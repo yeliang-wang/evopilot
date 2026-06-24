@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import test from "node:test";
-import { isProductImplementationFile, normalizeRepairAttempts, renderEvidenceFile, renderRepairHistory, runGeneratedQualityGate, sanitizeGeneratedContent, startInternalCodeUpgrader } from "../../scripts/internal-code-upgrader.mjs";
+import { isProductImplementationFile, normalizeRelativePath, normalizeRepairAttempts, renderEvidenceFile, renderRepairHistory, resolvePullRequestUrl, runGeneratedQualityGate, sanitizeGeneratedContent, startInternalCodeUpgrader } from "../../scripts/internal-code-upgrader.mjs";
 import { startInternalProductCicd } from "../../scripts/internal-product-cicd.mjs";
 
 test("内置代码升级执行器会产生非证据实现文件", async () => {
@@ -12,12 +12,13 @@ test("内置代码升级执行器会产生非证据实现文件", async () => {
   process.env.EVOPILOT_RUN_MODE = "debug";
   const repo = await createRepo();
   const runtime = await startInternalCodeUpgrader({ port: 0 });
+  const upgradeBranch = `evopilot/test/${Date.now()}`;
   try {
     const session = await post(`${runtime.baseUrl}/api/v1/conversations`, {
       repository: { provider: "local-git", root: repo, branch: "main" },
       branchStrategy: {
         sourceBranch: "main",
-        upgradeBranch: `evopilot/test/${Date.now()}`,
+        upgradeBranch,
         commitMessage: "test upgrade",
         mergeRequestTitle: "test",
         mergeRequestDescription: "test"
@@ -30,6 +31,8 @@ test("内置代码升级执行器会产生非证据实现文件", async () => {
     assert.equal(completed.status, "SUCCEEDED");
     assert.ok(completed.changedFiles.some((file) => file.startsWith(".evopilot/runtime-upgrades/")));
     assert.ok(completed.implementationFiles.some((file) => isProductImplementationFile(file)));
+    const branch = await run("git", ["rev-parse", "--verify", upgradeBranch], { cwd: repo });
+    assert.match(branch.stdout.trim(), /^[a-f0-9]{40}$/);
   } finally {
     await runtime.close();
     process.env.EVOPILOT_RUN_MODE = previousMode;
@@ -78,6 +81,19 @@ test("代码升级实现文件分类拒绝证据、说明和普通文档", () =>
   assert.equal(isProductImplementationFile("package.json"), true);
 });
 
+test("代码升级路径规整修复 LLM 截断的 package 文件名", () => {
+  assert.equal(normalizeRelativePath("package."), "package.json");
+  assert.equal(normalizeRelativePath("package"), "package.json");
+  assert.equal(normalizeRelativePath("config/rag."), "config/rag.json");
+  assert.equal(normalizeRelativePath("src/index.js"), "src/index.js");
+});
+
+test("local-git 代码升级会生成可审计的本地 review 引用", () => {
+  const repoRoot = path.join(os.tmpdir(), "evopilot local git repo");
+  const url = resolvePullRequestUrl({ provider: "local-git", root: repoRoot }, "evopilot/upgrade/a b");
+  assert.match(url, /^file:\/\/.*evopilot%20local%20git%20repo#evopilot%2Fupgrade%2Fa%20b$/);
+});
+
 test("代码升级提交前质量门禁拒绝语法错误的 Python 生成文件", async () => {
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-quality-gate-test-"));
   fs.writeFileSync(path.join(repo, "app.py"), "import\nprint('broken')\n", "utf8");
@@ -103,6 +119,22 @@ test("代码升级生成内容规整 Python JSON 标准库残缺引用", async (
   assert.match(content, /'application\/json'/);
   fs.writeFileSync(path.join(repo, "app.py"), content, "utf8");
   await runGeneratedQualityGate({ repoDir: repo, files: ["app.py"] });
+});
+
+test("代码升级生成内容规整 JS 截断的 JSON 配置导入", async () => {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-js-sanitize-"));
+  const content = sanitizeGeneratedContent([
+    "import config from '../../config/rag.' assert { type: '' };",
+    "const header = 'application/';",
+    "app.use(express.());",
+    "export async function read(response) { return response.(); }"
+  ].join("\n"), "embedding.js");
+  assert.match(content, /^const config = \{\};/);
+  assert.match(content, /'application\/json'/);
+  assert.match(content, /express\.json\(\)/);
+  assert.match(content, /response\.json\(\)/);
+  fs.writeFileSync(path.join(repo, "embedding.js"), content, "utf8");
+  await runGeneratedQualityGate({ repoDir: repo, files: ["embedding.js"] });
 });
 
 test("代码升级验证修复会携带历史失败和修复轨迹", () => {

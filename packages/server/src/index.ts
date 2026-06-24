@@ -179,6 +179,7 @@ interface ProjectCodeContext {
   branch?: string;
   commitSha?: string;
   fileCount: number;
+  writableRoots?: string[];
   selectedFiles: Array<{
     path: string;
     content: string;
@@ -393,6 +394,8 @@ interface ReleaseEvidenceBundle {
   id: string;
   candidate: string;
   status: "GO" | "CONDITIONAL-GO" | "NO-GO";
+  releaseTargetId?: string;
+  releaseDecisionId?: string;
   generatedAt: string;
   summary: Record<string, unknown>;
   sourceSoakReportIds: string[];
@@ -422,6 +425,85 @@ interface ReleaseEvidenceBundle {
     url?: string;
     status?: string;
   }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ReleaseEvidenceListItem {
+  id: string;
+  candidate: string;
+  status: ReleaseEvidenceBundle["status"];
+  releaseTargetId?: string;
+  releaseDecisionId?: string;
+  generatedAt: string;
+  summary: {
+    projectCount: number;
+    runCount: number;
+    releaseReadinessScore: number;
+    releaseBlockedCount: number;
+    rolloutBlockedCount: number;
+    releaseDecisionCount: number;
+    latestReleaseDecisionId?: string;
+  };
+  scenarioSummary: {
+    total: number;
+    passed: number;
+    failed: number;
+    notRun: number;
+    requiredFailed: number;
+  };
+  riskSummary: {
+    total: number;
+    open: number;
+    highOpen: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ReleaseTargetProfile {
+  id: string;
+  name: string;
+  description: string;
+  minConnectedProjects: number;
+  minSucceededSoakSeconds: number;
+  requireActiveSoak?: boolean;
+  minActiveSoakRunDelta?: number;
+  minActiveSoakCodeUpgradeDelta?: number;
+  minActiveSoakPipelineDelta?: number;
+  minSuccessfulRuns: number;
+  minEvaluationDatasets: number;
+  minOpportunities: number;
+  minSuccessfulEvolutionBatches: number;
+  minSuccessfulCodeUpgrades: number;
+  minSuccessfulPipelines: number;
+  requiredScenarioIds: string[];
+  requireNoHighOpenRisks: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ReleaseDecisionCriterion {
+  id: string;
+  name: string;
+  status: "PASS" | "FAIL";
+  actual: number | string | boolean;
+  target: number | string | boolean;
+  evidence: string[];
+  required: boolean;
+}
+
+interface ReleaseDecision {
+  id: string;
+  candidate: string;
+  targetId: string;
+  evidenceBundleId: string;
+  status: "GO" | "CONDITIONAL-GO" | "NO-GO";
+  generatedAt: string;
+  criteria: ReleaseDecisionCriterion[];
+  summary: Record<string, unknown>;
+  scenarioMatrix: ReleaseScenarioResult[];
+  riskRegister: ReleaseRisk[];
   createdAt: string;
   updatedAt: string;
 }
@@ -747,9 +829,31 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         store.appendAudit(audit(auth, "soak-report.upserted", report.id, { status: report.status, durationSeconds: report.durationSeconds }));
         return writeJson(response, 201, envelope(report));
       }
+      if (request.method === "GET" && url.pathname === "/api/v1/release/targets") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listReleaseTargets()));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/release/targets") {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const target = store.writeReleaseTarget(normalizeReleaseTarget(body));
+        store.appendAudit(audit(auth, "release-target.upserted", target.id, { minConnectedProjects: target.minConnectedProjects, requiredScenarioIds: target.requiredScenarioIds }));
+        return writeJson(response, 201, envelope(target));
+      }
+      const releaseTargetMatch = url.pathname.match(/^\/api\/v1\/release\/targets\/([^/]+)$/);
+      if (request.method === "GET" && releaseTargetMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const target = store.readReleaseTarget(decodeURIComponent(releaseTargetMatch[1]));
+        if (!target) return writeJson(response, 404, { error: "RELEASE_TARGET_NOT_FOUND" });
+        return writeJson(response, 200, envelope(target));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/release/decisions") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listReleaseDecisions().slice(-20).reverse()));
+      }
       if (request.method === "GET" && url.pathname === "/api/v1/release/evidence") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        return writeJson(response, 200, envelope(store.listReleaseEvidenceBundles().slice(-20).reverse()));
+        return writeJson(response, 200, envelope(store.listReleaseEvidenceSummaries().slice(-20).reverse()));
       }
       if (request.method === "POST" && url.pathname === "/api/v1/release/evidence") {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -757,6 +861,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const bundle = store.generateReleaseEvidenceBundle({
           id: body.id ? String(body.id) : undefined,
           candidate: body.candidate ? String(body.candidate) : undefined,
+          releaseTargetId: body.releaseTargetId ? String(body.releaseTargetId) : undefined,
           scenarioMatrix: normalizeScenarioMatrix(body.scenarioMatrix),
           artifactPaths: Array.isArray(body.artifactPaths) ? body.artifactPaths.map(String) : []
         });
@@ -1255,6 +1360,8 @@ class FileStore {
     fs.mkdirSync(this.evolutionCursorsDir, { recursive: true });
     fs.mkdirSync(this.soakReportsDir, { recursive: true });
     fs.mkdirSync(this.releaseEvidenceDir, { recursive: true });
+    fs.mkdirSync(this.releaseTargetsDir, { recursive: true });
+    fs.mkdirSync(this.releaseDecisionsDir, { recursive: true });
     this.ensureMetadata();
   }
 
@@ -1324,6 +1431,14 @@ class FileStore {
 
   get releaseEvidenceDir(): string {
     return path.join(this.dataRoot, "release-evidence");
+  }
+
+  get releaseTargetsDir(): string {
+    return path.join(this.dataRoot, "release-targets");
+  }
+
+  get releaseDecisionsDir(): string {
+    return path.join(this.dataRoot, "release-decisions");
   }
 
   get metadataFile(): string {
@@ -1404,7 +1519,7 @@ class FileStore {
       confirmedReviewCount: reviews.filter((review) => review.status === "USER_CONFIRMED").length,
       releaseCount: releases.length,
       releaseHealth: releases.length === 0 ? 100 : Math.round((releases.filter((release) => release.status === "SUCCEEDED").length / releases.length) * 100),
-      recentRuns: runs.slice(-5).reverse(),
+      recentRuns: runs.slice(-5).reverse().map(sanitizeRunForSummary),
       recentOpportunityInsights: insights.slice(0, 5),
       serviceScorecards: scorecards,
       sloReports,
@@ -1414,10 +1529,13 @@ class FileStore {
       releaseReadiness,
       rolloutStrategies,
       recentCodeUpgrades: codeUpgrades.slice(-5).reverse(),
-      recentPipelines: pipelines.slice(-5).reverse(),
+      recentPipelines: pipelines.slice(-5).reverse().map(sanitizePipelineRun),
       recentEvolutionBatches: batches.slice(-5).reverse(),
       recentSoakReports: this.listSoakReports().slice(-5).reverse(),
-      recentReleaseEvidence: this.listReleaseEvidenceBundles().slice(-5).reverse()
+      recentReleaseEvidence: this.listReleaseEvidenceSummaries().slice(-5).reverse(),
+      releaseTargetCount: this.listReleaseTargets().length,
+      releaseDecisionCount: this.listReleaseDecisions().length,
+      latestReleaseDecision: this.listReleaseDecisions().slice(-1)[0]
     };
   }
 
@@ -1685,11 +1803,26 @@ class FileStore {
     return projects.map((project) => {
       const projectRuns = runs.filter((run) => run.evidenceBundle.projectId === project.id);
       const releases = projectRuns.flatMap((run) => run.releaseReports);
-      const failedReleaseCount = releases.filter((release) => release.status === "FAILED" || release.status === "ROLLED_BACK").length;
+      const latestSuccessfulReleaseAt = releases
+        .filter((release) => release.status === "SUCCEEDED" && release.releasedAt)
+        .map((release) => Date.parse(release.releasedAt as string))
+        .filter((timestamp) => Number.isFinite(timestamp))
+        .sort((left, right) => right - left)[0];
+      const isAfterLatestSuccessfulRelease = (timestamp: string): boolean => {
+        if (!Number.isFinite(latestSuccessfulReleaseAt)) return true;
+        const parsed = Date.parse(timestamp);
+        return !Number.isFinite(parsed) || parsed > latestSuccessfulReleaseAt;
+      };
+      const failedReleaseCount = releases.filter((release) =>
+        (release.status === "FAILED" || release.status === "ROLLED_BACK") &&
+        isAfterLatestSuccessfulRelease(release.releasedAt ?? runFinishedAt(projectRuns, release.evidenceBundleId))
+      ).length;
+      const successfulReleaseCount = releases.filter((release) => release.status === "SUCCEEDED").length;
       const latencyViolationCount = projectRuns.flatMap((run) => run.evidenceBundle.events).filter((event) =>
+        isAfterLatestSuccessfulRelease(event.timestamp) &&
         Number(event.attributes?.durationMs ?? event.attributes?.latencyMs ?? event.attributes?.p95LatencyMs ?? 0) > 3000
       ).length;
-      const totalSignals = Math.max(1, projectRuns.reduce((sum, run) => sum + run.evidenceBundle.events.length, 0) + releases.length);
+      const totalSignals = Math.max(1, projectRuns.reduce((sum, run) => sum + run.evidenceBundle.events.length, 0) + successfulReleaseCount * 5 + failedReleaseCount * 2);
       const violationRate = (latencyViolationCount + failedReleaseCount * 2) / totalSignals;
       const observedHealth = Math.max(0, Math.round((1 - Math.min(1, violationRate)) * 100));
       const targetAvailability = 99;
@@ -2216,6 +2349,10 @@ class FileStore {
       .map((file) => JSON.parse(fs.readFileSync(path.join(this.releaseEvidenceDir, file), "utf8")) as ReleaseEvidenceBundle);
   }
 
+  listReleaseEvidenceSummaries(): ReleaseEvidenceListItem[] {
+    return this.listReleaseEvidenceBundles().map((bundle) => releaseEvidenceListItem(bundle));
+  }
+
   readReleaseEvidenceBundle(id: string): ReleaseEvidenceBundle | undefined {
     const file = path.join(this.releaseEvidenceDir, `${safeFileName(id)}.json`);
     if (!fs.existsSync(file)) return undefined;
@@ -2227,15 +2364,57 @@ class FileStore {
     return bundle;
   }
 
+  listReleaseTargets(): ReleaseTargetProfile[] {
+    const persisted = fs.readdirSync(this.releaseTargetsDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => JSON.parse(fs.readFileSync(path.join(this.releaseTargetsDir, file), "utf8")) as ReleaseTargetProfile);
+    if (persisted.some((target) => target.id === "ga")) return persisted;
+    return [defaultGAReleaseTarget(), ...persisted];
+  }
+
+  readReleaseTarget(id: string): ReleaseTargetProfile | undefined {
+    const safeId = safeFileName(id);
+    const file = path.join(this.releaseTargetsDir, `${safeId}.json`);
+    if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8")) as ReleaseTargetProfile;
+    if (safeId === "ga") return defaultGAReleaseTarget();
+    return undefined;
+  }
+
+  writeReleaseTarget(target: ReleaseTargetProfile): ReleaseTargetProfile {
+    atomicWriteJson(path.join(this.releaseTargetsDir, `${safeFileName(target.id)}.json`), target);
+    return target;
+  }
+
+  listReleaseDecisions(): ReleaseDecision[] {
+    return fs.readdirSync(this.releaseDecisionsDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => JSON.parse(fs.readFileSync(path.join(this.releaseDecisionsDir, file), "utf8")) as ReleaseDecision)
+      .sort((left, right) => Date.parse(left.generatedAt) - Date.parse(right.generatedAt));
+  }
+
+  readReleaseDecision(id: string): ReleaseDecision | undefined {
+    const file = path.join(this.releaseDecisionsDir, `${safeFileName(id)}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return JSON.parse(fs.readFileSync(file, "utf8")) as ReleaseDecision;
+  }
+
+  writeReleaseDecision(decision: ReleaseDecision): ReleaseDecision {
+    atomicWriteJson(path.join(this.releaseDecisionsDir, `${safeFileName(decision.id)}.json`), decision);
+    return decision;
+  }
+
   generateReleaseEvidenceBundle(input: {
     id?: string;
     candidate?: string;
+    releaseTargetId?: string;
     scenarioMatrix?: ReleaseScenarioResult[];
     artifactPaths?: string[];
   }): ReleaseEvidenceBundle {
     const now = new Date().toISOString();
     const id = safeFileName(input.id ?? `release-evidence-${Date.now()}`);
-    const summary = this.summary() as Record<string, unknown>;
+    const summary = compactReleaseEvidenceSummary(this.summary() as Record<string, unknown>);
     const projects = this.listProjects();
     const soakReports = this.listSoakReports();
     const pipelines = this.listPipelines();
@@ -2256,6 +2435,7 @@ class FileStore {
       id,
       candidate: input.candidate ?? `candidate-${now}`,
       status,
+      releaseTargetId: input.releaseTargetId ?? "ga",
       generatedAt: now,
       summary,
       sourceSoakReportIds: soakReports.map((report) => report.id),
@@ -2300,7 +2480,82 @@ class FileStore {
       createdAt: now,
       updatedAt: now
     };
-    return this.writeReleaseEvidenceBundle(bundle);
+    const target = this.readReleaseTarget(bundle.releaseTargetId ?? "ga") ?? defaultGAReleaseTarget();
+    const decision = this.generateReleaseDecision({ target, evidenceBundle: bundle, scenarioMatrix, riskRegister, summary, now });
+    const releaseBundle = {
+      ...bundle,
+      status: decision.status,
+      releaseDecisionId: decision.id
+    };
+    this.writeReleaseDecision(decision);
+    return this.writeReleaseEvidenceBundle(releaseBundle);
+  }
+
+  private generateReleaseDecision(args: {
+    target: ReleaseTargetProfile;
+    evidenceBundle: ReleaseEvidenceBundle;
+    scenarioMatrix: ReleaseScenarioResult[];
+    riskRegister: ReleaseRisk[];
+    summary: Record<string, unknown>;
+    now: string;
+  }): ReleaseDecision {
+    const { target, evidenceBundle, scenarioMatrix, riskRegister, summary, now } = args;
+    const soakReports = this.listSoakReports();
+    const succeededSoakSeconds = soakReports
+      .filter((report) => report.status === "SUCCEEDED")
+      .reduce((sum, report) => sum + report.durationSeconds, 0);
+    const activeSucceededSoakSeconds = soakReports
+      .filter((report) => report.status === "SUCCEEDED" && isActiveSoakReport(report, target))
+      .reduce((sum, report) => sum + report.durationSeconds, 0);
+    const requiredSoakSeconds = target.requireActiveSoak ? activeSucceededSoakSeconds : succeededSoakSeconds;
+    const successfulCodeUpgrades = this.listCodeUpgradeRuns().filter((upgrade) => upgrade.status === "SUCCEEDED").length;
+    const successfulPipelines = this.listPipelines().filter((pipeline) => pipeline.status === "SUCCEEDED").length;
+    const highOpenRiskCount = riskRegister.filter((risk) => risk.status === "OPEN" && (risk.severity === "HIGH" || risk.severity === "CRITICAL")).length;
+    const criteria: ReleaseDecisionCriterion[] = [
+      numericCriterion("min-connected-projects", "最少接入项目数", this.listProjects().length, target.minConnectedProjects, [`connectedProjects=${this.listProjects().length}`]),
+      numericCriterion("min-succeeded-soak-seconds", target.requireActiveSoak ? "有负载成功持续验证时长" : "成功持续验证时长", requiredSoakSeconds, target.minSucceededSoakSeconds, [
+        `succeededSoakSeconds=${succeededSoakSeconds}`,
+        `activeSucceededSoakSeconds=${activeSucceededSoakSeconds}`,
+        `requireActiveSoak=${Boolean(target.requireActiveSoak)}`
+      ]),
+      numericCriterion("min-successful-runs", "成功证据运行数", Number(summary.runCount ?? 0), target.minSuccessfulRuns, [`runs=${summary.runCount ?? 0}`]),
+      numericCriterion("min-evaluation-datasets", "评测集数量", Number(summary.evaluationDatasetCount ?? 0), target.minEvaluationDatasets, [`datasets=${summary.evaluationDatasetCount ?? 0}`]),
+      numericCriterion("min-opportunities", "机会点数量", Number(summary.opportunityCount ?? 0), target.minOpportunities, [`opportunities=${summary.opportunityCount ?? 0}`]),
+      numericCriterion("min-successful-evolution-batches", "成功进化批次数", Number(summary.successfulEvolutionBatchCount ?? 0), target.minSuccessfulEvolutionBatches, [`successfulBatches=${summary.successfulEvolutionBatchCount ?? 0}`]),
+      numericCriterion("min-successful-code-upgrades", "成功代码升级数", successfulCodeUpgrades, target.minSuccessfulCodeUpgrades, [`successfulCodeUpgrades=${successfulCodeUpgrades}`]),
+      numericCriterion("min-successful-pipelines", "成功 CI/CD 数", successfulPipelines, target.minSuccessfulPipelines, [`successfulPipelines=${successfulPipelines}`]),
+      booleanCriterion("required-scenarios", "必跑场景全部通过", target.requiredScenarioIds.every((id) => scenarioMatrix.some((scenario) => scenario.id === id && scenario.status === "PASS")), true, target.requiredScenarioIds.map((id) => {
+        const scenario = scenarioMatrix.find((item) => item.id === id);
+        return `${id}=${scenario?.status ?? "MISSING"}`;
+      })),
+      booleanCriterion("no-high-open-risks", "无高危未关闭风险", target.requireNoHighOpenRisks ? highOpenRiskCount === 0 : true, true, [`highOpenRisks=${highOpenRiskCount}`])
+    ];
+    const failedRequired = criteria.filter((criterion) => criterion.required && criterion.status === "FAIL");
+    const openMediumRiskCount = riskRegister.filter((risk) => risk.status === "OPEN" && risk.severity === "MEDIUM").length;
+    const status: ReleaseDecision["status"] = failedRequired.length > 0
+      ? "NO-GO"
+      : openMediumRiskCount > 0
+        ? "CONDITIONAL-GO"
+        : "GO";
+    return {
+      id: `decision-${safeFileName(evidenceBundle.id)}`,
+      candidate: evidenceBundle.candidate,
+      targetId: target.id,
+      evidenceBundleId: evidenceBundle.id,
+      status,
+      generatedAt: now,
+      criteria,
+      summary: {
+        passedCriteria: criteria.filter((criterion) => criterion.status === "PASS").length,
+        failedCriteria: failedRequired.length,
+        openRisks: riskRegister.filter((risk) => risk.status === "OPEN").length,
+        highOpenRisks: highOpenRiskCount
+      },
+      scenarioMatrix,
+      riskRegister,
+      createdAt: now,
+      updatedAt: now
+    };
   }
 
   private buildServiceInventory(projects: StoredProject[]): ReleaseEvidenceBundle["serviceInventory"] {
@@ -2400,7 +2655,7 @@ class FileStore {
         id: `risk-code-upgrade-${safeFileName(upgrade.id)}`,
         severity: "MEDIUM",
         source: "code-upgrade",
-        status: "OPEN",
+        status: hasLaterSuccessfulCodeUpgrade(upgrade, args.codeUpgrades) ? "MITIGATED" : "OPEN",
         summary: `${upgrade.projectId} 代码升级失败：${upgrade.failureReason ?? upgrade.error ?? upgrade.status}`,
         evidence: [upgrade.artifacts.pullRequestUrl ?? upgrade.artifacts.diffPath ?? upgrade.id],
         recommendedAction: "确认代码升级失败不会触发 CI/CD，并释放或失败对应进化批次。"
@@ -2492,6 +2747,88 @@ function normalizeSoakReportStatus(value: unknown): SoakReport["status"] {
   throw httpError(400, "SOAK_REPORT_STATUS_INVALID", `不支持的持续验证状态：${String(value)}`);
 }
 
+function normalizeReleaseTarget(value: unknown): ReleaseTargetProfile {
+  if (!isRecord(value)) throw httpError(400, "RELEASE_TARGET_INVALID", "发布目标必须是对象。");
+  const now = new Date().toISOString();
+  const existing = value.id === "ga" ? defaultGAReleaseTarget() : undefined;
+  const id = safeFileName(String(value.id ?? existing?.id ?? ""));
+  if (!id) throw httpError(400, "RELEASE_TARGET_ID_REQUIRED", "发布目标必须包含 id。");
+  const requiredScenarioIds = Array.isArray(value.requiredScenarioIds)
+    ? value.requiredScenarioIds.map(String).map(safeFileName).filter(Boolean)
+    : existing?.requiredScenarioIds ?? defaultGAReleaseTarget().requiredScenarioIds;
+  return {
+    id,
+    name: String(value.name ?? existing?.name ?? id),
+    description: String(value.description ?? existing?.description ?? "自定义发布目标"),
+    minConnectedProjects: nonNegativeInteger(value.minConnectedProjects, existing?.minConnectedProjects ?? 1),
+    minSucceededSoakSeconds: nonNegativeInteger(value.minSucceededSoakSeconds, existing?.minSucceededSoakSeconds ?? 0),
+    requireActiveSoak: value.requireActiveSoak === undefined ? existing?.requireActiveSoak ?? false : Boolean(value.requireActiveSoak),
+    minActiveSoakRunDelta: nonNegativeInteger(value.minActiveSoakRunDelta, existing?.minActiveSoakRunDelta ?? 1),
+    minActiveSoakCodeUpgradeDelta: nonNegativeInteger(value.minActiveSoakCodeUpgradeDelta, existing?.minActiveSoakCodeUpgradeDelta ?? 1),
+    minActiveSoakPipelineDelta: nonNegativeInteger(value.minActiveSoakPipelineDelta, existing?.minActiveSoakPipelineDelta ?? 1),
+    minSuccessfulRuns: nonNegativeInteger(value.minSuccessfulRuns, existing?.minSuccessfulRuns ?? 1),
+    minEvaluationDatasets: nonNegativeInteger(value.minEvaluationDatasets, existing?.minEvaluationDatasets ?? 1),
+    minOpportunities: nonNegativeInteger(value.minOpportunities, existing?.minOpportunities ?? 1),
+    minSuccessfulEvolutionBatches: nonNegativeInteger(value.minSuccessfulEvolutionBatches, existing?.minSuccessfulEvolutionBatches ?? 1),
+    minSuccessfulCodeUpgrades: nonNegativeInteger(value.minSuccessfulCodeUpgrades, existing?.minSuccessfulCodeUpgrades ?? 1),
+    minSuccessfulPipelines: nonNegativeInteger(value.minSuccessfulPipelines, existing?.minSuccessfulPipelines ?? 1),
+    requiredScenarioIds,
+    requireNoHighOpenRisks: value.requireNoHighOpenRisks === undefined ? existing?.requireNoHighOpenRisks ?? true : Boolean(value.requireNoHighOpenRisks),
+    createdAt: value.createdAt ? String(value.createdAt) : existing?.createdAt ?? now,
+    updatedAt: now
+  };
+}
+
+function defaultGAReleaseTarget(): ReleaseTargetProfile {
+  const now = "1970-01-01T00:00:00.000Z";
+  return {
+    id: "ga",
+    name: "GA Release",
+    description: "EvoPilot 生产 GA 发布目标，供 AI 或外部工具执行场景验证 loop 时作为统一判定标准。",
+    minConnectedProjects: 5,
+    minSucceededSoakSeconds: 90 * 60,
+    requireActiveSoak: true,
+    minActiveSoakRunDelta: 5,
+    minActiveSoakCodeUpgradeDelta: 5,
+    minActiveSoakPipelineDelta: 5,
+    minSuccessfulRuns: 5,
+    minEvaluationDatasets: 10,
+    minOpportunities: 5,
+    minSuccessfulEvolutionBatches: 5,
+    minSuccessfulCodeUpgrades: 5,
+    minSuccessfulPipelines: 5,
+    requiredScenarioIds: [
+      "normal-evolution-loop",
+      "ci-cd-failure-recovery",
+      "llm-failure-containment",
+      "scm-failure-containment",
+      "cost-slo-governance",
+      "manual-approval",
+      "multi-project-isolation",
+      "restart-recovery",
+      "rollback",
+      "data-governance"
+    ],
+    requireNoHighOpenRisks: true,
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+function numericCriterion(id: string, name: string, actual: number, target: number, evidence: string[]): ReleaseDecisionCriterion {
+  return { id, name, status: actual >= target ? "PASS" : "FAIL", actual, target, evidence, required: true };
+}
+
+function booleanCriterion(id: string, name: string, actual: boolean, target: boolean, evidence: string[]): ReleaseDecisionCriterion {
+  return { id, name, status: actual === target ? "PASS" : "FAIL", actual, target, evidence, required: true };
+}
+
+function nonNegativeInteger(value: unknown, fallback: number): number {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return Math.floor(parsed);
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -2534,6 +2871,12 @@ function defaultReleaseScenarioMatrix(args: {
   const frozenProjectCount = Number(summary.frozenProjectCount ?? 0);
   const activeBatchCount = Number(summary.activeEvolutionBatchCount ?? 0);
   const successfulBatchCount = Number(summary.successfulEvolutionBatchCount ?? 0);
+  const governanceHealthy = Number(summary.failedPolicyCount ?? 0) === 0 &&
+    Number(summary.sloHealth ?? 100) >= 99 &&
+    Number(summary.errorBudgetRemaining ?? 100) >= 70 &&
+    Number(summary.costHealth ?? 100) >= 90 &&
+    Number(summary.releaseBlockedCount ?? 0) === 0 &&
+    Number(summary.rolloutBlockedCount ?? 0) === 0;
   const normalLoopPassed = Number(summary.runCount ?? 0) > 0 &&
     Number(summary.evaluationDatasetCount ?? 0) > 0 &&
     Number(summary.opportunityCount ?? 0) > 0 &&
@@ -2555,10 +2898,14 @@ function defaultReleaseScenarioMatrix(args: {
     ], true, now),
     scenario("llm-failure-containment", "LLM 失败隔离", "NOT-RUN", ["未从当前持久化数据中发现 LLM 失败隔离证据。"], true, now),
     scenario("scm-failure-containment", "SCM 失败隔离", "NOT-RUN", ["未从当前持久化数据中发现 SCM 失败隔离证据。"], true, now),
-    scenario("cost-slo-governance", "成本/SLO 治理", frozenProjectCount > 0 || Number(summary.releaseBlockedCount ?? 0) > 0 || Number(summary.rolloutBlockedCount ?? 0) > 0 ? "PASS" : "NOT-RUN", [
+    scenario("cost-slo-governance", "成本/SLO 治理", governanceHealthy || frozenProjectCount > 0 || Number(summary.releaseBlockedCount ?? 0) > 0 || Number(summary.rolloutBlockedCount ?? 0) > 0 ? "PASS" : "NOT-RUN", [
       `frozenProjects=${frozenProjectCount}`,
       `releaseBlocked=${summary.releaseBlockedCount ?? 0}`,
-      `rolloutBlocked=${summary.rolloutBlockedCount ?? 0}`
+      `rolloutBlocked=${summary.rolloutBlockedCount ?? 0}`,
+      `failedPolicies=${summary.failedPolicyCount ?? 0}`,
+      `sloHealth=${summary.sloHealth ?? 100}`,
+      `errorBudgetRemaining=${summary.errorBudgetRemaining ?? 100}`,
+      `costHealth=${summary.costHealth ?? 100}`
     ], true, now),
     scenario("manual-approval", "人工审批门禁", Number(summary.confirmedReviewCount ?? 0) > 0 || Number(summary.pendingReviewCount ?? 0) > 0 ? "PASS" : "NOT-RUN", [
       `confirmedReviews=${summary.confirmedReviewCount ?? 0}`,
@@ -2600,11 +2947,174 @@ function mergeScenarioMatrix(defaults: ReleaseScenarioResult[], overrides: Relea
   return [...merged.values()];
 }
 
+function releaseEvidenceListItem(bundle: ReleaseEvidenceBundle): ReleaseEvidenceListItem {
+  const summary = bundle.summary ?? {};
+  return {
+    id: bundle.id,
+    candidate: bundle.candidate,
+    status: bundle.status,
+    releaseTargetId: bundle.releaseTargetId,
+    releaseDecisionId: bundle.releaseDecisionId,
+    generatedAt: bundle.generatedAt,
+    summary: {
+      projectCount: Number(summary.projectCount ?? 0),
+      runCount: Number(summary.runCount ?? 0),
+      releaseReadinessScore: Number(summary.releaseReadinessScore ?? 0),
+      releaseBlockedCount: Number(summary.releaseBlockedCount ?? 0),
+      rolloutBlockedCount: Number(summary.rolloutBlockedCount ?? 0),
+      releaseDecisionCount: Number(summary.releaseDecisionCount ?? 0),
+      latestReleaseDecisionId: isRecord(summary.latestReleaseDecision) ? String(summary.latestReleaseDecision.id ?? "") || undefined : undefined
+    },
+    scenarioSummary: {
+      total: bundle.scenarioMatrix.length,
+      passed: bundle.scenarioMatrix.filter((scenarioItem) => scenarioItem.status === "PASS").length,
+      failed: bundle.scenarioMatrix.filter((scenarioItem) => scenarioItem.status === "FAIL").length,
+      notRun: bundle.scenarioMatrix.filter((scenarioItem) => scenarioItem.status === "NOT-RUN").length,
+      requiredFailed: bundle.scenarioMatrix.filter((scenarioItem) => scenarioItem.required && scenarioItem.status !== "PASS").length
+    },
+    riskSummary: {
+      total: bundle.riskRegister.length,
+      open: bundle.riskRegister.filter((risk) => risk.status === "OPEN").length,
+      highOpen: bundle.riskRegister.filter((risk) => risk.status === "OPEN" && (risk.severity === "HIGH" || risk.severity === "CRITICAL")).length
+    },
+    createdAt: bundle.createdAt,
+    updatedAt: bundle.updatedAt
+  };
+}
+
+function sanitizeRunForSummary(run: StoredRun): StoredRun {
+  return {
+    ...run,
+    pipelineRuns: run.pipelineRuns?.map(sanitizePipelineRun)
+  };
+}
+
+function sanitizePipelineRun(pipeline: PipelineRun): PipelineRun {
+  return {
+    ...pipeline,
+    parameters: redactSensitiveRecord(pipeline.parameters),
+    logRef: pipeline.logRef
+      ? {
+          ...pipeline.logRef,
+          preview: pipeline.logRef.preview ? redactSensitiveText(pipeline.logRef.preview) : undefined
+        }
+      : undefined
+  };
+}
+
+function compactReleaseEvidenceSummary(summary: Record<string, unknown>): Record<string, unknown> {
+  const scalarKeys = [
+    "projectCount",
+    "runCount",
+    "pipelineCount",
+    "evaluationDatasetCount",
+    "evolutionBatchCount",
+    "activeEvolutionBatchCount",
+    "costOptimizationEvolutionBatchCount",
+    "successfulEvolutionBatchCount",
+    "failedEvolutionBatchCount",
+    "frozenProjectCount",
+    "costOptimizationReadyCount",
+    "selfLearningDatasetCount",
+    "opportunityInsightCount",
+    "opportunityInsightQuality",
+    "learningRecordCount",
+    "serviceScorecardCount",
+    "averageServiceScore",
+    "sloHealth",
+    "errorBudgetRemaining",
+    "failedPolicyCount",
+    "supplyChainRiskCount",
+    "costRiskCount",
+    "costHealth",
+    "releaseReadyCount",
+    "releaseBlockedCount",
+    "releaseReadinessScore",
+    "canaryReadyCount",
+    "rolloutBlockedCount",
+    "codeUpgradeCount",
+    "runningCodeUpgradeCount",
+    "runningPipelineCount",
+    "opportunityCount",
+    "pendingReviewCount",
+    "confirmedReviewCount",
+    "releaseCount",
+    "releaseHealth",
+    "releaseTargetCount",
+    "releaseDecisionCount"
+  ];
+  const compact: Record<string, unknown> = {};
+  for (const key of scalarKeys) compact[key] = summary[key];
+  for (const key of [
+    "evolutionFreezes",
+    "recentOpportunityInsights",
+    "serviceScorecards",
+    "sloReports",
+    "policyEvaluations",
+    "supplyChainReports",
+    "costReports",
+    "releaseReadiness",
+    "rolloutStrategies",
+    "recentEvolutionBatches",
+    "recentSoakReports",
+    "recentReleaseEvidence",
+    "latestReleaseDecision"
+  ]) {
+    if (summary[key] !== undefined) compact[key] = summary[key];
+  }
+  return JSON.parse(JSON.stringify(compact, (_key, value) => {
+    if (typeof value === "string") return redactSensitiveText(value);
+    return value;
+  })) as Record<string, unknown>;
+}
+
+function redactSensitiveRecord(record: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(Object.entries(record).map(([key, value]) => [
+    key,
+    isSensitiveKey(key) ? "[REDACTED]" : redactSensitiveText(value)
+  ]));
+}
+
+function isSensitiveKey(key: string): boolean {
+  return /token|password|secret|credential|apikey|api_key/i.test(key);
+}
+
+function redactSensitiveText(text: string): string {
+  return text
+    .replace(/glpat-[A-Za-z0-9_-]+/g, "[REDACTED]")
+    .replace(/(token|password|secret|credential|api[_-]?key)([=:\s]+)([^\\s"',}]+)/gi, "$1$2[REDACTED]");
+}
+
+function runFinishedAt(runs: StoredRun[], evidenceBundleId: string): string {
+  return runs.find((run) => run.evidenceBundle.id === evidenceBundleId)?.evidenceBundle.timeWindow.to ?? new Date(0).toISOString();
+}
+
+function isActiveSoakReport(report: SoakReport, target: ReleaseTargetProfile): boolean {
+  if (!target.requireActiveSoak) return true;
+  const summary = report.summary ?? {};
+  if (summary.requireActivity !== true) return false;
+  const activity = isRecord(summary.activity) ? summary.activity : {};
+  const runDelta = Number(activity.runDelta ?? 0);
+  const codeUpgradeDelta = Number(activity.codeUpgradeDelta ?? 0);
+  const pipelineDelta = Number(activity.pipelineDelta ?? 0);
+  return runDelta >= (target.minActiveSoakRunDelta ?? 1) &&
+    codeUpgradeDelta >= (target.minActiveSoakCodeUpgradeDelta ?? 1) &&
+    pipelineDelta >= (target.minActiveSoakPipelineDelta ?? 1);
+}
+
 function hasLaterSuccessfulPipeline(failed: PipelineRun, pipelines: PipelineRun[]): boolean {
   return pipelines.some((pipeline) =>
     pipeline.projectId === failed.projectId &&
     pipeline.status === "SUCCEEDED" &&
     Date.parse(pipeline.triggeredAt) >= Date.parse(failed.triggeredAt)
+  );
+}
+
+function hasLaterSuccessfulCodeUpgrade(failed: CodeUpgradeRun, upgrades: CodeUpgradeRun[]): boolean {
+  return upgrades.some((upgrade) =>
+    upgrade.projectId === failed.projectId &&
+    upgrade.status === "SUCCEEDED" &&
+    Date.parse(upgrade.updatedAt) >= Date.parse(failed.updatedAt)
   );
 }
 
@@ -2745,7 +3255,7 @@ async function startOpenHandsCodeUpgrade(args: {
   profile: ProjectProfile;
   runtime: RuntimeConfig;
 }): Promise<CodeUpgradeRun> {
-  const { store, auth, delivery, plan, review, body, profile, runtime } = args;
+  const { store, auth, run, delivery, plan, review, body, profile, runtime } = args;
   const connectorId = requireBodyString(body.connectorId, "CODE_UPGRADE_CONNECTOR_ID_REQUIRED", runtime, "default");
   const connector = store.readOpenHandsConnector(connectorId);
   if (!connector) throw new Error("OPENHANDS_CONNECTOR_NOT_CONFIGURED");
@@ -2757,11 +3267,11 @@ async function startOpenHandsCodeUpgrade(args: {
   const diagnostic = await diagnoseProjectRuntime({ store, project, runtime });
   const blockingDiagnostic = codeUpgradeBlockingDiagnostic(diagnostic);
   if (blockingDiagnostic) throw new Error(`PROJECT_RUNTIME_DIAGNOSTIC_FAILED: ${blockingDiagnostic.remediation ?? blockingDiagnostic.detail}`);
-  const codeContext = await collectProjectCodeContext({ project, runtime, profile });
+  const codeContext = await collectProjectCodeContext({ project, runtime, profile, focusFiles: codeUpgradeFocusFiles(run) });
   if (runtime.mode === "prod" && codeContext.status !== "AVAILABLE") {
     throw new Error(`PROJECT_CODE_CONTEXT_UNAVAILABLE: ${codeContext.unavailableReason ?? codeContext.summary}`);
   }
-  const allowedPaths = inferCodeUpgradeAllowedPaths(codeContext);
+  const allowedPaths = inferCodeUpgradeAllowedPaths(codeContext, codeUpgradeFocusFiles(run));
   const branchStrategy = createBranchStrategy({ projectId: delivery.projectId, sourceBranch: project?.repository?.defaultBranch, delivery, plan, body });
   const session = await new OpenHandsClient(connector).startCodeUpgrade({
     projectId: delivery.projectId,
@@ -2828,9 +3338,18 @@ function codeUpgradeBlockingDiagnostic(diagnostic: ProjectRuntimeDiagnostic): Pr
   ].includes(check.name));
 }
 
-function inferCodeUpgradeAllowedPaths(codeContext: ProjectCodeContext): string[] {
+function inferCodeUpgradeAllowedPaths(codeContext: ProjectCodeContext, focusFiles: string[] = []): string[] {
   const base = new Set([".evopilot/runtime-upgrades", "docs/evopilot-upgrades"]);
+  for (const file of focusFiles) {
+    const pathName = normalizeRelativePathForPolicy(file);
+    if (!pathName || pathName.startsWith("docs/") || pathName.startsWith(".evopilot/")) continue;
+    const first = pathName.split("/")[0];
+    if (["node_modules", "dist", "build", "target", ".git", ".venv", "__pycache__"].includes(first)) continue;
+    if (pathName.includes("/")) base.add(first);
+    else base.add(pathName);
+  }
   if (codeContext.status !== "AVAILABLE") return [...base];
+  for (const root of codeContext.writableRoots ?? []) base.add(root);
   for (const file of codeContext.selectedFiles) {
     const pathName = normalizeRelativePathForPolicy(file.path);
     if (!pathName || pathName.startsWith("docs/") || pathName.startsWith(".evopilot/")) continue;
@@ -2843,6 +3362,17 @@ function inferCodeUpgradeAllowedPaths(codeContext: ProjectCodeContext): string[]
     base.add(fallback);
   }
   return [...base];
+}
+
+function codeUpgradeFocusFiles(run: StoredRun): string[] {
+  return uniqueNormalizedPaths(run.impactMaps.flatMap((impactMap) => [
+    ...impactMap.likelyFiles,
+    ...impactMap.relatedTests
+  ]));
+}
+
+function uniqueNormalizedPaths(paths: string[]): string[] {
+  return [...new Set(paths.map(normalizeRelativePathForPolicy).filter(Boolean))];
 }
 
 function normalizeRelativePathForPolicy(value: string): string {
@@ -3512,6 +4042,7 @@ async function collectProjectCodeContext(args: {
   project?: StoredProject;
   runtime: RuntimeConfig;
   profile: ProjectProfile;
+  focusFiles?: string[];
 }): Promise<ProjectCodeContext> {
   const project = args.project;
   if (!project) return unavailableProjectCodeContext("unknown", "项目未注册，无法读取当前代码基线。");
@@ -3520,7 +4051,7 @@ async function collectProjectCodeContext(args: {
 
   if (project.repository.provider === "local-git") {
     if (!project.repository.root) return unavailableProjectCodeContext(project.id, "local-git 项目缺少 repository.root。");
-    return collectCodeContextFromWorktree({ project, repoRoot: project.repository.root, source: "local-git", profile: args.profile });
+    return collectCodeContextFromWorktree({ project, repoRoot: project.repository.root, source: "local-git", profile: args.profile, focusFiles: args.focusFiles });
   }
 
   if (!project.repository.gitUrl) return unavailableProjectCodeContext(project.id, "远程 Git 项目缺少 gitUrl，无法克隆当前代码基线。");
@@ -3533,7 +4064,7 @@ async function collectProjectCodeContext(args: {
       env: { ...process.env, GIT_ASKPASS: askpass, GIT_TERMINAL_PROMPT: "0" }
     });
     if (result.code !== 0) return unavailableProjectCodeContext(project.id, `克隆当前代码基线失败：${result.stderr || result.stdout}`);
-    return await collectCodeContextFromWorktree({ project, repoRoot, source: "git-clone", profile: args.profile });
+    return await collectCodeContextFromWorktree({ project, repoRoot, source: "git-clone", profile: args.profile, focusFiles: args.focusFiles });
   } finally {
     fs.rmSync(askpass, { force: true });
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -3557,14 +4088,16 @@ async function collectCodeContextFromWorktree(args: {
   repoRoot: string;
   source: ProjectCodeContext["source"];
   profile: ProjectProfile;
+  focusFiles?: string[];
 }): Promise<ProjectCodeContext> {
   if (!fs.existsSync(args.repoRoot)) return unavailableProjectCodeContext(args.project.id, `代码目录不存在：${args.repoRoot}`);
   const branch = await gitOutput(["-C", args.repoRoot, "rev-parse", "--abbrev-ref", "HEAD"]).catch(() => args.project.repository?.defaultBranch ?? "unknown");
   const commitSha = await gitOutput(["-C", args.repoRoot, "rev-parse", "HEAD"]).catch(() => undefined);
   const trackedFiles = await listTrackedFiles(args.repoRoot);
-  const selectedPaths = selectCodeContextFiles(trackedFiles, args.profile.policy.protectedPaths);
+  const selectedPaths = selectCodeContextFiles(trackedFiles, args.profile.policy.protectedPaths, args.focusFiles);
   const selectedFiles = selectedPaths.map((relativePath) => readContextFile(args.repoRoot, relativePath)).filter(Boolean) as ProjectCodeContext["selectedFiles"];
   if (selectedFiles.length === 0) return unavailableProjectCodeContext(args.project.id, "当前代码基线没有可用于架构分析的文本文件。");
+  const writableRoots = inferWritableCodeRoots(trackedFiles, args.profile.policy.protectedPaths);
   return {
     status: "AVAILABLE",
     source: args.source,
@@ -3572,6 +4105,7 @@ async function collectCodeContextFromWorktree(args: {
     branch: branch?.trim() || args.project.repository?.defaultBranch,
     commitSha: commitSha?.trim(),
     fileCount: trackedFiles.length,
+    writableRoots,
     selectedFiles,
     summary: `已读取 ${selectedFiles.length} 个关键文件，仓库共 ${trackedFiles.length} 个受 Git 跟踪文件。`
   };
@@ -3597,11 +4131,15 @@ function listFilesRecursive(root: string): string[] {
   return out;
 }
 
-function selectCodeContextFiles(files: string[], protectedPaths: string[]): string[] {
+function selectCodeContextFiles(files: string[], protectedPaths: string[], focusFiles: string[] = []): string[] {
   const textFiles = files
     .filter((file) => isContextTextFile(file))
     .filter((file) => !protectedPaths.some((protectedPath) => isUnder(file, protectedPath)))
     .filter((file) => !/(^|\/)(node_modules|dist|build|target|\.git|\.venv|__pycache__)\//.test(file));
+  const available = new Set(textFiles);
+  const focused = uniqueNormalizedPaths(focusFiles)
+    .filter((file) => available.has(file))
+    .slice(0, 6);
   const priority = (file: string): number => {
     const name = path.basename(file).toLowerCase();
     if (["readme.md", "package.json", "pyproject.toml", "requirements.txt", "pom.xml", "go.mod", "dockerfile", "jenkinsfile"].includes(name)) return 0;
@@ -3611,7 +4149,30 @@ function selectCodeContextFiles(files: string[], protectedPaths: string[]): stri
     if (file.startsWith("docs/")) return 4;
     return 5;
   };
-  return textFiles.sort((a, b) => priority(a) - priority(b) || a.localeCompare(b)).slice(0, 10);
+  const general = textFiles
+    .filter((file) => !focused.includes(file))
+    .sort((a, b) => priority(a) - priority(b) || a.localeCompare(b))
+    .slice(0, 10 - focused.length);
+  return [...focused, ...general];
+}
+
+function inferWritableCodeRoots(files: string[], protectedPaths: string[]): string[] {
+  const denied = new Set([".git", ".github", ".idea", ".vscode", ".venv", "__pycache__", "build", "dist", "docs", "node_modules", "target"]);
+  const roots = new Map<string, { sourceLike: boolean; buildLike: boolean }>();
+  for (const file of files.map(normalizeRelativePathForPolicy).filter(Boolean)) {
+    if (protectedPaths.some((protectedPath) => isUnder(file, protectedPath))) continue;
+    const [root, ...rest] = file.split("/");
+    if (!root || denied.has(root) || rest.length === 0) continue;
+    const name = rest.at(-1)?.toLowerCase() ?? "";
+    const state = roots.get(root) ?? { sourceLike: false, buildLike: false };
+    state.sourceLike ||= rest.includes("src") || rest.includes("app") || rest.includes("server") || rest.includes("lib") || rest.includes("tests") || rest.includes("test");
+    state.buildLike ||= ["package.json", "pom.xml", "pyproject.toml", "requirements.txt", "go.mod", "build.gradle", "settings.gradle", "dockerfile", "jenkinsfile"].includes(name);
+    roots.set(root, state);
+  }
+  return [...roots.entries()]
+    .filter(([, state]) => state.sourceLike || state.buildLike)
+    .map(([root]) => root)
+    .sort();
 }
 
 function isContextTextFile(file: string): boolean {

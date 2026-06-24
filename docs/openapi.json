@@ -749,6 +749,89 @@
         }
       }
     },
+    "/api/v1/release/targets": {
+      "get": {
+        "summary": "列出发布目标",
+        "description": "返回 EvoPilot 产品自身定义的 AI 可执行发布目标。默认包含 GA Release 目标，外部工具和 sub agent 应以该目标为准执行场景验证 loop。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "发布目标列表"
+          },
+          "403": {
+            "description": "需要只读或更高角色"
+          }
+        }
+      },
+      "post": {
+        "summary": "创建或更新发布目标",
+        "description": "管理员可调整 GA 或自定义发布目标，包括最少接入项目数、持续验证时长、成功进化闭环数量和必跑场景矩阵。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "发布目标已保存"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          }
+        }
+      }
+    },
+    "/api/v1/release/targets/{targetId}": {
+      "get": {
+        "summary": "获取单个发布目标",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "targetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "发布目标详情"
+          },
+          "404": {
+            "description": "发布目标不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/release/decisions": {
+      "get": {
+        "summary": "列出发布判定",
+        "description": "返回 EvoPilot 按发布目标和发布证据包生成的 GO / CONDITIONAL-GO / NO-GO 判定，每条判定包含可机器读取的 criteria PASS/FAIL 明细。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "发布判定列表"
+          },
+          "403": {
+            "description": "需要只读或更高角色"
+          }
+        }
+      }
+    },
     "/api/v1/release/evidence": {
       "get": {
         "summary": "列出发布候选证据包",
@@ -769,7 +852,7 @@
       },
       "post": {
         "summary": "生成发布候选证据包",
-        "description": "聚合真实运行数据、代码升级、CI/CD、持续验证报告和场景矩阵，生成 GO / CONDITIONAL-GO / NO-GO 证据包；不会返回连接器密钥或项目凭据。",
+        "description": "聚合真实运行数据、代码升级、CI/CD、持续验证报告和场景矩阵，并按 releaseTargetId 指定的发布目标生成 GO / CONDITIONAL-GO / NO-GO 证据包；默认 releaseTargetId 为 ga。不会返回连接器密钥或项目凭据。",
         "security": [
           {
             "bearerAuth": []

@@ -19,7 +19,7 @@ test("runs evidence to review to confirmed delivery to learning closed loop", as
       projectId: "domainforge-fabric",
       now: "2026-06-02T00:00:00.000Z",
       events: [
-        { id: "e1", type: "performance.latency", source: "agent", timestamp: "2026-06-02T00:00:00.000Z", severity: "HIGH", message: "p95 latency increased", module: "runtime-performance" },
+        { id: "e1", type: "performance.latency", source: "agent", timestamp: "2026-06-02T00:00:00.000Z", severity: "HIGH", message: "p95 latency increased", module: "runtime-performance", attributes: { durationMs: 3900 } },
         { id: "e2", type: "tool.failure", source: "tool", timestamp: "2026-06-02T00:00:01.000Z", severity: "MEDIUM", message: "tool failed" }
       ],
       files: [
@@ -60,6 +60,12 @@ test("runs evidence to review to confirmed delivery to learning closed loop", as
     const runs = await (await fetch(`${baseUrl}/api/v1/runs`)).json();
     assert.equal(runs.data.length, 1);
     assert.equal(runs.data[0].releaseReports.length, 1);
+
+    const sloReports = await (await fetch(`${baseUrl}/api/v1/slo-reports`)).json();
+    const slo = sloReports.data.find((report) => report.projectId === "domainforge-fabric");
+    assert.equal(slo.latencyViolationCount, 0);
+    assert.equal(slo.status, "HEALTHY");
+    assert.ok(slo.errorBudgetRemaining >= 70);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
@@ -501,6 +507,7 @@ test("triggers Jenkins after review gate and closes delivery from Jenkins pipeli
     }, "admin-token");
     assert.equal(upgrade.data.codeUpgradeRun.status, "SUCCEEDED");
     assert.match(openhands.prompt, /性能优化方案/);
+    assert.ok(openhands.allowedPaths.includes("services"), `allowedPaths should include services: ${JSON.stringify(openhands.allowedPaths)}`);
     const upgradeEvents = await getWithToken(`${baseUrl}/api/v1/code-upgrade-runs/${encodeURIComponent(upgrade.data.codeUpgradeRun.id)}/events`, "viewer-token");
     assert.ok(upgradeEvents.data.some((event) => event.phase === "运行验证"));
 
@@ -893,9 +900,28 @@ async function getWithToken(url, token) {
 }
 
 async function startFakeOpenHands() {
-  const state = { prompt: "", baseUrl: "" };
+  const state = { prompt: "", allowedPaths: [], baseUrl: "" };
   const server = (await import("node:http")).createServer(async (request, response) => {
     const url = new URL(request.url ?? "/", "http://127.0.0.1");
+    if (request.method === "POST" && url.pathname === "/api/v1/conversations") {
+      const body = JSON.parse(await readRequestBody(request));
+      state.prompt = String(body.initialUserMessage ?? "");
+      state.allowedPaths = Array.isArray(body.allowedPaths) ? body.allowedPaths.map(String) : [];
+      return writeFakeJson(response, { workspaceId: "workspace-1", conversationId: "conversation-1", status: "RUNNING" });
+    }
+    if (request.method === "GET" && url.pathname === "/api/v1/conversations/conversation-1") {
+      return writeFakeJson(response, {
+        workspaceId: "workspace-1",
+        conversationId: "conversation-1",
+        status: "SUCCEEDED",
+        events: fakeOpenHandsEvents(),
+        branchName: "evopilot/upgrade",
+        commitSha: "abc123",
+        pullRequestUrl: "https://git.example.com/agent-prod/merge_requests/1",
+        changedFiles: ["docs/evopilot-upgrades/performance.md"],
+        diff: "diff --git a/docs/evopilot-upgrades/performance.md b/docs/evopilot-upgrades/performance.md\n+upgraded\n"
+      });
+    }
     if (request.method === "POST" && url.pathname === "/api/settings") {
       await readRequestBody(request);
       return writeFakeJson(response, { message: "Settings stored" });
@@ -934,6 +960,7 @@ async function startFakeOpenHands() {
   return {
     get baseUrl() { return state.baseUrl; },
     get prompt() { return state.prompt; },
+    get allowedPaths() { return state.allowedPaths; },
     close: () => new Promise((resolve) => server.close(resolve))
   };
 }
@@ -1022,7 +1049,10 @@ function writeFakeJson(response, body) {
 function createLocalProjectRepo(root, name) {
   const repoRoot = path.join(root, name);
   fs.mkdirSync(path.join(repoRoot, "src"), { recursive: true });
+  fs.mkdirSync(path.join(repoRoot, "services", "domainforge-fabric-service", "src", "main", "java"), { recursive: true });
   fs.writeFileSync(path.join(repoRoot, "src", "index.ts"), "export const ok = true;\n");
+  fs.writeFileSync(path.join(repoRoot, "services", "domainforge-fabric-service", "pom.xml"), "<project />\n");
+  fs.writeFileSync(path.join(repoRoot, "services", "domainforge-fabric-service", "src", "main", "java", "App.java"), "class App {}\n");
   return repoRoot;
 }
 

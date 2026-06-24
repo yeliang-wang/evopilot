@@ -336,6 +336,61 @@ GET /api/v1/pipelines/{pipelineRunId}/artifacts
 
 返回 EvoPilot 汇总后的 Jenkins 流水线视图，包括 Job、Build Number、Stage、Artifact、日志摘要和 Jenkins 原始链接。深度排障仍应跳转 Jenkins 原始页面。
 
+## GA Release 目标与发布判定
+
+```http
+GET /api/v1/release/targets
+GET /api/v1/release/targets/{targetId}
+POST /api/v1/release/targets
+GET /api/v1/release/decisions
+POST /api/v1/release/evidence
+```
+
+EvoPilot 自身定义“什么才算 GA Release”。外部 AI、通用 sub agent、CI/CD 编排器或人工执行验证时，都应先读取发布目标，再按目标执行场景验证 loop，最后生成 release evidence 和 release decision。
+
+默认内置 `ga` 目标：
+
+| 目标项 | 默认门槛 |
+|---|---:|
+| 最少接入项目数 | 5 |
+| 有负载成功持续验证时长 | 5400 秒 |
+| 有负载 soak 运行增量 | 5 |
+| 有负载 soak 代码升级增量 | 5 |
+| 有负载 soak CI/CD 增量 | 5 |
+| 成功证据运行数 | 5 |
+| 评测集数量 | 10 |
+| 机会点数量 | 5 |
+| 成功进化批次数 | 5 |
+| 成功代码升级数 | 5 |
+| 成功 CI/CD 数 | 5 |
+
+默认 `ga` 必跑场景：
+
+- `normal-evolution-loop`
+- `ci-cd-failure-recovery`
+- `llm-failure-containment`
+- `scm-failure-containment`
+- `cost-slo-governance`
+- `manual-approval`
+- `multi-project-isolation`
+- `restart-recovery`
+- `rollback`
+- `data-governance`
+
+`POST /api/v1/release/evidence` 默认使用 `releaseTargetId: "ga"`，返回的证据包会包含：
+
+```json
+{
+  "releaseTargetId": "ga",
+  "releaseDecisionId": "decision-rc-1",
+  "status": "NO-GO"
+}
+```
+
+对应判定可从 `GET /api/v1/release/decisions` 查询。每条判定包含 `criteria`，逐项说明实际值、目标值、PASS/FAIL 和证据。若未达到 GA，例如只接入 1 个项目，`min-connected-projects` 会失败，最终为 `NO-GO`。
+
+默认 `ga` 目标要求 `requireActiveSoak=true`。仅健康检查持续存活不计入 GA 稳定性证明；soak 报告必须证明 `runCount`、`codeUpgradeCount` 和 `pipelineCount` 相比基线产生真实活动增量。
+
 ## 审计
 
 ```http

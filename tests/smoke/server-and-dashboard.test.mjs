@@ -112,6 +112,8 @@ test("server serves dashboard static files", async () => {
     assert.match(app, /发布就绪/);
     assert.match(app, /发布阻断/);
     assert.match(app, /发布证据包/);
+    assert.match(app, /GA目标/);
+    assert.match(app, /发布结论/);
     assert.match(app, /灰度就绪/);
     assert.match(app, /灰度阻断/);
     assert.match(app, /supplyChainRiskCount/);
@@ -121,6 +123,8 @@ test("server serves dashboard static files", async () => {
     assert.match(app, /costOptimizationReadyCount/);
     assert.match(app, /releaseReadinessScore/);
     assert.match(app, /releaseEvidenceCount/);
+    assert.match(app, /releaseTargetCount/);
+    assert.match(app, /latestReleaseDecisionStatus/);
     assert.match(app, /canaryReadyCount/);
     assert.match(app, /rolloutBlockedCount/);
     assert.match(app, /查看方案/);
@@ -1090,6 +1094,52 @@ test("release evidence endpoint persists release candidate evidence without leak
     });
     assert.equal(soak.status, 201);
 
+    const codeUpgradeRunsDir = path.join(dataRoot, "code-upgrades", "runs");
+    fs.mkdirSync(codeUpgradeRunsDir, { recursive: true });
+    fs.writeFileSync(path.join(codeUpgradeRunsDir, "failed-upgrade.json"), `${JSON.stringify({
+      id: "failed-upgrade",
+      projectId: "connected-project",
+      deliveryPlanId: "delivery-plan-failed",
+      planId: "plan-failed",
+      executor: "openhands",
+      status: "FAILED",
+      proposalMarkdown: "failed upgrade",
+      validationCommands: ["node --version"],
+      branchStrategy: {
+        sourceBranch: "main",
+        upgradeBranch: "evopilot/upgrade/failed",
+        commitMessage: "failed",
+        mergeRequestTitle: "failed",
+        mergeRequestDescription: "failed"
+      },
+      openhands: { connectorId: "default", conversationId: "failed-conversation" },
+      artifacts: {},
+      failureReason: "old validation failure",
+      createdAt: "2026-06-09T00:30:00.000Z",
+      updatedAt: "2026-06-09T00:30:00.000Z"
+    }, null, 2)}\n`);
+    fs.writeFileSync(path.join(codeUpgradeRunsDir, "successful-upgrade.json"), `${JSON.stringify({
+      id: "successful-upgrade",
+      projectId: "connected-project",
+      deliveryPlanId: "delivery-plan-success",
+      planId: "plan-success",
+      executor: "openhands",
+      status: "SUCCEEDED",
+      proposalMarkdown: "successful upgrade",
+      validationCommands: ["node --version"],
+      branchStrategy: {
+        sourceBranch: "main",
+        upgradeBranch: "evopilot/upgrade/success",
+        commitMessage: "success",
+        mergeRequestTitle: "success",
+        mergeRequestDescription: "success"
+      },
+      openhands: { connectorId: "default", conversationId: "success-conversation" },
+      artifacts: { branchName: "evopilot/upgrade/success", commitSha: "abc123" },
+      createdAt: "2026-06-09T01:00:00.000Z",
+      updatedAt: "2026-06-09T01:00:00.000Z"
+    }, null, 2)}\n`);
+
     const evidence = await fetch(`${baseUrl}/api/v1/release/evidence`, {
       method: "POST",
       headers: { authorization: "Bearer operator-token", "content-type": "application/json" },
@@ -1107,11 +1157,15 @@ test("release evidence endpoint persists release candidate evidence without leak
     const body = await evidence.json();
     assert.equal(body.data.id, "rc-1");
     assert.equal(body.data.candidate, "v0.1.0-rc.1");
+    assert.equal(body.data.releaseTargetId, "ga");
+    assert.equal(body.data.status, "NO-GO");
+    assert.equal(body.data.releaseDecisionId, "decision-rc-1");
     assert.ok(body.data.sourceSoakReportIds.includes("release-candidate-soak"));
     assert.ok(body.data.serviceInventory.some((item) => item.type === "code-upgrader" && item.status === "READY"));
     assert.ok(body.data.connectedProjects.some((item) => item.repository.credentialsConfigured === true));
     assert.ok(body.data.scenarioMatrix.some((item) => item.id === "llm-failure-containment" && item.status === "PASS"));
     assert.ok(body.data.riskRegister.some((item) => item.source === "scenario-matrix"));
+    assert.equal(body.data.riskRegister.find((item) => item.id === "risk-code-upgrade-failed-upgrade")?.status, "MITIGATED");
     assert.ok(body.data.artifacts.some((item) => item.type === "dashboard"));
     assert.doesNotMatch(JSON.stringify(body.data), /secret-project-token|secret-jenkins-token|secret-openhands-token/);
 
@@ -1121,11 +1175,69 @@ test("release evidence endpoint persists release candidate evidence without leak
     assert.equal(fetched.status, 200);
     assert.equal((await fetched.json()).data.id, "rc-1");
 
+    const firstEvidenceBytes = fs.statSync(path.join(dataRoot, "release-evidence", "rc-1.json")).size;
+    const secondEvidence = await fetch(`${baseUrl}/api/v1/release/evidence`, {
+      method: "POST",
+      headers: { authorization: "Bearer operator-token", "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "rc-2",
+        candidate: "v0.1.0-rc.2",
+        scenarioMatrix: [
+          { id: "llm-failure-containment", name: "LLM 失败隔离", status: "PASS", evidence: ["真实 LLM 超时被阻断"], required: true },
+          { id: "scm-failure-containment", name: "SCM 失败隔离", status: "PASS", evidence: ["真实 push 失败未泄露 token"], required: true }
+        ]
+      })
+    });
+    assert.equal(secondEvidence.status, 201);
+    const secondEvidenceBytes = fs.statSync(path.join(dataRoot, "release-evidence", "rc-2.json")).size;
+    assert.ok(secondEvidenceBytes < firstEvidenceBytes * 2, `release evidence should not recursively embed previous bundles: first=${firstEvidenceBytes}, second=${secondEvidenceBytes}`);
+
+    const evidenceList = await fetch(`${baseUrl}/api/v1/release/evidence`, {
+      headers: { authorization: "Bearer viewer-token" }
+    });
+    assert.equal(evidenceList.status, 200);
+    const evidenceListBody = await evidenceList.json();
+    assert.equal(evidenceListBody.data[0].id, "rc-2");
+    assert.equal(evidenceListBody.data[0].scenarioSummary.total >= 1, true);
+    assert.equal(evidenceListBody.data[0].connectedProjects, undefined);
+
+    const targets = await fetch(`${baseUrl}/api/v1/release/targets`, {
+      headers: { authorization: "Bearer viewer-token" }
+    });
+    assert.equal(targets.status, 200);
+    const targetBody = await targets.json();
+    assert.ok(targetBody.data.some((target) =>
+      target.id === "ga" &&
+      target.minConnectedProjects === 5 &&
+      target.minSucceededSoakSeconds === 5400 &&
+      target.requireActiveSoak === true &&
+      target.minActiveSoakRunDelta === 5 &&
+      target.minActiveSoakCodeUpgradeDelta === 5 &&
+      target.minActiveSoakPipelineDelta === 5
+    ));
+
+    const decisions = await fetch(`${baseUrl}/api/v1/release/decisions`, {
+      headers: { authorization: "Bearer viewer-token" }
+    });
+    assert.equal(decisions.status, 200);
+    const decisionBody = await decisions.json();
+    assert.equal(decisionBody.data[0].id, "decision-rc-2");
+    assert.equal(decisionBody.data[0].targetId, "ga");
+    assert.equal(decisionBody.data[0].status, "NO-GO");
+    const connectedProjectCriterion = decisionBody.data[0].criteria.find((criterion) => criterion.id === "min-connected-projects");
+    assert.equal(connectedProjectCriterion.target, 5);
+    assert.equal(connectedProjectCriterion.status, "FAIL");
+    assert.ok(connectedProjectCriterion.actual < connectedProjectCriterion.target);
+
     const summary = await fetch(`${baseUrl}/api/v1/summary`, {
       headers: { authorization: "Bearer viewer-token" }
     });
     assert.equal(summary.status, 200);
-    assert.equal((await summary.json()).data.recentReleaseEvidence[0].id, "rc-1");
+    const summaryBody = await summary.json();
+    assert.equal(summaryBody.data.recentReleaseEvidence[0].id, "rc-2");
+    assert.equal(summaryBody.data.recentReleaseEvidence[0].connectedProjects, undefined);
+    assert.equal(summaryBody.data.latestReleaseDecision.id, "decision-rc-2");
+    assert.equal(summaryBody.data.releaseTargetCount, 1);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

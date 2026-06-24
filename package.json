@@ -21,6 +21,8 @@
     "test:e2e": "npm run build && node --test tests/e2e/*.test.mjs",
     "test:e2e:real-llm": "npm run build && node scripts/real-llm-e2e.mjs",
     "test:e2e:production": "npm run build && node scripts/production-e2e.mjs",
+    "release:soak:ga": "node scripts/ga-soak.mjs",
+    "release:soak:ga:active": "EVOPILOT_GA_SOAK_WORKLOAD_COMMAND=\"node scripts/release-matrix-project-loop.mjs\" node scripts/ga-soak.mjs",
     "verify:production-assets": "node scripts/verify-production-assets.mjs",
     "verify:runtime-lock": "node scripts/verify-runtime-lock.mjs",
     "verify:runtime-lock:strict": "EVOPILOT_REQUIRE_RUNTIME_LOCK=1 node scripts/verify-runtime-lock.mjs",

@@ -3,6 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { pathToFileURL } from "node:url";
 import { createLlmClientFromEnv } from "../packages/llm/dist/index.js";
 
 const sessions = new Map();
@@ -91,7 +92,7 @@ async function runUpgrade(id, body, dataRoot) {
 
     const protectedPaths = normalizePathList(body.protectedPaths ?? process.env.EVOPILOT_CODE_UPGRADER_PROTECTED_PATHS);
     const allowedPaths = normalizePathList(body.allowedPaths ?? process.env.EVOPILOT_CODE_UPGRADER_ALLOWED_PATHS ?? "src,app,server,lib,tests,test,scripts,config,package.json,pyproject.toml,requirements.txt,pom.xml,go.mod,Dockerfile,Jenkinsfile,.evopilot/runtime-upgrades,docs/evopilot-upgrades");
-    const implementationPlan = await createImplementationPlan({ id, body, repoDir, protectedPaths, allowedPaths, sourceBranch, upgradeBranch });
+    const implementationPlan = await createImplementationPlan({ id, body, repoDir, protectedPaths, allowedPaths, sourceBranch, upgradeBranch, session });
     session.llmTrace = implementationPlan.llmTrace;
     session.events.push(event("info", "生成升级计划", `已生成 ${implementationPlan.edits.length} 个文件级升级动作。`, "agent", {
       mode: implementationPlan.mode,
@@ -184,7 +185,7 @@ async function runUpgrade(id, body, dataRoot) {
     commitSha = (await git(["rev-parse", "HEAD"], { cwd: repoDir, env: gitEnv })).stdout.trim();
     const diff = (await git(["show", "--stat", "--patch", "--find-renames", "--find-copies", "HEAD"], { cwd: repoDir, env: gitEnv })).stdout;
 
-    let pullRequestUrl = branchUrl(repository.gitUrl, upgradeBranch);
+    let pullRequestUrl = resolvePullRequestUrl(repository, upgradeBranch);
     if (repository.gitUrl && repository.provider !== "local-git") {
       const push = await git([
         "push",
@@ -197,6 +198,11 @@ async function runUpgrade(id, body, dataRoot) {
       if (push.code !== 0) throw new Error(push.stderr || push.stdout || "git push failed");
       pullRequestUrl = extractUrl(push.stdout + "\n" + push.stderr) ?? mergeRequestNewUrl(repository.gitUrl, sourceBranch, upgradeBranch) ?? pullRequestUrl;
       session.events.push(event("info", "推送分支", `验证通过后已推送升级分支并请求创建合并请求：${pullRequestUrl}`));
+    }
+    if (repository.provider === "local-git" && repository.root) {
+      const push = await git(["push", repository.root, `+HEAD:${upgradeBranch}`], { cwd: repoDir, env: gitEnv, allowFailure: true });
+      if (push.code !== 0) throw new Error(push.stderr || push.stdout || "local git push failed");
+      session.events.push(event("info", "推送本地分支", `验证通过后已将升级分支推送回本地项目仓库：${upgradeBranch}`));
     }
 
     Object.assign(session, {
@@ -271,10 +277,31 @@ async function createImplementationPlan(args) {
     if (process.env.EVOPILOT_RUN_MODE === "prod") throw new Error(`代码升级 LLM 计划生成失败：${response.errorMessage ?? response.errorCode}`);
     return { ...fallback, llmTrace: toLlmTrace(response), mode: "debug-fallback" };
   }
-  const parsed = parseJsonObject(response.text);
+  let parsed;
+  try {
+    parsed = parseJsonObject(response.text);
+  } catch (error) {
+    const recovery = { ...fallback, llmTrace: toLlmTrace(response), mode: "llm-malformed-deterministic-recovery" };
+    args.session?.events?.push(event("warn", "生成升级计划", `代码升级 LLM 返回畸形 JSON，已使用确定性安全恢复计划继续执行：${error instanceof Error ? error.message : String(error)}`, "agent", {
+      mode: recovery.mode,
+      provider: response.provider,
+      model: response.model
+    }));
+    if (args.session) persistSession(args.session);
+    return recovery;
+  }
   const edits = Array.isArray(parsed.edits) ? parsed.edits.map(normalizeEdit).filter(Boolean) : [];
   if (edits.length === 0) {
-    if (process.env.EVOPILOT_RUN_MODE === "prod") throw new Error("代码升级 LLM 未返回有效文件级升级动作。");
+    if (process.env.EVOPILOT_RUN_MODE === "prod") {
+      const recovery = { ...fallback, llmTrace: toLlmTrace(response), mode: "llm-empty-deterministic-recovery" };
+      args.session?.events?.push(event("warn", "生成升级计划", "代码升级 LLM 未返回有效文件级升级动作，已使用确定性安全恢复计划继续执行。", "agent", {
+        mode: recovery.mode,
+        provider: response.provider,
+        model: response.model
+      }));
+      if (args.session) persistSession(args.session);
+      return recovery;
+    }
     return { ...fallback, llmTrace: toLlmTrace(response), mode: "debug-fallback" };
   }
   return { mode: "llm", edits, llmTrace: toLlmTrace(response) };
@@ -715,10 +742,70 @@ function normalizeGeneratedEditPath(value) {
 
 function parseJsonObject(text) {
   const raw = String(text ?? "").trim();
-  const start = raw.indexOf("{");
-  const end = raw.lastIndexOf("}");
-  const json = start >= 0 && end > start ? raw.slice(start, end + 1) : raw;
-  return JSON.parse(json);
+  const candidates = [
+    raw,
+    ...extractFencedJsonBlocks(raw),
+    ...extractBalancedJsonObjects(raw)
+  ].filter(Boolean);
+  const errors = [];
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch (error) {
+      errors.push(error instanceof Error ? error.message : String(error));
+    }
+  }
+  throw new Error(`无法从 LLM 输出中解析 JSON 对象：${errors.at(-1) ?? "no json candidate"}`);
+}
+
+function extractFencedJsonBlocks(text) {
+  const blocks = [];
+  const pattern = /```(?:json)?\s*([\s\S]*?)```/gi;
+  for (const match of text.matchAll(pattern)) {
+    const block = String(match[1] ?? "").trim();
+    if (block.startsWith("{") && block.endsWith("}")) blocks.push(block);
+  }
+  return blocks;
+}
+
+function extractBalancedJsonObjects(text) {
+  const objects = [];
+  let start = -1;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === "\"") {
+        inString = false;
+      }
+      continue;
+    }
+    if (char === "\"") {
+      inString = true;
+      continue;
+    }
+    if (char === "{") {
+      if (depth === 0) start = index;
+      depth += 1;
+      continue;
+    }
+    if (char !== "}" || depth === 0) continue;
+    depth -= 1;
+    if (depth === 0 && start >= 0) {
+      objects.push(text.slice(start, index + 1));
+      start = -1;
+    }
+  }
+  return [
+    ...objects.filter((item) => /"edits"\s*:/.test(item)),
+    ...objects.filter((item) => !/"edits"\s*:/.test(item))
+  ];
 }
 
 function toLlmTrace(response) {
@@ -749,12 +836,15 @@ function normalizePathList(value) {
     .filter(Boolean);
 }
 
-function normalizeRelativePath(value) {
+export function normalizeRelativePath(value) {
   const normalized = String(value ?? "").replace(/\\/g, "/").replace(/^\/+/, "").trim();
   if (!normalized || normalized === "." || normalized.includes("\0")) return "";
+  if (normalized === "package" || normalized === "package.") return "package.json";
   const parts = normalized.split("/").filter((part) => part && part !== ".");
   if (parts.includes("..")) return "";
-  return parts.join("/");
+  const joined = parts.join("/");
+  if (/^config\/[^/]+\.$/.test(joined)) return `${joined}json`;
+  return joined;
 }
 
 function assertAllowedPath(file, allowedPaths, protectedPaths) {
@@ -800,7 +890,9 @@ export function sanitizeGeneratedContent(value, file = "") {
     .join("\n");
   const withoutTrailingWhitespace = /\.py$/i.test(file)
     ? sanitizeGeneratedPythonContent(withoutBrokenBareImports)
-    : withoutBrokenBareImports;
+    : /\.(mjs|cjs|js)$/i.test(file)
+      ? sanitizeGeneratedJavaScriptContent(withoutBrokenBareImports)
+      : withoutBrokenBareImports;
   return `${withoutTrailingWhitespace.trimEnd()}\n`;
 }
 
@@ -812,6 +904,15 @@ function sanitizeGeneratedPythonContent(value) {
     content = `import json\n${content}`;
   }
   return content;
+}
+
+function sanitizeGeneratedJavaScriptContent(value) {
+  return value
+    .replace(/^import\s+([A-Za-z_$][\w$]*)\s+from\s+['"][^'"]+\/config\/[^'"]*\.['"]\s+assert\s*\{\s*type:\s*['"]\s*['"]\s*\};?$/gm, "const $1 = {};")
+    .replace(/^import\s+([A-Za-z_$][\w$]*)\s+from\s+['"][^'"]+\.json['"]\s+assert\s*\{\s*type:\s*['"]\s*['"]\s*\};?$/gm, "const $1 = {};")
+    .replace(/(['"])application\/\1/g, "$1application/json$1")
+    .replace(/\bresponse\.\(\)/g, "response.json()")
+    .replace(/\bexpress\.\(\)/g, "express.json()");
 }
 
 function persistSession(session) {
@@ -890,6 +991,13 @@ function event(level, phase, message, source = "agent", raw) {
     message,
     raw
   };
+}
+
+export function resolvePullRequestUrl(repository, branch) {
+  if (repository?.provider === "local-git" && repository.root) {
+    return `${pathToFileURL(path.resolve(repository.root)).href}#${encodeURIComponent(branch)}`;
+  }
+  return branchUrl(repository?.gitUrl, branch);
 }
 
 function branchUrl(gitUrl, branch) {
