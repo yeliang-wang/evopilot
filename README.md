@@ -1,20 +1,20 @@
 # EvoPilot
 
-> Evidence-driven self-evolution control plane for AI agent products: runtime signals, human-approved code upgrades, CI/CD, and product-native GA release decisions.
+> GA Release V1.0: evidence-driven self-evolution control plane for AI agent products, with Loop Engineering, human-approved code upgrades, CI/CD, and product-native release decisions.
 
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#运行模式)
 [![Dashboard](https://img.shields.io/badge/dashboard-中文控制台-1f7a8c)](#控制台)
-[![Release](https://img.shields.io/badge/GA%20target-product--native%20GO-2ea043)](#ga-release-target)
+[![Release](https://img.shields.io/badge/GA%20Release-V1.0-2ea043)](#ga-release-v10)
 
-EvoPilot observes real AI-agent product behavior, turns evidence into reviewable evolution opportunities, waits for human approval, then drives code upgrades, Jenkins/GitLab delivery, release evidence, and auditable `GO` / `NO-GO` decisions.
+EvoPilot observes real AI-agent product behavior, turns evidence into reviewable evolution opportunities, waits for human approval, then drives Loop Runtime execution, code upgrades, Jenkins/GitLab delivery, release evidence, and auditable `GO` / `NO-GO` decisions.
 
 It is not an agent runtime, a prompt playground, or a generic code generator. Agent runtimes do the work; EvoPilot governs whether the product is ready to evolve and release.
 
 ## Status
 
-EvoPilot has a product-native GA release target and release decision API. The current GA standard is not a health-only soak: the release target requires production-representative projects, successful evolution loops, code-upgrader changes, Jenkins/GitLab delivery, residual scenarios, and active workload stability.
+EvoPilot is marked **GA Release V1.0** for its product control plane and Loop Engineering runtime. The release standard is not a health-only soak: the GA target requires production-representative projects, successful evolution loops, code-upgrader changes, Jenkins/GitLab delivery, residual scenarios, active workload stability, and product-native `GO` / `NO-GO` release evidence.
 
 The authoritative release verdict lives in:
 
@@ -26,12 +26,14 @@ GET /api/v1/release/decisions
 
 | Capability | What EvoPilot provides |
 |---|---|
+| Loop Engineering | Durable Loop Runtime, executor graphs, independent evidence sets, heartbeat leases, watchdog recovery, per-step workspaces, and Loop Dashboard timeline. |
 | Evidence ingestion | Runtime events, OpenTelemetry traces/logs, SkyWalking data, evaluation results, and user feedback. |
 | Opportunity discovery | Evidence clustering, failure attribution, dynamic baselines, scorecards, SLOs, and governance rules. |
 | Human approval | Markdown evolution proposals that users can review and edit before execution. |
 | Code upgrades | A code-upgrader runtime that creates branches, commits implementation changes, and returns review evidence. |
 | CI/CD delivery | Jenkins-backed delivery after successful code upgrades, with pipeline status and artifacts retained. |
 | Release governance | Product-native release targets, evidence bundles, scenario matrices, risk registers, and release decisions. |
+| ProofOps target loops | Target-driven release/maturity loops that create a target plan, require plan approval, collect evidence, emit a ProofOps-compatible final report, and gate release actions behind approval. |
 
 ## Quick Start
 
@@ -77,18 +79,72 @@ POST /api/v1/release/evidence
 
 The latest decision can return `GO`, `CONDITIONAL-GO`, or `NO-GO`, with per-criterion evidence.
 
+## Loop Runtime
+
+EvoPilot now has a first-class Loop Runtime for Loop Engineering: long-running agent-product tasks can be triggered from API, Codex, IM, schedules, runtime signals, release targets, or evolution batches, then advanced through a durable run state, executor graph, independent evidence sets, stop/retry policy, heartbeat leases, watchdog recovery, human approval, and timeline audit.
+
+Run the integrated gate:
+
+```bash
+npm run loop-runtime:check
+npm run loop:soak
+```
+
+Primary API flow:
+
+```http
+POST /api/v1/executor-graphs
+POST /api/v1/loops
+POST /api/v1/loops/{loopId}/start
+POST /api/v1/loops/{loopId}/resume
+POST /api/v1/loops/{loopId}/approve
+GET /api/v1/loops/{loopId}/timeline
+GET /api/v1/loops/{loopId}/evidence
+POST /api/v1/loop-workers/heartbeat
+POST /api/v1/loops/watchdog
+POST /api/v1/im/feishu/webhook
+POST /api/v1/im/wecom/webhook
+```
+
+The runtime is the common substrate for continuous product evolution, release readiness loops, Codex commands, and IM adapters. Release and other high-risk actions stay inside the loop, but they are guarded by explicit approval gates.
+
+## ProofOps Target Loop Mode
+
+EvoPilot includes ProofOps Mode as a target-driven release/maturity loop engine. ProofOps remains the Core contract layer for target presets, evidence matrix vocabulary, non-mock evidence rules, and final report compatibility; EvoPilot owns execution, state, approval, audit, remediation, and release actions.
+
+Run the integrated gate:
+
+```bash
+npm run proofops-mode:check
+```
+
+Primary API flow:
+
+```http
+POST /api/v1/conversations/commands
+POST /api/v1/target-loops
+POST /api/v1/target-loops/{loopId}/approve-plan
+POST /api/v1/target-loops/{loopId}/resume
+GET /api/v1/target-loops/{loopId}/final-report
+POST /api/v1/target-loops/{loopId}/route-remediation
+POST /api/v1/target-loops/{loopId}/release-actions/{action}/approve
+POST /api/v1/target-loops/{loopId}/release-actions/{action}/execute
+```
+
+Codex, Feishu, WeCom, and future IM adapters should use `/api/v1/conversations/commands` as the conversation gateway backend. Release actions are part of the ProofOps target loop, but require approval after `GO` and explicit execution after approval.
+
 ## GitHub About
 
 Suggested repository description:
 
 ```text
-Evidence-driven self-evolution control plane for AI agent products: runtime signals, human-approved code upgrades, CI/CD, and product-native GA release decisions.
+GA Release V1.0 self-evolution control plane for AI agent products: Loop Engineering, evidence, human-approved code upgrades, CI/CD, and release decisions.
 ```
 
 Suggested topics:
 
 ```text
-ai-agents, agentops, release-governance, evidence, cicd, llmops, self-evolution, typescript
+ai-agents, agentops, loop-engineering, release-governance, evidence, cicd, llmops, self-evolution, typescript
 ```
 
 ## 产品闭环
@@ -264,7 +320,7 @@ npm run server:debug
 构建镜像：
 
 ```bash
-docker build -t evopilot:0.1.0 .
+docker build -t evopilot:1.0.0 .
 ```
 
 运行容器：
@@ -274,7 +330,7 @@ docker run --rm \
   -p 19876:19876 \
   -e EVOPILOT_TOKENS='admin:change-me-admin-token:admin,operator:change-me-operator-token:operator,viewer:change-me-viewer-token:viewer' \
   -v evopilot-data:/var/lib/evopilot \
-  evopilot:0.1.0
+  evopilot:1.0.0
 ```
 
 或使用 Docker Compose：

@@ -1,4 +1,4 @@
-const navItems = ["首页", "接入项目", "证据策略", "评测集", "机会点", "流水线", "历史记录"];
+const navItems = ["首页", "接入项目", "证据策略", "评测集", "机会点", "Loop", "流水线", "历史记录"];
 const requestedPage = new URLSearchParams(window.location.search).get("page");
 
 const state = {
@@ -204,6 +204,7 @@ const state = {
     }
   ],
   codeUpgrades: [],
+  loops: [],
   pipelines: [
     {
       opportunityId: "opp-domainforge-latency",
@@ -275,6 +276,7 @@ function renderPage(page) {
   if (page === "证据策略") return renderRules();
   if (page === "评测集") return renderEvaluationDatasets();
   if (page === "机会点") return renderOpportunities();
+  if (page === "Loop") return renderLoops();
   if (page === "流水线") return renderPipelines();
   if (page === "历史记录") return renderHistory();
   return "";
@@ -451,6 +453,7 @@ function evolutionObservabilityModel() {
       { label: "发布证据包", value: state.intelligence.releaseEvidenceCount },
       { label: "GA目标", value: state.intelligence.releaseTargetCount },
       { label: "发布结论", value: state.intelligence.latestReleaseDecisionStatus },
+      { label: "Loop任务", value: state.loops.length },
       { label: "灰度就绪", value: state.intelligence.canaryReadyCount },
       { label: "灰度阻断", value: state.intelligence.rolloutBlockedCount },
       { label: "证据源", value: sourceTags.length },
@@ -995,6 +998,71 @@ function renderHistory() {
       ]))}
     </section>
     ${detail ? renderHistoryDetailModal(detail) : ""}
+  `;
+}
+
+function renderLoops() {
+  const loops = state.loops;
+  return `
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <h2>Loop Runtime</h2>
+          <p>长任务的跨轮状态、executor graph、独立证据、worker lease、审批与 watchdog 决策。</p>
+        </div>
+        <span class="pill ${loops.some((loop) => loop.status === "RUNNING") ? "good" : "warn"}">${loops.length} 个 Loop</span>
+      </div>
+      ${loops.length === 0 ? `<div class="empty">暂无 LoopRun。命令入口、IM、定时任务或 API 创建后会显示在这里。</div>` : table(["Loop", "状态", "轮次", "执行图", "Worker", "证据", "最近事件"], loops.map((loop) => [
+        `<strong>${loop.objective}</strong><span class="subtext">${loop.id}</span>`,
+        statusPill(loop.status),
+        `${loop.currentIteration}/${loop.stopPolicy?.maxIterations ?? "-"}`,
+        loop.executorGraphId,
+        loop.workerLease ? `${loop.workerLease.workerId}<span class="subtext">到期 ${formatDate(loop.workerLease.expiresAt)}</span>` : "未持有",
+        `${loop.evidenceSets?.length ?? 0} 组 / ${loop.artifacts?.length ?? 0} 个产物`,
+        `${loop.timeline?.at(-1)?.message ?? "等待启动"}<span class="subtext">${formatDate(loop.updatedAt)}</span>`
+      ]))}
+    </section>
+    ${loops.slice(0, 3).map(renderLoopDetail).join("")}
+  `;
+}
+
+function renderLoopDetail(loop) {
+  return `
+    <section class="card loop-detail">
+      <div class="section-title">
+        <div>
+          <h2>${loop.id}</h2>
+          <p>${loop.objective}</p>
+        </div>
+        <span class="pill">${loop.source}</span>
+      </div>
+      <div class="loop-columns">
+        <div>
+          <h3>Iterations</h3>
+          <div class="timeline">
+            ${(loop.iterations ?? []).map((iteration) => `
+              <div class="timeline-item">
+                <span>${iteration.decision}</span>
+                <strong>第 ${iteration.index} 轮</strong>
+                <small>${iteration.rationale}</small>
+              </div>
+            `).join("") || `<div class="empty">等待 worker 启动。</div>`}
+          </div>
+        </div>
+        <div>
+          <h3>Timeline</h3>
+          <div class="timeline">
+            ${(loop.timeline ?? []).slice(-6).map((event) => `
+              <div class="timeline-item">
+                <span>${event.type}</span>
+                <strong>${event.message}</strong>
+                <small>${formatDate(event.timestamp)}</small>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+    </section>
   `;
 }
 
@@ -1702,6 +1770,17 @@ async function loadCodeUpgradeEvents(id) {
   }
 }
 
+async function loadLoops() {
+  try {
+    const response = await fetch("/api/v1/loops");
+    if (!response.ok) throw new Error(`Loop 接口状态 ${response.status}`);
+    const { data } = await response.json();
+    if (Array.isArray(data)) state.loops = data;
+  } catch {
+    state.loops = [];
+  }
+}
+
 async function loadEvaluationDatasets() {
   try {
     const response = await fetch("/api/v1/evaluation-datasets");
@@ -2141,4 +2220,4 @@ function formatDate(value) {
   return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
-Promise.all([loadProjects(), loadSummary(), loadRules(), loadEvaluationDatasets(), loadCodeUpgrades(), loadPipelines()]).finally(render);
+Promise.all([loadProjects(), loadSummary(), loadRules(), loadEvaluationDatasets(), loadCodeUpgrades(), loadLoops(), loadPipelines()]).finally(render);

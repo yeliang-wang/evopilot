@@ -304,7 +304,7 @@ POST /api/v1/deliveries/{deliveryId}/execute
 
 ```json
 {
-  "version": "0.1.0",
+  "version": "1.0.0",
   "ciStatus": "PASSED"
 }
 ```
@@ -390,6 +390,72 @@ EvoPilot 自身定义“什么才算 GA Release”。外部 AI、通用 sub agen
 对应判定可从 `GET /api/v1/release/decisions` 查询。每条判定包含 `criteria`，逐项说明实际值、目标值、PASS/FAIL 和证据。若未达到 GA，例如只接入 1 个项目，`min-connected-projects` 会失败，最终为 `NO-GO`。
 
 默认 `ga` 目标要求 `requireActiveSoak=true`。仅健康检查持续存活不计入 GA 稳定性证明；soak 报告必须证明 `runCount`、`codeUpgradeCount` 和 `pipelineCount` 相比基线产生真实活动增量。
+
+## Loop Runtime
+
+```http
+GET /api/v1/executor-graphs
+POST /api/v1/executor-graphs
+GET /api/v1/executor-graphs/{graphId}
+GET /api/v1/loops
+POST /api/v1/loops
+GET /api/v1/loops/{loopId}
+POST /api/v1/loops/{loopId}/start
+POST /api/v1/loops/{loopId}/resume
+POST /api/v1/loops/{loopId}/approve
+POST /api/v1/loops/{loopId}/cancel
+GET /api/v1/loops/{loopId}/timeline
+GET /api/v1/loops/{loopId}/evidence
+GET /api/v1/loops/{loopId}/artifacts
+POST /api/v1/loop-workers/heartbeat
+GET /api/v1/loop-workers/leases
+POST /api/v1/loops/watchdog
+POST /api/v1/im/feishu/webhook
+POST /api/v1/im/wecom/webhook
+```
+
+Loop Runtime 是 EvoPilot 的 Loop Engineering 内核。它把 API、Codex、IM、定时任务、运行时信号、release target 和 evolution batch 统一成 `LoopRun`，并通过 `ExecutorGraph` 编排 LLM、code-upgrader、CI、validator、approval 和 release-action 等 executor。
+
+每轮 loop 都会生成：
+
+- `LoopIteration`：本轮执行步骤、输入输出、失败签名和决策。
+- `LoopEvidenceSet`：由 `evopilot-loop-runtime` 独立生成的证据集合，避免 executor 自证成功。
+- `LoopTimelineEvent`：创建、启动、迭代、证据、决策、审批、heartbeat、watchdog 等事件。
+- `LoopArtifact`：报告、diff、CI 日志、审批记录等产物索引。
+
+`StopPolicy` 控制最大轮次、最大持续时间、发布审批要求和重复失败阻断；`RetryPolicy` 控制单节点重试、退避时间和 circuit breaker。`/api/v1/loop-workers/heartbeat` 写入 worker lease，`/api/v1/loops/watchdog` 会释放过期 lease 或按 stop policy 阻断超时 loop。
+
+`npm run loop-worker` 启动独立 worker 进程，持续拉取 `PENDING` / `RUNNING` loop、写入 heartbeat lease、推进 start/resume 并交给 watchdog 恢复过期任务。`npm run loop:soak` 默认按 24 小时持续验证 Loop Runtime，可通过 `EVOPILOT_LOOP_SOAK_SECONDS` 缩短本地验证时间。
+
+飞书和企业微信 webhook adapter 使用 `/api/v1/im/feishu/webhook` 与 `/api/v1/im/wecom/webhook` 接收消息并创建 `LoopRun`。生产环境应在 API 网关或 adapter 层增加企业签名校验、消息去重和回调凭据保护。
+
+## ProofOps Target Loop Mode
+
+```http
+GET /api/v1/target-loops
+POST /api/v1/target-loops
+GET /api/v1/target-loops/{loopId}
+POST /api/v1/target-loops/{loopId}/approve-plan
+POST /api/v1/target-loops/{loopId}/resume
+GET /api/v1/target-loops/{loopId}/final-report
+POST /api/v1/target-loops/{loopId}/route-remediation
+POST /api/v1/target-loops/{loopId}/release-actions/{action}/approve
+POST /api/v1/target-loops/{loopId}/release-actions/{action}/execute
+POST /api/v1/conversations/commands
+```
+
+EvoPilot 内置 ProofOps Mode。ProofOps 不再作为独立 AMP 控制面运行，而是作为目标驱动 release/maturity loop 契约被 EvoPilot 消费。
+
+一次 target loop 的基本流程：
+
+1. 创建 target loop，生成 ProofOps-compatible target plan。
+2. 用户或审批策略确认 target plan。
+3. EvoPilot 执行或恢复 target loop，聚合 release evidence 并生成 decision chain。
+4. 输出 `proofops-final-release-report/v1` 格式的 final report。
+5. 若未达成目标，阻塞项可通过 `route-remediation` 路由给 EvoPilot 自演进、代码升级和 CI/CD 复验能力。
+6. 若结果为 `GO`，发布、tag、deploy、rollback 等发布动作仍需管理员审批；审批后再执行并写入审计。
+
+Codex、飞书、企业微信等入口应把用户对话转成 `POST /api/v1/conversations/commands`。该接口是统一的 conversation gateway 后端入口，当前支持通过自然语言命令创建 ProofOps target loop；具体 IM webhook 只负责鉴权、签名校验和消息转发。
 
 ## 审计
 

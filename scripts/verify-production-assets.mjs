@@ -17,6 +17,9 @@ const requiredFiles = [
   "docs/user-guide.md",
   "docs/production-user-e2e.md",
   "docs/runtime-management.md",
+  "docs/architecture/loop-runtime.md",
+  "scripts/loop-worker.mjs",
+  "scripts/loop-soak.mjs",
   "scripts/verify-runtime-lock.mjs",
   "runtimes/runtime-lock.json"
 ];
@@ -37,6 +40,31 @@ assert.ok(openapi.paths["/api/v1/release/targets/{targetId}"]);
 assert.ok(openapi.paths["/api/v1/release/decisions"]);
 assert.ok(openapi.paths["/api/v1/release/evidence"]);
 assert.ok(openapi.paths["/api/v1/release/evidence/{evidenceId}"]);
+assert.ok(openapi.paths["/api/v1/executor-graphs"]);
+assert.ok(openapi.paths["/api/v1/executor-graphs/{graphId}"]);
+assert.ok(openapi.paths["/api/v1/loops"]);
+assert.ok(openapi.paths["/api/v1/loops/{loopId}"]);
+assert.ok(openapi.paths["/api/v1/loops/{loopId}/start"]);
+assert.ok(openapi.paths["/api/v1/loops/{loopId}/resume"]);
+assert.ok(openapi.paths["/api/v1/loops/{loopId}/approve"]);
+assert.ok(openapi.paths["/api/v1/loops/{loopId}/cancel"]);
+assert.ok(openapi.paths["/api/v1/loops/{loopId}/timeline"]);
+assert.ok(openapi.paths["/api/v1/loops/{loopId}/evidence"]);
+assert.ok(openapi.paths["/api/v1/loops/{loopId}/artifacts"]);
+assert.ok(openapi.paths["/api/v1/loop-workers/heartbeat"]);
+assert.ok(openapi.paths["/api/v1/loop-workers/leases"]);
+assert.ok(openapi.paths["/api/v1/loops/watchdog"]);
+assert.ok(openapi.paths["/api/v1/im/feishu/webhook"]);
+assert.ok(openapi.paths["/api/v1/im/wecom/webhook"]);
+assert.ok(openapi.paths["/api/v1/target-loops"]);
+assert.ok(openapi.paths["/api/v1/target-loops/{loopId}"]);
+assert.ok(openapi.paths["/api/v1/target-loops/{loopId}/approve-plan"]);
+assert.ok(openapi.paths["/api/v1/target-loops/{loopId}/resume"]);
+assert.ok(openapi.paths["/api/v1/target-loops/{loopId}/final-report"]);
+assert.ok(openapi.paths["/api/v1/target-loops/{loopId}/release-actions/{action}/approve"]);
+assert.ok(openapi.paths["/api/v1/target-loops/{loopId}/release-actions/{action}/execute"]);
+assert.ok(openapi.paths["/api/v1/target-loops/{loopId}/route-remediation"]);
+assert.ok(openapi.paths["/api/v1/conversations/commands"]);
 assert.ok(openapi.components.securitySchemes.bearerAuth);
 
 const deployment = fs.readFileSync("deploy/k8s/deployment.yaml", "utf8");
@@ -51,6 +79,26 @@ assert.match(productionE2e, /只有代码升级成功后才能触发 CI\/CD/);
 const runtime = fs.readFileSync("docs/runtime-management.md", "utf8");
 assert.match(runtime, /运行时锁定/);
 assert.match(runtime, /verify:runtime-lock:strict/);
+
+const apiDoc = fs.readFileSync("docs/api.md", "utf8");
+assert.match(apiDoc, /Loop Runtime/);
+assert.match(apiDoc, /ExecutorGraph/);
+assert.match(apiDoc, /loop-workers\/heartbeat/);
+assert.match(apiDoc, /loop-worker/);
+assert.match(apiDoc, /im\/feishu\/webhook/);
+assert.match(apiDoc, /ProofOps Target Loop Mode/);
+assert.match(apiDoc, /proofops-final-release-report\/v1/);
+assert.match(apiDoc, /conversations\/commands/);
+
+const loopRuntimeDoc = fs.readFileSync("docs/architecture/loop-runtime.md", "utf8");
+assert.match(loopRuntimeDoc, /Loop Engineering/);
+assert.match(loopRuntimeDoc, /worker heartbeat leases/);
+assert.match(loopRuntimeDoc, /loop-workspaces/);
+assert.match(loopRuntimeDoc, /npm run loop-runtime:check/);
+
+const dashboardApp = fs.readFileSync("apps/dashboard/assets/app.js", "utf8");
+assert.match(dashboardApp, /Loop Runtime/);
+assert.match(dashboardApp, /\/api\/v1\/loops/);
 
 const lock = JSON.parse(fs.readFileSync("runtimes/runtime-lock.json", "utf8"));
 assert.equal(lock.schemaVersion, 1);

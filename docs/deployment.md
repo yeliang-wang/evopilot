@@ -19,12 +19,12 @@ http://127.0.0.1:19876/
 ## Docker
 
 ```bash
-docker build -t evopilot:0.1.0 .
+docker build -t evopilot:1.0.0 .
 docker run --rm \
   -p 19876:19876 \
   -e EVOPILOT_TOKENS='admin:change-me-admin-token:admin,operator:change-me-operator-token:operator,viewer:change-me-viewer-token:viewer' \
   -v evopilot-data:/var/lib/evopilot \
-  evopilot:0.1.0
+  evopilot:1.0.0
 ```
 
 ## Docker Compose

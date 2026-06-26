@@ -266,8 +266,8 @@ async function assertDashboardContract(baseUrl) {
   assert.doesNotMatch(html, /新建评审/);
   const navMatch = app.match(/const navItems = (\[[^\]]+\]);/);
   assert.ok(navMatch, "Dashboard should define first-level navigation explicitly");
-  assert.deepEqual(JSON.parse(navMatch[1]), ["首页", "接入项目", "证据策略", "评测集", "机会点", "流水线", "历史记录"]);
-  for (const label of ["首页", "进化观测图", "项目拓扑", "运行证据", "已接入", "OpenTelemetry", "SkyWalking", "用户反馈", "触发来源", "触发时间", "IP", "证据摘要", "评测集", "Eval Dataset", "Regression Suite", "形成机会点", "关联评测集", "查看方案", "编辑进化方案", "Markdown 方案正文", "提交方案修改", "确认进化", "代码升级过程", "根据方案进行代码升级", "白盒执行", "查看原始执行事件", "execution-transcript", "CI/CD 阶段视图", "代码升级失败", "历史详情", "注册项目", "验证并注册", "Git URL", "Token 环境变量", "使用系统默认 Jenkins", "使用项目独立 Jenkins", "Jenkins Job", "/api/v1/evaluation-datasets", "/api/v1/opportunity-drafts", "/api/v1/code-upgrade-runs", "/code-upgrade"]) {
+  assert.deepEqual(JSON.parse(navMatch[1]), ["首页", "接入项目", "证据策略", "评测集", "机会点", "Loop", "流水线", "历史记录"]);
+  for (const label of ["首页", "进化观测图", "项目拓扑", "运行证据", "已接入", "OpenTelemetry", "SkyWalking", "用户反馈", "触发来源", "触发时间", "IP", "证据摘要", "评测集", "Eval Dataset", "Regression Suite", "形成机会点", "关联评测集", "查看方案", "编辑进化方案", "Markdown 方案正文", "提交方案修改", "确认进化", "Loop Runtime", "Worker", "/api/v1/loops", "代码升级过程", "根据方案进行代码升级", "白盒执行", "查看原始执行事件", "execution-transcript", "CI/CD 阶段视图", "代码升级失败", "历史详情", "注册项目", "验证并注册", "Git URL", "Token 环境变量", "使用系统默认 Jenkins", "使用项目独立 Jenkins", "Jenkins Job", "/api/v1/evaluation-datasets", "/api/v1/opportunity-drafts", "/api/v1/code-upgrade-runs", "/code-upgrade"]) {
     assert.match(app, new RegExp(label));
   }
   assert.doesNotMatch(app, /Codex/);

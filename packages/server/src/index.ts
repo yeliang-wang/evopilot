@@ -55,6 +55,7 @@ export interface EvoPilotServerOptions {
   allowSampleData?: boolean;
   autoRegisterProfileProject?: boolean;
   maxBodyBytes?: number;
+  proofOpsCoreContractPath?: string;
 }
 
 export type EvoPilotRuntimeMode = "prod" | "debug";
@@ -508,6 +509,249 @@ interface ReleaseDecision {
   updatedAt: string;
 }
 
+interface ProofOpsCoreContract {
+  schema: "proofops-core-contract/v1";
+  version: string;
+  decisionVocabulary: string[];
+  productionReleaseEvidenceRule: string;
+  finalReportSchema: "proofops-final-release-report/v1";
+  targets?: Array<{ id: string; title?: string; requiredEvidence?: string[] }>;
+}
+
+type TargetLoopStatus = "PENDING_PLAN_APPROVAL" | "RUNNING" | "GO" | "NO-GO" | "BLOCKED";
+type TargetEvidenceStatus = "PASS" | "FAIL" | "NOT_RUN" | "BLOCKED";
+
+interface TargetLoopEvidenceRow {
+  capability: string;
+  scenario: string;
+  requiredEvidence: string;
+  status: TargetEvidenceStatus;
+  required: boolean;
+  blocker: string;
+  nextRepairAction: string;
+  evidence: string[];
+}
+
+interface TargetLoopDecisionStep {
+  phase: string;
+  rule: string;
+  decision: "continue" | "repair blocker" | "block" | "release";
+  rationale: string;
+  nextAction: string;
+  evidence: string[];
+}
+
+interface TargetLoopRun {
+  schema: "evopilot-proofops-target-loop/v1";
+  id: string;
+  projectId: string;
+  targetId: string;
+  releaseTarget: string;
+  mode: "proofops-target-loop";
+  status: TargetLoopStatus;
+  targetPlan: {
+    finalGoal: string;
+    phaseGoals: string[];
+    acceptanceCriteria: string[];
+    finalDecision: Array<"GO" | "CONDITIONAL-GO" | "NO-GO" | "BLOCKED">;
+    source: "proofops-core-compatible";
+    proofOpsCoreVersion?: string;
+  };
+  targetPlanConfirmation: {
+    status: "pending" | "confirmed";
+    confirmedAt?: string;
+    confirmedBy?: string;
+    instruction: string;
+  };
+  evidenceMatrix: TargetLoopEvidenceRow[];
+  decisionChain: TargetLoopDecisionStep[];
+  releaseDecision?: {
+    id: string;
+    status: ReleaseDecision["status"];
+    evidenceBundleId: string;
+    targetReached: boolean;
+    failedCriteria: number;
+    highOpenRisks: number;
+  };
+  finalReport?: {
+    schema: "proofops-final-release-report/v1";
+    projectId: string;
+    releaseTarget: string;
+    lifecycleId: string;
+    terminalReason: string;
+    generatedAt: string;
+    targetPlan: TargetLoopRun["targetPlan"];
+    targetPlanConfirmation: TargetLoopRun["targetPlanConfirmation"];
+    releaseDecision?: TargetLoopRun["releaseDecision"];
+    finalTargetSummary: {
+      finalGoal: string;
+      finalDecision: string;
+      targetReached: boolean;
+      latestCoverage: {
+        required: number;
+        passed: number;
+        failedOrBlocked: number;
+      };
+      blocker: string;
+      conclusion: string;
+    };
+    coverageMatrix: TargetLoopEvidenceRow[];
+    decisionChain: TargetLoopDecisionStep[];
+    productionReleaseRule: string;
+  };
+  releaseActions: Array<{
+    action: string;
+    status: "PENDING_APPROVAL" | "APPROVED" | "EXECUTED";
+    approvedAt?: string;
+    approvedBy?: string;
+    executedAt?: string;
+    executedBy?: string;
+  }>;
+  remediationRequests: Array<{
+    id: string;
+    status: "ROUTED" | "RESOLVED";
+    blocker: string;
+    routedTo: "evopilot";
+    createdAt: string;
+    resolvedAt?: string;
+  }>;
+  artifacts: {
+    finalReportJson?: string;
+    sourceReleaseEvidenceBundleId?: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+type LoopRunStatus = "PENDING" | "RUNNING" | "WAITING_APPROVAL" | "BLOCKED" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+type LoopTriggerSource = "api" | "im" | "schedule" | "runtime-signal" | "release-target" | "evolution-batch";
+type LoopDecision = "CONTINUE" | "REPAIR" | "BLOCK" | "WAIT_APPROVAL" | "SUCCEED" | "FAIL";
+type ExecutorNodeType = "llm" | "code-upgrader" | "ci" | "validator" | "approval" | "release-action";
+
+interface LoopStopPolicy {
+  maxIterations: number;
+  maxDurationSeconds: number;
+  requireApprovalForRelease: boolean;
+  stopOnRepeatedFailure: number;
+}
+
+interface LoopRetryPolicy {
+  maxAttemptsPerNode: number;
+  backoffSeconds: number;
+  circuitBreakerFailures: number;
+}
+
+interface ExecutorNode {
+  id: string;
+  type: ExecutorNodeType;
+  name: string;
+  config: Record<string, unknown>;
+}
+
+interface ExecutorEdge {
+  from: string;
+  to: string;
+}
+
+interface ExecutorGraph {
+  schema: "evopilot-executor-graph/v1";
+  id: string;
+  name: string;
+  nodes: ExecutorNode[];
+  edges: ExecutorEdge[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ExecutorStepResult {
+  nodeId: string;
+  type: ExecutorNodeType;
+  status: "SKIPPED" | "SUCCEEDED" | "FAILED" | "WAITING_APPROVAL";
+  startedAt: string;
+  completedAt?: string;
+  attempt: number;
+  input: Record<string, unknown>;
+  output: Record<string, unknown>;
+  evidence: string[];
+  failureSignature?: string;
+}
+
+interface LoopEvidenceSet {
+  id: string;
+  loopRunId: string;
+  iterationId: string;
+  validator: string;
+  status: "PASS" | "FAIL" | "BLOCKED";
+  evidence: string[];
+  artifacts: LoopArtifact[];
+  createdAt: string;
+}
+
+interface LoopArtifact {
+  id: string;
+  type: "plan" | "diff" | "ci-log" | "report" | "approval" | "generic";
+  label: string;
+  path?: string;
+  url?: string;
+  createdAt: string;
+}
+
+interface LoopTimelineEvent {
+  id: string;
+  type: "CREATED" | "STARTED" | "ITERATION" | "EVIDENCE" | "DECISION" | "APPROVAL" | "HEARTBEAT" | "LEASE" | "WATCHDOG" | "CANCELLED";
+  message: string;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface LoopWorkerLease {
+  workerId: string;
+  acquiredAt: string;
+  heartbeatAt: string;
+  expiresAt: string;
+}
+
+interface LoopIteration {
+  id: string;
+  loopRunId: string;
+  index: number;
+  startedAt: string;
+  completedAt?: string;
+  executorSteps: ExecutorStepResult[];
+  evidenceSetId?: string;
+  decision: LoopDecision;
+  rationale: string;
+}
+
+interface LoopRun {
+  schema: "evopilot-loop-run/v1";
+  id: string;
+  source: LoopTriggerSource;
+  projectId: string;
+  objective: string;
+  status: LoopRunStatus;
+  currentIteration: number;
+  executorGraphId: string;
+  stopPolicy: LoopStopPolicy;
+  retryPolicy: LoopRetryPolicy;
+  context: Record<string, unknown>;
+  iterations: LoopIteration[];
+  evidenceSets: LoopEvidenceSet[];
+  artifacts: LoopArtifact[];
+  approvals: Array<{
+    id: string;
+    status: "PENDING" | "APPROVED" | "REJECTED";
+    reason: string;
+    requestedAt: string;
+    decidedAt?: string;
+    decidedBy?: string;
+  }>;
+  workerLease?: LoopWorkerLease;
+  timeline: LoopTimelineEvent[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface ProjectEvolutionCursor {
   projectId: string;
   lastProcessedDatasetTriggeredAt?: string;
@@ -643,6 +887,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
   const runtime = resolveRuntimeConfig(options);
   const llmClient = options.llmClient ?? createLlmClientFromEnv();
   const requireLlm = runtime.requireLlm;
+  const proofOpsCore = loadProofOpsCoreContract(options.proofOpsCoreContractPath);
   store.ensureRuleMemories(profile.triggerRules ?? defaultTriggerRules);
   const tokens = normalizeTokens(options);
   assertProductionRuntimeIsConfigured(runtime, tokens);
@@ -850,6 +1095,292 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       if (request.method === "GET" && url.pathname === "/api/v1/release/decisions") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
         return writeJson(response, 200, envelope(store.listReleaseDecisions().slice(-20).reverse()));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/executor-graphs") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listExecutorGraphs()));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/executor-graphs") {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const graph = store.writeExecutorGraph(normalizeExecutorGraph(body));
+        store.appendAudit(audit(auth, "executor-graph.upserted", graph.id, { nodeCount: graph.nodes.length, edgeCount: graph.edges.length }));
+        return writeJson(response, 201, envelope(graph));
+      }
+      const executorGraphMatch = url.pathname.match(/^\/api\/v1\/executor-graphs\/([^/]+)$/);
+      if (request.method === "GET" && executorGraphMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const graph = store.readExecutorGraph(decodeURIComponent(executorGraphMatch[1]));
+        if (!graph) return writeJson(response, 404, { error: "EXECUTOR_GRAPH_NOT_FOUND" });
+        return writeJson(response, 200, envelope(graph));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/loops") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listLoops().slice(-50).reverse()));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/loops") {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const objective = String(body.objective ?? "").trim();
+        if (!objective) return writeJson(response, 400, { error: "LOOP_OBJECTIVE_REQUIRED" });
+        const loop = store.createLoop({
+          id: body.id ? String(body.id) : undefined,
+          source: normalizeLoopTriggerSource(body.source),
+          projectId: body.projectId ? String(body.projectId) : undefined,
+          objective,
+          executorGraphId: body.executorGraphId ? String(body.executorGraphId) : undefined,
+          stopPolicy: isRecord(body.stopPolicy) ? body.stopPolicy : undefined,
+          retryPolicy: isRecord(body.retryPolicy) ? body.retryPolicy : undefined,
+          context: isRecord(body.context) ? body.context : undefined
+        });
+        store.appendAudit(audit(auth, "loop.created", loop.id, { source: loop.source, projectId: loop.projectId, executorGraphId: loop.executorGraphId }));
+        return writeJson(response, 201, envelope(loop));
+      }
+      const loopStartMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/start$/);
+      if (request.method === "POST" && loopStartMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const loop = store.startLoop(decodeURIComponent(loopStartMatch[1]), auth.actor, {
+          forceDecision: normalizeLoopDecision(body.forceDecision),
+          evidence: Array.isArray(body.evidence) ? body.evidence.map(String) : undefined
+        });
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop.started", loop.id, { status: loop.status, iteration: loop.currentIteration }));
+        return writeJson(response, 200, envelope(loop));
+      }
+      const loopResumeMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/resume$/);
+      if (request.method === "POST" && loopResumeMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const loop = store.resumeLoop(decodeURIComponent(loopResumeMatch[1]), auth.actor, {
+          forceDecision: normalizeLoopDecision(body.forceDecision),
+          evidence: Array.isArray(body.evidence) ? body.evidence.map(String) : undefined
+        });
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop.resumed", loop.id, { status: loop.status, iteration: loop.currentIteration }));
+        return writeJson(response, 200, envelope(loop));
+      }
+      const loopApproveMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/approve$/);
+      if (request.method === "POST" && loopApproveMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const loop = store.approveLoop(decodeURIComponent(loopApproveMatch[1]), auth.actor, body.approvalId ? String(body.approvalId) : undefined);
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop.approved", loop.id, { status: loop.status }));
+        return writeJson(response, 200, envelope(loop));
+      }
+      const loopCancelMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/cancel$/);
+      if (request.method === "POST" && loopCancelMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const loop = store.cancelLoop(decodeURIComponent(loopCancelMatch[1]), auth.actor, body.reason ? String(body.reason) : undefined);
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop.cancelled", loop.id, { status: loop.status }));
+        return writeJson(response, 200, envelope(loop));
+      }
+      const loopTimelineMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/timeline$/);
+      if (request.method === "GET" && loopTimelineMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const loop = store.readLoop(decodeURIComponent(loopTimelineMatch[1]));
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        return writeJson(response, 200, envelope(loop.timeline));
+      }
+      const loopEvidenceMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/evidence$/);
+      if (request.method === "GET" && loopEvidenceMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const loop = store.readLoop(decodeURIComponent(loopEvidenceMatch[1]));
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        return writeJson(response, 200, envelope(loop.evidenceSets));
+      }
+      const loopArtifactsMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/artifacts$/);
+      if (request.method === "GET" && loopArtifactsMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const loop = store.readLoop(decodeURIComponent(loopArtifactsMatch[1]));
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        return writeJson(response, 200, envelope(loop.artifacts));
+      }
+      const loopMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)$/);
+      if (request.method === "GET" && loopMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const loop = store.readLoop(decodeURIComponent(loopMatch[1]));
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        return writeJson(response, 200, envelope(loop));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/loop-workers/heartbeat") {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const loopId = String(body.loopId ?? "").trim();
+        const workerId = String(body.workerId ?? "").trim();
+        if (!loopId || !workerId) return writeJson(response, 400, { error: "LOOP_WORKER_HEARTBEAT_REQUIRED" });
+        const loop = store.heartbeatLoop(loopId, workerId, body.leaseSeconds === undefined ? 120 : Number(body.leaseSeconds));
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop-worker.heartbeat", loop.id, { workerId, expiresAt: loop.workerLease?.expiresAt }));
+        return writeJson(response, 200, envelope(loop.workerLease));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/loop-workers/leases") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listLoopLeases()));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/loops/watchdog") {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const result = store.runLoopWatchdog();
+        store.appendAudit(audit(auth, "loop-watchdog.ran", "loops", { recovered: result.recovered.length, blocked: result.blocked.length }));
+        return writeJson(response, 200, envelope(result));
+      }
+      if (request.method === "POST" && (url.pathname === "/api/v1/im/feishu/webhook" || url.pathname === "/api/v1/im/wecom/webhook")) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const channel = url.pathname.includes("feishu") ? "feishu" : "wecom";
+        const command = parseConversationCommand({
+          channel,
+          conversationId: extractImConversationId(body, channel),
+          text: extractImText(body),
+          projectId: body.projectId,
+          targetId: body.targetId,
+          finalGoal: body.finalGoal
+        });
+        const runtimeLoop = store.createLoop({
+          source: "im",
+          projectId: command.projectId,
+          objective: command.finalGoal ?? `${command.projectId} reaches ${command.targetId.toUpperCase()} through EvoPilot Loop Runtime.`,
+          context: { channel, rawWebhookType: body.type ?? body.msgtype ?? body.event?.message?.message_type, conversationId: command.conversationId, text: command.text }
+        });
+        store.appendAudit(audit(auth, `im.${channel}.loop-created`, runtimeLoop.id, { conversationId: command.conversationId }));
+        return writeJson(response, 201, envelope({
+          schema: "evopilot-im-webhook-result/v1",
+          channel,
+          conversationId: command.conversationId,
+          message: `Created EvoPilot loop ${runtimeLoop.id} from ${channel} webhook.`,
+          loop: runtimeLoop
+        }));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/conversations/commands") {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const command = parseConversationCommand(body);
+        if (command.kind === "create-target-loop") {
+          const runtimeLoop = store.createLoop({
+            source: "im",
+            projectId: command.projectId,
+            objective: command.finalGoal ?? `${command.projectId} reaches ${command.targetId.toUpperCase()} through EvoPilot Loop Runtime.`,
+            context: {
+              channel: command.channel,
+              conversationId: command.conversationId,
+              text: command.text,
+              targetId: command.targetId
+            }
+          });
+          const loop = store.createTargetLoop({
+            projectId: command.projectId,
+            targetId: command.targetId,
+            finalGoal: command.finalGoal,
+            candidate: command.candidate,
+            proofOpsCore
+          });
+          store.appendAudit(audit(auth, "conversation.target-loop-created", loop.id, {
+            channel: command.channel,
+            conversationId: command.conversationId,
+            text: command.text,
+            runtimeLoopId: runtimeLoop.id
+          }));
+          return writeJson(response, 201, envelope({
+            schema: "evopilot-conversation-command-result/v1",
+            channel: command.channel,
+            conversationId: command.conversationId,
+            message: `Created EvoPilot loop ${runtimeLoop.id} and target loop ${loop.id}; target plan approval is required before guarded execution.`,
+            loop: runtimeLoop,
+            targetLoop: loop
+          }));
+        }
+        return writeJson(response, 400, { error: "CONVERSATION_COMMAND_UNSUPPORTED" });
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/target-loops") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listTargetLoops().slice(-50).reverse()));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/target-loops") {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const loop = store.createTargetLoop({
+          projectId: body.projectId ? String(body.projectId) : undefined,
+          targetId: body.targetId ? String(body.targetId) : undefined,
+          finalGoal: body.finalGoal ? String(body.finalGoal) : undefined,
+          candidate: body.candidate ? String(body.candidate) : undefined,
+          proofOpsCore
+        });
+        store.appendAudit(audit(auth, "target-loop.created", loop.id, { projectId: loop.projectId, targetId: loop.targetId }));
+        return writeJson(response, 201, envelope(loop));
+      }
+      const targetLoopMatch = url.pathname.match(/^\/api\/v1\/target-loops\/([^/]+)$/);
+      if (request.method === "GET" && targetLoopMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const loop = store.readTargetLoop(decodeURIComponent(targetLoopMatch[1]));
+        if (!loop) return writeJson(response, 404, { error: "TARGET_LOOP_NOT_FOUND" });
+        return writeJson(response, 200, envelope(loop));
+      }
+      const targetLoopApproveMatch = url.pathname.match(/^\/api\/v1\/target-loops\/([^/]+)\/approve-plan$/);
+      if (request.method === "POST" && targetLoopApproveMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const loop = store.approveTargetLoopPlan(decodeURIComponent(targetLoopApproveMatch[1]), auth.actor);
+        if (!loop) return writeJson(response, 404, { error: "TARGET_LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "target-loop.plan-approved", loop.id, { targetId: loop.targetId }));
+        return writeJson(response, 200, envelope(loop));
+      }
+      const targetLoopResumeMatch = url.pathname.match(/^\/api\/v1\/target-loops\/([^/]+)\/resume$/);
+      if (request.method === "POST" && targetLoopResumeMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const loop = store.runTargetLoop(decodeURIComponent(targetLoopResumeMatch[1]), {
+          scenarioMatrix: normalizeScenarioMatrix(body.scenarioMatrix),
+          artifactPaths: Array.isArray(body.artifactPaths) ? body.artifactPaths.map(String) : []
+        });
+        if (!loop) return writeJson(response, 404, { error: "TARGET_LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "target-loop.resumed", loop.id, { status: loop.status, releaseDecision: loop.releaseDecision?.id }));
+        return writeJson(response, 200, envelope(loop));
+      }
+      const targetLoopReportMatch = url.pathname.match(/^\/api\/v1\/target-loops\/([^/]+)\/final-report$/);
+      if (request.method === "GET" && targetLoopReportMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const loop = store.readTargetLoop(decodeURIComponent(targetLoopReportMatch[1]));
+        if (!loop) return writeJson(response, 404, { error: "TARGET_LOOP_NOT_FOUND" });
+        if (!loop.finalReport) return writeJson(response, 409, { error: "TARGET_LOOP_FINAL_REPORT_PENDING" });
+        return writeJson(response, 200, envelope(loop.finalReport));
+      }
+      const targetLoopReleaseActionMatch = url.pathname.match(/^\/api\/v1\/target-loops\/([^/]+)\/release-actions\/([^/]+)\/approve$/);
+      if (request.method === "POST" && targetLoopReleaseActionMatch) {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const loop = store.approveTargetLoopReleaseAction(
+          decodeURIComponent(targetLoopReleaseActionMatch[1]),
+          decodeURIComponent(targetLoopReleaseActionMatch[2]),
+          auth.actor
+        );
+        if (!loop) return writeJson(response, 404, { error: "TARGET_LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "target-loop.release-action-approved", loop.id, { action: targetLoopReleaseActionMatch[2] }));
+        return writeJson(response, 200, envelope(loop));
+      }
+      const targetLoopReleaseExecuteMatch = url.pathname.match(/^\/api\/v1\/target-loops\/([^/]+)\/release-actions\/([^/]+)\/execute$/);
+      if (request.method === "POST" && targetLoopReleaseExecuteMatch) {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const loop = store.executeTargetLoopReleaseAction(
+          decodeURIComponent(targetLoopReleaseExecuteMatch[1]),
+          decodeURIComponent(targetLoopReleaseExecuteMatch[2]),
+          auth.actor
+        );
+        if (!loop) return writeJson(response, 404, { error: "TARGET_LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "target-loop.release-action-executed", loop.id, { action: targetLoopReleaseExecuteMatch[2] }));
+        return writeJson(response, 200, envelope(loop));
+      }
+      const targetLoopRemediationMatch = url.pathname.match(/^\/api\/v1\/target-loops\/([^/]+)\/route-remediation$/);
+      if (request.method === "POST" && targetLoopRemediationMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const loop = store.routeTargetLoopRemediation(
+          decodeURIComponent(targetLoopRemediationMatch[1]),
+          body.blocker ? String(body.blocker) : undefined
+        );
+        if (!loop) return writeJson(response, 404, { error: "TARGET_LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "target-loop.remediation-routed", loop.id, { remediationCount: loop.remediationRequests.length }));
+        return writeJson(response, 200, envelope(loop));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/release/evidence") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -1362,6 +1893,10 @@ class FileStore {
     fs.mkdirSync(this.releaseEvidenceDir, { recursive: true });
     fs.mkdirSync(this.releaseTargetsDir, { recursive: true });
     fs.mkdirSync(this.releaseDecisionsDir, { recursive: true });
+    fs.mkdirSync(this.targetLoopsDir, { recursive: true });
+    fs.mkdirSync(this.loopsDir, { recursive: true });
+    fs.mkdirSync(this.loopWorkspacesDir, { recursive: true });
+    fs.mkdirSync(this.executorGraphsDir, { recursive: true });
     this.ensureMetadata();
   }
 
@@ -1439,6 +1974,22 @@ class FileStore {
 
   get releaseDecisionsDir(): string {
     return path.join(this.dataRoot, "release-decisions");
+  }
+
+  get targetLoopsDir(): string {
+    return path.join(this.dataRoot, "target-loops");
+  }
+
+  get loopsDir(): string {
+    return path.join(this.dataRoot, "loops");
+  }
+
+  get loopWorkspacesDir(): string {
+    return path.join(this.dataRoot, "loop-workspaces");
+  }
+
+  get executorGraphsDir(): string {
+    return path.join(this.dataRoot, "executor-graphs");
   }
 
   get metadataFile(): string {
@@ -1535,7 +2086,9 @@ class FileStore {
       recentReleaseEvidence: this.listReleaseEvidenceSummaries().slice(-5).reverse(),
       releaseTargetCount: this.listReleaseTargets().length,
       releaseDecisionCount: this.listReleaseDecisions().length,
-      latestReleaseDecision: this.listReleaseDecisions().slice(-1)[0]
+      latestReleaseDecision: this.listReleaseDecisions().slice(-1)[0],
+      targetLoopCount: this.listTargetLoops().length,
+      latestTargetLoop: this.listTargetLoops().slice(-1)[0]
     };
   }
 
@@ -2405,6 +2958,472 @@ class FileStore {
     return decision;
   }
 
+  listTargetLoops(): TargetLoopRun[] {
+    return fs.readdirSync(this.targetLoopsDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => JSON.parse(fs.readFileSync(path.join(this.targetLoopsDir, file), "utf8")) as TargetLoopRun)
+      .sort((left, right) => Date.parse(left.createdAt) - Date.parse(right.createdAt));
+  }
+
+  readTargetLoop(id: string): TargetLoopRun | undefined {
+    const file = path.join(this.targetLoopsDir, `${safeFileName(id)}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return JSON.parse(fs.readFileSync(file, "utf8")) as TargetLoopRun;
+  }
+
+  writeTargetLoop(loop: TargetLoopRun): TargetLoopRun {
+    atomicWriteJson(path.join(this.targetLoopsDir, `${safeFileName(loop.id)}.json`), loop);
+    return loop;
+  }
+
+  listExecutorGraphs(): ExecutorGraph[] {
+    const persisted = fs.readdirSync(this.executorGraphsDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => JSON.parse(fs.readFileSync(path.join(this.executorGraphsDir, file), "utf8")) as ExecutorGraph);
+    if (persisted.some((graph) => graph.id === "default-loop-engineering")) return persisted;
+    return [defaultExecutorGraph(), ...persisted];
+  }
+
+  readExecutorGraph(id: string): ExecutorGraph | undefined {
+    const safeId = safeFileName(id);
+    const file = path.join(this.executorGraphsDir, `${safeId}.json`);
+    if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8")) as ExecutorGraph;
+    if (safeId === "default-loop-engineering") return defaultExecutorGraph();
+    return undefined;
+  }
+
+  writeExecutorGraph(graph: ExecutorGraph): ExecutorGraph {
+    atomicWriteJson(path.join(this.executorGraphsDir, `${safeFileName(graph.id)}.json`), graph);
+    return graph;
+  }
+
+  listLoops(): LoopRun[] {
+    return fs.readdirSync(this.loopsDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => JSON.parse(fs.readFileSync(path.join(this.loopsDir, file), "utf8")) as LoopRun)
+      .sort((left, right) => Date.parse(left.createdAt) - Date.parse(right.createdAt));
+  }
+
+  readLoop(id: string): LoopRun | undefined {
+    const file = path.join(this.loopsDir, `${safeFileName(id)}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return JSON.parse(fs.readFileSync(file, "utf8")) as LoopRun;
+  }
+
+  writeLoop(loop: LoopRun): LoopRun {
+    atomicWriteJson(path.join(this.loopsDir, `${safeFileName(loop.id)}.json`), loop);
+    return loop;
+  }
+
+  createLoop(input: {
+    id?: string;
+    source?: LoopTriggerSource;
+    projectId?: string;
+    objective: string;
+    executorGraphId?: string;
+    stopPolicy?: Partial<LoopStopPolicy>;
+    retryPolicy?: Partial<LoopRetryPolicy>;
+    context?: Record<string, unknown>;
+  }): LoopRun {
+    const now = new Date().toISOString();
+    const projectId = safeFileName(String(input.projectId ?? "evopilot"));
+    const id = safeFileName(input.id ?? `loop-${projectId}-${Date.now()}`);
+    const graph = this.readExecutorGraph(input.executorGraphId ?? "default-loop-engineering") ?? defaultExecutorGraph();
+    if (graph.id !== "default-loop-engineering") this.writeExecutorGraph(graph);
+    const loop: LoopRun = {
+      schema: "evopilot-loop-run/v1",
+      id,
+      source: input.source ?? "api",
+      projectId,
+      objective: input.objective,
+      status: "PENDING",
+      currentIteration: 0,
+      executorGraphId: graph.id,
+      stopPolicy: normalizeLoopStopPolicy(input.stopPolicy),
+      retryPolicy: normalizeLoopRetryPolicy(input.retryPolicy),
+      context: input.context ?? {},
+      iterations: [],
+      evidenceSets: [],
+      artifacts: [],
+      approvals: [],
+      timeline: [loopTimelineEvent("CREATED", `Loop ${id} created from ${input.source ?? "api"}.`, { objective: input.objective, projectId })],
+      createdAt: now,
+      updatedAt: now
+    };
+    return this.writeLoop(loop);
+  }
+
+  startLoop(id: string, actor: string, input: { forceDecision?: LoopDecision; evidence?: string[]; artifacts?: LoopArtifact[] } = {}): LoopRun | undefined {
+    const loop = this.readLoop(id);
+    if (!loop) return undefined;
+    if (loop.status === "CANCELLED" || loop.status === "SUCCEEDED" || loop.status === "FAILED") return loop;
+    return this.runLoopIteration({
+      loop: {
+        ...loop,
+        status: "RUNNING",
+        timeline: [...loop.timeline, loopTimelineEvent("STARTED", `Loop started by ${actor}.`)]
+      },
+      actor,
+      ...input
+    });
+  }
+
+  resumeLoop(id: string, actor: string, input: { forceDecision?: LoopDecision; evidence?: string[]; artifacts?: LoopArtifact[] } = {}): LoopRun | undefined {
+    const loop = this.readLoop(id);
+    if (!loop) return undefined;
+    if (loop.status === "WAITING_APPROVAL" && loop.approvals.some((approval) => approval.status === "PENDING")) {
+      throw httpError(409, "LOOP_APPROVAL_REQUIRED", "Loop requires approval before it can resume.");
+    }
+    if (["CANCELLED", "SUCCEEDED", "FAILED"].includes(loop.status)) return loop;
+    return this.runLoopIteration({ loop: { ...loop, status: "RUNNING" }, actor, ...input });
+  }
+
+  approveLoop(id: string, actor: string, approvalId?: string): LoopRun | undefined {
+    const loop = this.readLoop(id);
+    if (!loop) return undefined;
+    const pending = loop.approvals.find((approval) => approval.status === "PENDING" && (!approvalId || approval.id === approvalId));
+    if (!pending) throw httpError(409, "LOOP_APPROVAL_NOT_PENDING", "No pending loop approval is available.");
+    const now = new Date().toISOString();
+    return this.writeLoop({
+      ...loop,
+      status: "RUNNING",
+      approvals: loop.approvals.map((approval) => approval.id === pending.id ? { ...approval, status: "APPROVED", decidedAt: now, decidedBy: actor } : approval),
+      timeline: [...loop.timeline, loopTimelineEvent("APPROVAL", `Approval ${pending.id} granted by ${actor}.`, { approvalId: pending.id })],
+      updatedAt: now
+    });
+  }
+
+  cancelLoop(id: string, actor: string, reason?: string): LoopRun | undefined {
+    const loop = this.readLoop(id);
+    if (!loop) return undefined;
+    const now = new Date().toISOString();
+    return this.writeLoop({
+      ...loop,
+      status: "CANCELLED",
+      timeline: [...loop.timeline, loopTimelineEvent("CANCELLED", reason || `Loop cancelled by ${actor}.`)],
+      updatedAt: now
+    });
+  }
+
+  heartbeatLoop(loopId: string, workerId: string, leaseSeconds = 120): LoopRun | undefined {
+    const loop = this.readLoop(loopId);
+    if (!loop) return undefined;
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    const lease: LoopWorkerLease = {
+      workerId: safeFileName(workerId),
+      acquiredAt: loop.workerLease?.workerId === safeFileName(workerId) ? loop.workerLease.acquiredAt : now,
+      heartbeatAt: now,
+      expiresAt: new Date(nowMs + Math.max(15, leaseSeconds) * 1000).toISOString()
+    };
+    return this.writeLoop({
+      ...loop,
+      workerLease: lease,
+      timeline: [...loop.timeline, loopTimelineEvent("HEARTBEAT", `Worker ${lease.workerId} heartbeat accepted.`, { expiresAt: lease.expiresAt })],
+      updatedAt: now
+    });
+  }
+
+  listLoopLeases(): Array<{ loopId: string; status: LoopRunStatus; workerLease?: LoopWorkerLease }> {
+    return this.listLoops().map((loop) => ({ loopId: loop.id, status: loop.status, workerLease: loop.workerLease }));
+  }
+
+  runLoopWatchdog(now = new Date()): { recovered: LoopRun[]; blocked: LoopRun[] } {
+    const recovered: LoopRun[] = [];
+    const blocked: LoopRun[] = [];
+    for (const loop of this.listLoops()) {
+      if (loop.status !== "RUNNING" && loop.status !== "PENDING") continue;
+      const leaseExpired = loop.workerLease?.expiresAt ? Date.parse(loop.workerLease.expiresAt) < now.getTime() : false;
+      const ageSeconds = (now.getTime() - Date.parse(loop.createdAt)) / 1000;
+      if (loop.status === "RUNNING" && leaseExpired) {
+        const updated = this.writeLoop({
+          ...loop,
+          status: "PENDING",
+          workerLease: undefined,
+          timeline: [...loop.timeline, loopTimelineEvent("WATCHDOG", "Expired worker lease released; loop can be resumed by another worker.")],
+          updatedAt: now.toISOString()
+        });
+        recovered.push(updated);
+      } else if (ageSeconds > loop.stopPolicy.maxDurationSeconds) {
+        const updated = this.writeLoop({
+          ...loop,
+          status: "BLOCKED",
+          timeline: [...loop.timeline, loopTimelineEvent("WATCHDOG", "Loop blocked by maxDurationSeconds stop policy.", { maxDurationSeconds: loop.stopPolicy.maxDurationSeconds })],
+          updatedAt: now.toISOString()
+        });
+        blocked.push(updated);
+      }
+    }
+    return { recovered, blocked };
+  }
+
+  private runLoopIteration(args: {
+    loop: LoopRun;
+    actor: string;
+    forceDecision?: LoopDecision;
+    evidence?: string[];
+    artifacts?: LoopArtifact[];
+  }): LoopRun {
+    const graph = this.readExecutorGraph(args.loop.executorGraphId) ?? defaultExecutorGraph();
+    const now = new Date().toISOString();
+    const nextIndex = args.loop.currentIteration + 1;
+    const startedAt = now;
+    const iterationWorkspace = path.join(this.loopWorkspacesDir, safeFileName(args.loop.id), `iteration-${nextIndex}`);
+    fs.mkdirSync(iterationWorkspace, { recursive: true });
+    const steps = graph.nodes.map((node, index) => executeLoopNode({
+      node,
+      loop: args.loop,
+      iterationIndex: nextIndex,
+      attempt: 1,
+      previousFailureCount: countRecentLoopFailure(args.loop),
+      forceDecision: args.forceDecision,
+      workspaceRoot: iterationWorkspace,
+      now: new Date(Date.now() + index).toISOString()
+    }));
+    const failedSteps = steps.filter((step) => step.status === "FAILED");
+    const waitingApproval = steps.some((step) => step.status === "WAITING_APPROVAL");
+    const evidenceStatus: LoopEvidenceSet["status"] = failedSteps.length > 0 ? "FAIL" : waitingApproval ? "BLOCKED" : "PASS";
+    const iterationId = `${args.loop.id}-iter-${nextIndex}`;
+    const artifacts = [
+      ...(args.artifacts ?? []),
+      loopArtifact("generic", `Iteration ${nextIndex} sandbox workspace`, iterationWorkspace),
+      loopArtifact("report", `Iteration ${nextIndex} report`, path.join(this.loopsDir, `${safeFileName(args.loop.id)}.json`))
+    ];
+    const evidenceSet: LoopEvidenceSet = {
+      id: `${iterationId}-evidence`,
+      loopRunId: args.loop.id,
+      iterationId,
+      validator: "evopilot-loop-runtime",
+      status: evidenceStatus,
+      evidence: [
+        `executorGraph=${graph.id}`,
+        `iteration=${nextIndex}`,
+        ...steps.flatMap((step) => step.evidence),
+        ...(args.evidence ?? [])
+      ],
+      artifacts,
+      createdAt: new Date().toISOString()
+    };
+    const decision = decideLoopIteration(args.loop, nextIndex, steps, evidenceSet, args.forceDecision);
+    const approval = decision === "WAIT_APPROVAL"
+      ? {
+          id: `approval-${args.loop.id}-${nextIndex}`,
+          status: "PENDING" as const,
+          reason: "Loop reached a release or high-risk approval gate.",
+          requestedAt: new Date().toISOString()
+        }
+      : undefined;
+    const iteration: LoopIteration = {
+      id: iterationId,
+      loopRunId: args.loop.id,
+      index: nextIndex,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      executorSteps: steps,
+      evidenceSetId: evidenceSet.id,
+      decision,
+      rationale: loopDecisionRationale(decision, failedSteps)
+    };
+    const status = loopStatusFromDecision(decision);
+    const updated: LoopRun = {
+      ...args.loop,
+      status,
+      currentIteration: nextIndex,
+      iterations: [...args.loop.iterations, iteration],
+      evidenceSets: [...args.loop.evidenceSets, evidenceSet],
+      artifacts: [...args.loop.artifacts, ...artifacts],
+      approvals: approval ? [...args.loop.approvals, approval] : args.loop.approvals,
+      timeline: [
+        ...args.loop.timeline,
+        loopTimelineEvent("ITERATION", `Iteration ${nextIndex} completed with ${decision}.`, { iterationId }),
+        loopTimelineEvent("EVIDENCE", `Evidence set ${evidenceSet.id} collected with ${evidenceSet.status}.`, { evidenceSetId: evidenceSet.id }),
+        loopTimelineEvent("DECISION", `Decision ${decision}: ${loopDecisionRationale(decision, failedSteps)}.`)
+      ],
+      updatedAt: new Date().toISOString()
+    };
+    return this.writeLoop(updated);
+  }
+
+  createTargetLoop(input: { projectId?: string; targetId?: string; finalGoal?: string; candidate?: string; proofOpsCore?: ProofOpsCoreContract }): TargetLoopRun {
+    const now = new Date().toISOString();
+    const targetId = safeFileName(String(input.targetId ?? "ga"));
+    const target = this.readReleaseTarget(targetId) ?? releaseTargetFromProofOpsCore(targetId, input.proofOpsCore) ?? defaultGAReleaseTarget();
+    const projectId = safeFileName(String(input.projectId ?? "evopilot"));
+    const id = safeFileName(String(input.candidate ?? `target-loop-${projectId}-${target.id}-${Date.now()}`));
+    const targetPlan = buildProofOpsTargetPlan({ target, projectId, finalGoal: input.finalGoal, proofOpsCore: input.proofOpsCore });
+    return this.writeTargetLoop({
+      schema: "evopilot-proofops-target-loop/v1",
+      id,
+      projectId,
+      targetId: target.id,
+      releaseTarget: target.name,
+      mode: "proofops-target-loop",
+      status: "PENDING_PLAN_APPROVAL",
+      targetPlan,
+      targetPlanConfirmation: {
+        status: "pending",
+        instruction: "Review and confirm this ProofOps target plan before EvoPilot starts the target loop."
+      },
+      evidenceMatrix: target.requiredScenarioIds.map((scenario) => ({
+        capability: "release-target",
+        scenario,
+        requiredEvidence: `Scenario ${scenario} must pass for ${target.id}.`,
+        status: "NOT_RUN",
+        required: true,
+        blocker: "",
+        nextRepairAction: "Run the target loop and collect real release evidence.",
+        evidence: []
+      })),
+      decisionChain: [],
+      releaseActions: [],
+      remediationRequests: [],
+      artifacts: {},
+      createdAt: now,
+      updatedAt: now
+    });
+  }
+
+  approveTargetLoopPlan(id: string, actor: string): TargetLoopRun | undefined {
+    const loop = this.readTargetLoop(id);
+    if (!loop) return undefined;
+    return this.writeTargetLoop({
+      ...loop,
+      targetPlanConfirmation: {
+        status: "confirmed",
+        confirmedAt: new Date().toISOString(),
+        confirmedBy: actor,
+        instruction: "ProofOps target plan confirmed through EvoPilot target-loop approval gate."
+      },
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  runTargetLoop(id: string, input: { scenarioMatrix?: ReleaseScenarioResult[]; artifactPaths?: string[] } = {}): TargetLoopRun | undefined {
+    const loop = this.readTargetLoop(id);
+    if (!loop) return undefined;
+    if (loop.targetPlanConfirmation.status !== "confirmed") {
+      throw httpError(409, "TARGET_LOOP_PLAN_NOT_CONFIRMED", "ProofOps target loop requires target plan confirmation before execution.");
+    }
+    const bundle = this.generateReleaseEvidenceBundle({
+      id: `target-loop-evidence-${loop.id}`,
+      candidate: loop.id,
+      releaseTargetId: loop.targetId,
+      scenarioMatrix: input.scenarioMatrix,
+      artifactPaths: input.artifactPaths
+    });
+    const decision = this.readReleaseDecision(bundle.releaseDecisionId ?? "");
+    const criteria = decision?.criteria ?? [];
+    const matrix = criteria.map((criterion) => ({
+      capability: "release-criterion",
+      scenario: criterion.id,
+      requiredEvidence: criterion.name,
+      status: criterion.status === "PASS" ? "PASS" as const : "FAIL" as const,
+      required: criterion.required,
+      blocker: criterion.status === "PASS" ? "" : `${criterion.actual} does not meet ${criterion.target}`,
+      nextRepairAction: criterion.status === "PASS" ? "continue" : "Route blocker to EvoPilot remediation, then resume this target loop.",
+      evidence: criterion.evidence
+    }));
+    const failedRequired = matrix.filter((row) => row.required && row.status !== "PASS");
+    const releaseDecision = decision ? {
+      id: decision.id,
+      status: decision.status,
+      evidenceBundleId: decision.evidenceBundleId,
+      targetReached: decision.status === "GO",
+      failedCriteria: Number(decision.summary.failedCriteria ?? failedRequired.length),
+      highOpenRisks: Number(decision.summary.highOpenRisks ?? 0)
+    } : undefined;
+    const decisionChain = matrix.map((row) => ({
+      phase: row.scenario,
+      rule: row.requiredEvidence,
+      decision: row.status === "PASS" ? "continue" as const : "repair blocker" as const,
+      rationale: row.status === "PASS" ? "Required release target evidence passed." : row.blocker,
+      nextAction: row.nextRepairAction,
+      evidence: row.evidence
+    }));
+    const finalReport = buildProofOpsFinalReport({
+      loop,
+      matrix,
+      decisionChain,
+      releaseDecision
+    });
+    const updated: TargetLoopRun = {
+      ...loop,
+      status: releaseDecision?.status === "GO" ? "GO" : failedRequired.length > 0 ? "NO-GO" : "BLOCKED",
+      evidenceMatrix: matrix,
+      decisionChain,
+      releaseDecision,
+      finalReport,
+      artifacts: {
+        finalReportJson: path.join(this.targetLoopsDir, `${safeFileName(loop.id)}.json`),
+        sourceReleaseEvidenceBundleId: bundle.id
+      },
+      updatedAt: new Date().toISOString()
+    };
+    return this.writeTargetLoop(updated);
+  }
+
+  approveTargetLoopReleaseAction(id: string, action: string, actor: string): TargetLoopRun | undefined {
+    const loop = this.readTargetLoop(id);
+    if (!loop) return undefined;
+    if (loop.status !== "GO") throw httpError(409, "TARGET_LOOP_NOT_GO", "Release actions require a GO target loop decision.");
+    const normalizedAction = safeFileName(action);
+    const existing = loop.releaseActions.filter((item) => item.action !== normalizedAction);
+    return this.writeTargetLoop({
+      ...loop,
+      releaseActions: [
+        ...existing,
+        {
+          action: normalizedAction,
+          status: "APPROVED",
+          approvedAt: new Date().toISOString(),
+          approvedBy: actor
+        }
+      ],
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  executeTargetLoopReleaseAction(id: string, action: string, actor: string): TargetLoopRun | undefined {
+    const loop = this.readTargetLoop(id);
+    if (!loop) return undefined;
+    const normalizedAction = safeFileName(action);
+    const actionRecord = loop.releaseActions.find((item) => item.action === normalizedAction);
+    if (!actionRecord || actionRecord.status !== "APPROVED") {
+      throw httpError(409, "TARGET_LOOP_RELEASE_ACTION_NOT_APPROVED", "Release action execution requires prior approval.");
+    }
+    return this.writeTargetLoop({
+      ...loop,
+      releaseActions: loop.releaseActions.map((item) => item.action === normalizedAction
+        ? { ...item, status: "EXECUTED" as const, executedAt: new Date().toISOString(), executedBy: actor }
+        : item),
+      updatedAt: new Date().toISOString()
+    });
+  }
+
+  routeTargetLoopRemediation(id: string, blocker?: string): TargetLoopRun | undefined {
+    const loop = this.readTargetLoop(id);
+    if (!loop) return undefined;
+    const firstBlocker = blocker || loop.evidenceMatrix.find((row) => row.status !== "PASS" && row.required)?.blocker || "Target loop blocker requires EvoPilot remediation.";
+    const now = new Date().toISOString();
+    return this.writeTargetLoop({
+      ...loop,
+      remediationRequests: [
+        ...loop.remediationRequests,
+        {
+          id: `remediation-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          status: "ROUTED",
+          blocker: firstBlocker,
+          routedTo: "evopilot",
+          createdAt: now
+        }
+      ],
+      updatedAt: now
+    });
+  }
+
   generateReleaseEvidenceBundle(input: {
     id?: string;
     candidate?: string;
@@ -2730,6 +3749,222 @@ function defaultEvolutionCursor(projectId: string): ProjectEvolutionCursor {
   };
 }
 
+function defaultExecutorGraph(): ExecutorGraph {
+  const now = new Date().toISOString();
+  return {
+    schema: "evopilot-executor-graph/v1",
+    id: "default-loop-engineering",
+    name: "Default Loop Engineering Graph",
+    nodes: [
+      { id: "context", type: "llm", name: "Context Builder", config: { output: "loop context and next action hypothesis" } },
+      { id: "remediate", type: "code-upgrader", name: "Remediation Executor", config: { optional: true } },
+      { id: "ci", type: "ci", name: "CI/CD Validator", config: { optional: true } },
+      { id: "validate", type: "validator", name: "Independent Evidence Validator", config: { independent: true } },
+      { id: "approval", type: "approval", name: "Human Approval Gate", config: { requiredForRelease: true } }
+    ],
+    edges: [
+      { from: "context", to: "remediate" },
+      { from: "remediate", to: "ci" },
+      { from: "ci", to: "validate" },
+      { from: "validate", to: "approval" }
+    ],
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+function normalizeLoopStopPolicy(input?: Partial<LoopStopPolicy>): LoopStopPolicy {
+  return {
+    maxIterations: clampPositiveInteger(input?.maxIterations, 3),
+    maxDurationSeconds: clampPositiveInteger(input?.maxDurationSeconds, 24 * 60 * 60),
+    requireApprovalForRelease: input?.requireApprovalForRelease ?? true,
+    stopOnRepeatedFailure: clampPositiveInteger(input?.stopOnRepeatedFailure, 2)
+  };
+}
+
+function normalizeLoopRetryPolicy(input?: Partial<LoopRetryPolicy>): LoopRetryPolicy {
+  return {
+    maxAttemptsPerNode: clampPositiveInteger(input?.maxAttemptsPerNode, 2),
+    backoffSeconds: clampPositiveInteger(input?.backoffSeconds, 30),
+    circuitBreakerFailures: clampPositiveInteger(input?.circuitBreakerFailures, 2)
+  };
+}
+
+function clampPositiveInteger(value: unknown, fallback: number): number {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? Math.floor(number) : fallback;
+}
+
+function normalizeExecutorGraph(value: any): ExecutorGraph {
+  if (!isRecord(value)) throw httpError(400, "EXECUTOR_GRAPH_INVALID", "Executor graph must be an object.");
+  const now = new Date().toISOString();
+  const id = safeFileName(String(value.id ?? `executor-graph-${Date.now()}`));
+  const nodes = Array.isArray(value.nodes) ? value.nodes.map(normalizeExecutorNode) : [];
+  if (nodes.length === 0) throw httpError(400, "EXECUTOR_GRAPH_NODES_REQUIRED", "Executor graph requires at least one node.");
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  const edges = (Array.isArray(value.edges) ? value.edges : []).map((edge: any) => ({
+    from: safeFileName(String(edge.from ?? "")),
+    to: safeFileName(String(edge.to ?? ""))
+  })).filter((edge: ExecutorEdge) => nodeIds.has(edge.from) && nodeIds.has(edge.to));
+  return {
+    schema: "evopilot-executor-graph/v1",
+    id,
+    name: String(value.name ?? id),
+    nodes,
+    edges,
+    createdAt: String(value.createdAt ?? now),
+    updatedAt: now
+  };
+}
+
+function normalizeExecutorNode(value: any): ExecutorNode {
+  if (!isRecord(value)) throw httpError(400, "EXECUTOR_NODE_INVALID", "Executor graph node must be an object.");
+  const type = normalizeExecutorNodeType(value.type);
+  const id = safeFileName(String(value.id ?? `${type}-${Date.now()}`));
+  return {
+    id,
+    type,
+    name: String(value.name ?? id),
+    config: isRecord(value.config) ? value.config : {}
+  };
+}
+
+function normalizeExecutorNodeType(value: unknown): ExecutorNodeType {
+  const type = String(value ?? "");
+  if (["llm", "code-upgrader", "ci", "validator", "approval", "release-action"].includes(type)) return type as ExecutorNodeType;
+  throw httpError(400, "EXECUTOR_NODE_TYPE_INVALID", `Unsupported executor node type: ${type}`);
+}
+
+function normalizeLoopTriggerSource(value: unknown): LoopTriggerSource {
+  const source = String(value ?? "api");
+  if (["api", "im", "schedule", "runtime-signal", "release-target", "evolution-batch"].includes(source)) return source as LoopTriggerSource;
+  return "api";
+}
+
+function normalizeLoopDecision(value: unknown): LoopDecision | undefined {
+  const decision = String(value ?? "").toUpperCase();
+  if (["CONTINUE", "REPAIR", "BLOCK", "WAIT_APPROVAL", "SUCCEED", "FAIL"].includes(decision)) return decision as LoopDecision;
+  return undefined;
+}
+
+function executeLoopNode(args: {
+  node: ExecutorNode;
+  loop: LoopRun;
+  iterationIndex: number;
+  attempt: number;
+  previousFailureCount: number;
+  forceDecision?: LoopDecision;
+  workspaceRoot: string;
+  now: string;
+}): ExecutorStepResult {
+  const workspacePath = path.join(args.workspaceRoot, safeFileName(args.node.id));
+  fs.mkdirSync(workspacePath, { recursive: true });
+  const baseEvidence = [
+    `node=${args.node.id}`,
+    `type=${args.node.type}`,
+    `attempt=${args.attempt}`,
+    `objective=${args.loop.objective}`,
+    `workspace=${workspacePath}`,
+    `executorBoundary=${executorBoundaryLabel(args.node.type)}`
+  ];
+  const blockedByCircuit = args.previousFailureCount >= args.loop.retryPolicy.circuitBreakerFailures && args.node.type !== "approval";
+  const forcedFailure = args.forceDecision === "FAIL" || args.forceDecision === "BLOCK" || args.forceDecision === "REPAIR";
+  const waitingApproval = args.node.type === "approval" && args.loop.stopPolicy.requireApprovalForRelease && args.iterationIndex >= args.loop.stopPolicy.maxIterations;
+  const status: ExecutorStepResult["status"] = blockedByCircuit || forcedFailure
+    ? "FAILED"
+    : waitingApproval
+      ? "WAITING_APPROVAL"
+      : "SUCCEEDED";
+  return {
+    nodeId: args.node.id,
+    type: args.node.type,
+    status,
+    startedAt: args.now,
+    completedAt: status === "WAITING_APPROVAL" ? undefined : new Date(Date.parse(args.now) + 1).toISOString(),
+    attempt: args.attempt,
+    input: { loopId: args.loop.id, iteration: args.iterationIndex },
+    output: status === "SUCCEEDED"
+      ? { result: `${args.node.type} completed`, workspacePath, executorBoundary: executorBoundaryLabel(args.node.type) }
+      : { reason: status === "WAITING_APPROVAL" ? "approval gate reached" : "loop policy blocked execution", workspacePath, executorBoundary: executorBoundaryLabel(args.node.type) },
+    evidence: status === "SUCCEEDED" ? [...baseEvidence, "status=SUCCEEDED"] : [...baseEvidence, `status=${status}`],
+    failureSignature: status === "FAILED" ? `${args.node.type}:policy-or-forced-failure` : undefined
+  };
+}
+
+function executorBoundaryLabel(type: ExecutorNodeType): string {
+  return ({
+    llm: "EvoPilot LLM gateway boundary",
+    "code-upgrader": "OpenHands/code-upgrader runtime boundary",
+    ci: "Jenkins CI/CD connector boundary",
+    validator: "independent validation boundary",
+    approval: "human approval boundary",
+    "release-action": "guarded release action boundary"
+  })[type];
+}
+
+function decideLoopIteration(loop: LoopRun, nextIndex: number, steps: ExecutorStepResult[], evidenceSet: LoopEvidenceSet, forceDecision?: LoopDecision): LoopDecision {
+  if (forceDecision === "REPAIR" || forceDecision === "FAIL") {
+    const recentFailureCount = countRecentLoopFailure(loop) + 1;
+    return recentFailureCount >= loop.stopPolicy.stopOnRepeatedFailure ? "BLOCK" : forceDecision;
+  }
+  if (forceDecision) return forceDecision;
+  if (steps.some((step) => step.status === "WAITING_APPROVAL")) return "WAIT_APPROVAL";
+  const failureCount = steps.filter((step) => step.status === "FAILED").length;
+  if (failureCount > 0) {
+    const recentFailureCount = countRecentLoopFailure(loop) + 1;
+    return recentFailureCount >= loop.stopPolicy.stopOnRepeatedFailure ? "BLOCK" : "REPAIR";
+  }
+  if (evidenceSet.status === "PASS" && nextIndex >= loop.stopPolicy.maxIterations) return "SUCCEED";
+  return "CONTINUE";
+}
+
+function countRecentLoopFailure(loop: LoopRun): number {
+  let count = 0;
+  for (const iteration of [...loop.iterations].reverse()) {
+    if (iteration.decision === "REPAIR" || iteration.decision === "BLOCK" || iteration.decision === "FAIL") count += 1;
+    else break;
+  }
+  return count;
+}
+
+function loopStatusFromDecision(decision: LoopDecision): LoopRunStatus {
+  if (decision === "SUCCEED") return "SUCCEEDED";
+  if (decision === "FAIL") return "FAILED";
+  if (decision === "BLOCK") return "BLOCKED";
+  if (decision === "WAIT_APPROVAL") return "WAITING_APPROVAL";
+  return "RUNNING";
+}
+
+function loopDecisionRationale(decision: LoopDecision, failedSteps: ExecutorStepResult[]): string {
+  if (decision === "CONTINUE") return "Loop evidence passed and stop policy has not been reached";
+  if (decision === "SUCCEED") return "Loop reached objective stop policy with passing evidence";
+  if (decision === "WAIT_APPROVAL") return "Human approval is required before release or high-risk continuation";
+  if (decision === "REPAIR") return failedSteps[0]?.failureSignature ?? "Executor failure requires remediation";
+  if (decision === "BLOCK") return "Repeated failure or stop policy blocked further automatic execution";
+  return "Loop failed by explicit decision";
+}
+
+function loopTimelineEvent(type: LoopTimelineEvent["type"], message: string, metadata?: Record<string, unknown>): LoopTimelineEvent {
+  return {
+    id: `loop-event-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    type,
+    message,
+    timestamp: new Date().toISOString(),
+    metadata
+  };
+}
+
+function loopArtifact(type: LoopArtifact["type"], label: string, artifactPath?: string, url?: string): LoopArtifact {
+  return {
+    id: `artifact-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    type,
+    label,
+    path: artifactPath,
+    url,
+    createdAt: new Date().toISOString()
+  };
+}
+
 function definedOnly<T extends Record<string, unknown>>(value: T): Partial<T> {
   return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
 }
@@ -2813,6 +4048,198 @@ function defaultGAReleaseTarget(): ReleaseTargetProfile {
     createdAt: now,
     updatedAt: now
   };
+}
+
+function releaseTargetFromProofOpsCore(targetId: string, proofOpsCore?: ProofOpsCoreContract): ReleaseTargetProfile | undefined {
+  const coreTarget = proofOpsCore?.targets?.find((item) => item.id === targetId);
+  if (!coreTarget) return undefined;
+  const now = new Date().toISOString();
+  return {
+    id: safeFileName(coreTarget.id),
+    name: coreTarget.title ?? coreTarget.id.toUpperCase(),
+    description: `ProofOps Core target ${coreTarget.id} imported into EvoPilot ProofOps Mode.`,
+    minConnectedProjects: targetId === "ga" ? 5 : 1,
+    minSucceededSoakSeconds: targetId === "ga" ? 5400 : 0,
+    requireActiveSoak: targetId === "ga",
+    minActiveSoakRunDelta: targetId === "ga" ? 5 : 0,
+    minActiveSoakCodeUpgradeDelta: targetId === "ga" ? 5 : 0,
+    minActiveSoakPipelineDelta: targetId === "ga" ? 5 : 0,
+    minSuccessfulRuns: targetId === "ga" ? 5 : 1,
+    minEvaluationDatasets: targetId === "ga" ? 10 : 0,
+    minOpportunities: targetId === "ga" ? 5 : 0,
+    minSuccessfulEvolutionBatches: targetId === "ga" ? 5 : 0,
+    minSuccessfulCodeUpgrades: targetId === "ga" ? 5 : 0,
+    minSuccessfulPipelines: targetId === "ga" ? 5 : 0,
+    requiredScenarioIds: [],
+    requireNoHighOpenRisks: targetId === "ga",
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+function buildProofOpsTargetPlan(args: {
+  target: ReleaseTargetProfile;
+  projectId: string;
+  finalGoal?: string;
+  proofOpsCore?: ProofOpsCoreContract;
+}): TargetLoopRun["targetPlan"] {
+  const { target, projectId } = args;
+  const coreRequiredEvidence = args.proofOpsCore?.targets?.find((item) => item.id === target.id)?.requiredEvidence ?? [];
+  return {
+    finalGoal: args.finalGoal ?? `${projectId} reaches ${target.name} through a ProofOps target loop with real-boundary evidence.`,
+    phaseGoals: [
+      `target-readiness: confirm ${target.id} target plan and acceptance criteria`,
+      "evidence-matrix: collect required release criteria and scenario evidence",
+      "remediation-loop: route failed criteria to EvoPilot remediation and verification",
+      "release-decision: produce GO, CONDITIONAL-GO, NO-GO, or BLOCKED with audit evidence"
+    ],
+    acceptanceCriteria: [
+      `connectedProjects >= ${target.minConnectedProjects}`,
+      `successfulRuns >= ${target.minSuccessfulRuns}`,
+      `successfulEvolutionBatches >= ${target.minSuccessfulEvolutionBatches}`,
+      `successfulCodeUpgrades >= ${target.minSuccessfulCodeUpgrades}`,
+      `successfulPipelines >= ${target.minSuccessfulPipelines}`,
+      `requiredScenarios pass: ${target.requiredScenarioIds.join(", ")}`,
+      ...(coreRequiredEvidence.length > 0 ? coreRequiredEvidence : []),
+      args.proofOpsCore?.productionReleaseEvidenceRule ?? "mock, fake, stub, simulator, fixture-only, demo-only, smoke-only, or chat-only evidence is not accepted as release evidence"
+    ],
+    finalDecision: ["GO", "CONDITIONAL-GO", "NO-GO", "BLOCKED"],
+    source: "proofops-core-compatible",
+    proofOpsCoreVersion: args.proofOpsCore?.version
+  };
+}
+
+function buildProofOpsFinalReport(args: {
+  loop: TargetLoopRun;
+  matrix: TargetLoopEvidenceRow[];
+  decisionChain: TargetLoopDecisionStep[];
+  releaseDecision?: TargetLoopRun["releaseDecision"];
+}): NonNullable<TargetLoopRun["finalReport"]> {
+  const required = args.matrix.filter((row) => row.required);
+  const passed = required.filter((row) => row.status === "PASS");
+  const failedOrBlocked = required.filter((row) => row.status !== "PASS");
+  const finalDecision = args.releaseDecision?.status ?? "BLOCKED";
+  const targetReached = args.releaseDecision?.targetReached === true;
+  return {
+    schema: "proofops-final-release-report/v1",
+    projectId: args.loop.projectId,
+    releaseTarget: args.loop.releaseTarget,
+    lifecycleId: args.loop.id,
+    terminalReason: targetReached ? "release-target-reached" : "target-loop-not-reached",
+    generatedAt: new Date().toISOString(),
+    targetPlan: args.loop.targetPlan,
+    targetPlanConfirmation: args.loop.targetPlanConfirmation,
+    releaseDecision: args.releaseDecision,
+    finalTargetSummary: {
+      finalGoal: args.loop.targetPlan.finalGoal,
+      finalDecision,
+      targetReached,
+      latestCoverage: {
+        required: required.length,
+        passed: passed.length,
+        failedOrBlocked: failedOrBlocked.length
+      },
+      blocker: failedOrBlocked[0]?.blocker ?? "",
+      conclusion: targetReached
+        ? `${args.loop.releaseTarget} target reached.`
+        : `${args.loop.releaseTarget} target not reached; route blockers through EvoPilot remediation and resume the target loop.`
+    },
+    coverageMatrix: args.matrix,
+    decisionChain: args.decisionChain,
+    productionReleaseRule: args.loop.targetPlan.acceptanceCriteria.find((item) => item.startsWith("No mock")) ?? "No mock, fake, stub, simulator, fixture-only, demo-only, smoke-only, or chat-only evidence is counted as production release proof."
+  };
+}
+
+function loadProofOpsCoreContract(configuredPath?: string): ProofOpsCoreContract | undefined {
+  const candidates = [
+    configuredPath,
+    process.env.EVOPILOT_PROOFOPS_CORE_CONTRACT,
+    "/Users/wangyejing/github/ProofOps/dist/proofops-core-contract.json"
+  ].filter((item): item is string => Boolean(item));
+  for (const candidate of candidates) {
+    try {
+      if (!fs.existsSync(candidate)) continue;
+      const parsed = JSON.parse(fs.readFileSync(candidate, "utf8")) as ProofOpsCoreContract;
+      if (parsed.schema === "proofops-core-contract/v1") return parsed;
+    } catch {
+      continue;
+    }
+  }
+  return undefined;
+}
+
+function parseConversationCommand(body: any): {
+  kind: "create-target-loop";
+  channel: string;
+  conversationId: string;
+  text: string;
+  projectId: string;
+  targetId: string;
+  finalGoal?: string;
+  candidate?: string;
+} {
+  const text = String(body.text ?? "").trim();
+  if (!text) throw httpError(400, "CONVERSATION_TEXT_REQUIRED", "conversation command text is required");
+  const targetId = safeFileName(String(body.targetId ?? inferTargetIdFromText(text) ?? "ga"));
+  const projectId = safeFileName(String(body.projectId ?? inferProjectIdFromText(text) ?? "default-project"));
+  return {
+    kind: "create-target-loop",
+    channel: String(body.channel ?? "codex"),
+    conversationId: String(body.conversationId ?? `conversation-${Date.now()}`),
+    text,
+    projectId,
+    targetId,
+    finalGoal: body.finalGoal ? String(body.finalGoal) : `${projectId} reaches ${targetId.toUpperCase()} through EvoPilot ProofOps Mode.`,
+    candidate: body.candidate ? String(body.candidate) : undefined
+  };
+}
+
+function extractImText(body: any): string {
+  const candidates = [
+    body.text,
+    body.content,
+    body.event?.message?.content,
+    body.event?.message?.text,
+    body.message?.content,
+    body.message?.text
+  ];
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim()) {
+      try {
+        const parsed = JSON.parse(candidate);
+        if (typeof parsed.text === "string") return parsed.text;
+        if (typeof parsed.content === "string") return parsed.content;
+      } catch {
+        return candidate;
+      }
+    }
+  }
+  return "";
+}
+
+function extractImConversationId(body: any, channel: string): string {
+  return String(
+    body.conversationId ??
+    body.event?.message?.chat_id ??
+    body.event?.message?.message_id ??
+    body.chat_id ??
+    body.msgid ??
+    `${channel}-${Date.now()}`
+  );
+}
+
+function inferTargetIdFromText(text: string): string | undefined {
+  const normalized = text.toLowerCase();
+  for (const target of ["demo-to-alpha", "alpha", "beta", "rc", "ga"]) {
+    if (normalized.includes(target)) return target;
+  }
+  if (text.includes("发布") || text.includes("成熟度")) return "ga";
+  return undefined;
+}
+
+function inferProjectIdFromText(text: string): string | undefined {
+  const match = text.match(/(?:project|项目|产品)\s*[:：]?\s*([A-Za-z0-9_-]+)/);
+  return match?.[1];
 }
 
 function numericCriterion(id: string, name: string, actual: number, target: number, evidence: string[]): ReleaseDecisionCriterion {

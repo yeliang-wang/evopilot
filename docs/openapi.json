@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "0.1.0"
+    "version": "1.0.0"
   },
   "paths": {
     "/health": {
@@ -892,6 +892,522 @@
           },
           "404": {
             "description": "发布证据包不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/executor-graphs": {
+      "get": {
+        "summary": "列出 Loop Runtime 执行图",
+        "description": "返回 EvoPilot Loop Runtime 可用的 executor graph，包括默认 Loop Engineering 图。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "执行图列表"
+          }
+        }
+      },
+      "post": {
+        "summary": "创建或更新 Loop Runtime 执行图",
+        "description": "定义 LLM、code-upgrader、CI、validator、approval、release-action 等 executor 节点及依赖关系。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "执行图已保存"
+          },
+          "403": {
+            "description": "需要操作员或更高角色"
+          }
+        }
+      }
+    },
+    "/api/v1/executor-graphs/{graphId}": {
+      "get": {
+        "summary": "获取单个 Loop Runtime 执行图",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "graphId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "执行图详情"
+          },
+          "404": {
+            "description": "执行图不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/loops": {
+      "get": {
+        "summary": "列出 Loop Runtime 长任务",
+        "description": "返回 EvoPilot Loop Runtime 管理的 LoopRun，包含状态、当前轮次、策略、证据、审批和 timeline。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LoopRun 列表"
+          }
+        }
+      },
+      "post": {
+        "summary": "创建 Loop Runtime 长任务",
+        "description": "将 API、IM、定时、运行时信号、release target 或 evolution batch 触发源转成 durable LoopRun。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "LoopRun 已创建"
+          },
+          "400": {
+            "description": "缺少 objective"
+          },
+          "403": {
+            "description": "需要操作员或更高角色"
+          }
+        }
+      }
+    },
+    "/api/v1/loops/{loopId}": {
+      "get": {
+        "summary": "获取单个 LoopRun",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "loopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LoopRun 详情"
+          },
+          "404": {
+            "description": "LoopRun 不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/loops/{loopId}/start": {
+      "post": {
+        "summary": "启动 LoopRun",
+        "description": "执行第一轮 executor graph，生成 iteration、evidence set、artifact 和 decision。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LoopRun 已启动"
+          }
+        }
+      }
+    },
+    "/api/v1/loops/{loopId}/resume": {
+      "post": {
+        "summary": "恢复 LoopRun",
+        "description": "继续下一轮执行；若存在待审批项则返回阻断。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LoopRun 已恢复"
+          },
+          "409": {
+            "description": "需要先完成审批"
+          }
+        }
+      }
+    },
+    "/api/v1/loops/{loopId}/approve": {
+      "post": {
+        "summary": "审批 LoopRun 的待确认项",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "审批已确认"
+          },
+          "409": {
+            "description": "没有待审批项"
+          }
+        }
+      }
+    },
+    "/api/v1/loops/{loopId}/cancel": {
+      "post": {
+        "summary": "取消 LoopRun",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LoopRun 已取消"
+          }
+        }
+      }
+    },
+    "/api/v1/loops/{loopId}/timeline": {
+      "get": {
+        "summary": "获取 LoopRun 时间线",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Loop timeline"
+          }
+        }
+      }
+    },
+    "/api/v1/loops/{loopId}/evidence": {
+      "get": {
+        "summary": "获取 LoopRun 证据集",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Loop evidence sets"
+          }
+        }
+      }
+    },
+    "/api/v1/loops/{loopId}/artifacts": {
+      "get": {
+        "summary": "获取 LoopRun 产物索引",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Loop artifacts"
+          }
+        }
+      }
+    },
+    "/api/v1/loop-workers/heartbeat": {
+      "post": {
+        "summary": "写入 Loop worker heartbeat 和 lease",
+        "description": "用于长任务 worker 续租；watchdog 可释放过期 lease。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lease 已更新"
+          }
+        }
+      }
+    },
+    "/api/v1/loop-workers/leases": {
+      "get": {
+        "summary": "列出 Loop worker lease",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Worker lease 列表"
+          }
+        }
+      }
+    },
+    "/api/v1/loops/watchdog": {
+      "post": {
+        "summary": "运行 Loop watchdog",
+        "description": "释放过期 worker lease，并按 StopPolicy 阻断超时 LoopRun。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Watchdog 执行结果"
+          }
+        }
+      }
+    },
+    "/api/v1/im/feishu/webhook": {
+      "post": {
+        "summary": "飞书消息 Webhook 转 LoopRun",
+        "description": "接收飞书消息事件，解析文本并创建 EvoPilot Loop Runtime 长任务。生产部署应在网关或 adapter 层启用签名校验和消息去重。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "LoopRun 已创建"
+          },
+          "403": {
+            "description": "需要操作员或更高角色"
+          }
+        }
+      }
+    },
+    "/api/v1/im/wecom/webhook": {
+      "post": {
+        "summary": "企业微信消息 Webhook 转 LoopRun",
+        "description": "接收企业微信消息事件，解析文本并创建 EvoPilot Loop Runtime 长任务。生产部署应在网关或 adapter 层启用签名校验和消息去重。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "LoopRun 已创建"
+          },
+          "403": {
+            "description": "需要操作员或更高角色"
+          }
+        }
+      }
+    },
+    "/api/v1/target-loops": {
+      "get": {
+        "summary": "列出 ProofOps 目标 Loop",
+        "description": "返回 EvoPilot 内置 ProofOps Mode 的 target-driven release/maturity loop。该能力使用 ProofOps Core 兼容的 target plan、evidence matrix、decision chain 和 final report。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "目标 Loop 列表"
+          }
+        }
+      },
+      "post": {
+        "summary": "创建 ProofOps 目标 Loop",
+        "description": "根据 release target 创建待确认的 ProofOps target plan。目标计划必须审批后才能执行。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "目标 Loop 已创建"
+          },
+          "403": {
+            "description": "需要操作员或更高角色"
+          }
+        }
+      }
+    },
+    "/api/v1/target-loops/{loopId}": {
+      "get": {
+        "summary": "获取 ProofOps 目标 Loop",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "loopId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "目标 Loop 详情"
+          },
+          "404": {
+            "description": "目标 Loop 不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/target-loops/{loopId}/approve-plan": {
+      "post": {
+        "summary": "确认 ProofOps target plan",
+        "description": "确认目标计划后，EvoPilot 才能执行该 target loop。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "目标计划已确认"
+          },
+          "403": {
+            "description": "需要操作员或更高角色"
+          }
+        }
+      }
+    },
+    "/api/v1/target-loops/{loopId}/resume": {
+      "post": {
+        "summary": "执行或恢复 ProofOps 目标 Loop",
+        "description": "聚合 EvoPilot release evidence，生成 ProofOps-compatible final report，并输出 GO / NO-GO / BLOCKED 状态。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "目标 Loop 已执行"
+          },
+          "409": {
+            "description": "目标计划尚未确认"
+          }
+        }
+      }
+    },
+    "/api/v1/target-loops/{loopId}/final-report": {
+      "get": {
+        "summary": "获取 ProofOps-compatible final report",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "最终报告"
+          },
+          "409": {
+            "description": "最终报告尚未生成"
+          }
+        }
+      }
+    },
+    "/api/v1/target-loops/{loopId}/release-actions/{action}/approve": {
+      "post": {
+        "summary": "审批目标 Loop 的发布动作",
+        "description": "发布、tag、deploy、rollback 等动作属于 ProofOps 闭环的一部分，但必须在 GO 后由管理员审批。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "发布动作已审批"
+          },
+          "409": {
+            "description": "目标 Loop 尚未 GO"
+          }
+        }
+      }
+    },
+    "/api/v1/target-loops/{loopId}/release-actions/{action}/execute": {
+      "post": {
+        "summary": "执行已审批的目标 Loop 发布动作",
+        "description": "发布动作必须先审批，随后才能由 EvoPilot 标记执行并写入审计。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "发布动作已执行"
+          },
+          "409": {
+            "description": "发布动作尚未审批"
+          }
+        }
+      }
+    },
+    "/api/v1/target-loops/{loopId}/route-remediation": {
+      "post": {
+        "summary": "将目标 Loop 阻塞路由给 EvoPilot 修复闭环",
+        "description": "将 ProofOps target loop 的阻塞项登记为 EvoPilot remediation request，后续由 EvoPilot 自演进/代码升级/CI 验证能力处理。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "阻塞项已路由"
+          },
+          "404": {
+            "description": "目标 Loop 不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/commands": {
+      "post": {
+        "summary": "处理 Codex/IM 对话命令",
+        "description": "统一接收 Codex、飞书、企业微信等入口转发的对话命令，并将其转换为 EvoPilot ProofOps Mode 操作。当前支持创建 target loop。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "对话命令已执行"
+          },
+          "400": {
+            "description": "对话命令无法识别"
           }
         }
       }
