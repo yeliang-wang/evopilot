@@ -60,6 +60,48 @@ test("metrics endpoint and request body limit are enforced", async () => {
   }
 });
 
+test("server emits production-grade structured logs with request ids and redaction", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-logs-"));
+  const previousLog = console.log;
+  const previousError = console.error;
+  const stdout = [];
+  const stderr = [];
+  console.log = (line) => stdout.push(String(line));
+  console.error = (line) => stderr.push(String(line));
+  const server = createServer({ dataRoot, apiToken: "secret-token", runtimeMode: "debug" });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const health = await fetch(`${baseUrl}/health?token=should-not-leak`, {
+      headers: { "x-request-id": "req-health-log", authorization: "Bearer secret-token" }
+    });
+    assert.equal(health.status, 200);
+    const summary = await fetch(`${baseUrl}/api/v1/summary`, {
+      headers: { "x-request-id": "req-summary-log", authorization: "Bearer secret-token" }
+    });
+    assert.equal(summary.status, 200);
+    const unauthorized = await fetch(`${baseUrl}/api/v1/summary`, {
+      headers: { "x-request-id": "req-unauthorized-log", authorization: "Bearer wrong-secret" }
+    });
+    assert.equal(unauthorized.status, 401);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    console.log = previousLog;
+    console.error = previousError;
+  }
+  const records = stdout.map((line) => JSON.parse(line));
+  assert.ok(records.some((record) => record.event === "server.configured" && record.version === "1.0.0"));
+  assert.ok(records.some((record) => record.event === "http.request.completed" && record.requestId === "req-health-log" && record.statusCode === 200));
+  assert.ok(records.some((record) => record.event === "http.request.completed" && record.requestId === "req-summary-log" && record.statusCode === 200));
+  assert.ok(records.some((record) => record.event === "http.request.completed" && record.requestId === "req-unauthorized-log" && record.statusCode === 401));
+  assert.equal(stderr.length, 0);
+  const allLogs = stdout.join("\n");
+  assert.doesNotMatch(allLogs, /secret-token/);
+  assert.doesNotMatch(allLogs, /should-not-leak/);
+  assert.match(allLogs, /\[REDACTED\]/);
+});
+
 test("server serves dashboard static files", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-dashboard-"));
   const dashboardRoot = path.resolve("apps/dashboard");

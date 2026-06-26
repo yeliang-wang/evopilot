@@ -73,3 +73,55 @@ npm run server:debug
 生产客户端应为 `POST /api/v1/runs` 设置 `X-Idempotency-Key`。
 
 使用相同 key 重复请求时，服务端会返回第一次的响应，不会创建重复运行。
+
+## 生产日志
+
+EvoPilot V1.0.0 的主服务、Loop worker 和 soak 脚本都输出 JSON Lines，适合直接被 `systemd journal`、Docker/Kubernetes stdout、Loki、ELK 或云日志采集。
+
+主服务每条日志包含：
+
+- `timestamp`
+- `level`
+- `service`
+- `version`
+- `event`
+- `requestId`
+- `method`
+- `path`
+- `statusCode`
+- `durationMs`
+- `actor`
+- `action`
+- `target`
+- `metadata`
+
+常用事件：
+
+| event | 用途 |
+|---|---|
+| `server.started` | 确认进程启动参数、监听地址、运行模式。 |
+| `http.request.completed` | 按 `requestId`、路径、状态码、耗时定位 API 请求。 |
+| `http.request.failed` | 查看 500 错误、错误栈和请求路径。 |
+| `http.request.rejected` | 查看业务阻断，例如审批缺失、权限不足、目标不存在。 |
+| `audit.recorded` | 对应持久化审计事件，可按 `action` / `target` 追踪操作。 |
+| `code-upgrade.starting` / `code-upgrade.started` / `code-upgrade.status-changed` | 定位代码升级执行器、分支、会话、状态变化。 |
+| `jenkins.build.triggering` / `jenkins.build.triggered` | 定位 CI/CD Job、Queue、Build URL。 |
+| `loop-worker.*` | 定位独立 Loop worker 的启动、空闲、推进、审批等待和错误。 |
+
+建议生产环境变量：
+
+```text
+EVOPILOT_LOG_LEVEL=info
+EVOPILOT_LOG_STACK=true
+```
+
+排障示例：
+
+```bash
+journalctl -u evopilot -o cat | jq 'select(.requestId=="<request-id>")'
+journalctl -u evopilot -o cat | jq 'select(.event=="http.request.failed")'
+journalctl -u evopilot -o cat | jq 'select(.metadata.loopId=="<loop-id>" or .target=="<loop-id>")'
+journalctl -u evopilot-worker -o cat | jq 'select(.event|startswith("loop-worker."))'
+```
+
+日志会对 `token`、`password`、`secret`、`credential`、`apiKey`、`authorization` 和 Bearer token 做脱敏。连接器密钥和项目凭据不应出现在日志中。

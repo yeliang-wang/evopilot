@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { randomUUID } from "node:crypto";
 import { GitHubHttpAdapter } from "@evopilot/adapter-github";
 import { GitLabHttpAdapter } from "@evopilot/adapter-gitlab";
 import { JenkinsClient, type JenkinsConnectorConfig } from "@evopilot/adapter-jenkins";
@@ -203,6 +204,29 @@ interface AuditRecord {
   action: string;
   target: string;
   timestamp: string;
+  metadata?: Record<string, unknown>;
+}
+
+type LogLevel = "debug" | "info" | "warn" | "error";
+
+interface LogRecord {
+  timestamp?: string;
+  level: LogLevel;
+  service?: "evopilot";
+  version?: "1.0.0";
+  event: string;
+  requestId?: string;
+  actor?: string;
+  role?: AuthRole;
+  action?: string;
+  target?: string;
+  method?: string;
+  path?: string;
+  statusCode?: number;
+  durationMs?: number;
+  error?: string;
+  errorCode?: string;
+  stack?: string;
   metadata?: Record<string, unknown>;
 }
 
@@ -906,9 +930,36 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
     });
   }
 
+  logInfo("server.configured", {
+    metadata: {
+      runtimeMode: runtime.mode,
+      dataRoot: options.dataRoot,
+      authRequired: tokens.length > 0,
+      profileId: profile.id,
+      dashboardEnabled: Boolean(options.dashboardRoot)
+    }
+  });
+
   return http.createServer(async (request, response) => {
+    const startedAt = Date.now();
+    const requestId = requestHeader(request, "x-request-id") || randomUUID();
+    response.setHeader("x-request-id", requestId);
+    let url = new URL(request.url ?? "/", "http://127.0.0.1");
+    response.on("finish", () => {
+      logInfo("http.request.completed", {
+        requestId,
+        method: request.method,
+        path: url.pathname,
+        statusCode: response.statusCode,
+        durationMs: Date.now() - startedAt,
+        metadata: {
+          query: redactUrlSearch(url.searchParams),
+          userAgent: requestHeader(request, "user-agent")
+        }
+      });
+    });
     try {
-      const url = new URL(request.url ?? "/", "http://127.0.0.1");
+      url = new URL(request.url ?? "/", "http://127.0.0.1");
       if (serveDashboard(request, response, url, options.dashboardRoot)) return;
       if (request.method === "GET" && url.pathname === "/health") {
         return writeJson(response, 200, {
@@ -1865,8 +1916,24 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       }
       return writeJson(response, 404, { error: "NOT_FOUND" });
     } catch (error) {
-      if (error instanceof HttpError) return writeJson(response, error.statusCode, { error: error.code, detail: error.detail });
-      return writeJson(response, 500, { error: error instanceof Error ? error.message : String(error) });
+      if (error instanceof HttpError) {
+        logWarn("http.request.rejected", {
+          requestId,
+          method: request.method,
+          path: url.pathname,
+          statusCode: error.statusCode,
+          errorCode: error.code,
+          error: error.detail ?? error.code
+        });
+        return writeJson(response, error.statusCode, { error: error.code, detail: error.detail, requestId });
+      }
+      logError("http.request.failed", error, {
+        requestId,
+        method: request.method,
+        path: url.pathname,
+        statusCode: 500
+      });
+      return writeJson(response, 500, { error: error instanceof Error ? error.message : String(error), requestId });
     }
   });
 }
@@ -2153,6 +2220,12 @@ class FileStore {
 
   appendAudit(record: AuditRecord): void {
     fs.appendFileSync(this.auditFile, `${JSON.stringify(record)}\n`);
+    logInfo("audit.recorded", {
+      actor: record.actor,
+      action: record.action,
+      target: record.target,
+      metadata: record.metadata
+    });
   }
 
   listAudit(): AuditRecord[] {
@@ -4508,6 +4581,7 @@ function isSensitiveKey(key: string): boolean {
 
 function redactSensitiveText(text: string): string {
   return text
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer [REDACTED]")
     .replace(/glpat-[A-Za-z0-9_-]+/g, "[REDACTED]")
     .replace(/(token|password|secret|credential|api[_-]?key)([=:\s]+)([^\\s"',}]+)/gi, "$1$2[REDACTED]");
 }
@@ -4700,6 +4774,20 @@ async function startOpenHandsCodeUpgrade(args: {
   }
   const allowedPaths = inferCodeUpgradeAllowedPaths(codeContext, codeUpgradeFocusFiles(run));
   const branchStrategy = createBranchStrategy({ projectId: delivery.projectId, sourceBranch: project?.repository?.defaultBranch, delivery, plan, body });
+  logInfo("code-upgrade.starting", {
+    actor: auth.actor,
+    target: delivery.id,
+    metadata: {
+      projectId: delivery.projectId,
+      connectorId,
+      planId: plan.id,
+      reviewId: review?.id,
+      sourceBranch: branchStrategy.sourceBranch,
+      upgradeBranch: branchStrategy.upgradeBranch,
+      validationCommandCount: validationCommands.length,
+      allowedPaths
+    }
+  });
   const session = await new OpenHandsClient(connector).startCodeUpgrade({
     projectId: delivery.projectId,
     repository: project?.repository ? {
@@ -4754,6 +4842,17 @@ async function startOpenHandsCodeUpgrade(args: {
     message: `用户确认进化方案后，EvoPilot 已创建代码升级任务，升级分支：${branchStrategy.upgradeBranch}。`
   });
   store.appendAudit(audit(auth, "code-upgrade.started", codeUpgrade.id, { deliveryId: delivery.id, connectorId, conversationId: session.conversationId, branchStrategy }));
+  logInfo("code-upgrade.started", {
+    actor: auth.actor,
+    target: codeUpgrade.id,
+    metadata: {
+      projectId: codeUpgrade.projectId,
+      deliveryPlanId: delivery.id,
+      connectorId,
+      conversationId: session.conversationId,
+      status: codeUpgrade.status
+    }
+  });
   return refreshCodeUpgradeRun(store, codeUpgrade.id).then((updated) => updated ?? codeUpgrade);
 }
 
@@ -4883,6 +4982,23 @@ async function refreshCodeUpgradeRun(store: FileStore, codeUpgradeRunId: string)
   };
   store.writeCodeUpgradeRun(updated);
   store.writeCodeUpgradeEvents(run.id, dedupeEvents(events));
+  if (updated.status !== run.status) {
+    logInfo("code-upgrade.status-changed", {
+      target: updated.id,
+      metadata: {
+        projectId: updated.projectId,
+        deliveryPlanId: updated.deliveryPlanId,
+        previousStatus: run.status,
+        status: updated.status,
+        conversationId: updated.openhands.conversationId,
+        changedFileCount: updated.artifacts.changedFiles?.length ?? 0,
+        commitSha: updated.artifacts.commitSha,
+        pullRequestUrl: updated.artifacts.pullRequestUrl,
+        failureReason: updated.failureReason,
+        error: updated.error
+      }
+    });
+  }
   return updated;
 }
 
@@ -6388,6 +6504,17 @@ async function triggerJenkinsDelivery(args: {
     ...(project?.cicd?.parameters ?? {}),
     ...(body.parameters && typeof body.parameters === "object" ? body.parameters : {})
   }, codeUpgrade);
+  logInfo("jenkins.build.triggering", {
+    actor: auth.actor,
+    target: delivery.id,
+    metadata: {
+      projectId: delivery.projectId,
+      connectorId: connector.id,
+      jobName,
+      deliveryPlanId: delivery.id,
+      codeUpgradeRunId: codeUpgrade?.id
+    }
+  });
   const queued = await new JenkinsClient(connector).triggerBuild({ jobName, parameters });
   const now = new Date().toISOString();
   const pipeline = createPipelineRun({
@@ -6406,6 +6533,18 @@ async function triggerJenkinsDelivery(args: {
   run.pipelineRuns = [...(run.pipelineRuns ?? []).filter((item) => item.id !== pipeline.id), pipeline];
   store.writeRun(run);
   store.appendAudit(audit(auth, "jenkins.build.triggered", pipeline.id, { deliveryId: delivery.id, jobName, queueId: queued.queueId }));
+  logInfo("jenkins.build.triggered", {
+    actor: auth.actor,
+    target: pipeline.id,
+    metadata: {
+      projectId: pipeline.projectId,
+      deliveryPlanId: delivery.id,
+      connectorId: connector.id,
+      jobName,
+      queueId: queued.queueId,
+      buildUrl: pipeline.buildUrl
+    }
+  });
   return pipeline;
 }
 
@@ -6549,6 +6688,83 @@ class HttpError extends Error {
 
 function httpError(statusCode: number, code: string, detail?: string): HttpError {
   return new HttpError(statusCode, code, detail);
+}
+
+function logDebug(event: string, record: Omit<LogRecord, "level" | "event"> = {}): void {
+  writeLog({ ...record, level: "debug", event });
+}
+
+function logInfo(event: string, record: Omit<LogRecord, "level" | "event"> = {}): void {
+  writeLog({ ...record, level: "info", event });
+}
+
+function logWarn(event: string, record: Omit<LogRecord, "level" | "event"> = {}): void {
+  writeLog({ ...record, level: "warn", event });
+}
+
+function logError(event: string, error: unknown, record: Omit<LogRecord, "level" | "event" | "error" | "stack"> = {}): void {
+  writeLog({
+    ...record,
+    level: "error",
+    event,
+    error: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined
+  });
+}
+
+function writeLog(record: LogRecord): void {
+  if (!shouldLog(record.level)) return;
+  const normalized: LogRecord = {
+    timestamp: record.timestamp ?? new Date().toISOString(),
+    service: "evopilot",
+    version: "1.0.0",
+    ...record,
+    metadata: record.metadata ? redactLogValue(record.metadata) as Record<string, unknown> : undefined,
+    error: record.error ? redactSensitiveText(record.error) : undefined,
+    stack: includeLogStack() && record.stack ? redactSensitiveText(record.stack) : undefined
+  };
+  const line = JSON.stringify(removeUndefined(normalized));
+  if (record.level === "error") console.error(line);
+  else console.log(line);
+}
+
+function shouldLog(level: LogLevel): boolean {
+  const configured = (process.env.EVOPILOT_LOG_LEVEL ?? "info").toLowerCase();
+  const ranks: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
+  const threshold = ranks[configured as LogLevel] ?? ranks.info;
+  return ranks[level] >= threshold;
+}
+
+function includeLogStack(): boolean {
+  return parseBoolean(process.env.EVOPILOT_LOG_STACK, true);
+}
+
+function redactLogValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(redactLogValue);
+  if (!value || typeof value !== "object") return typeof value === "string" ? redactSensitiveText(value) : value;
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([key, entry]) => {
+    if (/token|password|secret|authorization|apiKey|credential/i.test(key)) return [key, "[REDACTED]"];
+    return [key, redactLogValue(entry)];
+  }));
+}
+
+function removeUndefined<T extends object>(value: T): Partial<T> {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
+}
+
+function requestHeader(request: http.IncomingMessage, name: string): string | undefined {
+  const value = request.headers[name.toLowerCase()];
+  if (Array.isArray(value)) return value[0];
+  return value;
+}
+
+function redactUrlSearch(params: URLSearchParams): Record<string, string> | undefined {
+  const entries = [...params.entries()];
+  if (entries.length === 0) return undefined;
+  return Object.fromEntries(entries.map(([key, value]) => [
+    key,
+    /token|password|secret|authorization|apiKey|credential/i.test(key) ? "[REDACTED]" : value
+  ]));
 }
 
 function writeJson(response: http.ServerResponse, statusCode: number, body: unknown): void {
@@ -6708,10 +6924,27 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   const apiToken = process.env.EVOPILOT_API_TOKEN;
   const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens }).listen(port, host, () => {
     const runtimeMode = process.env.EVOPILOT_RUN_MODE ?? process.env.EVOPILOT_MODE ?? (parseBoolean(process.env.EVOPILOT_DEBUG, false) ? "debug" : "prod");
-    console.log(`EvoPilot 服务已监听 http://${host}:${port}，运行模式：${runtimeMode}`);
+    logInfo("server.started", {
+      metadata: {
+        url: `http://${host}:${port}`,
+        host,
+        port,
+        runtimeMode,
+        dataRoot,
+        dashboardRoot,
+        authConfigured: Boolean(apiToken || tokens?.length)
+      }
+    });
+  });
+  process.on("uncaughtException", (error) => {
+    logError("process.uncaught-exception", error);
+  });
+  process.on("unhandledRejection", (reason) => {
+    logError("process.unhandled-rejection", reason);
   });
   for (const signal of ["SIGINT", "SIGTERM"] as const) {
     process.on(signal, () => {
+      logWarn("server.stopping", { metadata: { signal } });
       server.close(() => process.exit(0));
     });
   }

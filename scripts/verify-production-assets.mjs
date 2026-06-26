@@ -72,6 +72,17 @@ assert.match(deployment, /readinessProbe/);
 assert.match(deployment, /livenessProbe/);
 assert.match(deployment, /persistentVolumeClaim/);
 
+const deploymentDoc = fs.readFileSync("docs/deployment.md", "utf8");
+assert.match(deploymentDoc, /生产日志/);
+assert.match(deploymentDoc, /http\.request\.completed/);
+assert.match(deploymentDoc, /code-upgrade\.status-changed/);
+assert.match(deploymentDoc, /EVOPILOT_LOG_LEVEL/);
+assert.match(deploymentDoc, /Bearer token 做脱敏/);
+
+const envExample = fs.readFileSync(".env.example", "utf8");
+assert.match(envExample, /EVOPILOT_LOG_LEVEL=info/);
+assert.match(envExample, /EVOPILOT_LOG_STACK=true/);
+
 const productionE2e = fs.readFileSync("docs/production-user-e2e.md", "utf8");
 assert.match(productionE2e, /代码升级执行器必须调用真实 LLM/);
 assert.match(productionE2e, /只有代码升级成功后才能触发 CI\/CD/);
