@@ -1,5 +1,30 @@
 # EvoPilot 用户操作手册
 
+## 操作总览
+
+EvoPilot 的日常使用不是“调用一次 agent”，而是把真实 AI Agent 产品接入一个可审计的持续演进流程：
+
+```text
+注册项目
+-> 定义证据策略
+-> 上报运行 / 评测 / 反馈 / CI 证据
+-> 形成机会点
+-> 生成并编辑进化方案
+-> 人工确认
+-> Loop Runtime 推进长任务
+-> 代码升级
+-> CI/CD 交付
+-> 发布证据与 GO / CONDITIONAL-GO / NO-GO 决策
+-> 历史记录、审计与学习
+```
+
+用户需要关注四个问题：
+
+- 证据是否来自真实项目和真实运行边界。
+- 方案是否经过人工确认，且修改范围清楚。
+- 执行是否留下 timeline、artifacts、代码升级和 CI/CD 证据。
+- 最终是否由 release decision 给出可审计结论，而不是只看健康检查或单次 CI 成功。
+
 ## 1. 注册项目
 
 进入 Dashboard 的“接入项目”，点击“注册项目”。
@@ -140,13 +165,40 @@ EvoPilot 生成方案前会读取当前项目注册的 Git 基线代码，并把
 
 当一个目标不能在一次方案生成或一次代码升级中完成时，可以把它作为长任务 Loop 推进。用户不需要理解 executor graph 的内部结构，只需要关注目标、证据、审批和结果。
 
-典型路径：
+适合使用 Loop 的场景：
+
+- 一个机会点需要多轮代码升级、验证和修复。
+- 发布目标需要持续收集运行证据、CI/CD 证据和风险矩阵。
+- 任务来自 Codex、IM、定时任务、运行时信号或 release target，不适合手工一步步推进。
+- 执行过程中可能出现失败、重试、暂停、审批或转人工。
+
+典型操作路径：
 
 1. 通过 Dashboard、API、Codex 或 IM 入口创建目标。
 2. 在 timeline 中查看每一轮执行、证据、失败签名、重试和 watchdog 恢复记录。
 3. 对高风险方案、发布动作或 release action 做人工审批。
 4. 查看 evidence sets、artifacts、代码升级结果和 CI/CD 结果。
 5. 根据最终 `GO` / `CONDITIONAL-GO` / `NO-GO` 决策继续、暂停、修复或发布。
+
+常用 API 入口：
+
+```http
+POST /api/v1/loops
+POST /api/v1/loops/{loopId}/start
+POST /api/v1/loops/{loopId}/resume
+POST /api/v1/loops/{loopId}/approve
+GET /api/v1/loops/{loopId}/timeline
+GET /api/v1/loops/{loopId}/evidence
+GET /api/v1/loops/{loopId}/artifacts
+```
+
+用户判断一个 Loop 是否健康时，应优先看：
+
+- timeline 是否能解释每一轮为什么继续、停止或等待审批。
+- evidence sets 是否来自独立验证，而不是 executor 自报成功。
+- artifacts 是否包含方案、diff、CI 日志、审批记录或发布证据。
+- watchdog 和 retry/stop policy 是否阻断了重复失败或超时任务。
+- release decision 是否明确给出 `GO` / `CONDITIONAL-GO` / `NO-GO`。
 
 Loop Runtime 负责长任务连续性：durable run state、heartbeat lease、watchdog、retry/stop policy、timeline 和 artifacts。EvoPilot 的产品控制面负责证据、决策、治理和发布判断。
 

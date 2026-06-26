@@ -66,6 +66,31 @@ flowchart LR
   Learning --> Evidence
 ```
 
+## End-to-End Product Flow
+
+The operational flow starts with a real AI Agent product, not a synthetic demo. EvoPilot connects evidence, review, execution, validation, and release governance into one auditable path:
+
+```mermaid
+flowchart TD
+  Product["AI Agent Product\nruntime / users / CI-CD"]
+  Register["Register Project\nrepo + profile + delivery boundary"]
+  Signals["Ingest Evidence\nOTLP / SkyWalking / eval / feedback"]
+  Opportunities["Discover Opportunities\nclusters / baselines / scorecards"]
+  Plan["Generate Evolution Plan\ncode-aware Markdown proposal"]
+  Review["Human Review\nedit / approve / reject"]
+  Loop["Loop Runtime\nstate / timeline / retries / watchdog"]
+  Upgrade["Code Upgrade\nbranch / commit / review evidence"]
+  Delivery["CI-CD Delivery\nJenkins / GitLab / artifacts"]
+  Decision["Release Decision\nGO / CONDITIONAL-GO / NO-GO"]
+  Audit["Audit + Learning\nhistory / rules / evidence quality"]
+
+  Product --> Register --> Signals --> Opportunities --> Plan --> Review
+  Review -->|approved| Loop --> Upgrade --> Delivery --> Decision --> Audit
+  Review -->|rejected or blocked| Audit
+  Decision -->|needs more work| Signals
+  Audit --> Signals
+```
+
 ## Quick Start
 
 ```bash
