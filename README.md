@@ -141,6 +141,36 @@ POST /api/v1/im/wecom/webhook
 
 The runtime is the common substrate for continuous product evolution, release readiness loops, Codex commands, and IM adapters. Release and other high-risk actions stay inside the loop, but they are guarded by explicit approval gates.
 
+## Self-Hosted Improvement Loop
+
+EvoPilot can register the current EvoPilot checkout as an EvoPilot-managed target project and create a bounded self-improvement loop:
+
+```bash
+EVOPILOT_API_TOKEN=<admin-token> npm run self-loop
+```
+
+By default this command only performs controlled setup:
+
+- registers `evopilot-self` through `POST /api/v1/projects` with a verified `local-git` repository.
+- ingests a real improvement signal through `POST /api/v1/evidence/events`.
+- creates `evopilot-self-executor-adapter-contract` through `POST /api/v1/loops`.
+- records allowed paths, validation commands, non-goals, and the human approval boundary in loop context.
+
+It does not automatically modify code, merge, tag, push, promote a release, or mutate the running controller process. To start exactly one Loop Runtime iteration after setup, opt in explicitly:
+
+```bash
+EVOPILOT_API_TOKEN=<admin-token> EVOPILOT_SELF_LOOP_START=1 npm run self-loop
+```
+
+Useful overrides:
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `EVOPILOT_BASE_URL` | `http://127.0.0.1:19876` | EvoPilot control-plane URL. |
+| `EVOPILOT_SELF_REPO_ROOT` | current working directory | Target checkout to register. |
+| `EVOPILOT_SELF_PROJECT_ID` | `evopilot-self` | Project id for the self-hosted target. |
+| `EVOPILOT_SELF_LOOP_ID` | `evopilot-self-executor-adapter-contract` | Loop id, useful when starting a fresh candidate loop. |
+
 ## ProofOps Target Loop Mode
 
 EvoPilot includes ProofOps Mode as a target-driven release/maturity loop engine. ProofOps remains the Core contract layer for target presets, evidence matrix vocabulary, non-mock evidence rules, and final report compatibility; EvoPilot owns execution, state, approval, audit, remediation, and release actions.

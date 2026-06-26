@@ -195,6 +195,30 @@ GET /api/v1/loops/{loopId}/artifacts
 
 Loop Runtime 负责长任务连续性：durable run state、heartbeat lease、watchdog、retry/stop policy、timeline 和 artifacts。EvoPilot 的产品控制面负责证据、决策、治理和发布判断。
 
+### 9.1 EvoPilot 自托管改进 Loop
+
+EvoPilot 可以把当前 EvoPilot 仓库作为被治理的目标项目接入自身控制面。这个入口用于形成受控的自举 loop，而不是让运行中的 controller 直接自我修改。
+
+启动控制面后执行：
+
+```bash
+EVOPILOT_API_TOKEN=<admin-token> npm run self-loop
+```
+
+该命令会完成三件事：
+
+- 注册 `evopilot-self` 项目，仓库类型为 `local-git`，并通过现有项目验证。
+- 上报一条关于 `ExecutorAdapter` 合同缺口的真实 evidence event。
+- 创建 `evopilot-self-executor-adapter-contract` loop，并把 `allowedPaths`、`validationCommands`、`nonGoals` 和 `approvalRequired` 写入 loop context。
+
+默认行为不会改代码、不会启动代码升级执行器、不会 merge/tag/push，也不会发布 GA 结论。如果需要只推进一轮 Loop Runtime 迭代用于生成 timeline 和 evidence，可显式开启：
+
+```bash
+EVOPILOT_API_TOKEN=<admin-token> EVOPILOT_SELF_LOOP_START=1 npm run self-loop
+```
+
+操作者应在 loop context 中检查边界，再用 `npm run loop-runtime:check`、`npm run check` 和 `git diff --check` 验证后续实现。
+
 ## 10. 角色权限
 
 | 角色 | 能力 |

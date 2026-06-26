@@ -88,6 +88,18 @@ Loop Runtime implements the continuity and execution substrate of this model. It
 
 The broader product control plane also includes project registration, evidence ingestion, opportunity discovery, review, release governance, and product-native decisions. That distinction matters because EvoPilot is not only a loop scheduler. Its value is deciding whether a real AI Agent product should evolve, continue, stop, route to a human, or release.
 
+## Self-Hosted Improvement Boundary
+
+EvoPilot supports a self-hosted improvement entrypoint through `scripts/evopilot-self-loop.mjs`. The entrypoint treats EvoPilot as a normal target project under the same control plane APIs used for other projects:
+
+```text
+local checkout -> /api/v1/projects -> /api/v1/evidence/events -> /api/v1/loops
+```
+
+The controller and target are intentionally separated even when they point at the same repository. The control plane persists project registration, evidence, loop context, stop policy, retry policy, timeline, and approval state. The target scope is constrained in loop context with allowed paths and validation commands.
+
+This is not uncontrolled self-modification. The default command creates the target project, evidence, and loop only. Starting a runtime iteration requires `EVOPILOT_SELF_LOOP_START=1`, and production-changing work still requires an approved executor contract, independent validation, and human approval gates.
+
 ## Validation
 
 Use the product validation gates that match the behavior being changed:

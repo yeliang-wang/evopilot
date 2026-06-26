@@ -15,6 +15,7 @@
     "server:debug": "EVOPILOT_RUN_MODE=debug node packages/server/dist/index.js",
     "loop-worker": "node scripts/loop-worker.mjs",
     "loop:soak": "node scripts/loop-soak.mjs",
+    "self-loop": "node scripts/evopilot-self-loop.mjs",
     "check": "npm run build && npm test && npm run verify:production-assets && npm run audit:security",
     "test": "npm run test:unit && npm run test:smoke && npm run test:functional && npm run test:e2e",
     "test:unit": "npm run build && node --test tests/unit/*.test.mjs",
