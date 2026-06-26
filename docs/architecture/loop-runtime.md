@@ -8,13 +8,12 @@ Accepted
 
 Loop Engineering requires more than a single agent call. EvoPilot must keep long-running tasks alive across iterations, validate each round independently, persist evidence and artifacts, decide whether to continue or stop, recover from worker interruption, and hand high-risk steps to human approval.
 
-Loop Runtime is the continuity and execution substrate of EvoPilot's continuous evolution control plane. The product model is described in [continuous-evolution-control-plane.md](continuous-evolution-control-plane.md). In that model:
+Loop Runtime is the continuity and execution substrate of EvoPilot's continuous evolution control plane. The product model is described in [continuous-evolution-control-plane.md](continuous-evolution-control-plane.md). It is based on the Loop Engineering layers:
 
-- Evidence Layer supplies runtime, evaluation, feedback, and delivery signals.
-- Decision Layer decides opportunities, risks, release targets, and continuation.
-- Execution Layer performs code upgrades, CI/CD, validation, and release actions.
-- Governance Layer applies RBAC, approval, audit, watchdog, and stop policies.
-- Continuity Layer is implemented by Loop Runtime state, timeline, evidence sets, artifacts, and heartbeat leases.
+- Sandbox: executor boundaries for code upgrade, CI/CD, validators, approval, and release actions.
+- Context: durable loop state, evidence sets, artifacts, and cross-iteration timeline.
+- Harness: API control plane, RBAC, approval, audit, watchdog, heartbeat leases, and retry/stop policy.
+- Loop: repeated continuation decisions with stop, retry, backoff, circuit breaker, remediation, and release verdicts.
 
 ## Decision
 

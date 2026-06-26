@@ -6,37 +6,47 @@ Accepted
 
 ## Purpose
 
-EvoPilot is a continuous evolution control plane for AI Agent products. It does not try to replace agent runtimes, CI/CD systems, observability platforms, or code editors. It connects them into a governed product loop: evidence creates context, decisions define what should change, approvals protect product boundaries, executors perform the work, validation produces release evidence, and release decisions state whether the product can move forward.
+EvoPilot is a continuous evolution control plane for AI Agent products. It does not try to replace agent runtimes, CI/CD systems, observability platforms, or code editors. It connects them into a governed product loop: executors work inside bounded environments, durable context survives across rounds, governance decides what may continue, and release decisions state whether the product can move forward.
 
-This model takes the long-task agent engineering idea and expresses it through EvoPilot's actual product capabilities instead of copying a generic `Sandbox / Context / Harness / Loop` diagram.
+This model is based on the Loop Engineering idea shown as nested layers: `Sandbox -> Context -> Harness -> Loop`. EvoPilot keeps that design intent, but maps it to product evolution capabilities instead of copying the diagram as decoration.
 
-## Product Layers
+## Loop Engineering Mapping
 
-| Layer | Responsibility | EvoPilot ownership |
+| Layer | Design question | EvoPilot ownership |
 |---|---|---|
-| Evidence Layer | Ingest and normalize runtime, evaluation, delivery, cost, security, and user feedback signals. | `/api/v1/evidence/*`, OTLP, SkyWalking, evaluations, feedback, evidence bundles, runtime metrics |
-| Decision Layer | Turn evidence into opportunities, risk judgments, approval requirements, and release conclusions. | evidence clustering, failure attribution, scorecards, SLO/cost/supply-chain rules, release targets, `GO` / `NO-GO` |
-| Execution Layer | Turn approved plans into concrete implementation and delivery actions. | code-upgrader runtime, Loop Runtime executor graphs, Jenkins/GitLab delivery, validators, artifacts |
-| Governance Layer | Enforce permissions, review gates, auditability, stop conditions, and operational recovery. | RBAC, approval APIs, audit log, structured production logs, watchdog, retry/stop policy, release action approval |
-| Continuity Layer | Keep long-running work consistent across rounds, workers, tools, failures, and time windows. | `LoopRun`, `LoopIteration`, timeline, evidence sets, artifacts, heartbeat leases, worker recovery |
+| Sandbox | How are executors isolated, constrained, and validated before they can affect product state? | per-step workspaces, code-upgrader runtime, protected path checks, validation commands, Jenkins/GitLab delivery boundaries |
+| Context | How does a 24h+ task keep progress, evidence, artifacts, and intermediate results across rounds? | `LoopRun`, `LoopIteration`, timeline, evidence sets, artifacts, project profile, evaluation datasets, release evidence |
+| Harness | What control plane applies policy, approval, audit, observability, and recovery? | `/api/v1/loops`, RBAC, approval APIs, audit log, structured logs, watchdog, heartbeat leases, retry/stop policies |
+| Loop | When should the system continue, stop, retry, escalate, split work, or produce a release decision? | trigger rules, resume/cancel/approve APIs, ProofOps target loops, release targets, final `GO` / `CONDITIONAL-GO` / `NO-GO` |
 
-## Control Plane Loop
+## Core Design Questions
+
+The model exists to answer concrete product questions:
+
+| Question | EvoPilot answer |
+|---|---|
+| How is the next round triggered? | runtime evidence, evaluation results, user feedback, schedules, IM/Codex commands, release targets, or target-loop goals |
+| How is each round independently verified? | `LoopEvidenceSet`, validators, CI/CD artifacts, release evidence, and product-native decision criteria |
+| When does work stop or route to a human? | approval gates, stop policy, repeated-failure blocking, timeout watchdog, release-action approval |
+| How are cross-round state and intermediate results retained? | durable loop state, timeline events, artifacts, evidence bundles, project profiles, audit records |
+| How can multiple executors cooperate without hiding risk? | executor graphs, bounded workspaces, code-upgrader evidence, CI/CD boundaries, approval checkpoints |
+| How does 24h+ work remain operable? | heartbeat leases, watchdog recovery, structured JSON logs, retry policy, timeline and artifact inspection |
+
+## Product Control Model
 
 ```mermaid
 flowchart LR
-  Evidence["Evidence Layer\nruntime / eval / feedback / delivery"]
-  Decision["Decision Layer\nopportunity / risk / release target"]
-  Governance["Governance Layer\nRBAC / approval / audit / stop policy"]
-  Execution["Execution Layer\ncode upgrader / CI-CD / validators"]
-  Continuity["Continuity Layer\nloop state / timeline / leases"]
-  Release["Release Decision\nGO / CONDITIONAL-GO / NO-GO"]
-  Learning["Learning\nhistory / policy updates / evidence quality"]
+  subgraph Loop["Loop: continue / stop / retry / approve / release"]
+    subgraph Harness["Harness: control plane / policy / audit / recovery"]
+      subgraph Context["Context: state / evidence / artifacts / timeline"]
+        Sandbox["Sandbox: executors / workspaces / CI-CD / validators"]
+      end
+    end
+  end
 
-  Evidence --> Decision --> Governance --> Execution --> Release --> Learning
-  Continuity -. keeps long tasks alive .-> Decision
-  Continuity -. coordinates .-> Execution
-  Governance -. gates .-> Release
-  Learning --> Evidence
+  Trigger["Triggers\nsignals / evals / target goals / commands"] --> Loop
+  Loop --> Verdict["Verdict\ncontinue / blocked / human approval / GO or NO-GO"]
+  Sandbox --> Context --> Harness --> Loop
 ```
 
 ## Runtime Mapping
@@ -76,7 +86,7 @@ EvoPilot should:
 
 Loop Runtime implements the continuity and execution substrate of this model. It keeps long-running work alive, coordinates executors, records iterations, and produces independent evidence sets.
 
-The broader product control plane also includes Evidence, Decision, Governance, and Release layers. That distinction matters because EvoPilot is not only a loop scheduler. Its value is deciding whether a real AI Agent product should evolve, continue, stop, or release.
+The broader product control plane also includes project registration, evidence ingestion, opportunity discovery, review, release governance, and product-native decisions. That distinction matters because EvoPilot is not only a loop scheduler. Its value is deciding whether a real AI Agent product should evolve, continue, stop, route to a human, or release.
 
 ## Validation
 

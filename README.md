@@ -36,59 +36,36 @@ GET /api/v1/release/decisions
 | Release governance | Product-native release targets, evidence bundles, scenario matrices, risk registers, and release decisions. |
 | ProofOps target loops | Target-driven release/maturity loops that create a target plan, require plan approval, collect evidence, emit a ProofOps-compatible final report, and gate release actions behind approval. |
 
-## Product Model
+## Loop Engineering Product Model
 
-EvoPilot turns real product behavior into governed evolution loops. It continuously collects runtime and delivery evidence, evaluates opportunities and release risk, asks for human approval when product-changing actions are required, drives code upgrades and CI/CD, then records release evidence and auditable `GO` / `NO-GO` decisions.
+EvoPilot applies the Loop Engineering idea to AI Agent product evolution: long-running work must run inside execution boundaries, keep durable context, stay under product governance, and move through an explicit continue / stop / approve loop. The goal is not to expose a generic agent framework, but to make real product evolution recoverable, auditable, and releasable.
 
-The product model is not a copy of a generic agent-loop diagram. EvoPilot applies the long-task agent engineering idea to its current control-plane capabilities:
+The Loop Engineering layered model, `Sandbox -> Context -> Harness -> Loop`, maps to EvoPilot this way:
 
-| Product layer | Role in EvoPilot | Current capabilities |
+| Loop Engineering layer | Product design question | EvoPilot capability |
 |---|---|---|
-| Evidence Layer | Converts real runtime, evaluation, feedback, and delivery signals into traceable product evidence. | runtime events, OTLP traces/logs, SkyWalking, evaluations, user feedback, CI/CD status |
-| Decision Layer | Turns evidence into opportunities, risk judgments, approval requirements, and release decisions. | clustering, failure attribution, scorecards, governance rules, release targets, `GO` / `NO-GO` |
-| Execution Layer | Moves approved opportunities into implementation and delivery work. | code-upgrader runtime, Loop Runtime, Jenkins/GitLab delivery, validators |
-| Governance Layer | Controls who may continue, what must be approved, what is audited, and when work must stop. | RBAC, approval gates, audit records, watchdog, structured production logs, release policies |
-| Continuity Layer | Keeps long-running work alive across rounds, tools, workers, and failures. | durable loop state, timeline, evidence sets, artifacts, heartbeat leases, retry/stop policies |
+| Sandbox | Where can executors safely work, and what boundaries prevent unsafe product changes? | per-step workspaces, code-upgrader runtime, protected paths, Jenkins/GitLab delivery boundaries, production mode checks |
+| Context | What state, evidence, artifacts, and intermediate results survive across rounds? | durable `LoopRun` state, timeline, evidence sets, artifacts, project profile, evaluation datasets, release evidence |
+| Harness | Who controls the run, what must be approved, and how are failures recovered? | API control plane, RBAC, approval gates, audit records, watchdog, retry/stop policy, structured logs |
+| Loop | When does the task continue, stop, retry, route to humans, or produce a release decision? | trigger rules, resume/cancel/approve APIs, release targets, ProofOps target loops, `GO` / `CONDITIONAL-GO` / `NO-GO` decisions |
 
-Mermaid 图建议 README 可以放简化版；the full architecture model lives in [docs/architecture/continuous-evolution-control-plane.md](docs/architecture/continuous-evolution-control-plane.md).
+This is the design center for EvoPilot V1.0: let Agent-product evolution run for long tasks without losing context, bypassing governance, or mistaking executor progress for product readiness.
 
 ```mermaid
 flowchart LR
-  Evidence["Evidence\nruntime / eval / feedback / CI"]
-  Decision["Decision\nopportunity / risk / release"]
-  Approval["Approval\nhuman gate / policy"]
-  Execution["Execution\ncode upgrade / CI/CD / validators"]
-  Validation["Validation\nevidence sets / artifacts"]
-  Release["Release Decision\nGO / CONDITIONAL-GO / NO-GO"]
-  Learning["Learning\nhistory / audit / rule updates"]
+  subgraph Loop["Loop: continue / stop / approve / release"]
+    subgraph Harness["Harness: API control plane / RBAC / audit / watchdog"]
+      subgraph Context["Context: durable state / timeline / evidence / artifacts"]
+        Sandbox["Sandbox: code upgrader / CI-CD / validators / protected workspaces"]
+      end
+    end
+  end
 
-  Evidence --> Decision --> Approval --> Execution --> Validation --> Release --> Learning
-  Learning --> Evidence
-```
-
-## End-to-End Product Flow
-
-The operational flow starts with a real AI Agent product, not a synthetic demo. EvoPilot connects evidence, review, execution, validation, and release governance into one auditable path:
-
-```mermaid
-flowchart TD
-  Product["AI Agent Product\nruntime / users / CI-CD"]
-  Register["Register Project\nrepo + profile + delivery boundary"]
-  Signals["Ingest Evidence\nOTLP / SkyWalking / eval / feedback"]
-  Opportunities["Discover Opportunities\nclusters / baselines / scorecards"]
-  Plan["Generate Evolution Plan\ncode-aware Markdown proposal"]
-  Review["Human Review\nedit / approve / reject"]
-  Loop["Loop Runtime\nstate / timeline / retries / watchdog"]
-  Upgrade["Code Upgrade\nbranch / commit / review evidence"]
-  Delivery["CI-CD Delivery\nJenkins / GitLab / artifacts"]
-  Decision["Release Decision\nGO / CONDITIONAL-GO / NO-GO"]
-  Audit["Audit + Learning\nhistory / rules / evidence quality"]
-
-  Product --> Register --> Signals --> Opportunities --> Plan --> Review
-  Review -->|approved| Loop --> Upgrade --> Delivery --> Decision --> Audit
-  Review -->|rejected or blocked| Audit
-  Decision -->|needs more work| Signals
-  Audit --> Signals
+  Triggers["Triggers\nruntime signals / evals / release targets / IM / Codex"] --> Loop
+  Sandbox --> Context
+  Context --> Harness
+  Harness --> Loop
+  Loop --> Decision["Product decision\nGO / CONDITIONAL-GO / NO-GO / route to human"]
 ```
 
 ## Quick Start
