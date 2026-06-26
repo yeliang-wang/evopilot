@@ -136,7 +136,21 @@ EvoPilot 生成方案前会读取当前项目注册的 Git 基线代码，并把
 - 发布报告
 - 审计记录
 
-## 9. 角色权限
+## 9. 使用长任务 Loop
+
+当一个目标不能在一次方案生成或一次代码升级中完成时，可以把它作为长任务 Loop 推进。用户不需要理解 executor graph 的内部结构，只需要关注目标、证据、审批和结果。
+
+典型路径：
+
+1. 通过 Dashboard、API、Codex 或 IM 入口创建目标。
+2. 在 timeline 中查看每一轮执行、证据、失败签名、重试和 watchdog 恢复记录。
+3. 对高风险方案、发布动作或 release action 做人工审批。
+4. 查看 evidence sets、artifacts、代码升级结果和 CI/CD 结果。
+5. 根据最终 `GO` / `CONDITIONAL-GO` / `NO-GO` 决策继续、暂停、修复或发布。
+
+Loop Runtime 负责长任务连续性：durable run state、heartbeat lease、watchdog、retry/stop policy、timeline 和 artifacts。EvoPilot 的产品控制面负责证据、决策、治理和发布判断。
+
+## 10. 角色权限
 
 | 角色 | 能力 |
 |---|---|

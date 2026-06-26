@@ -26,6 +26,7 @@ GET /api/v1/release/decisions
 
 | Capability | What EvoPilot provides |
 |---|---|
+| Continuous evolution control plane | Product-facing layers for evidence, decision, execution, governance, and continuity. |
 | Loop Engineering | Durable Loop Runtime, executor graphs, independent evidence sets, heartbeat leases, watchdog recovery, per-step workspaces, and Loop Dashboard timeline. |
 | Evidence ingestion | Runtime events, OpenTelemetry traces/logs, SkyWalking data, evaluation results, and user feedback. |
 | Opportunity discovery | Evidence clustering, failure attribution, dynamic baselines, scorecards, SLOs, and governance rules. |
@@ -34,6 +35,36 @@ GET /api/v1/release/decisions
 | CI/CD delivery | Jenkins-backed delivery after successful code upgrades, with pipeline status and artifacts retained. |
 | Release governance | Product-native release targets, evidence bundles, scenario matrices, risk registers, and release decisions. |
 | ProofOps target loops | Target-driven release/maturity loops that create a target plan, require plan approval, collect evidence, emit a ProofOps-compatible final report, and gate release actions behind approval. |
+
+## Product Model
+
+EvoPilot turns real product behavior into governed evolution loops. It continuously collects runtime and delivery evidence, evaluates opportunities and release risk, asks for human approval when product-changing actions are required, drives code upgrades and CI/CD, then records release evidence and auditable `GO` / `NO-GO` decisions.
+
+The product model is not a copy of a generic agent-loop diagram. EvoPilot applies the long-task agent engineering idea to its current control-plane capabilities:
+
+| Product layer | Role in EvoPilot | Current capabilities |
+|---|---|---|
+| Evidence Layer | Converts real runtime, evaluation, feedback, and delivery signals into traceable product evidence. | runtime events, OTLP traces/logs, SkyWalking, evaluations, user feedback, CI/CD status |
+| Decision Layer | Turns evidence into opportunities, risk judgments, approval requirements, and release decisions. | clustering, failure attribution, scorecards, governance rules, release targets, `GO` / `NO-GO` |
+| Execution Layer | Moves approved opportunities into implementation and delivery work. | code-upgrader runtime, Loop Runtime, Jenkins/GitLab delivery, validators |
+| Governance Layer | Controls who may continue, what must be approved, what is audited, and when work must stop. | RBAC, approval gates, audit records, watchdog, structured production logs, release policies |
+| Continuity Layer | Keeps long-running work alive across rounds, tools, workers, and failures. | durable loop state, timeline, evidence sets, artifacts, heartbeat leases, retry/stop policies |
+
+Mermaid 图建议 README 可以放简化版；the full architecture model lives in [docs/architecture/continuous-evolution-control-plane.md](docs/architecture/continuous-evolution-control-plane.md).
+
+```mermaid
+flowchart LR
+  Evidence["Evidence\nruntime / eval / feedback / CI"]
+  Decision["Decision\nopportunity / risk / release"]
+  Approval["Approval\nhuman gate / policy"]
+  Execution["Execution\ncode upgrade / CI/CD / validators"]
+  Validation["Validation\nevidence sets / artifacts"]
+  Release["Release Decision\nGO / CONDITIONAL-GO / NO-GO"]
+  Learning["Learning\nhistory / audit / rule updates"]
+
+  Evidence --> Decision --> Approval --> Execution --> Validation --> Release --> Learning
+  Learning --> Evidence
+```
 
 ## Quick Start
 
@@ -81,7 +112,7 @@ The latest decision can return `GO`, `CONDITIONAL-GO`, or `NO-GO`, with per-crit
 
 ## Loop Runtime
 
-EvoPilot now has a first-class Loop Runtime for Loop Engineering: long-running agent-product tasks can be triggered from API, Codex, IM, schedules, runtime signals, release targets, or evolution batches, then advanced through a durable run state, executor graph, independent evidence sets, stop/retry policy, heartbeat leases, watchdog recovery, human approval, and timeline audit.
+EvoPilot now has a first-class Loop Runtime for Loop Engineering. It is the continuity and execution substrate of the continuous evolution control plane: long-running agent-product tasks can be triggered from API, Codex, IM, schedules, runtime signals, release targets, or evolution batches, then advanced through durable run state, executor graphs, independent evidence sets, stop/retry policy, heartbeat leases, watchdog recovery, human approval, and timeline audit.
 
 Run the integrated gate:
 
@@ -393,6 +424,8 @@ tests/                                  单元、烟测、功能和 E2E 测试
 - [用户操作手册](docs/user-guide.md)
 - [API 文档](docs/api.md)
 - [OpenAPI 描述](docs/openapi.json)
+- [Continuous Evolution Control Plane](docs/architecture/continuous-evolution-control-plane.md)
+- [Loop Runtime 架构](docs/architecture/loop-runtime.md)
 - [进化证据接入手册](docs/evidence-ingestion.md)
 - [部署说明](docs/deployment.md)
 - [生产用户 E2E 场景](docs/production-user-e2e.md)

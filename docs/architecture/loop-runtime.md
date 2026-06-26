@@ -8,12 +8,13 @@ Accepted
 
 Loop Engineering requires more than a single agent call. EvoPilot must keep long-running tasks alive across iterations, validate each round independently, persist evidence and artifacts, decide whether to continue or stop, recover from worker interruption, and hand high-risk steps to human approval.
 
-The target product shape is:
+Loop Runtime is the continuity and execution substrate of EvoPilot's continuous evolution control plane. The product model is described in [continuous-evolution-control-plane.md](continuous-evolution-control-plane.md). In that model:
 
-- Sandbox: executor boundaries for LLM, code upgrade, CI, validation, approval, and release action.
-- Context: durable loop state, artifacts, evidence, and cross-iteration timeline.
-- Harness: API control plane, policies, approval, audit, and watchdog.
-- Loop: repeated decision cycle with stop, retry, backoff, circuit breaker, and remediation decisions.
+- Evidence Layer supplies runtime, evaluation, feedback, and delivery signals.
+- Decision Layer decides opportunities, risks, release targets, and continuation.
+- Execution Layer performs code upgrades, CI/CD, validation, and release actions.
+- Governance Layer applies RBAC, approval, audit, watchdog, and stop policies.
+- Continuity Layer is implemented by Loop Runtime state, timeline, evidence sets, artifacts, and heartbeat leases.
 
 ## Decision
 
@@ -33,6 +34,8 @@ The runtime introduces:
 - Feishu and WeCom webhook adapters that create `LoopRun` entries through the same control plane.
 
 Existing release, evolution, conversation, and target-loop entry points can remain product-specific surfaces, but the common execution substrate is `/api/v1/loops`.
+
+Loop Runtime does not own the whole product decision. Evidence ingestion, opportunity discovery, governance policy, and release decision APIs remain product-control-plane concerns. Runtime loops coordinate executors and preserve long-task continuity so those product decisions can be carried through safely.
 
 ## Alternatives
 
