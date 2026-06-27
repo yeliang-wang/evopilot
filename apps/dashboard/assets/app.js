@@ -4,6 +4,8 @@ const requestedPage = new URLSearchParams(window.location.search).get("page");
 const state = {
   active: navItems.includes(requestedPage) ? requestedPage : "首页",
   apiStatus: "示例数据",
+  apiToken: window.localStorage.getItem("evopilot.apiToken") ?? "",
+  authNotice: "",
   operationNotice: "",
   projectRegistration: {
     message: "",
@@ -205,6 +207,8 @@ const state = {
   ],
   codeUpgrades: [],
   loops: [],
+  loopStore: undefined,
+  loopTraces: [],
   pipelines: [
     {
       opportunityId: "opp-domainforge-latency",
@@ -1003,23 +1007,30 @@ function renderHistory() {
 
 function renderLoops() {
   const loops = state.loops;
+  const store = state.loopStore;
   return `
     <section class="card">
       <div class="section-title">
         <div>
           <h2>Loop Runtime</h2>
-          <p>长任务的跨轮状态、executor graph、独立证据、worker lease、审批与 watchdog 决策。</p>
+          <p>长任务的跨轮状态、executor graph、独立证据、worker lease、replay、sandbox、trace 与 watchdog 决策。</p>
         </div>
         <span class="pill ${loops.some((loop) => loop.status === "RUNNING") ? "good" : "warn"}">${loops.length} 个 Loop</span>
       </div>
-      ${loops.length === 0 ? `<div class="empty">暂无 LoopRun。命令入口、IM、定时任务或 API 创建后会显示在这里。</div>` : table(["Loop", "状态", "轮次", "执行图", "Worker", "证据", "最近事件"], loops.map((loop) => [
+      <div class="dashboard-stats">
+        <div><span>Store</span><strong>${store?.backend ?? "file"}</strong><small>${store?.lockProvider ?? "file-lease"}</small></div>
+        <div><span>恢复语义</span><strong>${store?.recovery ?? "idempotent-replay"}</strong><small>幂等恢复</small></div>
+        <div><span>运行中</span><strong>${loops.filter((loop) => loop.status === "RUNNING").length}</strong><small>含 worker lease</small></div>
+        <div><span>失败签名</span><strong>${state.loopTraces.reduce((sum, trace) => sum + (trace.failureSignatures?.length ?? 0), 0)}</strong><small>trace 聚合</small></div>
+      </div>
+      ${loops.length === 0 ? `<div class="empty">暂无 LoopRun。生产模式请先输入 API Token；命令入口、IM、定时任务或 API 创建后会显示在这里。</div>` : table(["Loop", "状态", "轮次", "执行图", "Sandbox", "Worker", "Trace"], loops.map((loop) => [
         `<strong>${loop.objective}</strong><span class="subtext">${loop.id}</span>`,
         statusPill(loop.status),
         `${loop.currentIteration}/${loop.stopPolicy?.maxIterations ?? "-"}`,
-        loop.executorGraphId,
+        `${loop.executorGraphId}<span class="subtext">${loop.coordination?.mode ?? "serial"}</span>`,
+        `${loop.sandbox?.runtime ?? "host"}<span class="subtext">${loop.sandbox?.network ?? "restricted"} / ${loop.sandbox?.credentialScope ?? "loop"}</span>`,
         loop.workerLease ? `${loop.workerLease.workerId}<span class="subtext">到期 ${formatDate(loop.workerLease.expiresAt)}</span>` : "未持有",
-        `${loop.evidenceSets?.length ?? 0} 组 / ${loop.artifacts?.length ?? 0} 个产物`,
-        `${loop.timeline?.at(-1)?.message ?? "等待启动"}<span class="subtext">${formatDate(loop.updatedAt)}</span>`
+        `${loop.trace?.executorStepCount ?? 0} steps / ${loop.trace?.failedStepCount ?? 0} failed<span class="subtext">${loop.timeline?.at(-1)?.message ?? "等待启动"}</span>`
       ]))}
     </section>
     ${loops.slice(0, 3).map(renderLoopDetail).join("")}
@@ -1036,6 +1047,12 @@ function renderLoopDetail(loop) {
         </div>
         <span class="pill">${loop.source}</span>
       </div>
+      <div class="dashboard-stats">
+        <div><span>Store</span><strong>${loop.store?.backend ?? "file"}</strong><small>${loop.store?.lockProvider ?? "file-lease"}</small></div>
+        <div><span>Sandbox</span><strong>${loop.sandbox?.runtime ?? "host"}</strong><small>${loop.sandbox?.network ?? "restricted"} / ${loop.sandbox?.credentialScope ?? "loop"}</small></div>
+        <div><span>Coordination</span><strong>${loop.coordination?.mode ?? "serial"}</strong><small>${loop.coordination?.nodes?.length ?? 0} executors</small></div>
+        <div><span>Cost</span><strong>$${Number(loop.trace?.cost?.estimatedUsd ?? 0).toFixed(4)}</strong><small>${loop.trace?.cost?.totalTokens ?? 0} tokens</small></div>
+      </div>
       <div class="loop-columns">
         <div>
           <h3>Iterations</h3>
@@ -1044,23 +1061,38 @@ function renderLoopDetail(loop) {
               <div class="timeline-item">
                 <span>${iteration.decision}</span>
                 <strong>第 ${iteration.index} 轮</strong>
-                <small>${iteration.rationale}</small>
+                <small>${iteration.rationale}${iteration.replayOfIterationId ? ` / replay ${iteration.replayOfIterationId}` : ""}</small>
               </div>
             `).join("") || `<div class="empty">等待 worker 启动。</div>`}
           </div>
         </div>
         <div>
-          <h3>Timeline</h3>
+          <h3>Trace</h3>
           <div class="timeline">
-            ${(loop.timeline ?? []).slice(-6).map((event) => `
+            ${(loop.trace?.failureSignatures ?? []).map((failure) => `
               <div class="timeline-item">
-                <span>${event.type}</span>
-                <strong>${event.message}</strong>
-                <small>${formatDate(event.timestamp)}</small>
+                <span>${failure.count}</span>
+                <strong>${failure.signature}</strong>
+                <small>失败签名</small>
               </div>
-            `).join("")}
+            `).join("") || `
+              <div class="timeline-item">
+                <span>OK</span>
+                <strong>${loop.trace?.executorStepCount ?? 0} executor steps</strong>
+                <small>worker lease ${loop.workerLease ? "active" : "none"} / watchdog age ${loop.trace?.watchdog?.ageSeconds ?? 0}s</small>
+              </div>
+            `}
           </div>
         </div>
+      </div>
+      <div class="timeline">
+        ${(loop.timeline ?? []).slice(-6).map((event) => `
+          <div class="timeline-item">
+            <span>${event.type}</span>
+            <strong>${event.message}</strong>
+            <small>${formatDate(event.timestamp)}</small>
+          </div>
+        `).join("")}
       </div>
     </section>
   `;
@@ -1249,13 +1281,52 @@ function translateImpactPill(impact) {
 function render() {
   title.textContent = state.active;
   renderNav();
-  content.innerHTML = renderPage(state.active);
+  content.innerHTML = `${renderAuthBar()}${renderPage(state.active)}`;
+  bindAuthBar();
   bindFlowHeader();
   bindPageLinks();
   bindProjectRegistration();
   bindEvaluationDatasets();
   bindOpportunityActions();
   bindHistoryActions();
+}
+
+function renderAuthBar() {
+  return `
+    <section class="auth-bar">
+      <div>
+        <strong>生产控制面</strong>
+        <span>${state.apiToken ? "已配置 API Token，Dashboard 使用真实 EvoPilot API。" : "生产模式需要 API Token 才能读取真实控制面数据。"}</span>
+        ${state.authNotice ? `<small>${state.authNotice}</small>` : ""}
+      </div>
+      <form id="api-token-form">
+        <input name="apiToken" type="password" placeholder="EvoPilot API Token" value="${escapeHtml(state.apiToken)}" autocomplete="off" />
+        <button type="submit">${state.apiToken ? "更新" : "连接"}</button>
+        ${state.apiToken ? `<button type="button" data-action="clear-api-token">清除</button>` : ""}
+      </form>
+    </section>
+  `;
+}
+
+function bindAuthBar() {
+  const form = content.querySelector("#api-token-form");
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const token = String(new FormData(form).get("apiToken") ?? "").trim();
+    state.apiToken = token;
+    if (token) window.localStorage.setItem("evopilot.apiToken", token);
+    else window.localStorage.removeItem("evopilot.apiToken");
+    state.authNotice = token ? "API Token 已保存到本机浏览器，正在刷新真实数据。" : "API Token 已清空。";
+    await refreshData();
+    render();
+  });
+  content.querySelector('[data-action="clear-api-token"]')?.addEventListener("click", async () => {
+    state.apiToken = "";
+    window.localStorage.removeItem("evopilot.apiToken");
+    state.authNotice = "API Token 已清空。";
+    await refreshData();
+    render();
+  });
 }
 
 function bindPageLinks() {
@@ -1564,7 +1635,7 @@ async function confirmOpportunity(id, options = {}) {
 
 async function loadSummary() {
   try {
-    const response = await fetch("/api/v1/summary");
+    const response = await apiFetch("/api/v1/summary");
     if (!response.ok) throw new Error(`汇总接口状态 ${response.status}`);
     const { data } = await response.json();
     state.apiStatus = "实时数据";
@@ -1671,7 +1742,7 @@ function extractEvidenceIp(event) {
 
 async function loadProjects() {
   try {
-    const response = await fetch("/api/v1/projects");
+    const response = await apiFetch("/api/v1/projects");
     if (!response.ok) throw new Error(`项目接口状态 ${response.status}`);
     const { data } = await response.json();
     if (Array.isArray(data) && data.length > 0) {
@@ -1701,7 +1772,7 @@ async function loadProjects() {
 
 async function loadServiceScorecards() {
   try {
-    const response = await fetch("/api/v1/service-scorecards");
+    const response = await apiFetch("/api/v1/service-scorecards");
     if (!response.ok) throw new Error(`项目成熟度接口状态 ${response.status}`);
     const { data } = await response.json();
     if (Array.isArray(data)) applyServiceScorecards(data);
@@ -1711,7 +1782,7 @@ async function loadServiceScorecards() {
 }
 
 async function postJson(url, body) {
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body)
@@ -1719,6 +1790,16 @@ async function postJson(url, body) {
   const text = await response.text();
   if (!response.ok) throw new Error(text || `HTTP ${response.status}`);
   return text ? JSON.parse(text) : {};
+}
+
+function apiFetch(url, options = {}) {
+  return fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers ?? {}),
+      ...(state.apiToken ? { authorization: `Bearer ${state.apiToken}` } : {})
+    }
+  });
 }
 
 function toIsoDateTime(value) {
@@ -1729,7 +1810,7 @@ function toIsoDateTime(value) {
 
 async function loadPipelines() {
   try {
-    const response = await fetch("/api/v1/pipelines");
+    const response = await apiFetch("/api/v1/pipelines");
     if (!response.ok) throw new Error(`流水线接口状态 ${response.status}`);
     const { data } = await response.json();
     if (Array.isArray(data) && data.length > 0) {
@@ -1745,7 +1826,7 @@ async function loadPipelines() {
 
 async function loadCodeUpgrades() {
   try {
-    const response = await fetch("/api/v1/code-upgrade-runs");
+    const response = await apiFetch("/api/v1/code-upgrade-runs");
     if (!response.ok) throw new Error(`代码升级接口状态 ${response.status}`);
     const { data } = await response.json();
     if (Array.isArray(data) && data.length > 0) {
@@ -1761,7 +1842,7 @@ async function loadCodeUpgrades() {
 
 async function loadCodeUpgradeEvents(id) {
   try {
-    const response = await fetch(`/api/v1/code-upgrade-runs/${encodeURIComponent(id)}/events`);
+    const response = await apiFetch(`/api/v1/code-upgrade-runs/${encodeURIComponent(id)}/events`);
     if (!response.ok) throw new Error(`代码升级事件接口状态 ${response.status}`);
     const { data } = await response.json();
     return Array.isArray(data) ? data : [];
@@ -1772,18 +1853,30 @@ async function loadCodeUpgradeEvents(id) {
 
 async function loadLoops() {
   try {
-    const response = await fetch("/api/v1/loops");
+    const storeResponse = await apiFetch("/api/v1/loop-store");
+    if (storeResponse.ok) {
+      const { data: storeData } = await storeResponse.json();
+      state.loopStore = storeData;
+    }
+    const traceResponse = await apiFetch("/api/v1/loop-observability");
+    if (traceResponse.ok) {
+      const { data: traceData } = await traceResponse.json();
+      state.loopTraces = Array.isArray(traceData) ? traceData : [];
+    }
+    const response = await apiFetch("/api/v1/loops");
     if (!response.ok) throw new Error(`Loop 接口状态 ${response.status}`);
     const { data } = await response.json();
     if (Array.isArray(data)) state.loops = data;
-  } catch {
+  } catch (error) {
     state.loops = [];
+    state.loopTraces = [];
+    state.authNotice = `Loop 数据读取失败：${error.message}`;
   }
 }
 
 async function loadEvaluationDatasets() {
   try {
-    const response = await fetch("/api/v1/evaluation-datasets");
+    const response = await apiFetch("/api/v1/evaluation-datasets");
     if (!response.ok) throw new Error(`评测集接口状态 ${response.status}`);
     const { data } = await response.json();
     if (Array.isArray(data) && data.length > 0) {
@@ -1798,7 +1891,7 @@ async function loadEvaluationDatasets() {
 
 async function loadRules() {
   try {
-    const response = await fetch("/api/v1/rules");
+    const response = await apiFetch("/api/v1/rules");
     if (!response.ok) throw new Error(`规则接口状态 ${response.status}`);
     const { data } = await response.json();
     if (Array.isArray(data) && data.length > 0) {

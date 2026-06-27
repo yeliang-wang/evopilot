@@ -27,7 +27,7 @@ GET /api/v1/release/decisions
 | Capability | What EvoPilot provides |
 |---|---|
 | Continuous evolution control plane | Product-facing layers for evidence, decision, execution, governance, and continuity. |
-| Loop Engineering | Durable Loop Runtime, executor graphs, independent evidence sets, heartbeat leases, watchdog recovery, per-step workspaces, and Loop Dashboard timeline. |
+| Loop Engineering | Durable Loop Runtime, executor graphs, ExecutorAdapter plugins, replay with human context edits, sandbox policies, worker leases, watchdog recovery, loop traces, and Dashboard timeline. |
 | Evidence ingestion | Runtime events, OpenTelemetry traces/logs, SkyWalking data, evaluation results, and user feedback. |
 | Opportunity discovery | Evidence clustering, failure attribution, dynamic baselines, scorecards, SLOs, and governance rules. |
 | Human approval | Markdown evolution proposals that users can review and edit before execution. |
@@ -44,9 +44,9 @@ The Loop Engineering layered model, `Sandbox -> Context -> Harness -> Loop`, map
 
 | Loop Engineering layer | Product design question | EvoPilot capability |
 |---|---|---|
-| Sandbox | Where can executors safely work, and what boundaries prevent unsafe product changes? | per-step workspaces, code-upgrader runtime, protected paths, Jenkins/GitLab delivery boundaries, production mode checks |
-| Context | What state, evidence, artifacts, and intermediate results survive across rounds? | durable `LoopRun` state, timeline, evidence sets, artifacts, project profile, evaluation datasets, release evidence |
-| Harness | Who controls the run, what must be approved, and how are failures recovered? | API control plane, RBAC, approval gates, audit records, watchdog, retry/stop policy, structured logs |
+| Sandbox | Where can executors safely work, and what boundaries prevent unsafe product changes? | host/Docker/K8s sandbox policy, credential scope, network mode, allowed/denied paths, per-step workspaces, code-upgrader runtime, protected paths, Jenkins/GitLab delivery boundaries, production mode checks |
+| Context | What state, evidence, artifacts, and intermediate results survive across rounds? | durable `LoopRun` state, file/SQLite/Postgres store contract, replay context patch, timeline, evidence sets, artifacts, project profile, evaluation datasets, release evidence |
+| Harness | Who controls the run, what must be approved, and how are failures recovered? | API control plane, RBAC, approval gates, audit records, worker lease locks, idempotent recovery, watchdog, retry/stop policy, structured logs |
 | Loop | When does the task continue, stop, retry, route to humans, or produce a release decision? | trigger rules, resume/cancel/approve APIs, release targets, ProofOps target loops, `GO` / `CONDITIONAL-GO` / `NO-GO` decisions |
 
 This is the design center for EvoPilot V1.0: let Agent-product evolution run for long tasks without losing context, bypassing governance, or mistaking executor progress for product readiness.
@@ -130,16 +130,20 @@ POST /api/v1/executor-graphs
 POST /api/v1/loops
 POST /api/v1/loops/{loopId}/start
 POST /api/v1/loops/{loopId}/resume
+POST /api/v1/loops/{loopId}/replay
 POST /api/v1/loops/{loopId}/approve
 GET /api/v1/loops/{loopId}/timeline
 GET /api/v1/loops/{loopId}/evidence
+GET /api/v1/loops/{loopId}/trace
+GET /api/v1/loop-store
+GET /api/v1/loop-observability
 POST /api/v1/loop-workers/heartbeat
 POST /api/v1/loops/watchdog
 POST /api/v1/im/feishu/webhook
 POST /api/v1/im/wecom/webhook
 ```
 
-The runtime is the common substrate for continuous product evolution, release readiness loops, Codex commands, and IM adapters. Release and other high-risk actions stay inside the loop, but they are guarded by explicit approval gates.
+The runtime is the common substrate for continuous product evolution, release readiness loops, Codex commands, and IM adapters. Release and other high-risk actions stay inside the loop, but they are guarded by explicit approval gates. The same substrate is used when EvoPilot manages `evopilot-self`: target-loop work is tracked in EvoPilot, code-upgrader/Codex acts as an executor, and GitHub/ECS delivery evidence is written back to the loop instead of living only in an external terminal transcript.
 
 ## Self-Hosted Improvement Loop
 

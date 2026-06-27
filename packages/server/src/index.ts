@@ -651,6 +651,9 @@ type LoopRunStatus = "PENDING" | "RUNNING" | "WAITING_APPROVAL" | "BLOCKED" | "S
 type LoopTriggerSource = "api" | "im" | "schedule" | "runtime-signal" | "release-target" | "evolution-batch";
 type LoopDecision = "CONTINUE" | "REPAIR" | "BLOCK" | "WAIT_APPROVAL" | "SUCCEED" | "FAIL";
 type ExecutorNodeType = "llm" | "code-upgrader" | "ci" | "validator" | "approval" | "release-action";
+type LoopStoreBackendType = "file" | "sqlite" | "postgres";
+type LoopExecutorMode = "serial" | "parallel";
+type LoopSandboxRuntimeType = "host" | "docker" | "k8s";
 
 interface LoopStopPolicy {
   maxIterations: number;
@@ -683,6 +686,7 @@ interface ExecutorGraph {
   name: string;
   nodes: ExecutorNode[];
   edges: ExecutorEdge[];
+  mode: LoopExecutorMode;
   createdAt: string;
   updatedAt: string;
 }
@@ -700,6 +704,60 @@ interface ExecutorStepResult {
   failureSignature?: string;
 }
 
+interface LoopSandboxPolicy {
+  runtime: LoopSandboxRuntimeType;
+  image?: string;
+  namespace?: string;
+  credentialScope: "none" | "loop" | "project";
+  network: "disabled" | "restricted" | "enabled";
+  allowedPaths: string[];
+  deniedPaths: string[];
+}
+
+interface ExecutorCoordinationPlan {
+  mode: LoopExecutorMode;
+  sharedContextKeys: string[];
+  nodes: Array<{
+    nodeId: string;
+    type: ExecutorNodeType;
+    adapterId?: string;
+    inputSchema: Record<string, unknown>;
+    outputSchema: Record<string, unknown>;
+    dependsOn: string[];
+  }>;
+}
+
+interface LoopStoreRuntime {
+  backend: LoopStoreBackendType;
+  dsn?: string;
+  durable: boolean;
+  lockProvider: "file-lease" | "sqlite-transaction" | "postgres-advisory-lock";
+  recovery: "idempotent-replay";
+}
+
+interface LoopTraceSummary {
+  id: string;
+  loopId: string;
+  status: LoopRunStatus;
+  currentIteration: number;
+  executorStepCount: number;
+  failedStepCount: number;
+  workerLease?: LoopWorkerLease;
+  watchdog: {
+    expiredLease: boolean;
+    ageSeconds: number;
+  };
+  cost: {
+    estimatedUsd: number;
+    totalTokens: number;
+  };
+  failureSignatures: Array<{
+    signature: string;
+    count: number;
+  }>;
+  updatedAt: string;
+}
+
 interface ExecutorAdapterExecutionInput {
   node: ExecutorNode;
   loop: LoopRun;
@@ -709,6 +767,8 @@ interface ExecutorAdapterExecutionInput {
   forceDecision?: LoopDecision;
   workspaceRoot: string;
   nodeWorkspace: string;
+  coordination: ExecutorCoordinationPlan;
+  sandbox: LoopSandboxPolicy;
   now: string;
 }
 
@@ -748,7 +808,7 @@ interface LoopArtifact {
 
 interface LoopTimelineEvent {
   id: string;
-  type: "CREATED" | "STARTED" | "ITERATION" | "EVIDENCE" | "DECISION" | "APPROVAL" | "HEARTBEAT" | "LEASE" | "WATCHDOG" | "CANCELLED";
+  type: "CREATED" | "STARTED" | "ITERATION" | "EVIDENCE" | "DECISION" | "APPROVAL" | "HEARTBEAT" | "LEASE" | "WATCHDOG" | "REPLAY" | "CANCELLED";
   message: string;
   timestamp: string;
   metadata?: Record<string, unknown>;
@@ -771,6 +831,9 @@ interface LoopIteration {
   evidenceSetId?: string;
   decision: LoopDecision;
   rationale: string;
+  replayOfIterationId?: string;
+  contextPatch?: Record<string, unknown>;
+  traceId: string;
 }
 
 interface LoopRun {
@@ -782,9 +845,14 @@ interface LoopRun {
   status: LoopRunStatus;
   currentIteration: number;
   executorGraphId: string;
+  controlPlaneUrl?: string;
   stopPolicy: LoopStopPolicy;
   retryPolicy: LoopRetryPolicy;
   context: Record<string, unknown>;
+  store: LoopStoreRuntime;
+  sandbox: LoopSandboxPolicy;
+  coordination: ExecutorCoordinationPlan;
+  trace: LoopTraceSummary;
   iterations: LoopIteration[];
   evidenceSets: LoopEvidenceSet[];
   artifacts: LoopArtifact[];
@@ -1184,6 +1252,14 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         store.appendAudit(audit(auth, "executor-graph.upserted", graph.id, { nodeCount: graph.nodes.length, edgeCount: graph.edges.length }));
         return writeJson(response, 201, envelope(graph));
       }
+      if (request.method === "GET" && url.pathname === "/api/v1/loop-store") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.loopStoreRuntime()));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/loop-observability") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listLoopTraces().slice(-50).reverse()));
+      }
       const executorGraphMatch = url.pathname.match(/^\/api\/v1\/executor-graphs\/([^/]+)$/);
       if (request.method === "GET" && executorGraphMatch) {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -1197,6 +1273,11 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       }
       if (request.method === "POST" && url.pathname === "/api/v1/loops") {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const idempotencyKey = getIdempotencyKey(request);
+        if (idempotencyKey) {
+          const existing = store.readIdempotency(`loop:create:${idempotencyKey}`);
+          if (existing) return writeJson(response, 200, existing);
+        }
         const body = await readJson(request, options.maxBodyBytes);
         const objective = String(body.objective ?? "").trim();
         if (!objective) return writeJson(response, 400, { error: "LOOP_OBJECTIVE_REQUIRED" });
@@ -1206,16 +1287,25 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           projectId: body.projectId ? String(body.projectId) : undefined,
           objective,
           executorGraphId: body.executorGraphId ? String(body.executorGraphId) : undefined,
+          controlPlaneUrl: body.controlPlaneUrl ? String(body.controlPlaneUrl) : undefined,
           stopPolicy: isRecord(body.stopPolicy) ? body.stopPolicy : undefined,
           retryPolicy: isRecord(body.retryPolicy) ? body.retryPolicy : undefined,
+          sandbox: isRecord(body.sandbox) ? body.sandbox : undefined,
           context: isRecord(body.context) ? body.context : undefined
         });
         store.appendAudit(audit(auth, "loop.created", loop.id, { source: loop.source, projectId: loop.projectId, executorGraphId: loop.executorGraphId }));
-        return writeJson(response, 201, envelope(loop));
+        const bodyOut = envelope(loop);
+        if (idempotencyKey) store.writeIdempotency(`loop:create:${idempotencyKey}`, bodyOut);
+        return writeJson(response, 201, bodyOut);
       }
       const loopStartMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/start$/);
       if (request.method === "POST" && loopStartMatch) {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const idempotencyKey = getIdempotencyKey(request);
+        if (idempotencyKey) {
+          const existing = store.readIdempotency(`loop:start:${decodeURIComponent(loopStartMatch[1])}:${idempotencyKey}`);
+          if (existing) return writeJson(response, 200, existing);
+        }
         const body = await readJson(request, options.maxBodyBytes);
         const loop = store.startLoop(decodeURIComponent(loopStartMatch[1]), auth.actor, {
           forceDecision: normalizeLoopDecision(body.forceDecision),
@@ -1223,11 +1313,18 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         });
         if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
         store.appendAudit(audit(auth, "loop.started", loop.id, { status: loop.status, iteration: loop.currentIteration }));
-        return writeJson(response, 200, envelope(loop));
+        const bodyOut = envelope(loop);
+        if (idempotencyKey) store.writeIdempotency(`loop:start:${loop.id}:${idempotencyKey}`, bodyOut);
+        return writeJson(response, 200, bodyOut);
       }
       const loopResumeMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/resume$/);
       if (request.method === "POST" && loopResumeMatch) {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const idempotencyKey = getIdempotencyKey(request);
+        if (idempotencyKey) {
+          const existing = store.readIdempotency(`loop:resume:${decodeURIComponent(loopResumeMatch[1])}:${idempotencyKey}`);
+          if (existing) return writeJson(response, 200, existing);
+        }
         const body = await readJson(request, options.maxBodyBytes);
         const loop = store.resumeLoop(decodeURIComponent(loopResumeMatch[1]), auth.actor, {
           forceDecision: normalizeLoopDecision(body.forceDecision),
@@ -1235,6 +1332,23 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         });
         if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
         store.appendAudit(audit(auth, "loop.resumed", loop.id, { status: loop.status, iteration: loop.currentIteration }));
+        const bodyOut = envelope(loop);
+        if (idempotencyKey) store.writeIdempotency(`loop:resume:${loop.id}:${idempotencyKey}`, bodyOut);
+        return writeJson(response, 200, bodyOut);
+      }
+      const loopReplayMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/replay$/);
+      if (request.method === "POST" && loopReplayMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const loop = store.replayLoop(decodeURIComponent(loopReplayMatch[1]), auth.actor, {
+          fromIteration: Number(body.fromIteration ?? body.iteration ?? 1),
+          contextPatch: isRecord(body.contextPatch) ? body.contextPatch : isRecord(body.context) ? body.context : undefined,
+          evidence: Array.isArray(body.evidence) ? body.evidence.map(String) : undefined,
+          artifacts: Array.isArray(body.artifacts) ? body.artifacts.map(normalizeLoopArtifact) : undefined,
+          forceDecision: normalizeLoopDecision(body.forceDecision)
+        });
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop.replayed", loop.id, { status: loop.status, iteration: loop.currentIteration }));
         return writeJson(response, 200, envelope(loop));
       }
       const loopApproveMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/approve$/);
@@ -1275,6 +1389,13 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const loop = store.readLoop(decodeURIComponent(loopArtifactsMatch[1]));
         if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
         return writeJson(response, 200, envelope(loop.artifacts));
+      }
+      const loopTraceMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/trace$/);
+      if (request.method === "GET" && loopTraceMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const loop = store.readLoop(decodeURIComponent(loopTraceMatch[1]));
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        return writeJson(response, 200, envelope(loop.trace));
       }
       const loopMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)$/);
       if (request.method === "GET" && loopMatch) {
@@ -2101,6 +2222,10 @@ class FileStore {
 
   metadata(): { schemaVersion: number; createdAt: string; product: string } {
     return JSON.parse(fs.readFileSync(this.metadataFile, "utf8"));
+  }
+
+  loopStoreRuntime(): LoopStoreRuntime {
+    return normalizeLoopStoreRuntime();
   }
 
   isReady(): boolean {
@@ -3102,19 +3227,53 @@ class FileStore {
     return fs.readdirSync(this.loopsDir)
       .filter((file) => file.endsWith(".json"))
       .sort()
-      .map((file) => JSON.parse(fs.readFileSync(path.join(this.loopsDir, file), "utf8")) as LoopRun)
+      .map((file) => this.hydrateLoop(JSON.parse(fs.readFileSync(path.join(this.loopsDir, file), "utf8"))))
       .sort((left, right) => Date.parse(left.createdAt) - Date.parse(right.createdAt));
   }
 
   readLoop(id: string): LoopRun | undefined {
     const file = path.join(this.loopsDir, `${safeFileName(id)}.json`);
     if (!fs.existsSync(file)) return undefined;
-    return JSON.parse(fs.readFileSync(file, "utf8")) as LoopRun;
+    return this.hydrateLoop(JSON.parse(fs.readFileSync(file, "utf8")));
   }
 
   writeLoop(loop: LoopRun): LoopRun {
-    atomicWriteJson(path.join(this.loopsDir, `${safeFileName(loop.id)}.json`), loop);
-    return loop;
+    const hydrated = this.hydrateLoop(loop);
+    atomicWriteJson(path.join(this.loopsDir, `${safeFileName(hydrated.id)}.json`), hydrated);
+    return hydrated;
+  }
+
+  listLoopTraces(): LoopTraceSummary[] {
+    return this.listLoops().map((loop) => loop.trace);
+  }
+
+  private hydrateLoop(loop: any): LoopRun {
+    const graph = this.readExecutorGraph(String(loop.executorGraphId ?? "default-loop-engineering")) ?? defaultExecutorGraph();
+    const hydrated: LoopRun = {
+      ...loop,
+      schema: "evopilot-loop-run/v1",
+      source: normalizeLoopTriggerSource(loop.source),
+      status: normalizeLoopRunStatus(loop.status),
+      currentIteration: Number.isFinite(Number(loop.currentIteration)) ? Number(loop.currentIteration) : 0,
+      executorGraphId: String(loop.executorGraphId ?? graph.id),
+      stopPolicy: normalizeLoopStopPolicy(loop.stopPolicy),
+      retryPolicy: normalizeLoopRetryPolicy(loop.retryPolicy),
+      context: isRecord(loop.context) ? loop.context : {},
+      store: normalizeLoopStoreRuntime(loop.store),
+      sandbox: normalizeLoopSandboxPolicy(loop.sandbox ?? loop.context?.sandbox),
+      coordination: normalizeExecutorCoordinationPlan(graph),
+      iterations: Array.isArray(loop.iterations) ? loop.iterations.map((iteration: any) => hydrateLoopIteration(iteration)) : [],
+      evidenceSets: Array.isArray(loop.evidenceSets) ? loop.evidenceSets : [],
+      artifacts: Array.isArray(loop.artifacts) ? loop.artifacts : [],
+      approvals: Array.isArray(loop.approvals) ? loop.approvals : [],
+      timeline: Array.isArray(loop.timeline) ? loop.timeline : [],
+      createdAt: String(loop.createdAt ?? new Date().toISOString()),
+      updatedAt: String(loop.updatedAt ?? loop.createdAt ?? new Date().toISOString())
+    };
+    return {
+      ...hydrated,
+      trace: buildLoopTraceSummary(hydrated)
+    };
   }
 
   createLoop(input: {
@@ -3123,8 +3282,10 @@ class FileStore {
     projectId?: string;
     objective: string;
     executorGraphId?: string;
+    controlPlaneUrl?: string;
     stopPolicy?: Partial<LoopStopPolicy>;
     retryPolicy?: Partial<LoopRetryPolicy>;
+    sandbox?: Partial<LoopSandboxPolicy>;
     context?: Record<string, unknown>;
   }): LoopRun {
     const now = new Date().toISOString();
@@ -3141,9 +3302,14 @@ class FileStore {
       status: "PENDING",
       currentIteration: 0,
       executorGraphId: graph.id,
+      controlPlaneUrl: input.controlPlaneUrl,
       stopPolicy: normalizeLoopStopPolicy(input.stopPolicy),
       retryPolicy: normalizeLoopRetryPolicy(input.retryPolicy),
       context: input.context ?? {},
+      store: normalizeLoopStoreRuntime(),
+      sandbox: normalizeLoopSandboxPolicy(input.sandbox ?? input.context?.sandbox),
+      coordination: normalizeExecutorCoordinationPlan(graph),
+      trace: emptyLoopTraceSummary(id, now),
       iterations: [],
       evidenceSets: [],
       artifacts: [],
@@ -3178,6 +3344,57 @@ class FileStore {
     }
     if (["CANCELLED", "SUCCEEDED", "FAILED"].includes(loop.status)) return loop;
     return this.runLoopIteration({ loop: { ...loop, status: "RUNNING" }, actor, ...input });
+  }
+
+  replayLoop(id: string, actor: string, input: {
+    fromIteration: number;
+    contextPatch?: Record<string, unknown>;
+    evidence?: string[];
+    artifacts?: LoopArtifact[];
+    forceDecision?: LoopDecision;
+  }): LoopRun | undefined {
+    const loop = this.readLoop(id);
+    if (!loop) return undefined;
+    const fromIteration = Math.max(1, Math.floor(Number(input.fromIteration) || 1));
+    const keptIterations = loop.iterations.filter((iteration) => iteration.index < fromIteration);
+    const keptEvidenceSetIds = new Set(keptIterations.map((iteration) => iteration.evidenceSetId).filter(Boolean));
+    const keptEvidenceSets = loop.evidenceSets.filter((set) => keptEvidenceSetIds.has(set.id));
+    const replayContextPatch = input.contextPatch ?? {};
+    const replayBase: LoopRun = {
+      ...loop,
+      status: "RUNNING",
+      currentIteration: keptIterations.length,
+      iterations: keptIterations,
+      evidenceSets: keptEvidenceSets,
+      context: {
+        ...loop.context,
+        ...replayContextPatch,
+        replay: {
+          fromIteration,
+          requestedBy: actor,
+          requestedAt: new Date().toISOString(),
+          contextPatchKeys: Object.keys(replayContextPatch)
+        }
+      },
+      timeline: [
+        ...loop.timeline,
+        loopTimelineEvent("REPLAY", `Loop replayed from iteration ${fromIteration} by ${actor}.`, { fromIteration, contextPatchKeys: Object.keys(replayContextPatch) })
+      ],
+      updatedAt: new Date().toISOString()
+    };
+    return this.runLoopIteration({
+      loop: replayBase,
+      actor,
+      forceDecision: input.forceDecision,
+      evidence: [
+        `replayFromIteration=${fromIteration}`,
+        ...Object.keys(replayContextPatch).map((key) => `contextEdited=${key}`),
+        ...(input.evidence ?? [])
+      ],
+      artifacts: input.artifacts,
+      replayOfIterationId: loop.iterations.find((iteration) => iteration.index === fromIteration)?.id,
+      contextPatch: replayContextPatch
+    });
   }
 
   approveLoop(id: string, actor: string, approvalId?: string): LoopRun | undefined {
@@ -3265,6 +3482,8 @@ class FileStore {
     forceDecision?: LoopDecision;
     evidence?: string[];
     artifacts?: LoopArtifact[];
+    replayOfIterationId?: string;
+    contextPatch?: Record<string, unknown>;
   }): LoopRun {
     const graph = this.readExecutorGraph(args.loop.executorGraphId) ?? defaultExecutorGraph();
     const now = new Date().toISOString();
@@ -3280,6 +3499,8 @@ class FileStore {
       previousFailureCount: countRecentLoopFailure(args.loop),
       forceDecision: args.forceDecision,
       workspaceRoot: iterationWorkspace,
+      coordination: normalizeExecutorCoordinationPlan(graph),
+      sandbox: args.loop.sandbox,
       now: new Date(Date.now() + index).toISOString()
     }));
     const failedSteps = steps.filter((step) => step.status === "FAILED");
@@ -3324,7 +3545,10 @@ class FileStore {
       executorSteps: steps,
       evidenceSetId: evidenceSet.id,
       decision,
-      rationale: loopDecisionRationale(decision, failedSteps)
+      rationale: loopDecisionRationale(decision, failedSteps),
+      replayOfIterationId: args.replayOfIterationId,
+      contextPatch: args.contextPatch,
+      traceId: `trace-${safeFileName(args.loop.id)}-${nextIndex}`
     };
     const status = loopStatusFromDecision(decision);
     const updated: LoopRun = {
@@ -3867,6 +4091,7 @@ function defaultExecutorGraph(): ExecutorGraph {
       { from: "ci", to: "validate" },
       { from: "validate", to: "approval" }
     ],
+    mode: "serial",
     createdAt: now,
     updatedAt: now
   };
@@ -3887,6 +4112,161 @@ function normalizeLoopRetryPolicy(input?: Partial<LoopRetryPolicy>): LoopRetryPo
     backoffSeconds: clampPositiveInteger(input?.backoffSeconds, 30),
     circuitBreakerFailures: clampPositiveInteger(input?.circuitBreakerFailures, 2)
   };
+}
+
+function normalizeLoopRunStatus(value: unknown): LoopRunStatus {
+  const status = String(value ?? "PENDING");
+  if (["PENDING", "RUNNING", "WAITING_APPROVAL", "BLOCKED", "SUCCEEDED", "FAILED", "CANCELLED"].includes(status)) return status as LoopRunStatus;
+  return "PENDING";
+}
+
+function normalizeLoopStoreRuntime(input?: Partial<LoopStoreRuntime>): LoopStoreRuntime {
+  const envBackend = String(process.env.EVOPILOT_LOOP_STORE_BACKEND ?? "").toLowerCase();
+  const backend = normalizeLoopStoreBackend(input?.backend ?? envBackend);
+  const dsn = input?.dsn ?? process.env.EVOPILOT_LOOP_STORE_DSN;
+  return {
+    backend,
+    dsn: dsn ? maskDsn(String(dsn)) : undefined,
+    durable: true,
+    lockProvider: backend === "postgres" ? "postgres-advisory-lock" : backend === "sqlite" ? "sqlite-transaction" : "file-lease",
+    recovery: "idempotent-replay"
+  };
+}
+
+function normalizeLoopStoreBackend(value: unknown): LoopStoreBackendType {
+  const backend = String(value ?? "file").toLowerCase();
+  if (backend === "sqlite" || backend === "postgres") return backend;
+  return "file";
+}
+
+function maskDsn(value: string): string {
+  return value.replace(/:\/\/([^:@/]+):([^@/]+)@/, "://$1:[REDACTED]@");
+}
+
+function normalizeLoopSandboxPolicy(input?: Partial<LoopSandboxPolicy> | unknown): LoopSandboxPolicy {
+  const value = isRecord(input) ? input : {};
+  const runtime = normalizeLoopSandboxRuntime(value.runtime);
+  const network = normalizeSandboxNetwork(value.network);
+  const credentialScope = normalizeCredentialScope(value.credentialScope);
+  return {
+    runtime,
+    image: value.image ? String(value.image) : runtime === "docker" ? "ghcr.io/all-hands-ai/runtime:0.59-nikolaik" : undefined,
+    namespace: value.namespace ? safeFileName(String(value.namespace)) : runtime === "k8s" ? "evopilot-sandbox" : undefined,
+    credentialScope,
+    network,
+    allowedPaths: Array.isArray(value.allowedPaths) ? value.allowedPaths.map(String) : [".evopilot/runtime-upgrades", "docs/evopilot-upgrades", "src", "test"],
+    deniedPaths: Array.isArray(value.deniedPaths) ? value.deniedPaths.map(String) : [".env", ".env.*", "node_modules", ".git"]
+  };
+}
+
+function normalizeLoopSandboxRuntime(value: unknown): LoopSandboxRuntimeType {
+  const runtime = String(value ?? "host").toLowerCase();
+  if (runtime === "docker" || runtime === "k8s") return runtime;
+  return "host";
+}
+
+function normalizeSandboxNetwork(value: unknown): LoopSandboxPolicy["network"] {
+  const network = String(value ?? "restricted").toLowerCase();
+  if (network === "disabled" || network === "enabled") return network;
+  return "restricted";
+}
+
+function normalizeCredentialScope(value: unknown): LoopSandboxPolicy["credentialScope"] {
+  const scope = String(value ?? "loop").toLowerCase();
+  if (scope === "none" || scope === "project") return scope;
+  return "loop";
+}
+
+function normalizeExecutorCoordinationPlan(graph: ExecutorGraph): ExecutorCoordinationPlan {
+  const mode = normalizeLoopExecutorMode(graph.mode);
+  return {
+    mode,
+    sharedContextKeys: ["loopId", "projectId", "objective", "evidence", "artifacts"],
+    nodes: graph.nodes.map((node) => ({
+      nodeId: node.id,
+      type: node.type,
+      adapterId: typeof node.config.adapterId === "string" ? String(node.config.adapterId) : undefined,
+      inputSchema: {
+        loopId: "string",
+        iteration: "number",
+        context: "object",
+        dependencies: "array"
+      },
+      outputSchema: {
+        status: "SUCCEEDED|FAILED|WAITING_APPROVAL|SKIPPED",
+        output: "object",
+        evidence: "array",
+        failureSignature: "string?"
+      },
+      dependsOn: graph.edges.filter((edge) => edge.to === node.id).map((edge) => edge.from)
+    }))
+  };
+}
+
+function normalizeLoopExecutorMode(value: unknown): LoopExecutorMode {
+  return String(value ?? "serial").toLowerCase() === "parallel" ? "parallel" : "serial";
+}
+
+function emptyLoopTraceSummary(loopId: string, now: string): LoopTraceSummary {
+  return {
+    id: `trace-${safeFileName(loopId)}`,
+    loopId,
+    status: "PENDING",
+    currentIteration: 0,
+    executorStepCount: 0,
+    failedStepCount: 0,
+    watchdog: {
+      expiredLease: false,
+      ageSeconds: 0
+    },
+    cost: {
+      estimatedUsd: 0,
+      totalTokens: 0
+    },
+    failureSignatures: [],
+    updatedAt: now
+  };
+}
+
+function buildLoopTraceSummary(loop: LoopRun): LoopTraceSummary {
+  const steps = loop.iterations.flatMap((iteration) => iteration.executorSteps ?? []);
+  const failureCounts = new Map<string, number>();
+  for (const step of steps) {
+    if (step.failureSignature) failureCounts.set(step.failureSignature, (failureCounts.get(step.failureSignature) ?? 0) + 1);
+  }
+  const totalTokens = steps.reduce((sum, step) => sum + Number(step.output.totalTokens ?? step.output.tokens ?? 0), 0);
+  const costFromSteps = steps.reduce((sum, step) => sum + Number(step.output.costUsd ?? 0), 0);
+  const ageSeconds = Math.max(0, Math.round((Date.now() - Date.parse(loop.createdAt)) / 1000));
+  const leaseExpiry = loop.workerLease?.expiresAt ? Date.parse(loop.workerLease.expiresAt) : Number.NaN;
+  return {
+    id: `trace-${safeFileName(loop.id)}`,
+    loopId: loop.id,
+    status: loop.status,
+    currentIteration: loop.currentIteration,
+    executorStepCount: steps.length,
+    failedStepCount: steps.filter((step) => step.status === "FAILED").length,
+    workerLease: loop.workerLease,
+    watchdog: {
+      expiredLease: Number.isFinite(leaseExpiry) ? leaseExpiry < Date.now() : false,
+      ageSeconds
+    },
+    cost: {
+      estimatedUsd: Number(costFromSteps.toFixed(6)),
+      totalTokens
+    },
+    failureSignatures: [...failureCounts.entries()].map(([signature, count]) => ({ signature, count })).sort((left, right) => right.count - left.count),
+    updatedAt: loop.updatedAt
+  };
+}
+
+function hydrateLoopIteration(iteration: any): LoopIteration {
+  return {
+    ...iteration,
+    executorSteps: Array.isArray(iteration.executorSteps) ? iteration.executorSteps : [],
+    decision: normalizeLoopDecision(iteration.decision) ?? "CONTINUE",
+    rationale: String(iteration.rationale ?? "Legacy iteration hydrated by EvoPilot."),
+    traceId: String(iteration.traceId ?? `trace-${safeFileName(String(iteration.loopRunId ?? "loop"))}-${iteration.index ?? 0}`)
+  } as LoopIteration;
 }
 
 function clampPositiveInteger(value: unknown, fallback: number): number {
@@ -3911,9 +4291,26 @@ function normalizeExecutorGraph(value: any): ExecutorGraph {
     name: String(value.name ?? id),
     nodes,
     edges,
+    mode: normalizeLoopExecutorMode(value.mode),
     createdAt: String(value.createdAt ?? now),
     updatedAt: now
   };
+}
+
+function normalizeLoopArtifact(value: unknown): LoopArtifact {
+  const item = isRecord(value) ? value : {};
+  return loopArtifact(
+    normalizeLoopArtifactType(item.type),
+    String(item.label ?? "Loop artifact"),
+    item.path ? String(item.path) : undefined,
+    item.url ? String(item.url) : undefined
+  );
+}
+
+function normalizeLoopArtifactType(value: unknown): LoopArtifact["type"] {
+  const type = String(value ?? "generic");
+  if (["plan", "diff", "ci-log", "report", "approval", "generic"].includes(type)) return type as LoopArtifact["type"];
+  return "generic";
 }
 
 function normalizeExecutorNode(value: any): ExecutorNode {
@@ -4004,18 +4401,30 @@ function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType
               result: `${input.node.type} completed`,
               workspacePath: input.nodeWorkspace,
               executorBoundary: boundary,
-              adapterId: id
+              adapterId: id,
+              coordinationMode: input.coordination.mode,
+              sandboxRuntime: input.sandbox.runtime,
+              credentialScope: input.sandbox.credentialScope,
+              network: input.sandbox.network
             }
           : {
               reason: status === "WAITING_APPROVAL" ? "approval gate reached" : "loop policy blocked execution",
               workspacePath: input.nodeWorkspace,
               executorBoundary: boundary,
-              adapterId: id
+              adapterId: id,
+              coordinationMode: input.coordination.mode,
+              sandboxRuntime: input.sandbox.runtime,
+              credentialScope: input.sandbox.credentialScope,
+              network: input.sandbox.network
             },
         evidence: [
           `adapter=${id}`,
           `adapterNodeType=${nodeType}`,
           `executorBoundary=${boundary}`,
+          `coordinationMode=${input.coordination.mode}`,
+          `sandboxRuntime=${input.sandbox.runtime}`,
+          `sandboxNetwork=${input.sandbox.network}`,
+          `credentialScope=${input.sandbox.credentialScope}`,
           `status=${status}`
         ],
         failureSignature: status === "FAILED" ? `${input.node.type}:policy-or-forced-failure` : undefined
@@ -4032,16 +4441,22 @@ function executeLoopNode(args: {
   previousFailureCount: number;
   forceDecision?: LoopDecision;
   workspaceRoot: string;
+  coordination: ExecutorCoordinationPlan;
+  sandbox: LoopSandboxPolicy;
   now: string;
 }): ExecutorStepResult {
   const workspacePath = path.join(args.workspaceRoot, safeFileName(args.node.id));
   fs.mkdirSync(workspacePath, { recursive: true });
+  const nodeCoordination = args.coordination.nodes.find((node) => node.nodeId === args.node.id);
   const baseEvidence = [
     `node=${args.node.id}`,
     `type=${args.node.type}`,
     `attempt=${args.attempt}`,
     `objective=${args.loop.objective}`,
-    `workspace=${workspacePath}`
+    `workspace=${workspacePath}`,
+    `dependsOn=${nodeCoordination?.dependsOn.join(",") ?? ""}`,
+    `allowedPaths=${args.sandbox.allowedPaths.join(",")}`,
+    `deniedPaths=${args.sandbox.deniedPaths.join(",")}`
   ];
   const adapter = executorAdapterRegistry.resolve(args.node);
   const adapterResult = adapter.execute({
@@ -4053,6 +4468,8 @@ function executeLoopNode(args: {
     forceDecision: args.forceDecision,
     workspaceRoot: args.workspaceRoot,
     nodeWorkspace: workspacePath,
+    coordination: args.coordination,
+    sandbox: args.sandbox,
     now: args.now
   });
   return {
@@ -4066,7 +4483,11 @@ function executeLoopNode(args: {
       loopId: args.loop.id,
       iteration: args.iterationIndex,
       adapterId: adapter.id,
-      nodeConfig: args.node.config
+      nodeConfig: args.node.config,
+      schema: nodeCoordination?.inputSchema,
+      dependsOn: nodeCoordination?.dependsOn ?? [],
+      sharedContextKeys: args.coordination.sharedContextKeys,
+      sandbox: args.sandbox
     },
     output: adapterResult.output,
     evidence: [...baseEvidence, ...adapterResult.evidence],

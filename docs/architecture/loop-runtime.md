@@ -26,6 +26,10 @@ The runtime introduces:
 - `LoopEvidenceSet` as independent validation output.
 - `ExecutorGraph` as the explicit multi-executor orchestration model.
 - `ExecutorAdapter` as the plugin boundary that turns executor graph nodes into structured execution contracts.
+- `LoopStoreRuntime` as the store contract for file, SQLite, or Postgres deployments, including lock-provider and idempotent replay semantics.
+- `LoopSandboxPolicy` as the per-loop sandbox contract for host, Docker, or Kubernetes execution boundaries.
+- `ExecutorCoordinationPlan` as the explicit multi-executor input/output schema, dependency, and serial/parallel coordination record.
+- `LoopTraceSummary` as the control-plane trace for executor steps, worker lease, watchdog, cost, and failure signatures.
 - `StopPolicy` and `RetryPolicy` as data, not hard-coded control flow.
 - worker heartbeat leases and watchdog recovery.
 - timeline, evidence, artifact, approval, and audit APIs.
@@ -36,6 +40,14 @@ The runtime introduces:
 Existing release, evolution, conversation, and target-loop entry points can remain product-specific surfaces, but the common execution substrate is `/api/v1/loops`.
 
 `ExecutorAdapter` is the runtime contract between graph orchestration and concrete executors. Each adapter receives the loop, node, iteration, retry context, workspace path, and force-decision policy; it returns a structured status, output, evidence, optional completion time, and optional failure signature. Built-in adapters cover LLM context building, code-upgrader execution, CI validation, independent validation, approval, and release action boundaries. A graph node can pin a specific adapter through `config.adapterId`; otherwise EvoPilot resolves the default adapter for the node type.
+
+The remaining target-loop capabilities are now part of the product runtime:
+
+- `persistent-loop-store`: every loop exposes its active store backend, lock provider, and idempotent recovery contract. File remains the default backend; `EVOPILOT_LOOP_STORE_BACKEND=sqlite|postgres` and `EVOPILOT_LOOP_STORE_DSN` declare the production store contract without leaking credentials.
+- `replay-and-human-edit`: `POST /api/v1/loops/{loopId}/replay` truncates execution from a selected iteration, records a context patch, and continues through the same executor graph.
+- `sandbox-runtime`: loop creation accepts a `sandbox` policy with `host`, `docker`, or `k8s`, credential scope, network mode, allowed paths, and denied paths. Each executor step records the effective sandbox boundary in evidence.
+- `multi-executor-coordination`: executor graphs include `mode: serial|parallel`; loop state records each executor's dependencies, shared context keys, input schema, and output schema.
+- `loop-observability`: `GET /api/v1/loop-observability` and `GET /api/v1/loops/{loopId}/trace` expose worker lease, watchdog age, cost summary, executor step counts, and failure signatures for Dashboard and automation.
 
 Loop Runtime does not own the whole product decision. Evidence ingestion, opportunity discovery, governance policy, and release decision APIs remain product-control-plane concerns. Runtime loops coordinate executors and preserve long-task continuity so those product decisions can be carried through safely.
 
@@ -64,4 +76,4 @@ npm run loop-runtime:check
 npm run loop:soak
 ```
 
-The gate verifies executor graph creation, ExecutorAdapter resolution, loop creation, start/resume, approval blocking, timeline, evidence, artifacts, heartbeat lease, watchdog, repeated-failure blocking, conversation command loop creation, worker-driven loop advancement, sandbox workspace creation, and IM webhook loop creation.
+The gate verifies executor graph creation, ExecutorAdapter resolution, loop creation, store runtime metadata, idempotent create/start/resume, replay with context edit, sandbox policy evidence, multi-executor coordination schemas, loop trace, observability aggregation, approval blocking, timeline, evidence, artifacts, heartbeat lease, watchdog, repeated-failure blocking, conversation command loop creation, worker-driven loop advancement, sandbox workspace creation, and IM webhook loop creation.

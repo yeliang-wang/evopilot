@@ -402,11 +402,15 @@ POST /api/v1/loops
 GET /api/v1/loops/{loopId}
 POST /api/v1/loops/{loopId}/start
 POST /api/v1/loops/{loopId}/resume
+POST /api/v1/loops/{loopId}/replay
 POST /api/v1/loops/{loopId}/approve
 POST /api/v1/loops/{loopId}/cancel
 GET /api/v1/loops/{loopId}/timeline
 GET /api/v1/loops/{loopId}/evidence
 GET /api/v1/loops/{loopId}/artifacts
+GET /api/v1/loops/{loopId}/trace
+GET /api/v1/loop-store
+GET /api/v1/loop-observability
 POST /api/v1/loop-workers/heartbeat
 GET /api/v1/loop-workers/leases
 POST /api/v1/loops/watchdog
@@ -417,6 +421,14 @@ POST /api/v1/im/wecom/webhook
 Loop Runtime 是 EvoPilot 的 Loop Engineering 内核。它把 API、Codex、IM、定时任务、运行时信号、release target 和 evolution batch 统一成 `LoopRun`，并通过 `ExecutorGraph` 编排 LLM、code-upgrader、CI、validator、approval 和 release-action 等 executor。
 
 `ExecutorGraph` 节点通过 `ExecutorAdapter` 执行。节点可以在 `config.adapterId` 中固定 adapter；未指定时，EvoPilot 按节点类型解析默认 adapter。adapter 必须返回结构化 `status`、`output`、`evidence` 和可选 `failureSignature`，因此后续 target loop 可以复用同一执行边界，而不是把执行结果写成不可审计的状态文本。
+
+剩余 target loop 对应的能力也属于 Loop Runtime 通用模型：
+
+- `persistent-loop-store`：`GET /api/v1/loop-store` 返回当前 store backend、lock provider 和 idempotent replay 恢复语义。默认是 `file`；生产可通过 `EVOPILOT_LOOP_STORE_BACKEND=sqlite|postgres` 和 `EVOPILOT_LOOP_STORE_DSN` 声明 SQLite/Postgres store contract，DSN 会脱敏返回。
+- `replay-and-human-edit`：`POST /api/v1/loops/{loopId}/replay` 支持 `fromIteration`、`contextPatch`、`evidence` 和 `artifacts`，会从指定 iteration 重新执行，并把人工编辑写入 loop context、timeline 和 iteration。
+- `sandbox-runtime`：创建 loop 时可传 `sandbox.runtime=host|docker|k8s`、`credentialScope`、`network`、`allowedPaths`、`deniedPaths`。每个 executor step 会记录实际 sandbox boundary。
+- `multi-executor-coordination`：`ExecutorGraph.mode=serial|parallel`，LoopRun 会返回 `coordination.nodes[]`，包含每个 executor 的依赖、输入 schema、输出 schema 和共享 context keys。
+- `loop-observability`：`GET /api/v1/loop-observability` 聚合 loop trace；`GET /api/v1/loops/{loopId}/trace` 返回单个 loop 的 executor step 数、worker lease、watchdog、成本和失败签名。
 
 每轮 loop 都会生成：
 

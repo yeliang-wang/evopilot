@@ -1056,6 +1056,25 @@
         }
       }
     },
+    "/api/v1/loops/{loopId}/replay": {
+      "post": {
+        "summary": "从指定轮次 replay LoopRun",
+        "description": "支持人工编辑 context 后从某个 iteration 重新执行，并保留 replay timeline 与 iteration 证据。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LoopRun 已 replay"
+          },
+          "404": {
+            "description": "LoopRun 不存在"
+          }
+        }
+      }
+    },
     "/api/v1/loops/{loopId}/approve": {
       "post": {
         "summary": "审批 LoopRun 的待确认项",
@@ -1130,6 +1149,57 @@
         "responses": {
           "200": {
             "description": "Loop artifacts"
+          }
+        }
+      }
+    },
+    "/api/v1/loops/{loopId}/trace": {
+      "get": {
+        "summary": "获取 LoopRun trace 摘要",
+        "description": "返回 executor step 数、失败签名、worker lease、watchdog、token 和成本摘要。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Loop trace summary"
+          },
+          "404": {
+            "description": "LoopRun 不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/loop-store": {
+      "get": {
+        "summary": "获取 Loop store 运行时能力",
+        "description": "返回 file、SQLite 或 Postgres store backend、lock provider 与幂等恢复语义。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Loop store runtime"
+          }
+        }
+      }
+    },
+    "/api/v1/loop-observability": {
+      "get": {
+        "summary": "聚合 Loop Runtime 观测数据",
+        "description": "返回最近 Loop trace，用于 Dashboard 展示 worker lease、watchdog、失败签名和成本。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Loop trace 列表"
           }
         }
       }

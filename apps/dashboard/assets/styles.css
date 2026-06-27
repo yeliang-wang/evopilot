@@ -142,6 +142,40 @@ button.primary {
   padding: 28px;
 }
 
+.auth-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+}
+
+.auth-bar div,
+.auth-bar form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.auth-bar span,
+.auth-bar small {
+  color: var(--muted);
+}
+
+.auth-bar input {
+  width: min(360px, 44vw);
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 10px;
+  font: inherit;
+}
+
 .grid {
   display: grid;
   gap: 16px;
@@ -186,6 +220,32 @@ th {
 .dashboard-stats,
 .dashboard-overview {
   margin-bottom: 16px;
+}
+
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-stats > div {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px;
+  background: #f9fbfc;
+}
+
+.dashboard-stats span,
+.dashboard-stats small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.dashboard-stats strong {
+  display: block;
+  margin: 4px 0;
+  font-size: 18px;
 }
 
 .section-title {

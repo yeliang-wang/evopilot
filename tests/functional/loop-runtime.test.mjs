@@ -25,6 +25,7 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
       body: {
         id: "product-evolution-dag",
         name: "Product Evolution DAG",
+        mode: "parallel",
         nodes: [
           { id: "plan", type: "llm", name: "Plan", config: { adapterId: "evopilot.llm-context-adapter" } },
           { id: "upgrade", type: "code-upgrader", name: "Upgrade", config: { adapterId: "evopilot.code-upgrader-adapter" } },
@@ -41,16 +42,34 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(graph.status, 201);
     assert.equal(graph.body.data.schema, "evopilot-executor-graph/v1");
     assert.equal(graph.body.data.nodes.length, 4);
+    assert.equal(graph.body.data.mode, "parallel");
+
+    const storeRuntime = await jsonFetch(`${baseUrl}/api/v1/loop-store`, {
+      token: "viewer-token"
+    });
+    assert.equal(storeRuntime.status, 200);
+    assert.equal(storeRuntime.body.data.backend, "file");
+    assert.equal(storeRuntime.body.data.recovery, "idempotent-replay");
 
     const created = await jsonFetch(`${baseUrl}/api/v1/loops`, {
       method: "POST",
       token: "operator-token",
+      idempotencyKey: "create-workbuddy-loop",
       body: {
         id: "workbuddy-long-task",
         source: "api",
         projectId: "workbuddy",
         objective: "Continuously evolve WorkBuddy until release readiness passes.",
         executorGraphId: "product-evolution-dag",
+        controlPlaneUrl: "http://8.153.72.80",
+        sandbox: {
+          runtime: "docker",
+          image: "ghcr.io/all-hands-ai/runtime:0.59-nikolaik",
+          credentialScope: "loop",
+          network: "restricted",
+          allowedPaths: ["src", "test"],
+          deniedPaths: [".env", ".git"]
+        },
         stopPolicy: {
           maxIterations: 2,
           maxDurationSeconds: 86400,
@@ -69,10 +88,27 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(created.body.data.schema, "evopilot-loop-run/v1");
     assert.equal(created.body.data.status, "PENDING");
     assert.equal(created.body.data.executorGraphId, "product-evolution-dag");
+    assert.equal(created.body.data.controlPlaneUrl, "http://8.153.72.80");
+    assert.equal(created.body.data.sandbox.runtime, "docker");
+    assert.equal(created.body.data.coordination.mode, "parallel");
+    assert.equal(created.body.data.trace.executorStepCount, 0);
+
+    const createdAgain = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      idempotencyKey: "create-workbuddy-loop",
+      body: {
+        id: "workbuddy-long-task-ignored",
+        objective: "Idempotency should return original loop."
+      }
+    });
+    assert.equal(createdAgain.status, 200);
+    assert.equal(createdAgain.body.data.id, "workbuddy-long-task");
 
     const started = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/start`, {
       method: "POST",
-      token: "operator-token"
+      token: "operator-token",
+      idempotencyKey: "start-workbuddy-loop"
     });
     assert.equal(started.status, 200);
     assert.equal(started.body.data.status, "RUNNING");
@@ -84,6 +120,23 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "adapter=evopilot.llm-context-adapter"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "adapter=evopilot.code-upgrader-adapter"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item.includes("executorBoundary=OpenHands/code-upgrader runtime boundary")));
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "coordinationMode=parallel"));
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sandboxRuntime=docker"));
+    assert.equal(started.body.data.iterations[0].executorSteps[0].input.sandbox.runtime, "docker");
+    assert.equal(started.body.data.trace.executorStepCount, 4);
+
+    const trace = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/trace`, {
+      token: "viewer-token"
+    });
+    assert.equal(trace.status, 200);
+    assert.equal(trace.body.data.loopId, "workbuddy-long-task");
+    assert.equal(trace.body.data.executorStepCount, 4);
+
+    const observability = await jsonFetch(`${baseUrl}/api/v1/loop-observability`, {
+      token: "viewer-token"
+    });
+    assert.equal(observability.status, 200);
+    assert.ok(observability.body.data.some((item) => item.loopId === "workbuddy-long-task"));
 
     const waiting = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/resume`, {
       method: "POST",
@@ -109,11 +162,27 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(approved.status, 200);
     assert.equal(approved.body.data.approvals[0].status, "APPROVED");
 
+    const replayed = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/replay`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        fromIteration: 2,
+        contextPatch: { humanEdit: "tighten target loop scope", priority: "persistent-loop-store" },
+        evidence: ["human edited context before replay"]
+      }
+    });
+    assert.equal(replayed.status, 200);
+    assert.equal(replayed.body.data.currentIteration, 2);
+    assert.equal(replayed.body.data.iterations[1].replayOfIterationId, "workbuddy-long-task-iter-2");
+    assert.equal(replayed.body.data.iterations[1].contextPatch.humanEdit, "tighten target loop scope");
+    assert.equal(replayed.body.data.context.humanEdit, "tighten target loop scope");
+
     const timeline = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/timeline`, {
       token: "viewer-token"
     });
     assert.equal(timeline.status, 200);
     assert.ok(timeline.body.data.some((event) => event.type === "DECISION"));
+    assert.ok(timeline.body.data.some((event) => event.type === "REPLAY"));
 
     const evidence = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/evidence`, {
       token: "viewer-token"
@@ -209,7 +278,10 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
 async function jsonFetch(url, options = {}) {
   const response = await fetch(url, {
     method: options.method ?? "GET",
-    headers: authHeaders(options.token, Boolean(options.body)),
+    headers: {
+      ...authHeaders(options.token, Boolean(options.body)),
+      ...(options.idempotencyKey ? { "x-idempotency-key": options.idempotencyKey } : {})
+    },
     body: options.body ? JSON.stringify(options.body) : undefined
   });
   const body = await response.json();
