@@ -8,6 +8,7 @@ services:
         condition: service_healthy
     environment:
       EVOPILOT_PORT: "19876"
+      EVOPILOT_HOST: "0.0.0.0"
       EVOPILOT_RUN_MODE: "prod"
       EVOPILOT_DATA_ROOT: "/var/lib/evopilot"
       EVOPILOT_DASHBOARD_ROOT: "/app/apps/dashboard"
