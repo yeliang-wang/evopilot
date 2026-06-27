@@ -1023,11 +1023,12 @@ function renderLoops() {
         <div><span>运行中</span><strong>${loops.filter((loop) => loop.status === "RUNNING").length}</strong><small>含 worker lease</small></div>
         <div><span>失败签名</span><strong>${state.loopTraces.reduce((sum, trace) => sum + (trace.failureSignatures?.length ?? 0), 0)}</strong><small>trace 聚合</small></div>
       </div>
-      ${loops.length === 0 ? `<div class="empty">暂无 LoopRun。生产模式请先输入 API Token；命令入口、IM、定时任务或 API 创建后会显示在这里。</div>` : table(["操作", "Loop", "状态", "轮次", "执行图", "Sandbox", "Worker", "Trace"], loops.map((loop) => [
+      ${loops.length === 0 ? `<div class="empty">暂无 LoopRun。生产模式请先输入 API Token；命令入口、IM、定时任务或 API 创建后会显示在这里。</div>` : table(["操作", "Loop", "状态", "轮次", "源码闭环", "执行图", "Sandbox", "Worker", "Trace"], loops.map((loop) => [
         renderLoopActions(loop),
         `<strong>${loop.objective}</strong><span class="subtext">${loop.id}</span>`,
         statusPill(loop.status),
         `${loop.currentIteration}/${loop.stopPolicy?.maxIterations ?? "-"}`,
+        renderLoopSourceClosure(loop),
         `${loop.executorGraphId}<span class="subtext">${loop.coordination?.mode ?? "serial"}</span>`,
         `${loop.sandbox?.runtime ?? "host"}<span class="subtext">${loop.sandbox?.network ?? "restricted"} / ${loop.sandbox?.credentialScope ?? "loop"}</span>`,
         loop.workerLease ? `${loop.workerLease.workerId}<span class="subtext">到期 ${formatDate(loop.workerLease.expiresAt)}</span>` : "未持有",
@@ -1054,6 +1055,13 @@ function renderLoopActions(loop) {
   return `<div class="table-actions">${buttons.join("")}</div>`;
 }
 
+function renderLoopSourceClosure(loop) {
+  const closure = loop.sourceClosure ?? {};
+  const ref = closure.sourceUrl ?? closure.sourceRoot ?? "未绑定源码";
+  const gates = (closure.requiredGates ?? []).join(" / ") || "未声明 gate";
+  return `${escapeHtml(closure.repositoryProvider ?? "unknown")}<span class="subtext">${escapeHtml(ref)}</span><span class="subtext">${escapeHtml(closure.targetVersion ?? "target version 未声明")} / ${escapeHtml(closure.releaseStrategy ?? "none")}</span><span class="subtext">${escapeHtml(gates)}</span>`;
+}
+
 function renderLoopDetail(loop) {
   return `
     <section class="card loop-detail">
@@ -1069,6 +1077,8 @@ function renderLoopDetail(loop) {
         <div><span>Sandbox</span><strong>${loop.sandbox?.runtime ?? "host"}</strong><small>${loop.sandbox?.network ?? "restricted"} / ${loop.sandbox?.credentialScope ?? "loop"}</small></div>
         <div><span>Coordination</span><strong>${loop.coordination?.mode ?? "serial"}</strong><small>${loop.coordination?.nodes?.length ?? 0} executors</small></div>
         <div><span>Cost</span><strong>$${Number(loop.trace?.cost?.estimatedUsd ?? 0).toFixed(4)}</strong><small>${loop.trace?.cost?.totalTokens ?? 0} tokens</small></div>
+        <div><span>Source</span><strong>${loop.sourceClosure?.repositoryProvider ?? "unknown"}</strong><small>${loop.sourceClosure?.sourceBranch ?? "main"} / ${loop.sourceClosure?.releaseStrategy ?? "none"}</small></div>
+        <div><span>Release</span><strong>${loop.sourceClosure?.targetVersion ?? "未声明"}</strong><small>${(loop.sourceClosure?.requiredGates ?? []).join(" / ") || "未声明 gate"}</small></div>
       </div>
       <div class="loop-columns">
         <div>

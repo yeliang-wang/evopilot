@@ -28,6 +28,7 @@ The runtime introduces:
 - `ExecutorAdapter` as the plugin boundary that turns executor graph nodes into structured execution contracts.
 - `LoopStoreRuntime` as the store contract for file, SQLite, or Postgres deployments, including lock-provider and idempotent replay semantics.
 - `LoopSandboxPolicy` as the per-loop sandbox contract for host, Docker, or Kubernetes execution boundaries.
+- `LoopSourceClosure` as the source-to-production contract binding each target loop to the source repository, branch, target version, release strategy, required gates, and deployment environment.
 - `ExecutorCoordinationPlan` as the explicit multi-executor input/output schema, dependency, and serial/parallel coordination record.
 - `LoopTraceSummary` as the control-plane trace for executor steps, worker lease, watchdog, cost, and failure signatures.
 - `StopPolicy` and `RetryPolicy` as data, not hard-coded control flow.
@@ -40,6 +41,8 @@ The runtime introduces:
 Existing release, evolution, conversation, and target-loop entry points can remain product-specific surfaces, but the common execution substrate is `/api/v1/loops`.
 
 `ExecutorAdapter` is the runtime contract between graph orchestration and concrete executors. Each adapter receives the loop, node, iteration, retry context, workspace path, and force-decision policy; it returns a structured status, output, evidence, optional completion time, and optional failure signature. Built-in adapters cover LLM context building, code-upgrader execution, CI validation, independent validation, approval, and release action boundaries. A graph node can pin a specific adapter through `config.adapterId`; otherwise EvoPilot resolves the default adapter for the node type.
+
+Every target loop carries a `sourceClosure` contract. The contract records the registered source project, repository provider, Git URL or server-local root, branch, target version, release strategy, required gates such as `code-change`, `push`, `tag`, `deploy`, and `health-ready`, and the deployment environment. If the caller does not provide it, EvoPilot derives the contract from the registered project repository. Executor steps and independent evidence sets repeat this contract so a loop cannot silently become a status-only success without a source repository and production-deployment boundary.
 
 The remaining target-loop capabilities are now part of the product runtime:
 

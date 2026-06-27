@@ -35,6 +35,7 @@ GET /api/v1/release/decisions
 | CI/CD delivery | Jenkins-backed delivery after successful code upgrades, with pipeline status and artifacts retained. |
 | Release governance | Product-native release targets, evidence bundles, scenario matrices, risk registers, and release decisions. |
 | ProofOps target loops | Target-driven release/maturity loops that create a target plan, require plan approval, collect evidence, emit a ProofOps-compatible final report, and gate release actions behind approval. |
+| Source-to-production closure | Every target loop carries the source repository/root, branch, target version, release strategy, required push/tag/deploy/health gates, and production deployment environment in `sourceClosure`. |
 
 ## Loop Engineering Product Model
 
@@ -144,6 +145,8 @@ POST /api/v1/im/wecom/webhook
 ```
 
 The runtime is the common substrate for continuous product evolution, release readiness loops, Codex commands, and IM adapters. Release and other high-risk actions stay inside the loop, but they are guarded by explicit approval gates. The same substrate is used when EvoPilot manages `evopilot-self`: target-loop work is tracked in EvoPilot, code-upgrader/Codex acts as an executor, and GitHub/ECS delivery evidence is written back to the loop instead of living only in an external terminal transcript.
+
+Every target loop also has a source-to-production closure contract. When a loop is created, EvoPilot records `sourceClosure`: the registered source project, repository provider, Git URL or server-local root, source branch, target version, release strategy, required gates such as `code-change`, `push`, `tag`, `deploy`, `health-ready`, and deployment environment. If the caller does not provide it, EvoPilot derives it from the registered project. Dashboard, executor step evidence, and independent loop evidence all repeat this contract so a target loop cannot be treated as complete without a visible source and production delivery boundary.
 
 ## Self-Hosted Improvement Loop
 

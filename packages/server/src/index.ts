@@ -714,6 +714,19 @@ interface LoopSandboxPolicy {
   deniedPaths: string[];
 }
 
+interface LoopSourceClosure {
+  sourceProjectId: string;
+  repositoryProvider: ProjectRepositoryProvider | "unknown";
+  sourceUrl?: string;
+  sourceRoot?: string;
+  sourceBranch: string;
+  controlPlaneUrl?: string;
+  targetVersion?: string;
+  releaseStrategy: "none" | "github-push" | "gitlab-merge-request" | "local-git-commit";
+  requiredGates: Array<"code-change" | "push" | "tag" | "deploy" | "health-ready">;
+  deploymentEnvironment?: string;
+}
+
 interface ExecutorCoordinationPlan {
   mode: LoopExecutorMode;
   sharedContextKeys: string[];
@@ -846,6 +859,7 @@ interface LoopRun {
   currentIteration: number;
   executorGraphId: string;
   controlPlaneUrl?: string;
+  sourceClosure: LoopSourceClosure;
   stopPolicy: LoopStopPolicy;
   retryPolicy: LoopRetryPolicy;
   context: Record<string, unknown>;
@@ -1288,6 +1302,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           objective,
           executorGraphId: body.executorGraphId ? String(body.executorGraphId) : undefined,
           controlPlaneUrl: body.controlPlaneUrl ? String(body.controlPlaneUrl) : undefined,
+          sourceClosure: isRecord(body.sourceClosure) ? body.sourceClosure : undefined,
           stopPolicy: isRecord(body.stopPolicy) ? body.stopPolicy : undefined,
           retryPolicy: isRecord(body.retryPolicy) ? body.retryPolicy : undefined,
           sandbox: isRecord(body.sandbox) ? body.sandbox : undefined,
@@ -3259,6 +3274,7 @@ class FileStore {
       stopPolicy: normalizeLoopStopPolicy(loop.stopPolicy),
       retryPolicy: normalizeLoopRetryPolicy(loop.retryPolicy),
       context: isRecord(loop.context) ? loop.context : {},
+      sourceClosure: normalizeLoopSourceClosure(loop.sourceClosure ?? loop.context?.sourceClosure, this.readProject(String(loop.projectId ?? "evopilot")), loop.controlPlaneUrl),
       store: normalizeLoopStoreRuntime(loop.store),
       sandbox: normalizeLoopSandboxPolicy(loop.sandbox ?? loop.context?.sandbox),
       coordination: normalizeExecutorCoordinationPlan(graph),
@@ -3283,6 +3299,7 @@ class FileStore {
     objective: string;
     executorGraphId?: string;
     controlPlaneUrl?: string;
+    sourceClosure?: Partial<LoopSourceClosure>;
     stopPolicy?: Partial<LoopStopPolicy>;
     retryPolicy?: Partial<LoopRetryPolicy>;
     sandbox?: Partial<LoopSandboxPolicy>;
@@ -3290,6 +3307,7 @@ class FileStore {
   }): LoopRun {
     const now = new Date().toISOString();
     const projectId = safeFileName(String(input.projectId ?? "evopilot"));
+    const project = this.readProject(projectId);
     const id = safeFileName(input.id ?? `loop-${projectId}-${Date.now()}`);
     const graph = this.readExecutorGraph(input.executorGraphId ?? "default-loop-engineering") ?? defaultExecutorGraph();
     if (graph.id !== "default-loop-engineering") this.writeExecutorGraph(graph);
@@ -3303,6 +3321,7 @@ class FileStore {
       currentIteration: 0,
       executorGraphId: graph.id,
       controlPlaneUrl: input.controlPlaneUrl,
+      sourceClosure: normalizeLoopSourceClosure(input.sourceClosure ?? input.context?.sourceClosure, project, input.controlPlaneUrl),
       stopPolicy: normalizeLoopStopPolicy(input.stopPolicy),
       retryPolicy: normalizeLoopRetryPolicy(input.retryPolicy),
       context: input.context ?? {},
@@ -3314,7 +3333,7 @@ class FileStore {
       evidenceSets: [],
       artifacts: [],
       approvals: [],
-      timeline: [loopTimelineEvent("CREATED", `Loop ${id} created from ${input.source ?? "api"}.`, { objective: input.objective, projectId })],
+      timeline: [loopTimelineEvent("CREATED", `Loop ${id} created from ${input.source ?? "api"}.`, { objective: input.objective, projectId, sourceClosure: normalizeLoopSourceClosure(input.sourceClosure ?? input.context?.sourceClosure, project, input.controlPlaneUrl) })],
       createdAt: now,
       updatedAt: now
     };
@@ -3521,6 +3540,14 @@ class FileStore {
       evidence: [
         `executorGraph=${graph.id}`,
         `iteration=${nextIndex}`,
+        `sourceClosure.project=${args.loop.sourceClosure.sourceProjectId}`,
+        `sourceClosure.provider=${args.loop.sourceClosure.repositoryProvider}`,
+        `sourceClosure.ref=${args.loop.sourceClosure.sourceUrl ?? args.loop.sourceClosure.sourceRoot ?? "unknown"}`,
+        `sourceClosure.branch=${args.loop.sourceClosure.sourceBranch}`,
+        `sourceClosure.releaseStrategy=${args.loop.sourceClosure.releaseStrategy}`,
+        `sourceClosure.requiredGates=${args.loop.sourceClosure.requiredGates.join(",")}`,
+        `sourceClosure.targetVersion=${args.loop.sourceClosure.targetVersion ?? "unspecified"}`,
+        `sourceClosure.deploymentEnvironment=${args.loop.sourceClosure.deploymentEnvironment ?? "production"}`,
         ...steps.flatMap((step) => step.evidence),
         ...(args.evidence ?? [])
       ],
@@ -4165,6 +4192,61 @@ function normalizeLoopSandboxRuntime(value: unknown): LoopSandboxRuntimeType {
   return "host";
 }
 
+function normalizeLoopSourceClosure(input: unknown, project?: StoredProject, controlPlaneUrl?: string): LoopSourceClosure {
+  const value = isRecord(input) ? input : {};
+  const repository = project?.repository;
+  const provider = normalizeSourceClosureRepositoryProvider(value.repositoryProvider ?? repository?.provider);
+  const sourceProjectId = safeFileName(String(value.sourceProjectId ?? project?.id ?? "evopilot"));
+  const sourceBranch = String(value.sourceBranch ?? repository?.defaultBranch ?? "main").trim() || "main";
+  const sourceUrl = value.sourceUrl
+    ? String(value.sourceUrl).trim()
+    : repository?.gitUrl ?? sourceUrlFromRepository(repository);
+  const sourceRoot = value.sourceRoot
+    ? String(value.sourceRoot).trim()
+    : repository?.root;
+  return {
+    sourceProjectId,
+    repositoryProvider: provider,
+    sourceUrl: sourceUrl || undefined,
+    sourceRoot: sourceRoot || undefined,
+    sourceBranch,
+    controlPlaneUrl: value.controlPlaneUrl ? String(value.controlPlaneUrl).trim() : controlPlaneUrl,
+    targetVersion: value.targetVersion ? String(value.targetVersion).trim() : undefined,
+    releaseStrategy: normalizeSourceClosureReleaseStrategy(value.releaseStrategy, provider),
+    requiredGates: normalizeSourceClosureGates(value.requiredGates),
+    deploymentEnvironment: value.deploymentEnvironment ? String(value.deploymentEnvironment).trim() : "production"
+  };
+}
+
+function normalizeSourceClosureRepositoryProvider(value: unknown): LoopSourceClosure["repositoryProvider"] {
+  const provider = String(value ?? "unknown").trim();
+  if (provider === "local-git" || provider === "gitlab" || provider === "github") return provider;
+  return "unknown";
+}
+
+function normalizeSourceClosureReleaseStrategy(value: unknown, provider: LoopSourceClosure["repositoryProvider"]): LoopSourceClosure["releaseStrategy"] {
+  const strategy = String(value ?? "").trim();
+  if (strategy === "github-push" || strategy === "gitlab-merge-request" || strategy === "local-git-commit" || strategy === "none") return strategy;
+  if (provider === "github") return "github-push";
+  if (provider === "gitlab") return "gitlab-merge-request";
+  if (provider === "local-git") return "local-git-commit";
+  return "none";
+}
+
+function normalizeSourceClosureGates(value: unknown): LoopSourceClosure["requiredGates"] {
+  const allowed = new Set<LoopSourceClosure["requiredGates"][number]>(["code-change", "push", "tag", "deploy", "health-ready"]);
+  const gates = Array.isArray(value) ? value.map(String).filter((item): item is LoopSourceClosure["requiredGates"][number] => allowed.has(item as LoopSourceClosure["requiredGates"][number])) : [];
+  return gates.length > 0 ? [...new Set(gates)] : ["code-change", "push", "deploy", "health-ready"];
+}
+
+function sourceUrlFromRepository(repository?: ProjectRepositoryRegistration): string | undefined {
+  if (!repository) return undefined;
+  if (repository.gitUrl) return repository.gitUrl;
+  if (repository.provider === "github" && repository.owner && repository.repo) return `https://github.com/${repository.owner}/${repository.repo}.git`;
+  if (repository.provider === "gitlab" && repository.baseUrl && repository.projectId) return `${repository.baseUrl.replace(/\/+$/, "")}/${repository.projectId}.git`;
+  return undefined;
+}
+
 function normalizeSandboxNetwork(value: unknown): LoopSandboxPolicy["network"] {
   const network = String(value ?? "restricted").toLowerCase();
   if (network === "disabled" || network === "enabled") return network;
@@ -4405,7 +4487,8 @@ function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType
               coordinationMode: input.coordination.mode,
               sandboxRuntime: input.sandbox.runtime,
               credentialScope: input.sandbox.credentialScope,
-              network: input.sandbox.network
+              network: input.sandbox.network,
+              sourceClosure: input.loop.sourceClosure
             }
           : {
               reason: status === "WAITING_APPROVAL" ? "approval gate reached" : "loop policy blocked execution",
@@ -4415,7 +4498,8 @@ function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType
               coordinationMode: input.coordination.mode,
               sandboxRuntime: input.sandbox.runtime,
               credentialScope: input.sandbox.credentialScope,
-              network: input.sandbox.network
+              network: input.sandbox.network,
+              sourceClosure: input.loop.sourceClosure
             },
         evidence: [
           `adapter=${id}`,
@@ -4425,6 +4509,14 @@ function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType
           `sandboxRuntime=${input.sandbox.runtime}`,
           `sandboxNetwork=${input.sandbox.network}`,
           `credentialScope=${input.sandbox.credentialScope}`,
+          `sourceProjectId=${input.loop.sourceClosure.sourceProjectId}`,
+          `sourceProvider=${input.loop.sourceClosure.repositoryProvider}`,
+          `sourceRef=${input.loop.sourceClosure.sourceUrl ?? input.loop.sourceClosure.sourceRoot ?? "unknown"}`,
+          `sourceBranch=${input.loop.sourceClosure.sourceBranch}`,
+          `releaseStrategy=${input.loop.sourceClosure.releaseStrategy}`,
+          `requiredGates=${input.loop.sourceClosure.requiredGates.join(",")}`,
+          `targetVersion=${input.loop.sourceClosure.targetVersion ?? "unspecified"}`,
+          `deploymentEnvironment=${input.loop.sourceClosure.deploymentEnvironment ?? "production"}`,
           `status=${status}`
         ],
         failureSignature: status === "FAILED" ? `${input.node.type}:policy-or-forced-failure` : undefined
@@ -4487,7 +4579,8 @@ function executeLoopNode(args: {
       schema: nodeCoordination?.inputSchema,
       dependsOn: nodeCoordination?.dependsOn ?? [],
       sharedContextKeys: args.coordination.sharedContextKeys,
-      sandbox: args.sandbox
+      sandbox: args.sandbox,
+      sourceClosure: args.loop.sourceClosure
     },
     output: adapterResult.output,
     evidence: [...baseEvidence, ...adapterResult.evidence],

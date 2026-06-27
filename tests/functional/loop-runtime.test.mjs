@@ -62,6 +62,16 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
         objective: "Continuously evolve WorkBuddy until release readiness passes.",
         executorGraphId: "product-evolution-dag",
         controlPlaneUrl: "http://8.153.72.80",
+        sourceClosure: {
+          sourceProjectId: "workbuddy",
+          repositoryProvider: "github",
+          sourceUrl: "https://github.com/example/workbuddy.git",
+          sourceBranch: "main",
+          targetVersion: "2.0.0",
+          releaseStrategy: "github-push",
+          requiredGates: ["code-change", "push", "tag", "deploy", "health-ready"],
+          deploymentEnvironment: "production"
+        },
         sandbox: {
           runtime: "docker",
           image: "ghcr.io/all-hands-ai/runtime:0.59-nikolaik",
@@ -89,6 +99,10 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(created.body.data.status, "PENDING");
     assert.equal(created.body.data.executorGraphId, "product-evolution-dag");
     assert.equal(created.body.data.controlPlaneUrl, "http://8.153.72.80");
+    assert.equal(created.body.data.sourceClosure.repositoryProvider, "github");
+    assert.equal(created.body.data.sourceClosure.sourceUrl, "https://github.com/example/workbuddy.git");
+    assert.equal(created.body.data.sourceClosure.targetVersion, "2.0.0");
+    assert.deepEqual(created.body.data.sourceClosure.requiredGates, ["code-change", "push", "tag", "deploy", "health-ready"]);
     assert.equal(created.body.data.sandbox.runtime, "docker");
     assert.equal(created.body.data.coordination.mode, "parallel");
     assert.equal(created.body.data.trace.executorStepCount, 0);
@@ -122,6 +136,11 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item.includes("executorBoundary=OpenHands/code-upgrader runtime boundary")));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "coordinationMode=parallel"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sandboxRuntime=docker"));
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sourceClosure.provider=github"));
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sourceClosure.targetVersion=2.0.0"));
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sourceClosure.requiredGates=code-change,push,tag,deploy,health-ready"));
+    assert.equal(started.body.data.iterations[0].executorSteps[0].input.sourceClosure.repositoryProvider, "github");
+    assert.equal(started.body.data.iterations[0].executorSteps[1].output.sourceClosure.releaseStrategy, "github-push");
     assert.equal(started.body.data.iterations[0].executorSteps[0].input.sandbox.runtime, "docker");
     assert.equal(started.body.data.trace.executorStepCount, 4);
 
