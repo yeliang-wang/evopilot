@@ -6928,9 +6928,16 @@ async function validateProjectRepository(repository: ProjectRepositoryRegistrati
     if (repository.provider === "github") {
       if (!repository.owner || !repository.repo) return { status: "FAILED", checkedAt, message: "GitHub 接入必须提供 gitUrl 或 owner + repo" };
       const token = resolveCredentialToken(repository);
-      if (!token) return { status: "FAILED", checkedAt, message: "GitHub 接入必须提供 token、password 或 tokenRef 对应的环境变量" };
-      const files = await new GitHubHttpAdapter({ apiBaseUrl: repository.baseUrl, owner: repository.owner, repo: repository.repo, token }).listFiles(repository.defaultBranch ?? "main");
-      return { status: "VERIFIED", checkedAt, message: "GitHub 项目验证通过", fileCount: files.length };
+      try {
+        const files = await new GitHubHttpAdapter({ apiBaseUrl: repository.baseUrl, owner: repository.owner, repo: repository.repo, token }).listFiles(repository.defaultBranch ?? "main");
+        return { status: "VERIFIED", checkedAt, message: token ? "GitHub 项目验证通过" : "GitHub 公开项目验证通过", fileCount: files.length };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!token && /GitHub request failed: (401|403|404)/.test(message)) {
+          return { status: "FAILED", checkedAt, message: `GitHub 公开项目验证失败：${message}；私有仓库必须提供 token、password 或 tokenRef 对应的环境变量` };
+        }
+        return { status: "FAILED", checkedAt, message: `GitHub 项目验证失败：${message}` };
+      }
     }
   } catch (error) {
     return { status: "FAILED", checkedAt, message: error instanceof Error ? error.message : String(error) };

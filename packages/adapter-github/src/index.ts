@@ -23,7 +23,7 @@ export class GitHubHttpAdapter {
   constructor(private readonly config: GitHubAdapterConfig) {}
 
   async listFiles(ref: string = "main"): Promise<string[]> {
-    const response = await this.requestJson<any>("GET", `/git/trees/${encodeURIComponent(ref)}?recursive=1`);
+    const response = await this.requestJson<any>("GET", `/git/trees/${encodeURIComponent(ref)}?recursive=1`, undefined, { allowAnonymous: true });
     return (response.tree ?? [])
       .filter((item: any) => item.type === "blob")
       .map((item: any) => String(item.path))
@@ -47,17 +47,17 @@ export class GitHubHttpAdapter {
     }));
   }
 
-  private async requestJson<T>(method: string, apiPath: string, body?: unknown): Promise<T> {
+  private async requestJson<T>(method: string, apiPath: string, body?: unknown, options: { allowAnonymous?: boolean } = {}): Promise<T> {
     const token = this.config.token;
-    if (!token) throw new Error("GitHub token is required");
+    if (!token && !options.allowAnonymous) throw new Error("GitHub token is required");
     const baseUrl = (this.config.apiBaseUrl ?? "https://api.github.com").replace(/\/+$/, "");
     const response = await fetch(`${baseUrl}/repos/${encodeURIComponent(this.config.owner)}/${encodeURIComponent(this.config.repo)}${apiPath}`, {
       method,
       headers: {
-        authorization: `Bearer ${token}`,
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
         accept: "application/vnd.github+json",
         "x-github-api-version": "2022-11-28",
-        "content-type": "application/json"
+        ...(body === undefined ? {} : { "content-type": "application/json" })
       },
       body: body === undefined ? undefined : JSON.stringify(body)
     });

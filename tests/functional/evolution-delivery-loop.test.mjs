@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
@@ -240,6 +241,38 @@ test("requires token, registers projects, exposes summary and audit", async () =
     assert.equal(audit.data[0].action, "project.created");
   } finally {
     await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("registers public GitHub projects without repository credentials", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-public-github-"));
+  const github = createFakeGitHubServer();
+  await new Promise((resolve) => github.listen(0, "127.0.0.1", resolve));
+  const githubAddress = github.address();
+  const githubBaseUrl = `http://127.0.0.1:${githubAddress.port}`;
+  const server = createServer({ dataRoot, apiToken: "test-token", runtimeMode: "debug" });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  try {
+    const project = await authedPost(`${baseUrl}/api/v1/projects`, {
+      id: "evopilot-github",
+      name: "EvoPilot GitHub",
+      repository: {
+        provider: "github",
+        gitUrl: "https://github.com/yeliang-wang/EvoPilot.git",
+        baseUrl: githubBaseUrl,
+        defaultBranch: "main"
+      }
+    });
+    assert.equal(project.data.repository.provider, "github");
+    assert.equal(project.data.repository.credentialsConfigured, false);
+    assert.equal(project.data.validation.status, "VERIFIED");
+    assert.equal(project.data.validation.message, "GitHub 公开项目验证通过");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await new Promise((resolve) => github.close(resolve));
   }
 });
 
@@ -1044,6 +1077,16 @@ async function readRequestBody(request) {
 function writeFakeJson(response, body) {
   response.writeHead(200, { "content-type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(body));
+}
+
+function createFakeGitHubServer() {
+  return http.createServer((request, response) => {
+    if (request.method === "GET" && request.url === "/repos/yeliang-wang/EvoPilot/git/trees/main?recursive=1") {
+      return writeFakeJson(response, { tree: [{ type: "blob", path: "README.md" }, { type: "blob", path: "package.json" }] });
+    }
+    response.writeHead(404);
+    response.end("not found");
+  });
 }
 
 function createLocalProjectRepo(root, name) {

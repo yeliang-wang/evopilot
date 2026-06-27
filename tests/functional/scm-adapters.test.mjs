@@ -37,6 +37,9 @@ test("GitHub adapter talks to a real HTTP boundary", async () => {
   const seen = [];
   const server = http.createServer(async (request, response) => {
     seen.push({ method: request.method, url: request.url, auth: request.headers.authorization });
+    if (request.url === "/repos/org/repo/git/trees/main?recursive=1") {
+      return json(response, { tree: [{ type: "blob", path: "README.md" }, { type: "tree", path: "src" }] });
+    }
     if (request.url === "/repos/org/repo/commits/main/check-runs") {
       return json(response, { check_runs: [{ name: "ci", status: "completed", conclusion: "success" }] });
     }
@@ -50,9 +53,32 @@ test("GitHub adapter talks to a real HTTP boundary", async () => {
   const port = server.address().port;
   try {
     const adapter = new GitHubHttpAdapter({ apiBaseUrl: `http://127.0.0.1:${port}`, owner: "org", repo: "repo", token: "token" });
+    assert.deepEqual(await adapter.listFiles("main"), ["README.md"]);
     assert.equal((await adapter.listChecks("main"))[0].conclusion, "success");
     assert.equal((await adapter.createPullRequest({ title: "t", body: "b", head: "feature", base: "main" })).number, 3);
     assert.equal(seen.every((item) => item.auth === "Bearer token"), true);
+  } finally {
+    await close(server);
+  }
+});
+
+test("GitHub adapter can list public repository files without a token", async () => {
+  const seen = [];
+  const server = http.createServer(async (request, response) => {
+    seen.push({ method: request.method, url: request.url, auth: request.headers.authorization });
+    if (request.url === "/repos/org/public-repo/git/trees/main?recursive=1") {
+      return json(response, { tree: [{ type: "blob", path: "package.json" }, { type: "tree", path: "src" }] });
+    }
+    response.writeHead(404);
+    response.end();
+  });
+  await listen(server);
+  const port = server.address().port;
+  try {
+    const adapter = new GitHubHttpAdapter({ apiBaseUrl: `http://127.0.0.1:${port}`, owner: "org", repo: "public-repo" });
+    assert.deepEqual(await adapter.listFiles("main"), ["package.json"]);
+    assert.equal(seen.length, 1);
+    assert.equal(seen[0].auth, undefined);
   } finally {
     await close(server);
   }
