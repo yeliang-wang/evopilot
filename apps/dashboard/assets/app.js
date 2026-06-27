@@ -14,6 +14,7 @@ const state = {
   deployConnectors: [],
   loopOrchestrationPresets: [],
   loopOrchestrationTargets: [],
+  loopWorkerQueue: [],
   serviceScorecards: [],
   intelligence: {
     selfLearningDatasetCount: 0,
@@ -1037,6 +1038,7 @@ function renderLoops() {
   return `
     ${renderLoopOrchestrationPanel()}
     ${renderLoopTargetBacklogPanel()}
+    ${renderLoopWorkerQueuePanel()}
     <section class="card">
       <div class="section-title">
         <div>
@@ -1064,6 +1066,34 @@ function renderLoops() {
       ]))}
     </section>
     ${loops.slice(0, 3).map(renderLoopDetail).join("")}
+  `;
+}
+
+function renderLoopWorkerQueuePanel() {
+  const queue = state.loopWorkerQueue ?? [];
+  const claimable = queue.filter((item) => item.claimable).length;
+  return `
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <h2>Worker Queue Workbench</h2>
+          <p>查看 durable queue、worker claim/renew/failover、crash-resume 和 source-closure 重复副作用保护。</p>
+        </div>
+        <span class="pill ${claimable > 0 ? "warn" : "good"}">${claimable} 个可 Claim</span>
+      </div>
+      <div class="table-actions">
+        <button class="primary" data-action="claim-loop-worker">Claim 下一 Loop</button>
+        <button data-action="watchdog-loop">Watchdog</button>
+      </div>
+      ${queue.length === 0 ? `<div class="empty">暂无 worker queue 数据。生产模式请先输入 API Token。</div>` : table(["Loop", "状态", "轮次", "Lease", "下一步", "副作用保护"], queue.map((item) => [
+        `<strong>${escapeHtml(item.loopId)}</strong><span class="subtext">${escapeHtml(item.objective ?? "")}</span>`,
+        statusPill(item.status),
+        `${item.currentIteration}/${item.maxIterations}`,
+        item.workerLease ? `${escapeHtml(item.workerLease.workerId)}<span class="subtext">${item.leaseExpired ? "已过期" : `到期 ${formatDate(item.workerLease.expiresAt)}`}</span>` : "未持有",
+        escapeHtml(item.nextAction),
+        `${escapeHtml(item.sideEffectGuard?.sourceClosureState ?? "PLANNED")}<span class="subtext">duplicate source closure ${item.sideEffectGuard?.duplicateSourceClosureBlocked ? "blocked" : "allowed"}</span>`
+      ]))}
+    </section>
   `;
 }
 
@@ -1247,6 +1277,36 @@ function renderLoopDetail(loop) {
                 <small>worker lease ${loop.workerLease ? "active" : "none"} / watchdog age ${loop.trace?.watchdog?.ageSeconds ?? 0}s</small>
               </div>
             `}
+          </div>
+        </div>
+      </div>
+      <div class="loop-columns">
+        <div>
+          <h3>Context Time Travel Workbench</h3>
+          <form class="project-form loop-time-travel-form" data-id="${escapeHtml(loop.id)}">
+            <label>
+              <span>Checkpoint</span>
+              <select name="fromIteration">
+                ${(loop.iterations ?? []).map((iteration) => `<option value="${iteration.index}">第 ${iteration.index} 轮 / ${escapeHtml(iteration.decision)}</option>`).join("") || `<option value="1">等待 checkpoint</option>`}
+              </select>
+            </label>
+            <label>
+              <span>Context Patch JSON</span>
+              <textarea name="contextPatch" rows="4" placeholder='{"priority":"target-loop","humanEdit":"补充验收标准"}'></textarea>
+            </label>
+            <button class="primary" type="submit" ${(loop.iterations ?? []).length === 0 ? "disabled" : ""}>Replay 并生成 Diff</button>
+          </form>
+        </div>
+        <div>
+          <h3>Replay Diff</h3>
+          <div class="timeline">
+            ${(loop.iterations ?? []).filter((iteration) => iteration.replayOfIterationId || iteration.contextPatch).slice(-3).map((iteration) => `
+              <div class="timeline-item">
+                <span>REPLAY</span>
+                <strong>第 ${iteration.index} 轮</strong>
+                <small>${escapeHtml(iteration.replayOfIterationId ?? "context edited")} / ${(Object.keys(iteration.contextPatch ?? {})).map(escapeHtml).join(", ") || "no patch keys"}</small>
+              </div>
+            `).join("") || `<div class="empty">选择 checkpoint 并提交 context patch 后，这里会显示 replay diff 摘要。</div>`}
           </div>
         </div>
       </div>
@@ -1661,6 +1721,58 @@ function bindLoopActions() {
         await loadSummary();
       } catch (error) {
         state.authNotice = `Target 推进失败：${error.message}`;
+      } finally {
+        render();
+      }
+    });
+  }
+  for (const button of content.querySelectorAll('[data-action="claim-loop-worker"]')) {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      state.authNotice = "";
+      try {
+        const response = await postJson("/api/v1/loop-workers/claim", {
+          workerId: "dashboard-worker",
+          leaseSeconds: 120
+        });
+        state.authNotice = response.data?.claimed
+          ? `已 Claim ${response.data.claimed.loopId}，worker lease 已写入。`
+          : "当前没有可 Claim 的 Loop。";
+        await loadLoops();
+      } catch (error) {
+        state.authNotice = `Worker claim 失败：${error.message}`;
+      } finally {
+        render();
+      }
+    });
+  }
+  for (const form of content.querySelectorAll(".loop-time-travel-form")) {
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const id = form.dataset.id;
+      const formData = new FormData(form);
+      let contextPatch = {};
+      const rawPatch = String(formData.get("contextPatch") ?? "").trim();
+      if (rawPatch) {
+        try {
+          contextPatch = JSON.parse(rawPatch);
+        } catch {
+          state.authNotice = "Context Patch 必须是合法 JSON。";
+          render();
+          return;
+        }
+      }
+      try {
+        const response = await postJson(`/api/v1/loops/${encodeURIComponent(id)}/time-travel/replay`, {
+          fromIteration: Number(formData.get("fromIteration") || 1),
+          contextPatch,
+          evidence: ["dashboard time-travel replay"]
+        });
+        const changed = response.data?.replayDiff?.executorOutputChanges?.filter((item) => item.changed).length ?? 0;
+        state.authNotice = `Time Travel Replay 完成，${changed} 个 executor output 发生变化。`;
+        await loadLoops();
+      } catch (error) {
+        state.authNotice = `Time Travel Replay 失败：${error.message}`;
       } finally {
         render();
       }
@@ -2185,6 +2297,11 @@ async function loadLoops() {
       const { data: traceData } = await traceResponse.json();
       state.loopTraces = Array.isArray(traceData) ? traceData : [];
     }
+    const queueResponse = await apiFetch("/api/v1/loop-workers/queue");
+    if (queueResponse.ok) {
+      const { data: queueData } = await queueResponse.json();
+      state.loopWorkerQueue = Array.isArray(queueData) ? queueData : [];
+    }
     const response = await apiFetch("/api/v1/loops");
     if (!response.ok) throw new Error(`Loop 接口状态 ${response.status}`);
     const { data } = await response.json();
@@ -2192,6 +2309,7 @@ async function loadLoops() {
   } catch (error) {
     state.loops = [];
     state.loopTraces = [];
+    state.loopWorkerQueue = [];
     state.loopOrchestrationPresets = [];
     state.loopOrchestrationTargets = [];
     state.authNotice = `Loop 数据读取失败：${error.message}`;

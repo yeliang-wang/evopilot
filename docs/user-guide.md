@@ -199,6 +199,8 @@ Dashboard 的“闭环编排”会调用 `POST /api/v1/loop-orchestration/instan
 
 同一页面的 Target Loop Backlog 对应 `GET /api/v1/loop-orchestration/targets` 和 `POST /api/v1/loop-orchestration/advance`。它把后续产品进化目标按 Sandbox、Context、Harness、Loop 四层排队，记录 acceptance criteria、next action、stop condition 和证据摘要；点击“推进下一 Target”时，EvoPilot 会创建或推进 Codex-backed target loop，而不是要求用户每次手工复制命令或重新描述上下文。
 
+Loop 页面还提供两个面向真实用户操作的工作台。Context Time Travel Workbench 会列出当前 Loop 的 checkpoint，用户选择 iteration、输入 Context Patch JSON 后点击“Replay 并生成 Diff”，Dashboard 会调用 `POST /api/v1/loops/{loopId}/time-travel/replay`，把人工编辑、replay 轮次和 replay diff 写回 loop。Worker Queue Workbench 会显示 durable queue、worker lease、过期 lease、下一步动作和 source-closure 重复副作用保护；点击“Claim 下一 Loop”会调用 `POST /api/v1/loop-workers/claim` 写入 worker lease，供 worker 或 watchdog 后续恢复执行。
+
 ### 9.1 EvoPilot 自托管改进 Loop
 
 EvoPilot 可以把当前 EvoPilot 仓库或远程 EvoPilot 仓库作为被治理的目标项目接入自身控制面。这个入口用于形成受控的自举 loop，而不是让运行中的 controller 直接自我修改。
@@ -249,7 +251,7 @@ EVOPILOT_SELF_GITLAB_TOKEN_REF=GITLAB_TOKEN \
 npm run self-loop
 ```
 
-接入后，Dashboard 的 Loop Runtime 表格和详情工作台会显示 `sourceClosure.closureState`、required gates、branch、commit、PR/MR、tag、deployment、health/ready、rollback、typed graph、sandbox enforcement 和 worker/watchdog 证据。管理员可以点击“执行闭环”，或调用 `POST /api/v1/loops/{loopId}/source-closure/execute`，由 EvoPilot 对 GitHub/GitLab 执行分支、提交、PR/MR、Tag、deploy connector 和 health/ready gate 探测。
+接入后，Dashboard 的 Loop Runtime 表格和详情工作台会显示 `sourceClosure.closureState`、required gates、branch、commit、PR/MR、tag、deployment、health/ready、rollback、typed graph、sandbox enforcement、checkpoint、replay diff 和 worker/watchdog 证据。管理员可以点击“执行闭环”，或调用 `POST /api/v1/loops/{loopId}/source-closure/execute`，由 EvoPilot 对 GitHub/GitLab 执行分支、提交、PR/MR、Tag、deploy connector 和 health/ready gate 探测。
 
 自动部署应先注册部署连接器：
 

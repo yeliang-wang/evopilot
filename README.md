@@ -132,6 +132,8 @@ POST /api/v1/loops
 POST /api/v1/loops/{loopId}/start
 POST /api/v1/loops/{loopId}/resume
 POST /api/v1/loops/{loopId}/replay
+GET /api/v1/loops/{loopId}/checkpoints
+POST /api/v1/loops/{loopId}/time-travel/replay
 POST /api/v1/loops/{loopId}/approve
 GET /api/v1/loops/{loopId}/timeline
 GET /api/v1/loops/{loopId}/evidence
@@ -139,6 +141,8 @@ GET /api/v1/loops/{loopId}/trace
 GET /api/v1/loop-store
 GET /api/v1/loop-observability
 POST /api/v1/loop-workers/heartbeat
+GET /api/v1/loop-workers/queue
+POST /api/v1/loop-workers/claim
 GET /api/v1/loop-orchestration/presets
 GET /api/v1/loop-orchestration/targets
 POST /api/v1/loop-orchestration/advance
@@ -155,6 +159,8 @@ Every target loop also has a source-to-production closure state machine. When a 
 For GitHub and GitLab repositories, an admin can execute the closure through `POST /api/v1/loops/{loopId}/source-closure/execute` or the Dashboard “执行闭环” action. EvoPilot creates a release branch, commits requested files, opens a PR or MR, creates a tag when the loop requires `tag`, invokes a configured deploy connector for the `deploy` gate, probes health/ready URLs, and writes `closureState`, `gateEvidence`, commit/tag/PR/MR/deployment artifacts, audit records, and independent evidence back into `LoopRun.sourceClosure`. The release states distinguish planned, code changed, pushed, tagged, deployed, health-ready, health-failed, rolled-back, promoted, and failed outcomes, so a rollout that is reverted after health failure is not reported as a promoted release. This is a real SCM and deployment boundary, not only metadata. Built-in deploy connectors cover HTTP webhooks and bounded ECS Docker Compose rollouts with deploy locks, idempotency stamps, compose-failure rollback, and post-deploy health-ready rollback; K8s/cloud-specific deployers can be attached through the same connector contract.
 
 The Dashboard also exposes a closed-loop orchestration workbench. `GET /api/v1/loop-orchestration/presets` lists productized loop presets, and `POST /api/v1/loop-orchestration/instantiate` creates a standard source-to-production target loop with a typed executor graph, Docker sandbox enforcement evidence, worker/watchdog continuity, deploy connector binding, and health-ready rollback semantics. `GET /api/v1/loop-orchestration/targets` exposes the product target backlog across Sandbox, Context, Harness, and Loop layers; `POST /api/v1/loop-orchestration/advance` creates or advances the next Codex-backed target loop, records next action and stop condition, and keeps acceptance criteria as loop context. Executor graphs now preserve typed edges, conditional routes, fan-out/fan-in edges, nested subgraph markers, and schema validation evidence in the graph contract.
+
+The same Dashboard page now includes reusable product workbenches for the remaining loop-harness gaps. Context Time Travel lists checkpoints from `GET /api/v1/loops/{loopId}/checkpoints`, lets an operator edit context JSON, and submits `POST /api/v1/loops/{loopId}/time-travel/replay` to continue from the selected iteration with a replay diff. Worker Queue Workbench uses `GET /api/v1/loop-workers/queue` and `POST /api/v1/loop-workers/claim` to show claimable loops, active or expired leases, crash-resume readiness, and duplicate source-closure side-effect protection.
 
 ## Self-Hosted Improvement Loop
 

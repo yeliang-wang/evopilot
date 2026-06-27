@@ -298,6 +298,15 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(replayed.body.data.iterations[1].contextPatch.humanEdit, "tighten target loop scope");
     assert.equal(replayed.body.data.context.humanEdit, "tighten target loop scope");
 
+    const checkpoints = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/checkpoints`, {
+      token: "viewer-token"
+    });
+    assert.equal(checkpoints.status, 200);
+    assert.equal(checkpoints.body.data[0].schema, "evopilot-loop-checkpoint/v1");
+    assert.equal(checkpoints.body.data[0].loopId, "workbuddy-long-task");
+    assert.ok(checkpoints.body.data[0].replayable);
+    assert.ok(Array.isArray(checkpoints.body.data[0].executorOutputs));
+
     const timeline = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/timeline`, {
       token: "viewer-token"
     });
@@ -316,6 +325,47 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     });
     assert.equal(artifacts.status, 200);
     assert.ok(artifacts.body.data.length >= 2);
+
+    const timeTravelReplay = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/time-travel/replay`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        fromIteration: 1,
+        contextPatch: { humanWorkbenchEdit: "dashboard checkpoint edit" },
+        evidence: ["dashboard time-travel replay"]
+      }
+    });
+    assert.equal(timeTravelReplay.status, 200);
+    assert.equal(timeTravelReplay.body.data.replayDiff.schema, "evopilot-loop-replay-diff/v1");
+    assert.equal(timeTravelReplay.body.data.replayDiff.fromIteration, 1);
+    assert.deepEqual(timeTravelReplay.body.data.replayDiff.contextChangedKeys, ["humanWorkbenchEdit"]);
+    assert.equal(timeTravelReplay.body.data.loop.context.humanWorkbenchEdit, "dashboard checkpoint edit");
+
+    const queuedLoop = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "queue-claim-loop",
+        objective: "Prove durable worker queue claim.",
+        stopPolicy: { maxIterations: 3, requireApprovalForRelease: false }
+      }
+    });
+    assert.equal(queuedLoop.status, 201);
+    const queue = await jsonFetch(`${baseUrl}/api/v1/loop-workers/queue`, {
+      token: "viewer-token"
+    });
+    assert.equal(queue.status, 200);
+    assert.ok(queue.body.data.some((item) => item.loopId === "queue-claim-loop" && item.claimable));
+    const claimed = await jsonFetch(`${baseUrl}/api/v1/loop-workers/claim`, {
+      method: "POST",
+      token: "operator-token",
+      body: { loopId: "queue-claim-loop", workerId: "worker-claim-a", leaseSeconds: 30 }
+    });
+    assert.equal(claimed.status, 201);
+    assert.equal(claimed.body.data.schema, "evopilot-loop-worker-claim/v1");
+    assert.equal(claimed.body.data.claimed.loopId, "queue-claim-loop");
+    assert.equal(claimed.body.data.claimed.workerLease.workerId, "worker-claim-a");
+    assert.equal(claimed.body.data.claimed.sideEffectGuard.duplicateSourceClosureBlocked, false);
 
     const heartbeat = await jsonFetch(`${baseUrl}/api/v1/loop-workers/heartbeat`, {
       method: "POST",

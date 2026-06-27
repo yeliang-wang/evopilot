@@ -916,6 +916,31 @@ interface LoopWorkerLease {
   expiresAt: string;
 }
 
+interface LoopWorkerQueueItem {
+  loopId: string;
+  status: LoopRunStatus;
+  objective: string;
+  currentIteration: number;
+  maxIterations: number;
+  claimable: boolean;
+  leaseExpired: boolean;
+  workerLease?: LoopWorkerLease;
+  sideEffectGuard: {
+    sourceClosureState: LoopSourceClosureState;
+    duplicateSourceClosureBlocked: boolean;
+  };
+  nextAction: "claim" | "renew" | "wait-approval" | "source-closure" | "blocked";
+}
+
+interface LoopWorkerQueueClaim {
+  schema: "evopilot-loop-worker-claim/v1";
+  workerId: string;
+  claimed?: LoopWorkerQueueItem;
+  queue: LoopWorkerQueueItem[];
+  evidence: string[];
+  createdAt: string;
+}
+
 interface LoopIteration {
   id: string;
   loopRunId: string;
@@ -929,6 +954,46 @@ interface LoopIteration {
   replayOfIterationId?: string;
   contextPatch?: Record<string, unknown>;
   traceId: string;
+}
+
+interface LoopCheckpoint {
+  schema: "evopilot-loop-checkpoint/v1";
+  id: string;
+  loopId: string;
+  iterationIndex: number;
+  iterationId: string;
+  status: LoopRunStatus;
+  decision: LoopDecision;
+  contextSnapshot: Record<string, unknown>;
+  contextPatch?: Record<string, unknown>;
+  evidenceSetId?: string;
+  executorOutputs: Array<{
+    nodeId: string;
+    status: ExecutorStepResult["status"];
+    output: Record<string, unknown>;
+    failureSignature?: string;
+  }>;
+  replayable: boolean;
+  createdAt: string;
+}
+
+interface LoopReplayDiff {
+  schema: "evopilot-loop-replay-diff/v1";
+  loopId: string;
+  fromIteration: number;
+  previousIterationId?: string;
+  replayIterationId?: string;
+  contextChangedKeys: string[];
+  executorOutputChanges: Array<{
+    nodeId: string;
+    beforeStatus?: ExecutorStepResult["status"];
+    afterStatus?: ExecutorStepResult["status"];
+    beforeOutput?: Record<string, unknown>;
+    afterOutput?: Record<string, unknown>;
+    changed: boolean;
+  }>;
+  evidence: string[];
+  createdAt: string;
 }
 
 interface LoopRun {
@@ -1555,6 +1620,31 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         store.appendAudit(audit(auth, "loop.replayed", loop.id, { status: loop.status, iteration: loop.currentIteration }));
         return writeJson(response, 200, envelope(loop));
       }
+      const loopCheckpointsMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/checkpoints$/);
+      if (request.method === "GET" && loopCheckpointsMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const checkpoints = store.listLoopCheckpoints(decodeURIComponent(loopCheckpointsMatch[1]));
+        if (!checkpoints) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        return writeJson(response, 200, envelope(checkpoints));
+      }
+      const loopTimeTravelReplayMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/time-travel\/replay$/);
+      if (request.method === "POST" && loopTimeTravelReplayMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const result = store.replayLoopWithDiff(decodeURIComponent(loopTimeTravelReplayMatch[1]), auth.actor, {
+          fromIteration: Number(body.fromIteration ?? body.iteration ?? 1),
+          contextPatch: isRecord(body.contextPatch) ? body.contextPatch : isRecord(body.context) ? body.context : undefined,
+          evidence: Array.isArray(body.evidence) ? body.evidence.map(String) : undefined,
+          artifacts: Array.isArray(body.artifacts) ? body.artifacts.map(normalizeLoopArtifact) : undefined,
+          forceDecision: normalizeLoopDecision(body.forceDecision)
+        });
+        if (!result) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop.time-travel-replayed", result.loop.id, {
+          fromIteration: result.replayDiff.fromIteration,
+          changedExecutorOutputs: result.replayDiff.executorOutputChanges.filter((item) => item.changed).length
+        }));
+        return writeJson(response, 200, envelope(result));
+      }
       const loopApproveMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/approve$/);
       if (request.method === "POST" && loopApproveMatch) {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -1636,6 +1726,22 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       if (request.method === "GET" && url.pathname === "/api/v1/loop-workers/leases") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
         return writeJson(response, 200, envelope(store.listLoopLeases()));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/loop-workers/queue") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listLoopWorkerQueue()));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/loop-workers/claim") {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const workerId = String(body.workerId ?? "").trim();
+        if (!workerId) return writeJson(response, 400, { error: "LOOP_WORKER_ID_REQUIRED" });
+        const result = store.claimNextLoop(workerId, body.leaseSeconds === undefined ? 120 : Number(body.leaseSeconds), new Date(), optionalTrimmedString(body.loopId));
+        store.appendAudit(audit(auth, "loop-worker.claimed", result.claimed?.loopId ?? "none", {
+          workerId: result.workerId,
+          claimed: result.claimed?.loopId
+        }));
+        return writeJson(response, result.claimed ? 201 : 200, envelope(result));
       }
       if (request.method === "POST" && url.pathname === "/api/v1/loops/watchdog") {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -3556,6 +3662,67 @@ class FileStore {
     return this.listLoops().map((loop) => loop.trace);
   }
 
+  listLoopCheckpoints(loopId: string): LoopCheckpoint[] | undefined {
+    const loop = this.readLoop(loopId);
+    if (!loop) return undefined;
+    return buildLoopCheckpoints(loop);
+  }
+
+  replayLoopWithDiff(id: string, actor: string, input: {
+    fromIteration: number;
+    contextPatch?: Record<string, unknown>;
+    evidence?: string[];
+    artifacts?: LoopArtifact[];
+    forceDecision?: LoopDecision;
+  }): { loop: LoopRun; checkpoint?: LoopCheckpoint; replayDiff: LoopReplayDiff } | undefined {
+    const before = this.readLoop(id);
+    if (!before) return undefined;
+    const fromIteration = Math.max(1, Math.floor(Number(input.fromIteration) || 1));
+    const checkpoint = buildLoopCheckpoints(before).find((item) => item.iterationIndex === fromIteration);
+    const replayed = this.replayLoop(id, actor, input);
+    if (!replayed) return undefined;
+    return {
+      loop: replayed,
+      checkpoint,
+      replayDiff: buildLoopReplayDiff(before, replayed, fromIteration, input.contextPatch ?? {})
+    };
+  }
+
+  listLoopWorkerQueue(now = new Date()): LoopWorkerQueueItem[] {
+    return this.listLoops()
+      .filter((loop) => ["PENDING", "RUNNING", "WAITING_APPROVAL", "BLOCKED", "SUCCEEDED"].includes(loop.status))
+      .map((loop) => loopWorkerQueueItem(loop, now))
+      .sort((left, right) => Number(right.claimable) - Number(left.claimable) || left.loopId.localeCompare(right.loopId));
+  }
+
+  claimNextLoop(workerId: string, leaseSeconds = 120, now = new Date(), preferredLoopId?: string): LoopWorkerQueueClaim {
+    const safeWorkerId = safeFileName(workerId || "evopilot-worker");
+    const queue = this.listLoopWorkerQueue(now);
+    const preferredId = preferredLoopId ? safeFileName(preferredLoopId) : "";
+    const candidate = (preferredId ? queue.find((item) => item.loopId === preferredId && item.claimable) : undefined)
+      ?? queue.find((item) => item.claimable);
+    let claimed: LoopWorkerQueueItem | undefined;
+    if (candidate) {
+      this.heartbeatLoop(candidate.loopId, safeWorkerId, leaseSeconds);
+      const loop = this.readLoop(candidate.loopId);
+      if (loop) claimed = loopWorkerQueueItem(loop, new Date());
+    }
+    const refreshedQueue = this.listLoopWorkerQueue(new Date());
+    return {
+      schema: "evopilot-loop-worker-claim/v1",
+      workerId: safeWorkerId,
+      claimed,
+      queue: refreshedQueue,
+      evidence: [
+        `worker=${safeWorkerId}`,
+        `claimable=${queue.filter((item) => item.claimable).length}`,
+        claimed ? `claimed=${claimed.loopId}` : "claimed=none",
+        "duplicateSideEffectGuard=sourceClosureState"
+      ],
+      createdAt: new Date().toISOString()
+    };
+  }
+
   private hydrateLoop(loop: any): LoopRun {
     const graph = this.readExecutorGraph(String(loop.executorGraphId ?? "default-loop-engineering")) ?? defaultExecutorGraph();
     const hydrated: LoopRun = {
@@ -5068,6 +5235,112 @@ function buildLoopTraceSummary(loop: LoopRun): LoopTraceSummary {
     failureSignatures: [...failureCounts.entries()].map(([signature, count]) => ({ signature, count })).sort((left, right) => right.count - left.count),
     updatedAt: loop.updatedAt
   };
+}
+
+function buildLoopCheckpoints(loop: LoopRun): LoopCheckpoint[] {
+  return loop.iterations.map((iteration) => ({
+    schema: "evopilot-loop-checkpoint/v1",
+    id: `${safeFileName(loop.id)}-checkpoint-${iteration.index}`,
+    loopId: loop.id,
+    iterationIndex: iteration.index,
+    iterationId: iteration.id,
+    status: loop.status,
+    decision: iteration.decision,
+    contextSnapshot: {
+      ...loop.context,
+      ...(iteration.contextPatch ?? {}),
+      checkpoint: {
+        iteration: iteration.index,
+        traceId: iteration.traceId,
+        evidenceSetId: iteration.evidenceSetId
+      }
+    },
+    contextPatch: iteration.contextPatch,
+    evidenceSetId: iteration.evidenceSetId,
+    executorOutputs: iteration.executorSteps.map((step) => ({
+      nodeId: step.nodeId,
+      status: step.status,
+      output: step.output,
+      failureSignature: step.failureSignature
+    })),
+    replayable: !["CANCELLED"].includes(loop.status),
+    createdAt: iteration.completedAt ?? iteration.startedAt
+  }));
+}
+
+function buildLoopReplayDiff(before: LoopRun, after: LoopRun, fromIteration: number, contextPatch: Record<string, unknown>): LoopReplayDiff {
+  const previous = before.iterations.find((iteration) => iteration.index === fromIteration);
+  const replayed = after.iterations.find((iteration) => iteration.index === fromIteration);
+  const nodeIds = new Set([
+    ...(previous?.executorSteps ?? []).map((step) => step.nodeId),
+    ...(replayed?.executorSteps ?? []).map((step) => step.nodeId)
+  ]);
+  const executorOutputChanges = [...nodeIds].map((nodeId) => {
+    const beforeStep = previous?.executorSteps.find((step) => step.nodeId === nodeId);
+    const afterStep = replayed?.executorSteps.find((step) => step.nodeId === nodeId);
+    const beforeOutput = beforeStep?.output;
+    const afterOutput = afterStep?.output;
+    const changed = beforeStep?.status !== afterStep?.status || stableJson(beforeOutput) !== stableJson(afterOutput);
+    return {
+      nodeId,
+      beforeStatus: beforeStep?.status,
+      afterStatus: afterStep?.status,
+      beforeOutput,
+      afterOutput,
+      changed
+    };
+  });
+  return {
+    schema: "evopilot-loop-replay-diff/v1",
+    loopId: before.id,
+    fromIteration,
+    previousIterationId: previous?.id,
+    replayIterationId: replayed?.id,
+    contextChangedKeys: Object.keys(contextPatch),
+    executorOutputChanges,
+    evidence: [
+      `fromIteration=${fromIteration}`,
+      `contextChangedKeys=${Object.keys(contextPatch).join(",") || "none"}`,
+      `changedExecutorOutputs=${executorOutputChanges.filter((item) => item.changed).length}`
+    ],
+    createdAt: new Date().toISOString()
+  };
+}
+
+function loopWorkerQueueItem(loop: LoopRun, now: Date): LoopWorkerQueueItem {
+  const leaseExpiry = loop.workerLease?.expiresAt ? Date.parse(loop.workerLease.expiresAt) : Number.NaN;
+  const leaseExpired = Number.isFinite(leaseExpiry) ? leaseExpiry < now.getTime() : false;
+  const duplicateSourceClosureBlocked = loop.sourceClosure.closureState !== "PLANNED" && loop.sourceClosure.closureState !== "FAILED";
+  const waitingApproval = loop.status === "WAITING_APPROVAL";
+  const terminal = ["FAILED", "CANCELLED"].includes(loop.status) || (loop.status === "SUCCEEDED" && loop.sourceClosure.closureState === "PROMOTED");
+  const claimable = !terminal && !waitingApproval && (loop.status === "PENDING" || loop.status === "BLOCKED" || !loop.workerLease || leaseExpired);
+  return {
+    loopId: loop.id,
+    status: loop.status,
+    objective: loop.objective,
+    currentIteration: loop.currentIteration,
+    maxIterations: loop.stopPolicy.maxIterations,
+    claimable,
+    leaseExpired,
+    workerLease: loop.workerLease,
+    sideEffectGuard: {
+      sourceClosureState: loop.sourceClosure.closureState,
+      duplicateSourceClosureBlocked
+    },
+    nextAction: waitingApproval
+      ? "wait-approval"
+      : loop.status === "SUCCEEDED" && loop.sourceClosure.closureState !== "PROMOTED"
+        ? "source-closure"
+        : claimable
+          ? "claim"
+          : loop.workerLease
+            ? "renew"
+            : "blocked"
+  };
+}
+
+function stableJson(value: unknown): string {
+  return JSON.stringify(value, Object.keys(isRecord(value) ? value : {}).sort());
 }
 
 function hydrateLoopIteration(iteration: any): LoopIteration {
