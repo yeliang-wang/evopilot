@@ -1329,6 +1329,18 @@ function bindAuthBar() {
   });
 }
 
+async function refreshData() {
+  await Promise.all([
+    loadProjects(),
+    loadSummary(),
+    loadRules(),
+    loadEvaluationDatasets(),
+    loadCodeUpgrades(),
+    loadLoops(),
+    loadPipelines()
+  ]);
+}
+
 function bindPageLinks() {
   for (const button of content.querySelectorAll("[data-page-link]")) {
     button.addEventListener("click", () => {
@@ -2313,4 +2325,4 @@ function formatDate(value) {
   return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
-Promise.all([loadProjects(), loadSummary(), loadRules(), loadEvaluationDatasets(), loadCodeUpgrades(), loadLoops(), loadPipelines()]).finally(render);
+refreshData().finally(render);
