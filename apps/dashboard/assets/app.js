@@ -1023,7 +1023,8 @@ function renderLoops() {
         <div><span>运行中</span><strong>${loops.filter((loop) => loop.status === "RUNNING").length}</strong><small>含 worker lease</small></div>
         <div><span>失败签名</span><strong>${state.loopTraces.reduce((sum, trace) => sum + (trace.failureSignatures?.length ?? 0), 0)}</strong><small>trace 聚合</small></div>
       </div>
-      ${loops.length === 0 ? `<div class="empty">暂无 LoopRun。生产模式请先输入 API Token；命令入口、IM、定时任务或 API 创建后会显示在这里。</div>` : table(["Loop", "状态", "轮次", "执行图", "Sandbox", "Worker", "Trace"], loops.map((loop) => [
+      ${loops.length === 0 ? `<div class="empty">暂无 LoopRun。生产模式请先输入 API Token；命令入口、IM、定时任务或 API 创建后会显示在这里。</div>` : table(["操作", "Loop", "状态", "轮次", "执行图", "Sandbox", "Worker", "Trace"], loops.map((loop) => [
+        renderLoopActions(loop),
         `<strong>${loop.objective}</strong><span class="subtext">${loop.id}</span>`,
         statusPill(loop.status),
         `${loop.currentIteration}/${loop.stopPolicy?.maxIterations ?? "-"}`,
@@ -1035,6 +1036,21 @@ function renderLoops() {
     </section>
     ${loops.slice(0, 3).map(renderLoopDetail).join("")}
   `;
+}
+
+function renderLoopActions(loop) {
+  const encodedId = escapeHtml(loop.id);
+  const buttons = [];
+  if (loop.status === "WAITING_APPROVAL") {
+    buttons.push(`<button class="primary" data-action="approve-loop" data-id="${encodedId}">批准并继续</button>`);
+    buttons.push(`<button data-action="resume-loop" data-id="${encodedId}">继续</button>`);
+  } else if (loop.status === "PENDING") {
+    buttons.push(`<button class="primary" data-action="start-loop" data-id="${encodedId}">启动</button>`);
+  } else if (loop.status === "RUNNING" || loop.status === "BLOCKED") {
+    buttons.push(`<button class="primary" data-action="resume-loop" data-id="${encodedId}">继续</button>`);
+  }
+  buttons.push(`<button data-action="watchdog-loop" data-id="${encodedId}">Watchdog</button>`);
+  return `<div class="table-actions">${buttons.join("")}</div>`;
 }
 
 function renderLoopDetail(loop) {
@@ -1288,6 +1304,7 @@ function render() {
   bindProjectRegistration();
   bindEvaluationDatasets();
   bindOpportunityActions();
+  bindLoopActions();
   bindHistoryActions();
 }
 
@@ -1426,6 +1443,33 @@ function bindOpportunityActions() {
       state.editingProposalId = "";
       state.proposalNotice = "方案已提交修改，确认进化时将以当前 Markdown 方案执行。";
       render();
+    });
+  }
+}
+
+function bindLoopActions() {
+  for (const button of content.querySelectorAll('[data-action="approve-loop"], [data-action="start-loop"], [data-action="resume-loop"], [data-action="watchdog-loop"]')) {
+    button.addEventListener("click", async () => {
+      const id = button.dataset.id;
+      const action = button.dataset.action;
+      if (!id && action !== "watchdog-loop") return;
+      button.disabled = true;
+      state.authNotice = "";
+      try {
+        if (action === "approve-loop") {
+          await postJson(`/api/v1/loops/${encodeURIComponent(id)}/approve`, {});
+          await postJson(`/api/v1/loops/${encodeURIComponent(id)}/resume`, {});
+        }
+        if (action === "start-loop") await postJson(`/api/v1/loops/${encodeURIComponent(id)}/start`, {});
+        if (action === "resume-loop") await postJson(`/api/v1/loops/${encodeURIComponent(id)}/resume`, {});
+        if (action === "watchdog-loop") await postJson("/api/v1/loops/watchdog", {});
+        await loadLoops();
+        await loadSummary();
+      } catch (error) {
+        state.authNotice = `Loop 操作失败：${error.message}`;
+      } finally {
+        render();
+      }
     });
   }
 }

@@ -275,6 +275,19 @@ table {
   min-width: 1180px;
 }
 
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.table-actions button {
+  padding: 6px 9px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 th {
   text-align: left;
   font-size: 12px;
