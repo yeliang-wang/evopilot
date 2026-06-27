@@ -1040,9 +1040,10 @@ function renderLoops() {
 
 function renderLoopActions(loop) {
   const encodedId = escapeHtml(loop.id);
+  const finalGate = Number(loop.currentIteration ?? 0) >= Number(loop.stopPolicy?.maxIterations ?? Number.POSITIVE_INFINITY);
   const buttons = [];
   if (loop.status === "WAITING_APPROVAL") {
-    buttons.push(`<button class="primary" data-action="approve-loop" data-id="${encodedId}">批准并继续</button>`);
+    buttons.push(`<button class="primary" data-action="approve-loop" data-id="${encodedId}" data-final-gate="${finalGate ? "true" : "false"}">${finalGate ? "批准完成" : "批准并继续"}</button>`);
     buttons.push(`<button data-action="resume-loop" data-id="${encodedId}">继续</button>`);
   } else if (loop.status === "PENDING") {
     buttons.push(`<button class="primary" data-action="start-loop" data-id="${encodedId}">启动</button>`);
@@ -1458,7 +1459,7 @@ function bindLoopActions() {
       try {
         if (action === "approve-loop") {
           await postJson(`/api/v1/loops/${encodeURIComponent(id)}/approve`, {});
-          await postJson(`/api/v1/loops/${encodeURIComponent(id)}/resume`, {});
+          await postJson(`/api/v1/loops/${encodeURIComponent(id)}/resume`, button.dataset.finalGate === "true" ? { forceDecision: "SUCCEED" } : {});
         }
         if (action === "start-loop") await postJson(`/api/v1/loops/${encodeURIComponent(id)}/start`, {});
         if (action === "resume-loop") await postJson(`/api/v1/loops/${encodeURIComponent(id)}/resume`, {});
