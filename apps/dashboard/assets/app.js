@@ -1458,8 +1458,13 @@ function bindLoopActions() {
       state.authNotice = "";
       try {
         if (action === "approve-loop") {
-          await postJson(`/api/v1/loops/${encodeURIComponent(id)}/approve`, {});
-          await postJson(`/api/v1/loops/${encodeURIComponent(id)}/resume`, button.dataset.finalGate === "true" ? { forceDecision: "SUCCEED" } : {});
+          const finalGate = button.dataset.finalGate === "true";
+          try {
+            await postJson(`/api/v1/loops/${encodeURIComponent(id)}/approve`, {});
+          } catch (error) {
+            if (!finalGate) throw error;
+          }
+          await postJson(`/api/v1/loops/${encodeURIComponent(id)}/resume`, finalGate ? { forceDecision: "SUCCEED" } : {});
         }
         if (action === "start-loop") await postJson(`/api/v1/loops/${encodeURIComponent(id)}/start`, {});
         if (action === "resume-loop") await postJson(`/api/v1/loops/${encodeURIComponent(id)}/resume`, {});
