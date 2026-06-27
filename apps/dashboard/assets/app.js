@@ -523,7 +523,8 @@ function renderProjects() {
         [
           connector.deployLock ? "锁" : null,
           connector.idempotency ? "幂等" : null,
-          connector.rollbackOnFailure ? "回滚" : null
+          connector.rollbackOnFailure ? "启动失败回滚" : null,
+          connector.rollbackOnHealthFailure ? "健康回滚" : null
         ].filter(Boolean).join(" / ") || "-",
         connector.tokenConfigured ? "已配置" : "未配置",
         `${connector.healthPath ?? "/health"} / ${connector.readyPath ?? "/ready"}`,
@@ -1087,10 +1088,13 @@ function renderLoopSourceClosure(loop) {
   const gates = (closure.requiredGates ?? []).join(" / ") || "未声明 gate";
   const artifacts = closure.artifacts ?? {};
   const releaseRef = artifacts.pullRequestUrl ?? artifacts.mergeRequestUrl ?? artifacts.commitSha ?? artifacts.branch ?? "未执行";
-  return `${escapeHtml(closure.repositoryProvider ?? "unknown")}<span class="subtext">${escapeHtml(ref)}</span><span class="subtext">${escapeHtml(closure.closureState ?? "PLANNED")} / ${escapeHtml(closure.targetVersion ?? "target version 未声明")} / ${escapeHtml(closure.releaseStrategy ?? "none")}</span><span class="subtext">${escapeHtml(gates)}</span><span class="subtext">${escapeHtml(releaseRef)}</span>`;
+  return `${escapeHtml(closure.repositoryProvider ?? "unknown")}<span class="subtext">${escapeHtml(ref)}</span><span class="subtext">${statusPill(translateSourceClosureState(closure.closureState ?? "PLANNED"))} ${escapeHtml(closure.targetVersion ?? "target version 未声明")} / ${escapeHtml(closure.releaseStrategy ?? "none")}</span><span class="subtext">${escapeHtml(gates)}</span><span class="subtext">${escapeHtml(releaseRef)}</span>`;
 }
 
 function renderLoopDetail(loop) {
+  const closure = loop.sourceClosure ?? {};
+  const artifacts = closure.artifacts ?? {};
+  const gateEvidence = closure.gateEvidence ?? {};
   return `
     <section class="card loop-detail">
       <div class="section-title">
@@ -1105,9 +1109,38 @@ function renderLoopDetail(loop) {
         <div><span>Sandbox</span><strong>${loop.sandbox?.runtime ?? "host"}</strong><small>${loop.sandbox?.network ?? "restricted"} / ${loop.sandbox?.credentialScope ?? "loop"}</small></div>
         <div><span>Coordination</span><strong>${loop.coordination?.mode ?? "serial"}</strong><small>${loop.coordination?.nodes?.length ?? 0} executors</small></div>
         <div><span>Cost</span><strong>$${Number(loop.trace?.cost?.estimatedUsd ?? 0).toFixed(4)}</strong><small>${loop.trace?.cost?.totalTokens ?? 0} tokens</small></div>
-        <div><span>Source</span><strong>${loop.sourceClosure?.repositoryProvider ?? "unknown"}</strong><small>${loop.sourceClosure?.sourceBranch ?? "main"} / ${loop.sourceClosure?.releaseStrategy ?? "none"}</small></div>
-        <div><span>Release</span><strong>${loop.sourceClosure?.targetVersion ?? "未声明"}</strong><small>${(loop.sourceClosure?.requiredGates ?? []).join(" / ") || "未声明 gate"}</small></div>
-        <div><span>Closure</span><strong>${loop.sourceClosure?.closureState ?? "PLANNED"}</strong><small>${loop.sourceClosure?.artifacts?.tag ?? loop.sourceClosure?.artifacts?.commitSha ?? loop.sourceClosure?.artifacts?.branch ?? "等待执行"}</small></div>
+        <div><span>Source</span><strong>${closure.repositoryProvider ?? "unknown"}</strong><small>${closure.sourceBranch ?? "main"} / ${closure.releaseStrategy ?? "none"}</small></div>
+        <div><span>Release</span><strong>${closure.targetVersion ?? "未声明"}</strong><small>${(closure.requiredGates ?? []).join(" / ") || "未声明 gate"}</small></div>
+        <div><span>Closure</span><strong>${translateSourceClosureState(closure.closureState ?? "PLANNED")}</strong><small>${artifacts.tag ?? artifacts.commitSha ?? artifacts.branch ?? "等待执行"}</small></div>
+        <div><span>Deploy</span><strong>${gateEvidence.deploy?.status ?? "PENDING"}</strong><small>${artifacts.deploymentConnectorId ?? "未绑定连接器"} / ${artifacts.deploymentId ?? "未发布"}</small></div>
+        <div><span>Health</span><strong>${gateEvidence["health-ready"]?.status ?? "PENDING"}</strong><small>${artifacts.healthUrl ?? artifacts.readyUrl ?? "等待探测"}</small></div>
+      </div>
+      <div class="loop-columns">
+        <div>
+          <h3>Source Closure Workbench</h3>
+          <div class="timeline">
+            ${(closure.requiredGates ?? []).map((gate) => renderGateEvidence(gate, gateEvidence[gate])).join("") || `<div class="empty">当前 Loop 未声明源码闭环 gate。</div>`}
+          </div>
+        </div>
+        <div>
+          <h3>Release Artifacts</h3>
+          <div class="timeline">
+            ${[
+              ["Branch", artifacts.branch],
+              ["Commit", artifacts.commitSha],
+              ["PR/MR", artifacts.pullRequestUrl ?? artifacts.mergeRequestUrl],
+              ["Tag", artifacts.tag],
+              ["Deployment", artifacts.deploymentUrl ?? artifacts.deployStatusUrl],
+              ["Probe", artifacts.healthUrl ?? artifacts.readyUrl]
+            ].filter((row) => row[1]).map(([label, value]) => `
+              <div class="timeline-item">
+                <span>${escapeHtml(label)}</span>
+                <strong>${escapeHtml(String(value))}</strong>
+                <small>source-to-production evidence</small>
+              </div>
+            `).join("") || `<div class="empty">等待执行闭环后生成分支、提交、PR/MR、部署和探测证据。</div>`}
+          </div>
+        </div>
       </div>
       <div class="loop-columns">
         <div>
@@ -1151,6 +1184,20 @@ function renderLoopDetail(loop) {
         `).join("")}
       </div>
     </section>
+  `;
+}
+
+function renderGateEvidence(gate, row) {
+  const status = row?.status ?? "PENDING";
+  const evidence = row?.evidence ?? [];
+  const lastEvidence = evidence.at(-1) ?? "等待执行";
+  const rollback = evidence.find((item) => String(item).startsWith("rollbackStatus="));
+  return `
+    <div class="timeline-item">
+      <span>${escapeHtml(status)}</span>
+      <strong>${escapeHtml(gate)}</strong>
+      <small>${escapeHtml(rollback ?? lastEvidence)}</small>
+    </div>
   `;
 }
 
@@ -1300,6 +1347,12 @@ function statusPill(status) {
     成功: "good",
     已验证: "good",
     已启用: "good",
+    已晋级: "good",
+    已部署: "good",
+    已打标: "good",
+    已推送: "good",
+    代码已变更: "good",
+    健康通过: "good",
     可回归: "good",
     已评估: "good",
     自动执行: "good",
@@ -1314,6 +1367,7 @@ function statusPill(status) {
     待标注: "warn",
     方案确认: "warn",
     人工设计: "warn",
+    已回滚: "warn",
     诊断模式: "warn",
     智能沉淀: "good",
     人工导入: "",
@@ -1321,6 +1375,7 @@ function statusPill(status) {
     中: "warn",
     高: "warn",
     高风险: "bad",
+    健康失败: "bad",
     失败: "bad",
     接入失败: "bad",
     验证失败: "bad",
@@ -2324,6 +2379,21 @@ function translateReleaseStatus(status) {
     SUCCEEDED: "成功",
     FAILED: "失败",
     ROLLED_BACK: "已回滚"
+  })[status] ?? status;
+}
+
+function translateSourceClosureState(status) {
+  return ({
+    PLANNED: "待执行",
+    CODE_CHANGED: "代码已变更",
+    PUSHED: "已推送",
+    TAGGED: "已打标",
+    DEPLOYED: "已部署",
+    HEALTH_READY: "健康通过",
+    HEALTH_FAILED: "健康失败",
+    ROLLED_BACK: "已回滚",
+    PROMOTED: "已晋级",
+    FAILED: "失败"
   })[status] ?? status;
 }
 

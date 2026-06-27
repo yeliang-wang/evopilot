@@ -700,6 +700,158 @@ exit 0
   }
 });
 
+test("ECS Docker Compose deploy connector rolls back after health-ready failure", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-ecs-health-rollback-"));
+  const deployRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-ecs-health-rollback-workdir-"));
+  const binDir = path.join(deployRoot, "bin");
+  fs.mkdirSync(binDir, { recursive: true });
+  const gitLog = path.join(deployRoot, "git.log");
+  const dockerLog = path.join(deployRoot, "docker.log");
+  const pulledMarker = path.join(deployRoot, ".pulled");
+  const resetMarker = path.join(deployRoot, ".reset");
+  const gitScript = path.join(binDir, "git");
+  const dockerScript = path.join(binDir, "docker");
+  fs.writeFileSync(gitScript, `#!/bin/sh
+echo "$@" >> "${gitLog}"
+if [ "$1" = "rev-parse" ]; then
+  if [ -f "${pulledMarker}" ]; then
+    echo "after-health-commit"
+  else
+    echo "before-health-commit"
+  fi
+  exit 0
+fi
+if [ "$1" = "pull" ]; then
+  touch "${pulledMarker}"
+  echo "pulled"
+  exit 0
+fi
+if [ "$1" = "reset" ]; then
+  touch "${resetMarker}"
+  echo "reset to $3"
+  exit 0
+fi
+echo "unexpected git command: $@" >&2
+exit 2
+`);
+  fs.writeFileSync(dockerScript, `#!/bin/sh
+echo "$@" >> "${dockerLog}"
+echo "compose succeeded"
+exit 0
+`);
+  fs.chmodSync(gitScript, 0o755);
+  fs.chmodSync(dockerScript, 0o755);
+
+  const github = createFakeSourceClosureGitHubServer();
+  const failingProbe = http.createServer((request, response) => {
+    if (request.url === "/health" || request.url === "/ready") {
+      response.writeHead(500, { "content-type": "application/json" });
+      response.end(JSON.stringify({ status: "DOWN" }));
+      return;
+    }
+    response.writeHead(404);
+    response.end();
+  });
+  await listen(github);
+  await listen(failingProbe);
+  const githubPort = github.address().port;
+  const probePort = failingProbe.address().port;
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "github-ecs-health-rollback-source",
+        name: "GitHub ECS Health Rollback Source",
+        repository: {
+          provider: "github",
+          baseUrl: `http://127.0.0.1:${githubPort}`,
+          owner: "org",
+          repo: "repo",
+          defaultBranch: "main",
+          credentials: { token: "token" }
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+
+    const deployConnector = await jsonFetch(`${baseUrl}/api/v1/connectors/deploy`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "ecs-compose-health-rollback",
+        name: "ECS Docker Compose Health Rollback",
+        type: "ecs-docker-compose",
+        workingDir: deployRoot,
+        composeFile: "docker-compose.prod.yml",
+        serviceName: "evopilot-server",
+        gitCommand: gitScript,
+        dockerCommand: dockerScript,
+        gitRemote: "origin",
+        gitBranch: "main",
+        rollbackOnHealthFailure: true,
+        url: `http://127.0.0.1:${probePort}`,
+        healthPath: "/health",
+        readyPath: "/ready"
+      }
+    });
+    assert.equal(deployConnector.status, 201);
+    assert.equal(deployConnector.body.data.rollbackOnHealthFailure, true);
+
+    const created = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "github-ecs-health-rollback-loop",
+        projectId: "github-ecs-health-rollback-source",
+        objective: "Rollback a deployed ECS Docker Compose service when health-ready fails.",
+        controlPlaneUrl: baseUrl,
+        sourceClosure: {
+          sourceProjectId: "github-ecs-health-rollback-source",
+          repositoryProvider: "github",
+          sourceBranch: "main",
+          targetVersion: "2.4.0",
+          deploymentConnectorId: "ecs-compose-health-rollback",
+          requiredGates: ["code-change", "push", "deploy", "health-ready"]
+        }
+      }
+    });
+    assert.equal(created.status, 201);
+
+    const executed = await jsonFetch(`${baseUrl}/api/v1/loops/github-ecs-health-rollback-loop/source-closure/execute`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        files: [{ path: "docs/source-closure.md", content: "closed by EvoPilot health rollback connector" }],
+        deployConnectorId: "ecs-compose-health-rollback"
+      }
+    });
+    assert.equal(executed.status, 200);
+    assert.equal(executed.body.data.sourceClosure.closureState, "ROLLED_BACK");
+    assert.equal(executed.body.data.sourceClosure.gateEvidence.deploy.status, "PASSED");
+    assert.equal(executed.body.data.sourceClosure.gateEvidence["health-ready"].status, "FAILED");
+    assert.ok(executed.body.data.sourceClosure.gateEvidence["health-ready"].evidence.some((item) => item === "rollbackStatus=SUCCEEDED"));
+    assert.ok(executed.body.data.sourceClosure.gateEvidence["health-ready"].evidence.some((item) => item === "rollbackTargetCommit=before-health-commit"));
+    assert.match(fs.readFileSync(gitLog, "utf8"), /reset --hard before-health-commit/);
+    assert.equal(fs.readFileSync(dockerLog, "utf8").trim().split("\n").length, 2);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await close(github);
+    await close(failingProbe);
+  }
+});
+
 test("Loop source closure executes GitLab source writeback gates", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-gitlab-source-closure-"));
   const gitlab = createFakeSourceClosureGitLabServer();

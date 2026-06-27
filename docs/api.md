@@ -175,7 +175,7 @@ GET /api/v1/connectors/deploy
 POST /api/v1/connectors/deploy
 ```
 
-部署连接器用于执行 source closure 的 `deploy` gate。当前内置 `http-webhook` 类型：EvoPilot 会向连接器 URL 发送结构化部署请求，连接器返回 `deploymentId`、`deploymentUrl`、`healthUrl`、`readyUrl` 或 `statusUrl` 后，EvoPilot 将部署证据写回 `LoopRun.sourceClosure.gateEvidence.deploy`，再继续执行 health/ready 探测。读取接口会隐藏 `token`，只返回是否已配置。
+部署连接器用于执行 source closure 的 `deploy` gate。当前内置 `http-webhook` 和 `ecs-docker-compose` 类型：EvoPilot 会向连接器 URL 发送结构化部署请求，或在配置的 ECS 工作目录中执行受限 Docker Compose 发布。连接器返回或生成 `deploymentId`、`deploymentUrl`、`healthUrl`、`readyUrl` 或 `statusUrl` 后，EvoPilot 将部署证据写回 `LoopRun.sourceClosure.gateEvidence.deploy`，再继续执行 health/ready 探测。读取接口会隐藏 `token`，只返回是否已配置。
 
 请求示例：
 
@@ -496,7 +496,7 @@ POST /api/v1/loops/{loopId}/source-closure/execute
 
 GitHub 路径会读取 base ref、创建 release branch、通过 Contents API 写入文件、创建 PR，并在需要 `tag` gate 时创建 tag。GitLab 路径会创建 branch、提交 commit actions、创建 MR，并在需要 `tag` gate 时创建 tag。如果传入 `deployConnectorId`，EvoPilot 会调用部署连接器并把连接器返回的部署结果写入 deploy gate。执行后 `LoopRun.sourceClosure` 会包含：
 
-- `closureState`: `PLANNED`、`CODE_CHANGED`、`PUSHED`、`TAGGED`、`DEPLOYED`、`HEALTH_READY`、`PROMOTED` 或 `FAILED`。
+- `closureState`: `PLANNED`、`CODE_CHANGED`、`PUSHED`、`TAGGED`、`DEPLOYED`、`HEALTH_READY`、`HEALTH_FAILED`、`ROLLED_BACK`、`PROMOTED` 或 `FAILED`。
 - `gateEvidence`: 每个 required gate 的 `PENDING`、`PASSED`、`FAILED` 或 `SKIPPED` 状态和证据。
 - `artifacts`: branch、commitSha、pullRequestUrl、mergeRequestUrl、tag、deploymentConnectorId、deploymentId、deploymentUrl、deployStatusUrl、healthUrl、readyUrl、executedAt、executedBy。
 
@@ -526,6 +526,7 @@ POST /api/v1/connectors/deploy
   "deployLock": true,
   "idempotency": true,
   "rollbackOnFailure": true,
+  "rollbackOnHealthFailure": true,
   "url": "http://8.153.72.80",
   "healthPath": "/health",
   "readyPath": "/ready",
@@ -533,7 +534,7 @@ POST /api/v1/connectors/deploy
 }
 ```
 
-执行时可在 `deployParameters.releaseKey` 指定幂等 key；未指定时 EvoPilot 会用 loop、源码 commit、tag 和 target version 生成默认 key。`deployLock=true` 时，同一个 connector 在同一 `workingDir` 中只允许一个部署执行。`rollbackOnFailure=true` 时，`docker compose up` 失败会触发 `git reset --hard <beforeCommit>` 并重新运行 compose，deploy gate 证据会包含 `rollbackStatus`。
+执行时可在 `deployParameters.releaseKey` 指定幂等 key；未指定时 EvoPilot 会用 loop、源码 commit、tag 和 target version 生成默认 key。`deployLock=true` 时，同一个 connector 在同一 `workingDir` 中只允许一个部署执行。`rollbackOnFailure=true` 时，`docker compose up` 失败会触发 `git reset --hard <beforeCommit>` 并重新运行 compose，deploy gate 证据会包含 `rollbackStatus`。`rollbackOnHealthFailure=true` 时，compose 发布成功但 health/ready 探测失败会基于 deploy stamp 回滚到发布前 commit，并把 `rollbackStatus`、`rollbackTargetCommit` 和回滚命令输出写入 `health-ready` gate 证据；此时 `closureState` 为 `ROLLED_BACK`，不会被提升为 `PROMOTED`。
 
 K8s/云发布执行器应接入该 deploy connector contract，而不是在 source closure 里硬编码平台逻辑。
 

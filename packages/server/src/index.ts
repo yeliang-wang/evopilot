@@ -246,6 +246,7 @@ interface StoredDeployConnector {
   name: string;
   type: "http-webhook" | "ecs-docker-compose";
   url?: string;
+  rollbackUrl?: string;
   method?: "POST";
   token?: string;
   tokenRef?: string;
@@ -261,6 +262,7 @@ interface StoredDeployConnector {
   deployLock?: boolean;
   idempotency?: boolean;
   rollbackOnFailure?: boolean;
+  rollbackOnHealthFailure?: boolean;
   gitCommand?: string;
   dockerCommand?: string;
   healthPath?: string;
@@ -682,7 +684,7 @@ type ExecutorNodeType = "llm" | "code-upgrader" | "ci" | "validator" | "approval
 type LoopStoreBackendType = "file" | "sqlite" | "postgres";
 type LoopExecutorMode = "serial" | "parallel";
 type LoopSandboxRuntimeType = "host" | "docker" | "k8s";
-type LoopSourceClosureState = "PLANNED" | "CODE_CHANGED" | "PUSHED" | "TAGGED" | "DEPLOYED" | "HEALTH_READY" | "PROMOTED" | "FAILED";
+type LoopSourceClosureState = "PLANNED" | "CODE_CHANGED" | "PUSHED" | "TAGGED" | "DEPLOYED" | "HEALTH_READY" | "HEALTH_FAILED" | "ROLLED_BACK" | "PROMOTED" | "FAILED";
 type LoopSourceClosureGate = "code-change" | "push" | "tag" | "deploy" | "health-ready";
 
 interface LoopStopPolicy {
@@ -1790,6 +1792,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           name: String(body.name ?? body.id ?? "生产部署连接器").trim(),
           type: connectorType,
           url: body.url || body.webhookUrl ? String(body.url ?? body.webhookUrl).trim() : undefined,
+          rollbackUrl: body.rollbackUrl ? String(body.rollbackUrl).trim() : undefined,
           method: connectorType === "http-webhook" ? "POST" : undefined,
           token: body.token ? String(body.token) : undefined,
           tokenRef: body.tokenRef ? String(body.tokenRef) : undefined,
@@ -1805,6 +1808,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           deployLock: body.deployLock === undefined ? connectorType === "ecs-docker-compose" : Boolean(body.deployLock),
           idempotency: body.idempotency === undefined ? connectorType === "ecs-docker-compose" : Boolean(body.idempotency),
           rollbackOnFailure: body.rollbackOnFailure === undefined ? connectorType === "ecs-docker-compose" : Boolean(body.rollbackOnFailure),
+          rollbackOnHealthFailure: body.rollbackOnHealthFailure === undefined ? connectorType === "ecs-docker-compose" : Boolean(body.rollbackOnHealthFailure),
           gitCommand: body.gitCommand ? String(body.gitCommand).trim() : "git",
           dockerCommand: body.dockerCommand ? String(body.dockerCommand).trim() : "docker",
           healthPath: body.healthPath ? String(body.healthPath) : undefined,
@@ -2605,6 +2609,7 @@ class FileStore {
       deployLock: connector.deployLock ?? true,
       idempotency: connector.idempotency ?? true,
       rollbackOnFailure: connector.rollbackOnFailure ?? true,
+      rollbackOnHealthFailure: connector.rollbackOnHealthFailure ?? true,
       gitCommand: connector.gitCommand ?? "git",
       dockerCommand: connector.dockerCommand ?? "docker"
     };
@@ -4378,7 +4383,7 @@ function normalizeLoopSourceClosure(input: unknown, project?: StoredProject, con
 
 function normalizeSourceClosureState(value: unknown): LoopSourceClosureState {
   const state = String(value ?? "PLANNED").trim().toUpperCase();
-  if (["PLANNED", "CODE_CHANGED", "PUSHED", "TAGGED", "DEPLOYED", "HEALTH_READY", "PROMOTED", "FAILED"].includes(state)) {
+  if (["PLANNED", "CODE_CHANGED", "PUSHED", "TAGGED", "DEPLOYED", "HEALTH_READY", "HEALTH_FAILED", "ROLLED_BACK", "PROMOTED", "FAILED"].includes(state)) {
     return state as LoopSourceClosureState;
   }
   return "PLANNED";
@@ -4944,8 +4949,27 @@ async function executeLoopSourceClosure(store: FileStore, loopId: string, actor:
         closureState = "FAILED";
       } else {
         const checks = await probeHealthReady(healthUrl, readyUrl);
-        markGate(gateEvidence, "health-ready", checks.passed ? "PASSED" : "FAILED", checks.evidence, new Date().toISOString());
-        closureState = checks.passed ? "HEALTH_READY" : "FAILED";
+        if (checks.passed) {
+          markGate(gateEvidence, "health-ready", "PASSED", checks.evidence, new Date().toISOString());
+          closureState = "HEALTH_READY";
+        } else {
+          let rollbackEvidence: string[] = [];
+          let rollbackSucceeded = false;
+          if (deployConnectorId) {
+            const rollbackResult = await rollbackDeployConnector(store, deployConnectorId, {
+              loop,
+              actor,
+              artifacts,
+              parameters: isRecord(request.deployParameters) ? request.deployParameters : {},
+              reason: "health-ready failed",
+              healthEvidence: checks.evidence
+            });
+            rollbackEvidence = rollbackResult.evidence;
+            rollbackSucceeded = rollbackResult.status === "SUCCEEDED";
+          }
+          markGate(gateEvidence, "health-ready", "FAILED", [...checks.evidence, ...rollbackEvidence], new Date().toISOString());
+          closureState = rollbackSucceeded ? "ROLLED_BACK" : "HEALTH_FAILED";
+        }
       }
     }
     if (requiredSourceClosureGatesPassed(loop.sourceClosure.requiredGates, gateEvidence)) {
@@ -4976,7 +5000,7 @@ async function executeLoopSourceClosure(store: FileStore, loopId: string, actor:
         loopRunId: loop.id,
         iterationId: loop.iterations.at(-1)?.id ?? `${loop.id}-source-closure`,
         validator: "evopilot-source-closure",
-        status: closureState === "FAILED" ? "FAIL" : "PASS",
+        status: sourceClosureEvidenceStatus(closureState),
         evidence: [
           ...evidence,
           ...Object.entries(updatedClosure.gateEvidence).flatMap(([gate, row]) => [
@@ -5115,6 +5139,142 @@ async function executeDeployConnector(store: FileStore, connectorId: string, inp
       status: "FAILED",
       evidence: [`deployConnector=${connector.id}`, `deployError=${message}`]
     };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function rollbackDeployConnector(store: FileStore, connectorId: string, input: {
+  loop: LoopRun;
+  actor: string;
+  artifacts: LoopSourceClosure["artifacts"];
+  parameters: Record<string, unknown>;
+  reason: string;
+  healthEvidence: string[];
+}): Promise<{ status: "SUCCEEDED" | "FAILED" | "SKIPPED"; evidence: string[] }> {
+  const connector = store.readDeployConnector(connectorId);
+  if (!connector) {
+    return {
+      status: "FAILED",
+      evidence: [`rollbackConnector=${connectorId}`, "rollbackFailure=deploy connector not configured"]
+    };
+  }
+  const evidence = [
+    `rollbackConnector=${connector.id}`,
+    `rollbackConnectorType=${connector.type}`,
+    `rollbackReason=${input.reason}`
+  ];
+  if (connector.rollbackOnHealthFailure === false) {
+    return {
+      status: "SKIPPED",
+      evidence: [...evidence, "rollbackStatus=SKIPPED", "rollbackOnHealthFailure=false"]
+    };
+  }
+  if (connector.type === "ecs-docker-compose") {
+    return rollbackEcsDockerComposeConnector(connector, input, evidence);
+  }
+  return rollbackWebhookDeployConnector(connector, input, evidence);
+}
+
+async function rollbackEcsDockerComposeConnector(connector: StoredDeployConnector, input: {
+  loop: LoopRun;
+  actor: string;
+  artifacts: LoopSourceClosure["artifacts"];
+  parameters: Record<string, unknown>;
+  reason: string;
+  healthEvidence: string[];
+}, evidence: string[]): Promise<{ status: "SUCCEEDED" | "FAILED"; evidence: string[] }> {
+  if (!connector.workingDir) {
+    return { status: "FAILED", evidence: [...evidence, "rollbackStatus=FAILED", "rollbackFailure=workingDir missing"] };
+  }
+  const workingDir = path.resolve(connector.workingDir);
+  if (!fs.existsSync(workingDir) || !fs.statSync(workingDir).isDirectory()) {
+    return { status: "FAILED", evidence: [...evidence, "rollbackStatus=FAILED", `rollbackFailure=workingDir not found: ${workingDir}`] };
+  }
+  const stamp = readEcsDeployStamp(workingDir, connector);
+  if (!stamp?.beforeCommit) {
+    return { status: "FAILED", evidence: [...evidence, "rollbackStatus=FAILED", "rollbackFailure=deploy stamp missing beforeCommit"] };
+  }
+  const timeoutSeconds = Math.max(1, connector.timeoutSeconds || 120);
+  const gitCommand = connector.gitCommand || "git";
+  const dockerCommand = connector.dockerCommand || "docker";
+  const composeArgs = ["compose", "-f", connector.composeFile || "docker-compose.yml", "up", "-d"];
+  if (connector.build !== false) composeArgs.push("--build");
+  if (connector.serviceName) composeArgs.push(connector.serviceName);
+  const commandResults: Array<{ name: string; exitCode: number; output: string }> = [];
+  const status = await rollbackEcsDockerComposeDeploy({
+    connector,
+    gitCommand,
+    dockerCommand,
+    composeArgs,
+    workingDir,
+    timeoutSeconds,
+    beforeCommit: stamp.beforeCommit,
+    commandResults
+  });
+  return {
+    status,
+    evidence: [
+      ...evidence,
+      `rollbackTargetCommit=${stamp.beforeCommit}`,
+      `rollbackReleaseKey=${stamp.releaseKey}`,
+      `rollbackStatus=${status}`,
+      ...commandEvidence(commandResults)
+    ]
+  };
+}
+
+async function rollbackWebhookDeployConnector(connector: StoredDeployConnector, input: {
+  loop: LoopRun;
+  actor: string;
+  artifacts: LoopSourceClosure["artifacts"];
+  parameters: Record<string, unknown>;
+  reason: string;
+  healthEvidence: string[];
+}, evidence: string[]): Promise<{ status: "SUCCEEDED" | "FAILED" | "SKIPPED"; evidence: string[] }> {
+  if (!connector.rollbackUrl) {
+    return { status: "SKIPPED", evidence: [...evidence, "rollbackStatus=SKIPPED", "rollbackUrl=not-configured"] };
+  }
+  const token = connector.token ?? (connector.tokenRef ? process.env[connector.tokenRef] : undefined);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), Math.max(1, connector.timeoutSeconds) * 1000);
+  try {
+    const response = await fetch(connector.rollbackUrl, {
+      method: "POST",
+      signal: controller.signal,
+      headers: {
+        "content-type": "application/json",
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+        ...(connector.headers ?? {})
+      },
+      body: JSON.stringify({
+        schema: "evopilot-deploy-rollback/v1",
+        loopId: input.loop.id,
+        projectId: input.loop.projectId,
+        actor: input.actor,
+        reason: input.reason,
+        targetVersion: input.loop.sourceClosure.targetVersion,
+        deploymentEnvironment: input.loop.sourceClosure.deploymentEnvironment ?? "production",
+        artifacts: input.artifacts,
+        healthEvidence: input.healthEvidence,
+        parameters: input.parameters
+      })
+    });
+    const text = await response.text();
+    const body = parseOptionalJson(text);
+    const rollbackId = optionalTrimmedString(body?.rollbackId) ?? optionalTrimmedString(body?.id);
+    return {
+      status: response.ok ? "SUCCEEDED" : "FAILED",
+      evidence: [
+        ...evidence,
+        `rollbackStatus=${response.ok ? "SUCCEEDED" : "FAILED"}`,
+        `rollbackHttpStatus=${response.status}`,
+        ...(rollbackId ? [`rollbackId=${rollbackId}`] : [])
+      ]
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { status: "FAILED", evidence: [...evidence, "rollbackStatus=FAILED", `rollbackError=${message}`] };
   } finally {
     clearTimeout(timeout);
   }
@@ -5408,12 +5568,20 @@ function ecsDeployResult(
       ...(healthUrl ? [`healthUrl=${healthUrl}`] : []),
       ...(readyUrl ? [`readyUrl=${readyUrl}`] : []),
       ...(failure ? [`deployFailure=${failure}`] : []),
-      ...commandResults.flatMap((result) => [
-        `command.${safeFileName(result.name)}.exitCode=${result.exitCode}`,
-        `command.${safeFileName(result.name)}.output=${truncateText(result.output, 500)}`
-      ])
+      ...commandEvidence(commandResults)
     ]
   };
+}
+
+function commandEvidence(commandResults: Array<{ name: string; exitCode: number; output: string }>): string[] {
+  return commandResults.flatMap((result) => [
+    `command.${safeFileName(result.name)}.exitCode=${result.exitCode}`,
+    `command.${safeFileName(result.name)}.output=${truncateText(result.output, 500)}`
+  ]);
+}
+
+function sourceClosureEvidenceStatus(state: LoopSourceClosureState): "PASS" | "FAIL" {
+  return ["PROMOTED", "HEALTH_READY", "DEPLOYED", "TAGGED", "PUSHED", "CODE_CHANGED"].includes(state) ? "PASS" : "FAIL";
 }
 
 async function runBoundedCommand(args: { command: string; args: string[]; cwd: string; timeoutSeconds: number }): Promise<{ exitCode: number; output: string }> {
