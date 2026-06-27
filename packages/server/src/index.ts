@@ -244,13 +244,22 @@ interface StoredOpenHandsConnector extends OpenHandsConnectorConfig {
 interface StoredDeployConnector {
   id: string;
   name: string;
-  type: "http-webhook";
-  url: string;
-  method: "POST";
+  type: "http-webhook" | "ecs-docker-compose";
+  url?: string;
+  method?: "POST";
   token?: string;
   tokenRef?: string;
   headers?: Record<string, string>;
   timeoutSeconds: number;
+  workingDir?: string;
+  composeFile?: string;
+  serviceName?: string;
+  gitRemote?: string;
+  gitBranch?: string;
+  gitPull?: boolean;
+  build?: boolean;
+  gitCommand?: string;
+  dockerCommand?: string;
   healthPath?: string;
   readyPath?: string;
   createdAt: string;
@@ -1772,24 +1781,36 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const body = await readJson(request, options.maxBodyBytes);
         const now = new Date().toISOString();
+        const connectorType = body.type === "ecs-docker-compose" ? "ecs-docker-compose" : "http-webhook";
         const connector: StoredDeployConnector = {
           id: requireBodyString(body.id, "DEPLOY_CONNECTOR_ID_REQUIRED", runtime, "default"),
           name: String(body.name ?? body.id ?? "生产部署连接器").trim(),
-          type: "http-webhook",
-          url: String(body.url ?? body.webhookUrl ?? "").trim(),
-          method: "POST",
+          type: connectorType,
+          url: body.url || body.webhookUrl ? String(body.url ?? body.webhookUrl).trim() : undefined,
+          method: connectorType === "http-webhook" ? "POST" : undefined,
           token: body.token ? String(body.token) : undefined,
           tokenRef: body.tokenRef ? String(body.tokenRef) : undefined,
           headers: body.headers && typeof body.headers === "object" ? normalizeStringMap(body.headers) : undefined,
           timeoutSeconds: Math.max(1, Math.min(300, Number(body.timeoutSeconds ?? 30))),
+          workingDir: body.workingDir ? String(body.workingDir).trim() : undefined,
+          composeFile: body.composeFile ? String(body.composeFile).trim() : connectorType === "ecs-docker-compose" ? "docker-compose.yml" : undefined,
+          serviceName: body.serviceName ? String(body.serviceName).trim() : undefined,
+          gitRemote: body.gitRemote ? String(body.gitRemote).trim() : "origin",
+          gitBranch: body.gitBranch ? String(body.gitBranch).trim() : "main",
+          gitPull: body.gitPull === undefined ? connectorType === "ecs-docker-compose" : Boolean(body.gitPull),
+          build: body.build === undefined ? true : Boolean(body.build),
+          gitCommand: body.gitCommand ? String(body.gitCommand).trim() : "git",
+          dockerCommand: body.dockerCommand ? String(body.dockerCommand).trim() : "docker",
           healthPath: body.healthPath ? String(body.healthPath) : undefined,
           readyPath: body.readyPath ? String(body.readyPath) : undefined,
           createdAt: now,
           updatedAt: now
         };
-        if (!connector.id || !connector.url) return writeJson(response, 400, { error: "DEPLOY_CONNECTOR_REQUIRED" });
+        if (!connector.id) return writeJson(response, 400, { error: "DEPLOY_CONNECTOR_REQUIRED" });
+        if (connector.type === "http-webhook" && !connector.url) return writeJson(response, 400, { error: "DEPLOY_CONNECTOR_URL_REQUIRED" });
+        if (connector.type === "ecs-docker-compose" && !connector.workingDir) return writeJson(response, 400, { error: "DEPLOY_CONNECTOR_WORKING_DIR_REQUIRED" });
         store.writeDeployConnector(connector);
-        store.appendAudit(audit(auth, "deploy.connector.saved", connector.id, { type: connector.type, url: connector.url }));
+        store.appendAudit(audit(auth, "deploy.connector.saved", connector.id, { type: connector.type, url: connector.url, workingDir: connector.workingDir }));
         return writeJson(response, 201, envelope(maskDeployConnector(connector)));
       }
       if (request.method === "POST" && url.pathname === "/api/v1/connectors/openhands") {
@@ -4990,6 +5011,9 @@ async function executeDeployConnector(store: FileStore, connectorId: string, inp
 }> {
   const connector = store.readDeployConnector(connectorId);
   if (!connector) throw httpError(409, "DEPLOY_CONNECTOR_NOT_FOUND", `Deploy connector ${connectorId} is not configured.`);
+  if (connector.type === "ecs-docker-compose") {
+    return executeEcsDockerComposeDeploy(connector, input);
+  }
   const token = connector.token ?? (connector.tokenRef ? process.env[connector.tokenRef] : undefined);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), Math.max(1, connector.timeoutSeconds) * 1000);
@@ -5018,9 +5042,11 @@ async function executeDeployConnector(store: FileStore, connectorId: string, inp
     },
     parameters: input.parameters
   };
+  const webhookUrl = connector.url;
+  if (!webhookUrl) throw httpError(409, "DEPLOY_CONNECTOR_URL_REQUIRED", `Deploy connector ${connectorId} does not have a webhook URL.`);
   try {
-    const response = await fetch(connector.url, {
-      method: connector.method,
+    const response = await fetch(webhookUrl, {
+      method: connector.method ?? "POST",
       signal: controller.signal,
       headers: {
         "content-type": "application/json",
@@ -5063,6 +5089,175 @@ async function executeDeployConnector(store: FileStore, connectorId: string, inp
   } finally {
     clearTimeout(timeout);
   }
+}
+
+async function executeEcsDockerComposeDeploy(connector: StoredDeployConnector, input: {
+  loop: LoopRun;
+  actor: string;
+  artifacts: LoopSourceClosure["artifacts"];
+  parameters: Record<string, unknown>;
+}): Promise<{
+  status: "SUCCEEDED" | "FAILED";
+  deploymentId?: string;
+  deploymentUrl?: string;
+  statusUrl?: string;
+  healthUrl?: string;
+  readyUrl?: string;
+  evidence: string[];
+}> {
+  if (!connector.workingDir) throw httpError(409, "ECS_DEPLOY_WORKING_DIR_REQUIRED", "ECS Docker Compose deploy connector requires workingDir.");
+  const workingDir = path.resolve(connector.workingDir);
+  if (!fs.existsSync(workingDir) || !fs.statSync(workingDir).isDirectory()) {
+    throw httpError(409, "ECS_DEPLOY_WORKING_DIR_NOT_FOUND", `Deploy workingDir does not exist: ${workingDir}`);
+  }
+  const timeoutSeconds = Math.max(1, connector.timeoutSeconds || 120);
+  const gitCommand = connector.gitCommand || "git";
+  const dockerCommand = connector.dockerCommand || "docker";
+  const composeFile = connector.composeFile || "docker-compose.yml";
+  const serviceName = connector.serviceName;
+  const gitRemote = connector.gitRemote || "origin";
+  const gitBranch = connector.gitBranch || "main";
+  const commandResults: Array<{ name: string; exitCode: number; output: string }> = [];
+  const evidence = [
+    `deployConnector=${connector.id}`,
+    `deployConnectorType=${connector.type}`,
+    `workingDir=${workingDir}`,
+    `composeFile=${composeFile}`,
+    ...(serviceName ? [`serviceName=${serviceName}`] : []),
+    ...(input.artifacts.commitSha ? [`sourceCommit=${input.artifacts.commitSha}`] : []),
+    ...(input.artifacts.tag ? [`sourceTag=${input.artifacts.tag}`] : [])
+  ];
+  const before = await runBoundedCommand({
+    command: gitCommand,
+    args: ["rev-parse", "--short", "HEAD"],
+    cwd: workingDir,
+    timeoutSeconds
+  });
+  commandResults.push({ name: "git rev-parse", exitCode: before.exitCode, output: before.output });
+  if (before.exitCode !== 0) {
+    return ecsDeployResult(connector, "FAILED", evidence, commandResults, undefined, "git rev-parse failed");
+  }
+  const beforeCommit = before.output.trim().split(/\s+/)[0];
+  evidence.push(`beforeCommit=${beforeCommit}`);
+  if (connector.gitPull !== false) {
+    const pull = await runBoundedCommand({
+      command: gitCommand,
+      args: ["pull", "--ff-only", gitRemote, gitBranch],
+      cwd: workingDir,
+      timeoutSeconds
+    });
+    commandResults.push({ name: "git pull", exitCode: pull.exitCode, output: pull.output });
+    if (pull.exitCode !== 0) {
+      return ecsDeployResult(connector, "FAILED", evidence, commandResults, beforeCommit, "git pull failed");
+    }
+  }
+  const after = await runBoundedCommand({
+    command: gitCommand,
+    args: ["rev-parse", "--short", "HEAD"],
+    cwd: workingDir,
+    timeoutSeconds
+  });
+  commandResults.push({ name: "git rev-parse after", exitCode: after.exitCode, output: after.output });
+  if (after.exitCode !== 0) {
+    return ecsDeployResult(connector, "FAILED", evidence, commandResults, beforeCommit, "git rev-parse after failed");
+  }
+  const afterCommit = after.output.trim().split(/\s+/)[0];
+  evidence.push(`afterCommit=${afterCommit}`);
+  const composeArgs = ["compose", "-f", composeFile, "up", "-d"];
+  if (connector.build !== false) composeArgs.push("--build");
+  if (serviceName) composeArgs.push(serviceName);
+  const compose = await runBoundedCommand({
+    command: dockerCommand,
+    args: composeArgs,
+    cwd: workingDir,
+    timeoutSeconds
+  });
+  commandResults.push({ name: "docker compose up", exitCode: compose.exitCode, output: compose.output });
+  if (compose.exitCode !== 0) {
+    return ecsDeployResult(connector, "FAILED", evidence, commandResults, afterCommit, "docker compose up failed");
+  }
+  return ecsDeployResult(connector, "SUCCEEDED", evidence, commandResults, afterCommit);
+}
+
+function ecsDeployResult(
+  connector: StoredDeployConnector,
+  status: "SUCCEEDED" | "FAILED",
+  evidence: string[],
+  commandResults: Array<{ name: string; exitCode: number; output: string }>,
+  deploymentId?: string,
+  failure?: string
+): {
+  status: "SUCCEEDED" | "FAILED";
+  deploymentId?: string;
+  deploymentUrl?: string;
+  statusUrl?: string;
+  healthUrl?: string;
+  readyUrl?: string;
+  evidence: string[];
+} {
+  const deploymentUrl = connector.url;
+  const healthUrl = joinUrlPath(deploymentUrl, connector.healthPath);
+  const readyUrl = joinUrlPath(deploymentUrl, connector.readyPath);
+  return {
+    status,
+    deploymentId,
+    deploymentUrl,
+    healthUrl,
+    readyUrl,
+    evidence: [
+      ...evidence,
+      `deployStatus=${status}`,
+      ...(deploymentId ? [`deploymentId=${deploymentId}`] : []),
+      ...(deploymentUrl ? [`deploymentUrl=${deploymentUrl}`] : []),
+      ...(healthUrl ? [`healthUrl=${healthUrl}`] : []),
+      ...(readyUrl ? [`readyUrl=${readyUrl}`] : []),
+      ...(failure ? [`deployFailure=${failure}`] : []),
+      ...commandResults.flatMap((result) => [
+        `command.${safeFileName(result.name)}.exitCode=${result.exitCode}`,
+        `command.${safeFileName(result.name)}.output=${truncateText(result.output, 500)}`
+      ])
+    ]
+  };
+}
+
+async function runBoundedCommand(args: { command: string; args: string[]; cwd: string; timeoutSeconds: number }): Promise<{ exitCode: number; output: string }> {
+  return new Promise((resolve) => {
+    let settled = false;
+    let timedOut = false;
+    const child = spawn(args.command, args.args, {
+      cwd: args.cwd,
+      shell: false,
+      env: process.env
+    });
+    let output = "";
+    const timer = setTimeout(() => {
+      timedOut = true;
+      output += "\n[evopilot] command timed out";
+      child.kill("SIGTERM");
+    }, Math.max(1, args.timeoutSeconds) * 1000);
+    child.stdout.on("data", (chunk) => {
+      output += String(chunk);
+    });
+    child.stderr.on("data", (chunk) => {
+      output += String(chunk);
+    });
+    child.on("error", (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ exitCode: 127, output: error.message });
+    });
+    child.on("close", (code) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ exitCode: timedOut ? 124 : Number(code ?? 0), output: truncateText(output, 4000) });
+    });
+  });
+}
+
+function truncateText(value: string, maxLength: number): string {
+  return value.length <= maxLength ? value : `${value.slice(0, maxLength)}...[truncated]`;
 }
 
 function parseOptionalJson(text: string): any | undefined {

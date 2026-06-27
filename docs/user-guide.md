@@ -253,7 +253,12 @@ npm run self-loop
 POST /api/v1/connectors/deploy
 ```
 
-当前内置 `http-webhook` 部署连接器。EvoPilot 会把 loop、源码、branch、commit、tag、PR/MR 和环境参数发送给部署系统，由部署系统返回 `deploymentId`、`deploymentUrl`、`healthUrl` 和 `readyUrl`。Dashboard 会在“接入项目”页展示部署连接器列表；执行闭环时，如果 loop 已绑定 `deploymentConnectorId` 或生产环境只有一个部署连接器，会自动携带该连接器。
+当前内置两类部署连接器：
+
+- `http-webhook`：EvoPilot 会把 loop、源码、branch、commit、tag、PR/MR 和环境参数发送给部署系统，由部署系统返回 `deploymentId`、`deploymentUrl`、`healthUrl` 和 `readyUrl`。
+- `ecs-docker-compose`：EvoPilot 在配置的服务器 `workingDir` 内执行受限发布序列，先读取当前 commit，可选执行 `git pull --ff-only <remote> <branch>`，再执行 `docker compose -f <composeFile> up -d --build [serviceName]`，并把每条命令的退出码和截断输出写入 deploy gate 证据。
+
+Dashboard 会在“接入项目”页展示部署连接器列表；执行闭环时，如果 loop 已绑定 `deploymentConnectorId` 或生产环境只有一个部署连接器，会自动携带该连接器。
 
 ## 10. 角色权限
 

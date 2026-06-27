@@ -402,6 +402,143 @@ test("Loop source closure executes GitHub source writeback gates", async () => {
   }
 });
 
+test("Loop source closure can deploy through ECS Docker Compose connector", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-ecs-compose-source-closure-"));
+  const deployRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-ecs-compose-workdir-"));
+  const binDir = path.join(deployRoot, "bin");
+  fs.mkdirSync(binDir, { recursive: true });
+  const gitLog = path.join(deployRoot, "git.log");
+  const dockerLog = path.join(deployRoot, "docker.log");
+  const pulledMarker = path.join(deployRoot, ".pulled");
+  const gitScript = path.join(binDir, "git");
+  const dockerScript = path.join(binDir, "docker");
+  fs.writeFileSync(gitScript, `#!/bin/sh
+echo "$@" >> "${gitLog}"
+if [ "$1" = "rev-parse" ]; then
+  if [ -f "${pulledMarker}" ]; then
+    echo "after-ecs-commit"
+  else
+    echo "before-ecs-commit"
+  fi
+  exit 0
+fi
+if [ "$1" = "pull" ]; then
+  touch "${pulledMarker}"
+  echo "pulled"
+  exit 0
+fi
+echo "unexpected git command: $@" >&2
+exit 2
+`);
+  fs.writeFileSync(dockerScript, `#!/bin/sh
+echo "$@" >> "${dockerLog}"
+exit 0
+`);
+  fs.chmodSync(gitScript, 0o755);
+  fs.chmodSync(dockerScript, 0o755);
+
+  const github = createFakeSourceClosureGitHubServer();
+  const deploy = createFakeDeployConnectorServer();
+  await listen(github);
+  await listen(deploy);
+  const githubPort = github.address().port;
+  const deployPort = deploy.address().port;
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "github-ecs-source",
+        name: "GitHub ECS Source",
+        repository: {
+          provider: "github",
+          baseUrl: `http://127.0.0.1:${githubPort}`,
+          owner: "org",
+          repo: "repo",
+          defaultBranch: "main",
+          credentials: { token: "token" }
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+
+    const deployConnector = await jsonFetch(`${baseUrl}/api/v1/connectors/deploy`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "ecs-compose",
+        name: "ECS Docker Compose",
+        type: "ecs-docker-compose",
+        workingDir: deployRoot,
+        composeFile: "docker-compose.prod.yml",
+        serviceName: "evopilot-server",
+        gitCommand: gitScript,
+        dockerCommand: dockerScript,
+        gitRemote: "origin",
+        gitBranch: "main",
+        url: `http://127.0.0.1:${deployPort}`,
+        healthPath: "/health",
+        readyPath: "/ready"
+      }
+    });
+    assert.equal(deployConnector.status, 201);
+    assert.equal(deployConnector.body.data.type, "ecs-docker-compose");
+
+    const created = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "github-ecs-loop",
+        projectId: "github-ecs-source",
+        objective: "Close source to ECS Docker Compose deployment.",
+        controlPlaneUrl: baseUrl,
+        sourceClosure: {
+          sourceProjectId: "github-ecs-source",
+          repositoryProvider: "github",
+          sourceBranch: "main",
+          targetVersion: "2.2.0",
+          deploymentConnectorId: "ecs-compose",
+          requiredGates: ["code-change", "push", "deploy", "health-ready"]
+        }
+      }
+    });
+    assert.equal(created.status, 201);
+
+    const executed = await jsonFetch(`${baseUrl}/api/v1/loops/github-ecs-loop/source-closure/execute`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        files: [{ path: "docs/source-closure.md", content: "closed by EvoPilot ECS connector" }],
+        deployConnectorId: "ecs-compose"
+      }
+    });
+    assert.equal(executed.status, 200);
+    assert.equal(executed.body.data.sourceClosure.closureState, "PROMOTED");
+    assert.equal(executed.body.data.sourceClosure.artifacts.deploymentConnectorId, "ecs-compose");
+    assert.equal(executed.body.data.sourceClosure.artifacts.deploymentId, "after-ecs-commit");
+    assert.equal(executed.body.data.sourceClosure.gateEvidence.deploy.status, "PASSED");
+    assert.ok(executed.body.data.sourceClosure.gateEvidence.deploy.evidence.some((item) => item === "deployConnectorType=ecs-docker-compose"));
+    assert.equal(executed.body.data.sourceClosure.gateEvidence["health-ready"].status, "PASSED");
+    assert.match(fs.readFileSync(gitLog, "utf8"), /pull --ff-only origin main/);
+    assert.equal(fs.readFileSync(dockerLog, "utf8").trim(), "compose -f docker-compose.prod.yml up -d --build evopilot-server");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await close(github);
+    await close(deploy);
+  }
+});
+
 test("Loop source closure executes GitLab source writeback gates", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-gitlab-source-closure-"));
   const gitlab = createFakeSourceClosureGitLabServer();
