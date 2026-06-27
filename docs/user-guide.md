@@ -199,7 +199,7 @@ Dashboard 的“闭环编排”会调用 `POST /api/v1/loop-orchestration/instan
 
 同一页面的 Target Loop Backlog 对应 `GET /api/v1/loop-orchestration/targets` 和 `POST /api/v1/loop-orchestration/advance`。它把后续产品进化目标按 Sandbox、Context、Harness、Loop 四层排队，记录 acceptance criteria、next action、stop condition 和证据摘要；点击“推进下一 Target”时，EvoPilot 会创建或推进 Codex-backed target loop，而不是要求用户每次手工复制命令或重新描述上下文。
 
-Loop 页面还提供两个面向真实用户操作的工作台。Context Time Travel Workbench 会列出当前 Loop 的 checkpoint，用户选择 iteration、输入 Context Patch JSON 后点击“Replay 并生成 Diff”，Dashboard 会调用 `POST /api/v1/loops/{loopId}/time-travel/replay`，把人工编辑、replay 轮次和 replay diff 写回 loop。Worker Queue Workbench 会显示 durable queue、worker lease、过期 lease、下一步动作和 source-closure 重复副作用保护；点击“Claim 下一 Loop”会调用 `POST /api/v1/loop-workers/claim` 写入 worker lease，供 worker 或 watchdog 后续恢复执行。
+Loop 页面还提供面向真实用户操作的工作台。Context Time Travel Workbench 会列出当前 Loop 的 checkpoint，用户选择 iteration、输入 Context Patch JSON 后点击“Replay 并生成 Diff”，Dashboard 会调用 `POST /api/v1/loops/{loopId}/time-travel/replay`，把人工编辑、replay 轮次和 replay diff 写回 loop。Worker Queue Workbench 会显示 durable queue、worker lease、过期 lease、下一步动作和 source-closure 重复副作用保护；点击“Claim 下一 Loop”会调用 `POST /api/v1/loop-workers/claim` 写入 worker lease，供 worker 或 watchdog 后续恢复执行。Sandbox Boundary Workbench 可以验证 Docker/K8s sandbox proof，并把 runtime、network、credential、path、resource 检查写回 loop。Streaming Trace Workbench 可以读取 trace tree 和 streaming events，用于查看 checkpoint、executor step、per-node cost/tokens、failure group、replay diff 和 sandbox proof。
 
 ### 9.1 EvoPilot 自托管改进 Loop
 

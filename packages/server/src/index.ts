@@ -759,6 +759,11 @@ interface LoopSandboxPolicy {
   network: "disabled" | "restricted" | "enabled";
   allowedPaths: string[];
   deniedPaths: string[];
+  resourceLimits: {
+    cpu: string;
+    memoryMb: number;
+    pids: number;
+  };
 }
 
 interface LoopSandboxEnforcement {
@@ -771,6 +776,29 @@ interface LoopSandboxEnforcement {
     allowedPaths: string[];
     deniedPaths: string[];
   };
+}
+
+interface LoopSandboxBoundaryProof {
+  schema: "evopilot-loop-sandbox-boundary-proof/v1";
+  loopId: string;
+  runtime: LoopSandboxRuntimeType;
+  status: LoopSandboxEnforcement["status"];
+  executableBoundary: {
+    dockerArgs?: string[];
+    k8sManifest?: Record<string, unknown>;
+    workspaceMount: string;
+    networkMode: string;
+    credentialMode: string;
+    readOnlyRootFilesystem: boolean;
+    resourceLimits: LoopSandboxPolicy["resourceLimits"];
+  };
+  checks: Array<{
+    id: string;
+    status: "PASS" | "FAIL" | "WARN";
+    evidence: string[];
+  }>;
+  blocksNonHumanExecutors: boolean;
+  createdAt: string;
 }
 
 interface LoopSourceClosure {
@@ -993,6 +1021,49 @@ interface LoopReplayDiff {
     changed: boolean;
   }>;
   evidence: string[];
+  createdAt: string;
+}
+
+interface LoopStreamEvent {
+  schema: "evopilot-loop-stream-event/v1";
+  id: string;
+  loopId: string;
+  type: "timeline" | "executor-step" | "checkpoint" | "worker-lease" | "watchdog" | "cost" | "failure-group" | "replay-diff" | "sandbox-proof";
+  timestamp: string;
+  label: string;
+  payload: Record<string, unknown>;
+}
+
+interface LoopTraceTree {
+  schema: "evopilot-loop-trace-tree/v1";
+  loopId: string;
+  root: {
+    id: string;
+    label: string;
+    status: LoopRunStatus;
+  };
+  nodes: Array<{
+    id: string;
+    parentId?: string;
+    type: "loop" | "iteration" | "executor-step" | "checkpoint" | "worker-lease" | "failure-group" | "replay-diff" | "sandbox-proof";
+    label: string;
+    status: string;
+    costUsd?: number;
+    tokens?: number;
+    evidence: string[];
+  }>;
+  edges: Array<{
+    from: string;
+    to: string;
+    type: "contains" | "emits" | "replays" | "fails-with" | "guards";
+  }>;
+  summary: {
+    checkpointCount: number;
+    eventCount: number;
+    failureGroupCount: number;
+    replayDiffCount: number;
+    sandboxProofStatus: LoopSandboxEnforcement["status"];
+  };
   createdAt: string;
 }
 
@@ -1690,6 +1761,36 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const loop = store.readLoop(decodeURIComponent(loopTraceMatch[1]));
         if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
         return writeJson(response, 200, envelope(loop.trace));
+      }
+      const loopTraceTreeMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/trace-tree$/);
+      if (request.method === "GET" && loopTraceTreeMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const tree = store.readLoopTraceTree(decodeURIComponent(loopTraceTreeMatch[1]));
+        if (!tree) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        return writeJson(response, 200, envelope(tree));
+      }
+      const loopEventsMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/events$/);
+      if (request.method === "GET" && loopEventsMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const events = store.listLoopStreamEvents(decodeURIComponent(loopEventsMatch[1]));
+        if (!events) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        if (String(request.headers.accept ?? "").includes("text/event-stream")) return writeEventStream(response, events);
+        return writeJson(response, 200, envelope(events));
+      }
+      const loopSandboxProofMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/sandbox-proof$/);
+      if (request.method === "GET" && loopSandboxProofMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const proof = store.readLoopSandboxProof(decodeURIComponent(loopSandboxProofMatch[1]));
+        if (!proof) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        return writeJson(response, 200, envelope(proof));
+      }
+      const loopSandboxProofVerifyMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/sandbox-proof\/verify$/);
+      if (request.method === "POST" && loopSandboxProofVerifyMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const result = store.verifyLoopSandboxProof(decodeURIComponent(loopSandboxProofVerifyMatch[1]), auth.actor);
+        if (!result) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop.sandbox-proof-verified", result.loop.id, { status: result.proof.status, runtime: result.proof.runtime }));
+        return writeJson(response, 200, envelope(result));
       }
       const loopSourceClosureExecuteMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/source-closure\/execute$/);
       if (request.method === "POST" && loopSourceClosureExecuteMatch) {
@@ -3662,6 +3763,53 @@ class FileStore {
     return this.listLoops().map((loop) => loop.trace);
   }
 
+  readLoopSandboxProof(loopId: string): LoopSandboxBoundaryProof | undefined {
+    const loop = this.readLoop(loopId);
+    if (!loop) return undefined;
+    return buildLoopSandboxBoundaryProof(loop);
+  }
+
+  verifyLoopSandboxProof(loopId: string, actor: string): { loop: LoopRun; proof: LoopSandboxBoundaryProof } | undefined {
+    const loop = this.readLoop(loopId);
+    if (!loop) return undefined;
+    const proof = buildLoopSandboxBoundaryProof(loop);
+    const now = new Date().toISOString();
+    const updated = this.writeLoop({
+      ...loop,
+      context: {
+        ...loop.context,
+        sandboxBoundaryProof: {
+          status: proof.status,
+          verifiedAt: now,
+          verifiedBy: actor,
+          checkCount: proof.checks.length
+        }
+      },
+      timeline: [
+        ...loop.timeline,
+        loopTimelineEvent("EVIDENCE", `Sandbox boundary proof ${proof.status} for ${proof.runtime}.`, {
+          runtime: proof.runtime,
+          status: proof.status,
+          checks: proof.checks.map((check) => `${check.id}:${check.status}`)
+        })
+      ],
+      updatedAt: now
+    });
+    return { loop: updated, proof };
+  }
+
+  readLoopTraceTree(loopId: string): LoopTraceTree | undefined {
+    const loop = this.readLoop(loopId);
+    if (!loop) return undefined;
+    return buildLoopTraceTree(loop);
+  }
+
+  listLoopStreamEvents(loopId: string): LoopStreamEvent[] | undefined {
+    const loop = this.readLoop(loopId);
+    if (!loop) return undefined;
+    return buildLoopStreamEvents(loop);
+  }
+
   listLoopCheckpoints(loopId: string): LoopCheckpoint[] | undefined {
     const loop = this.readLoop(loopId);
     if (!loop) return undefined;
@@ -4967,6 +5115,7 @@ function normalizeLoopSandboxPolicy(input?: Partial<LoopSandboxPolicy> | unknown
   const runtime = normalizeLoopSandboxRuntime(value.runtime);
   const network = normalizeSandboxNetwork(value.network);
   const credentialScope = normalizeCredentialScope(value.credentialScope);
+  const resourceLimits = normalizeSandboxResourceLimits(value.resourceLimits);
   return {
     runtime,
     image: value.image ? String(value.image) : runtime === "docker" ? "ghcr.io/all-hands-ai/runtime:0.59-nikolaik" : undefined,
@@ -4974,7 +5123,8 @@ function normalizeLoopSandboxPolicy(input?: Partial<LoopSandboxPolicy> | unknown
     credentialScope,
     network,
     allowedPaths: Array.isArray(value.allowedPaths) ? value.allowedPaths.map(String) : [".evopilot/runtime-upgrades", "docs/evopilot-upgrades", "src", "test"],
-    deniedPaths: Array.isArray(value.deniedPaths) ? value.deniedPaths.map(String) : [".env", ".env.*", "node_modules", ".git"]
+    deniedPaths: Array.isArray(value.deniedPaths) ? value.deniedPaths.map(String) : [".env", ".env.*", "node_modules", ".git"],
+    resourceLimits
   };
 }
 
@@ -4984,7 +5134,8 @@ function evaluateLoopSandboxEnforcement(policy: LoopSandboxPolicy): LoopSandboxE
     `sandbox.enforcement.network=${policy.network}`,
     `sandbox.enforcement.credentialScope=${policy.credentialScope}`,
     `sandbox.enforcement.allowedPaths=${policy.allowedPaths.join(",")}`,
-    `sandbox.enforcement.deniedPaths=${policy.deniedPaths.join(",")}`
+    `sandbox.enforcement.deniedPaths=${policy.deniedPaths.join(",")}`,
+    `sandbox.enforcement.resources=cpu:${policy.resourceLimits.cpu},memory:${policy.resourceLimits.memoryMb}Mi,pids:${policy.resourceLimits.pids}`
   ];
   if (policy.runtime === "host") {
     return {
@@ -5155,6 +5306,15 @@ function normalizeCredentialScope(value: unknown): LoopSandboxPolicy["credential
   return "loop";
 }
 
+function normalizeSandboxResourceLimits(value: unknown): LoopSandboxPolicy["resourceLimits"] {
+  const record = isRecord(value) ? value : {};
+  return {
+    cpu: String(record.cpu ?? "1"),
+    memoryMb: clampPositiveInteger(record.memoryMb ?? record.memoryMB, 2048),
+    pids: clampPositiveInteger(record.pids, 256)
+  };
+}
+
 function normalizeExecutorCoordinationPlan(graph: ExecutorGraph): ExecutorCoordinationPlan {
   const mode = normalizeLoopExecutorMode(graph.mode);
   return {
@@ -5237,6 +5397,121 @@ function buildLoopTraceSummary(loop: LoopRun): LoopTraceSummary {
   };
 }
 
+function buildLoopSandboxBoundaryProof(loop: LoopRun): LoopSandboxBoundaryProof {
+  const policy = loop.sandbox;
+  const enforcement = evaluateLoopSandboxEnforcement(policy);
+  const workspaceMount = `/workspace/${safeFileName(loop.id)}`;
+  const dockerArgs = policy.runtime === "docker" ? [
+    "docker",
+    "run",
+    "--rm",
+    "--read-only",
+    "--network",
+    policy.network === "enabled" ? "bridge" : "none",
+    "--cpus",
+    policy.resourceLimits.cpu,
+    "--memory",
+    `${policy.resourceLimits.memoryMb}m`,
+    "--pids-limit",
+    String(policy.resourceLimits.pids),
+    "--env",
+    `EVOPILOT_CREDENTIAL_SCOPE=${policy.credentialScope}`,
+    "--volume",
+    `${workspaceMount}:/workspace:rw`,
+    policy.image ?? "missing-image",
+    "sh",
+    "-lc",
+    sandboxBoundaryProbeScript(policy)
+  ] : undefined;
+  const k8sManifest = policy.runtime === "k8s" ? sandboxK8sManifest(loop, policy) : undefined;
+  const checks = sandboxBoundaryChecks(policy, enforcement);
+  return {
+    schema: "evopilot-loop-sandbox-boundary-proof/v1",
+    loopId: loop.id,
+    runtime: policy.runtime,
+    status: enforcement.status,
+    executableBoundary: {
+      dockerArgs,
+      k8sManifest,
+      workspaceMount,
+      networkMode: policy.network === "enabled" ? "egress-enabled" : "egress-blocked",
+      credentialMode: policy.credentialScope,
+      readOnlyRootFilesystem: policy.runtime !== "host",
+      resourceLimits: policy.resourceLimits
+    },
+    checks,
+    blocksNonHumanExecutors: enforcement.status === "FAILED",
+    createdAt: new Date().toISOString()
+  };
+}
+
+function sandboxBoundaryChecks(policy: LoopSandboxPolicy, enforcement: LoopSandboxEnforcement): LoopSandboxBoundaryProof["checks"] {
+  return [{
+    id: "runtime-boundary",
+    status: enforcement.status === "ENFORCED" ? "PASS" : enforcement.status === "FAILED" ? "FAIL" : "WARN",
+    evidence: enforcement.evidence
+  }, {
+    id: "network-boundary",
+    status: policy.network === "enabled" ? "WARN" : "PASS",
+    evidence: [`network=${policy.network}`, policy.network === "enabled" ? "egress allowed by policy" : "egress blocked or restricted by policy"]
+  }, {
+    id: "credential-boundary",
+    status: policy.credentialScope === "project" ? "WARN" : "PASS",
+    evidence: [`credentialScope=${policy.credentialScope}`, policy.credentialScope === "none" ? "no credentials mounted" : `credentials scoped to ${policy.credentialScope}`]
+  }, {
+    id: "path-boundary",
+    status: policy.deniedPaths.length > 0 && policy.allowedPaths.length > 0 ? "PASS" : "FAIL",
+    evidence: [`allowedPaths=${policy.allowedPaths.join(",")}`, `deniedPaths=${policy.deniedPaths.join(",")}`]
+  }, {
+    id: "resource-boundary",
+    status: policy.resourceLimits.memoryMb > 0 && policy.resourceLimits.pids > 0 ? "PASS" : "FAIL",
+    evidence: [`cpu=${policy.resourceLimits.cpu}`, `memoryMb=${policy.resourceLimits.memoryMb}`, `pids=${policy.resourceLimits.pids}`]
+  }];
+}
+
+function sandboxBoundaryProbeScript(policy: LoopSandboxPolicy): string {
+  return [
+    "set -e",
+    "test -d /workspace",
+    policy.deniedPaths.map((item) => `test ! -e /workspace/${shellSafePath(item)}`).join(" && ") || "true",
+    "echo evopilot-sandbox-boundary-ok"
+  ].join("; ");
+}
+
+function sandboxK8sManifest(loop: LoopRun, policy: LoopSandboxPolicy): Record<string, unknown> {
+  return {
+    apiVersion: "batch/v1",
+    kind: "Job",
+    metadata: {
+      name: safeFileName(`evopilot-${loop.id}`),
+      namespace: policy.namespace
+    },
+    spec: {
+      template: {
+        spec: {
+          restartPolicy: "Never",
+          containers: [{
+            name: "executor",
+            image: policy.image ?? "ghcr.io/all-hands-ai/runtime:0.59-nikolaik",
+            command: ["sh", "-lc", sandboxBoundaryProbeScript(policy)],
+            env: [{ name: "EVOPILOT_CREDENTIAL_SCOPE", value: policy.credentialScope }],
+            securityContext: {
+              readOnlyRootFilesystem: true,
+              allowPrivilegeEscalation: false
+            },
+            resources: {
+              limits: {
+                cpu: policy.resourceLimits.cpu,
+                memory: `${policy.resourceLimits.memoryMb}Mi`
+              }
+            }
+          }]
+        }
+      }
+    }
+  };
+}
+
 function buildLoopCheckpoints(loop: LoopRun): LoopCheckpoint[] {
   return loop.iterations.map((iteration) => ({
     schema: "evopilot-loop-checkpoint/v1",
@@ -5307,6 +5582,206 @@ function buildLoopReplayDiff(before: LoopRun, after: LoopRun, fromIteration: num
   };
 }
 
+function buildLoopTraceTree(loop: LoopRun): LoopTraceTree {
+  const nodes: LoopTraceTree["nodes"] = [{
+    id: loop.id,
+    type: "loop",
+    label: loop.objective,
+    status: loop.status,
+    evidence: [`project=${loop.projectId}`, `source=${loop.source}`, `sourceClosure=${loop.sourceClosure.closureState}`]
+  }];
+  const edges: LoopTraceTree["edges"] = [];
+  for (const iteration of loop.iterations) {
+    const iterationNodeId = iteration.id;
+    nodes.push({
+      id: iterationNodeId,
+      parentId: loop.id,
+      type: "iteration",
+      label: `Iteration ${iteration.index}`,
+      status: iteration.decision,
+      evidence: [`traceId=${iteration.traceId}`, `evidenceSet=${iteration.evidenceSetId ?? "none"}`]
+    });
+    edges.push({ from: loop.id, to: iterationNodeId, type: "contains" });
+    for (const step of iteration.executorSteps) {
+      const stepNodeId = `${iteration.id}:${step.nodeId}`;
+      nodes.push({
+        id: stepNodeId,
+        parentId: iterationNodeId,
+        type: "executor-step",
+        label: `${step.type}:${step.nodeId}`,
+        status: step.status,
+        costUsd: Number(step.output.costUsd ?? 0),
+        tokens: Number(step.output.totalTokens ?? step.output.tokens ?? 0),
+        evidence: step.evidence.slice(0, 12)
+      });
+      edges.push({ from: iterationNodeId, to: stepNodeId, type: "emits" });
+      if (step.failureSignature) edges.push({ from: stepNodeId, to: `failure:${step.failureSignature}`, type: "fails-with" });
+    }
+    if (iteration.replayOfIterationId) edges.push({ from: iteration.replayOfIterationId, to: iterationNodeId, type: "replays" });
+  }
+  for (const checkpoint of buildLoopCheckpoints(loop)) {
+    nodes.push({
+      id: checkpoint.id,
+      parentId: checkpoint.iterationId,
+      type: "checkpoint",
+      label: `Checkpoint ${checkpoint.iterationIndex}`,
+      status: checkpoint.decision,
+      evidence: [`replayable=${checkpoint.replayable}`, `executorOutputs=${checkpoint.executorOutputs.length}`]
+    });
+    edges.push({ from: checkpoint.iterationId, to: checkpoint.id, type: "contains" });
+  }
+  for (const failure of loop.trace.failureSignatures) {
+    nodes.push({
+      id: `failure:${failure.signature}`,
+      parentId: loop.id,
+      type: "failure-group",
+      label: failure.signature,
+      status: String(failure.count),
+      evidence: [`count=${failure.count}`]
+    });
+  }
+  if (loop.workerLease) {
+    nodes.push({
+      id: `${loop.id}:worker-lease`,
+      parentId: loop.id,
+      type: "worker-lease",
+      label: loop.workerLease.workerId,
+      status: loop.trace.watchdog.expiredLease ? "EXPIRED" : "ACTIVE",
+      evidence: [`heartbeatAt=${loop.workerLease.heartbeatAt}`, `expiresAt=${loop.workerLease.expiresAt}`]
+    });
+    edges.push({ from: loop.id, to: `${loop.id}:worker-lease`, type: "guards" });
+  }
+  nodes.push({
+    id: `${loop.id}:sandbox-proof`,
+    parentId: loop.id,
+    type: "sandbox-proof",
+    label: `${loop.sandbox.runtime} sandbox`,
+    status: loop.sandboxEnforcement.status,
+    evidence: loop.sandboxEnforcement.evidence
+  });
+  edges.push({ from: loop.id, to: `${loop.id}:sandbox-proof`, type: "guards" });
+  const replayDiffCount = loop.iterations.filter((iteration) => iteration.replayOfIterationId || iteration.contextPatch).length;
+  return {
+    schema: "evopilot-loop-trace-tree/v1",
+    loopId: loop.id,
+    root: {
+      id: loop.id,
+      label: loop.objective,
+      status: loop.status
+    },
+    nodes,
+    edges,
+    summary: {
+      checkpointCount: loop.iterations.length,
+      eventCount: buildLoopStreamEvents(loop).length,
+      failureGroupCount: loop.trace.failureSignatures.length,
+      replayDiffCount,
+      sandboxProofStatus: loop.sandboxEnforcement.status
+    },
+    createdAt: new Date().toISOString()
+  };
+}
+
+function buildLoopStreamEvents(loop: LoopRun): LoopStreamEvent[] {
+  const events: LoopStreamEvent[] = [];
+  for (const event of loop.timeline) {
+    events.push({
+      schema: "evopilot-loop-stream-event/v1",
+      id: event.id,
+      loopId: loop.id,
+      type: event.type === "WATCHDOG" ? "watchdog" : "timeline",
+      timestamp: event.timestamp,
+      label: event.message,
+      payload: event.metadata ?? {}
+    });
+  }
+  for (const iteration of loop.iterations) {
+    for (const step of iteration.executorSteps) {
+      events.push({
+        schema: "evopilot-loop-stream-event/v1",
+        id: `${iteration.id}:${step.nodeId}`,
+        loopId: loop.id,
+        type: "executor-step",
+        timestamp: step.completedAt ?? step.startedAt,
+        label: `${step.type}:${step.nodeId}:${step.status}`,
+        payload: {
+          iteration: iteration.index,
+          status: step.status,
+          failureSignature: step.failureSignature,
+          costUsd: step.output.costUsd ?? 0,
+          tokens: step.output.totalTokens ?? step.output.tokens ?? 0
+        }
+      });
+    }
+    if (iteration.replayOfIterationId || iteration.contextPatch) {
+      events.push({
+        schema: "evopilot-loop-stream-event/v1",
+        id: `${iteration.id}:replay-diff`,
+        loopId: loop.id,
+        type: "replay-diff",
+        timestamp: iteration.completedAt ?? iteration.startedAt,
+        label: `Replay diff for iteration ${iteration.index}`,
+        payload: {
+          replayOfIterationId: iteration.replayOfIterationId,
+          contextChangedKeys: Object.keys(iteration.contextPatch ?? {})
+        }
+      });
+    }
+  }
+  for (const checkpoint of buildLoopCheckpoints(loop)) {
+    events.push({
+      schema: "evopilot-loop-stream-event/v1",
+      id: checkpoint.id,
+      loopId: loop.id,
+      type: "checkpoint",
+      timestamp: checkpoint.createdAt,
+      label: `Checkpoint ${checkpoint.iterationIndex}`,
+      payload: { checkpoint }
+    });
+  }
+  if (loop.workerLease) {
+    events.push({
+      schema: "evopilot-loop-stream-event/v1",
+      id: `${loop.id}:worker-lease`,
+      loopId: loop.id,
+      type: "worker-lease",
+      timestamp: loop.workerLease.heartbeatAt,
+      label: `Worker lease ${loop.workerLease.workerId}`,
+      payload: { workerLease: loop.workerLease }
+    });
+  }
+  events.push({
+    schema: "evopilot-loop-stream-event/v1",
+    id: `${loop.id}:cost`,
+    loopId: loop.id,
+    type: "cost",
+    timestamp: loop.trace.updatedAt,
+    label: "Loop cost summary",
+    payload: loop.trace.cost
+  });
+  for (const failure of loop.trace.failureSignatures) {
+    events.push({
+      schema: "evopilot-loop-stream-event/v1",
+      id: `${loop.id}:failure:${safeFileName(failure.signature)}`,
+      loopId: loop.id,
+      type: "failure-group",
+      timestamp: loop.trace.updatedAt,
+      label: failure.signature,
+      payload: failure
+    });
+  }
+  events.push({
+    schema: "evopilot-loop-stream-event/v1",
+    id: `${loop.id}:sandbox-proof`,
+    loopId: loop.id,
+    type: "sandbox-proof",
+    timestamp: loop.updatedAt,
+    label: `Sandbox proof ${loop.sandboxEnforcement.status}`,
+    payload: { proof: buildLoopSandboxBoundaryProof(loop) }
+  });
+  return events.sort((left, right) => Date.parse(left.timestamp) - Date.parse(right.timestamp));
+}
+
 function loopWorkerQueueItem(loop: LoopRun, now: Date): LoopWorkerQueueItem {
   const leaseExpiry = loop.workerLease?.expiresAt ? Date.parse(loop.workerLease.expiresAt) : Number.NaN;
   const leaseExpired = Number.isFinite(leaseExpiry) ? leaseExpiry < now.getTime() : false;
@@ -5341,6 +5816,10 @@ function loopWorkerQueueItem(loop: LoopRun, now: Date): LoopWorkerQueueItem {
 
 function stableJson(value: unknown): string {
   return JSON.stringify(value, Object.keys(isRecord(value) ? value : {}).sort());
+}
+
+function shellSafePath(value: string): string {
+  return String(value).replace(/[^a-zA-Z0-9._/-]/g, "");
 }
 
 function hydrateLoopIteration(iteration: any): LoopIteration {
@@ -9360,6 +9839,20 @@ function redactUrlSearch(params: URLSearchParams): Record<string, string> | unde
 function writeJson(response: http.ServerResponse, statusCode: number, body: unknown): void {
   response.writeHead(statusCode, { "content-type": "application/json; charset=utf-8" });
   response.end(JSON.stringify(body));
+}
+
+function writeEventStream(response: http.ServerResponse, events: LoopStreamEvent[]): void {
+  response.writeHead(200, {
+    "content-type": "text/event-stream; charset=utf-8",
+    "cache-control": "no-cache",
+    connection: "keep-alive"
+  });
+  for (const event of events) {
+    response.write(`id: ${event.id}\n`);
+    response.write(`event: ${event.type}\n`);
+    response.write(`data: ${JSON.stringify(event)}\n\n`);
+  }
+  response.end();
 }
 
 function writeText(response: http.ServerResponse, statusCode: number, body: string): void {

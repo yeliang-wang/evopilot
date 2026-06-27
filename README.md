@@ -138,6 +138,10 @@ POST /api/v1/loops/{loopId}/approve
 GET /api/v1/loops/{loopId}/timeline
 GET /api/v1/loops/{loopId}/evidence
 GET /api/v1/loops/{loopId}/trace
+GET /api/v1/loops/{loopId}/trace-tree
+GET /api/v1/loops/{loopId}/events
+GET /api/v1/loops/{loopId}/sandbox-proof
+POST /api/v1/loops/{loopId}/sandbox-proof/verify
 GET /api/v1/loop-store
 GET /api/v1/loop-observability
 POST /api/v1/loop-workers/heartbeat
@@ -160,7 +164,7 @@ For GitHub and GitLab repositories, an admin can execute the closure through `PO
 
 The Dashboard also exposes a closed-loop orchestration workbench. `GET /api/v1/loop-orchestration/presets` lists productized loop presets, and `POST /api/v1/loop-orchestration/instantiate` creates a standard source-to-production target loop with a typed executor graph, Docker sandbox enforcement evidence, worker/watchdog continuity, deploy connector binding, and health-ready rollback semantics. `GET /api/v1/loop-orchestration/targets` exposes the product target backlog across Sandbox, Context, Harness, and Loop layers; `POST /api/v1/loop-orchestration/advance` creates or advances the next Codex-backed target loop, records next action and stop condition, and keeps acceptance criteria as loop context. Executor graphs now preserve typed edges, conditional routes, fan-out/fan-in edges, nested subgraph markers, and schema validation evidence in the graph contract.
 
-The same Dashboard page now includes reusable product workbenches for the remaining loop-harness gaps. Context Time Travel lists checkpoints from `GET /api/v1/loops/{loopId}/checkpoints`, lets an operator edit context JSON, and submits `POST /api/v1/loops/{loopId}/time-travel/replay` to continue from the selected iteration with a replay diff. Worker Queue Workbench uses `GET /api/v1/loop-workers/queue` and `POST /api/v1/loop-workers/claim` to show claimable loops, active or expired leases, crash-resume readiness, and duplicate source-closure side-effect protection.
+The same Dashboard page now includes reusable product workbenches for the remaining loop-harness gaps. Context Time Travel lists checkpoints from `GET /api/v1/loops/{loopId}/checkpoints`, lets an operator edit context JSON, and submits `POST /api/v1/loops/{loopId}/time-travel/replay` to continue from the selected iteration with a replay diff. Worker Queue Workbench uses `GET /api/v1/loop-workers/queue` and `POST /api/v1/loop-workers/claim` to show claimable loops, active or expired leases, crash-resume readiness, and duplicate source-closure side-effect protection. Sandbox Boundary Workbench exposes executable Docker/K8s boundary proof through `GET /api/v1/loops/{loopId}/sandbox-proof` and writes verification evidence through `POST /api/v1/loops/{loopId}/sandbox-proof/verify`. Streaming Trace Workbench uses `GET /api/v1/loops/{loopId}/trace-tree` and `GET /api/v1/loops/{loopId}/events` for trace tree, checkpoint, cost, failure-group, replay-diff, sandbox-proof, and SSE event inspection.
 
 ## Self-Hosted Improvement Loop
 

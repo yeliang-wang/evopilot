@@ -253,6 +253,47 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(trace.body.data.loopId, "workbuddy-long-task");
     assert.equal(trace.body.data.executorStepCount, 4);
 
+    const sandboxProof = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/sandbox-proof`, {
+      token: "viewer-token"
+    });
+    assert.equal(sandboxProof.status, 200);
+    assert.equal(sandboxProof.body.data.schema, "evopilot-loop-sandbox-boundary-proof/v1");
+    assert.equal(sandboxProof.body.data.status, "ENFORCED");
+    assert.ok(sandboxProof.body.data.executableBoundary.dockerArgs.includes("--read-only"));
+    assert.ok(sandboxProof.body.data.checks.some((check) => check.id === "resource-boundary" && check.status === "PASS"));
+
+    const verifiedSandboxProof = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/sandbox-proof/verify`, {
+      method: "POST",
+      token: "operator-token",
+      body: {}
+    });
+    assert.equal(verifiedSandboxProof.status, 200);
+    assert.equal(verifiedSandboxProof.body.data.proof.status, "ENFORCED");
+    assert.equal(verifiedSandboxProof.body.data.loop.context.sandboxBoundaryProof.status, "ENFORCED");
+
+    const traceTree = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/trace-tree`, {
+      token: "viewer-token"
+    });
+    assert.equal(traceTree.status, 200);
+    assert.equal(traceTree.body.data.schema, "evopilot-loop-trace-tree/v1");
+    assert.ok(traceTree.body.data.nodes.some((node) => node.type === "sandbox-proof"));
+    assert.ok(traceTree.body.data.nodes.some((node) => node.type === "executor-step"));
+    assert.equal(traceTree.body.data.summary.sandboxProofStatus, "ENFORCED");
+
+    const loopEvents = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/events`, {
+      token: "viewer-token"
+    });
+    assert.equal(loopEvents.status, 200);
+    assert.ok(loopEvents.body.data.some((event) => event.type === "executor-step"));
+    assert.ok(loopEvents.body.data.some((event) => event.type === "sandbox-proof"));
+
+    const eventStream = await fetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/events`, {
+      headers: { ...authHeaders("viewer-token"), accept: "text/event-stream" }
+    });
+    assert.equal(eventStream.status, 200);
+    assert.match(eventStream.headers.get("content-type") ?? "", /text\/event-stream/);
+    assert.match(await eventStream.text(), /event: sandbox-proof/);
+
     const observability = await jsonFetch(`${baseUrl}/api/v1/loop-observability`, {
       token: "viewer-token"
     });

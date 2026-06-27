@@ -1310,6 +1310,45 @@ function renderLoopDetail(loop) {
           </div>
         </div>
       </div>
+      <div class="loop-columns">
+        <div>
+          <h3>Sandbox Boundary Workbench</h3>
+          <div class="timeline">
+            <div class="timeline-item">
+              <span>${escapeHtml(loop.sandboxEnforcement?.status ?? "PENDING")}</span>
+              <strong>${escapeHtml(loop.sandbox?.runtime ?? "host")} boundary</strong>
+              <small>${escapeHtml(loop.sandbox?.network ?? "restricted")} / ${escapeHtml(loop.sandbox?.credentialScope ?? "loop")} / ${(loop.sandbox?.deniedPaths ?? []).map(escapeHtml).join(", ")}</small>
+            </div>
+            <div class="timeline-item">
+              <span>Resources</span>
+              <strong>${escapeHtml(loop.sandbox?.resourceLimits?.cpu ?? "1")} CPU / ${escapeHtml(String(loop.sandbox?.resourceLimits?.memoryMb ?? 2048))} MiB</strong>
+              <small>pids ${escapeHtml(String(loop.sandbox?.resourceLimits?.pids ?? 256))} / read-only root for Docker/K8s</small>
+            </div>
+          </div>
+          <div class="table-actions">
+            <button data-action="verify-sandbox-proof" data-id="${escapeHtml(loop.id)}">验证 Sandbox Proof</button>
+          </div>
+        </div>
+        <div>
+          <h3>Streaming Trace Workbench</h3>
+          <div class="timeline">
+            <div class="timeline-item">
+              <span>Trace Tree</span>
+              <strong>${loop.trace?.executorStepCount ?? 0} executor steps</strong>
+              <small>checkpoints ${(loop.iterations ?? []).length} / failures ${(loop.trace?.failureSignatures ?? []).length}</small>
+            </div>
+            <div class="timeline-item">
+              <span>Stream</span>
+              <strong>/events</strong>
+              <small>timeline, executor-step, checkpoint, cost, failure-group, replay-diff, sandbox-proof</small>
+            </div>
+          </div>
+          <div class="table-actions">
+            <button data-action="load-trace-tree" data-id="${escapeHtml(loop.id)}">刷新 Trace Tree</button>
+            <button data-action="load-loop-events" data-id="${escapeHtml(loop.id)}">读取 Streaming Events</button>
+          </div>
+        </div>
+      </div>
       <div class="timeline">
         ${(loop.timeline ?? []).slice(-6).map((event) => `
           <div class="timeline-item">
@@ -1773,6 +1812,38 @@ function bindLoopActions() {
         await loadLoops();
       } catch (error) {
         state.authNotice = `Time Travel Replay 失败：${error.message}`;
+      } finally {
+        render();
+      }
+    });
+  }
+  for (const button of content.querySelectorAll('[data-action="verify-sandbox-proof"], [data-action="load-trace-tree"], [data-action="load-loop-events"]')) {
+    button.addEventListener("click", async () => {
+      const id = button.dataset.id;
+      const action = button.dataset.action;
+      button.disabled = true;
+      state.authNotice = "";
+      try {
+        if (action === "verify-sandbox-proof") {
+          const response = await postJson(`/api/v1/loops/${encodeURIComponent(id)}/sandbox-proof/verify`, {});
+          const proof = response.data?.proof;
+          state.authNotice = `Sandbox Proof ${proof?.status ?? "UNKNOWN"}：${proof?.checks?.length ?? 0} 个边界检查已写入 Loop。`;
+        }
+        if (action === "load-trace-tree") {
+          const response = await apiFetch(`/api/v1/loops/${encodeURIComponent(id)}/trace-tree`);
+          if (!response.ok) throw new Error(`Trace Tree 接口状态 ${response.status}`);
+          const { data } = await response.json();
+          state.authNotice = `Trace Tree 已刷新：${data?.nodes?.length ?? 0} nodes / ${data?.edges?.length ?? 0} edges。`;
+        }
+        if (action === "load-loop-events") {
+          const response = await apiFetch(`/api/v1/loops/${encodeURIComponent(id)}/events`);
+          if (!response.ok) throw new Error(`Loop Events 接口状态 ${response.status}`);
+          const { data } = await response.json();
+          state.authNotice = `Streaming Events 已读取：${Array.isArray(data) ? data.length : 0} 条事件。`;
+        }
+        await loadLoops();
+      } catch (error) {
+        state.authNotice = `Loop Workbench 操作失败：${error.message}`;
       } finally {
         render();
       }

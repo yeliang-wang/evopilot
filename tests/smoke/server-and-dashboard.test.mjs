@@ -188,6 +188,10 @@ test("server serves dashboard static files", async () => {
     assert.match(app, /\/api\/v1\/loop-workers\/claim/);
     assert.match(app, /Context Time Travel Workbench/);
     assert.match(app, /\/time-travel\/replay/);
+    assert.match(app, /Sandbox Boundary Workbench/);
+    assert.match(app, /\/sandbox-proof\/verify/);
+    assert.match(app, /Streaming Trace Workbench/);
+    assert.match(app, /\/trace-tree/);
     assert.doesNotMatch(app, /OpenHands 白盒执行/);
     assert.doesNotMatch(app, /Jenkins Stage View/);
     assert.doesNotMatch(app, /进化方案 Review/);
