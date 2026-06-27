@@ -654,6 +654,8 @@ type ExecutorNodeType = "llm" | "code-upgrader" | "ci" | "validator" | "approval
 type LoopStoreBackendType = "file" | "sqlite" | "postgres";
 type LoopExecutorMode = "serial" | "parallel";
 type LoopSandboxRuntimeType = "host" | "docker" | "k8s";
+type LoopSourceClosureState = "PLANNED" | "CODE_CHANGED" | "PUSHED" | "TAGGED" | "DEPLOYED" | "HEALTH_READY" | "PROMOTED" | "FAILED";
+type LoopSourceClosureGate = "code-change" | "push" | "tag" | "deploy" | "health-ready";
 
 interface LoopStopPolicy {
   maxIterations: number;
@@ -723,8 +725,26 @@ interface LoopSourceClosure {
   controlPlaneUrl?: string;
   targetVersion?: string;
   releaseStrategy: "none" | "github-push" | "gitlab-merge-request" | "local-git-commit";
-  requiredGates: Array<"code-change" | "push" | "tag" | "deploy" | "health-ready">;
+  requiredGates: LoopSourceClosureGate[];
   deploymentEnvironment?: string;
+  closureState: LoopSourceClosureState;
+  gateEvidence: Partial<Record<LoopSourceClosureGate, {
+    status: "PENDING" | "PASSED" | "FAILED" | "SKIPPED";
+    evidence: string[];
+    checkedAt: string;
+  }>>;
+  artifacts: {
+    branch?: string;
+    commitSha?: string;
+    pullRequestUrl?: string;
+    mergeRequestUrl?: string;
+    tag?: string;
+    deploymentUrl?: string;
+    healthUrl?: string;
+    readyUrl?: string;
+    executedAt?: string;
+    executedBy?: string;
+  };
 }
 
 interface ExecutorCoordinationPlan {
@@ -1411,6 +1431,20 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const loop = store.readLoop(decodeURIComponent(loopTraceMatch[1]));
         if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
         return writeJson(response, 200, envelope(loop.trace));
+      }
+      const loopSourceClosureExecuteMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/source-closure\/execute$/);
+      if (request.method === "POST" && loopSourceClosureExecuteMatch) {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const loop = await executeLoopSourceClosure(store, decodeURIComponent(loopSourceClosureExecuteMatch[1]), auth.actor, body);
+        if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop.source-closure-executed", loop.id, {
+          provider: loop.sourceClosure.repositoryProvider,
+          closureState: loop.sourceClosure.closureState,
+          branch: loop.sourceClosure.artifacts.branch,
+          tag: loop.sourceClosure.artifacts.tag
+        }));
+        return writeJson(response, 200, envelope(loop));
       }
       const loopMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)$/);
       if (request.method === "GET" && loopMatch) {
@@ -4214,8 +4248,19 @@ function normalizeLoopSourceClosure(input: unknown, project?: StoredProject, con
     targetVersion: value.targetVersion ? String(value.targetVersion).trim() : undefined,
     releaseStrategy: normalizeSourceClosureReleaseStrategy(value.releaseStrategy, provider),
     requiredGates: normalizeSourceClosureGates(value.requiredGates),
-    deploymentEnvironment: value.deploymentEnvironment ? String(value.deploymentEnvironment).trim() : "production"
+    deploymentEnvironment: value.deploymentEnvironment ? String(value.deploymentEnvironment).trim() : "production",
+    closureState: normalizeSourceClosureState(value.closureState),
+    gateEvidence: normalizeSourceClosureGateEvidence(value.gateEvidence),
+    artifacts: normalizeSourceClosureArtifacts(value.artifacts)
   };
+}
+
+function normalizeSourceClosureState(value: unknown): LoopSourceClosureState {
+  const state = String(value ?? "PLANNED").trim().toUpperCase();
+  if (["PLANNED", "CODE_CHANGED", "PUSHED", "TAGGED", "DEPLOYED", "HEALTH_READY", "PROMOTED", "FAILED"].includes(state)) {
+    return state as LoopSourceClosureState;
+  }
+  return "PLANNED";
 }
 
 function normalizeSourceClosureRepositoryProvider(value: unknown): LoopSourceClosure["repositoryProvider"] {
@@ -4234,9 +4279,46 @@ function normalizeSourceClosureReleaseStrategy(value: unknown, provider: LoopSou
 }
 
 function normalizeSourceClosureGates(value: unknown): LoopSourceClosure["requiredGates"] {
-  const allowed = new Set<LoopSourceClosure["requiredGates"][number]>(["code-change", "push", "tag", "deploy", "health-ready"]);
-  const gates = Array.isArray(value) ? value.map(String).filter((item): item is LoopSourceClosure["requiredGates"][number] => allowed.has(item as LoopSourceClosure["requiredGates"][number])) : [];
+  const allowed = new Set<LoopSourceClosureGate>(["code-change", "push", "tag", "deploy", "health-ready"]);
+  const gates = Array.isArray(value) ? value.map(String).filter((item): item is LoopSourceClosureGate => allowed.has(item as LoopSourceClosureGate)) : [];
   return gates.length > 0 ? [...new Set(gates)] : ["code-change", "push", "deploy", "health-ready"];
+}
+
+function normalizeSourceClosureGateEvidence(value: unknown): LoopSourceClosure["gateEvidence"] {
+  if (!isRecord(value)) return {};
+  const evidence: LoopSourceClosure["gateEvidence"] = {};
+  for (const gate of ["code-change", "push", "tag", "deploy", "health-ready"] as const) {
+    const row = value[gate];
+    if (!isRecord(row)) continue;
+    const status = String(row.status ?? "PENDING").toUpperCase();
+    evidence[gate] = {
+      status: status === "PASSED" || status === "FAILED" || status === "SKIPPED" ? status : "PENDING",
+      evidence: Array.isArray(row.evidence) ? row.evidence.map(String) : [],
+      checkedAt: String(row.checkedAt ?? new Date().toISOString())
+    };
+  }
+  return evidence;
+}
+
+function normalizeSourceClosureArtifacts(value: unknown): LoopSourceClosure["artifacts"] {
+  if (!isRecord(value)) return {};
+  return {
+    branch: optionalTrimmedString(value.branch),
+    commitSha: optionalTrimmedString(value.commitSha),
+    pullRequestUrl: optionalTrimmedString(value.pullRequestUrl),
+    mergeRequestUrl: optionalTrimmedString(value.mergeRequestUrl),
+    tag: optionalTrimmedString(value.tag),
+    deploymentUrl: optionalTrimmedString(value.deploymentUrl),
+    healthUrl: optionalTrimmedString(value.healthUrl),
+    readyUrl: optionalTrimmedString(value.readyUrl),
+    executedAt: optionalTrimmedString(value.executedAt),
+    executedBy: optionalTrimmedString(value.executedBy)
+  };
+}
+
+function optionalTrimmedString(value: unknown): string | undefined {
+  const text = typeof value === "string" ? value.trim() : "";
+  return text || undefined;
 }
 
 function sourceUrlFromRepository(repository?: ProjectRepositoryRegistration): string | undefined {
@@ -4586,6 +4668,250 @@ function executeLoopNode(args: {
     evidence: [...baseEvidence, ...adapterResult.evidence],
     failureSignature: adapterResult.failureSignature
   };
+}
+
+async function executeLoopSourceClosure(store: FileStore, loopId: string, actor: string, body: unknown): Promise<LoopRun | undefined> {
+  const loop = store.readLoop(loopId);
+  if (!loop) return undefined;
+  const project = store.readProject(loop.sourceClosure.sourceProjectId) ?? store.readProject(loop.projectId);
+  const request = isRecord(body) ? body : {};
+  const now = new Date().toISOString();
+  const files = normalizeSourceClosureFiles(request.files);
+  const branch = optionalTrimmedString(request.branchName) ?? optionalTrimmedString(request.branch) ?? defaultClosureBranch(loop);
+  const commitMessage = optionalTrimmedString(request.commitMessage) ?? `EvoPilot source closure for ${loop.id}`;
+  const tagName = optionalTrimmedString(request.tagName) ?? (loop.sourceClosure.targetVersion ? `v${loop.sourceClosure.targetVersion.replace(/^v/, "")}` : undefined);
+  const deploymentUrl = optionalTrimmedString(request.deploymentUrl) ?? loop.sourceClosure.controlPlaneUrl;
+  const healthUrl = optionalTrimmedString(request.healthUrl) ?? (deploymentUrl ? `${deploymentUrl.replace(/\/+$/, "")}/health` : undefined);
+  const readyUrl = optionalTrimmedString(request.readyUrl) ?? (deploymentUrl ? `${deploymentUrl.replace(/\/+$/, "")}/ready` : undefined);
+  const gateEvidence: LoopSourceClosure["gateEvidence"] = { ...loop.sourceClosure.gateEvidence };
+  const artifacts: LoopSourceClosure["artifacts"] = {
+    ...loop.sourceClosure.artifacts,
+    branch,
+    deploymentUrl,
+    healthUrl,
+    readyUrl,
+    executedAt: now,
+    executedBy: actor
+  };
+  let closureState: LoopSourceClosureState = "PLANNED";
+  const evidence: string[] = [
+    `sourceClosure.provider=${loop.sourceClosure.repositoryProvider}`,
+    `sourceClosure.branch=${loop.sourceClosure.sourceBranch}`,
+    `sourceClosure.releaseBranch=${branch}`
+  ];
+
+  try {
+    if (loop.sourceClosure.repositoryProvider === "github") {
+      if (!project?.repository || project.repository.provider !== "github") throw httpError(409, "SOURCE_CLOSURE_PROJECT_NOT_GITHUB", "Loop source project is not a GitHub repository.");
+      const token = repositoryToken(project.repository);
+      if (!token) throw httpError(409, "SOURCE_CLOSURE_TOKEN_REQUIRED", "GitHub source closure requires a project token or tokenRef.");
+      if (!project.repository.owner || !project.repository.repo) throw httpError(409, "SOURCE_CLOSURE_GITHUB_COORDINATES_REQUIRED", "GitHub source closure requires owner and repo.");
+      const adapter = new GitHubHttpAdapter({
+        apiBaseUrl: project.repository.baseUrl,
+        owner: project.repository.owner,
+        repo: project.repository.repo,
+        token
+      });
+      const baseRef = await adapter.getRef(`heads/${loop.sourceClosure.sourceBranch}`);
+      await ignoreAlreadyExists(() => adapter.createBranch(branch, baseRef.sha));
+      artifacts.commitSha = baseRef.sha;
+      markGate(gateEvidence, "push", "PASSED", [`branch=${branch}`, `baseSha=${baseRef.sha}`], now);
+      evidence.push(`github.branch=${branch}`, `github.baseSha=${baseRef.sha}`);
+      for (const file of files) {
+        const written = await adapter.upsertFile({ ...file, branch, message: commitMessage });
+        artifacts.commitSha = written.commitSha || artifacts.commitSha;
+        if (written.htmlUrl) evidence.push(`github.fileUrl=${written.htmlUrl}`);
+      }
+      if (files.length > 0) {
+        closureState = "CODE_CHANGED";
+        markGate(gateEvidence, "code-change", "PASSED", files.map((file) => `file=${file.path}`), now);
+      }
+      if (request.createReviewRequest !== false) {
+        const pr = await adapter.createPullRequest({
+          title: optionalTrimmedString(request.pullRequestTitle) ?? `EvoPilot source closure: ${loop.objective}`,
+          body: optionalTrimmedString(request.pullRequestBody) ?? `Loop ${loop.id} source-to-production closure evidence.`,
+          head: branch,
+          base: loop.sourceClosure.sourceBranch
+        });
+        artifacts.pullRequestUrl = pr.htmlUrl;
+        evidence.push(`github.pullRequest=${pr.htmlUrl ?? pr.number}`);
+      }
+      if (tagName && loop.sourceClosure.requiredGates.includes("tag")) {
+        await ignoreAlreadyExists(() => adapter.createTag(tagName, artifacts.commitSha ?? baseRef.sha));
+        artifacts.tag = tagName;
+        closureState = "TAGGED";
+        markGate(gateEvidence, "tag", "PASSED", [`tag=${tagName}`, `target=${artifacts.commitSha ?? baseRef.sha}`], now);
+      }
+    } else if (loop.sourceClosure.repositoryProvider === "gitlab") {
+      if (!project?.repository || project.repository.provider !== "gitlab") throw httpError(409, "SOURCE_CLOSURE_PROJECT_NOT_GITLAB", "Loop source project is not a GitLab repository.");
+      const token = repositoryToken(project.repository);
+      if (!token) throw httpError(409, "SOURCE_CLOSURE_TOKEN_REQUIRED", "GitLab source closure requires a project token or tokenRef.");
+      if (!project.repository.baseUrl || !project.repository.projectId) throw httpError(409, "SOURCE_CLOSURE_GITLAB_COORDINATES_REQUIRED", "GitLab source closure requires baseUrl and projectId.");
+      const adapter = new GitLabHttpAdapter({
+        baseUrl: project.repository.baseUrl,
+        projectId: project.repository.projectId,
+        token
+      });
+      await ignoreAlreadyExists(() => adapter.createBranch(branch, loop.sourceClosure.sourceBranch));
+      markGate(gateEvidence, "push", "PASSED", [`branch=${branch}`, `base=${loop.sourceClosure.sourceBranch}`], now);
+      evidence.push(`gitlab.branch=${branch}`);
+      if (files.length > 0) {
+        const commit = await adapter.commitFiles({
+          branch,
+          message: commitMessage,
+          actions: files.map((file) => ({ action: "create", filePath: file.path, content: file.content }))
+        });
+        artifacts.commitSha = commit.id;
+        closureState = "CODE_CHANGED";
+        markGate(gateEvidence, "code-change", "PASSED", files.map((file) => `file=${file.path}`), now);
+        evidence.push(`gitlab.commit=${commit.webUrl ?? commit.id}`);
+      }
+      if (request.createReviewRequest !== false) {
+        const mr = await adapter.createMergeRequest({
+          title: optionalTrimmedString(request.mergeRequestTitle) ?? `EvoPilot source closure: ${loop.objective}`,
+          description: optionalTrimmedString(request.mergeRequestDescription) ?? `Loop ${loop.id} source-to-production closure evidence.`,
+          sourceBranch: branch,
+          targetBranch: loop.sourceClosure.sourceBranch
+        });
+        artifacts.mergeRequestUrl = mr.webUrl;
+        evidence.push(`gitlab.mergeRequest=${mr.webUrl ?? mr.iid}`);
+      }
+      if (tagName && loop.sourceClosure.requiredGates.includes("tag")) {
+        const tag = await ignoreAlreadyExists(() => adapter.createTag(tagName, branch, `EvoPilot closure tag for ${loop.id}`));
+        artifacts.tag = tagName;
+        closureState = "TAGGED";
+        markGate(gateEvidence, "tag", "PASSED", [`tag=${tagName}`, `target=${tag?.target ?? branch}`], now);
+      }
+    } else {
+      throw httpError(409, "SOURCE_CLOSURE_PROVIDER_UNSUPPORTED", "Automatic source closure currently supports GitHub and GitLab repositories.");
+    }
+
+    if (loop.sourceClosure.requiredGates.includes("deploy")) {
+      if (deploymentUrl) {
+        markGate(gateEvidence, "deploy", "PASSED", [`deploymentUrl=${deploymentUrl}`], now);
+        closureState = closureState === "TAGGED" ? "DEPLOYED" : closureState;
+      } else {
+        markGate(gateEvidence, "deploy", "PENDING", ["deploymentUrl missing"], now);
+      }
+    }
+    if (loop.sourceClosure.requiredGates.includes("health-ready")) {
+      const checks = await probeHealthReady(healthUrl, readyUrl);
+      markGate(gateEvidence, "health-ready", checks.passed ? "PASSED" : "FAILED", checks.evidence, new Date().toISOString());
+      closureState = checks.passed ? "HEALTH_READY" : "FAILED";
+    }
+    if (requiredSourceClosureGatesPassed(loop.sourceClosure.requiredGates, gateEvidence)) {
+      closureState = "PROMOTED";
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    markGate(gateEvidence, nextPendingGate(loop.sourceClosure.requiredGates, gateEvidence), "FAILED", [message], new Date().toISOString());
+    closureState = "FAILED";
+    evidence.push(`sourceClosure.error=${message}`);
+    if (isHttpError(error)) throw error;
+  }
+
+  const updatedClosure = normalizeLoopSourceClosure({
+    ...loop.sourceClosure,
+    closureState,
+    gateEvidence,
+    artifacts
+  }, project, loop.controlPlaneUrl);
+  return store.writeLoop({
+    ...loop,
+    sourceClosure: updatedClosure,
+    evidenceSets: [
+      ...loop.evidenceSets,
+      {
+        id: `${loop.id}-source-closure-${Date.now()}`,
+        loopRunId: loop.id,
+        iterationId: loop.iterations.at(-1)?.id ?? `${loop.id}-source-closure`,
+        validator: "evopilot-source-closure",
+        status: closureState === "FAILED" ? "FAIL" : "PASS",
+        evidence: [
+          ...evidence,
+          ...Object.entries(updatedClosure.gateEvidence).flatMap(([gate, row]) => [
+            `sourceClosure.gate.${gate}=${row?.status ?? "PENDING"}`,
+            ...(row?.evidence ?? [])
+          ])
+        ],
+        artifacts: [],
+        createdAt: new Date().toISOString()
+      }
+    ],
+    timeline: [
+      ...loop.timeline,
+      loopTimelineEvent("EVIDENCE", `Source closure executed with state ${closureState}.`, {
+        provider: updatedClosure.repositoryProvider,
+        branch: updatedClosure.artifacts.branch,
+        commitSha: updatedClosure.artifacts.commitSha,
+        tag: updatedClosure.artifacts.tag
+      })
+    ],
+    updatedAt: new Date().toISOString()
+  });
+}
+
+function normalizeSourceClosureFiles(value: unknown): Array<{ path: string; content: string }> {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(isRecord)
+    .map((file) => ({
+      path: String(file.path ?? "").trim(),
+      content: String(file.content ?? "")
+    }))
+    .filter((file) => file.path && !file.path.startsWith("/") && !file.path.includes(".."));
+}
+
+function defaultClosureBranch(loop: LoopRun): string {
+  const version = loop.sourceClosure.targetVersion ? `-${safeFileName(loop.sourceClosure.targetVersion)}` : "";
+  return `evopilot/${safeFileName(loop.id)}${version}`;
+}
+
+function repositoryToken(repository: ProjectRepositoryRegistration): string | undefined {
+  if (repository.credentials?.token) return repository.credentials.token;
+  if (repository.credentials?.password) return repository.credentials.password;
+  if (repository.credentials?.tokenRef) return process.env[repository.credentials.tokenRef];
+  return undefined;
+}
+
+async function ignoreAlreadyExists<T>(operation: () => Promise<T>): Promise<T | undefined> {
+  try {
+    return await operation();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/409|422|already exists|already_exist|already/i.test(message)) return undefined;
+    throw error;
+  }
+}
+
+function markGate(gateEvidence: LoopSourceClosure["gateEvidence"], gate: LoopSourceClosureGate, status: NonNullable<LoopSourceClosure["gateEvidence"][LoopSourceClosureGate]>["status"], evidence: string[], checkedAt: string): void {
+  gateEvidence[gate] = { status, evidence, checkedAt };
+}
+
+function nextPendingGate(requiredGates: LoopSourceClosureGate[], gateEvidence: LoopSourceClosure["gateEvidence"]): LoopSourceClosureGate {
+  return requiredGates.find((gate) => gateEvidence[gate]?.status !== "PASSED") ?? requiredGates[0] ?? "code-change";
+}
+
+function requiredSourceClosureGatesPassed(requiredGates: LoopSourceClosureGate[], gateEvidence: LoopSourceClosure["gateEvidence"]): boolean {
+  return requiredGates.every((gate) => gateEvidence[gate]?.status === "PASSED" || gateEvidence[gate]?.status === "SKIPPED");
+}
+
+async function probeHealthReady(healthUrl?: string, readyUrl?: string): Promise<{ passed: boolean; evidence: string[] }> {
+  const targets = [healthUrl, readyUrl].filter((item): item is string => Boolean(item));
+  if (targets.length === 0) return { passed: false, evidence: ["healthUrl and readyUrl missing"] };
+  const evidence: string[] = [];
+  let passed = true;
+  for (const target of targets) {
+    try {
+      const response = await fetch(target, { method: "GET" });
+      evidence.push(`${target}=${response.status}`);
+      if (!response.ok) passed = false;
+    } catch (error) {
+      passed = false;
+      evidence.push(`${target}=${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  return { passed, evidence };
 }
 
 function executorBoundaryLabel(type: ExecutorNodeType): string {
@@ -6971,6 +7297,7 @@ function normalizeProjectRepository(body: any): ProjectRepositoryRegistration | 
   const gitUrl = source.gitUrl ?? source.url;
   const parsed = gitUrl ? parseGitUrl(String(gitUrl)) : {};
   const provider = String(source.provider ?? parsed.provider ?? "").trim() as ProjectRepositoryProvider;
+  const nestedCredentials = source.credentials && typeof source.credentials === "object" ? source.credentials : {};
   if (provider !== "local-git" && provider !== "gitlab" && provider !== "github") return undefined;
   const repository: ProjectRepositoryRegistration = {
     provider,
@@ -6982,10 +7309,10 @@ function normalizeProjectRepository(body: any): ProjectRepositoryRegistration | 
     repo: source.repo ? String(source.repo).trim() : parsed.repo,
     defaultBranch: String(source.defaultBranch ?? "main").trim(),
     credentials: {
-      username: source.username ? String(source.username) : undefined,
-      password: source.password ? String(source.password) : undefined,
-      token: source.token ? String(source.token) : undefined,
-      tokenRef: source.tokenRef ? String(source.tokenRef) : undefined
+      username: source.username ? String(source.username) : nestedCredentials.username ? String(nestedCredentials.username) : undefined,
+      password: source.password ? String(source.password) : nestedCredentials.password ? String(nestedCredentials.password) : undefined,
+      token: source.token ? String(source.token) : nestedCredentials.token ? String(nestedCredentials.token) : undefined,
+      tokenRef: source.tokenRef ? String(source.tokenRef) : nestedCredentials.tokenRef ? String(nestedCredentials.tokenRef) : undefined
     }
   };
   if (!repository.credentials?.username && body.username) repository.credentials!.username = String(body.username);
@@ -7319,6 +7646,10 @@ class HttpError extends Error {
 
 function httpError(statusCode: number, code: string, detail?: string): HttpError {
   return new HttpError(statusCode, code, detail);
+}
+
+function isHttpError(error: unknown): error is HttpError {
+  return error instanceof HttpError;
 }
 
 function logDebug(event: string, record: Omit<LogRecord, "level" | "event"> = {}): void {

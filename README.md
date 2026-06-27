@@ -35,7 +35,7 @@ GET /api/v1/release/decisions
 | CI/CD delivery | Jenkins-backed delivery after successful code upgrades, with pipeline status and artifacts retained. |
 | Release governance | Product-native release targets, evidence bundles, scenario matrices, risk registers, and release decisions. |
 | ProofOps target loops | Target-driven release/maturity loops that create a target plan, require plan approval, collect evidence, emit a ProofOps-compatible final report, and gate release actions behind approval. |
-| Source-to-production closure | Every target loop carries the source repository/root, branch, target version, release strategy, required push/tag/deploy/health gates, and production deployment environment in `sourceClosure`. |
+| Source-to-production closure | Every target loop carries `sourceClosure`, and GitHub/GitLab projects can execute SCM closure through branch creation, file commits, PR/MR creation, tags, deploy URL evidence, and health/ready probes. |
 
 ## Loop Engineering Product Model
 
@@ -146,7 +146,9 @@ POST /api/v1/im/wecom/webhook
 
 The runtime is the common substrate for continuous product evolution, release readiness loops, Codex commands, and IM adapters. Release and other high-risk actions stay inside the loop, but they are guarded by explicit approval gates. The same substrate is used when EvoPilot manages `evopilot-self`: target-loop work is tracked in EvoPilot, code-upgrader/Codex acts as an executor, and GitHub/ECS delivery evidence is written back to the loop instead of living only in an external terminal transcript.
 
-Every target loop also has a source-to-production closure contract. When a loop is created, EvoPilot records `sourceClosure`: the registered source project, repository provider, Git URL or server-local root, source branch, target version, release strategy, required gates such as `code-change`, `push`, `tag`, `deploy`, `health-ready`, and deployment environment. If the caller does not provide it, EvoPilot derives it from the registered project. Dashboard, executor step evidence, and independent loop evidence all repeat this contract so a target loop cannot be treated as complete without a visible source and production delivery boundary.
+Every target loop also has a source-to-production closure state machine. When a loop is created, EvoPilot records `sourceClosure`: the registered source project, repository provider, Git URL or server-local root, source branch, target version, release strategy, required gates such as `code-change`, `push`, `tag`, `deploy`, `health-ready`, and deployment environment. If the caller does not provide it, EvoPilot derives it from the registered project.
+
+For GitHub and GitLab repositories, an admin can execute the closure through `POST /api/v1/loops/{loopId}/source-closure/execute` or the Dashboard “执行闭环” action. EvoPilot creates a release branch, commits requested files, opens a PR or MR, creates a tag when the loop requires `tag`, records deploy URL evidence, probes health/ready URLs, and writes `closureState`, `gateEvidence`, commit/tag/PR/MR artifacts, audit records, and independent evidence back into `LoopRun.sourceClosure`. This is a real SCM API boundary, not only metadata. A generic production deploy executor remains separate: EvoPilot records and probes deploy/health gates, but it does not pretend to SSH into arbitrary servers unless a deploy connector is configured.
 
 ## Self-Hosted Improvement Loop
 
@@ -163,7 +165,7 @@ By default this command only performs controlled setup:
 - creates `evopilot-self-executor-adapter-contract` through `POST /api/v1/loops`.
 - records allowed paths, validation commands, non-goals, and the human approval boundary in loop context.
 
-It does not automatically modify code, merge, tag, push, promote a release, or mutate the running controller process. To start exactly one Loop Runtime iteration after setup, opt in explicitly:
+It does not mutate the running controller process by itself. Source release closure is now an explicit admin action: after the loop produces reviewable files or a Dashboard user triggers the closure action, EvoPilot can write to GitHub/GitLab through the registered repository credentials and record branch/commit/PR/MR/tag/health evidence. To start exactly one Loop Runtime iteration after setup, opt in explicitly:
 
 ```bash
 EVOPILOT_API_TOKEN=<admin-token> EVOPILOT_SELF_LOOP_START=1 npm run self-loop
@@ -218,6 +220,7 @@ GET /api/v1/target-loops/{loopId}/final-report
 POST /api/v1/target-loops/{loopId}/route-remediation
 POST /api/v1/target-loops/{loopId}/release-actions/{action}/approve
 POST /api/v1/target-loops/{loopId}/release-actions/{action}/execute
+POST /api/v1/loops/{loopId}/source-closure/execute
 ```
 
 Codex, Feishu, WeCom, and future IM adapters should use `/api/v1/conversations/commands` as the conversation gateway backend. Release actions are part of the ProofOps target loop, but require approval after `GO` and explicit execution after approval.
@@ -511,7 +514,7 @@ SkyWalking 更关注服务观测、链路追踪和诊断；EvoPilot 更关注如
 
 ## 当前状态
 
-EvoPilot 已具备可运行的产品闭环代码、中文 Dashboard、真实 LLM 链路、证据接入层、项目注册、代码升级执行边界、外部 Jenkins CI/CD 连接器边界和测试套件。
+EvoPilot 已具备可运行的产品闭环代码、中文 Dashboard、真实 LLM 链路、证据接入层、项目注册、代码升级执行边界、GitHub/GitLab 源码闭环写回、外部 Jenkins CI/CD 连接器边界和测试套件。
 
 发布到生产环境前，至少需要完成：
 

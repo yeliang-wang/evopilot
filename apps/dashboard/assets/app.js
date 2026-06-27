@@ -1051,6 +1051,9 @@ function renderLoopActions(loop) {
   } else if (loop.status === "RUNNING" || loop.status === "BLOCKED") {
     buttons.push(`<button class="primary" data-action="resume-loop" data-id="${encodedId}">继续</button>`);
   }
+  if (["github", "gitlab"].includes(loop.sourceClosure?.repositoryProvider) && loop.sourceClosure?.closureState !== "PROMOTED") {
+    buttons.push(`<button data-action="execute-source-closure" data-id="${encodedId}">执行闭环</button>`);
+  }
   buttons.push(`<button data-action="watchdog-loop" data-id="${encodedId}">Watchdog</button>`);
   return `<div class="table-actions">${buttons.join("")}</div>`;
 }
@@ -1059,7 +1062,9 @@ function renderLoopSourceClosure(loop) {
   const closure = loop.sourceClosure ?? {};
   const ref = closure.sourceUrl ?? closure.sourceRoot ?? "未绑定源码";
   const gates = (closure.requiredGates ?? []).join(" / ") || "未声明 gate";
-  return `${escapeHtml(closure.repositoryProvider ?? "unknown")}<span class="subtext">${escapeHtml(ref)}</span><span class="subtext">${escapeHtml(closure.targetVersion ?? "target version 未声明")} / ${escapeHtml(closure.releaseStrategy ?? "none")}</span><span class="subtext">${escapeHtml(gates)}</span>`;
+  const artifacts = closure.artifacts ?? {};
+  const releaseRef = artifacts.pullRequestUrl ?? artifacts.mergeRequestUrl ?? artifacts.commitSha ?? artifacts.branch ?? "未执行";
+  return `${escapeHtml(closure.repositoryProvider ?? "unknown")}<span class="subtext">${escapeHtml(ref)}</span><span class="subtext">${escapeHtml(closure.closureState ?? "PLANNED")} / ${escapeHtml(closure.targetVersion ?? "target version 未声明")} / ${escapeHtml(closure.releaseStrategy ?? "none")}</span><span class="subtext">${escapeHtml(gates)}</span><span class="subtext">${escapeHtml(releaseRef)}</span>`;
 }
 
 function renderLoopDetail(loop) {
@@ -1079,6 +1084,7 @@ function renderLoopDetail(loop) {
         <div><span>Cost</span><strong>$${Number(loop.trace?.cost?.estimatedUsd ?? 0).toFixed(4)}</strong><small>${loop.trace?.cost?.totalTokens ?? 0} tokens</small></div>
         <div><span>Source</span><strong>${loop.sourceClosure?.repositoryProvider ?? "unknown"}</strong><small>${loop.sourceClosure?.sourceBranch ?? "main"} / ${loop.sourceClosure?.releaseStrategy ?? "none"}</small></div>
         <div><span>Release</span><strong>${loop.sourceClosure?.targetVersion ?? "未声明"}</strong><small>${(loop.sourceClosure?.requiredGates ?? []).join(" / ") || "未声明 gate"}</small></div>
+        <div><span>Closure</span><strong>${loop.sourceClosure?.closureState ?? "PLANNED"}</strong><small>${loop.sourceClosure?.artifacts?.tag ?? loop.sourceClosure?.artifacts?.commitSha ?? loop.sourceClosure?.artifacts?.branch ?? "等待执行"}</small></div>
       </div>
       <div class="loop-columns">
         <div>
@@ -1459,7 +1465,7 @@ function bindOpportunityActions() {
 }
 
 function bindLoopActions() {
-  for (const button of content.querySelectorAll('[data-action="approve-loop"], [data-action="start-loop"], [data-action="resume-loop"], [data-action="watchdog-loop"]')) {
+  for (const button of content.querySelectorAll('[data-action="approve-loop"], [data-action="start-loop"], [data-action="resume-loop"], [data-action="watchdog-loop"], [data-action="execute-source-closure"]')) {
     button.addEventListener("click", async () => {
       const id = button.dataset.id;
       const action = button.dataset.action;
@@ -1479,6 +1485,26 @@ function bindLoopActions() {
         if (action === "start-loop") await postJson(`/api/v1/loops/${encodeURIComponent(id)}/start`, {});
         if (action === "resume-loop") await postJson(`/api/v1/loops/${encodeURIComponent(id)}/resume`, {});
         if (action === "watchdog-loop") await postJson("/api/v1/loops/watchdog", {});
+        if (action === "execute-source-closure") {
+          const loop = state.loops.find((item) => item.id === id);
+          const version = loop?.sourceClosure?.targetVersion;
+          await postJson(`/api/v1/loops/${encodeURIComponent(id)}/source-closure/execute`, {
+            tagName: version ? `v${String(version).replace(/^v/, "")}` : undefined,
+            files: [{
+              path: `docs/evopilot-source-closures/${id}.md`,
+              content: [
+                `# EvoPilot Source Closure: ${id}`,
+                "",
+                `Objective: ${loop?.objective ?? id}`,
+                `Provider: ${loop?.sourceClosure?.repositoryProvider ?? "unknown"}`,
+                `Target version: ${version ?? "unspecified"}`,
+                `Generated at: ${new Date().toISOString()}`,
+                "",
+                "This file records Dashboard-triggered source-to-production closure evidence."
+              ].join("\n")
+            }]
+          });
+        }
         await loadLoops();
         await loadSummary();
       } catch (error) {

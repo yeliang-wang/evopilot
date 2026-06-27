@@ -17,6 +17,15 @@ test("GitLab adapter talks to a real HTTP boundary", async () => {
     if (request.url === "/api/v4/projects/group%2Fproject/merge_requests" && request.method === "POST") {
       return json(response, { iid: 7, web_url: "http://gitlab/mr/7" });
     }
+    if (request.url === "/api/v4/projects/group%2Fproject/repository/branches" && request.method === "POST") {
+      return json(response, { name: "evopilot/source-closure", web_url: "http://gitlab/branch" });
+    }
+    if (request.url === "/api/v4/projects/group%2Fproject/repository/commits" && request.method === "POST") {
+      return json(response, { id: "gitlab-commit-sha", short_id: "gitlab-c", web_url: "http://gitlab/commit/gitlab-c" });
+    }
+    if (request.url === "/api/v4/projects/group%2Fproject/repository/tags" && request.method === "POST") {
+      return json(response, { name: "v2.0.0", target: "evopilot/source-closure", web_url: "http://gitlab/tag/v2.0.0" });
+    }
     response.writeHead(404);
     response.end();
   });
@@ -27,6 +36,9 @@ test("GitLab adapter talks to a real HTTP boundary", async () => {
     assert.deepEqual(await adapter.listFiles("main"), ["src/index.ts"]);
     assert.equal((await adapter.listPipelines("main"))[0].status, "success");
     assert.equal((await adapter.createMergeRequest({ title: "t", description: "d", sourceBranch: "a", targetBranch: "main" })).iid, 7);
+    assert.equal((await adapter.createBranch("evopilot/source-closure", "main")).name, "evopilot/source-closure");
+    assert.equal((await adapter.commitFiles({ branch: "evopilot/source-closure", message: "m", actions: [{ action: "create", filePath: "CHANGELOG.md", content: "ok" }] })).id, "gitlab-commit-sha");
+    assert.equal((await adapter.createTag("v2.0.0", "evopilot/source-closure")).target, "evopilot/source-closure");
     assert.equal(seen.every((item) => item.token === "token"), true);
   } finally {
     await close(server);
@@ -46,6 +58,15 @@ test("GitHub adapter talks to a real HTTP boundary", async () => {
     if (request.url === "/repos/org/repo/pulls" && request.method === "POST") {
       return json(response, { number: 3, html_url: "http://github/pr/3" });
     }
+    if (request.url === "/repos/org/repo/git/ref/heads%2Fmain" && request.method === "GET") {
+      return json(response, { ref: "refs/heads/main", object: { sha: "base-sha" } });
+    }
+    if (request.url === "/repos/org/repo/git/refs" && request.method === "POST") {
+      return json(response, { ref: "refs/heads/evopilot/source-closure", object: { sha: "base-sha" } });
+    }
+    if (request.url === "/repos/org/repo/contents/CHANGELOG.md" && request.method === "PUT") {
+      return json(response, { commit: { sha: "github-commit-sha" }, content: { sha: "content-sha", html_url: "http://github/blob/CHANGELOG.md" } });
+    }
     response.writeHead(404);
     response.end();
   });
@@ -56,6 +77,10 @@ test("GitHub adapter talks to a real HTTP boundary", async () => {
     assert.deepEqual(await adapter.listFiles("main"), ["README.md"]);
     assert.equal((await adapter.listChecks("main"))[0].conclusion, "success");
     assert.equal((await adapter.createPullRequest({ title: "t", body: "b", head: "feature", base: "main" })).number, 3);
+    assert.equal((await adapter.getRef("heads/main")).sha, "base-sha");
+    assert.equal((await adapter.createBranch("evopilot/source-closure", "base-sha")).sha, "base-sha");
+    assert.equal((await adapter.upsertFile({ path: "CHANGELOG.md", content: "ok", message: "m", branch: "evopilot/source-closure" })).commitSha, "github-commit-sha");
+    assert.equal((await adapter.createTag("v2.0.0", "github-commit-sha")).ref, "refs/heads/evopilot/source-closure");
     assert.equal(seen.every((item) => item.auth === "Bearer token"), true);
   } finally {
     await close(server);

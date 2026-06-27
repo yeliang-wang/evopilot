@@ -233,6 +233,20 @@ npm run self-loop
 
 其中 `GITHUB_TOKEN` 必须存在于 EvoPilot 服务器环境中，供服务器验证远程仓库。
 
+GitLab 项目同样支持：
+
+```bash
+EVOPILOT_BASE_URL=https://evopilot.example.com \
+EVOPILOT_API_TOKEN=<admin-token> \
+EVOPILOT_SELF_REPOSITORY_PROVIDER=gitlab \
+EVOPILOT_SELF_GITLAB_BASE_URL=https://gitlab.example.com \
+EVOPILOT_SELF_GITLAB_PROJECT_ID=group/EvoPilot \
+EVOPILOT_SELF_GITLAB_TOKEN_REF=GITLAB_TOKEN \
+npm run self-loop
+```
+
+接入后，Dashboard 的 Loop Runtime 表格会显示 `sourceClosure.closureState`、required gates、branch、commit、PR/MR 或 tag 证据。管理员可以点击“执行闭环”，或调用 `POST /api/v1/loops/{loopId}/source-closure/execute`，由 EvoPilot 对 GitHub/GitLab 执行分支、提交、PR/MR、Tag 和 health/ready gate 探测。该动作不会替代真实部署连接器；生产发布仍应通过 Jenkins、ECS/K8s deploy connector 或人工批准的发布流程执行。
+
 ## 10. 角色权限
 
 | 角色 | 能力 |

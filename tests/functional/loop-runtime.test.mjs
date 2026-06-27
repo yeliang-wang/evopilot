@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -294,6 +295,163 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
   }
 });
 
+test("Loop source closure executes GitHub source writeback gates", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-source-closure-"));
+  const github = createFakeSourceClosureGitHubServer();
+  await listen(github);
+  const githubPort = github.address().port;
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "viewer", token: "viewer-token", role: "viewer" },
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "github-source",
+        name: "GitHub Source",
+        repository: {
+          provider: "github",
+          baseUrl: `http://127.0.0.1:${githubPort}`,
+          owner: "org",
+          repo: "repo",
+          defaultBranch: "main",
+          credentials: { token: "token" }
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+    assert.equal(project.body.data.validation.status, "VERIFIED");
+
+    const created = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "github-source-loop",
+        projectId: "github-source",
+        objective: "Close source-to-production release evidence.",
+        controlPlaneUrl: baseUrl,
+        sourceClosure: {
+          sourceProjectId: "github-source",
+          repositoryProvider: "github",
+          sourceBranch: "main",
+          targetVersion: "2.0.0",
+          requiredGates: ["code-change", "push", "tag", "deploy", "health-ready"]
+        }
+      }
+    });
+    assert.equal(created.status, 201);
+    assert.equal(created.body.data.sourceClosure.closureState, "PLANNED");
+
+    const executed = await jsonFetch(`${baseUrl}/api/v1/loops/github-source-loop/source-closure/execute`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        files: [{ path: "docs/source-closure.md", content: "closed by EvoPilot" }],
+        tagName: "v2.0.0"
+      }
+    });
+    assert.equal(executed.status, 200);
+    assert.equal(executed.body.data.sourceClosure.closureState, "PROMOTED");
+    assert.equal(executed.body.data.sourceClosure.artifacts.branch, "evopilot/github-source-loop-2.0.0");
+    assert.equal(executed.body.data.sourceClosure.artifacts.commitSha, "github-commit-sha");
+    assert.equal(executed.body.data.sourceClosure.artifacts.pullRequestUrl, "http://github/pr/3");
+    assert.equal(executed.body.data.sourceClosure.artifacts.tag, "v2.0.0");
+    assert.equal(executed.body.data.sourceClosure.gateEvidence["code-change"].status, "PASSED");
+    assert.equal(executed.body.data.sourceClosure.gateEvidence.push.status, "PASSED");
+    assert.equal(executed.body.data.sourceClosure.gateEvidence.tag.status, "PASSED");
+    assert.equal(executed.body.data.sourceClosure.gateEvidence.deploy.status, "PASSED");
+    assert.equal(executed.body.data.sourceClosure.gateEvidence["health-ready"].status, "PASSED");
+    assert.ok(executed.body.data.evidenceSets.some((set) => set.validator === "evopilot-source-closure"));
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await close(github);
+  }
+});
+
+test("Loop source closure executes GitLab source writeback gates", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-gitlab-source-closure-"));
+  const gitlab = createFakeSourceClosureGitLabServer();
+  await listen(gitlab);
+  const gitlabPort = gitlab.address().port;
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "gitlab-source",
+        name: "GitLab Source",
+        repository: {
+          provider: "gitlab",
+          baseUrl: `http://127.0.0.1:${gitlabPort}`,
+          projectId: "group/project",
+          defaultBranch: "main",
+          credentials: { token: "token" }
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+    assert.equal(project.body.data.validation.status, "VERIFIED");
+
+    const created = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "gitlab-source-loop",
+        projectId: "gitlab-source",
+        objective: "Close GitLab source release evidence.",
+        controlPlaneUrl: baseUrl,
+        sourceClosure: {
+          sourceProjectId: "gitlab-source",
+          repositoryProvider: "gitlab",
+          sourceBranch: "main",
+          targetVersion: "2.1.0",
+          requiredGates: ["code-change", "push", "tag", "deploy", "health-ready"]
+        }
+      }
+    });
+    assert.equal(created.status, 201);
+
+    const executed = await jsonFetch(`${baseUrl}/api/v1/loops/gitlab-source-loop/source-closure/execute`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        files: [{ path: "docs/source-closure.md", content: "closed by EvoPilot GitLab" }],
+        tagName: "v2.1.0"
+      }
+    });
+    assert.equal(executed.status, 200);
+    assert.equal(executed.body.data.sourceClosure.closureState, "PROMOTED");
+    assert.equal(executed.body.data.sourceClosure.artifacts.commitSha, "gitlab-commit-sha");
+    assert.equal(executed.body.data.sourceClosure.artifacts.mergeRequestUrl, "http://gitlab/mr/7");
+    assert.equal(executed.body.data.sourceClosure.artifacts.tag, "v2.1.0");
+    assert.equal(executed.body.data.sourceClosure.gateEvidence["health-ready"].status, "PASSED");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await close(gitlab);
+  }
+});
+
 async function jsonFetch(url, options = {}) {
   const response = await fetch(url, {
     method: options.method ?? "GET",
@@ -305,6 +463,63 @@ async function jsonFetch(url, options = {}) {
   });
   const body = await response.json();
   return { status: response.status, body };
+}
+
+function createFakeSourceClosureGitHubServer() {
+  return http.createServer(async (request, response) => {
+    if (request.url === "/repos/org/repo/git/trees/main?recursive=1") {
+      return json(response, { tree: [{ type: "blob", path: "README.md" }] });
+    }
+    if (request.url === "/repos/org/repo/git/ref/heads%2Fmain" && request.method === "GET") {
+      return json(response, { ref: "refs/heads/main", object: { sha: "base-sha" } });
+    }
+    if (request.url === "/repos/org/repo/git/refs" && request.method === "POST") {
+      return json(response, { ref: "refs/heads/evopilot/github-source-loop-2.0.0", object: { sha: "base-sha" } });
+    }
+    if (request.url === "/repos/org/repo/contents/docs/source-closure.md" && request.method === "PUT") {
+      return json(response, { commit: { sha: "github-commit-sha" }, content: { html_url: "http://github/blob/docs/source-closure.md" } });
+    }
+    if (request.url === "/repos/org/repo/pulls" && request.method === "POST") {
+      return json(response, { number: 3, html_url: "http://github/pr/3" });
+    }
+    response.writeHead(404);
+    response.end();
+  });
+}
+
+function createFakeSourceClosureGitLabServer() {
+  return http.createServer(async (request, response) => {
+    if (request.url?.startsWith("/api/v4/projects/group%2Fproject/repository/tree")) {
+      return json(response, [{ type: "blob", path: "README.md" }]);
+    }
+    if (request.url === "/api/v4/projects/group%2Fproject/repository/branches" && request.method === "POST") {
+      return json(response, { name: "evopilot/gitlab-source-loop-2.1.0", web_url: "http://gitlab/branch" });
+    }
+    if (request.url === "/api/v4/projects/group%2Fproject/repository/commits" && request.method === "POST") {
+      return json(response, { id: "gitlab-commit-sha", short_id: "gitlab-c", web_url: "http://gitlab/commit/gitlab-c" });
+    }
+    if (request.url === "/api/v4/projects/group%2Fproject/merge_requests" && request.method === "POST") {
+      return json(response, { iid: 7, web_url: "http://gitlab/mr/7" });
+    }
+    if (request.url === "/api/v4/projects/group%2Fproject/repository/tags" && request.method === "POST") {
+      return json(response, { name: "v2.1.0", target: "gitlab-commit-sha", web_url: "http://gitlab/tag/v2.1.0" });
+    }
+    response.writeHead(404);
+    response.end();
+  });
+}
+
+function json(response, body) {
+  response.writeHead(200, { "content-type": "application/json" });
+  response.end(JSON.stringify(body));
+}
+
+function listen(server) {
+  return new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+}
+
+function close(server) {
+  return new Promise((resolve) => server.close(resolve));
 }
 
 function authHeaders(token, json = false) {

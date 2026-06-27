@@ -28,7 +28,7 @@ The runtime introduces:
 - `ExecutorAdapter` as the plugin boundary that turns executor graph nodes into structured execution contracts.
 - `LoopStoreRuntime` as the store contract for file, SQLite, or Postgres deployments, including lock-provider and idempotent replay semantics.
 - `LoopSandboxPolicy` as the per-loop sandbox contract for host, Docker, or Kubernetes execution boundaries.
-- `LoopSourceClosure` as the source-to-production contract binding each target loop to the source repository, branch, target version, release strategy, required gates, and deployment environment.
+- `LoopSourceClosure` as the executable source-to-production state machine binding each target loop to the source repository, branch, target version, release strategy, required gates, gate evidence, SCM artifacts, and deployment environment.
 - `ExecutorCoordinationPlan` as the explicit multi-executor input/output schema, dependency, and serial/parallel coordination record.
 - `LoopTraceSummary` as the control-plane trace for executor steps, worker lease, watchdog, cost, and failure signatures.
 - `StopPolicy` and `RetryPolicy` as data, not hard-coded control flow.
@@ -42,7 +42,11 @@ Existing release, evolution, conversation, and target-loop entry points can rema
 
 `ExecutorAdapter` is the runtime contract between graph orchestration and concrete executors. Each adapter receives the loop, node, iteration, retry context, workspace path, and force-decision policy; it returns a structured status, output, evidence, optional completion time, and optional failure signature. Built-in adapters cover LLM context building, code-upgrader execution, CI validation, independent validation, approval, and release action boundaries. A graph node can pin a specific adapter through `config.adapterId`; otherwise EvoPilot resolves the default adapter for the node type.
 
-Every target loop carries a `sourceClosure` contract. The contract records the registered source project, repository provider, Git URL or server-local root, branch, target version, release strategy, required gates such as `code-change`, `push`, `tag`, `deploy`, and `health-ready`, and the deployment environment. If the caller does not provide it, EvoPilot derives the contract from the registered project repository. Executor steps and independent evidence sets repeat this contract so a loop cannot silently become a status-only success without a source repository and production-deployment boundary.
+Every target loop carries a `sourceClosure` state machine. The contract records the registered source project, repository provider, Git URL or server-local root, branch, target version, release strategy, required gates such as `code-change`, `push`, `tag`, `deploy`, and `health-ready`, deployment environment, `closureState`, per-gate evidence, and SCM artifacts. If the caller does not provide it, EvoPilot derives the source identity from the registered project repository.
+
+`POST /api/v1/loops/{loopId}/source-closure/execute` is the executable boundary for GitHub and GitLab repositories. It uses the registered project credentials to create a release branch, commit requested files, open a PR or MR, create a tag when required, record deployment URL evidence, probe health/ready endpoints, and write the resulting branch, commit, PR/MR, tag, gate evidence, audit event, and independent evidence set back into the `LoopRun`. Executor steps also repeat the same `sourceClosure` so a loop cannot silently become a status-only success without a source repository and production-delivery boundary.
+
+This source closure executor is intentionally separate from generic production deployment. It can record and probe deploy/health gates, but a real ECS/K8s/cloud rollout still needs a deploy connector with its own credentials, idempotency, rollback, and approval semantics.
 
 The remaining target-loop capabilities are now part of the product runtime:
 

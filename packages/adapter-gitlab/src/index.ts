@@ -9,12 +9,18 @@ export interface GitLabAdapterCapability {
   listFiles: boolean;
   createMergeRequest: boolean;
   readPipelines: boolean;
+  createBranch: boolean;
+  commitFiles: boolean;
+  createTag: boolean;
 }
 
 export const gitLabAdapterCapability: GitLabAdapterCapability = {
   listFiles: true,
   createMergeRequest: true,
-  readPipelines: true
+  readPipelines: true,
+  createBranch: true,
+  commitFiles: true,
+  createTag: true
 };
 
 export interface GitLabPipeline {
@@ -29,6 +35,12 @@ export interface GitLabMergeRequestDraft {
   description: string;
   sourceBranch: string;
   targetBranch: string;
+}
+
+export interface GitLabCommitAction {
+  action: "create" | "update" | "delete";
+  filePath: string;
+  content?: string;
 }
 
 export class GitLabHttpAdapter {
@@ -70,6 +82,47 @@ export class GitLabHttpAdapter {
     });
     return {
       iid: Number(response.iid),
+      webUrl: response.web_url ? String(response.web_url) : undefined
+    };
+  }
+
+  async createBranch(branch: string, ref: string): Promise<{ name: string; webUrl?: string }> {
+    const response = await this.postJson<any>("/repository/branches", {
+      branch,
+      ref
+    });
+    return {
+      name: String(response.name ?? branch),
+      webUrl: response.web_url ? String(response.web_url) : undefined
+    };
+  }
+
+  async commitFiles(input: { branch: string; message: string; actions: GitLabCommitAction[] }): Promise<{ id: string; shortId?: string; webUrl?: string }> {
+    const response = await this.postJson<any>("/repository/commits", {
+      branch: input.branch,
+      commit_message: input.message,
+      actions: input.actions.map((action) => ({
+        action: action.action,
+        file_path: action.filePath,
+        ...(action.content === undefined ? {} : { content: action.content })
+      }))
+    });
+    return {
+      id: String(response.id ?? ""),
+      shortId: response.short_id ? String(response.short_id) : undefined,
+      webUrl: response.web_url ? String(response.web_url) : undefined
+    };
+  }
+
+  async createTag(tagName: string, ref: string, message?: string): Promise<{ name: string; target?: string; webUrl?: string }> {
+    const response = await this.postJson<any>("/repository/tags", {
+      tag_name: tagName,
+      ref,
+      ...(message ? { message } : {})
+    });
+    return {
+      name: String(response.name ?? tagName),
+      target: response.target ? String(response.target) : undefined,
       webUrl: response.web_url ? String(response.web_url) : undefined
     };
   }

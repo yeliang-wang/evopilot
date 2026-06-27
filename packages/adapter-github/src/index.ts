@@ -9,7 +9,11 @@ export interface GitHubAdapterConfig {
 export const gitHubAdapterCapability = {
   listFiles: true,
   createPullRequest: true,
-  readChecks: true
+  readChecks: true,
+  readRef: true,
+  createBranch: true,
+  upsertFile: true,
+  createTag: true
 };
 
 export interface GitHubPullRequestDraft {
@@ -17,6 +21,14 @@ export interface GitHubPullRequestDraft {
   body: string;
   head: string;
   base: string;
+}
+
+export interface GitHubFileUpsert {
+  path: string;
+  content: string;
+  message: string;
+  branch: string;
+  sha?: string;
 }
 
 export class GitHubHttpAdapter {
@@ -35,6 +47,51 @@ export class GitHubHttpAdapter {
     return {
       number: Number(response.number),
       htmlUrl: response.html_url ? String(response.html_url) : undefined
+    };
+  }
+
+  async getRef(ref: string): Promise<{ ref: string; sha: string }> {
+    const normalized = ref.startsWith("refs/") ? ref.replace(/^refs\//, "") : ref;
+    const response = await this.requestJson<any>("GET", `/git/ref/${encodeURIComponent(normalized)}`);
+    return {
+      ref: String(response.ref ?? `refs/${normalized}`),
+      sha: String(response.object?.sha ?? response.sha ?? "")
+    };
+  }
+
+  async createBranch(branch: string, sha: string): Promise<{ ref: string; sha: string }> {
+    const response = await this.requestJson<any>("POST", "/git/refs", {
+      ref: `refs/heads/${branch}`,
+      sha
+    });
+    return {
+      ref: String(response.ref ?? `refs/heads/${branch}`),
+      sha: String(response.object?.sha ?? sha)
+    };
+  }
+
+  async upsertFile(file: GitHubFileUpsert): Promise<{ commitSha: string; contentSha?: string; htmlUrl?: string }> {
+    const response = await this.requestJson<any>("PUT", `/contents/${file.path.split("/").map(encodeURIComponent).join("/")}`, {
+      message: file.message,
+      content: Buffer.from(file.content, "utf8").toString("base64"),
+      branch: file.branch,
+      ...(file.sha ? { sha: file.sha } : {})
+    });
+    return {
+      commitSha: String(response.commit?.sha ?? ""),
+      contentSha: response.content?.sha ? String(response.content.sha) : undefined,
+      htmlUrl: response.content?.html_url ? String(response.content.html_url) : undefined
+    };
+  }
+
+  async createTag(tagName: string, sha: string): Promise<{ ref: string; sha: string }> {
+    const response = await this.requestJson<any>("POST", "/git/refs", {
+      ref: `refs/tags/${tagName}`,
+      sha
+    });
+    return {
+      ref: String(response.ref ?? `refs/tags/${tagName}`),
+      sha: String(response.object?.sha ?? sha)
     };
   }
 
