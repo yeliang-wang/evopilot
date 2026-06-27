@@ -167,7 +167,7 @@ EvoPilot 生成方案前会读取当前项目注册的 Git 基线代码，并把
 
 典型操作路径：
 
-1. 通过 Dashboard、API、Codex 或 IM 入口创建目标。
+1. 通过 Dashboard 的“Loop > 闭环编排”、API、Codex 或 IM 入口创建目标。
 2. 在 timeline 中查看每一轮执行、证据、失败签名、重试和 watchdog 恢复记录。
 3. 对高风险方案、发布动作或 release action 做人工审批。
 4. 查看 evidence sets、artifacts、代码升级结果和 CI/CD 结果。
@@ -194,6 +194,8 @@ GET /api/v1/loops/{loopId}/artifacts
 - Loop：release decision 是否明确给出 `GO` / `CONDITIONAL-GO` / `NO-GO`，或明确路由给人工处理。
 
 Loop Runtime 负责长任务连续性：durable run state、heartbeat lease、watchdog、retry/stop policy、timeline 和 artifacts。EvoPilot 的产品控制面负责证据、决策、治理和发布判断。
+
+Dashboard 的“闭环编排”会调用 `POST /api/v1/loop-orchestration/instantiate`，从标准预设创建 source-to-production target loop。该 loop 会自动带上 typed executor graph、Docker sandbox enforcement、sourceClosure、worker/watchdog 语义、deploy connector 和 health-ready rollback。创建后，用户可以在同一页启动、继续、批准、watchdog、执行源码闭环，并查看 Source Closure Workbench 和 Release Artifacts。
 
 ### 9.1 EvoPilot 自托管改进 Loop
 
@@ -245,7 +247,7 @@ EVOPILOT_SELF_GITLAB_TOKEN_REF=GITLAB_TOKEN \
 npm run self-loop
 ```
 
-接入后，Dashboard 的 Loop Runtime 表格和详情工作台会显示 `sourceClosure.closureState`、required gates、branch、commit、PR/MR、tag、deployment、health/ready 和 rollback 证据。管理员可以点击“执行闭环”，或调用 `POST /api/v1/loops/{loopId}/source-closure/execute`，由 EvoPilot 对 GitHub/GitLab 执行分支、提交、PR/MR、Tag、deploy connector 和 health/ready gate 探测。
+接入后，Dashboard 的 Loop Runtime 表格和详情工作台会显示 `sourceClosure.closureState`、required gates、branch、commit、PR/MR、tag、deployment、health/ready、rollback、typed graph、sandbox enforcement 和 worker/watchdog 证据。管理员可以点击“执行闭环”，或调用 `POST /api/v1/loops/{loopId}/source-closure/execute`，由 EvoPilot 对 GitHub/GitLab 执行分支、提交、PR/MR、Tag、deploy connector 和 health/ready gate 探测。
 
 自动部署应先注册部署连接器：
 

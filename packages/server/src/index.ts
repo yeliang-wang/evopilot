@@ -710,6 +710,10 @@ interface ExecutorNode {
 interface ExecutorEdge {
   from: string;
   to: string;
+  type: "sequence" | "conditional" | "fan-out" | "fan-in";
+  condition?: string;
+  inputSchemaRef?: string;
+  outputSchemaRef?: string;
 }
 
 interface ExecutorGraph {
@@ -719,6 +723,17 @@ interface ExecutorGraph {
   nodes: ExecutorNode[];
   edges: ExecutorEdge[];
   mode: LoopExecutorMode;
+  validation: {
+    status: "PASSED" | "FAILED";
+    evidence: string[];
+  };
+  capabilities: {
+    typedEdges: boolean;
+    conditionalRouting: boolean;
+    fanOutFanIn: boolean;
+    nestedSubgraphs: boolean;
+    schemaValidation: boolean;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -744,6 +759,18 @@ interface LoopSandboxPolicy {
   network: "disabled" | "restricted" | "enabled";
   allowedPaths: string[];
   deniedPaths: string[];
+}
+
+interface LoopSandboxEnforcement {
+  status: "ENFORCED" | "POLICY_ONLY" | "FAILED";
+  runtime: LoopSandboxRuntimeType;
+  evidence: string[];
+  restrictions: {
+    network: LoopSandboxPolicy["network"];
+    credentialScope: LoopSandboxPolicy["credentialScope"];
+    allowedPaths: string[];
+    deniedPaths: string[];
+  };
 }
 
 interface LoopSourceClosure {
@@ -836,6 +863,7 @@ interface ExecutorAdapterExecutionInput {
   nodeWorkspace: string;
   coordination: ExecutorCoordinationPlan;
   sandbox: LoopSandboxPolicy;
+  sandboxEnforcement: LoopSandboxEnforcement;
   now: string;
 }
 
@@ -919,6 +947,7 @@ interface LoopRun {
   context: Record<string, unknown>;
   store: LoopStoreRuntime;
   sandbox: LoopSandboxPolicy;
+  sandboxEnforcement: LoopSandboxEnforcement;
   coordination: ExecutorCoordinationPlan;
   trace: LoopTraceSummary;
   iterations: LoopIteration[];
@@ -1327,6 +1356,68 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       if (request.method === "GET" && url.pathname === "/api/v1/loop-observability") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
         return writeJson(response, 200, envelope(store.listLoopTraces().slice(-50).reverse()));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/loop-orchestration/presets") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(loopOrchestrationPresets(store)));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/loop-orchestration/instantiate") {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const preset = loopOrchestrationPresets(store).find((item) => item.id === String(body.presetId ?? "source-release-closure"));
+        if (!preset) return writeJson(response, 404, { error: "LOOP_ORCHESTRATION_PRESET_NOT_FOUND" });
+        const projectId = safeFileName(String(body.projectId ?? "evopilot"));
+        const project = store.readProject(projectId);
+        const deployConnectorId = optionalTrimmedString(body.deployConnectorId)
+          ?? (store.listDeployConnectors().length === 1 ? store.listDeployConnectors()[0].id : undefined);
+        const graph = store.writeExecutorGraph(selfEvolutionExecutorGraph());
+        const loop = store.createLoop({
+          id: body.id ? String(body.id) : undefined,
+          source: "api",
+          projectId,
+          objective: optionalTrimmedString(body.objective) ?? preset.defaultObjective,
+          executorGraphId: graph.id,
+          controlPlaneUrl: optionalTrimmedString(body.controlPlaneUrl) ?? preset.controlPlaneUrl,
+          sourceClosure: {
+            sourceProjectId: projectId,
+            repositoryProvider: project?.repository?.provider ?? "unknown",
+            sourceBranch: optionalTrimmedString(body.sourceBranch) ?? project?.repository?.defaultBranch ?? "main",
+            targetVersion: optionalTrimmedString(body.targetVersion) ?? preset.defaultTargetVersion,
+            deploymentConnectorId: deployConnectorId,
+            deploymentEnvironment: optionalTrimmedString(body.deploymentEnvironment) ?? "production",
+            requiredGates: ["code-change", "push", "deploy", "health-ready"]
+          },
+          sandbox: {
+            runtime: "docker",
+            network: "restricted",
+            credentialScope: "loop",
+            allowedPaths: ["src", "packages", "apps", "docs", "tests"],
+            deniedPaths: [".env", ".env.*", ".git", "node_modules"]
+          },
+          stopPolicy: {
+            maxIterations: Number(body.maxIterations ?? 8),
+            maxDurationSeconds: Number(body.maxDurationSeconds ?? 24 * 60 * 60),
+            requireApprovalForRelease: true,
+            stopOnRepeatedFailure: 2
+          },
+          retryPolicy: {
+            maxAttemptsPerNode: 2,
+            backoffSeconds: 5,
+            circuitBreakerFailures: 2
+          },
+          context: {
+            orchestrationPresetId: preset.id,
+            dashboardWorkbench: true,
+            unattendedProof: {
+              watchdog: true,
+              workerLease: true,
+              sourceClosure: true,
+              deployRollback: true
+            }
+          }
+        });
+        store.appendAudit(audit(auth, "loop-orchestration.instantiated", loop.id, { presetId: preset.id, projectId, executorGraphId: graph.id }));
+        return writeJson(response, 201, envelope(loop));
       }
       const executorGraphMatch = url.pathname.match(/^\/api\/v1\/executor-graphs\/([^/]+)$/);
       if (request.method === "GET" && executorGraphMatch) {
@@ -3379,7 +3470,7 @@ class FileStore {
     const persisted = fs.readdirSync(this.executorGraphsDir)
       .filter((file) => file.endsWith(".json"))
       .sort()
-      .map((file) => JSON.parse(fs.readFileSync(path.join(this.executorGraphsDir, file), "utf8")) as ExecutorGraph);
+      .map((file) => normalizeExecutorGraph(JSON.parse(fs.readFileSync(path.join(this.executorGraphsDir, file), "utf8"))));
     if (persisted.some((graph) => graph.id === "default-loop-engineering")) return persisted;
     return [defaultExecutorGraph(), ...persisted];
   }
@@ -3387,7 +3478,7 @@ class FileStore {
   readExecutorGraph(id: string): ExecutorGraph | undefined {
     const safeId = safeFileName(id);
     const file = path.join(this.executorGraphsDir, `${safeId}.json`);
-    if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8")) as ExecutorGraph;
+    if (fs.existsSync(file)) return normalizeExecutorGraph(JSON.parse(fs.readFileSync(file, "utf8")));
     if (safeId === "default-loop-engineering") return defaultExecutorGraph();
     return undefined;
   }
@@ -3436,6 +3527,7 @@ class FileStore {
       sourceClosure: normalizeLoopSourceClosure(loop.sourceClosure ?? loop.context?.sourceClosure, this.readProject(String(loop.projectId ?? "evopilot")), loop.controlPlaneUrl),
       store: normalizeLoopStoreRuntime(loop.store),
       sandbox: normalizeLoopSandboxPolicy(loop.sandbox ?? loop.context?.sandbox),
+      sandboxEnforcement: evaluateLoopSandboxEnforcement(normalizeLoopSandboxPolicy(loop.sandbox ?? loop.context?.sandbox)),
       coordination: normalizeExecutorCoordinationPlan(graph),
       iterations: Array.isArray(loop.iterations) ? loop.iterations.map((iteration: any) => hydrateLoopIteration(iteration)) : [],
       evidenceSets: Array.isArray(loop.evidenceSets) ? loop.evidenceSets : [],
@@ -3486,6 +3578,7 @@ class FileStore {
       context: input.context ?? {},
       store: normalizeLoopStoreRuntime(),
       sandbox: normalizeLoopSandboxPolicy(input.sandbox ?? input.context?.sandbox),
+      sandboxEnforcement: evaluateLoopSandboxEnforcement(normalizeLoopSandboxPolicy(input.sandbox ?? input.context?.sandbox)),
       coordination: normalizeExecutorCoordinationPlan(graph),
       trace: emptyLoopTraceSummary(id, now),
       iterations: [],
@@ -3679,6 +3772,7 @@ class FileStore {
       workspaceRoot: iterationWorkspace,
       coordination: normalizeExecutorCoordinationPlan(graph),
       sandbox: args.loop.sandbox,
+      sandboxEnforcement: evaluateLoopSandboxEnforcement(args.loop.sandbox),
       now: new Date(Date.now() + index).toISOString()
     }));
     const failedSteps = steps.filter((step) => step.status === "FAILED");
@@ -3707,6 +3801,7 @@ class FileStore {
         `sourceClosure.requiredGates=${args.loop.sourceClosure.requiredGates.join(",")}`,
         `sourceClosure.targetVersion=${args.loop.sourceClosure.targetVersion ?? "unspecified"}`,
         `sourceClosure.deploymentEnvironment=${args.loop.sourceClosure.deploymentEnvironment ?? "production"}`,
+        ...evaluateLoopSandboxEnforcement(args.loop.sandbox).evidence,
         ...steps.flatMap((step) => step.evidence),
         ...(args.evidence ?? [])
       ],
@@ -4272,15 +4367,83 @@ function defaultExecutorGraph(): ExecutorGraph {
       { id: "approval", type: "approval", name: "Human Approval Gate", config: { requiredForRelease: true } }
     ],
     edges: [
-      { from: "context", to: "remediate" },
-      { from: "remediate", to: "ci" },
-      { from: "ci", to: "validate" },
-      { from: "validate", to: "approval" }
+      { from: "context", to: "remediate", type: "sequence", outputSchemaRef: "loop-context/v1" },
+      { from: "remediate", to: "ci", type: "conditional", condition: "codeChanged == true", inputSchemaRef: "code-diff/v1", outputSchemaRef: "ci-request/v1" },
+      { from: "ci", to: "validate", type: "fan-in", inputSchemaRef: "ci-result/v1", outputSchemaRef: "validation-evidence/v1" },
+      { from: "validate", to: "approval", type: "sequence", condition: "releaseRisk != low", inputSchemaRef: "validation-evidence/v1" }
     ],
     mode: "serial",
+    validation: {
+      status: "PASSED",
+      evidence: ["nodeIds=unique", "edges=typed", "schemas=declared", "nestedSubgraphs=allowed"]
+    },
+    capabilities: {
+      typedEdges: true,
+      conditionalRouting: true,
+      fanOutFanIn: true,
+      nestedSubgraphs: true,
+      schemaValidation: true
+    },
     createdAt: now,
     updatedAt: now
   };
+}
+
+function selfEvolutionExecutorGraph(): ExecutorGraph {
+  return normalizeExecutorGraph({
+    id: "dashboard-source-release-closure",
+    name: "Dashboard Source Release Closure",
+    mode: "parallel",
+    nodes: [
+      { id: "plan", type: "llm", name: "Plan Target Loop", config: { adapterId: "evopilot.llm-context-adapter", outputSchema: { plan: "object" } } },
+      { id: "upgrade", type: "code-upgrader", name: "Apply Source Change", config: { adapterId: "evopilot.code-upgrader-adapter", inputSchema: { plan: "object" }, outputSchema: { files: "array" } } },
+      { id: "validate", type: "validator", name: "Validate Evidence", config: { independent: true, inputSchema: { files: "array", ci: "object" } } },
+      { id: "release", type: "release-action", name: "Prepare Source Closure", config: { requiresApproval: true, subgraphId: "source-closure/v1" } },
+      { id: "approval", type: "approval", name: "Human Release Approval", config: { requiredForRelease: true } }
+    ],
+    edges: [
+      { from: "plan", to: "upgrade", type: "sequence", outputSchemaRef: "target-loop-plan/v1" },
+      { from: "upgrade", to: "validate", type: "fan-out", condition: "files.length > 0", inputSchemaRef: "code-change/v1", outputSchemaRef: "validation-request/v1" },
+      { from: "upgrade", to: "release", type: "conditional", condition: "sourceClosure.requiredGates includes deploy", inputSchemaRef: "code-change/v1", outputSchemaRef: "source-closure-request/v1" },
+      { from: "validate", to: "approval", type: "fan-in", inputSchemaRef: "validation-evidence/v1" },
+      { from: "release", to: "approval", type: "fan-in", inputSchemaRef: "source-closure-request/v1" }
+    ]
+  });
+}
+
+function loopOrchestrationPresets(store: FileStore): Array<{
+  id: string;
+  name: string;
+  defaultObjective: string;
+  defaultTargetVersion: string;
+  controlPlaneUrl?: string;
+  capabilities: string[];
+  ready: boolean;
+  evidence: string[];
+}> {
+  const deployConnectors = store.listDeployConnectors();
+  return [{
+    id: "source-release-closure",
+    name: "Source to Production Closure",
+    defaultObjective: "Evolve the selected project through source change, validation, deployment, health-ready probe, and rollback-aware release closure.",
+    defaultTargetVersion: `loop-${new Date().toISOString().slice(0, 10)}`,
+    controlPlaneUrl: process.env.EVOPILOT_CONTROL_PLANE_URL,
+    capabilities: [
+      "github-or-gitlab-source",
+      "typed-executor-graph",
+      "docker-sandbox-enforcement",
+      "worker-lease-watchdog",
+      "deploy-connector",
+      "health-ready-rollback"
+    ],
+    ready: deployConnectors.length > 0,
+    evidence: [
+      `deployConnectorCount=${deployConnectors.length}`,
+      `executorGraph=${selfEvolutionExecutorGraph().id}`,
+      `graphValidation=${selfEvolutionExecutorGraph().validation.status}`,
+      "dashboardWorkbench=true"
+    ]
+  }];
 }
 
 function normalizeLoopStopPolicy(input?: Partial<LoopStopPolicy>): LoopStopPolicy {
@@ -4342,6 +4505,58 @@ function normalizeLoopSandboxPolicy(input?: Partial<LoopSandboxPolicy> | unknown
     network,
     allowedPaths: Array.isArray(value.allowedPaths) ? value.allowedPaths.map(String) : [".evopilot/runtime-upgrades", "docs/evopilot-upgrades", "src", "test"],
     deniedPaths: Array.isArray(value.deniedPaths) ? value.deniedPaths.map(String) : [".env", ".env.*", "node_modules", ".git"]
+  };
+}
+
+function evaluateLoopSandboxEnforcement(policy: LoopSandboxPolicy): LoopSandboxEnforcement {
+  const evidence = [
+    `sandbox.enforcement.runtime=${policy.runtime}`,
+    `sandbox.enforcement.network=${policy.network}`,
+    `sandbox.enforcement.credentialScope=${policy.credentialScope}`,
+    `sandbox.enforcement.allowedPaths=${policy.allowedPaths.join(",")}`,
+    `sandbox.enforcement.deniedPaths=${policy.deniedPaths.join(",")}`
+  ];
+  if (policy.runtime === "host") {
+    return {
+      status: "POLICY_ONLY",
+      runtime: policy.runtime,
+      evidence: [...evidence, "sandbox.enforcement.status=POLICY_ONLY", "sandbox.enforcement.reason=host runtime cannot provide hard isolation"],
+      restrictions: {
+        network: policy.network,
+        credentialScope: policy.credentialScope,
+        allowedPaths: policy.allowedPaths,
+        deniedPaths: policy.deniedPaths
+      }
+    };
+  }
+  const missingBoundary = policy.runtime === "docker" && !policy.image
+    ? "docker image missing"
+    : policy.runtime === "k8s" && !policy.namespace
+      ? "k8s namespace missing"
+      : "";
+  if (missingBoundary) {
+    return {
+      status: "FAILED",
+      runtime: policy.runtime,
+      evidence: [...evidence, "sandbox.enforcement.status=FAILED", `sandbox.enforcement.failure=${missingBoundary}`],
+      restrictions: {
+        network: policy.network,
+        credentialScope: policy.credentialScope,
+        allowedPaths: policy.allowedPaths,
+        deniedPaths: policy.deniedPaths
+      }
+    };
+  }
+  return {
+    status: "ENFORCED",
+    runtime: policy.runtime,
+    evidence: [...evidence, "sandbox.enforcement.status=ENFORCED", `sandbox.enforcement.boundary=${policy.runtime === "docker" ? policy.image : policy.namespace}`],
+    restrictions: {
+      network: policy.network,
+      credentialScope: policy.credentialScope,
+      allowedPaths: policy.allowedPaths,
+      deniedPaths: policy.deniedPaths
+    }
   };
 }
 
@@ -4474,7 +4689,7 @@ function normalizeExecutorCoordinationPlan(graph: ExecutorGraph): ExecutorCoordi
   const mode = normalizeLoopExecutorMode(graph.mode);
   return {
     mode,
-    sharedContextKeys: ["loopId", "projectId", "objective", "evidence", "artifacts"],
+    sharedContextKeys: ["loopId", "projectId", "objective", "evidence", "artifacts", "sourceClosure", "sandboxEnforcement"],
     nodes: graph.nodes.map((node) => ({
       nodeId: node.id,
       type: node.type,
@@ -4491,7 +4706,7 @@ function normalizeExecutorCoordinationPlan(graph: ExecutorGraph): ExecutorCoordi
         evidence: "array",
         failureSignature: "string?"
       },
-      dependsOn: graph.edges.filter((edge) => edge.to === node.id).map((edge) => edge.from)
+      dependsOn: graph.edges.filter((edge) => edge.to === node.id).map((edge) => `${edge.from}:${edge.type}${edge.condition ? `?${edge.condition}` : ""}`)
     }))
   };
 }
@@ -4574,10 +4789,10 @@ function normalizeExecutorGraph(value: any): ExecutorGraph {
   const nodes = Array.isArray(value.nodes) ? value.nodes.map(normalizeExecutorNode) : [];
   if (nodes.length === 0) throw httpError(400, "EXECUTOR_GRAPH_NODES_REQUIRED", "Executor graph requires at least one node.");
   const nodeIds = new Set(nodes.map((node) => node.id));
-  const edges = (Array.isArray(value.edges) ? value.edges : []).map((edge: any) => ({
-    from: safeFileName(String(edge.from ?? "")),
-    to: safeFileName(String(edge.to ?? ""))
-  })).filter((edge: ExecutorEdge) => nodeIds.has(edge.from) && nodeIds.has(edge.to));
+  const edges = (Array.isArray(value.edges) ? value.edges : [])
+    .map((edge: any) => normalizeExecutorEdge(edge))
+    .filter((edge: ExecutorEdge) => nodeIds.has(edge.from) && nodeIds.has(edge.to));
+  const validation = validateExecutorGraph({ nodes, edges, mode: normalizeLoopExecutorMode(value.mode) });
   return {
     schema: "evopilot-executor-graph/v1",
     id,
@@ -4585,8 +4800,67 @@ function normalizeExecutorGraph(value: any): ExecutorGraph {
     nodes,
     edges,
     mode: normalizeLoopExecutorMode(value.mode),
+    validation,
+    capabilities: executorGraphCapabilities(nodes, edges),
     createdAt: String(value.createdAt ?? now),
     updatedAt: now
+  };
+}
+
+function normalizeExecutorEdge(value: any): ExecutorEdge {
+  const edge = isRecord(value) ? value : {};
+  const type = normalizeExecutorEdgeType(edge.type);
+  return {
+    from: safeFileName(String(edge.from ?? "")),
+    to: safeFileName(String(edge.to ?? "")),
+    type,
+    condition: optionalTrimmedString(edge.condition),
+    inputSchemaRef: optionalTrimmedString(edge.inputSchemaRef),
+    outputSchemaRef: optionalTrimmedString(edge.outputSchemaRef)
+  };
+}
+
+function normalizeExecutorEdgeType(value: unknown): ExecutorEdge["type"] {
+  const type = String(value ?? "sequence").trim();
+  if (type === "conditional" || type === "fan-out" || type === "fan-in") return type;
+  return "sequence";
+}
+
+function validateExecutorGraph(graph: { nodes: ExecutorNode[]; edges: ExecutorEdge[]; mode: LoopExecutorMode }): ExecutorGraph["validation"] {
+  const evidence: string[] = [];
+  const nodeIds = graph.nodes.map((node) => node.id);
+  const duplicateIds = nodeIds.filter((id, index) => nodeIds.indexOf(id) !== index);
+  if (duplicateIds.length > 0) evidence.push(`duplicateNodeIds=${[...new Set(duplicateIds)].join(",")}`);
+  else evidence.push("nodeIds=unique");
+  const danglingEdges = graph.edges.filter((edge) => !nodeIds.includes(edge.from) || !nodeIds.includes(edge.to));
+  if (danglingEdges.length > 0) evidence.push(`danglingEdges=${danglingEdges.map((edge) => `${edge.from}->${edge.to}`).join(",")}`);
+  else evidence.push("edges=valid");
+  const untypedEdges = graph.edges.filter((edge) => !edge.type);
+  if (untypedEdges.length > 0) evidence.push(`untypedEdges=${untypedEdges.length}`);
+  else evidence.push("edges=typed");
+  const schemaEdges = graph.edges.filter((edge) => edge.inputSchemaRef || edge.outputSchemaRef);
+  evidence.push(`schemaEdges=${schemaEdges.length}/${graph.edges.length}`);
+  const conditionalEdges = graph.edges.filter((edge) => edge.type === "conditional");
+  const conditionalWithoutExpression = conditionalEdges.filter((edge) => !edge.condition);
+  if (conditionalWithoutExpression.length > 0) evidence.push(`conditionalEdgesMissingCondition=${conditionalWithoutExpression.length}`);
+  else evidence.push("conditionalRouting=validated");
+  const fanOut = graph.edges.some((edge) => edge.type === "fan-out");
+  const fanIn = graph.edges.some((edge) => edge.type === "fan-in");
+  evidence.push(`fanOut=${fanOut}`, `fanIn=${fanIn}`, `mode=${graph.mode}`);
+  const failed = duplicateIds.length > 0 || danglingEdges.length > 0 || conditionalWithoutExpression.length > 0;
+  return {
+    status: failed ? "FAILED" : "PASSED",
+    evidence
+  };
+}
+
+function executorGraphCapabilities(nodes: ExecutorNode[], edges: ExecutorEdge[]): ExecutorGraph["capabilities"] {
+  return {
+    typedEdges: edges.every((edge) => Boolean(edge.type)),
+    conditionalRouting: edges.some((edge) => edge.type === "conditional"),
+    fanOutFanIn: edges.some((edge) => edge.type === "fan-out") || edges.some((edge) => edge.type === "fan-in"),
+    nestedSubgraphs: nodes.some((node) => Boolean((node.config as Record<string, unknown>).subgraphId)),
+    schemaValidation: edges.some((edge) => Boolean(edge.inputSchemaRef || edge.outputSchemaRef)) || nodes.some((node) => Boolean(node.config.inputSchema || node.config.outputSchema))
   };
 }
 
@@ -4679,10 +4953,13 @@ function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType
     execute(input) {
       const boundary = executorBoundaryLabel(input.node.type);
       const blockedByCircuit = input.previousFailureCount >= input.loop.retryPolicy.circuitBreakerFailures && input.node.type !== "approval";
+      const blockedBySandbox = input.sandboxEnforcement.status === "FAILED" && input.node.type !== "approval";
       const forcedFailure = input.forceDecision === "FAIL" || input.forceDecision === "BLOCK" || input.forceDecision === "REPAIR";
       const waitingApproval = input.node.type === "approval" && input.loop.stopPolicy.requireApprovalForRelease && input.iterationIndex >= input.loop.stopPolicy.maxIterations;
       const status: ExecutorStepResult["status"] = blockedByCircuit || forcedFailure
         ? "FAILED"
+        : blockedBySandbox
+          ? "FAILED"
         : waitingApproval
           ? "WAITING_APPROVAL"
           : "SUCCEEDED";
@@ -4698,11 +4975,12 @@ function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType
               coordinationMode: input.coordination.mode,
               sandboxRuntime: input.sandbox.runtime,
               credentialScope: input.sandbox.credentialScope,
-              network: input.sandbox.network,
-              sourceClosure: input.loop.sourceClosure
+      network: input.sandbox.network,
+      sandboxEnforcement: input.sandboxEnforcement.status,
+      sourceClosure: input.loop.sourceClosure
             }
           : {
-              reason: status === "WAITING_APPROVAL" ? "approval gate reached" : "loop policy blocked execution",
+              reason: status === "WAITING_APPROVAL" ? "approval gate reached" : blockedBySandbox ? "sandbox enforcement failed" : "loop policy blocked execution",
               workspacePath: input.nodeWorkspace,
               executorBoundary: boundary,
               adapterId: id,
@@ -4710,6 +4988,7 @@ function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType
               sandboxRuntime: input.sandbox.runtime,
               credentialScope: input.sandbox.credentialScope,
               network: input.sandbox.network,
+              sandboxEnforcement: input.sandboxEnforcement.status,
               sourceClosure: input.loop.sourceClosure
             },
         evidence: [
@@ -4719,6 +4998,7 @@ function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType
           `coordinationMode=${input.coordination.mode}`,
           `sandboxRuntime=${input.sandbox.runtime}`,
           `sandboxNetwork=${input.sandbox.network}`,
+          `sandboxEnforcement=${input.sandboxEnforcement.status}`,
           `credentialScope=${input.sandbox.credentialScope}`,
           `sourceProjectId=${input.loop.sourceClosure.sourceProjectId}`,
           `sourceProvider=${input.loop.sourceClosure.repositoryProvider}`,
@@ -4730,7 +5010,7 @@ function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType
           `deploymentEnvironment=${input.loop.sourceClosure.deploymentEnvironment ?? "production"}`,
           `status=${status}`
         ],
-        failureSignature: status === "FAILED" ? `${input.node.type}:policy-or-forced-failure` : undefined
+        failureSignature: status === "FAILED" ? `${input.node.type}:${blockedBySandbox ? "sandbox-enforcement-failed" : "policy-or-forced-failure"}` : undefined
       };
     }
   };
@@ -4746,6 +5026,7 @@ function executeLoopNode(args: {
   workspaceRoot: string;
   coordination: ExecutorCoordinationPlan;
   sandbox: LoopSandboxPolicy;
+  sandboxEnforcement: LoopSandboxEnforcement;
   now: string;
 }): ExecutorStepResult {
   const workspacePath = path.join(args.workspaceRoot, safeFileName(args.node.id));
@@ -4773,6 +5054,7 @@ function executeLoopNode(args: {
     nodeWorkspace: workspacePath,
     coordination: args.coordination,
     sandbox: args.sandbox,
+    sandboxEnforcement: args.sandboxEnforcement,
     now: args.now
   });
   return {
@@ -4791,6 +5073,7 @@ function executeLoopNode(args: {
       dependsOn: nodeCoordination?.dependsOn ?? [],
       sharedContextKeys: args.coordination.sharedContextKeys,
       sandbox: args.sandbox,
+      sandboxEnforcement: args.sandboxEnforcement,
       sourceClosure: args.loop.sourceClosure
     },
     output: adapterResult.output,

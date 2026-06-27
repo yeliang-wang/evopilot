@@ -434,6 +434,8 @@ GET /api/v1/loops/{loopId}/artifacts
 GET /api/v1/loops/{loopId}/trace
 GET /api/v1/loop-store
 GET /api/v1/loop-observability
+GET /api/v1/loop-orchestration/presets
+POST /api/v1/loop-orchestration/instantiate
 POST /api/v1/loop-workers/heartbeat
 GET /api/v1/loop-workers/leases
 POST /api/v1/loops/watchdog
@@ -444,6 +446,10 @@ POST /api/v1/im/wecom/webhook
 Loop Runtime 是 EvoPilot 的 Loop Engineering 内核。它把 API、Codex、IM、定时任务、运行时信号、release target 和 evolution batch 统一成 `LoopRun`，并通过 `ExecutorGraph` 编排 LLM、code-upgrader、CI、validator、approval 和 release-action 等 executor。
 
 `ExecutorGraph` 节点通过 `ExecutorAdapter` 执行。节点可以在 `config.adapterId` 中固定 adapter；未指定时，EvoPilot 按节点类型解析默认 adapter。adapter 必须返回结构化 `status`、`output`、`evidence` 和可选 `failureSignature`，因此后续 target loop 可以复用同一执行边界，而不是把执行结果写成不可审计的状态文本。
+
+Dashboard 编排入口通过 `GET /api/v1/loop-orchestration/presets` 返回可用闭环预设，通过 `POST /api/v1/loop-orchestration/instantiate` 创建标准 source-to-production target loop。预设会自动绑定 typed executor graph、`sourceClosure`、Docker sandbox enforcement、worker/watchdog 语义、deploy connector 和 health-ready rollback。
+
+`ExecutorGraph.edges` 支持 typed edge：`type=sequence|conditional|fan-out|fan-in`、`condition`、`inputSchemaRef` 和 `outputSchemaRef`。EvoPilot 会在 graph 中写入 `validation.status`、`validation.evidence` 和 `capabilities`，用于判断是否具备 typed edge、条件路由、fan-out/fan-in、nested subgraph 和 schema validation 能力。
 
 每个 target loop 都必须显式形成源码到生产的闭环契约。`POST /api/v1/loops` 支持 `sourceClosure`，未提供时会根据已注册项目仓库自动补齐：
 
@@ -542,8 +548,8 @@ K8s/云发布执行器应接入该 deploy connector contract，而不是在 sour
 
 - `persistent-loop-store`：`GET /api/v1/loop-store` 返回当前 store backend、lock provider 和 idempotent replay 恢复语义。默认是 `file`；生产可通过 `EVOPILOT_LOOP_STORE_BACKEND=sqlite|postgres` 和 `EVOPILOT_LOOP_STORE_DSN` 声明 SQLite/Postgres store contract，DSN 会脱敏返回。
 - `replay-and-human-edit`：`POST /api/v1/loops/{loopId}/replay` 支持 `fromIteration`、`contextPatch`、`evidence` 和 `artifacts`，会从指定 iteration 重新执行，并把人工编辑写入 loop context、timeline 和 iteration。
-- `sandbox-runtime`：创建 loop 时可传 `sandbox.runtime=host|docker|k8s`、`credentialScope`、`network`、`allowedPaths`、`deniedPaths`。每个 executor step 会记录实际 sandbox boundary。
-- `multi-executor-coordination`：`ExecutorGraph.mode=serial|parallel`，LoopRun 会返回 `coordination.nodes[]`，包含每个 executor 的依赖、输入 schema、输出 schema 和共享 context keys。
+- `sandbox-runtime`：创建 loop 时可传 `sandbox.runtime=host|docker|k8s`、`credentialScope`、`network`、`allowedPaths`、`deniedPaths`。每个 loop 会返回 `sandboxEnforcement`；Docker/K8s 边界齐备时为 `ENFORCED`，host 为 `POLICY_ONLY`，缺少关键边界时为 `FAILED` 并阻断非审批节点。
+- `multi-executor-coordination`：`ExecutorGraph.mode=serial|parallel`，LoopRun 会返回 `coordination.nodes[]`，包含每个 executor 的依赖、输入 schema、输出 schema 和共享 context keys；依赖会带上 edge type 与条件路由信息。
 - `loop-observability`：`GET /api/v1/loop-observability` 聚合 loop trace；`GET /api/v1/loops/{loopId}/trace` 返回单个 loop 的 executor step 数、worker lease、watchdog、成本和失败签名。
 
 每轮 loop 都会生成：

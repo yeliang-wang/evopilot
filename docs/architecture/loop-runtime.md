@@ -25,7 +25,7 @@ The runtime introduces:
 - `LoopIteration` as the per-round execution record.
 - `LoopEvidenceSet` as independent validation output.
 - `ExecutorGraph` as the explicit multi-executor orchestration model.
-- `ExecutorAdapter` as the plugin boundary that turns executor graph nodes into structured execution contracts.
+- `ExecutorAdapter` as the plugin boundary that turns typed executor graph nodes and edges into structured execution contracts.
 - `LoopStoreRuntime` as the store contract for file, SQLite, or Postgres deployments, including lock-provider and idempotent replay semantics.
 - `LoopSandboxPolicy` as the per-loop sandbox contract for host, Docker, or Kubernetes execution boundaries.
 - `LoopSourceClosure` as the executable source-to-production state machine binding each target loop to the source repository, branch, target version, release strategy, required gates, gate evidence, SCM artifacts, and deployment environment.
@@ -48,12 +48,14 @@ Every target loop carries a `sourceClosure` state machine. The contract records 
 
 Deploy connectors are separate runtime connectors. The built-in connector types are `http-webhook` and `ecs-docker-compose`. The webhook connector sends a structured deploy request with loop, project, source, branch, commit, tag, PR/MR, environment, and parameters; the external deployer returns deployment and probe URLs, and can expose a `rollbackUrl` for health-failure rollback. The ECS Docker Compose connector executes a bounded server-side sequence in a configured `workingDir`: read the current commit, optionally `git pull --ff-only`, read the deployed commit, then run `docker compose -f <composeFile> up -d --build [serviceName]`. Commands are passed as argument arrays rather than shell strings, and command output is stored as deploy evidence. ECS connectors default to a file lock under `.evopilot/deploy-locks`, an idempotency stamp under `.evopilot/deploy-stamps`, rollback on compose failure, and rollback on post-deploy health/ready failure by resetting to the pre-deploy commit and rerunning compose. K8s/cloud rollout implementations should attach behind this connector boundary with their own credentials, idempotency, rollback, and approval semantics instead of being hard-coded into source closure.
 
+Dashboard loop orchestration is a productized control plane surface, not a separate script. `GET /api/v1/loop-orchestration/presets` exposes standard closed-loop presets and `POST /api/v1/loop-orchestration/instantiate` creates a source-to-production loop with a typed executor graph, Docker sandbox enforcement, worker/watchdog continuity, source closure, deployment connector binding, and health-ready rollback semantics.
+
 The remaining target-loop capabilities are now part of the product runtime:
 
 - `persistent-loop-store`: every loop exposes its active store backend, lock provider, and idempotent recovery contract. File remains the default backend; `EVOPILOT_LOOP_STORE_BACKEND=sqlite|postgres` and `EVOPILOT_LOOP_STORE_DSN` declare the production store contract without leaking credentials.
 - `replay-and-human-edit`: `POST /api/v1/loops/{loopId}/replay` truncates execution from a selected iteration, records a context patch, and continues through the same executor graph.
-- `sandbox-runtime`: loop creation accepts a `sandbox` policy with `host`, `docker`, or `k8s`, credential scope, network mode, allowed paths, and denied paths. Each executor step records the effective sandbox boundary in evidence.
-- `multi-executor-coordination`: executor graphs include `mode: serial|parallel`; loop state records each executor's dependencies, shared context keys, input schema, and output schema.
+- `sandbox-runtime`: loop creation accepts a `sandbox` policy with `host`, `docker`, or `k8s`, credential scope, network mode, allowed paths, and denied paths. Loop state records `sandboxEnforcement`: Docker/K8s produce `ENFORCED` when the boundary is configured, host produces `POLICY_ONLY`, and invalid hard-boundary configuration produces `FAILED` and blocks non-approval executor nodes.
+- `multi-executor-coordination`: executor graphs include `mode: serial|parallel`; typed edges support `sequence`, `conditional`, `fan-out`, and `fan-in`, with schema refs and condition strings. Loop state records each executor's dependencies, shared context keys, input schema, output schema, and edge semantics.
 - `loop-observability`: `GET /api/v1/loop-observability` and `GET /api/v1/loops/{loopId}/trace` expose worker lease, watchdog age, cost summary, executor step counts, and failure signatures for Dashboard and automation.
 
 Loop Runtime does not own the whole product decision. Evidence ingestion, opportunity discovery, governance policy, and release decision APIs remain product-control-plane concerns. Runtime loops coordinate executors and preserve long-task continuity so those product decisions can be carried through safely.

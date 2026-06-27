@@ -12,6 +12,7 @@ const state = {
     status: ""
   },
   deployConnectors: [],
+  loopOrchestrationPresets: [],
   serviceScorecards: [],
   intelligence: {
     selfLearningDatasetCount: 0,
@@ -1033,6 +1034,7 @@ function renderLoops() {
   const loops = state.loops;
   const store = state.loopStore;
   return `
+    ${renderLoopOrchestrationPanel()}
     <section class="card">
       <div class="section-title">
         <div>
@@ -1060,6 +1062,51 @@ function renderLoops() {
       ]))}
     </section>
     ${loops.slice(0, 3).map(renderLoopDetail).join("")}
+  `;
+}
+
+function renderLoopOrchestrationPanel() {
+  const presets = state.loopOrchestrationPresets;
+  const defaultProject = state.projects[0]?.id ?? "evopilot";
+  return `
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <h2>闭环编排</h2>
+          <p>从 Dashboard 创建标准 source-to-production target loop，包含 typed executor graph、sandbox enforcement、worker lease、deploy connector 和 health-ready rollback。</p>
+        </div>
+        <span class="pill ${presets.some((preset) => preset.ready) ? "good" : "warn"}">${presets.length || 0} 个预设</span>
+      </div>
+      <form class="project-form" id="loop-orchestration-form">
+        <label>
+          <span>接入项目</span>
+          <select name="projectId">
+            ${state.projects.map((project) => `<option value="${escapeHtml(project.id)}" ${project.id === defaultProject ? "selected" : ""}>${escapeHtml(project.name)} (${escapeHtml(project.id)})</option>`).join("")}
+          </select>
+        </label>
+        <label>
+          <span>编排预设</span>
+          <select name="presetId">
+            ${presets.map((preset) => `<option value="${escapeHtml(preset.id)}">${escapeHtml(preset.name)}${preset.ready ? "" : " - 待部署连接器"}</option>`).join("") || `<option value="source-release-closure">Source to Production Closure</option>`}
+          </select>
+        </label>
+        <label>
+          <span>目标版本</span>
+          <input name="targetVersion" placeholder="vNext 或 loop-2026-06-27" />
+        </label>
+        <label>
+          <span>目标描述</span>
+          <input name="objective" placeholder="让该项目完成源码到生产发布闭环" />
+        </label>
+        <button class="primary" type="submit">创建闭环 Loop</button>
+      </form>
+      ${presets.map((preset) => `
+        <div class="notice ${preset.ready ? "good" : "warn"}">
+          ${escapeHtml(preset.name)}：${escapeHtml((preset.capabilities ?? []).join(" / "))}<br />
+          ${(preset.evidence ?? []).map(escapeHtml).join("；")}
+        </div>
+      `).join("")}
+    </section>
   `;
 }
 
@@ -1544,6 +1591,30 @@ function bindOpportunityActions() {
 }
 
 function bindLoopActions() {
+  const orchestrationForm = content.querySelector("#loop-orchestration-form");
+  if (orchestrationForm) {
+    orchestrationForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(orchestrationForm);
+      state.authNotice = "";
+      try {
+        await postJson("/api/v1/loop-orchestration/instantiate", {
+          projectId: String(formData.get("projectId") || "evopilot"),
+          presetId: String(formData.get("presetId") || "source-release-closure"),
+          targetVersion: String(formData.get("targetVersion") || "").trim() || undefined,
+          objective: String(formData.get("objective") || "").trim() || undefined,
+          deployConnectorId: state.deployConnectors.length === 1 ? state.deployConnectors[0].id : undefined,
+          controlPlaneUrl: window.location.origin
+        });
+        state.authNotice = "已创建闭环 Loop，可在列表中启动、继续、执行闭环或查看证据。";
+        await loadLoops();
+      } catch (error) {
+        state.authNotice = `闭环编排失败：${error.message}`;
+      } finally {
+        render();
+      }
+    });
+  }
   for (const button of content.querySelectorAll('[data-action="approve-loop"], [data-action="start-loop"], [data-action="resume-loop"], [data-action="watchdog-loop"], [data-action="execute-source-closure"]')) {
     button.addEventListener("click", async () => {
       const id = button.dataset.id;
@@ -2043,6 +2114,11 @@ async function loadCodeUpgradeEvents(id) {
 
 async function loadLoops() {
   try {
+    const presetsResponse = await apiFetch("/api/v1/loop-orchestration/presets");
+    if (presetsResponse.ok) {
+      const { data: presetData } = await presetsResponse.json();
+      state.loopOrchestrationPresets = Array.isArray(presetData) ? presetData : [];
+    }
     const storeResponse = await apiFetch("/api/v1/loop-store");
     if (storeResponse.ok) {
       const { data: storeData } = await storeResponse.json();
@@ -2060,6 +2136,7 @@ async function loadLoops() {
   } catch (error) {
     state.loops = [];
     state.loopTraces = [];
+    state.loopOrchestrationPresets = [];
     state.authNotice = `Loop 数据读取失败：${error.message}`;
   }
 }

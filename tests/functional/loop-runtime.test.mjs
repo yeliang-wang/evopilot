@@ -44,6 +44,33 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(graph.body.data.schema, "evopilot-executor-graph/v1");
     assert.equal(graph.body.data.nodes.length, 4);
     assert.equal(graph.body.data.mode, "parallel");
+    assert.equal(graph.body.data.validation.status, "PASSED");
+    assert.equal(graph.body.data.capabilities.typedEdges, true);
+
+    const typedGraph = await jsonFetch(`${baseUrl}/api/v1/executor-graphs`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "typed-release-graph",
+        name: "Typed Release Graph",
+        mode: "parallel",
+        nodes: [
+          { id: "plan", type: "llm", name: "Plan", config: { outputSchema: { plan: "object" } } },
+          { id: "upgrade", type: "code-upgrader", name: "Upgrade", config: { inputSchema: { plan: "object" } } },
+          { id: "validate", type: "validator", name: "Validate" },
+          { id: "approve", type: "approval", name: "Approve", config: { subgraphId: "approval/v1" } }
+        ],
+        edges: [
+          { from: "plan", to: "upgrade", type: "sequence", outputSchemaRef: "target-plan/v1" },
+          { from: "upgrade", to: "validate", type: "fan-out", condition: "files.length > 0", inputSchemaRef: "code-change/v1" },
+          { from: "validate", to: "approve", type: "fan-in", inputSchemaRef: "validation-evidence/v1" }
+        ]
+      }
+    });
+    assert.equal(typedGraph.status, 201);
+    assert.equal(typedGraph.body.data.validation.status, "PASSED");
+    assert.equal(typedGraph.body.data.capabilities.fanOutFanIn, true);
+    assert.equal(typedGraph.body.data.capabilities.nestedSubgraphs, true);
 
     const storeRuntime = await jsonFetch(`${baseUrl}/api/v1/loop-store`, {
       token: "viewer-token"
@@ -105,6 +132,7 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(created.body.data.sourceClosure.targetVersion, "2.0.0");
     assert.deepEqual(created.body.data.sourceClosure.requiredGates, ["code-change", "push", "tag", "deploy", "health-ready"]);
     assert.equal(created.body.data.sandbox.runtime, "docker");
+    assert.equal(created.body.data.sandboxEnforcement.status, "ENFORCED");
     assert.equal(created.body.data.coordination.mode, "parallel");
     assert.equal(created.body.data.trace.executorStepCount, 0);
 
@@ -137,13 +165,40 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item.includes("executorBoundary=OpenHands/code-upgrader runtime boundary")));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "coordinationMode=parallel"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sandboxRuntime=docker"));
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sandbox.enforcement.status=ENFORCED"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sourceClosure.provider=github"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sourceClosure.targetVersion=2.0.0"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sourceClosure.requiredGates=code-change,push,tag,deploy,health-ready"));
     assert.equal(started.body.data.iterations[0].executorSteps[0].input.sourceClosure.repositoryProvider, "github");
     assert.equal(started.body.data.iterations[0].executorSteps[1].output.sourceClosure.releaseStrategy, "github-push");
     assert.equal(started.body.data.iterations[0].executorSteps[0].input.sandbox.runtime, "docker");
+    assert.equal(started.body.data.iterations[0].executorSteps[0].input.sandboxEnforcement.status, "ENFORCED");
     assert.equal(started.body.data.trace.executorStepCount, 4);
+
+    const presets = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/presets`, {
+      token: "viewer-token"
+    });
+    assert.equal(presets.status, 200);
+    assert.ok(presets.body.data.some((preset) => preset.id === "source-release-closure"));
+
+    const orchestrated = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/instantiate`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        projectId: "workbuddy",
+        presetId: "source-release-closure",
+        targetVersion: "2.0.1",
+        objective: "Create a dashboard-orchestrated source release loop.",
+        controlPlaneUrl: baseUrl
+      }
+    });
+    assert.equal(orchestrated.status, 201);
+    assert.equal(orchestrated.body.data.context.orchestrationPresetId, "source-release-closure");
+    assert.equal(orchestrated.body.data.executorGraphId, "dashboard-source-release-closure");
+    assert.equal(orchestrated.body.data.sourceClosure.targetVersion, "2.0.1");
+    assert.equal(orchestrated.body.data.sandboxEnforcement.status, "ENFORCED");
+    assert.equal(orchestrated.body.data.coordination.mode, "parallel");
+    assert.ok(orchestrated.body.data.coordination.nodes.some((node) => node.dependsOn.some((dependency) => dependency.includes("fan-in"))));
 
     const trace = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/trace`, {
       token: "viewer-token"
