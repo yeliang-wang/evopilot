@@ -700,6 +700,32 @@ interface ExecutorStepResult {
   failureSignature?: string;
 }
 
+interface ExecutorAdapterExecutionInput {
+  node: ExecutorNode;
+  loop: LoopRun;
+  iterationIndex: number;
+  attempt: number;
+  previousFailureCount: number;
+  forceDecision?: LoopDecision;
+  workspaceRoot: string;
+  nodeWorkspace: string;
+  now: string;
+}
+
+interface ExecutorAdapterExecutionOutput {
+  status: ExecutorStepResult["status"];
+  output: Record<string, unknown>;
+  evidence: string[];
+  completedAt?: string;
+  failureSignature?: string;
+}
+
+interface ExecutorAdapter {
+  id: string;
+  nodeType: ExecutorNodeType;
+  execute(input: ExecutorAdapterExecutionInput): ExecutorAdapterExecutionOutput;
+}
+
 interface LoopEvidenceSet {
   id: string;
   loopRunId: string;
@@ -3920,6 +3946,84 @@ function normalizeLoopDecision(value: unknown): LoopDecision | undefined {
   return undefined;
 }
 
+class ExecutorAdapterRegistry {
+  private readonly adaptersById = new Map<string, ExecutorAdapter>();
+  private readonly adaptersByType = new Map<ExecutorNodeType, ExecutorAdapter>();
+
+  constructor(adapters: ExecutorAdapter[]) {
+    for (const adapter of adapters) this.register(adapter);
+  }
+
+  register(adapter: ExecutorAdapter): void {
+    this.adaptersById.set(adapter.id, adapter);
+    this.adaptersByType.set(adapter.nodeType, adapter);
+  }
+
+  resolve(node: ExecutorNode): ExecutorAdapter {
+    const configuredAdapterId = typeof node.config.adapterId === "string" ? node.config.adapterId.trim() : "";
+    if (configuredAdapterId) {
+      const adapter = this.adaptersById.get(configuredAdapterId);
+      if (!adapter) throw new Error(`EXECUTOR_ADAPTER_NOT_FOUND:${configuredAdapterId}`);
+      if (adapter.nodeType !== node.type) throw new Error(`EXECUTOR_ADAPTER_TYPE_MISMATCH:${configuredAdapterId}:${node.type}`);
+      return adapter;
+    }
+    const adapter = this.adaptersByType.get(node.type);
+    if (!adapter) throw new Error(`EXECUTOR_ADAPTER_TYPE_NOT_REGISTERED:${node.type}`);
+    return adapter;
+  }
+}
+
+const executorAdapterRegistry = new ExecutorAdapterRegistry([
+  createPolicyAwareExecutorAdapter("evopilot.llm-context-adapter", "llm"),
+  createPolicyAwareExecutorAdapter("evopilot.code-upgrader-adapter", "code-upgrader"),
+  createPolicyAwareExecutorAdapter("evopilot.ci-adapter", "ci"),
+  createPolicyAwareExecutorAdapter("evopilot.validator-adapter", "validator"),
+  createPolicyAwareExecutorAdapter("evopilot.approval-adapter", "approval"),
+  createPolicyAwareExecutorAdapter("evopilot.release-action-adapter", "release-action")
+]);
+
+function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType): ExecutorAdapter {
+  return {
+    id,
+    nodeType,
+    execute(input) {
+      const boundary = executorBoundaryLabel(input.node.type);
+      const blockedByCircuit = input.previousFailureCount >= input.loop.retryPolicy.circuitBreakerFailures && input.node.type !== "approval";
+      const forcedFailure = input.forceDecision === "FAIL" || input.forceDecision === "BLOCK" || input.forceDecision === "REPAIR";
+      const waitingApproval = input.node.type === "approval" && input.loop.stopPolicy.requireApprovalForRelease && input.iterationIndex >= input.loop.stopPolicy.maxIterations;
+      const status: ExecutorStepResult["status"] = blockedByCircuit || forcedFailure
+        ? "FAILED"
+        : waitingApproval
+          ? "WAITING_APPROVAL"
+          : "SUCCEEDED";
+      return {
+        status,
+        completedAt: status === "WAITING_APPROVAL" ? undefined : new Date(Date.parse(input.now) + 1).toISOString(),
+        output: status === "SUCCEEDED"
+          ? {
+              result: `${input.node.type} completed`,
+              workspacePath: input.nodeWorkspace,
+              executorBoundary: boundary,
+              adapterId: id
+            }
+          : {
+              reason: status === "WAITING_APPROVAL" ? "approval gate reached" : "loop policy blocked execution",
+              workspacePath: input.nodeWorkspace,
+              executorBoundary: boundary,
+              adapterId: id
+            },
+        evidence: [
+          `adapter=${id}`,
+          `adapterNodeType=${nodeType}`,
+          `executorBoundary=${boundary}`,
+          `status=${status}`
+        ],
+        failureSignature: status === "FAILED" ? `${input.node.type}:policy-or-forced-failure` : undefined
+      };
+    }
+  };
+}
+
 function executeLoopNode(args: {
   node: ExecutorNode;
   loop: LoopRun;
@@ -3937,30 +4041,36 @@ function executeLoopNode(args: {
     `type=${args.node.type}`,
     `attempt=${args.attempt}`,
     `objective=${args.loop.objective}`,
-    `workspace=${workspacePath}`,
-    `executorBoundary=${executorBoundaryLabel(args.node.type)}`
+    `workspace=${workspacePath}`
   ];
-  const blockedByCircuit = args.previousFailureCount >= args.loop.retryPolicy.circuitBreakerFailures && args.node.type !== "approval";
-  const forcedFailure = args.forceDecision === "FAIL" || args.forceDecision === "BLOCK" || args.forceDecision === "REPAIR";
-  const waitingApproval = args.node.type === "approval" && args.loop.stopPolicy.requireApprovalForRelease && args.iterationIndex >= args.loop.stopPolicy.maxIterations;
-  const status: ExecutorStepResult["status"] = blockedByCircuit || forcedFailure
-    ? "FAILED"
-    : waitingApproval
-      ? "WAITING_APPROVAL"
-      : "SUCCEEDED";
+  const adapter = executorAdapterRegistry.resolve(args.node);
+  const adapterResult = adapter.execute({
+    node: args.node,
+    loop: args.loop,
+    iterationIndex: args.iterationIndex,
+    attempt: args.attempt,
+    previousFailureCount: args.previousFailureCount,
+    forceDecision: args.forceDecision,
+    workspaceRoot: args.workspaceRoot,
+    nodeWorkspace: workspacePath,
+    now: args.now
+  });
   return {
     nodeId: args.node.id,
     type: args.node.type,
-    status,
+    status: adapterResult.status,
     startedAt: args.now,
-    completedAt: status === "WAITING_APPROVAL" ? undefined : new Date(Date.parse(args.now) + 1).toISOString(),
+    completedAt: adapterResult.completedAt,
     attempt: args.attempt,
-    input: { loopId: args.loop.id, iteration: args.iterationIndex },
-    output: status === "SUCCEEDED"
-      ? { result: `${args.node.type} completed`, workspacePath, executorBoundary: executorBoundaryLabel(args.node.type) }
-      : { reason: status === "WAITING_APPROVAL" ? "approval gate reached" : "loop policy blocked execution", workspacePath, executorBoundary: executorBoundaryLabel(args.node.type) },
-    evidence: status === "SUCCEEDED" ? [...baseEvidence, "status=SUCCEEDED"] : [...baseEvidence, `status=${status}`],
-    failureSignature: status === "FAILED" ? `${args.node.type}:policy-or-forced-failure` : undefined
+    input: {
+      loopId: args.loop.id,
+      iteration: args.iterationIndex,
+      adapterId: adapter.id,
+      nodeConfig: args.node.config
+    },
+    output: adapterResult.output,
+    evidence: [...baseEvidence, ...adapterResult.evidence],
+    failureSignature: adapterResult.failureSignature
   };
 }
 

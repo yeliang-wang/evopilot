@@ -26,8 +26,8 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
         id: "product-evolution-dag",
         name: "Product Evolution DAG",
         nodes: [
-          { id: "plan", type: "llm", name: "Plan" },
-          { id: "upgrade", type: "code-upgrader", name: "Upgrade" },
+          { id: "plan", type: "llm", name: "Plan", config: { adapterId: "evopilot.llm-context-adapter" } },
+          { id: "upgrade", type: "code-upgrader", name: "Upgrade", config: { adapterId: "evopilot.code-upgrader-adapter" } },
           { id: "validate", type: "validator", name: "Validate" },
           { id: "approve", type: "approval", name: "Approve" }
         ],
@@ -78,6 +78,12 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(started.body.data.status, "RUNNING");
     assert.equal(started.body.data.currentIteration, 1);
     assert.equal(started.body.data.evidenceSets[0].validator, "evopilot-loop-runtime");
+    assert.ok(started.body.data.iterations[0].executorSteps.every((step) => step.input.adapterId));
+    assert.equal(started.body.data.iterations[0].executorSteps[0].input.adapterId, "evopilot.llm-context-adapter");
+    assert.equal(started.body.data.iterations[0].executorSteps[1].output.adapterId, "evopilot.code-upgrader-adapter");
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "adapter=evopilot.llm-context-adapter"));
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "adapter=evopilot.code-upgrader-adapter"));
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item.includes("executorBoundary=OpenHands/code-upgrader runtime boundary")));
 
     const waiting = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/resume`, {
       method: "POST",

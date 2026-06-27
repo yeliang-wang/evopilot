@@ -25,6 +25,7 @@ The runtime introduces:
 - `LoopIteration` as the per-round execution record.
 - `LoopEvidenceSet` as independent validation output.
 - `ExecutorGraph` as the explicit multi-executor orchestration model.
+- `ExecutorAdapter` as the plugin boundary that turns executor graph nodes into structured execution contracts.
 - `StopPolicy` and `RetryPolicy` as data, not hard-coded control flow.
 - worker heartbeat leases and watchdog recovery.
 - timeline, evidence, artifact, approval, and audit APIs.
@@ -33,6 +34,8 @@ The runtime introduces:
 - Feishu and WeCom webhook adapters that create `LoopRun` entries through the same control plane.
 
 Existing release, evolution, conversation, and target-loop entry points can remain product-specific surfaces, but the common execution substrate is `/api/v1/loops`.
+
+`ExecutorAdapter` is the runtime contract between graph orchestration and concrete executors. Each adapter receives the loop, node, iteration, retry context, workspace path, and force-decision policy; it returns a structured status, output, evidence, optional completion time, and optional failure signature. Built-in adapters cover LLM context building, code-upgrader execution, CI validation, independent validation, approval, and release action boundaries. A graph node can pin a specific adapter through `config.adapterId`; otherwise EvoPilot resolves the default adapter for the node type.
 
 Loop Runtime does not own the whole product decision. Evidence ingestion, opportunity discovery, governance policy, and release decision APIs remain product-control-plane concerns. Runtime loops coordinate executors and preserve long-task continuity so those product decisions can be carried through safely.
 
@@ -61,4 +64,4 @@ npm run loop-runtime:check
 npm run loop:soak
 ```
 
-The gate verifies executor graph creation, loop creation, start/resume, approval blocking, timeline, evidence, artifacts, heartbeat lease, watchdog, repeated-failure blocking, conversation command loop creation, worker-driven loop advancement, sandbox workspace creation, and IM webhook loop creation.
+The gate verifies executor graph creation, ExecutorAdapter resolution, loop creation, start/resume, approval blocking, timeline, evidence, artifacts, heartbeat lease, watchdog, repeated-failure blocking, conversation command loop creation, worker-driven loop advancement, sandbox workspace creation, and IM webhook loop creation.
