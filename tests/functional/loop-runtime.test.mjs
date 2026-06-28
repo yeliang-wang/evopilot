@@ -851,6 +851,78 @@ exit 0
   }
 });
 
+test("GitHub source closure reuses an existing open pull request when create returns 422", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-github-pr-reuse-"));
+  const github = createExistingPullRequestGitHubServer();
+  await listen(github);
+  const githubPort = github.address().port;
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await listen(server);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "github-pr-reuse-source",
+        name: "GitHub PR Reuse Source",
+        repository: {
+          provider: "github",
+          baseUrl: `http://127.0.0.1:${githubPort}`,
+          owner: "org",
+          repo: "repo",
+          defaultBranch: "main",
+          credentials: { token: "token" }
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+
+    const created = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "github-pr-reuse-loop",
+        projectId: "github-pr-reuse-source",
+        objective: "Reuse an already-open source closure PR.",
+        controlPlaneUrl: baseUrl,
+        sourceClosure: {
+          sourceProjectId: "github-pr-reuse-source",
+          repositoryProvider: "github",
+          sourceBranch: "main",
+          targetVersion: "2.5.0",
+          requiredGates: ["code-change", "push"]
+        }
+      }
+    });
+    assert.equal(created.status, 201);
+
+    const executed = await jsonFetch(`${baseUrl}/api/v1/loops/github-pr-reuse-loop/source-closure/execute`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        files: [{ path: "docs/source-closure.md", content: "reuse existing PR" }]
+      }
+    });
+    assert.equal(executed.status, 200);
+    assert.equal(executed.body.data.sourceClosure.closureState, "PROMOTED");
+    assert.equal(executed.body.data.sourceClosure.artifacts.pullRequestNumber, 9);
+    assert.equal(executed.body.data.sourceClosure.artifacts.pullRequestUrl, "http://github/pr/9");
+    assert.ok(executed.body.data.evidenceSets.at(-1).evidence.some((item) => item === "github.pullRequestReused=true"));
+    assert.ok(executed.body.data.evidenceSets.at(-1).evidence.some((item) => item.includes("GitHub request failed: 422")));
+  } finally {
+    await close(server);
+    await close(github);
+  }
+});
+
 test("Post-merge deploy finalizer reconciles source release state after server restart", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-source-release-finalizer-"));
   const probe = http.createServer((request, response) => {
@@ -1764,6 +1836,37 @@ function createFakeSourceClosureGitHubServer() {
     }
     if (request.url === "/repos/org/repo/pulls/3/merge" && request.method === "PUT") {
       return json(response, { sha: "github-merge-sha", merged: true, message: "Pull Request successfully merged" });
+    }
+    response.writeHead(404);
+    response.end();
+  });
+}
+
+function createExistingPullRequestGitHubServer() {
+  return http.createServer(async (request, response) => {
+    if (request.url === "/repos/org/repo/git/trees/main?recursive=1") {
+      return json(response, { tree: [{ type: "blob", path: "README.md" }] });
+    }
+    if (request.url === "/repos/org/repo/git/ref/heads%2Fmain" && request.method === "GET") {
+      return json(response, { ref: "refs/heads/main", object: { sha: "base-sha" } });
+    }
+    if (request.url === "/repos/org/repo/git/refs" && request.method === "POST") {
+      return json(response, { message: "Reference already exists" }, 422);
+    }
+    if (request.url === "/repos/org/repo/contents/docs/source-closure.md" && request.method === "PUT") {
+      return json(response, { commit: { sha: "github-reuse-commit-sha" }, content: { html_url: "http://github/blob/docs/source-closure.md" } });
+    }
+    if (request.url === "/repos/org/repo/pulls" && request.method === "POST") {
+      return json(response, { message: "Validation Failed", errors: [{ resource: "PullRequest", code: "custom", message: "A pull request already exists" }] }, 422);
+    }
+    if (request.url === "/repos/org/repo/pulls?state=open&head=org%3Aevopilot%2Fgithub-pr-reuse-loop-2.5.0&base=main" && request.method === "GET") {
+      return json(response, [{
+        number: 9,
+        html_url: "http://github/pr/9",
+        head: { ref: "evopilot/github-pr-reuse-loop-2.5.0" },
+        base: { ref: "main" },
+        state: "open"
+      }]);
     }
     response.writeHead(404);
     response.end();

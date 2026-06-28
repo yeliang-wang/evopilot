@@ -58,6 +58,9 @@ test("GitHub adapter talks to a real HTTP boundary", async () => {
     if (request.url === "/repos/org/repo/pulls" && request.method === "POST") {
       return json(response, { number: 3, html_url: "http://github/pr/3" });
     }
+    if (request.url === "/repos/org/repo/pulls?state=open&head=org%3Afeature&base=main" && request.method === "GET") {
+      return json(response, [{ number: 4, html_url: "http://github/pr/4", head: { ref: "feature" }, base: { ref: "main" }, state: "open" }]);
+    }
     if (request.url === "/repos/org/repo/git/ref/heads%2Fmain" && request.method === "GET") {
       return json(response, { ref: "refs/heads/main", object: { sha: "base-sha" } });
     }
@@ -77,6 +80,7 @@ test("GitHub adapter talks to a real HTTP boundary", async () => {
     assert.deepEqual(await adapter.listFiles("main"), ["README.md"]);
     assert.equal((await adapter.listChecks("main"))[0].conclusion, "success");
     assert.equal((await adapter.createPullRequest({ title: "t", body: "b", head: "feature", base: "main" })).number, 3);
+    assert.equal((await adapter.listPullRequests({ state: "open", head: "feature", base: "main" }))[0].number, 4);
     assert.equal((await adapter.getRef("heads/main")).sha, "base-sha");
     assert.equal((await adapter.createBranch("evopilot/source-closure", "base-sha")).sha, "base-sha");
     assert.equal((await adapter.upsertFile({ path: "CHANGELOG.md", content: "ok", message: "m", branch: "evopilot/source-closure" })).commitSha, "github-commit-sha");

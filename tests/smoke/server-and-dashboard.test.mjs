@@ -198,6 +198,8 @@ test("server serves dashboard static files", async () => {
     assert.match(app, /\/source-closure\/plan/);
     assert.match(app, /\/source-closure\/review-decision/);
     assert.match(app, /\/api\/v1\/source-release-runs/);
+    assert.match(app, /Deploy Finalizer Workbench/);
+    assert.match(app, /\/api\/v1\/source-release-deploy-finalizers/);
     assert.match(app, /批准 Release/);
     assert.match(app, /合并 Release/);
     assert.match(app, /安全自动合并/);

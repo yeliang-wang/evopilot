@@ -13,6 +13,7 @@ const state = {
   },
   deployConnectors: [],
   sourceReleaseRuns: [],
+  sourceReleaseDeployFinalizers: [],
   loopAutopilotRuns: [],
   loopOrchestrationPresets: [],
   loopOrchestrationTargets: [],
@@ -1104,6 +1105,7 @@ function renderLoops() {
     ${renderLoopOrchestrationPanel()}
     ${renderLoopTargetBacklogPanel()}
     ${renderLoopWorkerQueuePanel()}
+    ${renderSourceReleaseDeployFinalizersPanel()}
     <section class="card">
       <div class="section-title">
         <div>
@@ -1131,6 +1133,38 @@ function renderLoops() {
       ]))}
     </section>
     ${loops.slice(0, 3).map(renderLoopDetail).join("")}
+  `;
+}
+
+function renderSourceReleaseDeployFinalizersPanel() {
+  const finalizers = state.sourceReleaseDeployFinalizers ?? [];
+  const counts = finalizers.reduce((acc, finalizer) => {
+    acc[finalizer.status] = (acc[finalizer.status] ?? 0) + 1;
+    return acc;
+  }, {});
+  return `
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <h2>Deploy Finalizer Workbench</h2>
+          <p>自部署或 post-merge deploy 期间服务重启后，自动补写 release run 与 loop 终态。</p>
+        </div>
+        <span class="pill ${counts.PENDING ? "warn" : "good"}">${counts.PENDING ?? 0} pending</span>
+      </div>
+      <div class="dashboard-stats">
+        <div><span>Finalizers</span><strong>${finalizers.length}</strong><small>/api/v1/source-release-deploy-finalizers</small></div>
+        <div><span>Succeeded</span><strong>${counts.SUCCEEDED ?? 0}</strong><small>已完成恢复</small></div>
+        <div><span>Failed</span><strong>${counts.FAILED ?? 0}</strong><small>需人工处理</small></div>
+        <div><span>Pending</span><strong>${counts.PENDING ?? 0}</strong><small>等待 reconcile</small></div>
+      </div>
+      ${finalizers.length === 0 ? `<div class="empty">暂无 deploy finalizer。只有 post-merge deploy 被服务重启打断或完成后才会生成记录。</div>` : table(["Loop", "状态", "连接器", "尝试", "最后证据"], finalizers.slice(0, 8).map((finalizer) => [
+        `<strong>${escapeHtml(finalizer.loopId)}</strong><span class="subtext">${escapeHtml(finalizer.releaseRunId ?? finalizer.id)}</span>`,
+        statusPill(finalizer.status),
+        finalizer.deployConnectorId,
+        `${finalizer.attempts ?? 0}/${finalizer.maxAttempts ?? 0}`,
+        `<span class="subtext">${escapeHtml((finalizer.evidence ?? []).at(-1) ?? finalizer.lastError ?? "等待执行")}</span>`
+      ]))}
+    </section>
   `;
 }
 
@@ -1282,6 +1316,7 @@ function renderLoopDetail(loop) {
   const closure = loop.sourceClosure ?? {};
   const artifacts = closure.artifacts ?? {};
   const gateEvidence = closure.gateEvidence ?? {};
+  const deployFinalizers = sourceReleaseDeployFinalizersForLoop(loop.id);
   const releaseRun = latestSourceReleaseRun(loop.id) ?? {
     status: closure.closureState ?? "PLANNED",
     stages: (closure.requiredGates ?? []).map((gate) => ({
@@ -1365,6 +1400,20 @@ function renderLoopDetail(loop) {
             <button data-action="auto-merge-source-release" data-id="${escapeHtml(loop.id)}" ${releaseRun.review?.status === "PENDING" || releaseRun.review?.status === "APPROVED" ? "" : "disabled"}>安全自动合并</button>
           </div>
         </div>
+        <div>
+          <h3>Deploy Finalizers</h3>
+          <div class="timeline">
+            ${deployFinalizers.map((finalizer) => `
+              <div class="timeline-item">
+                <span>${escapeHtml(finalizer.status ?? "PENDING")}</span>
+                <strong>${escapeHtml(finalizer.deployConnectorId ?? "unknown")} / ${escapeHtml(String(finalizer.attempts ?? 0))} attempts</strong>
+                <small>${escapeHtml((finalizer.evidence ?? []).at(-1) ?? finalizer.lastError ?? "waiting")}</small>
+              </div>
+            `).join("") || `<div class="empty">当前 Loop 暂无 deploy finalizer 记录。</div>`}
+          </div>
+        </div>
+      </div>
+      <div class="loop-columns">
         <div>
           <h3>Source Release Artifacts</h3>
           <div class="timeline">
@@ -1522,6 +1571,12 @@ function latestSourceReleaseRun(loopId) {
   return (state.sourceReleaseRuns ?? [])
     .filter((run) => run.loopId === loopId)
     .sort((left, right) => new Date(right.updatedAt ?? right.createdAt ?? 0) - new Date(left.updatedAt ?? left.createdAt ?? 0))[0];
+}
+
+function sourceReleaseDeployFinalizersForLoop(loopId) {
+  return (state.sourceReleaseDeployFinalizers ?? [])
+    .filter((finalizer) => finalizer.loopId === loopId)
+    .sort((left, right) => new Date(right.updatedAt ?? right.createdAt ?? 0) - new Date(left.updatedAt ?? left.createdAt ?? 0));
 }
 
 function renderHistoryDetailModal(item) {
@@ -2752,6 +2807,11 @@ async function loadLoops() {
       const { data: releaseRunData } = await releaseRunsResponse.json();
       state.sourceReleaseRuns = Array.isArray(releaseRunData) ? releaseRunData : [];
     }
+    const finalizersResponse = await apiFetch("/api/v1/source-release-deploy-finalizers");
+    if (finalizersResponse.ok) {
+      const { data: finalizerData } = await finalizersResponse.json();
+      state.sourceReleaseDeployFinalizers = Array.isArray(finalizerData) ? finalizerData : [];
+    }
     const response = await apiFetch("/api/v1/loops");
     if (!response.ok) throw new Error(`Loop 接口状态 ${response.status}`);
     const { data } = await response.json();
@@ -2761,6 +2821,7 @@ async function loadLoops() {
     state.loopTraces = [];
     state.loopWorkerQueue = [];
     state.sourceReleaseRuns = [];
+    state.sourceReleaseDeployFinalizers = [];
     state.loopOrchestrationPresets = [];
     state.loopOrchestrationTargets = [];
     state.authNotice = `Loop 数据读取失败：${error.message}`;

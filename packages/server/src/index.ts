@@ -5,7 +5,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { randomUUID } from "node:crypto";
-import { GitHubHttpAdapter } from "@evopilot/adapter-github";
+import { GitHubHttpAdapter, type GitHubPullRequestDraft } from "@evopilot/adapter-github";
 import { GitLabHttpAdapter } from "@evopilot/adapter-gitlab";
 import { JenkinsClient, type JenkinsConnectorConfig } from "@evopilot/adapter-jenkins";
 import { listRepositoryFiles } from "@evopilot/adapter-local-git";
@@ -7045,16 +7045,20 @@ async function executeLoopSourceClosure(store: FileStore, loopId: string, actor:
         markGate(gateEvidence, "code-change", "PASSED", files.map((file) => `file=${file.path}`), now);
       }
       if (request.createReviewRequest !== false) {
-        const pr = await adapter.createPullRequest({
+        const prDraft = {
           title: optionalTrimmedString(request.pullRequestTitle) ?? `EvoPilot source closure: ${loop.objective}`,
           body: optionalTrimmedString(request.pullRequestBody) ?? `Loop ${loop.id} source-to-production closure evidence.`,
           head: branch,
           base: loop.sourceClosure.sourceBranch
-        });
+        };
+        const pr = await createOrReuseGitHubPullRequest(adapter, prDraft);
         artifacts.pullRequestUrl = pr.htmlUrl;
         artifacts.pullRequestNumber = pr.number;
         artifacts.reviewStatus = "PENDING";
-        evidence.push(`github.pullRequest=${pr.htmlUrl ?? pr.number}`);
+        evidence.push(
+          `github.pullRequest=${pr.htmlUrl ?? pr.number}`,
+          ...(pr.reused ? ["github.pullRequestReused=true", ...(pr.evidence ?? [])] : [])
+        );
       } else {
         artifacts.reviewStatus = "NOT_REQUIRED";
       }
@@ -7426,6 +7430,26 @@ async function mergeSourceClosureReview(project: StoredProject | undefined, loop
     return mergeLocalGitSourceClosure(project.repository, loop, artifacts, commitMessage ?? `EvoPilot merge ${loop.id}`, actor);
   }
   throw httpError(409, "SOURCE_CLOSURE_PROVIDER_UNSUPPORTED", "Review merge supports GitHub, GitLab, and local-git repositories.");
+}
+
+async function createOrReuseGitHubPullRequest(adapter: GitHubHttpAdapter, draft: GitHubPullRequestDraft): Promise<{ number: number; htmlUrl?: string; reused?: boolean; evidence?: string[] }> {
+  try {
+    return await adapter.createPullRequest(draft);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const existing = (await adapter.listPullRequests({ state: "open", head: draft.head, base: draft.base }))[0];
+    if (!existing) throw error;
+    return {
+      number: existing.number,
+      htmlUrl: existing.htmlUrl,
+      reused: true,
+      evidence: [
+        `github.pullRequestCreateError=${message}`,
+        `github.pullRequestHead=${draft.head}`,
+        `github.pullRequestBase=${draft.base}`
+      ]
+    };
+  }
 }
 
 function evaluateSourceReleasePolicy(loop: LoopRun, artifacts: LoopSourceClosure["artifacts"], options: {

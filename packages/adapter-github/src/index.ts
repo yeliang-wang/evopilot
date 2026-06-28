@@ -9,6 +9,7 @@ export interface GitHubAdapterConfig {
 export const gitHubAdapterCapability = {
   listFiles: true,
   createPullRequest: true,
+  listPullRequests: true,
   readChecks: true,
   readRef: true,
   createBranch: true,
@@ -49,6 +50,22 @@ export class GitHubHttpAdapter {
       number: Number(response.number),
       htmlUrl: response.html_url ? String(response.html_url) : undefined
     };
+  }
+
+  async listPullRequests(input: { head?: string; base?: string; state?: "open" | "closed" | "all" } = {}): Promise<Array<{ number: number; htmlUrl?: string; head?: string; base?: string; state?: string }>> {
+    const params = new URLSearchParams();
+    if (input.state) params.set("state", input.state);
+    if (input.head) params.set("head", input.head.includes(":") ? input.head : `${this.config.owner}:${input.head}`);
+    if (input.base) params.set("base", input.base);
+    const query = params.toString();
+    const response = await this.requestJson<any[]>("GET", `/pulls${query ? `?${query}` : ""}`);
+    return response.map((pull) => ({
+      number: Number(pull.number),
+      htmlUrl: pull.html_url ? String(pull.html_url) : undefined,
+      head: pull.head?.ref ? String(pull.head.ref) : undefined,
+      base: pull.base?.ref ? String(pull.base.ref) : undefined,
+      state: pull.state ? String(pull.state) : undefined
+    }));
   }
 
   async mergePullRequest(number: number, input: { commitTitle?: string; commitMessage?: string } = {}): Promise<{ sha: string; merged: boolean; message?: string }> {
