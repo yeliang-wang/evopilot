@@ -1341,6 +1341,106 @@ test("Loop source closure executes local-git source writeback gates", async () =
   }
 });
 
+test("Loop source closure preflight blocks GitHub writeback without credentials", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-source-closure-preflight-"));
+  const github = createFakeSourceClosureGitHubServer();
+  await listen(github);
+  const githubPort = github.address().port;
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "viewer", token: "viewer-token", role: "viewer" },
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "github-public-source",
+        name: "GitHub Public Source",
+        repository: {
+          provider: "github",
+          baseUrl: `http://127.0.0.1:${githubPort}`,
+          owner: "org",
+          repo: "repo",
+          defaultBranch: "main"
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+    assert.equal(project.body.data.validation.status, "VERIFIED");
+    assert.equal(project.body.data.repository.credentialsConfigured, false);
+
+    const loop = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "github-preflight-loop",
+        projectId: "github-public-source",
+        objective: "Preflight source closure before writeback.",
+        controlPlaneUrl: baseUrl,
+        sourceClosure: {
+          sourceProjectId: "github-public-source",
+          repositoryProvider: "github",
+          sourceBranch: "main",
+          targetVersion: "2.4.0",
+          requiredGates: ["code-change", "push", "deploy", "health-ready"]
+        }
+      }
+    });
+    assert.equal(loop.status, 201);
+
+    const preflight = await jsonFetch(`${baseUrl}/api/v1/loops/github-preflight-loop/source-closure/preflight`, {
+      method: "POST",
+      token: "operator-token"
+    });
+    assert.equal(preflight.status, 409);
+    assert.equal(preflight.body.data.schema, "evopilot-source-closure-preflight/v1");
+    assert.equal(preflight.body.data.status, "FAIL");
+    assert.equal(preflight.body.data.nextAction, "repair-credentials");
+    assert.ok(preflight.body.data.blockers.some((blocker) => blocker === "credentials:SOURCE_CLOSURE_TOKEN_REQUIRED"));
+    assert.ok(preflight.body.data.checks.some((check) => check.id === "credentials" && check.status === "FAIL"));
+
+    const storedLoop = await jsonFetch(`${baseUrl}/api/v1/loops/github-preflight-loop`, { token: "viewer-token" });
+    assert.equal(storedLoop.status, 200);
+    assert.ok(storedLoop.body.data.evidenceSets.some((set) =>
+      set.validator === "evopilot-source-closure-preflight" &&
+      set.status === "FAIL" &&
+      set.evidence.some((item) => item === "sourceClosure.preflight.blocker=credentials:SOURCE_CLOSURE_TOKEN_REQUIRED")
+    ));
+
+    const autopilot = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/autopilot`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        targetId: "codex-loop-target-autopilot",
+        projectId: "github-public-source",
+        targetVersion: "2.4.1",
+        controlPlaneUrl: baseUrl,
+        approveHumanGate: true,
+        autoMerge: true,
+        maxSteps: 8
+      }
+    });
+    assert.equal(autopilot.status, 409);
+    assert.equal(autopilot.body.data.status, "FAILED");
+    assert.equal(autopilot.body.data.nextAction, "source-closure");
+    assert.ok(autopilot.body.data.stages.some((stage) => stage.id === "source-preflight" && stage.status === "FAILED"));
+    assert.ok(!autopilot.body.data.stages.some((stage) => stage.id === "source-closure"));
+    assert.equal(autopilot.body.data.releaseRun, undefined);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await close(github);
+  }
+});
+
 test("Loop autopilot persists failed GitHub source closure as release-run evidence", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-autopilot-source-closure-failure-"));
   const github = createFailingSourceClosureGitHubServer();

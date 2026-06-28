@@ -106,6 +106,8 @@ POST /api/v1/projects
 
 读取项目列表时不会回显 `password` 或 `token`，只返回 `credentialsConfigured`。
 
+公开 GitHub 仓库可以在无凭据时完成只读项目验证；但源码写回、PR/MR、merge 和一键自动驾驶 source-closure 必须配置可解析的 `token`、`password` 或 `tokenRef`。写回前可先调用 source-closure preflight，避免在真实写文件阶段才失败。
+
 请求示例：
 
 ```json
@@ -524,6 +526,15 @@ POST /api/v1/loops/{loopId}/source-closure/execute
 ```
 
 GitHub 路径会读取 base ref、创建 release branch、通过 Contents API 写入文件、创建 PR，并在需要 `tag` gate 时创建 tag。GitLab 路径会创建 branch、提交 commit actions、创建 MR，并在需要 `tag` gate 时创建 tag。本地目录路径会在注册的 `repository.root` 内创建或切换 release branch、写入文件、提交并在需要时打 tag；默认要求干净工作树，除非请求显式传入 `allowDirtyWorktree=true`。如果传入 `deployConnectorId`，EvoPilot 会调用部署连接器并把连接器返回的部署结果写入 deploy gate。执行后 `LoopRun.sourceClosure` 会包含：
+
+预检接口不会创建分支或写文件，只验证项目绑定、provider、凭据解析、source branch 可读、deploy target 和 health-ready 条件。`POST` 会把预检结果写入 loop evidence 和 timeline：
+
+```http
+GET /api/v1/loops/{loopId}/source-closure/preflight
+POST /api/v1/loops/{loopId}/source-closure/preflight
+```
+
+失败响应为 `409`，响应体 schema 为 `evopilot-source-closure-preflight/v1`，包含 `status`、`blockers`、`checks`、`nextAction` 和 `capabilities`。例如缺少 GitHub/GitLab 写回 token 时，blocker 为 `credentials:SOURCE_CLOSURE_TOKEN_REQUIRED`。
 
 - `closureState`: `PLANNED`、`CODE_CHANGED`、`PUSHED`、`TAGGED`、`DEPLOYED`、`HEALTH_READY`、`HEALTH_FAILED`、`ROLLED_BACK`、`PROMOTED` 或 `FAILED`。
 - `gateEvidence`: 每个 required gate 的 `PENDING`、`PASSED`、`FAILED` 或 `SKIPPED` 状态和证据。

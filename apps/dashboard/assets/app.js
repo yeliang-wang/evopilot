@@ -1191,6 +1191,7 @@ function renderLoopActions(loop) {
     buttons.push(`<button class="primary" data-action="resume-loop" data-id="${encodedId}">继续</button>`);
   }
   if (["github", "gitlab"].includes(loop.sourceClosure?.repositoryProvider) && loop.sourceClosure?.closureState !== "PROMOTED") {
+    buttons.push(`<button data-action="preflight-source-closure" data-id="${encodedId}">预检闭环</button>`);
     buttons.push(`<button data-action="execute-source-closure" data-id="${encodedId}">执行闭环</button>`);
   }
   buttons.push(`<button data-action="watchdog-loop" data-id="${encodedId}">Watchdog</button>`);
@@ -1996,7 +1997,7 @@ function bindLoopActions() {
       }
     });
   }
-  for (const button of content.querySelectorAll('[data-action="approve-loop"], [data-action="start-loop"], [data-action="resume-loop"], [data-action="watchdog-loop"], [data-action="execute-source-closure"]')) {
+  for (const button of content.querySelectorAll('[data-action="approve-loop"], [data-action="start-loop"], [data-action="resume-loop"], [data-action="watchdog-loop"], [data-action="preflight-source-closure"], [data-action="execute-source-closure"]')) {
     button.addEventListener("click", async () => {
       const id = button.dataset.id;
       const action = button.dataset.action;
@@ -2016,6 +2017,10 @@ function bindLoopActions() {
         if (action === "start-loop") await postJson(`/api/v1/loops/${encodeURIComponent(id)}/start`, {});
         if (action === "resume-loop") await postJson(`/api/v1/loops/${encodeURIComponent(id)}/resume`, {});
         if (action === "watchdog-loop") await postJson("/api/v1/loops/watchdog", {});
+        if (action === "preflight-source-closure") {
+          const result = await postJson(`/api/v1/loops/${encodeURIComponent(id)}/source-closure/preflight`, {});
+          state.authNotice = `源码闭环预检 ${result.data?.status ?? "UNKNOWN"}：${result.data?.nextAction ?? "unknown"}，${result.data?.checks?.length ?? 0} 项检查。`;
+        }
         if (action === "execute-source-closure") {
           const loop = state.loops.find((item) => item.id === id);
           const version = loop?.sourceClosure?.targetVersion;
@@ -2457,6 +2462,7 @@ function safeJsonParse(text) {
 
 function summarizeApiError(body, status) {
   if (body?.data?.schema === "evopilot-loop-orchestration-autopilot/v1") return summarizeAutopilotRun(body.data);
+  if (body?.data?.schema === "evopilot-source-closure-preflight/v1") return summarizeSourceClosurePreflight(body.data);
   const detail = body?.detail ?? body?.error ?? body?.message;
   return detail ? `${detail}` : `HTTP ${status}`;
 }
@@ -2467,6 +2473,11 @@ function summarizeAutopilotRun(run) {
   const releaseState = run.releaseRun?.status ?? run.loop?.sourceClosure?.closureState ?? "UNKNOWN";
   const detail = failedEvidence ? failedEvidence.replace(/^failedEvidence=|^error=/, "") : failedStage?.detail;
   return `Autopilot ${run.status}：${failedStage?.id ?? run.nextAction} / source ${releaseState}${detail ? ` / ${detail}` : ""}`;
+}
+
+function summarizeSourceClosurePreflight(preflight) {
+  const blocker = preflight.blockers?.[0] ?? "unknown";
+  return `Source closure preflight ${preflight.status}：${preflight.nextAction} / ${blocker}`;
 }
 
 function apiFetch(url, options = {}) {

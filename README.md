@@ -35,7 +35,7 @@ GET /api/v1/release/decisions
 | CI/CD delivery | Jenkins-backed delivery after successful code upgrades, with pipeline status and artifacts retained. |
 | Release governance | Product-native release targets, evidence bundles, scenario matrices, risk registers, and release decisions. |
 | ProofOps target loops | Target-driven release/maturity loops that create a target plan, require plan approval, collect evidence, emit a ProofOps-compatible final report, and gate release actions behind approval. |
-| Source-to-production closure | Every target loop carries `sourceClosure`, and GitHub/GitLab projects can execute SCM closure through branch creation, file commits, PR/MR creation, tags, deploy URL evidence, and health/ready probes. |
+| Source-to-production closure | Every target loop carries `sourceClosure`; GitHub/GitLab/local projects run a preflight gate before SCM writeback, then execute branch creation, file commits, PR/MR creation, tags, deploy URL evidence, and health/ready probes. |
 
 ## Loop Engineering Product Model
 

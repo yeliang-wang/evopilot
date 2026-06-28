@@ -756,6 +756,25 @@ interface SourceReleaseClosureRun {
   actor?: string;
 }
 
+interface SourceClosurePreflightResult {
+  schema: "evopilot-source-closure-preflight/v1";
+  loopId: string;
+  projectId: string;
+  sourceProjectId: string;
+  provider: LoopSourceClosure["repositoryProvider"];
+  status: "PASS" | "FAIL";
+  blockers: string[];
+  checks: Array<{
+    id: "project-binding" | "provider" | "credentials" | "source-branch" | "deploy-target" | "health-ready";
+    status: "PASS" | "FAIL" | "SKIP";
+    evidence: string[];
+    required: boolean;
+  }>;
+  capabilities: string[];
+  nextAction: "write-source" | "repair-credentials" | "repair-project" | "repair-deploy-target";
+  createdAt: string;
+}
+
 interface LoopStopPolicy {
   maxIterations: number;
   maxDurationSeconds: number;
@@ -1221,7 +1240,7 @@ interface LoopOrchestrationAutopilotResult {
   loop?: LoopRun;
   releaseRun?: SourceReleaseClosureRun;
   stages: Array<{
-    id: "advance" | "iterate" | "human-gate" | "source-closure" | "safe-auto-merge";
+    id: "advance" | "iterate" | "human-gate" | "source-preflight" | "source-closure" | "safe-auto-merge";
     status: "SUCCEEDED" | "SKIPPED" | "BLOCKED" | "FAILED";
     detail: string;
     evidence: string[];
@@ -1944,6 +1963,21 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!loop) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
         const latestRun = store.listSourceReleaseClosureRuns(loop.id).at(-1);
         return writeJson(response, 200, envelope(latestRun ?? buildSourceReleaseClosureRun(loop)));
+      }
+      const loopSourceClosurePreflightMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/source-closure\/preflight$/);
+      if ((request.method === "GET" || request.method === "POST") && loopSourceClosurePreflightMatch) {
+        if (!hasRole(auth, request.method === "POST" ? "operator" : "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const result = await preflightLoopSourceClosure(store, decodeURIComponent(loopSourceClosurePreflightMatch[1]), {
+          actor: auth.actor,
+          persist: request.method === "POST"
+        });
+        if (!result) return writeJson(response, 404, { error: "LOOP_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop.source-closure-preflight", result.loopId, {
+          status: result.status,
+          provider: result.provider,
+          blockers: result.blockers
+        }));
+        return writeJson(response, result.status === "PASS" ? 200 : 409, envelope(result));
       }
       const loopSourceReleaseRunsMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/source-release-runs$/);
       if (request.method === "GET" && loopSourceReleaseRunsMatch) {
@@ -5238,6 +5272,34 @@ async function runLoopOrchestrationAutopilot(store: FileStore, actor: string, bo
 
   const shouldExecuteClosure = request.executeSourceClosure !== false && loop.sourceClosure.closureState !== "PROMOTED";
   if (shouldExecuteClosure) {
+    const preflight = await preflightLoopSourceClosure(store, loop.id, { actor, persist: true });
+    if (!preflight || preflight.status !== "PASS") {
+      loop = store.readLoop(loop.id) ?? loop;
+      const detail = preflight
+        ? `Source closure preflight failed: ${preflight.blockers.join(", ") || "unknown blocker"}.`
+        : "Source closure preflight failed because the loop was not found.";
+      pushStage({
+        id: "source-preflight",
+        status: "FAILED",
+        detail,
+        evidence: [
+          `preflight=${preflight?.status ?? "MISSING"}`,
+          `nextAction=${preflight?.nextAction ?? "repair-project"}`,
+          ...(preflight?.blockers ?? []).map((blocker) => `blocker=${blocker}`)
+        ]
+      });
+      return finalizeLoopOrchestrationAutopilot({ status: "FAILED", target, loop, releaseRun, stages, evidence, nextAction: "source-closure" });
+    }
+    pushStage({
+      id: "source-preflight",
+      status: "SUCCEEDED",
+      detail: "Source closure preflight passed.",
+      evidence: [
+        `preflight=${preflight.status}`,
+        `nextAction=${preflight.nextAction}`,
+        ...preflight.checks.map((check) => `${check.id}=${check.status}`)
+      ]
+    });
     try {
       const sourceClosure = await executeLoopSourceClosure(store, loop.id, actor, {
         files: normalizeSourceClosureFiles(request.files).length > 0 ? normalizeSourceClosureFiles(request.files) : defaultAutopilotSourceClosureFiles(loop, target),
@@ -7176,6 +7238,189 @@ function normalizeSourceClosureFiles(value: unknown): Array<{ path: string; cont
       content: String(file.content ?? "")
     }))
     .filter((file) => file.path && !file.path.startsWith("/") && !file.path.includes(".."));
+}
+
+async function preflightLoopSourceClosure(store: FileStore, loopId: string, options: { actor: string; persist?: boolean }): Promise<SourceClosurePreflightResult | undefined> {
+  const loop = store.readLoop(loopId);
+  if (!loop) return undefined;
+  const project = store.readProject(loop.sourceClosure.sourceProjectId) ?? store.readProject(loop.projectId);
+  const closure = loop.sourceClosure;
+  const checks: SourceClosurePreflightResult["checks"] = [];
+  const now = new Date().toISOString();
+
+  const addCheck = (check: SourceClosurePreflightResult["checks"][number]) => {
+    checks.push(check);
+  };
+
+  addCheck({
+    id: "project-binding",
+    status: project?.repository ? "PASS" : "FAIL",
+    required: true,
+    evidence: project?.repository
+      ? [`project=${project.id}`, `repositoryProvider=${project.repository.provider}`]
+      : [`sourceProject=${closure.sourceProjectId}`, "repository=missing"]
+  });
+
+  const providerSupported = closure.repositoryProvider === "github" || closure.repositoryProvider === "gitlab" || closure.repositoryProvider === "local-git";
+  addCheck({
+    id: "provider",
+    status: providerSupported ? "PASS" : "FAIL",
+    required: true,
+    evidence: [`provider=${closure.repositoryProvider}`, `releaseStrategy=${closure.releaseStrategy}`]
+  });
+
+  if (project?.repository?.provider === "github") {
+    const token = repositoryToken(project.repository);
+    addCheck({
+      id: "credentials",
+      status: token ? "PASS" : "FAIL",
+      required: true,
+      evidence: [
+        token ? "tokenResolved=true" : "SOURCE_CLOSURE_TOKEN_REQUIRED",
+        project.repository.credentials?.tokenRef ? `tokenRef=${project.repository.credentials.tokenRef}` : "tokenRef=missing",
+        project.repository.credentials?.tokenRef ? `tokenRefResolved=${Boolean(process.env[project.repository.credentials.tokenRef])}` : "tokenRefResolved=false"
+      ]
+    });
+    if (token && project.repository.owner && project.repository.repo) {
+      try {
+        const files = await new GitHubHttpAdapter({
+          apiBaseUrl: project.repository.baseUrl,
+          owner: project.repository.owner,
+          repo: project.repository.repo,
+          token
+        }).listFiles(closure.sourceBranch);
+        addCheck({ id: "source-branch", status: "PASS", required: true, evidence: [`branch=${closure.sourceBranch}`, `fileCount=${files.length}`] });
+      } catch (error) {
+        addCheck({ id: "source-branch", status: "FAIL", required: true, evidence: [`branch=${closure.sourceBranch}`, error instanceof Error ? error.message : String(error)] });
+      }
+    } else {
+      addCheck({ id: "source-branch", status: "SKIP", required: true, evidence: [`branch=${closure.sourceBranch}`, "credentials-or-coordinates-missing"] });
+    }
+  } else if (project?.repository?.provider === "gitlab") {
+    const token = repositoryToken(project.repository);
+    addCheck({
+      id: "credentials",
+      status: token ? "PASS" : "FAIL",
+      required: true,
+      evidence: [
+        token ? "tokenResolved=true" : "SOURCE_CLOSURE_TOKEN_REQUIRED",
+        project.repository.credentials?.tokenRef ? `tokenRef=${project.repository.credentials.tokenRef}` : "tokenRef=missing",
+        project.repository.credentials?.tokenRef ? `tokenRefResolved=${Boolean(process.env[project.repository.credentials.tokenRef])}` : "tokenRefResolved=false"
+      ]
+    });
+    if (token && project.repository.baseUrl && project.repository.projectId) {
+      try {
+        const files = await new GitLabHttpAdapter({
+          baseUrl: project.repository.baseUrl,
+          projectId: project.repository.projectId,
+          token
+        }).listFiles(closure.sourceBranch);
+        addCheck({ id: "source-branch", status: "PASS", required: true, evidence: [`branch=${closure.sourceBranch}`, `fileCount=${files.length}`] });
+      } catch (error) {
+        addCheck({ id: "source-branch", status: "FAIL", required: true, evidence: [`branch=${closure.sourceBranch}`, error instanceof Error ? error.message : String(error)] });
+      }
+    } else {
+      addCheck({ id: "source-branch", status: "SKIP", required: true, evidence: [`branch=${closure.sourceBranch}`, "credentials-or-coordinates-missing"] });
+    }
+  } else if (project?.repository?.provider === "local-git") {
+    const root = project.repository.root ? path.resolve(project.repository.root) : "";
+    const rootOk = Boolean(root && fs.existsSync(root) && fs.statSync(root).isDirectory());
+    addCheck({ id: "credentials", status: "PASS", required: false, evidence: ["local-git-credentials=not-required"] });
+    addCheck({ id: "source-branch", status: rootOk ? "PASS" : "FAIL", required: true, evidence: [`root=${root || "missing"}`, rootOk ? "rootExists=true" : "rootExists=false"] });
+  } else {
+    addCheck({ id: "credentials", status: "FAIL", required: true, evidence: ["repository=missing-or-provider-mismatch"] });
+    addCheck({ id: "source-branch", status: "SKIP", required: true, evidence: [`branch=${closure.sourceBranch}`, "repository=missing-or-provider-mismatch"] });
+  }
+
+  const deployRequired = closure.requiredGates.includes("deploy");
+  const deployConnector = closure.deploymentConnectorId ? store.readDeployConnector(closure.deploymentConnectorId) : undefined;
+  const deploymentUrl = closure.artifacts.deploymentUrl ?? closure.controlPlaneUrl ?? loop.controlPlaneUrl;
+  addCheck({
+    id: "deploy-target",
+    status: !deployRequired || deployConnector || deploymentUrl ? "PASS" : "FAIL",
+    required: deployRequired,
+    evidence: [
+      `deployRequired=${deployRequired}`,
+      closure.deploymentConnectorId ? `deployConnector=${closure.deploymentConnectorId}` : "deployConnector=missing",
+      deployConnector ? `deployConnectorType=${deployConnector.type}` : "deployConnectorResolved=false",
+      deploymentUrl ? `deploymentUrl=${deploymentUrl}` : "deploymentUrl=missing"
+    ]
+  });
+
+  const healthRequired = closure.requiredGates.includes("health-ready");
+  addCheck({
+    id: "health-ready",
+    status: !healthRequired || closure.artifacts.healthUrl || closure.artifacts.readyUrl || deploymentUrl ? "PASS" : "FAIL",
+    required: healthRequired,
+    evidence: [
+      `healthReadyRequired=${healthRequired}`,
+      closure.artifacts.healthUrl ? `healthUrl=${closure.artifacts.healthUrl}` : "healthUrl=derived-or-missing",
+      closure.artifacts.readyUrl ? `readyUrl=${closure.artifacts.readyUrl}` : "readyUrl=derived-or-missing"
+    ]
+  });
+
+  const blockers = checks
+    .filter((check) => check.required && check.status !== "PASS")
+    .flatMap((check) => check.evidence.some((item) => item === "SOURCE_CLOSURE_TOKEN_REQUIRED")
+      ? [`${check.id}:SOURCE_CLOSURE_TOKEN_REQUIRED`]
+      : [`${check.id}:${check.status}`]);
+  const result: SourceClosurePreflightResult = {
+    schema: "evopilot-source-closure-preflight/v1",
+    loopId: loop.id,
+    projectId: loop.projectId,
+    sourceProjectId: closure.sourceProjectId,
+    provider: closure.repositoryProvider,
+    status: blockers.length === 0 ? "PASS" : "FAIL",
+    blockers,
+    checks,
+    capabilities: [
+      "non-mutating-source-closure-preflight",
+      `${closure.repositoryProvider}-credential-check`,
+      "branch-readiness-check",
+      "deploy-target-check",
+      "autopilot-preflight-gate"
+    ],
+    nextAction: blockers.some((blocker) => blocker.includes("credentials")) ? "repair-credentials"
+      : blockers.some((blocker) => blocker.includes("project") || blocker.includes("provider") || blocker.includes("source-branch")) ? "repair-project"
+        : blockers.some((blocker) => blocker.includes("deploy") || blocker.includes("health")) ? "repair-deploy-target"
+          : "write-source",
+    createdAt: now
+  };
+
+  if (options.persist) {
+    store.writeLoop({
+      ...loop,
+      evidenceSets: [
+        ...loop.evidenceSets,
+        {
+          id: `${loop.id}-source-closure-preflight-${Date.now()}`,
+          loopRunId: loop.id,
+          iterationId: loop.iterations.at(-1)?.id ?? `${loop.id}-source-closure-preflight`,
+          validator: "evopilot-source-closure-preflight",
+          status: result.status === "PASS" ? "PASS" : "FAIL",
+          evidence: [
+            `sourceClosure.preflight=${result.status}`,
+            `sourceClosure.preflight.nextAction=${result.nextAction}`,
+            ...result.blockers.map((blocker) => `sourceClosure.preflight.blocker=${blocker}`),
+            ...result.checks.flatMap((check) => [`sourceClosure.preflight.${check.id}=${check.status}`, ...check.evidence])
+          ],
+          artifacts: [],
+          createdAt: now
+        }
+      ],
+      timeline: [
+        ...loop.timeline,
+        loopTimelineEvent("EVIDENCE", `Source closure preflight ${result.status}.`, {
+          provider: closure.repositoryProvider,
+          blockers: result.blockers,
+          nextAction: result.nextAction
+        })
+      ],
+      updatedAt: now
+    });
+  }
+
+  return result;
 }
 
 function buildSourceReleaseClosureRun(loop: LoopRun, actor?: string, id?: string, createdAt?: string): SourceReleaseClosureRun {
