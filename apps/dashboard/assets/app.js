@@ -3082,4 +3082,5 @@ function formatDate(value) {
   return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
+render();
 refreshData().finally(render);
