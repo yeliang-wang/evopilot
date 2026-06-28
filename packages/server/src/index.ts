@@ -2024,6 +2024,19 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const latestRun = store.listSourceReleaseClosureRuns(loop.id).at(-1);
         return writeJson(response, 200, envelope(latestRun ?? buildSourceReleaseClosureRun(loop)));
       }
+      const sourceReleaseRunRepairMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/source-release-runs\/([^/]+)\/repair$/);
+      if (request.method === "POST" && sourceReleaseRunRepairMatch) {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const result = await repairSourceReleaseRun(store, decodeURIComponent(sourceReleaseRunRepairMatch[1]), decodeURIComponent(sourceReleaseRunRepairMatch[2]), auth.actor, body);
+        if (!result) return writeJson(response, 404, { error: "SOURCE_RELEASE_RUN_NOT_FOUND" });
+        store.appendAudit(audit(auth, "loop.source-release-run-repaired", result.loop.id, {
+          originalReleaseRunId: result.originalReleaseRun.id,
+          releaseRunId: result.releaseRun.id,
+          closureState: result.loop.sourceClosure.closureState
+        }));
+        return writeJson(response, 200, envelope(result));
+      }
       const loopSourceClosurePreflightMatch = url.pathname.match(/^\/api\/v1\/loops\/([^/]+)\/source-closure\/preflight$/);
       if ((request.method === "GET" || request.method === "POST") && loopSourceClosurePreflightMatch) {
         if (!hasRole(auth, request.method === "POST" ? "operator" : "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -7006,7 +7019,8 @@ async function executeLoopSourceClosure(store: FileStore, loopId: string, actor:
   const evidence: string[] = [
     `sourceClosure.provider=${loop.sourceClosure.repositoryProvider}`,
     `sourceClosure.branch=${loop.sourceClosure.sourceBranch}`,
-    `sourceClosure.releaseBranch=${branch}`
+    `sourceClosure.releaseBranch=${branch}`,
+    ...(optionalTrimmedString(request.repairOfReleaseRunId) ? [`sourceClosure.repairOfReleaseRunId=${optionalTrimmedString(request.repairOfReleaseRunId)}`] : [])
   ];
   let releaseRun = store.writeSourceReleaseClosureRun(buildSourceReleaseClosureRun({
     ...loop,
@@ -7373,6 +7387,79 @@ async function applySourceClosureReviewDecision(store: FileStore, loopId: string
   const latestRun = store.listSourceReleaseClosureRuns(loop.id).at(-1);
   const releaseRun = store.writeSourceReleaseClosureRun(buildSourceReleaseClosureRun(updatedLoop, actor, latestRun?.id, latestRun?.createdAt));
   return { loop: updatedLoop, releaseRun, action };
+}
+
+async function repairSourceReleaseRun(store: FileStore, loopId: string, releaseRunId: string, actor: string, body: unknown): Promise<{ loop: LoopRun; releaseRun: SourceReleaseClosureRun; originalReleaseRun: SourceReleaseClosureRun; action: "repair-and-execute" | "repair-intent" } | undefined> {
+  const loop = store.readLoop(loopId);
+  const originalReleaseRun = store.readSourceReleaseClosureRun(releaseRunId);
+  if (!loop || !originalReleaseRun || originalReleaseRun.loopId !== loopId) return undefined;
+  const request = isRecord(body) ? body : {};
+  const now = new Date().toISOString();
+  const project = store.readProject(loop.sourceClosure.sourceProjectId) ?? store.readProject(loop.projectId);
+  const gateEvidence: LoopSourceClosure["gateEvidence"] = { ...loop.sourceClosure.gateEvidence };
+  for (const gate of loop.sourceClosure.requiredGates) {
+    if (gateEvidence[gate]?.status === "FAILED") {
+      markGate(gateEvidence, gate, "PENDING", [
+        `sourceReleaseRepair=queued`,
+        `originalReleaseRunId=${releaseRunId}`,
+        ...(gateEvidence[gate]?.evidence ?? []).slice(-2)
+      ], now);
+    }
+  }
+  const artifacts: LoopSourceClosure["artifacts"] = {
+    ...loop.sourceClosure.artifacts,
+    policyStatus: undefined,
+    policyBlockers: undefined,
+    policyEvaluatedAt: undefined,
+    postMergeDeployStatus: undefined
+  };
+  const repairedClosure = normalizeLoopSourceClosure({
+    ...loop.sourceClosure,
+    closureState: "PLANNED",
+    gateEvidence,
+    artifacts
+  }, project, loop.controlPlaneUrl);
+  const repairedLoop = store.writeLoop({
+    ...loop,
+    sourceClosure: repairedClosure,
+    evidenceSets: [
+      ...loop.evidenceSets,
+      {
+        id: `${loop.id}-source-release-repair-${Date.now()}`,
+        loopRunId: loop.id,
+        iterationId: loop.iterations.at(-1)?.id ?? `${loop.id}-source-release-repair`,
+        validator: "evopilot-source-release-repair",
+        status: "PASS",
+        evidence: [
+          "sourceReleaseRepair=QUEUED",
+          `originalReleaseRunId=${releaseRunId}`,
+          `originalStatus=${originalReleaseRun.status}`,
+          `executeSourceClosure=${request.executeSourceClosure !== false}`
+        ],
+        artifacts: [],
+        createdAt: now
+      }
+    ],
+    timeline: [
+      ...loop.timeline,
+      loopTimelineEvent("DECISION", "Source release run repair queued.", {
+        originalReleaseRunId: releaseRunId,
+        originalStatus: originalReleaseRun.status
+      })
+    ],
+    updatedAt: now
+  });
+  if (request.executeSourceClosure === false) {
+    const releaseRun = store.writeSourceReleaseClosureRun(buildSourceReleaseClosureRun(repairedLoop, actor));
+    return { loop: repairedLoop, releaseRun, originalReleaseRun, action: "repair-intent" };
+  }
+  const execution = await executeLoopSourceClosure(store, loopId, actor, {
+    ...request,
+    repairOfReleaseRunId: releaseRunId,
+    files: Array.isArray(request.files) ? request.files : []
+  });
+  if (!execution) return undefined;
+  return { loop: execution.loop, releaseRun: execution.releaseRun, originalReleaseRun, action: "repair-and-execute" };
 }
 
 async function mergeSourceClosureReview(project: StoredProject | undefined, loop: LoopRun, artifacts: LoopSourceClosure["artifacts"], actor: string, commitMessage?: string): Promise<{ mergeCommitSha?: string; evidence: string[] }> {

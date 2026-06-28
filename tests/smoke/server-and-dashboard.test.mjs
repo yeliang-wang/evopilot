@@ -203,6 +203,8 @@ test("server serves dashboard static files", async () => {
     assert.match(app, /批准 Release/);
     assert.match(app, /合并 Release/);
     assert.match(app, /安全自动合并/);
+    assert.match(app, /修复 Release Run/);
+    assert.match(app, /\/source-release-runs\/\$\{encodeURIComponent\(runId\)\}\/repair/);
     assert.match(app, /Post Merge Deploy/);
     assert.doesNotMatch(app, /OpenHands 白盒执行/);
     assert.doesNotMatch(app, /Jenkins Stage View/);

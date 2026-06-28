@@ -1398,6 +1398,7 @@ function renderLoopDetail(loop) {
             <button data-action="approve-source-release" data-id="${escapeHtml(loop.id)}" ${releaseRun.review?.status === "PENDING" ? "" : "disabled"}>批准 Release</button>
             <button data-action="merge-source-release" data-id="${escapeHtml(loop.id)}" ${releaseRun.review?.status === "APPROVED" ? "" : "disabled"}>合并 Release</button>
             <button data-action="auto-merge-source-release" data-id="${escapeHtml(loop.id)}" ${releaseRun.review?.status === "PENDING" || releaseRun.review?.status === "APPROVED" ? "" : "disabled"}>安全自动合并</button>
+            <button data-action="repair-source-release-run" data-id="${escapeHtml(loop.id)}" data-run-id="${escapeHtml(releaseRun.id ?? "")}" ${releaseRun.id && ["FAILED", "HEALTH_FAILED", "ROLLED_BACK"].includes(releaseRun.status) ? "" : "disabled"}>修复 Release Run</button>
           </div>
         </div>
         <div>
@@ -2063,7 +2064,7 @@ function bindLoopActions() {
       }
     });
   }
-  for (const button of content.querySelectorAll('[data-action="verify-sandbox-proof"], [data-action="load-trace-tree"], [data-action="load-loop-events"], [data-action="load-source-release-run"], [data-action="approve-source-release"], [data-action="merge-source-release"], [data-action="auto-merge-source-release"]')) {
+  for (const button of content.querySelectorAll('[data-action="verify-sandbox-proof"], [data-action="load-trace-tree"], [data-action="load-loop-events"], [data-action="load-source-release-run"], [data-action="approve-source-release"], [data-action="merge-source-release"], [data-action="auto-merge-source-release"], [data-action="repair-source-release-run"]')) {
     button.addEventListener("click", async () => {
       const id = button.dataset.id;
       const action = button.dataset.action;
@@ -2114,6 +2115,37 @@ function bindLoopActions() {
             : action === "auto-merge-source-release"
               ? `Release 安全自动合并：${run?.policy?.status ?? "UNKNOWN"} / ${run?.review?.mergeCommitSha ?? "merge commit pending"}。`
               : `Release 已合并：${run?.review?.mergeCommitSha ?? "merge commit pending"}。`;
+        }
+        if (action === "repair-source-release-run") {
+          const loop = state.loops.find((item) => item.id === id);
+          const runId = button.dataset.runId;
+          const version = loop?.sourceClosure?.targetVersion;
+          const deployConnectorId = loop?.sourceClosure?.deploymentConnectorId ?? (state.deployConnectors.length === 1 ? state.deployConnectors[0].id : undefined);
+          const response = await postJson(`/api/v1/loops/${encodeURIComponent(id)}/source-release-runs/${encodeURIComponent(runId)}/repair`, {
+            deployConnectorId,
+            tagName: version ? `v${String(version).replace(/^v/, "")}` : undefined,
+            files: [{
+              path: `docs/evopilot-source-closures/${id}-repair.md`,
+              content: [
+                `# EvoPilot Source Release Repair: ${id}`,
+                "",
+                `Original release run: ${runId}`,
+                `Objective: ${loop?.objective ?? id}`,
+                `Target version: ${version ?? "unspecified"}`,
+                `Generated at: ${new Date().toISOString()}`,
+                "",
+                "This file records Dashboard-triggered stale release run repair evidence."
+              ].join("\n")
+            }]
+          });
+          const run = response.data?.releaseRun;
+          if (run) {
+            state.sourceReleaseRuns = [
+              ...(state.sourceReleaseRuns ?? []).filter((item) => item.id !== run.id),
+              run
+            ];
+          }
+          state.authNotice = `Release Run 修复完成：${run?.status ?? "UNKNOWN"} / ${response.data?.action ?? "repair"}。`;
         }
         await loadLoops();
       } catch (error) {

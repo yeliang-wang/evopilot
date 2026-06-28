@@ -923,6 +923,94 @@ test("GitHub source closure reuses an existing open pull request when create ret
   }
 });
 
+test("Source release run repair re-executes stale failed GitHub closure and reuses existing PR", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-source-release-repair-"));
+  const github = createRepairablePullRequestGitHubServer();
+  await listen(github.server);
+  const githubPort = github.server.address().port;
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await listen(server);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  try {
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "github-repair-source",
+        name: "GitHub Repair Source",
+        repository: {
+          provider: "github",
+          baseUrl: `http://127.0.0.1:${githubPort}`,
+          owner: "org",
+          repo: "repo",
+          defaultBranch: "main",
+          credentials: { token: "token" }
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+
+    const created = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "github-repair-loop",
+        projectId: "github-repair-source",
+        objective: "Repair stale failed source release run.",
+        controlPlaneUrl: baseUrl,
+        sourceClosure: {
+          sourceProjectId: "github-repair-source",
+          repositoryProvider: "github",
+          sourceBranch: "main",
+          targetVersion: "2.6.0",
+          requiredGates: ["code-change", "push"]
+        }
+      }
+    });
+    assert.equal(created.status, 201);
+
+    const failed = await jsonFetch(`${baseUrl}/api/v1/loops/github-repair-loop/source-closure/execute`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        files: [{ path: "docs/source-closure.md", content: "initial stale failure" }]
+      }
+    });
+    assert.equal(failed.status, 200);
+    assert.equal(failed.body.data.sourceClosure.closureState, "FAILED");
+    assert.equal(failed.body.data.sourceReleaseRun.status, "FAILED");
+    assert.ok(failed.body.data.evidenceSets.at(-1).evidence.some((item) => item.includes("GitHub request failed: 422")));
+
+    github.allowReuse = true;
+    const repaired = await jsonFetch(`${baseUrl}/api/v1/loops/github-repair-loop/source-release-runs/${encodeURIComponent(failed.body.data.sourceReleaseRun.id)}/repair`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        files: [{ path: "docs/source-closure.md", content: "repair stale failure" }]
+      }
+    });
+    assert.equal(repaired.status, 200);
+    assert.equal(repaired.body.data.originalReleaseRun.id, failed.body.data.sourceReleaseRun.id);
+    assert.equal(repaired.body.data.action, "repair-and-execute");
+    assert.equal(repaired.body.data.loop.sourceClosure.closureState, "PROMOTED");
+    assert.equal(repaired.body.data.releaseRun.status, "PROMOTED");
+    assert.equal(repaired.body.data.releaseRun.artifacts.pullRequestNumber, 11);
+    assert.ok(repaired.body.data.loop.evidenceSets.some((set) => set.validator === "evopilot-source-release-repair"));
+    assert.ok(repaired.body.data.loop.evidenceSets.at(-1).evidence.some((item) => item === "github.pullRequestReused=true"));
+    assert.ok(repaired.body.data.loop.evidenceSets.at(-1).evidence.some((item) => item.startsWith("sourceClosure.repairOfReleaseRunId=")));
+  } finally {
+    await close(server);
+    await close(github.server);
+  }
+});
+
 test("Post-merge deploy finalizer reconciles source release state after server restart", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-source-release-finalizer-"));
   const probe = http.createServer((request, response) => {
@@ -1871,6 +1959,41 @@ function createExistingPullRequestGitHubServer() {
     response.writeHead(404);
     response.end();
   });
+}
+
+function createRepairablePullRequestGitHubServer() {
+  const fixture = {
+    allowReuse: false,
+    server: http.createServer(async (request, response) => {
+      if (request.url === "/repos/org/repo/git/trees/main?recursive=1") {
+        return json(response, { tree: [{ type: "blob", path: "README.md" }] });
+      }
+      if (request.url === "/repos/org/repo/git/ref/heads%2Fmain" && request.method === "GET") {
+        return json(response, { ref: "refs/heads/main", object: { sha: "base-sha" } });
+      }
+      if (request.url === "/repos/org/repo/git/refs" && request.method === "POST") {
+        return json(response, { message: "Reference already exists" }, 422);
+      }
+      if (request.url === "/repos/org/repo/contents/docs/source-closure.md" && request.method === "PUT") {
+        return json(response, { commit: { sha: "github-repair-commit-sha" }, content: { html_url: "http://github/blob/docs/source-closure.md" } });
+      }
+      if (request.url === "/repos/org/repo/pulls" && request.method === "POST") {
+        return json(response, { message: "Validation Failed", errors: [{ resource: "PullRequest", code: "custom", message: "A pull request already exists" }] }, 422);
+      }
+      if (request.url === "/repos/org/repo/pulls?state=open&head=org%3Aevopilot%2Fgithub-repair-loop-2.6.0&base=main" && request.method === "GET") {
+        return json(response, fixture.allowReuse ? [{
+          number: 11,
+          html_url: "http://github/pr/11",
+          head: { ref: "evopilot/github-repair-loop-2.6.0" },
+          base: { ref: "main" },
+          state: "open"
+        }] : []);
+      }
+      response.writeHead(404);
+      response.end();
+    })
+  };
+  return fixture;
 }
 
 function createFailingSourceClosureGitHubServer() {
