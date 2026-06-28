@@ -602,21 +602,71 @@ test("Loop source closure executes GitHub source writeback gates", async () => {
     assert.equal(approved.status, 200);
     assert.equal(approved.body.data.sourceReleaseRun.review.status, "APPROVED");
     assert.equal(approved.body.data.sourceReleaseRun.nextAction, "merge-review");
+    assert.equal(approved.body.data.sourceReleaseRun.policy.status, "PASS");
+    assert.equal(approved.body.data.sourceReleaseRun.policy.autoMerge, false);
     const merged = await jsonFetch(`${baseUrl}/api/v1/loops/github-source-loop/source-closure/review-decision`, {
       method: "POST",
       token: "admin-token",
-      body: { action: "merge" }
+      body: { action: "merge", postMergeDeploy: true }
     });
     assert.equal(merged.status, 200);
     assert.equal(merged.body.data.sourceReleaseRun.review.status, "MERGED");
+    assert.equal(merged.body.data.sourceReleaseRun.policy.status, "PASS");
     assert.equal(merged.body.data.sourceReleaseRun.review.mergeCommitSha, "github-merge-sha");
+    assert.equal(merged.body.data.sourceReleaseRun.postMergeDeployment.status, "SUCCEEDED");
     assert.equal(merged.body.data.sourceClosure.artifacts.mergeCommitSha, "github-merge-sha");
+    assert.equal(merged.body.data.sourceClosure.artifacts.postMergeDeployStatus, "SUCCEEDED");
     assert.equal(merged.body.data.sourceReleaseRun.nextAction, "promoted");
     const runs = await jsonFetch(`${baseUrl}/api/v1/loops/github-source-loop/source-release-runs`, {
       token: "operator-token"
     });
     assert.equal(runs.status, 200);
     assert.equal(runs.body.data.at(-1).id, executed.body.data.sourceReleaseRun.id);
+
+    const blockedLoop = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "github-policy-blocked-loop",
+        projectId: "github-source",
+        objective: "Block unsafe release merge when policy gates are incomplete.",
+        controlPlaneUrl: baseUrl,
+        sourceClosure: {
+          sourceProjectId: "github-source",
+          repositoryProvider: "github",
+          sourceBranch: "main",
+          targetVersion: "2.0.1",
+          requiredGates: ["code-change", "push"]
+        }
+      }
+    });
+    assert.equal(blockedLoop.status, 201);
+    const blockedExecuted = await jsonFetch(`${baseUrl}/api/v1/loops/github-policy-blocked-loop/source-closure/execute`, {
+      method: "POST",
+      token: "admin-token",
+      body: { files: [] }
+    });
+    assert.equal(blockedExecuted.status, 200);
+    assert.equal(blockedExecuted.body.data.sourceReleaseRun.review.status, "PENDING");
+    const blockedApproved = await jsonFetch(`${baseUrl}/api/v1/loops/github-policy-blocked-loop/source-closure/review-decision`, {
+      method: "POST",
+      token: "admin-token",
+      body: { action: "approve" }
+    });
+    assert.equal(blockedApproved.status, 200);
+    const blockedMerge = await jsonFetch(`${baseUrl}/api/v1/loops/github-policy-blocked-loop/source-closure/review-decision`, {
+      method: "POST",
+      token: "admin-token",
+      body: { action: "merge" }
+    });
+    assert.equal(blockedMerge.status, 409);
+    assert.equal(blockedMerge.body.error, "SOURCE_CLOSURE_RELEASE_POLICY_BLOCKED");
+    const blockedPlan = await jsonFetch(`${baseUrl}/api/v1/loops/github-policy-blocked-loop/source-closure/plan`, {
+      token: "operator-token"
+    });
+    assert.equal(blockedPlan.status, 200);
+    assert.equal(blockedPlan.body.data.policy.status, "BLOCKED");
+    assert.equal(blockedPlan.body.data.nextAction, "policy-review");
   } finally {
     await new Promise((resolve) => server.close(resolve));
     await close(github);

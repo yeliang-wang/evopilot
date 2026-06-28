@@ -686,8 +686,10 @@ type LoopExecutorMode = "serial" | "parallel";
 type LoopSandboxRuntimeType = "host" | "docker" | "k8s";
 type LoopSourceClosureState = "PLANNED" | "CODE_CHANGED" | "PUSHED" | "TAGGED" | "DEPLOYED" | "HEALTH_READY" | "HEALTH_FAILED" | "ROLLED_BACK" | "PROMOTED" | "FAILED";
 type LoopSourceClosureGate = "code-change" | "push" | "tag" | "deploy" | "health-ready";
-type SourceReleaseClosureStage = LoopSourceClosureGate | "review" | "merge";
+type SourceReleaseClosureStage = LoopSourceClosureGate | "review" | "policy" | "merge";
 type SourceReleaseReviewStatus = "NOT_REQUIRED" | "PENDING" | "APPROVED" | "REJECTED" | "MERGED";
+type SourceReleasePolicyStatus = "PASS" | "BLOCKED";
+type SourceReleasePostMergeDeployStatus = "NOT_REQUIRED" | "SUCCEEDED" | "FAILED" | "ROLLED_BACK";
 
 interface SourceReleaseClosureRun {
   schema: "evopilot-source-release-closure-run/v1";
@@ -725,8 +727,30 @@ interface SourceReleaseClosureRun {
     mergedAt?: string;
     mergeCommitSha?: string;
   };
+  policy: {
+    status: SourceReleasePolicyStatus;
+    evaluatedAt?: string;
+    autoMerge: boolean;
+    blockers: string[];
+    checks: Array<{
+      id: string;
+      status: "PASS" | "FAIL";
+      evidence: string[];
+      required: boolean;
+    }>;
+  };
+  postMergeDeployment?: {
+    status: SourceReleasePostMergeDeployStatus;
+    deployedAt?: string;
+    deployedBy?: string;
+    deploymentId?: string;
+    deploymentUrl?: string;
+    healthUrl?: string;
+    readyUrl?: string;
+    evidence: string[];
+  };
   capabilities: string[];
-  nextAction: "write-source" | "open-review" | "approve-review" | "merge-review" | "tag" | "deploy" | "probe-health" | "rollback" | "promoted" | "failed";
+  nextAction: "write-source" | "open-review" | "approve-review" | "policy-review" | "merge-review" | "tag" | "deploy" | "probe-health" | "rollback" | "promoted" | "failed";
   createdAt: string;
   updatedAt: string;
   actor?: string;
@@ -879,6 +903,13 @@ interface LoopSourceClosure {
     rejectedBy?: string;
     mergedAt?: string;
     mergedBy?: string;
+    policyStatus?: SourceReleasePolicyStatus;
+    policyBlockers?: string[];
+    policyEvaluatedAt?: string;
+    autoMerge?: boolean;
+    postMergeDeployStatus?: SourceReleasePostMergeDeployStatus;
+    postMergeDeployAt?: string;
+    postMergeDeployBy?: string;
     tag?: string;
     deploymentConnectorId?: string;
     deploymentId?: string;
@@ -5392,6 +5423,13 @@ function normalizeSourceClosureArtifacts(value: unknown): LoopSourceClosure["art
     rejectedBy: optionalTrimmedString(value.rejectedBy),
     mergedAt: optionalTrimmedString(value.mergedAt),
     mergedBy: optionalTrimmedString(value.mergedBy),
+    policyStatus: normalizeSourceReleasePolicyStatus(value.policyStatus),
+    policyBlockers: Array.isArray(value.policyBlockers) ? value.policyBlockers.map(String) : undefined,
+    policyEvaluatedAt: optionalTrimmedString(value.policyEvaluatedAt),
+    autoMerge: value.autoMerge === true,
+    postMergeDeployStatus: normalizeSourceReleasePostMergeDeployStatus(value.postMergeDeployStatus),
+    postMergeDeployAt: optionalTrimmedString(value.postMergeDeployAt),
+    postMergeDeployBy: optionalTrimmedString(value.postMergeDeployBy),
     tag: optionalTrimmedString(value.tag),
     deploymentConnectorId: optionalTrimmedString(value.deploymentConnectorId),
     deploymentId: optionalTrimmedString(value.deploymentId),
@@ -5412,6 +5450,18 @@ function optionalNumber(value: unknown): number | undefined {
 function normalizeSourceReleaseReviewStatus(value: unknown): SourceReleaseReviewStatus | undefined {
   const status = String(value ?? "").trim().toUpperCase();
   if (status === "NOT_REQUIRED" || status === "PENDING" || status === "APPROVED" || status === "REJECTED" || status === "MERGED") return status;
+  return undefined;
+}
+
+function normalizeSourceReleasePolicyStatus(value: unknown): SourceReleasePolicyStatus | undefined {
+  const status = String(value ?? "").trim().toUpperCase();
+  if (status === "PASS" || status === "BLOCKED") return status;
+  return undefined;
+}
+
+function normalizeSourceReleasePostMergeDeployStatus(value: unknown): SourceReleasePostMergeDeployStatus | undefined {
+  const status = String(value ?? "").trim().toUpperCase();
+  if (status === "NOT_REQUIRED" || status === "SUCCEEDED" || status === "FAILED" || status === "ROLLED_BACK") return status;
   return undefined;
 }
 
@@ -6547,7 +6597,7 @@ async function applySourceClosureReviewDecision(store: FileStore, loopId: string
   const project = store.readProject(loop.sourceClosure.sourceProjectId) ?? store.readProject(loop.projectId);
   const request = isRecord(body) ? body : {};
   const action = String(request.action ?? "approve").trim().toLowerCase();
-  if (action !== "approve" && action !== "reject" && action !== "merge") throw httpError(400, "SOURCE_CLOSURE_REVIEW_ACTION_INVALID", "action must be approve, reject, or merge.");
+  if (action !== "approve" && action !== "reject" && action !== "merge" && action !== "auto-merge") throw httpError(400, "SOURCE_CLOSURE_REVIEW_ACTION_INVALID", "action must be approve, reject, merge, or auto-merge.");
   const now = new Date().toISOString();
   const artifacts: LoopSourceClosure["artifacts"] = { ...loop.sourceClosure.artifacts };
   const evidence: string[] = [
@@ -6555,7 +6605,7 @@ async function applySourceClosureReviewDecision(store: FileStore, loopId: string
     `sourceClosure.provider=${loop.sourceClosure.repositoryProvider}`
   ];
 
-  if (action === "approve") {
+  if (action === "approve" || action === "auto-merge") {
     artifacts.reviewStatus = "APPROVED";
     artifacts.approvedAt = now;
     artifacts.approvedBy = actor;
@@ -6567,9 +6617,53 @@ async function applySourceClosureReviewDecision(store: FileStore, loopId: string
     artifacts.rejectedBy = actor;
     evidence.push(`rejectedBy=${actor}`);
   }
-  if (action === "merge") {
+  if (action === "merge" || action === "auto-merge") {
     if (artifacts.reviewStatus !== "APPROVED" && request.force !== true) {
       throw httpError(409, "SOURCE_CLOSURE_REVIEW_NOT_APPROVED", "Release review must be approved before merge unless force=true.");
+    }
+    artifacts.autoMerge = action === "auto-merge" || request.autoMerge === true;
+    const policy = evaluateSourceReleasePolicy(loop, artifacts, {
+      autoMerge: artifacts.autoMerge === true,
+      forcePolicy: request.forcePolicy === true
+    });
+    artifacts.policyStatus = policy.status;
+    artifacts.policyBlockers = policy.blockers;
+    artifacts.policyEvaluatedAt = policy.evaluatedAt;
+    evidence.push(...policy.checks.flatMap((check) => [`policy.${check.id}=${check.status}`, ...check.evidence]));
+    if (policy.status === "BLOCKED" && request.forcePolicy !== true) {
+      const blockedClosure = normalizeLoopSourceClosure({
+        ...loop.sourceClosure,
+        artifacts
+      }, project, loop.controlPlaneUrl);
+      const blockedLoop = store.writeLoop({
+        ...loop,
+        sourceClosure: blockedClosure,
+        evidenceSets: [
+          ...loop.evidenceSets,
+          {
+            id: `${loop.id}-source-policy-${Date.now()}`,
+            loopRunId: loop.id,
+            iterationId: loop.iterations.at(-1)?.id ?? `${loop.id}-source-policy`,
+            validator: "evopilot-source-release-policy",
+            status: "FAIL",
+            evidence: [`policyStatus=BLOCKED`, ...policy.blockers.map((blocker) => `policyBlocker=${blocker}`), ...evidence],
+            artifacts: [],
+            createdAt: now
+          }
+        ],
+        timeline: [
+          ...loop.timeline,
+          loopTimelineEvent("DECISION", "Source release policy blocked merge.", {
+            provider: blockedClosure.repositoryProvider,
+            policyStatus: "BLOCKED",
+            blockers: policy.blockers
+          })
+        ],
+        updatedAt: now
+      });
+      const latestRun = store.listSourceReleaseClosureRuns(loop.id).at(-1);
+      store.writeSourceReleaseClosureRun(buildSourceReleaseClosureRun(blockedLoop, actor, latestRun?.id, latestRun?.createdAt));
+      throw httpError(409, "SOURCE_CLOSURE_RELEASE_POLICY_BLOCKED", `Release policy blocked merge: ${policy.blockers.join("; ")}`);
     }
     const merge = await mergeSourceClosureReview(project, loop, artifacts, actor, optionalTrimmedString(request.commitMessage));
     artifacts.reviewStatus = "MERGED";
@@ -6577,6 +6671,13 @@ async function applySourceClosureReviewDecision(store: FileStore, loopId: string
     artifacts.mergedBy = actor;
     artifacts.mergeCommitSha = merge.mergeCommitSha;
     evidence.push(...merge.evidence);
+    if (request.postMergeDeploy !== false) {
+      const postMergeDeploy = await executePostMergeDeployment(store, loop, project, artifacts, actor, request);
+      artifacts.postMergeDeployStatus = postMergeDeploy.status;
+      artifacts.postMergeDeployAt = postMergeDeploy.deployedAt;
+      artifacts.postMergeDeployBy = actor;
+      evidence.push(...postMergeDeploy.evidence);
+    }
   }
 
   const updatedClosure = normalizeLoopSourceClosure({
@@ -6671,6 +6772,126 @@ async function mergeSourceClosureReview(project: StoredProject | undefined, loop
   throw httpError(409, "SOURCE_CLOSURE_PROVIDER_UNSUPPORTED", "Review merge supports GitHub, GitLab, and local-git repositories.");
 }
 
+function evaluateSourceReleasePolicy(loop: LoopRun, artifacts: LoopSourceClosure["artifacts"], options: {
+  autoMerge: boolean;
+  forcePolicy: boolean;
+}): SourceReleaseClosureRun["policy"] & { evaluatedAt: string } {
+  const closure = loop.sourceClosure;
+  const evaluatedAt = new Date().toISOString();
+  const checks: SourceReleaseClosureRun["policy"]["checks"] = [];
+  const addCheck = (id: string, passed: boolean, evidence: string[], required = true) => {
+    checks.push({ id, status: passed ? "PASS" : "FAIL", evidence, required });
+  };
+  const failedGates = closure.requiredGates.filter((gate) => closure.gateEvidence[gate]?.status === "FAILED");
+  const unpassedGates = closure.requiredGates.filter((gate) => closure.gateEvidence[gate]?.status !== "PASSED");
+  addCheck("required-gates", unpassedGates.length === 0, [
+    `requiredGates=${closure.requiredGates.join(",") || "none"}`,
+    `unpassedGates=${unpassedGates.join(",") || "none"}`
+  ]);
+  addCheck("no-failed-gates", failedGates.length === 0, [`failedGates=${failedGates.join(",") || "none"}`]);
+  addCheck("closure-promoted", closure.closureState === "PROMOTED", [`closureState=${closure.closureState}`]);
+  addCheck("review-approved", artifacts.reviewStatus === "APPROVED" || artifacts.reviewStatus === "MERGED" || artifacts.reviewStatus === "NOT_REQUIRED", [`reviewStatus=${artifacts.reviewStatus ?? "UNKNOWN"}`]);
+  addCheck("source-commit", Boolean(artifacts.commitSha), [`commitSha=${artifacts.commitSha ?? "missing"}`]);
+  if (closure.repositoryProvider === "github") {
+    addCheck("github-review-artifact", Boolean(artifacts.pullRequestNumber || artifacts.pullRequestUrl), [
+      `pullRequestNumber=${artifacts.pullRequestNumber ?? "missing"}`,
+      `pullRequestUrl=${artifacts.pullRequestUrl ?? "missing"}`
+    ]);
+  }
+  if (closure.repositoryProvider === "gitlab") {
+    addCheck("gitlab-review-artifact", Boolean(artifacts.mergeRequestIid || artifacts.mergeRequestUrl), [
+      `mergeRequestIid=${artifacts.mergeRequestIid ?? "missing"}`,
+      `mergeRequestUrl=${artifacts.mergeRequestUrl ?? "missing"}`
+    ]);
+  }
+  if (closure.requiredGates.includes("deploy")) {
+    addCheck("deploy-ready", closure.gateEvidence.deploy?.status === "PASSED", [`deployStatus=${closure.gateEvidence.deploy?.status ?? "PENDING"}`]);
+  }
+  if (closure.requiredGates.includes("health-ready")) {
+    addCheck("health-ready", closure.gateEvidence["health-ready"]?.status === "PASSED", [`healthReadyStatus=${closure.gateEvidence["health-ready"]?.status ?? "PENDING"}`]);
+  }
+  addCheck("force-policy", !options.forcePolicy, [`forcePolicy=${options.forcePolicy}`], false);
+  const blockers = checks
+    .filter((check) => check.required && check.status === "FAIL")
+    .map((check) => `${check.id}:${check.evidence.join("|")}`);
+  return {
+    status: blockers.length === 0 ? "PASS" : "BLOCKED",
+    evaluatedAt,
+    autoMerge: options.autoMerge,
+    blockers,
+    checks
+  };
+}
+
+async function executePostMergeDeployment(store: FileStore, loop: LoopRun, project: StoredProject | undefined, artifacts: LoopSourceClosure["artifacts"], actor: string, request: Record<string, unknown>): Promise<{
+  status: SourceReleasePostMergeDeployStatus;
+  deployedAt: string;
+  evidence: string[];
+}> {
+  const deployedAt = new Date().toISOString();
+  if (!loop.sourceClosure.requiredGates.includes("deploy")) {
+    return { status: "NOT_REQUIRED", deployedAt, evidence: ["postMergeDeploy=NOT_REQUIRED", "deployGate=not-required"] };
+  }
+  const deployConnectorId = optionalTrimmedString(request.deployConnectorId) ?? optionalTrimmedString(request.deploymentConnectorId) ?? artifacts.deploymentConnectorId ?? loop.sourceClosure.deploymentConnectorId;
+  if (!deployConnectorId) {
+    return { status: "NOT_REQUIRED", deployedAt, evidence: ["postMergeDeploy=NOT_REQUIRED", "deploymentConnectorId=missing"] };
+  }
+  const deploymentArtifacts: LoopSourceClosure["artifacts"] = {
+    ...artifacts,
+    commitSha: artifacts.mergeCommitSha ?? artifacts.commitSha,
+    deploymentConnectorId: deployConnectorId
+  };
+  const deployResult = await executeDeployConnector(store, deployConnectorId, {
+    loop: {
+      ...loop,
+      sourceClosure: normalizeLoopSourceClosure({
+        ...loop.sourceClosure,
+        artifacts: deploymentArtifacts
+      }, project, loop.controlPlaneUrl)
+    },
+    actor,
+    artifacts: deploymentArtifacts,
+    parameters: {
+      ...(isRecord(request.deployParameters) ? request.deployParameters : {}),
+      releaseKey: `${loop.id}:${deploymentArtifacts.commitSha ?? "no-merge-commit"}:post-merge:${loop.sourceClosure.targetVersion ?? "no-target-version"}`
+    }
+  });
+  artifacts.deploymentConnectorId = deployConnectorId;
+  artifacts.deploymentId = deployResult.deploymentId;
+  artifacts.deploymentUrl = deployResult.deploymentUrl ?? artifacts.deploymentUrl;
+  artifacts.deployStatusUrl = deployResult.statusUrl ?? artifacts.deployStatusUrl;
+  artifacts.healthUrl = deployResult.healthUrl ?? artifacts.healthUrl;
+  artifacts.readyUrl = deployResult.readyUrl ?? artifacts.readyUrl;
+  const health = await probeHealthReady(artifacts.healthUrl, artifacts.readyUrl);
+  const deployOk = deployResult.status === "SUCCEEDED";
+  const healthOk = health.passed;
+  const rollbackEvidence: string[] = [];
+  let status: SourceReleasePostMergeDeployStatus = deployOk && healthOk ? "SUCCEEDED" : "FAILED";
+  if (deployOk && !healthOk) {
+    const rollbackResult = await rollbackDeployConnector(store, deployConnectorId, {
+      loop,
+      actor,
+      artifacts,
+      parameters: isRecord(request.deployParameters) ? request.deployParameters : {},
+      reason: "post-merge health-ready failed",
+      healthEvidence: health.evidence
+    });
+    rollbackEvidence.push(...rollbackResult.evidence);
+    status = rollbackResult.status === "SUCCEEDED" ? "ROLLED_BACK" : "FAILED";
+  }
+  return {
+    status,
+    deployedAt,
+    evidence: [
+      `postMergeDeploy=${status}`,
+      `postMergeDeployConnector=${deployConnectorId}`,
+      ...deployResult.evidence,
+      ...health.evidence,
+      ...rollbackEvidence
+    ]
+  };
+}
+
 function normalizeSourceClosureFiles(value: unknown): Array<{ path: string; content: string }> {
   if (!Array.isArray(value)) return [];
   return value
@@ -6706,6 +6927,8 @@ function buildSourceReleaseClosureRun(loop: LoopRun, actor?: string, id?: string
     stages: buildSourceReleaseClosureStages(closure),
     artifacts: closure.artifacts,
     review: sourceReleaseReviewState(closure),
+    policy: sourceReleasePolicyState(closure),
+    postMergeDeployment: sourceReleasePostMergeDeploymentState(closure),
     capabilities: sourceReleaseClosureCapabilities(closure),
     nextAction: sourceReleaseClosureNextAction(closure),
     createdAt: createdAt ?? now,
@@ -6726,6 +6949,7 @@ function buildSourceReleaseClosureStages(closure: LoopSourceClosure): SourceRele
     };
   });
   const review = sourceReleaseReviewState(closure);
+  const policy = sourceReleasePolicyState(closure);
   return [
     ...gateStages,
     {
@@ -6739,6 +6963,17 @@ function buildSourceReleaseClosureStages(closure: LoopSourceClosure): SourceRele
         ...(review.rejectedBy ? [`rejectedBy=${review.rejectedBy}`] : [])
       ],
       checkedAt: review.approvedAt ?? review.rejectedAt
+    },
+    {
+      gate: "policy",
+      label: "Evaluate release policy",
+      status: policy.evaluatedAt ? policy.status === "PASS" ? "PASSED" : "FAILED" : "PENDING",
+      evidence: [
+        `policyStatus=${policy.status}`,
+        `autoMerge=${policy.autoMerge}`,
+        ...policy.blockers.map((blocker) => `policyBlocker=${blocker}`)
+      ],
+      checkedAt: policy.evaluatedAt
     },
     {
       gate: "merge",
@@ -6771,6 +7006,47 @@ function sourceReleaseReviewState(closure: LoopSourceClosure): SourceReleaseClos
   };
 }
 
+function sourceReleasePolicyState(closure: LoopSourceClosure): SourceReleaseClosureRun["policy"] {
+  const artifacts = closure.artifacts;
+  const status = artifacts.policyStatus ?? "PASS";
+  return {
+    status,
+    evaluatedAt: artifacts.policyEvaluatedAt,
+    autoMerge: artifacts.autoMerge === true,
+    blockers: artifacts.policyBlockers ?? [],
+    checks: [
+      {
+        id: "policy-state",
+        status: status === "PASS" ? "PASS" : "FAIL",
+        evidence: [
+          `policyStatus=${status}`,
+          ...(artifacts.policyBlockers ?? []).map((blocker) => `policyBlocker=${blocker}`)
+        ],
+        required: true
+      }
+    ]
+  };
+}
+
+function sourceReleasePostMergeDeploymentState(closure: LoopSourceClosure): SourceReleaseClosureRun["postMergeDeployment"] {
+  const artifacts = closure.artifacts;
+  if (!artifacts.postMergeDeployStatus) return undefined;
+  return {
+    status: artifacts.postMergeDeployStatus,
+    deployedAt: artifacts.postMergeDeployAt,
+    deployedBy: artifacts.postMergeDeployBy,
+    deploymentId: artifacts.deploymentId,
+    deploymentUrl: artifacts.deploymentUrl,
+    healthUrl: artifacts.healthUrl,
+    readyUrl: artifacts.readyUrl,
+    evidence: [
+      `postMergeDeploy=${artifacts.postMergeDeployStatus}`,
+      ...(artifacts.deploymentId ? [`deploymentId=${artifacts.deploymentId}`] : []),
+      ...(artifacts.deploymentUrl ? [`deploymentUrl=${artifacts.deploymentUrl}`] : [])
+    ]
+  };
+}
+
 function sourceClosureGateLabel(gate: SourceReleaseClosureStage): string {
   return {
     "code-change": "Write source change",
@@ -6779,6 +7055,7 @@ function sourceClosureGateLabel(gate: SourceReleaseClosureStage): string {
     deploy: "Deploy to environment",
     "health-ready": "Probe health and ready",
     review: "Approve release review",
+    policy: "Evaluate release policy",
     merge: "Merge release review"
   }[gate];
 }
@@ -6789,7 +7066,10 @@ function sourceReleaseClosureCapabilities(closure: LoopSourceClosure): string[] 
     closure.releaseStrategy,
     "branch-commit-review",
     "review-approval",
+    "release-policy-gate",
+    "safe-auto-merge",
     "merge-tracking",
+    "post-merge-deploy-closure",
     ...(closure.requiredGates.includes("tag") ? ["version-tag"] : []),
     ...(closure.requiredGates.includes("deploy") ? ["deploy-connector"] : []),
     ...(closure.requiredGates.includes("health-ready") ? ["health-ready-probe"] : []),
@@ -6800,6 +7080,7 @@ function sourceReleaseClosureCapabilities(closure: LoopSourceClosure): string[] 
 function sourceReleaseClosureNextAction(closure: LoopSourceClosure): SourceReleaseClosureRun["nextAction"] {
   const review = sourceReleaseReviewState(closure);
   if (review.status === "REJECTED") return "failed";
+  if (closure.artifacts.policyStatus === "BLOCKED") return "policy-review";
   if (review.status === "PENDING") return "approve-review";
   if (review.status === "APPROVED") return "merge-review";
   if (closure.closureState === "PROMOTED") return "promoted";

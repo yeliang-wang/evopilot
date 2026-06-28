@@ -1282,6 +1282,7 @@ function renderLoopDetail(loop) {
             <button data-action="load-source-release-run" data-id="${escapeHtml(loop.id)}">刷新 Release Run</button>
             <button data-action="approve-source-release" data-id="${escapeHtml(loop.id)}" ${releaseRun.review?.status === "PENDING" ? "" : "disabled"}>批准 Release</button>
             <button data-action="merge-source-release" data-id="${escapeHtml(loop.id)}" ${releaseRun.review?.status === "APPROVED" ? "" : "disabled"}>合并 Release</button>
+            <button data-action="auto-merge-source-release" data-id="${escapeHtml(loop.id)}" ${releaseRun.review?.status === "PENDING" || releaseRun.review?.status === "APPROVED" ? "" : "disabled"}>安全自动合并</button>
           </div>
         </div>
         <div>
@@ -1294,7 +1295,10 @@ function renderLoopDetail(loop) {
               ["Commit", releaseRun.artifacts?.commitSha ?? artifacts.commitSha],
               ["Review", releaseRun.artifacts?.pullRequestUrl ?? releaseRun.artifacts?.mergeRequestUrl ?? artifacts.pullRequestUrl ?? artifacts.mergeRequestUrl],
               ["Review Status", releaseRun.review?.status],
+              ["Policy", releaseRun.policy ? `${releaseRun.policy.status}${releaseRun.policy.autoMerge ? " / auto" : ""}` : undefined],
+              ["Policy Blocker", releaseRun.policy?.blockers?.join("; ")],
               ["Merge Commit", releaseRun.review?.mergeCommitSha ?? artifacts.mergeCommitSha],
+              ["Post Merge Deploy", releaseRun.postMergeDeployment?.status],
               ["Deployment", releaseRun.artifacts?.deploymentUrl ?? artifacts.deploymentUrl]
             ].filter((row) => row[1]).map(([label, value]) => `
               <div class="timeline-item">
@@ -1915,9 +1919,10 @@ function bindLoopActions() {
           ].filter(Boolean);
           state.authNotice = `Release Run 已刷新：${data?.status ?? "UNKNOWN"} / next ${data?.nextAction ?? "unknown"}。`;
         }
-        if (action === "approve-source-release" || action === "merge-source-release") {
+        if (action === "approve-source-release" || action === "merge-source-release" || action === "auto-merge-source-release") {
           const response = await postJson(`/api/v1/loops/${encodeURIComponent(id)}/source-closure/review-decision`, {
-            action: action === "approve-source-release" ? "approve" : "merge"
+            action: action === "approve-source-release" ? "approve" : action === "auto-merge-source-release" ? "auto-merge" : "merge",
+            autoMerge: action === "auto-merge-source-release"
           });
           const run = response.data?.sourceReleaseRun;
           if (run) {
@@ -1928,7 +1933,9 @@ function bindLoopActions() {
           }
           state.authNotice = action === "approve-source-release"
             ? `Release 已批准：${run?.review?.status ?? "UNKNOWN"}。`
-            : `Release 已合并：${run?.review?.mergeCommitSha ?? "merge commit pending"}。`;
+            : action === "auto-merge-source-release"
+              ? `Release 安全自动合并：${run?.policy?.status ?? "UNKNOWN"} / ${run?.review?.mergeCommitSha ?? "merge commit pending"}。`
+              : `Release 已合并：${run?.review?.mergeCommitSha ?? "merge commit pending"}。`;
         }
         await loadLoops();
       } catch (error) {
