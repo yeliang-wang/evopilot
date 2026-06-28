@@ -500,7 +500,7 @@ function renderProjects() {
         </div>
       </div>
       ${!state.showProjectRegistrationModal && state.projectRegistration.message ? `<div class="notice ${state.projectRegistration.status}">${state.projectRegistration.message}</div>` : ""}
-      ${table(["项目", "状态", "成熟度", "等级", "仓库注册", "凭据", "CI/CD", "验证", "最近信号", "建议动作"], state.projects.map((project) => [
+      ${table(["项目", "状态", "成熟度", "等级", "仓库注册", "源码凭据", "CI/CD", "验证", "最近信号", "建议动作", "操作"], state.projects.map((project) => [
         `<strong>${project.name}</strong><span class="subtext">${project.id}</span>`,
         statusPill(project.status),
         scorePill(project.score),
@@ -510,7 +510,8 @@ function renderProjects() {
         project.cicd ?? "系统默认 Jenkins",
         statusPill(project.validation),
         project.lastSignal,
-        project.recommendedAction ?? "等待更多证据"
+        project.recommendedAction ?? "等待更多证据",
+        project.hasRepository ? `<button data-action="preflight-source-credentials" data-id="${escapeHtml(project.id)}">验证写回凭据</button>` : "-"
       ]))}
     </section>
     <section class="card">
@@ -2138,6 +2139,29 @@ function bindProjectRegistration() {
       render();
     });
   }
+  for (const button of content.querySelectorAll('[data-action="preflight-source-credentials"]')) {
+    button.addEventListener("click", async () => {
+      const id = button.dataset.id;
+      button.disabled = true;
+      state.projectRegistration = { status: "warn", message: `正在验证 ${id} 的源码写回凭据...` };
+      render();
+      try {
+        const result = await postJson(`/api/v1/projects/${encodeURIComponent(id)}/source-credentials/preflight`, {});
+        state.projectRegistration = {
+          status: "good",
+          message: sourceCredentialReadinessMessage(result.data)
+        };
+      } catch (error) {
+        state.projectRegistration = {
+          status: "bad",
+          message: `源码写回凭据未就绪：${error.message}`
+        };
+      } finally {
+        await loadProjects();
+        render();
+      }
+    });
+  }
   const form = content.querySelector("#project-registration-form");
   if (!form) return;
   form.addEventListener("submit", async (event) => {
@@ -2395,7 +2419,8 @@ async function loadProjects() {
         status: project.validation?.status === "VERIFIED" ? "健康" : "接入失败",
         validation: project.validation?.status === "VERIFIED" ? "已验证" : "验证失败",
         repository: project.repository?.gitUrl ?? project.repository?.root ?? project.repository?.projectId ?? "内置项目画像",
-        credentials: project.repository ? (project.repository.credentialsConfigured ? "已配置" : "未配置") : "无需凭据",
+        credentials: project.repository ? sourceCredentialLabel(project.repository) : "无需凭据",
+        hasRepository: Boolean(project.repository),
         cicd: project.cicd?.mode === "project-override"
           ? `项目独立 Jenkins：${project.cicd.job ?? project.cicd.connectorId ?? "已配置"}`
           : project.cicd?.mode === "system-default"
@@ -2463,6 +2488,7 @@ function safeJsonParse(text) {
 function summarizeApiError(body, status) {
   if (body?.data?.schema === "evopilot-loop-orchestration-autopilot/v1") return summarizeAutopilotRun(body.data);
   if (body?.data?.schema === "evopilot-source-closure-preflight/v1") return summarizeSourceClosurePreflight(body.data);
+  if (body?.data?.schema === "evopilot-source-credential-readiness/v1") return sourceCredentialReadinessMessage(body.data);
   const detail = body?.detail ?? body?.error ?? body?.message;
   return detail ? `${detail}` : `HTTP ${status}`;
 }
@@ -2478,6 +2504,22 @@ function summarizeAutopilotRun(run) {
 function summarizeSourceClosurePreflight(preflight) {
   const blocker = preflight.blockers?.[0] ?? "unknown";
   return `Source closure preflight ${preflight.status}：${preflight.nextAction} / ${blocker}`;
+}
+
+function sourceCredentialLabel(repository) {
+  if (!repository) return "无需凭据";
+  const mode = repository.credentialMode ?? (repository.credentialsConfigured ? "configured" : "none");
+  if (repository.provider === "local-git") return "local-git 无需 token";
+  if (mode === "tokenRef") return repository.tokenRefResolved === false
+    ? `tokenRef 未解析：${repository.tokenRef ?? "-"}`
+    : `tokenRef 已配置：${repository.tokenRef ?? "-"}`;
+  if (mode === "inline-token" || mode === "password") return "已配置写回凭据";
+  return "未配置写回凭据";
+}
+
+function sourceCredentialReadinessMessage(readiness) {
+  const blocker = readiness?.blockers?.[0] ?? "none";
+  return `源码写回凭据 ${readiness?.status ?? "UNKNOWN"}：${readiness?.nextAction ?? "unknown"} / ${blocker}`;
 }
 
 function apiFetch(url, options = {}) {

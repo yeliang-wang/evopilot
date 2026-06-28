@@ -198,6 +198,23 @@ interface ProjectValidation {
   fileCount?: number;
 }
 
+interface SourceCredentialReadiness {
+  schema: "evopilot-source-credential-readiness/v1";
+  projectId: string;
+  provider: ProjectRepositoryProvider | "unknown";
+  status: "READY" | "READ_ONLY" | "BLOCKED";
+  checks: Array<{
+    id: "project" | "provider" | "credential-ref" | "token-resolution" | "source-branch" | "writeback-policy";
+    status: "PASS" | "FAIL" | "SKIP";
+    evidence: string[];
+    required: boolean;
+  }>;
+  blockers: string[];
+  capabilities: string[];
+  nextAction: "write-source" | "configure-token-ref" | "repair-project" | "use-local-git";
+  checkedAt: string;
+}
+
 interface AuditRecord {
   id: string;
   actor: string;
@@ -2383,6 +2400,42 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const project = store.readProject(decodeURIComponent(projectDiagnosticsMatch[1]));
         if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
         return writeJson(response, 200, envelope(await diagnoseProjectRuntime({ store, project, runtime })));
+      }
+      const projectSourceCredentialMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/source-credentials$/);
+      if (request.method === "POST" && projectSourceCredentialMatch) {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const project = store.readProject(decodeURIComponent(projectSourceCredentialMatch[1]));
+        if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!project.repository) return writeJson(response, 409, { error: "PROJECT_REPOSITORY_NOT_CONFIGURED" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const updated = updateProjectSourceCredentials(project, body);
+        updated.validation = await validateProjectRepository(updated.repository);
+        updated.updatedAt = new Date().toISOString();
+        store.writeProject(updated);
+        const readiness = await checkSourceCredentialReadiness(updated);
+        store.appendAudit(audit(auth, "project.source-credentials.updated", updated.id, {
+          provider: updated.repository?.provider,
+          tokenRefConfigured: Boolean(updated.repository?.credentials?.tokenRef),
+          tokenConfigured: Boolean(updated.repository?.credentials?.token || updated.repository?.credentials?.password),
+          readiness: readiness.status,
+          blockers: readiness.blockers
+        }));
+        return writeJson(response, readiness.status === "READY" ? 200 : 409, envelope({ project: maskProject(updated), readiness }));
+      }
+      const projectSourceCredentialPreflightMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/source-credentials\/preflight$/);
+      if ((request.method === "GET" || request.method === "POST") && projectSourceCredentialPreflightMatch) {
+        if (!hasRole(auth, request.method === "POST" ? "operator" : "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const project = store.readProject(decodeURIComponent(projectSourceCredentialPreflightMatch[1]));
+        if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        const readiness = await checkSourceCredentialReadiness(project);
+        if (request.method === "POST") {
+          store.appendAudit(audit(auth, "project.source-credentials-preflight", project.id, {
+            provider: project.repository?.provider,
+            readiness: readiness.status,
+            blockers: readiness.blockers
+          }));
+        }
+        return writeJson(response, readiness.status === "READY" ? 200 : 409, envelope(readiness));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/pipelines") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -10213,8 +10266,166 @@ function isUnder(file: string, prefix: string): boolean {
   return normalizedFile === normalizedPrefix || normalizedFile.startsWith(`${normalizedPrefix}/`);
 }
 
-function maskProject(project: StoredProject): Omit<StoredProject, "repository"> & { repository?: Omit<ProjectRepositoryRegistration, "credentials"> & { credentialsConfigured: boolean } } {
+async function checkSourceCredentialReadiness(project: StoredProject): Promise<SourceCredentialReadiness> {
+  const checkedAt = new Date().toISOString();
+  const repository = project.repository;
+  const checks: SourceCredentialReadiness["checks"] = [];
+  const addCheck = (check: SourceCredentialReadiness["checks"][number]) => checks.push(check);
+
+  addCheck({
+    id: "project",
+    status: repository ? "PASS" : "FAIL",
+    required: true,
+    evidence: repository ? [`project=${project.id}`] : [`project=${project.id}`, "repository=missing"]
+  });
+
+  const provider = repository?.provider ?? "unknown";
+  const remoteProvider = provider === "github" || provider === "gitlab";
+  const supported = remoteProvider || provider === "local-git";
+  addCheck({
+    id: "provider",
+    status: supported ? "PASS" : "FAIL",
+    required: true,
+    evidence: [`provider=${provider}`]
+  });
+
+  if (!repository) {
+    return sourceCredentialReadinessResult(project.id, provider, checks, checkedAt);
+  }
+
+  if (repository.provider === "local-git") {
+    const root = repository.root ? path.resolve(repository.root) : "";
+    const rootOk = Boolean(root && fs.existsSync(root) && fs.statSync(root).isDirectory());
+    addCheck({ id: "credential-ref", status: "SKIP", required: false, evidence: ["local-git-token=not-required"] });
+    addCheck({ id: "token-resolution", status: "SKIP", required: false, evidence: ["local-git-token=not-required"] });
+    addCheck({ id: "source-branch", status: rootOk ? "PASS" : "FAIL", required: true, evidence: [`root=${root || "missing"}`, rootOk ? "rootExists=true" : "rootExists=false"] });
+    addCheck({ id: "writeback-policy", status: rootOk ? "PASS" : "FAIL", required: true, evidence: ["writeback=local-git"] });
+    return sourceCredentialReadinessResult(project.id, repository.provider, checks, checkedAt);
+  }
+
+  const token = resolveCredentialToken(repository);
+  const credentialMode = repository.credentials?.tokenRef ? "tokenRef" : repository.credentials?.token ? "inline-token" : repository.credentials?.password ? "password" : "none";
+  addCheck({
+    id: "credential-ref",
+    status: credentialMode === "none" ? "FAIL" : "PASS",
+    required: true,
+    evidence: [
+      `credentialMode=${credentialMode}`,
+      repository.credentials?.tokenRef ? `tokenRef=${repository.credentials.tokenRef}` : "tokenRef=missing"
+    ]
+  });
+  addCheck({
+    id: "token-resolution",
+    status: token ? "PASS" : "FAIL",
+    required: true,
+    evidence: [
+      token ? "tokenResolved=true" : "SOURCE_CREDENTIAL_TOKEN_REQUIRED",
+      repository.credentials?.tokenRef ? `tokenRefResolved=${Boolean(process.env[repository.credentials.tokenRef])}` : "tokenRefResolved=false"
+    ]
+  });
+
+  if (repository.provider === "github") {
+    if (token && repository.owner && repository.repo) {
+      try {
+        const files = await new GitHubHttpAdapter({ apiBaseUrl: repository.baseUrl, owner: repository.owner, repo: repository.repo, token }).listFiles(repository.defaultBranch ?? "main");
+        addCheck({ id: "source-branch", status: "PASS", required: true, evidence: [`branch=${repository.defaultBranch ?? "main"}`, `fileCount=${files.length}`] });
+      } catch (error) {
+        addCheck({ id: "source-branch", status: "FAIL", required: true, evidence: [`branch=${repository.defaultBranch ?? "main"}`, error instanceof Error ? error.message : String(error)] });
+      }
+    } else {
+      addCheck({ id: "source-branch", status: "SKIP", required: true, evidence: [`branch=${repository.defaultBranch ?? "main"}`, "credentials-or-coordinates-missing"] });
+    }
+  } else if (repository.provider === "gitlab") {
+    if (token && repository.baseUrl && repository.projectId) {
+      try {
+        const files = await new GitLabHttpAdapter({ baseUrl: repository.baseUrl, projectId: repository.projectId, token }).listFiles(repository.defaultBranch ?? "main");
+        addCheck({ id: "source-branch", status: "PASS", required: true, evidence: [`branch=${repository.defaultBranch ?? "main"}`, `fileCount=${files.length}`] });
+      } catch (error) {
+        addCheck({ id: "source-branch", status: "FAIL", required: true, evidence: [`branch=${repository.defaultBranch ?? "main"}`, error instanceof Error ? error.message : String(error)] });
+      }
+    } else {
+      addCheck({ id: "source-branch", status: "SKIP", required: true, evidence: [`branch=${repository.defaultBranch ?? "main"}`, "credentials-or-coordinates-missing"] });
+    }
+  } else {
+    addCheck({ id: "source-branch", status: "SKIP", required: true, evidence: ["repository=unsupported-provider"] });
+  }
+
+  addCheck({
+    id: "writeback-policy",
+    status: token && remoteProvider ? "PASS" : "FAIL",
+    required: true,
+    evidence: [
+      `provider=${repository.provider}`,
+      token ? "sourceWriteback=enabled" : "sourceWriteback=read-only",
+      "requiredScopes=repo-or-project-write"
+    ]
+  });
+
+  return sourceCredentialReadinessResult(project.id, repository.provider, checks, checkedAt);
+}
+
+function sourceCredentialReadinessResult(projectId: string, provider: ProjectRepositoryProvider | "unknown", checks: SourceCredentialReadiness["checks"], checkedAt: string): SourceCredentialReadiness {
+  const blockers = checks
+    .filter((check) => check.required && check.status !== "PASS")
+    .flatMap((check) => check.evidence.some((item) => item === "SOURCE_CREDENTIAL_TOKEN_REQUIRED")
+      ? [`${check.id}:SOURCE_CREDENTIAL_TOKEN_REQUIRED`]
+      : [`${check.id}:${check.status}`]);
+  const status: SourceCredentialReadiness["status"] = blockers.length === 0 ? "READY"
+    : blockers.every((blocker) => blocker.includes("credential") || blocker.includes("token") || blocker.includes("source-branch:SKIP") || blocker.includes("writeback-policy")) ? "READ_ONLY"
+      : "BLOCKED";
+  return {
+    schema: "evopilot-source-credential-readiness/v1",
+    projectId,
+    provider,
+    status,
+    checks,
+    blockers,
+    capabilities: [
+      "github-gitlab-tokenref-readiness",
+      "public-repository-readonly-detection",
+      "source-writeback-preflight",
+      "dashboard-credential-control-plane",
+      "secret-value-masking"
+    ],
+    nextAction: status === "READY" ? "write-source"
+      : provider === "local-git" ? "use-local-git"
+        : blockers.some((blocker) => blocker.includes("project") || blocker.includes("provider") || blocker.includes("source-branch:FAIL")) ? "repair-project"
+          : "configure-token-ref",
+    checkedAt
+  };
+}
+
+function updateProjectSourceCredentials(project: StoredProject, body: any): StoredProject {
+  const repository = project.repository;
+  if (!repository) return project;
+  const source = body.repository && typeof body.repository === "object" ? body.repository : body;
+  const credentials = source.credentials && typeof source.credentials === "object" ? source.credentials : source;
+  const nextCredentials: ProjectRepositoryCredentials = {
+    ...repository.credentials,
+    username: optionalTrimmedString(credentials.username) ?? repository.credentials?.username,
+    password: optionalTrimmedString(credentials.password) ?? repository.credentials?.password,
+    token: optionalTrimmedString(credentials.token) ?? repository.credentials?.token,
+    tokenRef: optionalTrimmedString(credentials.tokenRef) ?? repository.credentials?.tokenRef
+  };
+  if (credentials.clearInlineToken === true) delete nextCredentials.token;
+  if (credentials.clearPassword === true) delete nextCredentials.password;
+  if (credentials.clearTokenRef === true) delete nextCredentials.tokenRef;
+  return {
+    ...project,
+    repository: {
+      ...repository,
+      defaultBranch: optionalTrimmedString(source.defaultBranch) ?? repository.defaultBranch,
+      credentials: Object.values(nextCredentials).some(Boolean) ? nextCredentials : undefined
+    }
+  };
+}
+
+function maskProject(project: StoredProject): Omit<StoredProject, "repository"> & { repository?: Omit<ProjectRepositoryRegistration, "credentials"> & { credentialsConfigured: boolean; credentialMode: string; tokenRef?: string; tokenRefResolved?: boolean } } {
   const { repository, ...safe } = project;
+  const credentialMode = repository?.credentials?.tokenRef ? "tokenRef"
+    : repository?.credentials?.token ? "inline-token"
+      : repository?.credentials?.password ? "password"
+        : "none";
   return {
     ...safe,
     repository: repository ? {
@@ -10226,7 +10437,10 @@ function maskProject(project: StoredProject): Omit<StoredProject, "repository"> 
       owner: repository.owner,
       repo: repository.repo,
       defaultBranch: repository.defaultBranch,
-      credentialsConfigured: Boolean(repository.credentials?.token || repository.credentials?.password || repository.credentials?.tokenRef)
+      credentialsConfigured: Boolean(repository.credentials?.token || repository.credentials?.password || repository.credentials?.tokenRef),
+      credentialMode,
+      tokenRef: repository.credentials?.tokenRef,
+      tokenRefResolved: repository.credentials?.tokenRef ? Boolean(process.env[repository.credentials.tokenRef]) : undefined
     } : undefined
   };
 }

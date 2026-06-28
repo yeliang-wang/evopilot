@@ -104,9 +104,17 @@ POST /api/v1/projects
 - `token`
 - `tokenRef`，从 EvoPilot 服务环境变量读取真实 token
 
-读取项目列表时不会回显 `password` 或 `token`，只返回 `credentialsConfigured`。
+读取项目列表时不会回显 `password` 或 `token`，只返回 `credentialsConfigured`、`credentialMode`、`tokenRef` 和 `tokenRefResolved` 等非 secret 状态。
 
-公开 GitHub 仓库可以在无凭据时完成只读项目验证；但源码写回、PR/MR、merge 和一键自动驾驶 source-closure 必须配置可解析的 `token`、`password` 或 `tokenRef`。写回前可先调用 source-closure preflight，避免在真实写文件阶段才失败。
+公开 GitHub 仓库可以在无凭据时完成只读项目验证；但源码写回、PR/MR、merge 和一键自动驾驶 source-closure 必须配置可解析的 `token`、`password` 或 `tokenRef`。项目级源码写回凭据控制面用于区分 `READ_ONLY` 和 `READY`，写回前还可调用 loop source-closure preflight，避免在真实写文件阶段才失败。
+
+```http
+POST /api/v1/projects/{projectId}/source-credentials
+GET /api/v1/projects/{projectId}/source-credentials/preflight
+POST /api/v1/projects/{projectId}/source-credentials/preflight
+```
+
+`source-credentials` 只更新项目级 GitHub/GitLab 写回凭据元数据，例如 `tokenRef`、`token`、`password`、`username` 或 `defaultBranch`，响应不会回显 secret。`source-credentials/preflight` 不写仓库，只检查项目、provider、credential ref、token 解析、source branch 和写回策略。响应 schema 为 `evopilot-source-credential-readiness/v1`，状态为 `READY`、`READ_ONLY` 或 `BLOCKED`。公开 GitHub 无 token 时通常是 `READ_ONLY`，blocker 为 `token-resolution:SOURCE_CREDENTIAL_TOKEN_REQUIRED`；`tokenRef` 已配置但环境变量未解析时仍为 `READ_ONLY`；解析成功并能读取分支后为 `READY`。
 
 请求示例：
 

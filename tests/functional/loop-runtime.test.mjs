@@ -1441,6 +1441,87 @@ test("Loop source closure preflight blocks GitHub writeback without credentials"
   }
 });
 
+test("Project source credential control plane separates public read-only from writeback ready", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-source-credential-control-plane-"));
+  const github = createFakeSourceClosureGitHubServer();
+  await listen(github);
+  const githubPort = github.address().port;
+  const tokenRef = "EVOPILOT_TEST_GITHUB_WRITE_TOKEN";
+  const previousToken = process.env[tokenRef];
+  delete process.env[tokenRef];
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "viewer", token: "viewer-token", role: "viewer" },
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "github-credential-control",
+        name: "GitHub Credential Control",
+        repository: {
+          provider: "github",
+          baseUrl: `http://127.0.0.1:${githubPort}`,
+          owner: "org",
+          repo: "repo",
+          defaultBranch: "main"
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+    assert.equal(project.body.data.validation.status, "VERIFIED");
+    assert.equal(project.body.data.repository.credentialsConfigured, false);
+
+    const readOnly = await jsonFetch(`${baseUrl}/api/v1/projects/github-credential-control/source-credentials/preflight`, {
+      method: "POST",
+      token: "operator-token"
+    });
+    assert.equal(readOnly.status, 409);
+    assert.equal(readOnly.body.data.schema, "evopilot-source-credential-readiness/v1");
+    assert.equal(readOnly.body.data.status, "READ_ONLY");
+    assert.equal(readOnly.body.data.nextAction, "configure-token-ref");
+    assert.ok(readOnly.body.data.blockers.includes("token-resolution:SOURCE_CREDENTIAL_TOKEN_REQUIRED"));
+
+    const unresolved = await jsonFetch(`${baseUrl}/api/v1/projects/github-credential-control/source-credentials`, {
+      method: "POST",
+      token: "admin-token",
+      body: { tokenRef }
+    });
+    assert.equal(unresolved.status, 409);
+    assert.equal(unresolved.body.data.project.repository.credentialMode, "tokenRef");
+    assert.equal(unresolved.body.data.project.repository.tokenRef, tokenRef);
+    assert.equal(unresolved.body.data.project.repository.tokenRefResolved, false);
+    assert.equal(unresolved.body.data.readiness.status, "READ_ONLY");
+
+    process.env[tokenRef] = "write-token";
+    const ready = await jsonFetch(`${baseUrl}/api/v1/projects/github-credential-control/source-credentials`, {
+      method: "POST",
+      token: "admin-token",
+      body: { tokenRef }
+    });
+    assert.equal(ready.status, 200);
+    assert.equal(ready.body.data.project.repository.credentialsConfigured, true);
+    assert.equal(ready.body.data.project.repository.tokenRefResolved, true);
+    assert.equal(ready.body.data.readiness.status, "READY");
+    assert.equal(ready.body.data.readiness.nextAction, "write-source");
+    assert.ok(ready.body.data.readiness.checks.some((check) => check.id === "writeback-policy" && check.status === "PASS"));
+  } finally {
+    if (previousToken === undefined) delete process.env[tokenRef];
+    else process.env[tokenRef] = previousToken;
+    await new Promise((resolve) => server.close(resolve));
+    await close(github);
+  }
+});
+
 test("Loop autopilot persists failed GitHub source closure as release-run evidence", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-autopilot-source-closure-failure-"));
   const github = createFailingSourceClosureGitHubServer();
