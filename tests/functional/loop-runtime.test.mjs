@@ -988,6 +988,15 @@ test("Source release run repair re-executes stale failed GitHub closure and reus
     assert.equal(failed.body.data.sourceReleaseRun.status, "FAILED");
     assert.ok(failed.body.data.evidenceSets.at(-1).evidence.some((item) => item.includes("GitHub request failed: 422")));
 
+    const candidates = await jsonFetch(`${baseUrl}/api/v1/source-release-runs/repair-candidates`, {
+      token: "operator-token"
+    });
+    assert.equal(candidates.status, 200);
+    assert.equal(candidates.body.data.length, 1);
+    assert.equal(candidates.body.data[0].runId, failed.body.data.sourceReleaseRun.id);
+    assert.equal(candidates.body.data[0].suggestedAction, "repair-source-closure");
+    assert.equal(candidates.body.data[0].repaired, false);
+
     github.allowReuse = true;
     const repaired = await jsonFetch(`${baseUrl}/api/v1/loops/github-repair-loop/source-release-runs/${encodeURIComponent(failed.body.data.sourceReleaseRun.id)}/repair`, {
       method: "POST",
@@ -1005,6 +1014,98 @@ test("Source release run repair re-executes stale failed GitHub closure and reus
     assert.ok(repaired.body.data.loop.evidenceSets.some((set) => set.validator === "evopilot-source-release-repair"));
     assert.ok(repaired.body.data.loop.evidenceSets.at(-1).evidence.some((item) => item === "github.pullRequestReused=true"));
     assert.ok(repaired.body.data.loop.evidenceSets.at(-1).evidence.some((item) => item.startsWith("sourceClosure.repairOfReleaseRunId=")));
+
+    const remainingCandidates = await jsonFetch(`${baseUrl}/api/v1/source-release-runs/repair-candidates`, {
+      token: "operator-token"
+    });
+    assert.equal(remainingCandidates.status, 200);
+    assert.equal(remainingCandidates.body.data.some((candidate) => candidate.runId === failed.body.data.sourceReleaseRun.id), false);
+  } finally {
+    await close(server);
+    await close(github.server);
+  }
+});
+
+test("Source release run repair queue repairs discovered stale candidates", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-source-release-repair-queue-"));
+  const github = createRepairablePullRequestGitHubServer();
+  await listen(github.server);
+  const githubPort = github.server.address().port;
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await listen(server);
+  const baseUrl = `http://127.0.0.1:${server.address().port}`;
+  try {
+    assert.equal((await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "github-repair-queue-source",
+        name: "GitHub Repair Queue Source",
+        repository: {
+          provider: "github",
+          baseUrl: `http://127.0.0.1:${githubPort}`,
+          owner: "org",
+          repo: "repo",
+          defaultBranch: "main",
+          credentials: { token: "token" }
+        }
+      }
+    })).status, 201);
+
+    assert.equal((await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "github-repair-queue-loop",
+        projectId: "github-repair-queue-source",
+        objective: "Queue repair stale failed source release run.",
+        controlPlaneUrl: baseUrl,
+        sourceClosure: {
+          sourceProjectId: "github-repair-queue-source",
+          repositoryProvider: "github",
+          sourceBranch: "main",
+          targetVersion: "2.6.0",
+          requiredGates: ["code-change", "push"]
+        }
+      }
+    })).status, 201);
+
+    const failed = await jsonFetch(`${baseUrl}/api/v1/loops/github-repair-queue-loop/source-closure/execute`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        files: [{ path: "docs/source-closure.md", content: "queue repair stale failure" }]
+      }
+    });
+    assert.equal(failed.status, 200);
+    assert.equal(failed.body.data.sourceReleaseRun.status, "FAILED");
+
+    github.allowReuse = true;
+    const queue = await jsonFetch(`${baseUrl}/api/v1/source-release-runs/repair-candidates/repair`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        runIds: [failed.body.data.sourceReleaseRun.id],
+        limit: 1,
+        files: [{ path: "docs/source-closure.md", content: "queue repair stale failure" }]
+      }
+    });
+    assert.equal(queue.status, 200);
+    assert.equal(queue.body.data.repaired.length, 1);
+    assert.equal(queue.body.data.failed.length, 0);
+    assert.equal(queue.body.data.repaired[0].runId, failed.body.data.sourceReleaseRun.id);
+    assert.equal(queue.body.data.repaired[0].status, "PROMOTED");
+
+    const candidates = await jsonFetch(`${baseUrl}/api/v1/source-release-runs/repair-candidates`, { token: "operator-token" });
+    assert.equal(candidates.status, 200);
+    assert.equal(candidates.body.data.length, 0);
   } finally {
     await close(server);
     await close(github.server);
@@ -1980,11 +2081,12 @@ function createRepairablePullRequestGitHubServer() {
       if (request.url === "/repos/org/repo/pulls" && request.method === "POST") {
         return json(response, { message: "Validation Failed", errors: [{ resource: "PullRequest", code: "custom", message: "A pull request already exists" }] }, 422);
       }
-      if (request.url === "/repos/org/repo/pulls?state=open&head=org%3Aevopilot%2Fgithub-repair-loop-2.6.0&base=main" && request.method === "GET") {
+      if (request.url?.startsWith("/repos/org/repo/pulls?state=open&head=org%3Aevopilot%2Fgithub-repair-") && request.url.endsWith("-2.6.0&base=main") && request.method === "GET") {
+        const head = new URL(`http://127.0.0.1${request.url}`).searchParams.get("head")?.split(":").at(-1) ?? "evopilot/github-repair-loop-2.6.0";
         return json(response, fixture.allowReuse ? [{
           number: 11,
           html_url: "http://github/pr/11",
-          head: { ref: "evopilot/github-repair-loop-2.6.0" },
+          head: { ref: head },
           base: { ref: "main" },
           state: "open"
         }] : []);

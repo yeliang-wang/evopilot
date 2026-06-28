@@ -13,6 +13,7 @@ const state = {
   },
   deployConnectors: [],
   sourceReleaseRuns: [],
+  sourceReleaseRepairCandidates: [],
   sourceReleaseDeployFinalizers: [],
   loopAutopilotRuns: [],
   loopOrchestrationPresets: [],
@@ -1105,6 +1106,7 @@ function renderLoops() {
     ${renderLoopOrchestrationPanel()}
     ${renderLoopTargetBacklogPanel()}
     ${renderLoopWorkerQueuePanel()}
+    ${renderSourceReleaseRepairQueuePanel()}
     ${renderSourceReleaseDeployFinalizersPanel()}
     <section class="card">
       <div class="section-title">
@@ -1133,6 +1135,41 @@ function renderLoops() {
       ]))}
     </section>
     ${loops.slice(0, 3).map(renderLoopDetail).join("")}
+  `;
+}
+
+function renderSourceReleaseRepairQueuePanel() {
+  const candidates = state.sourceReleaseRepairCandidates ?? [];
+  const latest = candidates.filter((candidate) => candidate.latestForLoop).length;
+  const repaired = candidates.filter((candidate) => candidate.repaired).length;
+  return `
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <h2>Release Run Auto Repair Workbench</h2>
+          <p>发现 stale 或 failed source release run，生成可修复队列，并从 Dashboard 触发批量修复闭环。</p>
+        </div>
+        <span class="pill ${candidates.length ? "warn" : "good"}">${candidates.length} candidates</span>
+      </div>
+      <div class="dashboard-stats">
+        <div><span>Repair Queue</span><strong>${candidates.length}</strong><small>/api/v1/source-release-runs/repair-candidates</small></div>
+        <div><span>Latest Failed</span><strong>${latest}</strong><small>当前最新失败</small></div>
+        <div><span>Already Repaired</span><strong>${repaired}</strong><small>默认不重复执行</small></div>
+        <div><span>Providers</span><strong>${new Set(candidates.map((candidate) => candidate.provider)).size}</strong><small>GitHub / GitLab / local</small></div>
+      </div>
+      <div class="table-actions">
+        <button data-action="refresh-source-release-repair-candidates">刷新修复队列</button>
+        <button data-action="repair-source-release-candidates" ${candidates.length ? "" : "disabled"}>一键修复队列</button>
+      </div>
+      ${candidates.length === 0 ? `<div class="empty">暂无待修复 Release Run。失败 run 修复完成后会从默认队列中移除。</div>` : table(["操作", "Loop", "状态", "来源", "原因", "建议"], candidates.slice(0, 8).map((candidate) => [
+        `<button data-action="repair-source-release-candidate" data-run-id="${escapeHtml(candidate.runId)}">修复</button>`,
+        `<strong>${escapeHtml(candidate.loopId)}</strong><span class="subtext">${escapeHtml(candidate.runId)}</span>`,
+        statusPill(candidate.status),
+        `${escapeHtml(candidate.provider)}<span class="subtext">${candidate.latestForLoop ? "latest failed" : `superseded by ${escapeHtml(candidate.supersededByRunId ?? "newer run")}`}</span>`,
+        `<span class="subtext">${escapeHtml(candidate.reason ?? "failed source release run")}</span>`,
+        `${escapeHtml(candidate.suggestedAction ?? "repair-source-closure")}<span class="subtext">${Math.floor((candidate.ageSeconds ?? 0) / 60)} min old</span>`
+      ]))}
+    </section>
   `;
 }
 
@@ -2064,6 +2101,35 @@ function bindLoopActions() {
       }
     });
   }
+  for (const button of content.querySelectorAll('[data-action="refresh-source-release-repair-candidates"], [data-action="repair-source-release-candidates"], [data-action="repair-source-release-candidate"]')) {
+    button.addEventListener("click", async () => {
+      const action = button.dataset.action;
+      button.disabled = true;
+      state.authNotice = "";
+      try {
+        if (action === "refresh-source-release-repair-candidates") {
+          const response = await apiFetch("/api/v1/source-release-runs/repair-candidates");
+          if (!response.ok) throw new Error(`Release Run 修复队列接口状态 ${response.status}`);
+          const { data } = await response.json();
+          state.sourceReleaseRepairCandidates = Array.isArray(data) ? data : [];
+          state.authNotice = `Release Run 修复队列已刷新：${state.sourceReleaseRepairCandidates.length} 个候选。`;
+        } else {
+          const runId = button.dataset.runId;
+          const response = await postJson("/api/v1/source-release-runs/repair-candidates/repair", {
+            runIds: runId ? [runId] : undefined,
+            limit: runId ? 1 : 10
+          });
+          const result = response.data;
+          state.authNotice = `Release Run 修复队列完成：${result?.repaired?.length ?? 0} 成功 / ${result?.failed?.length ?? 0} 失败 / ${result?.skipped?.length ?? 0} 跳过。`;
+          await loadLoops();
+        }
+      } catch (error) {
+        state.authNotice = `Release Run 修复队列操作失败：${error.message}`;
+      } finally {
+        render();
+      }
+    });
+  }
   for (const button of content.querySelectorAll('[data-action="verify-sandbox-proof"], [data-action="load-trace-tree"], [data-action="load-loop-events"], [data-action="load-source-release-run"], [data-action="approve-source-release"], [data-action="merge-source-release"], [data-action="auto-merge-source-release"], [data-action="repair-source-release-run"]')) {
     button.addEventListener("click", async () => {
       const id = button.dataset.id;
@@ -2839,6 +2905,11 @@ async function loadLoops() {
       const { data: releaseRunData } = await releaseRunsResponse.json();
       state.sourceReleaseRuns = Array.isArray(releaseRunData) ? releaseRunData : [];
     }
+    const repairCandidatesResponse = await apiFetch("/api/v1/source-release-runs/repair-candidates");
+    if (repairCandidatesResponse.ok) {
+      const { data: repairCandidateData } = await repairCandidatesResponse.json();
+      state.sourceReleaseRepairCandidates = Array.isArray(repairCandidateData) ? repairCandidateData : [];
+    }
     const finalizersResponse = await apiFetch("/api/v1/source-release-deploy-finalizers");
     if (finalizersResponse.ok) {
       const { data: finalizerData } = await finalizersResponse.json();
@@ -2853,6 +2924,7 @@ async function loadLoops() {
     state.loopTraces = [];
     state.loopWorkerQueue = [];
     state.sourceReleaseRuns = [];
+    state.sourceReleaseRepairCandidates = [];
     state.sourceReleaseDeployFinalizers = [];
     state.loopOrchestrationPresets = [];
     state.loopOrchestrationTargets = [];

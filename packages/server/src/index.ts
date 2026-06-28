@@ -727,6 +727,7 @@ type SourceReleaseClosureStage = LoopSourceClosureGate | "review" | "policy" | "
 type SourceReleaseReviewStatus = "NOT_REQUIRED" | "PENDING" | "APPROVED" | "REJECTED" | "MERGED";
 type SourceReleasePolicyStatus = "PASS" | "BLOCKED";
 type SourceReleasePostMergeDeployStatus = "NOT_REQUIRED" | "SUCCEEDED" | "FAILED" | "ROLLED_BACK";
+const REPAIRABLE_SOURCE_RELEASE_RUN_STATUSES: LoopSourceClosureState[] = ["FAILED", "HEALTH_FAILED", "ROLLED_BACK"];
 
 interface SourceReleaseClosureRun {
   schema: "evopilot-source-release-closure-run/v1";
@@ -830,6 +831,46 @@ interface SourceClosurePreflightResult {
   capabilities: string[];
   nextAction: "write-source" | "repair-credentials" | "repair-project" | "repair-deploy-target";
   createdAt: string;
+}
+
+interface SourceReleaseRunRepairCandidate {
+  schema: "evopilot-source-release-repair-candidate/v1";
+  id: string;
+  loopId: string;
+  runId: string;
+  projectId: string;
+  sourceProjectId: string;
+  provider: LoopSourceClosure["repositoryProvider"];
+  status: LoopSourceClosureState;
+  reason: string;
+  suggestedAction: "repair-source-closure" | "inspect-existing-repair";
+  latestForLoop: boolean;
+  repaired: boolean;
+  supersededByRunId?: string;
+  ageSeconds: number;
+  evidence: string[];
+  createdAt: string;
+}
+
+interface SourceReleaseRunRepairQueueResult {
+  schema: "evopilot-source-release-repair-queue/v1";
+  repaired: Array<{
+    runId: string;
+    loopId: string;
+    status: LoopSourceClosureState;
+    action: "repair-and-execute" | "repair-intent";
+    repairedRunId: string;
+  }>;
+  failed: Array<{
+    runId: string;
+    loopId: string;
+    error: string;
+  }>;
+  skipped: Array<{
+    runId: string;
+    loopId: string;
+    reason: string;
+  }>;
 }
 
 interface LoopStopPolicy {
@@ -2060,6 +2101,22 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       if (request.method === "GET" && url.pathname === "/api/v1/source-release-runs") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
         return writeJson(response, 200, envelope(store.listSourceReleaseClosureRuns()));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/source-release-runs/repair-candidates") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const includeRepaired = url.searchParams.get("includeRepaired") === "true";
+        return writeJson(response, 200, envelope(discoverSourceReleaseRunRepairCandidates(store, { includeRepaired })));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/source-release-runs/repair-candidates/repair") {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const result = await repairSourceReleaseRunCandidates(store, auth.actor, body);
+        store.appendAudit(audit(auth, "source-release-run-repair-queue.executed", "source-release-runs", {
+          repaired: result.repaired.length,
+          failed: result.failed.length,
+          skipped: result.skipped.length
+        }));
+        return writeJson(response, 200, envelope(result));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/source-release-deploy-finalizers") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -7460,6 +7517,149 @@ async function repairSourceReleaseRun(store: FileStore, loopId: string, releaseR
   });
   if (!execution) return undefined;
   return { loop: execution.loop, releaseRun: execution.releaseRun, originalReleaseRun, action: "repair-and-execute" };
+}
+
+function discoverSourceReleaseRunRepairCandidates(store: FileStore, options: { includeRepaired?: boolean } = {}): SourceReleaseRunRepairCandidate[] {
+  const runs = store.listSourceReleaseClosureRuns();
+  const latestRunByLoop = new Map<string, SourceReleaseClosureRun>();
+  for (const run of runs) latestRunByLoop.set(run.loopId, run);
+  const repairedRunIds = discoverRepairedSourceReleaseRunIds(store);
+  const nowMs = Date.now();
+  return runs
+    .filter((run) => REPAIRABLE_SOURCE_RELEASE_RUN_STATUSES.includes(run.status))
+    .map((run) => {
+      const latestRun = latestRunByLoop.get(run.loopId);
+      const repaired = repairedRunIds.has(run.id);
+      const failedStages = run.stages
+        .filter((stage) => stage.status === "FAILED")
+        .map((stage) => `${stage.gate}:${stage.evidence.at(-1) ?? "failed"}`);
+      const blockers = [
+        ...(run.policy?.blockers ?? []).map((blocker) => `policy:${blocker}`),
+        ...(run.postMergeDeployment?.status === "FAILED" || run.postMergeDeployment?.status === "ROLLED_BACK"
+          ? [`post-merge-deploy:${run.postMergeDeployment.evidence.at(-1) ?? run.postMergeDeployment.status}`]
+          : [])
+      ];
+      return {
+        schema: "evopilot-source-release-repair-candidate/v1",
+        id: `source-release-repair-candidate-${safeFileName(run.id)}`,
+        loopId: run.loopId,
+        runId: run.id,
+        projectId: run.projectId,
+        sourceProjectId: run.sourceProjectId,
+        provider: run.provider,
+        status: run.status,
+        reason: failedStages[0] ?? blockers[0] ?? `source release run status ${run.status}`,
+        suggestedAction: repaired ? "inspect-existing-repair" : "repair-source-closure",
+        latestForLoop: latestRun?.id === run.id,
+        repaired,
+        supersededByRunId: latestRun && latestRun.id !== run.id ? latestRun.id : undefined,
+        ageSeconds: Math.max(0, Math.floor((nowMs - Date.parse(run.createdAt)) / 1000)),
+        evidence: [...failedStages, ...blockers].slice(0, 6),
+        createdAt: run.createdAt
+      } satisfies SourceReleaseRunRepairCandidate;
+    })
+    .filter((candidate) => options.includeRepaired || !candidate.repaired)
+    .sort((left, right) => Number(right.latestForLoop) - Number(left.latestForLoop) || Date.parse(left.createdAt) - Date.parse(right.createdAt));
+}
+
+function discoverRepairedSourceReleaseRunIds(store: FileStore): Set<string> {
+  const repaired = new Set<string>();
+  for (const loop of store.listLoops()) {
+    for (const set of loop.evidenceSets ?? []) {
+      for (const item of set.evidence ?? []) {
+        const text = String(item);
+        for (const prefix of ["originalReleaseRunId=", "sourceClosure.repairOfReleaseRunId="]) {
+          if (text.startsWith(prefix)) repaired.add(text.slice(prefix.length));
+        }
+      }
+    }
+  }
+  return repaired;
+}
+
+async function repairSourceReleaseRunCandidates(store: FileStore, actor: string, body: unknown): Promise<SourceReleaseRunRepairQueueResult> {
+  const request = isRecord(body) ? body : {};
+  const requestedRunIds = Array.isArray(request.runIds) ? request.runIds.map((id) => String(id).trim()).filter(Boolean) : [];
+  const includeRepaired = request.includeRepaired === true;
+  const candidates = discoverSourceReleaseRunRepairCandidates(store, { includeRepaired });
+  const selected = requestedRunIds.length > 0
+    ? requestedRunIds.map((runId) => candidates.find((candidate) => candidate.runId === runId) ?? buildSkippedRepairCandidate(store, runId))
+    : candidates;
+  const limit = Math.max(1, Math.min(25, Number(request.limit ?? selected.length) || selected.length));
+  const result: SourceReleaseRunRepairQueueResult = {
+    schema: "evopilot-source-release-repair-queue/v1",
+    repaired: [],
+    failed: [],
+    skipped: []
+  };
+  for (const candidate of selected.slice(0, limit)) {
+    if (!candidate) continue;
+    if (candidate.repaired && !includeRepaired) {
+      result.skipped.push({ runId: candidate.runId, loopId: candidate.loopId, reason: "already repaired" });
+      continue;
+    }
+    if (candidate.suggestedAction !== "repair-source-closure") {
+      result.skipped.push({ runId: candidate.runId, loopId: candidate.loopId, reason: candidate.suggestedAction });
+      continue;
+    }
+    try {
+      const loop = store.readLoop(candidate.loopId);
+      const version = loop?.sourceClosure.targetVersion;
+      const repair = await repairSourceReleaseRun(store, candidate.loopId, candidate.runId, actor, {
+        ...request,
+        files: Array.isArray(request.files) ? request.files : [{
+          path: `docs/evopilot-source-closures/${candidate.loopId}-auto-repair.md`,
+          content: [
+            `# EvoPilot Source Release Auto Repair: ${candidate.loopId}`,
+            "",
+            `Original release run: ${candidate.runId}`,
+            `Original status: ${candidate.status}`,
+            `Reason: ${candidate.reason}`,
+            `Target version: ${version ?? "unspecified"}`,
+            `Generated at: ${new Date().toISOString()}`,
+            "",
+            "This file records Dashboard or API queued source release run repair evidence."
+          ].join("\n")
+        }]
+      });
+      if (!repair) {
+        result.failed.push({ runId: candidate.runId, loopId: candidate.loopId, error: "SOURCE_RELEASE_RUN_NOT_FOUND" });
+        continue;
+      }
+      result.repaired.push({
+        runId: candidate.runId,
+        loopId: candidate.loopId,
+        status: repair.releaseRun.status,
+        action: repair.action,
+        repairedRunId: repair.releaseRun.id
+      });
+    } catch (error) {
+      result.failed.push({ runId: candidate.runId, loopId: candidate.loopId, error: error instanceof Error ? error.message : String(error) });
+    }
+  }
+  return result;
+}
+
+function buildSkippedRepairCandidate(store: FileStore, runId: string): SourceReleaseRunRepairCandidate | undefined {
+  const run = store.readSourceReleaseClosureRun(runId);
+  if (!run) return undefined;
+  return {
+    schema: "evopilot-source-release-repair-candidate/v1",
+    id: `source-release-repair-candidate-${safeFileName(run.id)}`,
+    loopId: run.loopId,
+    runId: run.id,
+    projectId: run.projectId,
+    sourceProjectId: run.sourceProjectId,
+    provider: run.provider,
+    status: run.status,
+    reason: REPAIRABLE_SOURCE_RELEASE_RUN_STATUSES.includes(run.status) ? "not in active repair queue" : `status ${run.status} is not repairable`,
+    suggestedAction: REPAIRABLE_SOURCE_RELEASE_RUN_STATUSES.includes(run.status) ? "repair-source-closure" : "inspect-existing-repair",
+    latestForLoop: false,
+    repaired: true,
+    ageSeconds: Math.max(0, Math.floor((Date.now() - Date.parse(run.createdAt)) / 1000)),
+    evidence: [],
+    createdAt: run.createdAt
+  };
 }
 
 async function mergeSourceClosureReview(project: StoredProject | undefined, loop: LoopRun, artifacts: LoopSourceClosure["artifacts"], actor: string, commitMessage?: string): Promise<{ mergeCommitSha?: string; evidence: string[] }> {
