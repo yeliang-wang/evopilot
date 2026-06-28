@@ -1121,12 +1121,20 @@ function renderLoopTargetBacklogPanel() {
         statusPill(target.status),
         escapeHtml(target.nextAction),
         (target.acceptanceCriteria ?? []).map(escapeHtml).join("<br />"),
-        (target.evidence ?? []).map(escapeHtml).join("<br />"),
+        [
+          ...(target.externalBlocker ? [
+            `<strong>外部阻塞：${escapeHtml(target.externalBlocker.type)}</strong>`,
+            `恢复动作：${escapeHtml(target.externalBlocker.recovery?.dashboardAction ?? target.externalBlocker.nextAction ?? "-")}`,
+            ...(target.externalBlocker.blockers ?? []).map((blocker) => `blocker=${escapeHtml(blocker)}`)
+          ] : []),
+          ...(target.evidence ?? []).map(escapeHtml)
+        ].join("<br />"),
         `<button data-action="advance-loop-target" data-target-id="${escapeHtml(target.id)}">推进</button><button data-action="autopilot-loop-target" data-target-id="${escapeHtml(target.id)}">自动驾驶</button>`
       ]))}
       ${(state.loopAutopilotRuns ?? []).slice(-1).map((run) => `
         <div class="notice ${run.status === "SUCCEEDED" ? "good" : "warn"}">
           Autopilot ${escapeHtml(run.status)}：${escapeHtml(run.target?.id ?? "unknown")} / next ${escapeHtml(run.nextAction ?? "unknown")}<br />
+          ${run.externalBlocker ? `外部阻塞：${escapeHtml(run.externalBlocker.type)} / ${escapeHtml(run.externalBlocker.recovery?.dashboardAction ?? run.externalBlocker.nextAction ?? "-")}<br />` : ""}
           ${(run.stages ?? []).map((stage) => `${escapeHtml(stage.id)}=${escapeHtml(stage.status)} (${escapeHtml(stage.detail)})`).join("；")}
         </div>
       `).join("")}
@@ -2495,6 +2503,10 @@ function summarizeApiError(body, status) {
 
 function summarizeAutopilotRun(run) {
   const failedStage = (run.stages ?? []).find((stage) => stage.status === "FAILED" || stage.status === "BLOCKED");
+  if (run.externalBlocker) {
+    const blocker = run.externalBlocker.blockers?.[0] ?? run.externalBlocker.type;
+    return `Autopilot ${run.status}：${run.externalBlocker.nextAction} / ${run.externalBlocker.recovery?.dashboardAction ?? "外部阻塞"} / ${blocker}`;
+  }
   const failedEvidence = failedStage?.evidence?.find((item) => item.startsWith("failedEvidence=") || item.startsWith("error="));
   const releaseState = run.releaseRun?.status ?? run.loop?.sourceClosure?.closureState ?? "UNKNOWN";
   const detail = failedEvidence ? failedEvidence.replace(/^failedEvidence=|^error=/, "") : failedStage?.detail;

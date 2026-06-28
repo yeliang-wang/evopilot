@@ -1430,11 +1430,23 @@ test("Loop source closure preflight blocks GitHub writeback without credentials"
       }
     });
     assert.equal(autopilot.status, 409);
-    assert.equal(autopilot.body.data.status, "FAILED");
-    assert.equal(autopilot.body.data.nextAction, "source-closure");
-    assert.ok(autopilot.body.data.stages.some((stage) => stage.id === "source-preflight" && stage.status === "FAILED"));
+    assert.equal(autopilot.body.data.status, "BLOCKED");
+    assert.equal(autopilot.body.data.nextAction, "configure-source-credentials");
+    assert.equal(autopilot.body.data.externalBlocker.schema, "evopilot-external-blocker/v1");
+    assert.equal(autopilot.body.data.externalBlocker.type, "source-credential");
+    assert.equal(autopilot.body.data.externalBlocker.recovery.route, "project-source-credentials");
+    assert.ok(autopilot.body.data.stages.some((stage) => stage.id === "source-preflight" && stage.status === "BLOCKED"));
+    assert.ok(autopilot.body.data.stages.some((stage) => stage.id === "external-blocker" && stage.status === "BLOCKED"));
     assert.ok(!autopilot.body.data.stages.some((stage) => stage.id === "source-closure"));
     assert.equal(autopilot.body.data.releaseRun, undefined);
+
+    const targets = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/targets`, { token: "viewer-token" });
+    assert.equal(targets.status, 200);
+    const codexTarget = targets.body.data.find((target) => target.id === "codex-loop-target-autopilot");
+    assert.equal(codexTarget.status, "BLOCKED");
+    assert.equal(codexTarget.nextAction, "configure-source-credentials");
+    assert.equal(codexTarget.externalBlocker.type, "source-credential");
+    assert.ok(codexTarget.evidence.some((item) => item === "externalBlocker.type=source-credential"));
   } finally {
     await new Promise((resolve) => server.close(resolve));
     await close(github);

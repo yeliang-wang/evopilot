@@ -215,6 +215,26 @@ interface SourceCredentialReadiness {
   checkedAt: string;
 }
 
+interface LoopExternalBlocker {
+  schema: "evopilot-external-blocker/v1";
+  id: string;
+  type: "source-credential" | "deploy-target" | "project-binding" | "policy" | "unknown";
+  status: "WAITING_HUMAN" | "BLOCKED";
+  targetId?: string;
+  loopId?: string;
+  projectId?: string;
+  provider?: ProjectRepositoryProvider | "unknown";
+  nextAction: "configure-source-credentials" | "repair-project" | "repair-deploy-target" | "policy-review" | "repair";
+  blockers: string[];
+  evidence: string[];
+  recovery: {
+    route: "project-source-credentials" | "deploy-connectors" | "project-settings" | "release-policy" | "loop-repair";
+    api?: string;
+    dashboardAction?: string;
+  };
+  createdAt: string;
+}
+
 interface AuditRecord {
   id: string;
   actor: string;
@@ -1236,8 +1256,9 @@ interface LoopOrchestrationTarget {
   acceptanceCriteria: string[];
   status: LoopOrchestrationTargetStatus;
   loopId?: string;
-  nextAction: "create-loop" | "start-loop" | "resume-loop" | "human-approval" | "source-closure" | "done" | "repair";
+  nextAction: "create-loop" | "start-loop" | "resume-loop" | "human-approval" | "source-closure" | "configure-source-credentials" | "repair-project" | "repair-deploy-target" | "policy-review" | "done" | "repair";
   evidence: string[];
+  externalBlocker?: LoopExternalBlocker;
 }
 
 interface LoopOrchestrationAdvanceResult {
@@ -1257,12 +1278,13 @@ interface LoopOrchestrationAutopilotResult {
   loop?: LoopRun;
   releaseRun?: SourceReleaseClosureRun;
   stages: Array<{
-    id: "advance" | "iterate" | "human-gate" | "source-preflight" | "source-closure" | "safe-auto-merge";
+    id: "advance" | "iterate" | "human-gate" | "source-preflight" | "external-blocker" | "source-closure" | "safe-auto-merge";
     status: "SUCCEEDED" | "SKIPPED" | "BLOCKED" | "FAILED";
     detail: string;
     evidence: string[];
   }>;
-  nextAction: "done" | "human-approval" | "source-closure" | "policy-review" | "repair";
+  nextAction: "done" | "human-approval" | "source-closure" | "configure-source-credentials" | "repair-project" | "repair-deploy-target" | "policy-review" | "repair";
+  externalBlocker?: LoopExternalBlocker;
   evidence: string[];
   createdAt: string;
 }
@@ -1690,7 +1712,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           nextAction: result.nextAction,
           releaseRunId: result.releaseRun?.id
         }));
-        return writeJson(response, result.status === "FAILED" ? 409 : 200, envelope(result));
+        return writeJson(response, result.status === "SUCCEEDED" ? 200 : 409, envelope(result));
       }
       if (request.method === "POST" && url.pathname === "/api/v1/loop-orchestration/instantiate") {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -5145,13 +5167,15 @@ function loopOrchestrationTargets(store: FileStore): LoopOrchestrationTarget[] {
     const loop = loops
       .filter((item) => item.context?.orchestrationTargetId === target.id)
       .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))[0];
-    const status = loop ? targetStatusFromLoop(loop) : "PENDING";
+    const externalBlocker = loop ? inferLoopExternalBlocker(target, loop) : undefined;
+    const status = externalBlocker ? "BLOCKED" : loop ? targetStatusFromLoop(loop) : "PENDING";
     return {
       ...target,
       status,
       loopId: loop?.id,
-      nextAction: nextTargetAction(loop),
-      evidence: targetEvidence(target, loop)
+      nextAction: externalBlocker?.nextAction ?? nextTargetAction(loop),
+      evidence: externalBlocker ? [...targetEvidence(target, loop), ...externalBlockerEvidence(externalBlocker)] : targetEvidence(target, loop),
+      externalBlocker
     };
   });
 }
@@ -5210,12 +5234,16 @@ function advanceLoopOrchestrationTarget(store: FileStore, actor: string, input: 
     action = "done";
     evidence.push("targetStatus=done");
   }
+  const externalBlocker = inferLoopExternalBlocker(target, loop);
   const refreshedTarget = {
     ...target,
-    status: targetStatusFromLoop(loop),
+    status: externalBlocker ? "BLOCKED" : targetStatusFromLoop(loop),
     loopId: loop.id,
-    nextAction: nextTargetAction(loop),
-    evidence: targetEvidence(target, loop)
+    nextAction: externalBlocker?.nextAction ?? nextTargetAction(loop),
+    evidence: externalBlocker
+      ? [...targetEvidence(target, loop), ...externalBlockerEvidence(externalBlocker)]
+      : targetEvidence(target, loop),
+    externalBlocker
   };
   return {
     schema: "evopilot-loop-orchestration-advance/v1",
@@ -5328,12 +5356,13 @@ async function runLoopOrchestrationAutopilot(store: FileStore, actor: string, bo
     const preflight = await preflightLoopSourceClosure(store, loop.id, { actor, persist: true });
     if (!preflight || preflight.status !== "PASS") {
       loop = store.readLoop(loop.id) ?? loop;
+      const externalBlocker = buildExternalBlockerFromPreflight(preflight, target, loop);
       const detail = preflight
         ? `Source closure preflight failed: ${preflight.blockers.join(", ") || "unknown blocker"}.`
         : "Source closure preflight failed because the loop was not found.";
       pushStage({
         id: "source-preflight",
-        status: "FAILED",
+        status: externalBlocker ? "BLOCKED" : "FAILED",
         detail,
         evidence: [
           `preflight=${preflight?.status ?? "MISSING"}`,
@@ -5341,6 +5370,29 @@ async function runLoopOrchestrationAutopilot(store: FileStore, actor: string, bo
           ...(preflight?.blockers ?? []).map((blocker) => `blocker=${blocker}`)
         ]
       });
+      if (externalBlocker) {
+        pushStage({
+          id: "external-blocker",
+          status: "BLOCKED",
+          detail: `External blocker requires ${externalBlocker.nextAction}.`,
+          evidence: [
+            `externalBlocker=${externalBlocker.id}`,
+            `type=${externalBlocker.type}`,
+            `route=${externalBlocker.recovery.route}`,
+            ...externalBlocker.blockers.map((blocker) => `blocker=${blocker}`)
+          ]
+        });
+        return finalizeLoopOrchestrationAutopilot({
+          status: "BLOCKED",
+          target,
+          loop,
+          releaseRun,
+          stages,
+          evidence,
+          nextAction: externalBlocker.nextAction,
+          externalBlocker
+        });
+      }
       return finalizeLoopOrchestrationAutopilot({ status: "FAILED", target, loop, releaseRun, stages, evidence, nextAction: "source-closure" });
     }
     pushStage({
@@ -5456,18 +5508,173 @@ function finalizeLoopOrchestrationAutopilot(input: {
   stages: LoopOrchestrationAutopilotResult["stages"];
   evidence: string[];
   nextAction: LoopOrchestrationAutopilotResult["nextAction"];
+  externalBlocker?: LoopExternalBlocker;
 }): LoopOrchestrationAutopilotResult {
   return {
     schema: "evopilot-loop-orchestration-autopilot/v1",
     status: input.status,
-    target: input.target,
+    target: input.externalBlocker ? {
+      ...input.target,
+      status: "BLOCKED",
+      nextAction: input.externalBlocker.nextAction,
+      externalBlocker: input.externalBlocker,
+      evidence: [...input.target.evidence, ...externalBlockerEvidence(input.externalBlocker)]
+    } : input.target,
     loop: input.loop,
     releaseRun: input.releaseRun,
     stages: input.stages,
     nextAction: input.nextAction,
+    externalBlocker: input.externalBlocker,
     evidence: input.evidence,
     createdAt: new Date().toISOString()
   };
+}
+
+function buildExternalBlockerFromPreflight(preflight: SourceClosurePreflightResult | undefined, target: LoopOrchestrationTarget, loop: LoopRun): LoopExternalBlocker | undefined {
+  if (!preflight || preflight.status === "PASS") return undefined;
+  const now = new Date().toISOString();
+  if (preflight.nextAction === "repair-credentials") {
+    return {
+      schema: "evopilot-external-blocker/v1",
+      id: `${loop.id}-source-credential-blocker`,
+      type: "source-credential",
+      status: "WAITING_HUMAN",
+      targetId: target.id,
+      loopId: loop.id,
+      projectId: preflight.sourceProjectId,
+      provider: preflight.provider,
+      nextAction: "configure-source-credentials",
+      blockers: preflight.blockers,
+      evidence: [
+        `preflight=${preflight.status}`,
+        `preflightNextAction=${preflight.nextAction}`,
+        ...preflight.checks.flatMap((check) => [`${check.id}=${check.status}`, ...check.evidence])
+      ],
+      recovery: {
+        route: "project-source-credentials",
+        api: `/api/v1/projects/${encodeURIComponent(preflight.sourceProjectId)}/source-credentials/preflight`,
+        dashboardAction: "接入项目 -> 验证写回凭据"
+      },
+      createdAt: now
+    };
+  }
+  if (preflight.nextAction === "repair-deploy-target") {
+    return {
+      schema: "evopilot-external-blocker/v1",
+      id: `${loop.id}-deploy-target-blocker`,
+      type: "deploy-target",
+      status: "WAITING_HUMAN",
+      targetId: target.id,
+      loopId: loop.id,
+      projectId: preflight.sourceProjectId,
+      provider: preflight.provider,
+      nextAction: "repair-deploy-target",
+      blockers: preflight.blockers,
+      evidence: [`preflight=${preflight.status}`, `preflightNextAction=${preflight.nextAction}`],
+      recovery: { route: "deploy-connectors", dashboardAction: "部署连接器 -> 配置健康检查" },
+      createdAt: now
+    };
+  }
+  if (preflight.nextAction === "repair-project") {
+    return {
+      schema: "evopilot-external-blocker/v1",
+      id: `${loop.id}-project-binding-blocker`,
+      type: "project-binding",
+      status: "WAITING_HUMAN",
+      targetId: target.id,
+      loopId: loop.id,
+      projectId: preflight.sourceProjectId,
+      provider: preflight.provider,
+      nextAction: "repair-project",
+      blockers: preflight.blockers,
+      evidence: [`preflight=${preflight.status}`, `preflightNextAction=${preflight.nextAction}`],
+      recovery: { route: "project-settings", dashboardAction: "接入项目 -> 修复仓库配置" },
+      createdAt: now
+    };
+  }
+  return undefined;
+}
+
+function externalBlockerEvidence(blocker: LoopExternalBlocker): string[] {
+  return [
+    `externalBlocker=${blocker.id}`,
+    `externalBlocker.type=${blocker.type}`,
+    `externalBlocker.status=${blocker.status}`,
+    `externalBlocker.nextAction=${blocker.nextAction}`,
+    `externalBlocker.route=${blocker.recovery.route}`,
+    ...blocker.blockers.map((item) => `externalBlocker.blocker=${item}`)
+  ];
+}
+
+function inferLoopExternalBlocker(target: Pick<LoopOrchestrationTarget, "id">, loop: LoopRun): LoopExternalBlocker | undefined {
+  const preflightEvidence = [...loop.evidenceSets].reverse().find((set) =>
+    set.validator === "evopilot-source-closure-preflight" &&
+    set.status === "FAIL" &&
+    set.evidence.some((item) => item === "sourceClosure.preflight=FAIL")
+  );
+  if (!preflightEvidence) return undefined;
+  const blockers = preflightEvidence.evidence
+    .filter((item) => item.startsWith("sourceClosure.preflight.blocker="))
+    .map((item) => item.replace("sourceClosure.preflight.blocker=", ""));
+  const nextAction = preflightEvidence.evidence
+    .find((item) => item.startsWith("sourceClosure.preflight.nextAction="))
+    ?.replace("sourceClosure.preflight.nextAction=", "");
+  if (nextAction === "repair-credentials" || blockers.some((blocker) => blocker.includes("credentials") || blocker.includes("token"))) {
+    return {
+      schema: "evopilot-external-blocker/v1",
+      id: `${loop.id}-source-credential-blocker`,
+      type: "source-credential",
+      status: "WAITING_HUMAN",
+      targetId: target.id,
+      loopId: loop.id,
+      projectId: loop.sourceClosure.sourceProjectId,
+      provider: loop.sourceClosure.repositoryProvider,
+      nextAction: "configure-source-credentials",
+      blockers,
+      evidence: preflightEvidence.evidence,
+      recovery: {
+        route: "project-source-credentials",
+        api: `/api/v1/projects/${encodeURIComponent(loop.sourceClosure.sourceProjectId)}/source-credentials/preflight`,
+        dashboardAction: "接入项目 -> 验证写回凭据"
+      },
+      createdAt: preflightEvidence.createdAt
+    };
+  }
+  if (nextAction === "repair-deploy-target") {
+    return {
+      schema: "evopilot-external-blocker/v1",
+      id: `${loop.id}-deploy-target-blocker`,
+      type: "deploy-target",
+      status: "WAITING_HUMAN",
+      targetId: target.id,
+      loopId: loop.id,
+      projectId: loop.sourceClosure.sourceProjectId,
+      provider: loop.sourceClosure.repositoryProvider,
+      nextAction: "repair-deploy-target",
+      blockers,
+      evidence: preflightEvidence.evidence,
+      recovery: { route: "deploy-connectors", dashboardAction: "部署连接器 -> 配置健康检查" },
+      createdAt: preflightEvidence.createdAt
+    };
+  }
+  if (nextAction === "repair-project") {
+    return {
+      schema: "evopilot-external-blocker/v1",
+      id: `${loop.id}-project-binding-blocker`,
+      type: "project-binding",
+      status: "WAITING_HUMAN",
+      targetId: target.id,
+      loopId: loop.id,
+      projectId: loop.sourceClosure.sourceProjectId,
+      provider: loop.sourceClosure.repositoryProvider,
+      nextAction: "repair-project",
+      blockers,
+      evidence: preflightEvidence.evidence,
+      recovery: { route: "project-settings", dashboardAction: "接入项目 -> 修复仓库配置" },
+      createdAt: preflightEvidence.createdAt
+    };
+  }
+  return undefined;
 }
 
 function sourceClosureFailedEvidence(closure: LoopSourceClosure): string[] {
@@ -5569,6 +5776,8 @@ function createOrchestrationTargetLoop(store: FileStore, target: LoopOrchestrati
 
 function targetStatusFromLoop(loop?: LoopRun): LoopOrchestrationTargetStatus {
   if (!loop) return "PENDING";
+  const externalBlocker = inferLoopExternalBlocker({ id: loop.context?.orchestrationTargetId ? String(loop.context.orchestrationTargetId) : "unknown" }, loop);
+  if (externalBlocker) return "BLOCKED";
   if (loop.status === "SUCCEEDED" && loop.sourceClosure.closureState === "PROMOTED") return "DONE";
   if (loop.status === "WAITING_APPROVAL") return "WAITING_HUMAN";
   if (loop.status === "FAILED" || loop.status === "CANCELLED" || loop.status === "BLOCKED") return "BLOCKED";
@@ -5577,6 +5786,8 @@ function targetStatusFromLoop(loop?: LoopRun): LoopOrchestrationTargetStatus {
 
 function nextTargetAction(loop?: LoopRun): LoopOrchestrationTarget["nextAction"] {
   if (!loop) return "create-loop";
+  const externalBlocker = inferLoopExternalBlocker({ id: loop.context?.orchestrationTargetId ? String(loop.context.orchestrationTargetId) : "unknown" }, loop);
+  if (externalBlocker) return externalBlocker.nextAction;
   if (loop.status === "PENDING") return "start-loop";
   if (loop.status === "WAITING_APPROVAL") return "human-approval";
   if (loop.status === "RUNNING" || loop.status === "BLOCKED") return "resume-loop";
@@ -5586,6 +5797,7 @@ function nextTargetAction(loop?: LoopRun): LoopOrchestrationTarget["nextAction"]
 }
 
 function targetEvidence(target: Pick<LoopOrchestrationTarget, "id" | "layer" | "acceptanceCriteria">, loop?: LoopRun): string[] {
+  const externalBlocker = loop ? inferLoopExternalBlocker(target, loop) : undefined;
   return [
     `target=${target.id}`,
     `layer=${target.layer}`,
@@ -5595,7 +5807,8 @@ function targetEvidence(target: Pick<LoopOrchestrationTarget, "id" | "layer" | "
     loop ? `iteration=${loop.currentIteration}/${loop.stopPolicy.maxIterations}` : "iteration=0",
     loop ? `sourceClosure=${loop.sourceClosure.closureState}` : "sourceClosure=not-started",
     loop ? `sandboxEnforcement=${loop.sandboxEnforcement.status}` : "sandboxEnforcement=pending",
-    loop?.trace ? `executorSteps=${loop.trace.executorStepCount}` : "executorSteps=0"
+    loop?.trace ? `executorSteps=${loop.trace.executorStepCount}` : "executorSteps=0",
+    externalBlocker ? `externalBlocker=${externalBlocker.id}` : "externalBlocker=none"
   ];
 }
 
