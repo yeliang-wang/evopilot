@@ -5251,14 +5251,21 @@ async function runLoopOrchestrationAutopilot(store: FileStore, actor: string, bo
       });
       loop = sourceClosure?.loop ?? loop;
       releaseRun = sourceClosure?.releaseRun;
+      const sourceClosureEvidence = [
+        `closureState=${loop.sourceClosure.closureState}`,
+        `releaseRun=${releaseRun?.id ?? "none"}`,
+        ...sourceClosureFailedEvidence(loop.sourceClosure)
+      ];
       pushStage({
         id: "source-closure",
-        status: loop.sourceClosure.closureState === "PROMOTED" ? "SUCCEEDED" : "BLOCKED",
+        status: loop.sourceClosure.closureState === "PROMOTED" ? "SUCCEEDED" : loop.sourceClosure.closureState === "FAILED" ? "FAILED" : "BLOCKED",
         detail: `Source closure reached ${loop.sourceClosure.closureState}.`,
-        evidence: [`closureState=${loop.sourceClosure.closureState}`, `releaseRun=${releaseRun?.id ?? "none"}`]
+        evidence: sourceClosureEvidence
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
+      loop = store.readLoop(loop.id) ?? loop;
+      releaseRun = store.listSourceReleaseClosureRuns(loop.id).at(-1) ?? releaseRun;
       pushStage({ id: "source-closure", status: "FAILED", detail: message, evidence: [`error=${message}`] });
       return finalizeLoopOrchestrationAutopilot({ status: "FAILED", target, loop, releaseRun, stages, evidence, nextAction: "source-closure" });
     }
@@ -5269,6 +5276,18 @@ async function runLoopOrchestrationAutopilot(store: FileStore, actor: string, bo
 
   if (request.autoMerge === false) {
     return finalizeLoopOrchestrationAutopilot({ status: "BLOCKED", target, loop, releaseRun, stages, evidence, nextAction: "policy-review" });
+  }
+
+  if (loop.sourceClosure.closureState !== "PROMOTED") {
+    return finalizeLoopOrchestrationAutopilot({
+      status: loop.sourceClosure.closureState === "FAILED" ? "FAILED" : "BLOCKED",
+      target,
+      loop,
+      releaseRun,
+      stages,
+      evidence,
+      nextAction: "source-closure"
+    });
   }
 
   try {
@@ -5334,6 +5353,12 @@ function finalizeLoopOrchestrationAutopilot(input: {
     evidence: input.evidence,
     createdAt: new Date().toISOString()
   };
+}
+
+function sourceClosureFailedEvidence(closure: LoopSourceClosure): string[] {
+  return Object.entries(closure.gateEvidence)
+    .filter(([, row]) => row?.status === "FAILED")
+    .flatMap(([gate, row]) => [`failedGate=${gate}`, ...(row?.evidence ?? []).map((item) => `failedEvidence=${item}`)]);
 }
 
 function defaultAutopilotSourceClosureFiles(loop: LoopRun, target: LoopOrchestrationTarget): Array<{ path: string; content: string }> {
@@ -6795,7 +6820,6 @@ async function executeLoopSourceClosure(store: FileStore, loopId: string, actor:
     markGate(gateEvidence, nextPendingGate(loop.sourceClosure.requiredGates, gateEvidence), "FAILED", [message], new Date().toISOString());
     closureState = "FAILED";
     evidence.push(`sourceClosure.error=${message}`);
-    if (isHttpError(error)) throw error;
   }
 
   const updatedClosure = normalizeLoopSourceClosure({

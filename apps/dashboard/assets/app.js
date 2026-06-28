@@ -1867,6 +1867,17 @@ function bindLoopActions() {
         await loadLoops();
         await loadSummary();
       } catch (error) {
+        const run = error.responseBody?.data?.schema === "evopilot-loop-orchestration-autopilot/v1" ? error.responseBody.data : undefined;
+        if (run) {
+          state.loopAutopilotRuns = [...(state.loopAutopilotRuns ?? []), run].filter(Boolean).slice(-5);
+          if (run.releaseRun) {
+            state.sourceReleaseRuns = [
+              ...(state.sourceReleaseRuns ?? []).filter((item) => item.id !== run.releaseRun.id),
+              run.releaseRun
+            ];
+          }
+          await loadLoops();
+        }
         state.authNotice = `Autopilot 执行失败：${error.message}`;
       } finally {
         render();
@@ -2426,8 +2437,36 @@ async function postJson(url, body) {
     body: JSON.stringify(body)
   });
   const text = await response.text();
-  if (!response.ok) throw new Error(text || `HTTP ${response.status}`);
-  return text ? JSON.parse(text) : {};
+  const parsed = text ? safeJsonParse(text) : {};
+  if (!response.ok) {
+    const error = new Error(summarizeApiError(parsed, response.status));
+    error.responseBody = parsed;
+    error.status = response.status;
+    throw error;
+  }
+  return parsed;
+}
+
+function safeJsonParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { detail: text };
+  }
+}
+
+function summarizeApiError(body, status) {
+  if (body?.data?.schema === "evopilot-loop-orchestration-autopilot/v1") return summarizeAutopilotRun(body.data);
+  const detail = body?.detail ?? body?.error ?? body?.message;
+  return detail ? `${detail}` : `HTTP ${status}`;
+}
+
+function summarizeAutopilotRun(run) {
+  const failedStage = (run.stages ?? []).find((stage) => stage.status === "FAILED" || stage.status === "BLOCKED");
+  const failedEvidence = failedStage?.evidence?.find((item) => item.startsWith("failedEvidence=") || item.startsWith("error="));
+  const releaseState = run.releaseRun?.status ?? run.loop?.sourceClosure?.closureState ?? "UNKNOWN";
+  const detail = failedEvidence ? failedEvidence.replace(/^failedEvidence=|^error=/, "") : failedStage?.detail;
+  return `Autopilot ${run.status}：${failedStage?.id ?? run.nextAction} / source ${releaseState}${detail ? ` / ${detail}` : ""}`;
 }
 
 function apiFetch(url, options = {}) {

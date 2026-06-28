@@ -1341,6 +1341,80 @@ test("Loop source closure executes local-git source writeback gates", async () =
   }
 });
 
+test("Loop autopilot persists failed GitHub source closure as release-run evidence", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-autopilot-source-closure-failure-"));
+  const github = createFailingSourceClosureGitHubServer();
+  await listen(github);
+  const githubPort = github.address().port;
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "viewer", token: "viewer-token", role: "viewer" },
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "github-source-failure",
+        name: "GitHub Source Failure",
+        repository: {
+          provider: "github",
+          baseUrl: `http://127.0.0.1:${githubPort}`,
+          owner: "org",
+          repo: "repo",
+          defaultBranch: "main",
+          credentials: { token: "token" }
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+    assert.equal(project.body.data.validation.status, "VERIFIED");
+
+    const autopilot = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/autopilot`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        targetId: "codex-loop-target-autopilot",
+        projectId: "github-source-failure",
+        targetVersion: "2.3.0",
+        controlPlaneUrl: baseUrl,
+        approveHumanGate: true,
+        autoMerge: true,
+        maxSteps: 8
+      }
+    });
+    assert.equal(autopilot.status, 409);
+    assert.equal(autopilot.body.data.status, "FAILED");
+    assert.equal(autopilot.body.data.nextAction, "source-closure");
+    assert.equal(autopilot.body.data.loop.status, "SUCCEEDED");
+    assert.equal(autopilot.body.data.loop.sourceClosure.closureState, "FAILED");
+    assert.equal(autopilot.body.data.releaseRun.status, "FAILED");
+    assert.equal(autopilot.body.data.releaseRun.nextAction, "failed");
+    assert.ok(autopilot.body.data.releaseRun.stages.some((stage) => stage.gate === "code-change" && stage.status === "FAILED"));
+    assert.ok(autopilot.body.data.stages.some((stage) => stage.id === "source-closure" && stage.status === "FAILED"));
+    assert.ok(autopilot.body.data.stages.some((stage) => stage.evidence.some((item) => item.includes("GitHub request failed: 422"))));
+    assert.ok(!autopilot.body.data.stages.some((stage) => stage.id === "safe-auto-merge"));
+
+    const runs = await jsonFetch(`${baseUrl}/api/v1/loops/${encodeURIComponent(autopilot.body.data.loop.id)}/source-release-runs`, {
+      token: "viewer-token"
+    });
+    assert.equal(runs.status, 200);
+    assert.equal(runs.body.data.at(-1).status, "FAILED");
+    assert.equal(runs.body.data.at(-1).id, autopilot.body.data.releaseRun.id);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await close(github);
+  }
+});
+
 function git(cwd, args) {
   const result = spawnSync("git", args, { cwd, encoding: "utf8" });
   if (result.status !== 0) throw new Error(result.stderr || result.stdout);
@@ -1379,6 +1453,25 @@ function createFakeSourceClosureGitHubServer() {
     }
     if (request.url === "/repos/org/repo/pulls/3/merge" && request.method === "PUT") {
       return json(response, { sha: "github-merge-sha", merged: true, message: "Pull Request successfully merged" });
+    }
+    response.writeHead(404);
+    response.end();
+  });
+}
+
+function createFailingSourceClosureGitHubServer() {
+  return http.createServer(async (request, response) => {
+    if (request.url === "/repos/org/repo/git/trees/main?recursive=1") {
+      return json(response, { tree: [{ type: "blob", path: "README.md" }] });
+    }
+    if (request.url === "/repos/org/repo/git/ref/heads%2Fmain" && request.method === "GET") {
+      return json(response, { ref: "refs/heads/main", object: { sha: "base-sha" } });
+    }
+    if (request.url === "/repos/org/repo/git/refs" && request.method === "POST") {
+      return json(response, { ref: "refs/heads/evopilot/failing", object: { sha: "base-sha" } });
+    }
+    if (request.url?.startsWith("/repos/org/repo/contents/docs/evopilot-source-closures/") && request.method === "PUT") {
+      return json(response, { message: "GitHub write rejected by branch protection" }, 422);
     }
     response.writeHead(404);
     response.end();
@@ -1433,8 +1526,8 @@ function createFakeDeployConnectorServer() {
   });
 }
 
-function json(response, body) {
-  response.writeHead(200, { "content-type": "application/json" });
+function json(response, body, status = 200) {
+  response.writeHead(status, { "content-type": "application/json" });
   response.end(JSON.stringify(body));
 }
 
