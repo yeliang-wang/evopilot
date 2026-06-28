@@ -13,7 +13,8 @@ RUN npm run build
 
 FROM node:22-alpine AS runtime
 WORKDIR /app
-RUN apk add --no-cache git docker-cli docker-cli-compose
+RUN sed -i 's#https://dl-cdn.alpinelinux.org/alpine#https://mirrors.aliyun.com/alpine#g' /etc/apk/repositories \
+  && apk add --no-cache git docker-cli docker-cli-compose
 ENV NODE_ENV=production
 ENV EVOPILOT_RUN_MODE=prod
 ENV EVOPILOT_HOST=0.0.0.0
