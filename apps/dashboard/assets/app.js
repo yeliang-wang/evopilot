@@ -13,6 +13,7 @@ const state = {
   },
   deployConnectors: [],
   sourceReleaseRuns: [],
+  loopAutopilotRuns: [],
   loopOrchestrationPresets: [],
   loopOrchestrationTargets: [],
   loopWorkerQueue: [],
@@ -1111,6 +1112,7 @@ function renderLoopTargetBacklogPanel() {
       </div>
       <div class="table-actions">
         <button class="primary" data-action="advance-loop-target" data-target-id="">推进下一 Target</button>
+        <button data-action="autopilot-loop-target" data-target-id="">一键自动驾驶</button>
       </div>
       ${targets.length === 0 ? `<div class="empty">暂无 target backlog。生产模式请先输入 API Token。</div>` : table(["Target", "层", "状态", "下一步", "验收", "证据", "操作"], targets.map((target) => [
         `<strong>${escapeHtml(target.title)}</strong><span class="subtext">${escapeHtml(target.id)}${target.loopId ? ` / ${escapeHtml(target.loopId)}` : ""}</span>`,
@@ -1119,8 +1121,14 @@ function renderLoopTargetBacklogPanel() {
         escapeHtml(target.nextAction),
         (target.acceptanceCriteria ?? []).map(escapeHtml).join("<br />"),
         (target.evidence ?? []).map(escapeHtml).join("<br />"),
-        `<button data-action="advance-loop-target" data-target-id="${escapeHtml(target.id)}">推进</button>`
+        `<button data-action="advance-loop-target" data-target-id="${escapeHtml(target.id)}">推进</button><button data-action="autopilot-loop-target" data-target-id="${escapeHtml(target.id)}">自动驾驶</button>`
       ]))}
+      ${(state.loopAutopilotRuns ?? []).slice(-1).map((run) => `
+        <div class="notice ${run.status === "SUCCEEDED" ? "good" : "warn"}">
+          Autopilot ${escapeHtml(run.status)}：${escapeHtml(run.target?.id ?? "unknown")} / next ${escapeHtml(run.nextAction ?? "unknown")}<br />
+          ${(run.stages ?? []).map((stage) => `${escapeHtml(stage.id)}=${escapeHtml(stage.status)} (${escapeHtml(stage.detail)})`).join("；")}
+        </div>
+      `).join("")}
     </section>
   `;
 }
@@ -1833,6 +1841,38 @@ function bindLoopActions() {
       }
     });
   }
+  for (const button of content.querySelectorAll('[data-action="autopilot-loop-target"]')) {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      state.authNotice = "";
+      try {
+        const response = await postJson("/api/v1/loop-orchestration/autopilot", {
+          targetId: button.dataset.targetId || undefined,
+          projectId: state.projects[0]?.id ?? "evopilot",
+          deployConnectorId: state.deployConnectors.length === 1 ? state.deployConnectors[0].id : undefined,
+          controlPlaneUrl: window.location.origin,
+          runUntilSourceClosure: true,
+          autoMerge: true,
+          postMergeDeploy: true
+        });
+        const run = response.data;
+        state.loopAutopilotRuns = [...(state.loopAutopilotRuns ?? []), run].filter(Boolean).slice(-5);
+        if (run.releaseRun) {
+          state.sourceReleaseRuns = [
+            ...(state.sourceReleaseRuns ?? []).filter((item) => item.id !== run.releaseRun.id),
+            run.releaseRun
+          ];
+        }
+        state.authNotice = `Autopilot ${run.status}：next ${run.nextAction}，${run.stages?.length ?? 0} 个阶段已写入证据。`;
+        await loadLoops();
+        await loadSummary();
+      } catch (error) {
+        state.authNotice = `Autopilot 执行失败：${error.message}`;
+      } finally {
+        render();
+      }
+    });
+  }
   for (const button of content.querySelectorAll('[data-action="claim-loop-worker"]')) {
     button.addEventListener("click", async () => {
       button.disabled = true;
@@ -1885,7 +1925,7 @@ function bindLoopActions() {
       }
     });
   }
-  for (const button of content.querySelectorAll('[data-action="verify-sandbox-proof"], [data-action="load-trace-tree"], [data-action="load-loop-events"], [data-action="load-source-release-run"], [data-action="approve-source-release"], [data-action="merge-source-release"]')) {
+  for (const button of content.querySelectorAll('[data-action="verify-sandbox-proof"], [data-action="load-trace-tree"], [data-action="load-loop-events"], [data-action="load-source-release-run"], [data-action="approve-source-release"], [data-action="merge-source-release"], [data-action="auto-merge-source-release"]')) {
     button.addEventListener("click", async () => {
       const id = button.dataset.id;
       const action = button.dataset.action;

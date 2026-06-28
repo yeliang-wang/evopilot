@@ -1214,6 +1214,23 @@ interface LoopOrchestrationAdvanceResult {
   createdAt: string;
 }
 
+interface LoopOrchestrationAutopilotResult {
+  schema: "evopilot-loop-orchestration-autopilot/v1";
+  status: "SUCCEEDED" | "BLOCKED" | "FAILED";
+  target: LoopOrchestrationTarget;
+  loop?: LoopRun;
+  releaseRun?: SourceReleaseClosureRun;
+  stages: Array<{
+    id: "advance" | "iterate" | "human-gate" | "source-closure" | "safe-auto-merge";
+    status: "SUCCEEDED" | "SKIPPED" | "BLOCKED" | "FAILED";
+    detail: string;
+    evidence: string[];
+  }>;
+  nextAction: "done" | "human-approval" | "source-closure" | "policy-review" | "repair";
+  evidence: string[];
+  createdAt: string;
+}
+
 interface ProjectEvolutionCursor {
   projectId: string;
   lastProcessedDatasetTriggeredAt?: string;
@@ -1626,6 +1643,18 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         });
         store.appendAudit(audit(auth, "loop-orchestration.advanced", result.target.id, { action: result.action, loopId: result.loop?.id, advanced: result.advanced }));
         return writeJson(response, result.advanced ? 201 : 200, envelope(result));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/loop-orchestration/autopilot") {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const result = await runLoopOrchestrationAutopilot(store, auth.actor, body);
+        store.appendAudit(audit(auth, "loop-orchestration.autopilot", result.target.id, {
+          status: result.status,
+          loopId: result.loop?.id,
+          nextAction: result.nextAction,
+          releaseRunId: result.releaseRun?.id
+        }));
+        return writeJson(response, result.status === "FAILED" ? 409 : 200, envelope(result));
       }
       if (request.method === "POST" && url.pathname === "/api/v1/loop-orchestration/instantiate") {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -5110,6 +5139,228 @@ function advanceLoopOrchestrationTarget(store: FileStore, actor: string, input: 
     evidence,
     createdAt: new Date().toISOString()
   };
+}
+
+async function runLoopOrchestrationAutopilot(store: FileStore, actor: string, body: unknown): Promise<LoopOrchestrationAutopilotResult> {
+  const request = isRecord(body) ? body : {};
+  const stages: LoopOrchestrationAutopilotResult["stages"] = [];
+  const evidence: string[] = ["autopilot=production-self-evolution"];
+  const maxSteps = Math.min(12, Math.max(1, Math.floor(Number(request.maxSteps ?? 8))));
+  let loop: LoopRun | undefined;
+  let releaseRun: SourceReleaseClosureRun | undefined;
+  let target: LoopOrchestrationTarget | undefined;
+
+  const pushStage = (stage: LoopOrchestrationAutopilotResult["stages"][number]) => {
+    stages.push(stage);
+    evidence.push(`stage.${stage.id}=${stage.status}`, ...stage.evidence);
+  };
+
+  try {
+    const advanced = advanceLoopOrchestrationTarget(store, actor, {
+      targetId: optionalTrimmedString(request.targetId),
+      projectId: optionalTrimmedString(request.projectId),
+      targetVersion: optionalTrimmedString(request.targetVersion),
+      objective: optionalTrimmedString(request.objective),
+      controlPlaneUrl: optionalTrimmedString(request.controlPlaneUrl),
+      deployConnectorId: optionalTrimmedString(request.deployConnectorId),
+      autoStart: request.autoStart !== false
+    });
+    target = advanced.target;
+    loop = advanced.loop;
+    pushStage({
+      id: "advance",
+      status: "SUCCEEDED",
+      detail: `Target advanced with action ${advanced.action}.`,
+      evidence: advanced.evidence
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const fallback = loopOrchestrationTargets(store)[0];
+    if (!fallback) throw error;
+    target = fallback;
+    pushStage({ id: "advance", status: "FAILED", detail: message, evidence: [`error=${message}`] });
+    return finalizeLoopOrchestrationAutopilot({ status: "FAILED", target, loop, releaseRun, stages, evidence, nextAction: "repair" });
+  }
+
+  if (!loop) return finalizeLoopOrchestrationAutopilot({ status: "FAILED", target, loop, releaseRun, stages, evidence, nextAction: "repair" });
+
+  let iterated = false;
+  for (let step = 0; step < maxSteps; step += 1) {
+    loop = store.readLoop(loop.id) ?? loop;
+    if (loop.status === "SUCCEEDED" || loop.status === "FAILED" || loop.status === "CANCELLED") break;
+    if (loop.status === "WAITING_APPROVAL") {
+      if (request.approveHumanGate === true) {
+        const approved = store.approveLoop(loop.id, actor);
+        loop = approved ?? loop;
+        pushStage({
+          id: "human-gate",
+          status: "SUCCEEDED",
+          detail: "Pending loop approval was explicitly approved by autopilot request.",
+          evidence: [`approvedBy=${actor}`, "approveHumanGate=true"]
+        });
+        loop = store.resumeLoop(loop.id, actor, {
+          forceDecision: "SUCCEED",
+          evidence: ["autopilotHumanGateApproved=true", `autopilotActor=${actor}`]
+        }) ?? loop;
+        iterated = true;
+        continue;
+      }
+      pushStage({
+        id: "human-gate",
+        status: "BLOCKED",
+        detail: "Loop reached a human approval gate; autopilot stopped before source release.",
+        evidence: ["approveHumanGate=false", `pendingApprovals=${loop.approvals.filter((approval) => approval.status === "PENDING").length}`]
+      });
+      return finalizeLoopOrchestrationAutopilot({ status: "BLOCKED", target, loop, releaseRun, stages, evidence, nextAction: "human-approval" });
+    }
+    if (loop.status === "PENDING") {
+      loop = store.startLoop(loop.id, actor, { evidence: ["autopilot.iterate=start"] }) ?? loop;
+      iterated = true;
+      continue;
+    }
+    if (loop.status === "RUNNING" || loop.status === "BLOCKED") {
+      loop = store.resumeLoop(loop.id, actor, { evidence: ["autopilot.iterate=resume"] }) ?? loop;
+      iterated = true;
+      continue;
+    }
+    break;
+  }
+  pushStage({
+    id: "iterate",
+    status: loop.status === "SUCCEEDED" ? "SUCCEEDED" : iterated ? "BLOCKED" : "SKIPPED",
+    detail: `Loop status is ${loop.status} after bounded autopilot iteration.`,
+    evidence: [`loopStatus=${loop.status}`, `iteration=${loop.currentIteration}`, `maxSteps=${maxSteps}`]
+  });
+
+  if (loop.status !== "SUCCEEDED") {
+    return finalizeLoopOrchestrationAutopilot({ status: "BLOCKED", target, loop, releaseRun, stages, evidence, nextAction: loop.status === "WAITING_APPROVAL" ? "human-approval" : "repair" });
+  }
+
+  const shouldExecuteClosure = request.executeSourceClosure !== false && loop.sourceClosure.closureState !== "PROMOTED";
+  if (shouldExecuteClosure) {
+    try {
+      const sourceClosure = await executeLoopSourceClosure(store, loop.id, actor, {
+        files: normalizeSourceClosureFiles(request.files).length > 0 ? normalizeSourceClosureFiles(request.files) : defaultAutopilotSourceClosureFiles(loop, target),
+        tagName: optionalTrimmedString(request.tagName),
+        deployConnectorId: optionalTrimmedString(request.deployConnectorId),
+        deploymentUrl: optionalTrimmedString(request.deploymentUrl),
+        healthUrl: optionalTrimmedString(request.healthUrl),
+        readyUrl: optionalTrimmedString(request.readyUrl),
+        createReviewRequest: request.createReviewRequest !== false,
+        commitMessage: optionalTrimmedString(request.commitMessage) ?? `EvoPilot autopilot source closure for ${loop.id}`
+      });
+      loop = sourceClosure?.loop ?? loop;
+      releaseRun = sourceClosure?.releaseRun;
+      pushStage({
+        id: "source-closure",
+        status: loop.sourceClosure.closureState === "PROMOTED" ? "SUCCEEDED" : "BLOCKED",
+        detail: `Source closure reached ${loop.sourceClosure.closureState}.`,
+        evidence: [`closureState=${loop.sourceClosure.closureState}`, `releaseRun=${releaseRun?.id ?? "none"}`]
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      pushStage({ id: "source-closure", status: "FAILED", detail: message, evidence: [`error=${message}`] });
+      return finalizeLoopOrchestrationAutopilot({ status: "FAILED", target, loop, releaseRun, stages, evidence, nextAction: "source-closure" });
+    }
+  } else {
+    releaseRun = store.listSourceReleaseClosureRuns(loop.id).at(-1);
+    pushStage({ id: "source-closure", status: "SKIPPED", detail: `Source closure is ${loop.sourceClosure.closureState}.`, evidence: [`closureState=${loop.sourceClosure.closureState}`] });
+  }
+
+  if (request.autoMerge === false) {
+    return finalizeLoopOrchestrationAutopilot({ status: "BLOCKED", target, loop, releaseRun, stages, evidence, nextAction: "policy-review" });
+  }
+
+  try {
+    const decision = await applySourceClosureReviewDecision(store, loop.id, actor, {
+      action: "auto-merge",
+      autoMerge: true,
+      postMergeDeploy: request.postMergeDeploy !== false,
+      commitMessage: optionalTrimmedString(request.mergeCommitMessage) ?? `EvoPilot safe auto-merge ${loop.id}`
+    });
+    loop = decision?.loop ?? loop;
+    releaseRun = decision?.releaseRun ?? releaseRun;
+    pushStage({
+      id: "safe-auto-merge",
+      status: releaseRun?.review?.status === "MERGED" ? "SUCCEEDED" : "BLOCKED",
+      detail: `Release review is ${releaseRun?.review?.status ?? "UNKNOWN"} and policy is ${releaseRun?.policy?.status ?? "UNKNOWN"}.`,
+      evidence: [
+        `review=${releaseRun?.review?.status ?? "UNKNOWN"}`,
+        `policy=${releaseRun?.policy?.status ?? "UNKNOWN"}`,
+        `postMergeDeploy=${releaseRun?.postMergeDeployment?.status ?? "UNKNOWN"}`
+      ]
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    loop = store.readLoop(loop.id) ?? loop;
+    releaseRun = store.listSourceReleaseClosureRuns(loop.id).at(-1) ?? releaseRun;
+    pushStage({
+      id: "safe-auto-merge",
+      status: "BLOCKED",
+      detail: message,
+      evidence: [`error=${message}`, `policy=${releaseRun?.policy?.status ?? "UNKNOWN"}`]
+    });
+    return finalizeLoopOrchestrationAutopilot({ status: "BLOCKED", target, loop, releaseRun, stages, evidence, nextAction: "policy-review" });
+  }
+
+  return finalizeLoopOrchestrationAutopilot({
+    status: releaseRun?.review?.status === "MERGED" ? "SUCCEEDED" : "BLOCKED",
+    target,
+    loop,
+    releaseRun,
+    stages,
+    evidence,
+    nextAction: releaseRun?.review?.status === "MERGED" ? "done" : "policy-review"
+  });
+}
+
+function finalizeLoopOrchestrationAutopilot(input: {
+  status: LoopOrchestrationAutopilotResult["status"];
+  target: LoopOrchestrationTarget;
+  loop?: LoopRun;
+  releaseRun?: SourceReleaseClosureRun;
+  stages: LoopOrchestrationAutopilotResult["stages"];
+  evidence: string[];
+  nextAction: LoopOrchestrationAutopilotResult["nextAction"];
+}): LoopOrchestrationAutopilotResult {
+  return {
+    schema: "evopilot-loop-orchestration-autopilot/v1",
+    status: input.status,
+    target: input.target,
+    loop: input.loop,
+    releaseRun: input.releaseRun,
+    stages: input.stages,
+    nextAction: input.nextAction,
+    evidence: input.evidence,
+    createdAt: new Date().toISOString()
+  };
+}
+
+function defaultAutopilotSourceClosureFiles(loop: LoopRun, target: LoopOrchestrationTarget): Array<{ path: string; content: string }> {
+  return [{
+    path: `docs/evopilot-source-closures/${safeFileName(loop.id)}.md`,
+    content: [
+      `# EvoPilot Autopilot Source Closure`,
+      ``,
+      `Loop: ${loop.id}`,
+      `Target: ${target.id}`,
+      `Target title: ${target.title}`,
+      `Objective: ${loop.objective}`,
+      `Provider: ${loop.sourceClosure.repositoryProvider}`,
+      `Source branch: ${loop.sourceClosure.sourceBranch}`,
+      `Target version: ${loop.sourceClosure.targetVersion ?? "unspecified"}`,
+      ``,
+      `## Acceptance Criteria`,
+      ...target.acceptanceCriteria.map((item) => `- ${item}`),
+      ``,
+      `## Autopilot Evidence`,
+      `- production-self-evolution-autopilot=true`,
+      `- sourceClosure.requiredGates=${loop.sourceClosure.requiredGates.join(",")}`,
+      `- sandbox=${loop.sandbox.runtime}/${loop.sandbox.network}/${loop.sandbox.credentialScope}`,
+      `- coordination=${loop.coordination.mode}/${loop.coordination.nodes.length} executors`,
+      ``
+    ].join("\n")
+  }];
 }
 
 function createOrchestrationTargetLoop(store: FileStore, target: LoopOrchestrationTarget, input: {

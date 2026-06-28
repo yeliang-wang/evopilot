@@ -184,6 +184,8 @@ test("server serves dashboard static files", async () => {
     assert.match(app, /\/code-upgrade/);
     assert.match(app, /Codex target loop/);
     assert.match(app, /\/api\/v1\/loop-orchestration\/advance/);
+    assert.match(app, /一键自动驾驶/);
+    assert.match(app, /\/api\/v1\/loop-orchestration\/autopilot/);
     assert.match(app, /Worker Queue Workbench/);
     assert.match(app, /\/api\/v1\/loop-workers\/claim/);
     assert.match(app, /Context Time Travel Workbench/);

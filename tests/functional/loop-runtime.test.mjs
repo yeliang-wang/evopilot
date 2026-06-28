@@ -623,6 +623,33 @@ test("Loop source closure executes GitHub source writeback gates", async () => {
     assert.equal(runs.status, 200);
     assert.equal(runs.body.data.at(-1).id, executed.body.data.sourceReleaseRun.id);
 
+    const autopilot = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/autopilot`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        targetId: "codex-loop-target-autopilot",
+        projectId: "github-source",
+        targetVersion: "2.2.0",
+        deployConnectorId: "prod-webhook",
+        controlPlaneUrl: baseUrl,
+        approveHumanGate: true,
+        autoMerge: true,
+        postMergeDeploy: true,
+        maxSteps: 8
+      }
+    });
+    assert.equal(autopilot.status, 200);
+    assert.equal(autopilot.body.data.schema, "evopilot-loop-orchestration-autopilot/v1");
+    assert.equal(autopilot.body.data.status, "SUCCEEDED");
+    assert.equal(autopilot.body.data.nextAction, "done");
+    assert.equal(autopilot.body.data.target.id, "codex-loop-target-autopilot");
+    assert.equal(autopilot.body.data.loop.status, "SUCCEEDED");
+    assert.equal(autopilot.body.data.loop.sourceClosure.closureState, "PROMOTED");
+    assert.equal(autopilot.body.data.releaseRun.review.status, "MERGED");
+    assert.equal(autopilot.body.data.releaseRun.policy.status, "PASS");
+    assert.equal(autopilot.body.data.releaseRun.postMergeDeployment.status, "SUCCEEDED");
+    assert.ok(autopilot.body.data.stages.some((stage) => stage.id === "safe-auto-merge" && stage.status === "SUCCEEDED"));
+
     const blockedLoop = await jsonFetch(`${baseUrl}/api/v1/loops`, {
       method: "POST",
       token: "operator-token",
@@ -1344,7 +1371,7 @@ function createFakeSourceClosureGitHubServer() {
     if (request.url === "/repos/org/repo/git/refs" && request.method === "POST") {
       return json(response, { ref: "refs/heads/evopilot/github-source-loop-2.0.0", object: { sha: "base-sha" } });
     }
-    if (request.url === "/repos/org/repo/contents/docs/source-closure.md" && request.method === "PUT") {
+    if ((request.url === "/repos/org/repo/contents/docs/source-closure.md" || request.url?.startsWith("/repos/org/repo/contents/docs/evopilot-source-closures/")) && request.method === "PUT") {
       return json(response, { commit: { sha: "github-commit-sha" }, content: { html_url: "http://github/blob/docs/source-closure.md" } });
     }
     if (request.url === "/repos/org/repo/pulls" && request.method === "POST") {
