@@ -97,7 +97,8 @@ The built-in `ga` release target requires:
 | Active code-upgrade delta | 5 |
 | Active CI/CD pipeline delta | 5 |
 | Successful runs, evolution batches, code upgrades, and pipelines | 5 each |
-| Required release scenarios | 10 |
+| Required release scenarios | 11 |
+| Mainstream Loop Harness alignment | Required evidence against LangGraph, CrewAI, AutoGen, OpenAI Agents SDK, E2B, Temporal, and DBOS-style baselines |
 
 Run the active stability proof:
 

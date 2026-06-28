@@ -81,6 +81,7 @@ EvoPilot should:
 - let high-risk actions continue through explicit approval gates.
 - preserve enough timeline and structured logs for recovery and production debugging.
 - make `GET /api/v1/release/decisions` the product-native release verdict.
+- require mainstream Loop Harness alignment evidence before GA stable release. The GA target must explicitly compare EvoPilot with current GitHub-popular adjacent projects such as LangGraph, CrewAI, AutoGen, OpenAI Agents SDK, E2B, Temporal, and DBOS across durable execution, checkpoint/persistence, human-in-loop, sandbox, multi-executor coordination, streaming trace, guardrails, and source-to-production closure.
 
 ## Relationship To Loop Runtime
 

@@ -396,6 +396,7 @@ EvoPilot 自身定义“什么才算 GA Release”。外部 AI、通用 sub agen
 | 成功进化批次数 | 5 |
 | 成功代码升级数 | 5 |
 | 成功 CI/CD 数 | 5 |
+| 主流 Loop Harness 对齐证据 | 必须提供 |
 
 默认 `ga` 必跑场景：
 
@@ -409,6 +410,9 @@ EvoPilot 自身定义“什么才算 GA Release”。外部 AI、通用 sub agen
 - `restart-recovery`
 - `rollback`
 - `data-governance`
+- `mainstream-loop-harness-alignment`
+
+`mainstream-loop-harness-alignment` 用于把 GA stable 的外部基线产品化：release evidence 必须说明 EvoPilot 与 GitHub 主流 Agent/Loop Harness 项目的关键能力对齐，包括 durable execution、checkpoint/persistence、human-in-loop、sandbox、multi-executor coordination、streaming trace、guardrails 和 source-to-production closure。没有这项场景证据时，release decision 会生成独立的 `mainstream-loop-harness-alignment` criterion，并返回 `NO-GO`。
 
 `POST /api/v1/release/evidence` 默认使用 `releaseTargetId: "ga"`，返回的证据包会包含：
 

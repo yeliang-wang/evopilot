@@ -4914,6 +4914,11 @@ class FileStore {
         const scenario = scenarioMatrix.find((item) => item.id === id);
         return `${id}=${scenario?.status ?? "MISSING"}`;
       })),
+      booleanCriterion("mainstream-loop-harness-alignment", "主流 Loop Harness 对齐证据", !target.requiredScenarioIds.includes("mainstream-loop-harness-alignment") || scenarioMatrix.some((scenario) => scenario.id === "mainstream-loop-harness-alignment" && scenario.status === "PASS"), true, [
+        target.requiredScenarioIds.includes("mainstream-loop-harness-alignment")
+          ? scenarioMatrix.find((scenario) => scenario.id === "mainstream-loop-harness-alignment")?.evidence.join("; ") ?? "missing mainstream-loop-harness-alignment scenario"
+          : "not required by release target"
+      ]),
       booleanCriterion("no-high-open-risks", "无高危未关闭风险", target.requireNoHighOpenRisks ? highOpenRiskCount === 0 : true, true, [`highOpenRisks=${highOpenRiskCount}`])
     ];
     const failedRequired = criteria.filter((criterion) => criterion.required && criterion.status === "FAIL");
@@ -9288,7 +9293,8 @@ function defaultGAReleaseTarget(): ReleaseTargetProfile {
       "multi-project-isolation",
       "restart-recovery",
       "rollback",
-      "data-governance"
+      "data-governance",
+      "mainstream-loop-harness-alignment"
     ],
     requireNoHighOpenRisks: true,
     createdAt: now,
@@ -9596,6 +9602,10 @@ function defaultReleaseScenarioMatrix(args: {
     scenario("data-governance", "数据治理", Number(summary.projectCount ?? 0) >= 0 && Array.isArray(summary.recentSoakReports) ? "PASS" : "NOT-RUN", [
       `soakReports=${Array.isArray(summary.recentSoakReports) ? summary.recentSoakReports.length : 0}`,
       "release evidence is generated without secrets"
+    ], true, now),
+    scenario("mainstream-loop-harness-alignment", "主流 Loop Harness 对齐", "NOT-RUN", [
+      "未提供 LangGraph/CrewAI/AutoGen/OpenAI Agents SDK/E2B/Temporal/DBOS 等主流 Agent/Loop Harness 对齐证据。",
+      "GA stable 需要证明 durable execution、checkpoint/persistence、human-in-loop、sandbox、multi-executor coordination、streaming trace、guardrails 和 source-to-production closure 已覆盖。"
     ], true, now)
   ];
 }

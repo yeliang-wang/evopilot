@@ -1281,7 +1281,8 @@ test("release evidence endpoint persists release candidate evidence without leak
       target.requireActiveSoak === true &&
       target.minActiveSoakRunDelta === 5 &&
       target.minActiveSoakCodeUpgradeDelta === 5 &&
-      target.minActiveSoakPipelineDelta === 5
+      target.minActiveSoakPipelineDelta === 5 &&
+      target.requiredScenarioIds.includes("mainstream-loop-harness-alignment")
     ));
 
     const decisions = await fetch(`${baseUrl}/api/v1/release/decisions`, {
@@ -1296,6 +1297,9 @@ test("release evidence endpoint persists release candidate evidence without leak
     assert.equal(connectedProjectCriterion.target, 5);
     assert.equal(connectedProjectCriterion.status, "FAIL");
     assert.ok(connectedProjectCriterion.actual < connectedProjectCriterion.target);
+    const mainstreamCriterion = decisionBody.data[0].criteria.find((criterion) => criterion.id === "mainstream-loop-harness-alignment");
+    assert.equal(mainstreamCriterion.status, "FAIL");
+    assert.match(mainstreamCriterion.evidence.join("\n"), /LangGraph|Loop Harness/);
 
     const summary = await fetch(`${baseUrl}/api/v1/summary`, {
       headers: { authorization: "Bearer viewer-token" }
