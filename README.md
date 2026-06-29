@@ -312,19 +312,20 @@ http://127.0.0.1:19876/
 
 ## 控制台
 
-Dashboard 位于 `apps/dashboard/`，当前一级菜单包括：
+Dashboard 位于 `apps/dashboard/`，当前一级菜单按 Loop Engineering 生命周期组织：
 
 | 菜单 | 用途 |
 |---|---|
-| 首页 | 展示 APM 风格进化观测图，查看接入项目与证据流拓扑。 |
-| 接入项目 | 注册 GitLab、GitHub 或本地 Git 项目，查看项目成熟度 Scorecard，验证通过后进入下游流程。 |
-| 证据策略 | 用自然语言定义进化触发规则，系统编译并落盘为 Markdown。 |
-| 评测集 | 查看线上证据沉淀出的 Eval Dataset / Regression Suite，并多选形成机会点。 |
-| 机会点 | 查看触发来源、策略、项目、IP、证据摘要、置信度、失败归因、治理等级和可编辑 Markdown 方案。 |
-| 流水线 | 查看用户确认后的代码升级白盒过程，以及成功后的 CI/CD 阶段。 |
-| 历史记录 | 查看已完成演进、验证证据、产物和执行链路。 |
+| 工作台 | 展示 Autopilot Cockpit、人工待办中心、端到端流程入口和进化观测图。 |
+| 项目接入 | 通过 GitHub、GitLab 或本地 Git 向导注册项目，验证源码凭据、CI/CD 和部署连接器。 |
+| 发现与目标 | 统一展示 Discovery Runtime、Target Runtime、Target Backlog、证据策略、评测集和机会点。 |
+| Loop 执行 | 创建 source-to-production loop，查看 Visual Loop Run Canvas、worker queue、runtime 表格、trace、replay 和 sandbox 证据。 |
+| 评估与发布 | 展示 Release Cockpit、guardrail、adversarial evaluation、CI/CD、repair queue、deploy finalizer 和 source release artifacts。 |
+| 历史审计 | 查看已完成演进、验证证据、产物和审计链路。 |
 
-首页还会展示平均服务分、SLO 健康、错误预算、失败策略、供应链风险、运行时就绪、成本健康、发布就绪、发布阻断、灰度就绪和灰度阻断。供应链风险和运行时就绪来自 `runtimes/runtime-lock.json`，成本健康来自运行证据中的 `costUsd`、`totalTokens`、`inputTokens`、`outputTokens` 等字段，发布就绪度来自 `/api/v1/release/readiness`，灰度策略来自 `/api/v1/rollout/strategies`。
+旧入口仍保持兼容：`首页` 映射到 `工作台`，`接入项目` 映射到 `项目接入`，`证据策略` / `评测集` / `机会点` 映射到 `发现与目标`，`Loop` 映射到 `Loop 执行`，`流水线` 映射到 `评估与发布`，`历史记录` 映射到 `历史审计`。
+
+工作台还会展示平均服务分、SLO 健康、错误预算、失败策略、供应链风险、运行时就绪、成本健康、发布就绪、发布阻断、灰度就绪和灰度阻断。供应链风险和运行时就绪来自 `runtimes/runtime-lock.json`，成本健康来自运行证据中的 `costUsd`、`totalTokens`、`inputTokens`、`outputTokens` 等字段，发布就绪度来自 `/api/v1/release/readiness`，灰度策略来自 `/api/v1/rollout/strategies`。
 
 也可以只打开静态控制台：
 

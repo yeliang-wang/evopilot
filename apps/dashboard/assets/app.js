@@ -357,6 +357,8 @@ function renderPage(page) {
 function renderHome() {
   return `
     ${renderHomeCommandCenter()}
+    ${renderAutopilotCommandCenter()}
+    ${renderHumanActionInbox()}
     ${renderFlowHeader()}
     ${renderEvolutionObservabilityMap()}
   `;
@@ -433,9 +435,155 @@ function renderFlowHeader() {
   `;
 }
 
+function renderAutopilotCommandCenter() {
+  const selectedProject = state.projects.find((project) => /已验证|健康/.test(`${project.validation}${project.status}`)) ?? state.projects[0];
+  const nextTarget = state.loopOrchestrationTargets.find((target) => target.status === "RUNNING")
+    ?? state.loopOrchestrationTargets.find((target) => target.status === "PENDING")
+    ?? state.loopOrchestrationTargets[0];
+  const activeLoop = state.loops.find((loop) => ["RUNNING", "WAITING_APPROVAL", "BLOCKED"].includes(loop.status)) ?? state.loops[0];
+  const readiness = autopilotReadinessModel(selectedProject, nextTarget);
+  return `
+    <section class="autopilot-cockpit" aria-label="Loop autopilot command center">
+      <div class="autopilot-main">
+        <span class="eyebrow">Autopilot cockpit</span>
+        <h2>一键自动驾驶从项目到生产发布</h2>
+        <p>选择已接入项目和下一个 target，EvoPilot 会按预算、凭据、CI/CD、发布门禁和人工确认边界推进源码闭环。</p>
+        <div class="autopilot-route" aria-label="自动驾驶闭环路径">
+          ${["Connect", "Discover", "Loop", "Evaluate", "Release"].map((step, index) => `
+            <div class="route-node ${readiness[index]?.ready ? "ready" : "blocked"}">
+              <span>${index + 1}</span>
+              <strong>${step}</strong>
+              <small>${escapeHtml(readiness[index]?.label ?? "pending")}</small>
+            </div>
+          `).join("")}
+        </div>
+        <div class="autopilot-actions">
+          <button class="primary" data-action="autopilot-loop-target" data-target-id="${escapeHtml(nextTarget?.id ?? "")}">启动一键自动驾驶</button>
+          <button data-page-link="项目接入">检查接入</button>
+          <button data-page-link="评估与发布">查看发布门禁</button>
+        </div>
+      </div>
+      <aside class="autopilot-side">
+        <div>
+          <span>项目</span>
+          <strong>${escapeHtml(selectedProject?.name ?? "等待接入项目")}</strong>
+          <small>${escapeHtml(selectedProject?.repository ?? "未注册 Git 源码")} / ${escapeHtml(selectedProject?.credentials ?? "未配置凭据")}</small>
+        </div>
+        <div>
+          <span>Target</span>
+          <strong>${escapeHtml(nextTarget?.title ?? "等待 target backlog")}</strong>
+          <small>${escapeHtml(nextTarget?.nextAction ?? "运行 Discovery 或手动创建 Loop")}</small>
+        </div>
+        <div>
+          <span>当前 Loop</span>
+          <strong>${escapeHtml(activeLoop?.status ?? "未启动")}</strong>
+          <small>${escapeHtml(activeLoop?.id ?? "创建闭环 Loop 后进入运行视图")}</small>
+        </div>
+      </aside>
+    </section>
+  `;
+}
+
+function autopilotReadinessModel(project, target) {
+  return [
+    { ready: Boolean(project), label: project?.validation ?? "no project" },
+    { ready: state.loopTargetRuntime.discoveryCandidates.length > 0 || state.opportunities.length > 0, label: `${state.loopTargetRuntime.discoveryCandidates.length + state.opportunities.length} signals` },
+    { ready: Boolean(target || state.loops.length), label: target?.status ?? `${state.loops.length} loops` },
+    { ready: state.loopTargetRuntime.guardrailEvaluations.length > 0 || state.sourceReleaseRuns.length > 0, label: `${state.loopTargetRuntime.guardrailEvaluations.length} guardrails` },
+    { ready: state.sourceReleaseRuns.some((run) => ["PROMOTED", "SUCCEEDED"].includes(run.status)), label: `${state.sourceReleaseRuns.length} release runs` }
+  ];
+}
+
+function renderHumanActionInbox() {
+  const items = humanActionInboxModel();
+  return `
+    <section class="action-inbox" aria-label="Human action inbox">
+      <div class="section-title">
+        <div>
+          <h2>人工待办中心</h2>
+          <p>把待补凭据、待批准、待修复、待 replay 和待发布动作集中到一个队列，避免用户在多个页面里找下一步。</p>
+        </div>
+        <span class="pill ${items.length ? "warn" : "good"}">${items.length} 个待办</span>
+      </div>
+      <div class="inbox-list">
+        ${items.slice(0, 6).map((item) => `
+          <article class="inbox-item ${item.tone}">
+            <div>
+              <span>${escapeHtml(item.type)}</span>
+              <strong>${escapeHtml(item.title)}</strong>
+              <small>${escapeHtml(item.detail)}</small>
+            </div>
+            <button ${item.action ? `data-action="${escapeHtml(item.action)}"` : `data-page-link="${escapeHtml(item.page)}"`} ${item.id ? `data-id="${escapeHtml(item.id)}"` : ""} ${item.runId ? `data-run-id="${escapeHtml(item.runId)}"` : ""} ${item.finalGate ? `data-final-gate="${escapeHtml(item.finalGate)}"` : ""}>${escapeHtml(item.cta)}</button>
+          </article>
+        `).join("") || renderEmptyState("暂无人工待办", "当前没有阻塞项。Loop 进入批准、凭据、修复、replay 或发布门禁时会出现在这里。")}
+      </div>
+    </section>
+  `;
+}
+
+function humanActionInboxModel() {
+  const credentialItems = state.projects
+    .filter((project) => project.hasRepository && !/已配置|tokenRef|inline token/.test(String(project.credentials)))
+    .map((project) => ({
+      type: "凭据",
+      title: `${project.name} 缺少源码写回凭据`,
+      detail: "GitHub/GitLab 写回前需要 tokenRef 或 inline token 预检通过。",
+      cta: "配置凭据",
+      action: "open-source-credential-config",
+      id: project.id,
+      tone: "warn"
+    }));
+  const approvalItems = state.loops
+    .filter((loop) => loop.status === "WAITING_APPROVAL")
+    .map((loop) => {
+      const finalGate = Number(loop.currentIteration ?? 0) >= Number(loop.stopPolicy?.maxIterations ?? Number.POSITIVE_INFINITY);
+      return {
+      type: "批准",
+      title: loop.objective,
+      detail: `${loop.id} 等待人工批准继续或完成。`,
+      cta: finalGate ? "批准完成" : "批准并继续",
+      action: "approve-loop",
+      id: loop.id,
+      finalGate: finalGate ? "true" : "false",
+      tone: "warn"
+    };
+    });
+  const repairItems = state.sourceReleaseRepairCandidates.map((candidate) => ({
+    type: "修复",
+    title: `${candidate.loopId} release run 失败`,
+    detail: candidate.reason ?? "source release run 需要修复。",
+    cta: "修复",
+    action: "repair-source-release-candidate",
+    runId: candidate.runId,
+    tone: "bad"
+  }));
+  const releaseItems = state.sourceReleaseRuns
+    .filter((run) => ["PENDING_REVIEW", "POLICY_BLOCKED", "FAILED", "HEALTH_FAILED"].includes(run.status) || run.review?.status === "PENDING")
+    .map((run) => ({
+      type: "发布",
+      title: `${run.loopId ?? run.id} 等待 release 决策`,
+      detail: `${run.status ?? "PLANNED"} / ${run.nextAction ?? "review"}`,
+      cta: "查看发布",
+      page: "评估与发布",
+      tone: run.status === "FAILED" || run.status === "HEALTH_FAILED" ? "bad" : "warn"
+    }));
+  const inboxItems = (state.loopTargetRuntime.memoryInbox ?? [])
+    .filter((item) => ["NEW", "ACCEPTED"].includes(item.status))
+    .map((item) => ({
+      type: "记忆",
+      title: item.title ?? item.id,
+      detail: `${item.status} / ${item.targetId ?? item.type ?? "memory"}`,
+      cta: "处理",
+      page: "发现与目标",
+      tone: "neutral"
+    }));
+  return [...credentialItems, ...approvalItems, ...repairItems, ...releaseItems, ...inboxItems];
+}
+
 function renderDiscoveryAndTargets() {
   return `
     ${renderFlowHeader()}
+    ${renderHumanActionInbox()}
     <div class="page-brief">
       <div>
         <span class="eyebrow">Discovery and target control</span>
@@ -461,10 +609,12 @@ function renderLoopExecution() {
   const store = state.loopStore;
   return `
     ${renderFlowHeader()}
+    ${renderAutopilotCommandCenter()}
     <div class="loop-command-grid">
       ${renderLoopOrchestrationPanel()}
       ${renderLoopWorkerQueuePanel()}
     </div>
+    ${renderVisualLoopRunCanvas(loops)}
     <section class="card">
       <div class="section-title">
         <div>
@@ -488,6 +638,7 @@ function renderLoopExecution() {
 function renderEvaluationAndRelease() {
   return `
     ${renderFlowHeader()}
+    ${renderReleaseCockpit()}
     <div class="page-brief">
       <div>
         <span class="eyebrow">Evaluation and release gates</span>
@@ -507,6 +658,134 @@ function renderEvaluationAndRelease() {
       ${renderSourceReleaseDeployFinalizersPanel()}
     </div>
     ${state.loops.slice(0, 2).map(renderLoopDetail).join("")}
+  `;
+}
+
+function renderVisualLoopRunCanvas(loops) {
+  const loop = loops.find((item) => ["RUNNING", "WAITING_APPROVAL", "BLOCKED"].includes(item.status)) ?? loops[0];
+  const closure = loop?.sourceClosure ?? {};
+  const trace = loop?.trace ?? {};
+  const nodes = [
+    {
+      id: "target",
+      label: "Target",
+      value: loop?.objective ?? state.loopOrchestrationTargets[0]?.title ?? "等待 target",
+      status: loop ? loop.status : "PENDING"
+    },
+    {
+      id: "graph",
+      label: "Executor graph",
+      value: loop?.executorGraphId ?? "dashboard-source-release-closure",
+      status: loop?.coordination?.mode ?? "serial"
+    },
+    {
+      id: "sandbox",
+      label: "Sandbox",
+      value: `${loop?.sandbox?.runtime ?? "docker"} / ${loop?.sandbox?.network ?? "restricted"}`,
+      status: loop?.sandboxEnforcement?.status ?? "PENDING"
+    },
+    {
+      id: "worker",
+      label: "Worker",
+      value: loop?.workerLease?.workerId ?? "等待 claim",
+      status: loop?.workerLease ? "LEASED" : "UNCLAIMED"
+    },
+    {
+      id: "trace",
+      label: "Trace",
+      value: `${trace.executorStepCount ?? 0} steps / ${trace.failedStepCount ?? 0} failed`,
+      status: (trace.failureSignatures ?? []).length ? "ATTENTION" : "OK"
+    },
+    {
+      id: "release",
+      label: "Release",
+      value: closure.targetVersion ?? latestSourceReleaseRun(loop?.id)?.id ?? "等待发布",
+      status: closure.closureState ?? latestSourceReleaseRun(loop?.id)?.status ?? "PLANNED"
+    }
+  ];
+  return `
+    <section class="loop-canvas" aria-label="Visual loop run canvas">
+      <div class="section-title">
+        <div>
+          <h2>Visual Loop Run Canvas</h2>
+          <p>把 target、executor graph、sandbox、worker、trace 和 release gate 合成一张运行图，替代表格里来回查找状态。</p>
+        </div>
+        <span class="pill ${loop?.status === "RUNNING" ? "good" : loop ? "warn" : ""}">${escapeHtml(loop?.status ?? "等待 Loop")}</span>
+      </div>
+      <div class="canvas-lane">
+        ${nodes.map((node, index) => `
+          <article class="canvas-node ${String(node.status).toLowerCase()}">
+            <span>${index + 1}</span>
+            <strong>${escapeHtml(node.label)}</strong>
+            <small>${escapeHtml(String(node.value))}</small>
+            <b>${escapeHtml(String(node.status))}</b>
+          </article>
+        `).join("")}
+      </div>
+      <div class="canvas-evidence">
+        <div>
+          <span>最新事件</span>
+          <strong>${escapeHtml(loop?.timeline?.at(-1)?.message ?? "等待启动")}</strong>
+        </div>
+        <div>
+          <span>Checkpoint</span>
+          <strong>${loop?.iterations?.length ?? 0} 个</strong>
+        </div>
+        <div>
+          <span>Failure grouping</span>
+          <strong>${trace.failureSignatures?.length ?? 0} 类</strong>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderReleaseCockpit() {
+  const releaseRun = [...(state.sourceReleaseRuns ?? [])]
+    .sort((left, right) => new Date(right.updatedAt ?? right.createdAt ?? 0) - new Date(left.updatedAt ?? left.createdAt ?? 0))[0];
+  const matchingLoop = releaseRun ? state.loops.find((loop) => loop.id === releaseRun.loopId) : state.loops[0];
+  const closure = matchingLoop?.sourceClosure ?? {};
+  const gates = [
+    ["code-change", "代码变更"],
+    ["push", "推送分支"],
+    ["review", "PR/MR 审核"],
+    ["merge", "合并"],
+    ["deploy", "部署"],
+    ["health-ready", "健康探测"]
+  ];
+  return `
+    <section class="release-cockpit" aria-label="Release cockpit">
+      <div class="release-cockpit-head">
+        <div>
+          <span class="eyebrow">Release cockpit</span>
+          <h2>源码到生产发布检查清单</h2>
+          <p>把 CI、评估、PR/MR、merge、deploy、health 和 rollback 合并为一个可决策视图。</p>
+        </div>
+        <div class="release-cockpit-status">
+          <strong>${escapeHtml(releaseRun?.status ?? closure.closureState ?? "PLANNED")}</strong>
+          <span>${escapeHtml(releaseRun?.nextAction ?? "等待 source closure")}</span>
+        </div>
+      </div>
+      <div class="release-checklist">
+        ${gates.map(([gate, label]) => {
+          const evidence = closure.gateEvidence?.[gate];
+          const stage = (releaseRun?.stages ?? []).find((item) => item.gate === gate);
+          const status = evidence?.status ?? stage?.status ?? "PENDING";
+          return `
+            <div class="release-check ${String(status).toLowerCase()}">
+              <span>${escapeHtml(status)}</span>
+              <strong>${label}</strong>
+              <small>${escapeHtml((evidence?.evidence ?? stage?.evidence ?? []).at(-1) ?? gate)}</small>
+            </div>
+          `;
+        }).join("")}
+      </div>
+      <div class="release-cockpit-actions">
+        <button data-page-link="Loop 执行">查看运行图</button>
+        <button data-action="load-source-release-run" data-id="${escapeHtml(matchingLoop?.id ?? "")}" ${matchingLoop ? "" : "disabled"}>刷新 Release Run</button>
+        <button class="primary" data-action="auto-merge-source-release" data-id="${escapeHtml(matchingLoop?.id ?? "")}" ${matchingLoop && (releaseRun?.review?.status === "PENDING" || releaseRun?.review?.status === "APPROVED") ? "" : "disabled"}>安全自动合并</button>
+      </div>
+    </section>
   `;
 }
 
@@ -678,6 +957,7 @@ function averageProjectScore() {
 function renderProjects() {
   return `
     ${renderFlowHeader()}
+    ${renderGuidedOnboardingPanel()}
     <section class="card">
       <div class="section-title">
         <div>
@@ -729,6 +1009,71 @@ function renderProjects() {
     </section>
     ${state.showProjectRegistrationModal ? renderProjectRegistrationModal() : ""}
     ${state.showSourceCredentialModal ? renderSourceCredentialModal() : ""}
+  `;
+}
+
+function renderGuidedOnboardingPanel() {
+  const verified = state.projects.filter((project) => /已验证|健康/.test(`${project.validation}${project.status}`)).length;
+  const withCredentials = state.projects.filter((project) => project.hasRepository && /已配置|tokenRef|inline token/.test(String(project.credentials))).length;
+  const deployReady = state.deployConnectors.filter((connector) => connector.tokenConfigured || connector.type).length;
+  const steps = [
+    {
+      title: "选择接入源",
+      detail: "GitHub、GitLab 或本地 Git 目录。",
+      state: state.projects.length ? `${state.projects.length} 个项目` : "等待注册",
+      ready: state.projects.length > 0
+    },
+    {
+      title: "验证源码凭据",
+      detail: "写回 tokenRef、默认分支和只读预检。",
+      state: `${withCredentials}/${state.projects.filter((project) => project.hasRepository).length} 已配置`,
+      ready: withCredentials > 0 || state.projects.every((project) => !project.hasRepository)
+    },
+    {
+      title: "绑定交付链路",
+      detail: "Jenkins、部署连接器、health/ready 探测。",
+      state: `${deployReady} 个部署连接器`,
+      ready: deployReady > 0
+    },
+    {
+      title: "进入 Loop",
+      detail: "验证通过后可进入 discovery、target 和 autopilot。",
+      state: `${verified} 个验证通过`,
+      ready: verified > 0
+    }
+  ];
+  return `
+    <section class="onboarding-guide" aria-label="Project onboarding guide">
+      <div class="section-title">
+        <div>
+          <h2>项目接入向导</h2>
+          <p>把仓库、凭据、CI/CD 和部署连接器按真实用户接入顺序拆成四步，降低第一次接入成本。</p>
+        </div>
+        <button class="primary" data-action="open-project-registration">注册项目</button>
+      </div>
+      <div class="provider-switcher" aria-label="接入方式">
+        ${[
+          ["GitHub", "远程仓库、PR、tokenRef"],
+          ["GitLab", "远程仓库、MR、私有部署"],
+          ["Local Git", "本地目录、离线验证、调试闭环"]
+        ].map(([provider, detail]) => `
+          <div class="provider-card">
+            <strong>${provider}</strong>
+            <span>${detail}</span>
+          </div>
+        `).join("")}
+      </div>
+      <div class="onboarding-steps">
+        ${steps.map((step, index) => `
+          <div class="onboarding-step ${step.ready ? "ready" : "pending"}">
+            <span>${index + 1}</span>
+            <strong>${step.title}</strong>
+            <small>${step.detail}</small>
+            <b>${step.state}</b>
+          </div>
+        `).join("")}
+      </div>
+    </section>
   `;
 }
 

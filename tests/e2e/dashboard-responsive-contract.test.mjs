@@ -30,6 +30,13 @@ test("dashboard ships responsive workbench contracts for dense operator pages", 
     assert.match(app, /renderEvaluationAndRelease/);
     assert.match(app, /renderLoopTargetRuntimePanel/);
     assert.match(app, /renderReleaseGuardrailPanel/);
+    assert.match(app, /renderAutopilotCommandCenter/);
+    assert.match(app, /renderHumanActionInbox/);
+    assert.match(app, /renderGuidedOnboardingPanel/);
+    assert.match(app, /renderVisualLoopRunCanvas/);
+    assert.match(app, /renderReleaseCockpit/);
+    assert.match(app, /autopilotReadinessModel/);
+    assert.match(app, /humanActionInboxModel/);
     assert.match(app, /normalizePage/);
     assert.match(app, /loopBacklogModel/);
     assert.match(app, /backlog-summary/);
@@ -42,6 +49,14 @@ test("dashboard ships responsive workbench contracts for dense operator pages", 
     assert.match(css, /\.command-center/);
     assert.match(css, /\.nav-section/);
     assert.match(css, /\.page-brief/);
+    assert.match(css, /\.autopilot-cockpit/);
+    assert.match(css, /\.action-inbox/);
+    assert.match(css, /\.onboarding-guide/);
+    assert.match(css, /\.loop-canvas/);
+    assert.match(css, /\.release-cockpit/);
+    assert.match(css, /\.canvas-lane/);
+    assert.match(css, /\.release-checklist/);
+    assert.match(css, /\.provider-switcher/);
     assert.match(css, /\.target-runtime-lists/);
     assert.match(css, /\.runtime-row/);
     assert.match(css, /\.backlog-summary/);
