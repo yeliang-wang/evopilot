@@ -5284,6 +5284,78 @@ function loopOrchestrationTargetDefinitions(): Array<Omit<LoopOrchestrationTarge
         "Credential and path restrictions are tested and recorded.",
         "Failed sandbox enforcement blocks non-human executor nodes."
       ]
+    },
+    {
+      id: "discovery-skill-runtime",
+      title: "Discovery Skill Runtime",
+      layer: "context",
+      presetId: "codex-target-loop",
+      objective: "Turn repository, trace, evaluation, and production signal discovery into a reusable skill runtime that proposes target loops with evidence instead of relying on manual backlog curation.",
+      acceptanceCriteria: [
+        "Connected GitHub, GitLab, and local directory projects expose a discovery skill contract with inputs, outputs, confidence, and evidence sources.",
+        "Discovery output can create or update target-loop candidates with acceptance criteria, affected files, and runtime evidence links.",
+        "Dashboard shows discovery provenance so users can distinguish product signals, code signals, and manually entered targets."
+      ]
+    },
+    {
+      id: "per-finding-worktree-handoff",
+      title: "Per Finding Worktree Handoff",
+      layer: "harness",
+      presetId: "codex-target-loop",
+      objective: "Give every selected finding an isolated worktree or branch handoff with bounded files, validation commands, source-closure metadata, and resumable executor context.",
+      acceptanceCriteria: [
+        "Each finding can allocate an isolated worktree, release branch, or executor workspace without contaminating other loop targets.",
+        "Handoff payload includes allowed paths, validation commands, source branch, target branch, and rollback metadata.",
+        "Failed or interrupted handoffs can be resumed, reassigned, or archived with artifacts and audit evidence."
+      ]
+    },
+    {
+      id: "adversarial-evaluator-agent",
+      title: "Adversarial Evaluator Agent",
+      layer: "harness",
+      presetId: "codex-target-loop",
+      objective: "Add an independent adversarial evaluator that challenges proposed code changes, release evidence, and target completion claims before merge or deployment.",
+      acceptanceCriteria: [
+        "Evaluator receives the proposed diff, tests, runtime evidence, budget impact, and release gates as structured input.",
+        "Evaluator can return PASS, WARN, or BLOCK with failure signatures, missing evidence, and suggested replay or repair actions.",
+        "Autopilot treats evaluator BLOCK as a policy-review or human-approval stop condition rather than self-approving the release."
+      ]
+    },
+    {
+      id: "recurring-loop-scheduler",
+      title: "Recurring Loop Scheduler",
+      layer: "loop",
+      presetId: "codex-target-loop",
+      objective: "Support recurring target-loop schedules driven by time windows, evidence thresholds, release cadence, and budget guardrails.",
+      acceptanceCriteria: [
+        "Users can define recurring loop schedules with project scope, target preset, cadence, trigger rules, and max budget.",
+        "Scheduler records due, skipped, blocked, and executed runs with idempotency keys and next-run timestamps.",
+        "Schedules respect human gates, source-credential blockers, release freezes, and active incident windows."
+      ]
+    },
+    {
+      id: "loop-memory-inbox",
+      title: "Loop Memory Inbox",
+      layer: "context",
+      presetId: "codex-target-loop",
+      objective: "Provide a product memory inbox where prior findings, user feedback, failed evaluations, release learnings, and operator notes can be triaged into future target loops.",
+      acceptanceCriteria: [
+        "Memory inbox stores typed items from evaluations, traces, release decisions, user feedback, and manual notes.",
+        "Users can accept, merge, snooze, reject, or convert inbox items into target-loop backlog entries.",
+        "Converted targets retain memory provenance and can be used by discovery, planning, replay, and evaluator agents."
+      ]
+    },
+    {
+      id: "budget-and-judgment-guardrails",
+      title: "Budget and Judgment Guardrails",
+      layer: "loop",
+      presetId: "codex-target-loop",
+      objective: "Make cost, token, time, blast-radius, confidence, and release-judgment guardrails explicit stop conditions for every autonomous loop.",
+      acceptanceCriteria: [
+        "Loop plans declare max cost, token, time, file-change, and deployment-risk budgets before execution.",
+        "Runtime records per-node cost, confidence, blast-radius, and policy judgment evidence for each iteration.",
+        "Autopilot blocks or routes to human review when budget, confidence, or release-judgment thresholds are exceeded."
+      ]
     }
   ];
 }

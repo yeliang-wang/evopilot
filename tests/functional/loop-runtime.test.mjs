@@ -209,6 +209,21 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.ok(targets.body.data.some((target) => target.id === "codex-loop-target-autopilot"));
     assert.ok(targets.body.data.some((target) => target.layer === "sandbox"));
     assert.ok(targets.body.data.every((target) => Array.isArray(target.acceptanceCriteria)));
+    for (const id of [
+      "discovery-skill-runtime",
+      "per-finding-worktree-handoff",
+      "adversarial-evaluator-agent",
+      "recurring-loop-scheduler",
+      "loop-memory-inbox",
+      "budget-and-judgment-guardrails"
+    ]) {
+      const target = targets.body.data.find((item) => item.id === id);
+      assert.ok(target, `${id} should be exposed as a target-loop backlog item`);
+      assert.equal(target.presetId, "codex-target-loop");
+      assert.ok(target.acceptanceCriteria.length >= 3);
+      assert.equal(target.status, "PENDING");
+      assert.equal(target.nextAction, "create-loop");
+    }
 
     const advanced = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/advance`, {
       method: "POST",
@@ -246,6 +261,24 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(advancedAgain.body.data.loop.id, advanced.body.data.loop.id);
     assert.equal(advancedAgain.body.data.action, "resume-loop");
     assert.equal(advancedAgain.body.data.loop.currentIteration, 2);
+
+    const discoveryAdvanced = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/advance`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        targetId: "discovery-skill-runtime",
+        projectId: "workbuddy",
+        targetVersion: "2.0.3",
+        controlPlaneUrl: baseUrl,
+        autoStart: false
+      }
+    });
+    assert.equal(discoveryAdvanced.status, 201);
+    assert.equal(discoveryAdvanced.body.data.target.id, "discovery-skill-runtime");
+    assert.equal(discoveryAdvanced.body.data.action, "create-loop");
+    assert.equal(discoveryAdvanced.body.data.loop.status, "PENDING");
+    assert.equal(discoveryAdvanced.body.data.loop.context.orchestrationTargetId, "discovery-skill-runtime");
+    assert.equal(discoveryAdvanced.body.data.loop.sourceClosure.targetVersion, "2.0.3");
 
     const trace = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/trace`, {
       token: "viewer-token"
