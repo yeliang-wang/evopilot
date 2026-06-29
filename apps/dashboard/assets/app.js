@@ -615,6 +615,8 @@ function renderLoopExecution() {
       ${renderLoopWorkerQueuePanel()}
     </div>
     ${renderVisualLoopRunCanvas(loops)}
+    ${renderWorkflowCanvasEditor(loops)}
+    ${renderInteractiveAgentRunConsole(loops)}
     <section class="card">
       <div class="section-title">
         <div>
@@ -738,6 +740,169 @@ function renderVisualLoopRunCanvas(loops) {
       </div>
     </section>
   `;
+}
+
+function renderWorkflowCanvasEditor(loops) {
+  const activeLoop = loops.find((loop) => ["RUNNING", "WAITING_APPROVAL", "BLOCKED"].includes(loop.status)) ?? loops[0];
+  const presets = state.loopOrchestrationPresets;
+  const defaultProject = state.projects[0]?.id ?? "evopilot";
+  const graphNodes = workflowCanvasNodes(activeLoop);
+  return `
+    <section class="workflow-editor" aria-label="Workflow canvas editor">
+      <div class="section-title">
+        <div>
+          <h2>Workflow Canvas Editor</h2>
+          <p>像工作流产品一样编辑 target graph：节点、条件路由、fan-out/fan-in、human gate 和 release gate 会一起进入新建 Loop。</p>
+        </div>
+        <span class="pill ${activeLoop ? "good" : "warn"}">${escapeHtml(activeLoop?.executorGraphId ?? "new graph")}</span>
+      </div>
+      <div class="workflow-editor-layout">
+        <div class="workflow-node-board">
+          ${graphNodes.map((node, index) => `
+            <article class="workflow-node ${node.tone}">
+              <span>${index + 1}</span>
+              <strong>${escapeHtml(node.label)}</strong>
+              <small>${escapeHtml(node.detail)}</small>
+              <b>${escapeHtml(node.route)}</b>
+            </article>
+          `).join("")}
+        </div>
+        <form class="workflow-editor-form" id="workflow-canvas-editor-form">
+          <label>
+            <span>项目</span>
+            <select name="projectId">
+              ${state.projects.map((project) => `<option value="${escapeHtml(project.id)}" ${project.id === defaultProject ? "selected" : ""}>${escapeHtml(project.name)} (${escapeHtml(project.id)})</option>`).join("")}
+            </select>
+          </label>
+          <label>
+            <span>Graph template</span>
+            <select name="presetId">
+              ${presets.map((preset) => `<option value="${escapeHtml(preset.id)}">${escapeHtml(preset.name)}${preset.ready ? "" : " - 待连接器"}</option>`).join("") || `<option value="source-release-closure">Source to Production Closure</option>`}
+            </select>
+          </label>
+          <label>
+            <span>条件路由</span>
+            <select name="routingMode">
+              <option value="policy-gated">Policy gated</option>
+              <option value="fanout-evaluator">Fan-out evaluator</option>
+              <option value="human-first">Human gate first</option>
+            </select>
+          </label>
+          <label>
+            <span>发布 Gate</span>
+            <select name="releaseGate">
+              <option value="source-closure">Source closure + health-ready</option>
+              <option value="review-only">Review only</option>
+              <option value="deploy-and-rollback">Deploy + rollback proof</option>
+            </select>
+          </label>
+          <label class="wide-field">
+            <span>目标描述</span>
+            <input name="objective" placeholder="让该项目完成一次可审计的源码到生产发布闭环" />
+          </label>
+          <div class="form-actions">
+            <button type="button" data-action="run-discovery-runtime">刷新 Discovery</button>
+            <button class="primary" type="submit">从画布创建 Loop</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  `;
+}
+
+function workflowCanvasNodes(loop) {
+  const closure = loop?.sourceClosure ?? {};
+  return [
+    { label: "Target", detail: loop?.objective ?? "用户定义 target loop", route: "start", tone: loop ? "ready" : "pending" },
+    { label: "Discovery", detail: `${state.loopTargetRuntime.discoveryCandidates.length} candidates / ${state.evaluationDatasets.length} datasets`, route: "fan-out", tone: state.loopTargetRuntime.discoveryCandidates.length ? "ready" : "pending" },
+    { label: "Executor", detail: loop?.executorGraphId ?? "typed executor graph", route: loop?.coordination?.mode ?? "serial", tone: loop?.status === "RUNNING" ? "ready" : "pending" },
+    { label: "Evaluator", detail: `${state.loopTargetRuntime.adversarialEvaluations.length} adversarial / ${state.loopTargetRuntime.guardrailEvaluations.length} guardrails`, route: "fan-in", tone: state.loopTargetRuntime.guardrailEvaluations.length ? "ready" : "pending" },
+    { label: "Human gate", detail: loop?.status === "WAITING_APPROVAL" ? "等待批准" : "按策略触发", route: "conditional", tone: loop?.status === "WAITING_APPROVAL" ? "blocked" : "pending" },
+    { label: "Release", detail: `${closure.repositoryProvider ?? "scm"} / ${closure.closureState ?? "PLANNED"}`, route: "source closure", tone: closure.closureState === "PROMOTED" ? "ready" : "pending" }
+  ];
+}
+
+function renderInteractiveAgentRunConsole(loops) {
+  const loop = loops.find((item) => ["RUNNING", "WAITING_APPROVAL", "BLOCKED"].includes(item.status)) ?? loops[0];
+  const events = interactiveConsoleEvents(loop);
+  const currentExecutor = loop?.timeline?.at(-1)?.type ?? loop?.iterations?.at(-1)?.decision ?? "waiting";
+  return `
+    <section class="run-console" aria-label="Interactive agent run console">
+      <div class="run-console-head">
+        <div>
+          <span class="eyebrow">Interactive run console</span>
+          <h2>实时 Agent 运行控制台</h2>
+          <p>集中展示 streaming events、当前 executor、日志、成本、失败原因和人工动作，比在多个表格里追踪更接近主流 Agent IDE。</p>
+        </div>
+        <div class="run-console-status">
+          <strong>${escapeHtml(loop?.status ?? "NO_LOOP")}</strong>
+          <span>${escapeHtml(loop?.id ?? "创建 Loop 后显示实时控制台")}</span>
+        </div>
+      </div>
+      <div class="run-console-grid">
+        <div class="console-stream">
+          <div class="console-toolbar">
+            <strong>${escapeHtml(currentExecutor)}</strong>
+            <span>${loop?.trace?.executorStepCount ?? 0} steps / $${Number(loop?.trace?.cost?.estimatedUsd ?? 0).toFixed(4)}</span>
+          </div>
+          <div class="console-lines">
+            ${events.map((event) => `
+              <div class="console-line ${event.tone}">
+                <span>${escapeHtml(event.time)}</span>
+                <strong>${escapeHtml(event.label)}</strong>
+                <small>${escapeHtml(event.detail)}</small>
+              </div>
+            `).join("") || `<div class="empty">暂无 streaming events。启动 Loop 后这里会显示 executor、checkpoint、cost、failure 和 replay diff。</div>`}
+          </div>
+        </div>
+        <aside class="console-side">
+          <div>
+            <span>当前 executor</span>
+            <strong>${escapeHtml(currentExecutor)}</strong>
+            <small>${escapeHtml(loop?.coordination?.mode ?? "serial")} / ${loop?.coordination?.nodes?.length ?? 0} nodes</small>
+          </div>
+          <div>
+            <span>失败签名</span>
+            <strong>${loop?.trace?.failureSignatures?.length ?? 0}</strong>
+            <small>${escapeHtml(loop?.trace?.failureSignatures?.[0]?.signature ?? "未发现聚合失败")}</small>
+          </div>
+          <div>
+            <span>人工输入</span>
+            <strong>${loop?.status === "WAITING_APPROVAL" ? "需要批准" : "无阻塞"}</strong>
+            <small>${escapeHtml(loop?.timeline?.at(-1)?.message ?? "等待运行事件")}</small>
+          </div>
+          <div class="console-actions">
+            <button data-action="load-loop-events" data-id="${escapeHtml(loop?.id ?? "")}" ${loop ? "" : "disabled"}>读取 Streaming Events</button>
+            <button data-action="watchdog-loop" data-id="${escapeHtml(loop?.id ?? "")}" ${loop ? "" : "disabled"}>Watchdog</button>
+            ${loop?.status === "WAITING_APPROVAL" ? `<button class="primary" data-action="approve-loop" data-id="${escapeHtml(loop.id)}" data-final-gate="${Number(loop.currentIteration ?? 0) >= Number(loop.stopPolicy?.maxIterations ?? Number.POSITIVE_INFINITY) ? "true" : "false"}">批准继续</button>` : `<button class="primary" data-action="resume-loop" data-id="${escapeHtml(loop?.id ?? "")}" ${loop ? "" : "disabled"}>继续 Loop</button>`}
+          </div>
+        </aside>
+      </div>
+    </section>
+  `;
+}
+
+function interactiveConsoleEvents(loop) {
+  if (!loop) return [];
+  const timeline = (loop.timeline ?? []).slice(-6).map((event) => ({
+    time: formatDate(event.timestamp),
+    label: event.type,
+    detail: event.message,
+    tone: /fail|error|blocked/i.test(`${event.type}${event.message}`) ? "bad" : "neutral"
+  }));
+  const iterations = (loop.iterations ?? []).slice(-3).map((iteration) => ({
+    time: `iteration ${iteration.index}`,
+    label: iteration.decision,
+    detail: iteration.rationale,
+    tone: iteration.decision === "CONTINUE" ? "good" : "warn"
+  }));
+  const failures = (loop.trace?.failureSignatures ?? []).slice(0, 2).map((failure) => ({
+    time: `${failure.count}x`,
+    label: "failure-group",
+    detail: failure.signature,
+    tone: "bad"
+  }));
+  return [...timeline, ...iterations, ...failures].slice(-10);
 }
 
 function renderReleaseCockpit() {
@@ -958,6 +1123,8 @@ function renderProjects() {
   return `
     ${renderFlowHeader()}
     ${renderGuidedOnboardingPanel()}
+    ${renderProjectDetailWorkspace()}
+    ${renderConnectorMarketplaceSettings()}
     <section class="card">
       <div class="section-title">
         <div>
@@ -984,32 +1151,134 @@ function renderProjects() {
         project.hasRepository ? `<div class="row-actions"><button data-action="open-source-credential-config" data-id="${escapeHtml(project.id)}">配置凭据</button><button data-action="preflight-source-credentials" data-id="${escapeHtml(project.id)}">验证写回凭据</button></div>` : "-"
       ]))}
     </section>
-    <section class="card">
-      <div class="section-title">
-        <div>
-          <h2>部署连接器</h2>
-          <p>source closure 的 deploy gate 可调用部署连接器，再由 EvoPilot 探测 health/ready。</p>
-        </div>
-        <span class="pill">${state.deployConnectors.length} 个连接器</span>
-      </div>
-      ${state.deployConnectors.length === 0 ? `<div class="empty">暂无部署连接器。可通过 API 注册 HTTP webhook、ECS、K8s 或云发布编排入口。</div>` : table(["连接器", "类型", "地址/工作目录", "保护", "凭据", "健康路径", "超时"], state.deployConnectors.map((connector) => [
-        `<strong>${connector.name}</strong><span class="subtext">${connector.id}</span>`,
-        connector.type,
-        connector.url ?? connector.workingDir ?? "-",
-        [
-          connector.deployLock ? "锁" : null,
-          connector.idempotency ? "幂等" : null,
-          connector.rollbackOnFailure ? "启动失败回滚" : null,
-          connector.rollbackOnHealthFailure ? "健康回滚" : null
-        ].filter(Boolean).join(" / ") || "-",
-        connector.tokenConfigured ? "已配置" : "未配置",
-        `${connector.healthPath ?? "/health"} / ${connector.readyPath ?? "/ready"}`,
-        `${connector.timeoutSeconds ?? 30}s`
-      ]))}
-    </section>
     ${state.showProjectRegistrationModal ? renderProjectRegistrationModal() : ""}
     ${state.showSourceCredentialModal ? renderSourceCredentialModal() : ""}
   `;
+}
+
+function renderProjectDetailWorkspace() {
+  const project = state.projects.find((item) => /已验证|健康/.test(`${item.validation}${item.status}`)) ?? state.projects[0];
+  const projectLoops = state.loops.filter((loop) => loop.projectId === project?.id || loop.sourceClosure?.sourceProjectId === project?.id);
+  const projectTargets = state.loopOrchestrationTargets.filter((target) => target.projectId === project?.id || !target.projectId);
+  const projectReleases = state.sourceReleaseRuns.filter((run) => run.projectId === project?.id || run.loopId && projectLoops.some((loop) => loop.id === run.loopId));
+  const projectDatasets = state.evaluationDatasets.filter((dataset) => dataset.projectId === project?.id);
+  return `
+    <section class="project-workspace" aria-label="Project detail workspace">
+      <div class="project-workspace-head">
+        <div>
+          <span class="eyebrow">Project workspace</span>
+          <h2>${escapeHtml(project?.name ?? "等待项目接入")}</h2>
+          <p>每个项目都有独立的 Overview、Targets、Runs、Credentials、Deployments 和 History，不再只靠全局项目表格查状态。</p>
+        </div>
+        <div class="project-workspace-status">
+          <strong>${escapeHtml(project?.level ?? "待接入")}</strong>
+          <span>${escapeHtml(project?.validation ?? "等待验证")} / ${escapeHtml(project?.status ?? "未接入")}</span>
+        </div>
+      </div>
+      <div class="workspace-tabs" role="tablist" aria-label="项目工作区">
+        ${["Overview", "Targets", "Runs", "Credentials", "Deployments", "History"].map((tab, index) => `<button class="${index === 0 ? "active" : ""}" type="button">${tab}</button>`).join("")}
+      </div>
+      <div class="workspace-grid">
+        <div class="workspace-panel">
+          <span>Overview</span>
+          <strong>${escapeHtml(project?.repository ?? "未注册源码")}</strong>
+          <small>${escapeHtml(project?.lastSignal ?? "等待运行证据")}</small>
+        </div>
+        <div class="workspace-panel">
+          <span>Targets</span>
+          <strong>${projectTargets.length}</strong>
+          <small>${escapeHtml(projectTargets[0]?.nextAction ?? "运行 Discovery 后生成 target")}</small>
+        </div>
+        <div class="workspace-panel">
+          <span>Runs</span>
+          <strong>${projectLoops.length}</strong>
+          <small>${escapeHtml(projectLoops[0]?.status ?? "暂无 LoopRun")}</small>
+        </div>
+        <div class="workspace-panel">
+          <span>Credentials</span>
+          <strong>${escapeHtml(project?.credentials ?? "未配置")}</strong>
+          <small>${project?.hasRepository ? "可执行源码写回预检" : "内置画像或本地项目"}</small>
+        </div>
+        <div class="workspace-panel">
+          <span>Deployments</span>
+          <strong>${projectReleases.length}</strong>
+          <small>${escapeHtml(projectReleases[0]?.status ?? "等待发布闭环")}</small>
+        </div>
+        <div class="workspace-panel">
+          <span>Evidence</span>
+          <strong>${projectDatasets.length}</strong>
+          <small>Eval Dataset / Regression Suite</small>
+        </div>
+      </div>
+      <div class="workspace-actions">
+        ${project?.hasRepository ? `<button data-action="open-source-credential-config" data-id="${escapeHtml(project.id)}">配置源码凭据</button>` : ""}
+        ${project?.hasRepository ? `<button data-action="preflight-source-credentials" data-id="${escapeHtml(project.id)}">验证写回凭据</button>` : ""}
+        <button data-page-link="发现与目标">查看 Targets</button>
+        <button class="primary" data-page-link="Loop 执行">进入 Loop 工作区</button>
+      </div>
+    </section>
+  `;
+}
+
+function renderConnectorMarketplaceSettings() {
+  const connectors = connectorMarketplaceModel();
+  return `
+    <section class="connector-marketplace" aria-label="Connector marketplace settings">
+      <div class="section-title">
+        <div>
+          <h2>连接器市场与设置</h2>
+          <p>把 GitHub、GitLab、Jenkins、ECS、K8s、LLM 和 Sandbox 统一管理，用户不需要在接入表单、发布面板和环境变量之间来回切换。</p>
+        </div>
+        <span class="pill ${connectors.filter((item) => item.status === "READY").length >= 3 ? "good" : "warn"}">${connectors.filter((item) => item.status === "READY").length}/${connectors.length} ready</span>
+      </div>
+      <div class="connector-grid">
+        ${connectors.map((connector) => `
+          <article class="connector-tile ${connector.status.toLowerCase()}">
+            <div>
+              <span>${escapeHtml(connector.category)}</span>
+              <strong>${escapeHtml(connector.name)}</strong>
+              <small>${escapeHtml(connector.detail)}</small>
+            </div>
+            <b>${escapeHtml(connector.status)}</b>
+          </article>
+        `).join("")}
+      </div>
+      <div class="connector-runtime-table">
+        ${state.deployConnectors.length === 0 ? renderEmptyState("暂无部署连接器", "可通过 API 注册 HTTP webhook、ECS、K8s 或云发布编排入口。", "注册后会出现在 Connector Marketplace 和 release cockpit 中。") : table(["连接器", "类型", "地址/工作目录", "保护", "凭据", "健康路径", "超时"], state.deployConnectors.map((connector) => [
+          `<strong>${connector.name}</strong><span class="subtext">${connector.id}</span>`,
+          connector.type,
+          connector.url ?? connector.workingDir ?? "-",
+          [
+            connector.deployLock ? "锁" : null,
+            connector.idempotency ? "幂等" : null,
+            connector.rollbackOnFailure ? "启动失败回滚" : null,
+            connector.rollbackOnHealthFailure ? "健康回滚" : null
+          ].filter(Boolean).join(" / ") || "-",
+          connector.tokenConfigured ? "已配置" : "未配置",
+          `${connector.healthPath ?? "/health"} / ${connector.readyPath ?? "/ready"}`,
+          `${connector.timeoutSeconds ?? 30}s`
+        ]))}
+      </div>
+    </section>
+  `;
+}
+
+function connectorMarketplaceModel() {
+  const remoteProviders = new Set(state.projects.map((project) => project.repositoryMeta?.provider).filter(Boolean));
+  const hasGithub = remoteProviders.has("github");
+  const hasGitlab = remoteProviders.has("gitlab");
+  const hasLocal = remoteProviders.has("local-git") || state.projects.some((project) => /local-git|本地/.test(`${project.credentials}${project.repository}`));
+  const hasJenkins = state.projects.some((project) => /Jenkins/.test(project.cicd ?? "")) || state.pipelines.length > 0;
+  const hasDeploy = state.deployConnectors.length > 0;
+  return [
+    { category: "SCM", name: "GitHub", status: hasGithub ? "READY" : "CONFIGURE", detail: hasGithub ? "PR、tokenRef、source closure 可用" : "注册 GitHub 项目后启用 PR 写回" },
+    { category: "SCM", name: "GitLab", status: hasGitlab ? "READY" : "CONFIGURE", detail: hasGitlab ? "MR、私有部署、tokenRef 可用" : "注册 GitLab 项目后启用 MR 写回" },
+    { category: "SCM", name: "Local Git", status: hasLocal ? "READY" : "CONFIGURE", detail: hasLocal ? "本地目录验证可用" : "适合本机项目或离线调试" },
+    { category: "CI/CD", name: "Jenkins", status: hasJenkins ? "READY" : "CONFIGURE", detail: hasJenkins ? "流水线和 artifact 已接入" : "配置系统默认或项目级 Jenkins" },
+    { category: "Deploy", name: "ECS / K8s / Webhook", status: hasDeploy ? "READY" : "CONFIGURE", detail: hasDeploy ? `${state.deployConnectors.length} 个 deploy connector` : "发布 gate 需要部署连接器" },
+    { category: "Runtime", name: "LLM Route", status: state.apiStatus === "实时数据" ? "READY" : "CONFIGURE", detail: "用于 discovery、evaluator 和 code upgrade" },
+    { category: "Runtime", name: "Sandbox", status: state.loops.some((loop) => loop.sandbox?.runtime) ? "READY" : "CONFIGURE", detail: "Docker/K8s 边界、网络、路径、凭据隔离" }
+  ];
 }
 
 function renderGuidedOnboardingPanel() {
@@ -2663,6 +2932,41 @@ function bindLoopActions() {
         await loadLoops();
       } catch (error) {
         state.authNotice = `闭环编排失败：${error.message}`;
+      } finally {
+        render();
+      }
+    });
+  }
+  const workflowEditorForm = content.querySelector("#workflow-canvas-editor-form");
+  if (workflowEditorForm) {
+    workflowEditorForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const formData = new FormData(workflowEditorForm);
+      state.authNotice = "";
+      try {
+        const routingMode = String(formData.get("routingMode") || "policy-gated");
+        const releaseGate = String(formData.get("releaseGate") || "source-closure");
+        const objective = String(formData.get("objective") || "").trim()
+          || `Dashboard workflow canvas: ${routingMode}, ${releaseGate}`;
+        await postJson("/api/v1/loop-orchestration/instantiate", {
+          projectId: String(formData.get("projectId") || "evopilot"),
+          presetId: String(formData.get("presetId") || "source-release-closure"),
+          objective,
+          deployConnectorId: state.deployConnectors.length === 1 ? state.deployConnectors[0].id : undefined,
+          controlPlaneUrl: window.location.origin,
+          context: {
+            workflowCanvasEditor: {
+              routingMode,
+              releaseGate,
+              humanGate: routingMode === "human-first",
+              visualEditorVersion: "dashboard-workflow-canvas/v1"
+            }
+          }
+        });
+        state.authNotice = "已从 Workflow Canvas Editor 创建 Loop，运行控制台会显示最新执行状态。";
+        await loadLoops();
+      } catch (error) {
+        state.authNotice = `Workflow Canvas 创建失败：${error.message}`;
       } finally {
         render();
       }

@@ -35,6 +35,13 @@ test("dashboard ships responsive workbench contracts for dense operator pages", 
     assert.match(app, /renderGuidedOnboardingPanel/);
     assert.match(app, /renderVisualLoopRunCanvas/);
     assert.match(app, /renderReleaseCockpit/);
+    assert.match(app, /renderProjectDetailWorkspace/);
+    assert.match(app, /renderConnectorMarketplaceSettings/);
+    assert.match(app, /connectorMarketplaceModel/);
+    assert.match(app, /renderWorkflowCanvasEditor/);
+    assert.match(app, /workflowCanvasNodes/);
+    assert.match(app, /renderInteractiveAgentRunConsole/);
+    assert.match(app, /interactiveConsoleEvents/);
     assert.match(app, /autopilotReadinessModel/);
     assert.match(app, /humanActionInboxModel/);
     assert.match(app, /normalizePage/);
@@ -54,6 +61,14 @@ test("dashboard ships responsive workbench contracts for dense operator pages", 
     assert.match(css, /\.onboarding-guide/);
     assert.match(css, /\.loop-canvas/);
     assert.match(css, /\.release-cockpit/);
+    assert.match(css, /\.project-workspace/);
+    assert.match(css, /\.connector-marketplace/);
+    assert.match(css, /\.workflow-editor/);
+    assert.match(css, /\.run-console/);
+    assert.match(css, /\.workspace-tabs/);
+    assert.match(css, /\.connector-grid/);
+    assert.match(css, /\.workflow-node-board/);
+    assert.match(css, /\.console-lines/);
     assert.match(css, /\.canvas-lane/);
     assert.match(css, /\.release-checklist/);
     assert.match(css, /\.provider-switcher/);
