@@ -448,6 +448,7 @@ GET /api/v1/loops/{loopId}/artifacts
 GET /api/v1/loops/{loopId}/trace
 GET /api/v1/loops/{loopId}/trace-tree
 GET /api/v1/loops/{loopId}/events
+GET /api/v1/loops/{loopId}/executor-graph
 GET /api/v1/loops/{loopId}/sandbox-proof
 POST /api/v1/loops/{loopId}/sandbox-proof/verify
 GET /api/v1/loop-store
@@ -471,6 +472,8 @@ POST /api/v1/im/wecom/webhook
 Loop Runtime 是 EvoPilot 的 Loop Engineering 内核。它把 API、Codex、IM、定时任务、运行时信号、release target 和 evolution batch 统一成 `LoopRun`，并通过 `ExecutorGraph` 编排 LLM、code-upgrader、CI、validator、approval 和 release-action 等 executor。
 
 `ExecutorGraph` 节点通过 `ExecutorAdapter` 执行。节点可以在 `config.adapterId` 中固定 adapter；未指定时，EvoPilot 按节点类型解析默认 adapter。adapter 必须返回结构化 `status`、`output`、`evidence` 和可选 `failureSignature`，因此后续 target loop 可以复用同一执行边界，而不是把执行结果写成不可审计的状态文本。
+
+`GET /api/v1/loops/{loopId}/executor-graph` 返回当前 Loop 绑定的 graph contract、coordination plan、validation result、capabilities 和 evidence。Dashboard Loop 执行页的 Source-to-GA 动态本体链路图会把该接口与 project、target runtime、loop、worker queue、trace tree、events、sandbox proof、source-closure plan、source release run、deploy finalizer 和 release decision 数据合并，形成 `SCM/Git Project -> Discovery Candidate -> Target Backlog -> Executor Graph -> Worker + Sandbox -> Human Gate -> Source Closure -> CI/CD + Deploy -> Release Decision -> GA Release` 的运行视图。该视图只解释当前运行边界，不替代 `GET /api/v1/release/decisions` 的 GA verdict。
 
 Dashboard 编排入口通过 `GET /api/v1/loop-orchestration/presets` 返回可用闭环预设，通过 `POST /api/v1/loop-orchestration/instantiate` 创建标准 source-to-production target loop。预设会自动绑定 typed executor graph、`sourceClosure`、Docker sandbox enforcement、worker/watchdog 语义、deploy connector 和 health-ready rollback。
 

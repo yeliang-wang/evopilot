@@ -52,6 +52,42 @@ Deploy connectors are separate runtime connectors. The built-in connector types 
 
 Dashboard loop orchestration is a productized control plane surface, not a separate script. `GET /api/v1/loop-orchestration/presets` exposes standard closed-loop presets and `POST /api/v1/loop-orchestration/instantiate` creates a source-to-production loop with a typed executor graph, Docker sandbox enforcement, worker/watchdog continuity, source closure, deployment connector binding, and health-ready rollback semantics.
 
+## Source-to-GA Dynamic Ontology Chain
+
+The Loop execution page renders the Source-to-GA chain as a live ontology view over the runtime contract. It is not a separate graph store and should not become a Dashboard-only state model. Each node is derived from persisted control-plane objects:
+
+| Chain node | Runtime object | Meaning |
+|---|---|---|
+| SCM / Git Project | registered project, repository validation, source credential readiness | The source system and credential boundary for writeback. |
+| Discovery Candidate | target runtime discovery candidates, evaluation datasets, memory inbox provenance | The evidence intake that turns product signals into candidate work. |
+| Target Backlog | `LoopRun.objective`, target backlog item, stop policy | The product goal being advanced toward GA evidence. |
+| Executor Graph | `LoopRun.executorGraphId`, `ExecutorGraph`, `ExecutorCoordinationPlan` | The typed executor contract, routing mode, fan-out/fan-in behavior, schema validation, and capabilities. |
+| Worker + Sandbox | worker lease, worker queue, watchdog evidence, `LoopSandboxPolicy`, sandbox proof | The durable execution owner and boundary for code, CI/CD, validators, credentials, network, paths, and resources. |
+| Human Gate | approval state, stop policy, release approval | The point where risky continuation or release actions require explicit human control. |
+| Source Closure | `LoopSourceClosure`, source-closure preflight, `sourceReleaseRun` | The SCM writeback state: branch, commit, PR/MR, tag, required gates, and artifacts. |
+| CI/CD + Deploy | Jenkins/deploy connector state, deploy finalizer, health-ready probes | The delivery boundary, rollback path, and post-merge deployment evidence. |
+| Release Decision | release policy, `GET /api/v1/release/decisions` | The product-native `GO` / `CONDITIONAL-GO` / `NO-GO` verdict. |
+| GA Release | promoted source release run, merge commit, release evidence | The final auditable state after source closure, deploy, policy, and release decision agree. |
+
+The adjacent Workflow Canvas Editor uses a second ontology for authoring a new or adjusted loop: `Target -> Discovery -> Executor -> Evaluator -> Human gate -> Release`. Submitting the canvas must persist an `evopilot-executor-graph/v1` contract and a `sourceClosure` contract; the UI text alone is not the source of truth.
+
+The chain is intentionally stateful. A healthy-looking executor node does not imply GA readiness unless the source-closure, deploy, release-decision, and GA nodes all have required evidence. A blocked release path should route the operator to source credentials, preflight, policy review, repair candidates, merge approval, post-merge deploy, or release evidence depending on `nextAction` and `policy.blockers`. A blocked worker/sandbox path should route to queue claim, watchdog, sandbox proof, time-travel replay, or failure-group evidence before source closure is retried.
+
+The minimum API set for the chain is:
+
+```http
+GET /api/v1/loops
+GET /api/v1/loops/{loopId}/executor-graph
+GET /api/v1/loops/{loopId}/trace-tree
+GET /api/v1/loops/{loopId}/events
+GET /api/v1/loop-workers/queue
+GET /api/v1/loops/{loopId}/sandbox-proof
+GET /api/v1/loops/{loopId}/source-closure/plan
+GET /api/v1/loops/{loopId}/source-release-runs
+GET /api/v1/source-release-deploy-finalizers
+GET /api/v1/release/decisions
+```
+
 Target-loop backlog is the next control-plane layer above a single LoopRun. `GET /api/v1/loop-orchestration/targets` maps product-evolution work into Sandbox, Context, Harness, and Loop targets with acceptance criteria, status, next action, and evidence. `POST /api/v1/loop-orchestration/advance` creates or advances a Codex-backed target loop and stops at explicit human approval or source-closure boundaries. `POST /api/v1/loop-orchestration/autopilot` is the bounded production self-evolution autopilot: it advances the target, optionally stops at human approval, executes source closure, applies release policy, runs safe auto-merge, and records post-merge deploy closure as one staged product resource. This keeps the long-task loop state inside EvoPilot while allowing Codex to act as an executor rather than the system of record.
 
 The target runtime now owns the next six GA-alignment targets as product objects rather than a separate roadmap note:

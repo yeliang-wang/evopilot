@@ -197,6 +197,21 @@ Loop Runtime 负责长任务连续性：durable run state、heartbeat lease、wa
 
 Dashboard 的“闭环编排”会调用 `POST /api/v1/loop-orchestration/instantiate`，从标准预设创建 source-to-production target loop。该 loop 会自动带上 typed executor graph、Docker sandbox enforcement、sourceClosure、worker/watchdog 语义、deploy connector 和 health-ready rollback。创建后，用户可以在同一页启动、继续、批准、watchdog、执行源码闭环，并查看 Source Closure Workbench、Release Closure Runtime、Release Run Auto Repair Workbench 和 Release Artifacts。Release Closure Runtime 还提供“批准 Release”“合并 Release”和“安全自动合并”，用于把 PR/MR 或本地 release branch 的审批、策略门禁、merge、post-merge deploy 证据写回 release run。
 
+Loop 执行页顶部的 Source-to-GA 动态本体链路图用于快速判断“从源码到 GA”卡在哪一类边界。读图顺序是：
+
+1. `SCM / Git Project`：确认项目、仓库、默认分支和源码写回凭据是否可用。
+2. `Discovery Candidate`：确认 trace、evaluation、production 或 manual signal 是否已经形成候选证据。
+3. `Target Backlog`：确认目标、项目和 stop condition 是否是当前要推进的 GA 或发布目标。
+4. `Executor Graph`：确认 typed graph 是否已经入库，是否带条件路由、fan-out/fan-in、人审和 release gate。
+5. `Worker + Sandbox`：确认 loop 是否已被 worker claim，代码升级、CI/CD、验证命令、凭据、网络和路径边界是否被执行或至少有 policy proof。
+6. `Human Gate`：确认当前是否等待批准继续、批准 Release 或结束最终 gate。
+7. `Source Closure`：确认 branch、commit、PR/MR、tag、required gates 和 artifacts 是否已经进入 source release run。
+8. `CI/CD + Deploy`：确认 Jenkins/deploy connector、post-merge deploy、health/ready 和 rollback/finalizer 证据是否完整。
+9. `Release Decision`：确认 release policy 和 `GET /api/v1/release/decisions` 是否解释 `GO` / `CONDITIONAL-GO` / `NO-GO`。
+10. `GA Release`：确认 promoted/succeeded release run、merge commit 和 GA evidence 是否可复盘。
+
+如果链路图显示 `Source Closure`、`CI/CD + Deploy`、`Release Decision` 或 `GA Release` 还停在 `PLANNED`、`FAILED`、`HEALTH_FAILED`、`ROLLED_BACK`、`POLICY_BLOCKED` 或 `NO-GO`，不要只看 CI 成功。应先打开 Release Closure Runtime 或 Release Run Auto Repair Workbench，检查 `nextAction`、`policy.blockers`、required gates 和 artifacts，再决定是配置源码凭据、预检闭环、执行闭环、批准 Release、合并 Release、执行安全自动合并，还是进入修复队列。只有后四个节点和 `GET /api/v1/release/decisions` 都能解释 `GO` / `CONDITIONAL-GO` / `NO-GO`，这个 Source-to-GA 链路才算形成可审计结论。
+
 Release Run Auto Repair Workbench 用于处理已经失败或陈旧的源码发布记录。用户点击“刷新修复队列”时，Dashboard 会调用 `GET /api/v1/source-release-runs/repair-candidates`，列出需要恢复的 release run、失败阶段、failure signature、next action、capabilities 和推荐修复请求。用户可以点击某一行“修复”，也可以在确认候选范围后点击“一键修复队列”；Dashboard 会调用 `POST /api/v1/source-release-runs/repair-candidates/repair`，由 EvoPilot 重新进入 source closure 执行路径，继续完成 SCM 写回、deploy connector、health/ready、release policy 和 evidence 写入。修复成功后，新的 release run 会进入 `PROMOTED` 或其他非失败终态，原候选会从修复队列中移除。生产 ECS 演练已经验证该用户路径：本地 Git 项目因 dirty worktree 触发 `FAILED`，随后在 Dashboard 单行修复后生成 `PROMOTED` release run，并从 repair candidates 队列消失。
 
 同一页面的 Target Loop Backlog 对应 `GET /api/v1/loop-orchestration/targets`、`POST /api/v1/loop-orchestration/advance` 和 `POST /api/v1/loop-orchestration/autopilot`。它把后续产品进化目标按 Sandbox、Context、Harness、Loop 四层排队，记录 acceptance criteria、next action、stop condition 和证据摘要；点击“推进下一 Target”时，EvoPilot 会创建或推进 Codex-backed target loop，而不是要求用户每次手工复制命令或重新描述上下文。点击“一键自动驾驶”时，EvoPilot 会在受控步数内推进 loop、停在 human gate 或 source closure 边界、执行源码闭环、跑 release policy、进行安全自动合并，并把 post-merge deploy 结果写回 release run；如果没有显式授权 human gate，自动驾驶会停在人工审批而不是绕过治理。

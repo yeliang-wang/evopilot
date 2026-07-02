@@ -57,6 +57,9 @@ const state = {
   loopOrchestrationPresets: [],
   loopOrchestrationTargets: [],
   loopGraphContracts: {},
+  sourceToGaLoopId: "",
+  sourceToGaNodeId: "executor",
+  sourceToGaRefreshing: false,
   loopTargetRuntime: {
     discoveryCandidates: [],
     findingHandoffs: [],
@@ -669,82 +672,272 @@ function renderEvaluationAndRelease() {
 }
 
 function renderVisualLoopRunCanvas(loops) {
-  const loop = loops.find((item) => ["RUNNING", "WAITING_APPROVAL", "BLOCKED"].includes(item.status)) ?? loops[0];
-  const closure = loop?.sourceClosure ?? {};
-  const trace = loop?.trace ?? {};
-  const nodes = [
-    {
-      id: "target",
-      label: "Target",
-      value: loop?.objective ?? state.loopOrchestrationTargets[0]?.title ?? "等待 target",
-      status: loop ? loop.status : "PENDING"
-    },
-    {
-      id: "graph",
-      label: "Executor graph",
-      value: loop?.executorGraphId ?? "dashboard-source-release-closure",
-      status: loop?.coordination?.mode ?? "serial"
-    },
-    {
-      id: "sandbox",
-      label: "Sandbox",
-      value: `${loop?.sandbox?.runtime ?? "docker"} / ${loop?.sandbox?.network ?? "restricted"}`,
-      status: loop?.sandboxEnforcement?.status ?? "PENDING"
-    },
-    {
-      id: "worker",
-      label: "Worker",
-      value: loop?.workerLease?.workerId ?? "等待 claim",
-      status: loop?.workerLease ? "LEASED" : "UNCLAIMED"
-    },
-    {
-      id: "trace",
-      label: "Trace",
-      value: `${trace.executorStepCount ?? 0} steps / ${trace.failedStepCount ?? 0} failed`,
-      status: (trace.failureSignatures ?? []).length ? "ATTENTION" : "OK"
-    },
-    {
-      id: "release",
-      label: "Release",
-      value: closure.targetVersion ?? latestSourceReleaseRun(loop?.id)?.id ?? "等待发布",
-      status: closure.closureState ?? latestSourceReleaseRun(loop?.id)?.status ?? "PLANNED"
-    }
-  ];
+  const loop = selectedSourceToGaLoop(loops);
+  const model = sourceToGaModel(loop);
+  const selectedNode = model.nodes.find((node) => node.id === state.sourceToGaNodeId) ?? model.nodes.find((node) => node.current) ?? model.nodes[0];
   return `
-    <section class="loop-canvas" aria-label="Visual loop run canvas">
+    <section class="source-ga-workbench" aria-label="Source-to-GA ontology map">
       <div class="section-title">
         <div>
-          <h2>Visual Loop Run Canvas</h2>
-          <p>把 target、executor graph、sandbox、worker、trace 和 release gate 合成一张运行图，替代表格里来回查找状态。</p>
+          <h2>Source-to-GA 本体链路图</h2>
+          <p>同一个动态组件服务所有 Loop Run：选择一个 loopId 后，节点、连线、Inspector 和事件流会根据真实 runtime、trace、source release run 与 release decision 刷新。</p>
         </div>
-        <span class="pill ${loop?.status === "RUNNING" ? "good" : loop ? "warn" : ""}">${escapeHtml(loop?.status ?? "等待 Loop")}</span>
+        <div class="source-ga-actions">
+          <span class="pill ${loop?.status === "RUNNING" ? "good source-ga-live" : loop ? "warn" : ""}">${escapeHtml(loop?.status ?? "等待 Loop")}</span>
+          <button data-source-ga-refresh="true">刷新动态图</button>
+          <button class="primary" data-action="resume-loop" data-id="${escapeHtml(loop?.id ?? "")}" ${loop ? "" : "disabled"}>继续 Loop</button>
+        </div>
       </div>
-      <div class="canvas-lane">
-        ${nodes.map((node, index) => `
-          <article class="canvas-node ${String(node.status).toLowerCase()}">
-            <span>${index + 1}</span>
-            <strong>${escapeHtml(node.label)}</strong>
-            <small>${escapeHtml(String(node.value))}</small>
-            <b>${escapeHtml(String(node.status))}</b>
-          </article>
-        `).join("")}
+      <div class="source-ga-loop-strip" aria-label="Loop 选择器">
+        ${(loops ?? []).slice(0, 6).map((item) => `
+          <button class="${item.id === loop?.id ? "active" : ""}" data-source-ga-loop-id="${escapeHtml(item.id)}">
+            <strong>${escapeHtml(item.id)}</strong>
+            <span>${escapeHtml(item.status ?? "UNKNOWN")}</span>
+          </button>
+        `).join("") || `<div class="empty">暂无 LoopRun。创建闭环 Loop 后，这里会用同一张动态图展示每个 Loop 的进度。</div>`}
       </div>
-      <div class="canvas-evidence">
-        <div>
-          <span>最新事件</span>
-          <strong>${escapeHtml(loop?.timeline?.at(-1)?.message ?? "等待启动")}</strong>
+      <div class="source-ga-layout">
+        <div class="source-ga-map">
+          <div class="source-ga-lane lane-input">外部输入层</div>
+          <div class="source-ga-lane lane-target">Target 建模层</div>
+          <div class="source-ga-lane lane-runtime">Loop 执行层</div>
+          <div class="source-ga-lane lane-release">发布闭环层</div>
+          <div class="source-ga-lane lane-evidence">证据与决策层</div>
+          <svg class="source-ga-links" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <marker id="source-ga-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z"></path>
+              </marker>
+            </defs>
+            ${model.edges.map((edge) => `
+              <path class="${edge.active ? "active" : ""}" d="${escapeHtml(edge.path)}"></path>
+            `).join("")}
+          </svg>
+          ${model.edges.map((edge) => `<span class="source-ga-relation ${escapeHtml(edge.className)}">${escapeHtml(edge.label)}</span>`).join("")}
+          ${model.nodes.map((node) => `
+            <button class="source-ga-node ${escapeHtml(node.position)} ${escapeHtml(node.tone)} ${node.current ? "current" : ""} ${selectedNode?.id === node.id ? "selected" : ""}"
+              data-source-ga-node-id="${escapeHtml(node.id)}"
+              aria-label="${escapeHtml(node.title)} ${escapeHtml(node.status)}">
+              <span><i></i>${escapeHtml(node.type)}</span>
+              <strong>${escapeHtml(node.title)}</strong>
+              <small>${escapeHtml(node.detail)}</small>
+              <b>${escapeHtml(node.status)}</b>
+            </button>
+          `).join("")}
         </div>
-        <div>
-          <span>Checkpoint</span>
-          <strong>${loop?.iterations?.length ?? 0} 个</strong>
+        <aside class="source-ga-inspector" aria-label="Source-to-GA node inspector">
+          ${renderSourceToGaInspector(selectedNode, loop, model)}
+        </aside>
+      </div>
+      <div class="source-ga-footer">
+        <div class="source-ga-legend">
+          <span><i class="ready"></i>READY / DONE</span>
+          <span><i class="running"></i>RUNNING / STREAMING</span>
+          <span><i class="blocked"></i>WAITING / BLOCKED</span>
+          <span><i class="pending"></i>等待上游证据</span>
         </div>
-        <div>
-          <span>Failure grouping</span>
-          <strong>${trace.failureSignatures?.length ?? 0} 类</strong>
+        <div class="source-ga-events" aria-label="Source-to-GA 实时事件流">
+          ${model.events.map((event) => `
+            <div class="source-ga-event">
+              <span>${escapeHtml(event.time)}</span>
+              <strong>${escapeHtml(event.label)}</strong>
+              <small>${escapeHtml(event.detail)}</small>
+            </div>
+          `).join("") || `<div class="empty">暂无事件。启动 Loop 后，这里会追加 executor、worker、gate、release 和 GA evidence 事件。</div>`}
         </div>
       </div>
     </section>
   `;
+}
+
+function selectedSourceToGaLoop(loops) {
+  const preferred = loops.find((loop) => loop.id === state.sourceToGaLoopId);
+  const active = loops.find((loop) => ["RUNNING", "WAITING_APPROVAL", "BLOCKED"].includes(loop.status));
+  const loop = preferred ?? active ?? loops[0];
+  if (loop && state.sourceToGaLoopId !== loop.id) state.sourceToGaLoopId = loop.id;
+  return loop;
+}
+
+function sourceToGaModel(loop) {
+  const closure = loop?.sourceClosure ?? {};
+  const trace = loop?.trace ?? {};
+  const target = state.loopOrchestrationTargets.find((item) => item.id === loop?.targetId || item.projectId === loop?.projectId) ?? state.loopOrchestrationTargets[0];
+  const project = state.projects.find((item) => item.id === loop?.projectId || item.id === closure.sourceProjectId) ?? state.projects[0];
+  const releaseRun = latestSourceReleaseRun(loop?.id);
+  const finalizer = sourceReleaseDeployFinalizersForLoop(loop?.id).at(0);
+  const graphContract = loop ? state.loopGraphContracts[loop.id] : undefined;
+  const releaseStatus = releaseRun?.status ?? closure.closureState ?? "PLANNED";
+  const loopStatus = loop?.status ?? "PENDING";
+  const currentId = inferSourceToGaCurrentNode(loop, releaseRun, finalizer);
+  const nodes = [
+    sourceToGaNode("project", "SCM", "GitHub / Git Project", project?.name ?? "等待项目接入", project?.validation ?? project?.status ?? "PENDING", "pos-project", project?.validation === "已验证" || project?.hasRepository ? "ready" : "pending", currentId),
+    sourceToGaNode("discovery", "Evidence", "Discovery Candidate", `${state.loopTargetRuntime.discoveryCandidates.length} candidates / ${state.evaluationDatasets.length} datasets`, state.loopTargetRuntime.discoveryCandidates.length ? "READY" : "PENDING", "pos-discovery", state.loopTargetRuntime.discoveryCandidates.length ? "ready" : "pending", currentId),
+    sourceToGaNode("target", "Target", "Target Backlog", target?.title ?? loop?.objective ?? "等待 target", target?.status ?? (loop ? "BOUND" : "PENDING"), "pos-target", target?.status === "BLOCKED" ? "blocked" : loop ? "running" : "pending", currentId),
+    sourceToGaNode("executor", "Graph", "Executor Graph", loop?.executorGraphId ?? graphContract?.executorGraph?.id ?? "typed executor graph", graphContract?.executorGraph?.validation?.status ?? loopStatus, "pos-executor", sourceToGaTone(loopStatus), currentId),
+    sourceToGaNode("worker", "Runtime", "Worker + Sandbox", `${loop?.workerLease?.workerId ?? "等待 claim"} / ${loop?.sandbox?.runtime ?? "sandbox"}`, loop?.workerLease ? "CLAIMED" : (loop ? "UNCLAIMED" : "PENDING"), "pos-worker", loop?.workerLease ? "ready" : loop ? "running" : "pending", currentId),
+    sourceToGaNode("humanGate", "Gate", "Human Gate", loopStatus === "WAITING_APPROVAL" ? "等待批准继续或发布" : "按策略触发", loopStatus === "WAITING_APPROVAL" ? "WAITING_APPROVAL" : "CONDITIONAL", "pos-gate", loopStatus === "WAITING_APPROVAL" ? "blocked" : "pending", currentId),
+    sourceToGaNode("closure", "Closure", "Source Closure", `${closure.repositoryProvider ?? "scm"} / ${closure.targetVersion ?? "target version pending"}`, releaseStatus, "pos-closure", sourceToGaTone(releaseStatus), currentId),
+    sourceToGaNode("deploy", "Deploy", "CI/CD + Deploy", finalizer?.connectorId ?? releaseRun?.deploy?.connectorId ?? "Jenkins / deploy connector", finalizer?.status ?? releaseRun?.deploy?.status ?? "PENDING", "pos-deploy", sourceToGaTone(finalizer?.status ?? releaseRun?.deploy?.status ?? releaseStatus), currentId),
+    sourceToGaNode("decision", "Decision", "Release Decision", releaseRun?.policy?.status ?? state.intelligence.latestReleaseDecisionStatus ?? "未判定", releaseDecisionLabel(releaseRun), "pos-decision", releaseDecisionTone(releaseRun), currentId),
+    sourceToGaNode("ga", "GA", "GA Release", releaseRun?.review?.mergeCommitSha ?? releaseRun?.id ?? "等待 release evidence", gaStatusLabel(releaseRun), "pos-ga", gaTone(releaseRun), currentId)
+  ];
+  return {
+    nodes,
+    edges: sourceToGaEdges(nodes),
+    events: sourceToGaEvents(loop, releaseRun, finalizer),
+    releaseRun,
+    finalizer
+  };
+}
+
+function sourceToGaNode(id, type, title, detail, status, position, tone, currentId) {
+  return {
+    id,
+    type,
+    title,
+    detail: String(detail ?? "-"),
+    status: String(status ?? "PENDING"),
+    position,
+    tone,
+    current: id === currentId
+  };
+}
+
+function inferSourceToGaCurrentNode(loop, releaseRun, finalizer) {
+  if (!loop) return "project";
+  if (["RUNNING"].includes(loop.status)) return "executor";
+  if (loop.status === "WAITING_APPROVAL") return "humanGate";
+  if (loop.status === "BLOCKED" || loop.status === "FAILED") return "executor";
+  if (["RUNNING", "PENDING", "PLANNED"].includes(releaseRun?.status)) return "closure";
+  if (finalizer && !["SUCCEEDED", "PROMOTED"].includes(finalizer.status)) return "deploy";
+  if (releaseRun && !["PROMOTED", "SUCCEEDED"].includes(releaseRun.status)) return "decision";
+  if (["PROMOTED", "SUCCEEDED"].includes(releaseRun?.status)) return "ga";
+  return "target";
+}
+
+function sourceToGaTone(status) {
+  const value = String(status ?? "").toUpperCase();
+  if (["READY", "DONE", "OK", "SUCCEEDED", "PROMOTED", "CLAIMED", "LEASED", "VALID"].includes(value)) return "ready";
+  if (["RUNNING", "STREAMING", "BOUND"].includes(value)) return "running";
+  if (["WAITING_APPROVAL", "BLOCKED", "FAILED", "HEALTH_FAILED", "ROLLED_BACK", "ATTENTION", "POLICY_BLOCKED"].includes(value)) return "blocked";
+  return "pending";
+}
+
+function releaseDecisionLabel(releaseRun) {
+  const decision = String(state.intelligence.latestReleaseDecisionStatus ?? "").trim();
+  if (decision && decision !== "未判定") return decision;
+  if (["FAILED", "HEALTH_FAILED", "ROLLED_BACK", "POLICY_BLOCKED"].includes(releaseRun?.status)) return "NO-GO";
+  if (releaseRun) return releaseRun.policy?.status ?? "AWAITING_DECISION";
+  return "AWAITING";
+}
+
+function releaseDecisionTone(releaseRun) {
+  const label = releaseDecisionLabel(releaseRun);
+  if (label === "GO") return "ready";
+  if (label === "NO-GO") return "blocked";
+  return releaseRun ? "running" : "pending";
+}
+
+function gaStatusLabel(releaseRun) {
+  const decision = releaseDecisionLabel(releaseRun);
+  if (decision === "GO" && ["PROMOTED", "SUCCEEDED"].includes(releaseRun?.status)) return "GA_READY";
+  if (decision === "NO-GO") return "NO_GO";
+  if (releaseRun) return "NOT_YET";
+  return "AWAITING";
+}
+
+function gaTone(releaseRun) {
+  const status = gaStatusLabel(releaseRun);
+  if (status === "GA_READY") return "ready";
+  if (status === "NO_GO" || ["FAILED", "HEALTH_FAILED", "ROLLED_BACK"].includes(releaseRun?.status)) return "blocked";
+  return releaseRun ? "running" : "pending";
+}
+
+function sourceToGaEdges(nodes) {
+  const activeIndex = Math.max(0, nodes.findIndex((node) => node.current));
+  const edgeDefs = [
+    ["project", "discovery", "registers", "rel-registers", "M170 86 C205 86 225 86 260 86"],
+    ["discovery", "target", "discovers", "rel-discovers", "M405 98 C470 120 500 150 535 190"],
+    ["target", "executor", "creates loop", "rel-loop", "M645 235 C705 260 730 292 760 325"],
+    ["executor", "worker", "claims", "rel-claims", "M755 360 C660 390 532 392 420 365"],
+    ["worker", "humanGate", "gates", "rel-gates", "M420 408 C465 455 500 480 535 503"],
+    ["humanGate", "closure", "approves", "rel-approves", "M650 510 C690 510 720 510 760 510"],
+    ["closure", "deploy", "deploys", "rel-deploys", "M830 535 C830 560 830 575 830 592"],
+    ["deploy", "decision", "reports", "rel-reports", "M760 592 C720 592 690 592 650 592"],
+    ["decision", "ga", "decides", "rel-decides", "M535 592 C485 592 445 592 405 592"]
+  ];
+  return edgeDefs.map(([from, to, label, className, path]) => {
+    const toIndex = nodes.findIndex((node) => node.id === to);
+    return { from, to, label, className, path, active: toIndex > -1 && toIndex <= activeIndex };
+  });
+}
+
+function sourceToGaEvents(loop, releaseRun, finalizer) {
+  const timeline = (loop?.timeline ?? []).slice(-3).map((event, index) => ({
+    time: event.timestamp ? formatDate(event.timestamp) : `T-${3 - index}`,
+    label: event.type ?? "loop-event",
+    detail: event.message ?? event.decision ?? "Loop runtime event"
+  }));
+  const synthetic = [
+    loop ? { time: "now", label: "selected-loop", detail: `${loop.id} / ${loop.status}` } : undefined,
+    releaseRun ? { time: "release", label: "source-release-run", detail: `${releaseRun.id} / ${releaseRun.status}` } : undefined,
+    finalizer ? { time: "deploy", label: "deploy-finalizer", detail: `${finalizer.connectorId ?? "connector"} / ${finalizer.status}` } : undefined
+  ].filter(Boolean);
+  return [...timeline, ...synthetic].slice(-5);
+}
+
+function renderSourceToGaInspector(node, loop, model) {
+  const releaseRun = model.releaseRun;
+  const finalizer = model.finalizer;
+  const apiHints = {
+    project: ["/api/v1/projects", "/api/v1/deploy-connectors"],
+    discovery: ["/api/v1/loop-target-runtime/summary", "/api/v1/evaluation-datasets"],
+    target: ["/api/v1/loop-orchestration/targets"],
+    executor: [`/api/v1/loops/${loop?.id ?? "{loopId}"}/executor-graph`, `/api/v1/loops/${loop?.id ?? "{loopId}"}/trace-tree`, `/api/v1/loops/${loop?.id ?? "{loopId}"}/events`],
+    worker: ["/api/v1/loop-workers/queue", `/api/v1/loops/${loop?.id ?? "{loopId}"}/events`],
+    humanGate: [`/api/v1/loops/${loop?.id ?? "{loopId}"}/approve`],
+    closure: ["/api/v1/source-release-runs", `/api/v1/loops/${loop?.id ?? "{loopId}"}/source-release`],
+    deploy: ["/api/v1/source-release-deploy-finalizers"],
+    decision: ["/api/v1/release/decisions", "/api/v1/source-release-runs"],
+    ga: ["/api/v1/release/decisions", "/api/v1/source-release-runs", "/api/v1/history"]
+  };
+  const facts = [
+    ["Loop", loop?.id ?? "等待 Loop"],
+    ["当前节点", node?.title ?? "-"],
+    ["节点状态", node?.status ?? "-"],
+    ["下一动作", sourceToGaNextAction(node, loop, releaseRun)],
+    ["Release Run", releaseRun?.id ?? "等待 source closure"],
+    ["Deploy Finalizer", finalizer?.status ?? "无待恢复 finalizer"]
+  ];
+  return `
+    <div class="source-ga-inspector-head">
+      <span class="eyebrow">Node inspector</span>
+      <h3>${escapeHtml(node?.title ?? "等待节点")}</h3>
+      <p>点击左侧节点会切换这里的状态、关联 API、blocker、artifacts 和可执行动作。</p>
+    </div>
+    <div class="source-ga-facts">
+      ${facts.map(([label, value]) => `<span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong>`).join("")}
+    </div>
+    <div class="source-ga-api-list">
+      <strong>关联 API</strong>
+      ${(apiHints[node?.id] ?? []).map((api) => `<code>${escapeHtml(api)}</code>`).join("")}
+    </div>
+    <div class="source-ga-inspector-actions">
+      <button data-action="load-loop-events" data-id="${escapeHtml(loop?.id ?? "")}" ${loop ? "" : "disabled"}>刷新事件</button>
+      <button data-action="watchdog-loop" data-id="${escapeHtml(loop?.id ?? "")}" ${loop ? "" : "disabled"}>Watchdog</button>
+      ${loop?.status === "WAITING_APPROVAL" ? `<button data-action="approve-loop" data-id="${escapeHtml(loop.id)}">批准继续</button>` : `<button data-action="resume-loop" data-id="${escapeHtml(loop?.id ?? "")}" ${loop ? "" : "disabled"}>继续 Loop</button>`}
+      <button class="primary" data-action="load-source-release-run" data-id="${escapeHtml(loop?.id ?? "")}" ${loop ? "" : "disabled"}>刷新 Release Run</button>
+    </div>
+  `;
+}
+
+function sourceToGaNextAction(node, loop, releaseRun) {
+  if (!loop) return "创建或选择一个 Loop Run";
+  if (node?.id === "humanGate" && loop.status === "WAITING_APPROVAL") return "批准继续或结束最终 gate";
+  if (node?.id === "closure" && !releaseRun) return "执行 source release closure";
+  if (node?.id === "decision" && releaseRun) return "读取 release decision 与 policy blocker";
+  if (node?.id === "ga") return ["PROMOTED", "SUCCEEDED"].includes(releaseRun?.status) ? "复盘 GA evidence" : "等待 Release Decision 达到 GO";
+  return loop.timeline?.at(-1)?.message ?? loop.status ?? "等待 runtime 事件";
 }
 
 function renderWorkflowCanvasEditor(loops) {
@@ -2107,7 +2300,7 @@ function helpManualScenarios() {
       outcome: "卡住的 Loop 被定位到 worker、context、sandbox、trace 或 release gate，并继续或形成人工阻塞",
       goal: "当长任务中断或状态不清时，用 Dashboard 的 runtime workbench 找到当前阻塞点并恢复。",
       steps: [
-        manualStep("查看运行图定位阻塞", "打开 Visual Loop Run Canvas，用 target、executor graph、sandbox、worker、trace、release 六个节点判断卡点。", "能定位阻塞类型和当前节点", "Visual Loop Run Canvas", "Loop 执行", "Run canvas", "长任务状态合成一张运行图", navFor("Loop 执行"), ["Target", "Executor graph", "Sandbox", "Worker", "Trace", "Release"], "Loop 执行", "状态数据未刷新"),
+        manualStep("查看 Source-to-GA 动态链路定位阻塞", "打开 Source-to-GA 本体链路图，选择当前 loopId，用 Git Project、Discovery、Target、Executor Graph、Worker/Sandbox、Human Gate、Source Closure、CI/CD Deploy、Release Decision 和 GA Release 判断卡点。", "能定位当前节点、阻塞类型、关联 API 和下一动作", "Source-to-GA 本体链路图", "Loop 执行", "Dynamic ontology map", "同一张动态图根据所选 Loop Run 实时展示从源码到 GA 的进度", navFor("Loop 执行"), ["Loop 选择器", "当前节点高亮", "Node Inspector", "实时事件流"], "Loop 执行", "状态数据未刷新或 release decision 缺失"),
         manualStep("Claim worker 或执行 Watchdog", "在 Worker Queue Workbench 中 claim 下一 Loop，或触发 Watchdog 检查 expired lease、crash-resume 和 side-effect guard。", "worker lease 更新或 watchdog 给出恢复动作", "Worker Queue Workbench", "Loop 执行", "Worker recovery", "claimable loop 和 lease 过期恢复", navFor("Loop 执行"), ["Claim 下一 Loop", "Watchdog", "Lease", "side-effect guard"], "Loop 执行", "已有 worker 持有有效 lease"),
         manualStep("执行 Context Time Travel Replay", "在 Context Time Travel Workbench 选择 checkpoint，编辑 context JSON 并 Replay 生成 Diff。", "出现 replay diff，Loop 从指定 checkpoint 继续", "Context Time Travel Workbench", "Loop 执行", "Replay", "修改上下文后继续执行", navFor("Loop 执行"), ["Checkpoint", "Replay 并生成 Diff", "contextPatch", "diff"], "Loop 执行", "context JSON 无效或 checkpoint 不存在"),
         manualStep("验证 Sandbox 和 Trace", "用 Sandbox Boundary Workbench 验证 Docker/K8s 边界，用 Streaming Trace Workbench 读取 trace tree 和 events。", "sandbox proof、trace tree、events 都有可读证据", "Sandbox Boundary Workbench", "Loop 执行", "Runtime proof", "沙箱边界、trace tree 和事件流", navFor("Loop 执行"), ["验证 Sandbox Proof", "刷新 Trace Tree", "/events", "failure-group"], "Loop 执行", "沙箱权限不足或事件流断开")
@@ -3021,6 +3214,7 @@ function render() {
   bindEvaluationDatasets();
   bindOpportunityActions();
   bindLoopActions();
+  bindSourceToGaMap();
   bindHistoryActions();
 }
 
@@ -3079,6 +3273,30 @@ function bindPageLinks() {
   for (const button of content.querySelectorAll("[data-page-link]")) {
     button.addEventListener("click", () => {
       setActivePage(button.dataset.pageLink);
+      render();
+    });
+  }
+}
+
+function bindSourceToGaMap() {
+  for (const button of content.querySelectorAll("[data-source-ga-loop-id]")) {
+    button.addEventListener("click", () => {
+      state.sourceToGaLoopId = button.dataset.sourceGaLoopId ?? "";
+      state.sourceToGaNodeId = "executor";
+      render();
+    });
+  }
+  for (const button of content.querySelectorAll("[data-source-ga-node-id]")) {
+    button.addEventListener("click", () => {
+      state.sourceToGaNodeId = button.dataset.sourceGaNodeId ?? "executor";
+      render();
+    });
+  }
+  for (const button of content.querySelectorAll("[data-source-ga-refresh]")) {
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      state.authNotice = "正在刷新 Source-to-GA 动态链路图。";
+      await loadLoops();
       render();
     });
   }
@@ -4732,3 +4950,14 @@ refreshData().finally(() => {
   state.isLoading = false;
   render();
 });
+
+setInterval(async () => {
+  if (normalizePage(state.active) !== "Loop 执行" || state.isLoading || state.sourceToGaRefreshing) return;
+  state.sourceToGaRefreshing = true;
+  try {
+    await loadLoops();
+    render();
+  } finally {
+    state.sourceToGaRefreshing = false;
+  }
+}, 8000);

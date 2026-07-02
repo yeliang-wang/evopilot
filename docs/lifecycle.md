@@ -8,6 +8,8 @@ Evidence -> Decision -> Approval -> Execution -> Validation -> Release Decision 
 
 这个闭环不是一次性 agent 调用。运行证据先形成可追踪上下文，决策层识别机会和风险，治理层决定是否需要人工审批，执行层推进代码升级和 CI/CD，验证层产出独立证据，发布决策给出 `GO` / `CONDITIONAL-GO` / `NO-GO`，最后把结果沉淀为下一轮学习输入。
 
+Dashboard Loop 执行页的 Source-to-GA 动态本体链路图把这条生命周期落到运行对象上：`SCM/Git Project` 对应源码和凭据边界，`Discovery Candidate` 对应证据输入，`Target Backlog` 对应目标和决策上下文，`Executor Graph` 对应执行编排，`Worker + Sandbox` 对应长任务连续性和受控执行边界，`Human Gate` 对应治理停点，`Source Closure` 对应源码写回，`CI/CD + Deploy` 对应交付和健康探测，`Release Decision` 对应产品发布判定，`GA Release` 对应最终可审计状态。它的作用是让用户在一个页面判断当前 loop 是缺项目/证据、缺目标、缺执行器、缺边界、缺审批、缺发布闭环，还是缺 GA 判定。
+
 ## 1. 项目接入
 
 注册 AI Agent 产品、仓库提供方、运行证据通道、项目画像、环境、负责人和交付策略。

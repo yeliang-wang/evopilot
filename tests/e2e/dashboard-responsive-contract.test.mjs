@@ -34,6 +34,8 @@ test("dashboard ships responsive workbench contracts for dense operator pages", 
     assert.match(app, /renderHumanActionInbox/);
     assert.match(app, /renderGuidedOnboardingPanel/);
     assert.match(app, /renderVisualLoopRunCanvas/);
+    assert.match(app, /sourceToGaModel/);
+    assert.match(app, /bindSourceToGaMap/);
     assert.match(app, /renderReleaseCockpit/);
     assert.match(app, /renderProjectDetailWorkspace/);
     assert.match(app, /renderConnectorMarketplaceSettings/);
@@ -62,6 +64,9 @@ test("dashboard ships responsive workbench contracts for dense operator pages", 
     assert.match(css, /\.action-inbox/);
     assert.match(css, /\.onboarding-guide/);
     assert.match(css, /\.loop-canvas/);
+    assert.match(css, /\.source-ga-workbench/);
+    assert.match(css, /\.source-ga-map/);
+    assert.match(css, /\.source-ga-node/);
     assert.match(css, /\.release-cockpit/);
     assert.match(css, /\.project-workspace/);
     assert.match(css, /\.connector-marketplace/);
