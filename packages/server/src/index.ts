@@ -295,6 +295,7 @@ interface StoredDeployConnector {
   gitRemote?: string;
   gitBranch?: string;
   gitPull?: boolean;
+  preserveLocalPaths?: string[];
   build?: boolean;
   deployLock?: boolean;
   idempotency?: boolean;
@@ -2700,6 +2701,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           gitRemote: body.gitRemote ? String(body.gitRemote).trim() : "origin",
           gitBranch: body.gitBranch ? String(body.gitBranch).trim() : "main",
           gitPull: body.gitPull === undefined ? connectorType === "ecs-docker-compose" : Boolean(body.gitPull),
+          preserveLocalPaths: normalizeStringList(body.preserveLocalPaths, []),
           build: body.build === undefined ? true : Boolean(body.build),
           deployLock: body.deployLock === undefined ? connectorType === "ecs-docker-compose" : Boolean(body.deployLock),
           idempotency: body.idempotency === undefined ? connectorType === "ecs-docker-compose" : Boolean(body.idempotency),
@@ -3869,6 +3871,7 @@ class FileStore {
       gitRemote: connector.gitRemote ?? "origin",
       gitBranch: connector.gitBranch ?? "main",
       gitPull: connector.gitPull ?? true,
+      preserveLocalPaths: normalizeStringList(connector.preserveLocalPaths, []),
       build: connector.build ?? true,
       deployLock: connector.deployLock ?? true,
       idempotency: connector.idempotency ?? true,
@@ -9978,6 +9981,17 @@ async function executeEcsDockerComposeDeploy(connector: StoredDeployConnector, i
       return ecsDeployResult(connector, "SUCCEEDED", evidence, commandResults, previousStamp.deploymentId);
     }
     if (connector.gitPull !== false) {
+      const preserved = await preserveEcsLocalPaths({
+        connector,
+        gitCommand,
+        workingDir,
+        timeoutSeconds,
+        commandResults
+      });
+      if (preserved.status === "FAILED") {
+        return ecsDeployResult(connector, "FAILED", evidence, commandResults, beforeCommit, preserved.failure);
+      }
+      evidence.push(...preserved.evidence);
       const pull = await runBoundedCommand({
         command: gitCommand,
         args: ["pull", "--ff-only", gitRemote, gitBranch],
@@ -9988,6 +10002,17 @@ async function executeEcsDockerComposeDeploy(connector: StoredDeployConnector, i
       if (pull.exitCode !== 0) {
         return ecsDeployResult(connector, "FAILED", evidence, commandResults, beforeCommit, "git pull failed");
       }
+      const restored = await restoreEcsLocalPaths({
+        gitCommand,
+        workingDir,
+        timeoutSeconds,
+        commandResults,
+        stashCreated: preserved.stashCreated
+      });
+      if (restored.status === "FAILED") {
+        return ecsDeployResult(connector, "FAILED", evidence, commandResults, beforeCommit, restored.failure);
+      }
+      evidence.push(...restored.evidence);
     }
     const after = await runBoundedCommand({
       command: gitCommand,
@@ -10070,6 +10095,57 @@ async function rollbackEcsDockerComposeDeploy(args: {
   });
   args.commandResults.push({ name: "rollback docker compose up", exitCode: compose.exitCode, output: compose.output });
   return compose.exitCode === 0 ? "SUCCEEDED" : "FAILED";
+}
+
+async function preserveEcsLocalPaths(args: {
+  connector: StoredDeployConnector;
+  gitCommand: string;
+  workingDir: string;
+  timeoutSeconds: number;
+  commandResults: Array<{ name: string; exitCode: number; output: string }>;
+}): Promise<{ status: "SUCCEEDED" | "FAILED"; stashCreated: boolean; evidence: string[]; failure?: string }> {
+  const paths = normalizeStringList(args.connector.preserveLocalPaths, []);
+  if (paths.length === 0) return { status: "SUCCEEDED", stashCreated: false, evidence: [] };
+  const stash = await runBoundedCommand({
+    command: args.gitCommand,
+    args: ["stash", "push", "--include-untracked", "-m", `evopilot-preserve-${args.connector.id}`, "--", ...paths],
+    cwd: args.workingDir,
+    timeoutSeconds: args.timeoutSeconds
+  });
+  args.commandResults.push({ name: "git stash preserve-local-paths", exitCode: stash.exitCode, output: stash.output });
+  if (stash.exitCode !== 0) {
+    return { status: "FAILED", stashCreated: false, evidence: [`preserveLocalPaths=${paths.join(",")}`], failure: "git stash preserve-local-paths failed" };
+  }
+  const stashCreated = !/No local changes to save/i.test(stash.output);
+  return {
+    status: "SUCCEEDED",
+    stashCreated,
+    evidence: [
+      `preserveLocalPaths=${paths.join(",")}`,
+      `preserveLocalPathsStashed=${stashCreated}`
+    ]
+  };
+}
+
+async function restoreEcsLocalPaths(args: {
+  gitCommand: string;
+  workingDir: string;
+  timeoutSeconds: number;
+  commandResults: Array<{ name: string; exitCode: number; output: string }>;
+  stashCreated: boolean;
+}): Promise<{ status: "SUCCEEDED" | "FAILED"; evidence: string[]; failure?: string }> {
+  if (!args.stashCreated) return { status: "SUCCEEDED", evidence: ["preserveLocalPathsRestored=false"] };
+  const pop = await runBoundedCommand({
+    command: args.gitCommand,
+    args: ["stash", "pop"],
+    cwd: args.workingDir,
+    timeoutSeconds: args.timeoutSeconds
+  });
+  args.commandResults.push({ name: "git stash pop preserve-local-paths", exitCode: pop.exitCode, output: pop.output });
+  if (pop.exitCode !== 0) {
+    return { status: "FAILED", evidence: ["preserveLocalPathsRestored=false"], failure: "git stash pop preserve-local-paths failed" };
+  }
+  return { status: "SUCCEEDED", evidence: ["preserveLocalPathsRestored=true"] };
 }
 
 function ecsDeployReleaseKey(input: {

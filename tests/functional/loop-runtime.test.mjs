@@ -986,6 +986,14 @@ if [ "$1" = "pull" ]; then
   echo "pulled"
   exit 0
 fi
+if [ "$1" = "stash" ] && [ "$2" = "push" ]; then
+  echo "Saved working directory and index state"
+  exit 0
+fi
+if [ "$1" = "stash" ] && [ "$2" = "pop" ]; then
+  echo "restored"
+  exit 0
+fi
 echo "unexpected git command: $@" >&2
 exit 2
 `);
@@ -1046,6 +1054,7 @@ exit 0
         dockerCommand: dockerScript,
         gitRemote: "origin",
         gitBranch: "main",
+        preserveLocalPaths: ["Dockerfile"],
         url: `http://127.0.0.1:${deployPort}`,
         healthPath: "/health",
         readyPath: "/ready"
@@ -1088,8 +1097,10 @@ exit 0
     assert.equal(executed.body.data.sourceClosure.artifacts.deploymentId, "after-ecs-commit");
     assert.equal(executed.body.data.sourceClosure.gateEvidence.deploy.status, "PASSED");
     assert.ok(executed.body.data.sourceClosure.gateEvidence.deploy.evidence.some((item) => item === "deployConnectorType=ecs-docker-compose"));
+    assert.ok(executed.body.data.sourceClosure.gateEvidence.deploy.evidence.some((item) => item === "preserveLocalPaths=Dockerfile"));
+    assert.ok(executed.body.data.sourceClosure.gateEvidence.deploy.evidence.some((item) => item === "preserveLocalPathsRestored=true"));
     assert.equal(executed.body.data.sourceClosure.gateEvidence["health-ready"].status, "PASSED");
-    assert.match(fs.readFileSync(gitLog, "utf8"), /pull --ff-only origin main/);
+    assert.match(fs.readFileSync(gitLog, "utf8"), /stash push --include-untracked -m evopilot-preserve-ecs-compose -- Dockerfile\npull --ff-only origin main\nstash pop/);
     assert.equal(fs.readFileSync(dockerLog, "utf8").trim(), "compose -f docker-compose.prod.yml up -d --build evopilot-server");
 
     const replayed = await jsonFetch(`${baseUrl}/api/v1/loops/github-ecs-loop/source-closure/execute`, {
