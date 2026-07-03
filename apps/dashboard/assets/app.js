@@ -58,6 +58,7 @@ const state = {
   loopOrchestrationTargets: [],
   loopGraphContracts: {},
   loopWorkspaceView: "overview",
+  loopExecutionTab: "current",
   releaseWorkspaceView: "simple",
   sourceToGaLoopId: "",
   sourceToGaNodeId: "executor",
@@ -836,6 +837,8 @@ function renderSimplifiedLoopExecution(loops) {
   const completedLoops = loops.filter((loop) => ["SUCCEEDED", "COMPLETED"].includes(loop.status) || loop.sourceClosure?.closureState === "PROMOTED");
   const failedLoops = loops.filter((loop) => ["FAILED", "CANCELLED"].includes(loop.status) || loop.sourceClosure?.closureState === "FAILED");
   const primaryLoop = model.activeLoop ?? currentLoops[0] ?? completedLoops[0] ?? loops[0];
+  const activeTab = ["current", "pending", "history", "failed"].includes(state.loopExecutionTab) ? state.loopExecutionTab : "current";
+  const inbox = humanActionInboxModel();
   return `
     <section class="source-ga-loop-head">
       <div>
@@ -846,11 +849,50 @@ function renderSimplifiedLoopExecution(loops) {
       <button data-loop-workspace-view="advanced">打开高级工作区</button>
     </section>
     <div class="source-ga-loop-tabs" role="tablist" aria-label="Loop 状态分组">
-      <button class="active">当前进行中 ${currentLoops.length || (primaryLoop ? 1 : 0)}</button>
-      <button>待处理 ${humanActionInboxModel().length}</button>
-      <button>历史完成 ${completedLoops.length}</button>
-      <button>失败/修复 ${failedLoops.length + state.sourceReleaseRepairCandidates.length}</button>
+      ${[
+        ["current", `当前进行中 ${currentLoops.length || (primaryLoop ? 1 : 0)}`],
+        ["pending", `待处理 ${inbox.length}`],
+        ["history", `历史完成 ${completedLoops.length}`],
+        ["failed", `失败/修复 ${failedLoops.length + state.sourceReleaseRepairCandidates.length}`]
+      ].map(([id, label]) => `<button class="${activeTab === id ? "active" : ""}" data-loop-execution-tab="${id}">${escapeHtml(label)}</button>`).join("")}
     </div>
+    ${renderSimplifiedLoopTab(activeTab, { primaryLoop, model, currentLoops, completedLoops, failedLoops, inbox })}
+  `;
+}
+
+function renderSimplifiedLoopTab(activeTab, data) {
+  const { primaryLoop, model, currentLoops, completedLoops, failedLoops, inbox } = data;
+  if (activeTab === "pending") {
+    return `
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>待办中心</h2>
+            <p>只显示会阻塞下一步的凭据、审批、修复和发布动作。</p>
+          </div>
+          <span class="pill ${inbox.length ? "warn" : "good"}">${inbox.length}</span>
+        </div>
+        <div class="source-ga-todo-list">
+          ${renderSimplifiedTodoList(inbox, 12)}
+        </div>
+      </section>
+    `;
+  }
+  if (activeTab === "history") {
+    return renderSimplifiedLoopList("历史完成", "已经完成或 source closure 已晋级的 Loop。", completedLoops, "暂无完成 Loop");
+  }
+  if (activeTab === "failed") {
+    const repairItems = state.sourceReleaseRepairCandidates.map((item) => ({
+      id: item.loopId ?? item.id,
+      objective: `${item.loopId ?? item.id} release run 失败`,
+      status: item.status ?? "FAILED",
+      currentIteration: item.currentIteration ?? 0,
+      sourceClosure: { closureState: item.status ?? "FAILED" },
+      trace: { cost: { totalTokens: 0 } }
+    }));
+    return renderSimplifiedLoopList("失败/修复", "失败、回滚或需要 repair run 的 Loop。", [...failedLoops, ...repairItems], "暂无失败 Loop");
+  }
+  return `
     <div class="source-ga-loop-grid">
       <section class="card">
         <div class="section-title">
@@ -861,6 +903,7 @@ function renderSimplifiedLoopExecution(loops) {
           ${statusPill(model.loopDone ? "已晋级" : primaryLoop?.status ?? "待启动")}
         </div>
         ${primaryLoop ? renderSimplifiedLoopCard(primaryLoop, model) : renderEmptyState("还没有 Loop", "连接 GitHub 项目并生成 GA target 后，启动第一个 Source-to-GA Loop。", "把首次路径保持在一个主任务上。")}
+        ${currentLoops.length > 1 ? renderSimplifiedLoopRows(currentLoops.filter((loop) => loop.id !== primaryLoop?.id).slice(0, 4)) : ""}
       </section>
       <aside class="card">
         <div class="section-title">
@@ -868,20 +911,58 @@ function renderSimplifiedLoopExecution(loops) {
             <h2>待办中心</h2>
             <p>只显示会阻塞下一步的动作。</p>
           </div>
-          <span class="pill ${humanActionInboxModel().length ? "warn" : "good"}">${humanActionInboxModel().length}</span>
+          <span class="pill ${inbox.length ? "warn" : "good"}">${inbox.length}</span>
         </div>
         <div class="source-ga-todo-list">
-          ${humanActionInboxModel().slice(0, 5).map((item) => `
-            <article>
-              <div>
-                <strong>${escapeHtml(item.title)}</strong>
-                <small>${escapeHtml(item.detail)}</small>
-              </div>
-              <button ${item.action ? `data-action="${escapeHtml(item.action)}"` : `data-page-link="${escapeHtml(item.page)}"`} ${item.id ? `data-id="${escapeHtml(item.id)}"` : ""}>${escapeHtml(item.cta)}</button>
-            </article>
-          `).join("") || renderEmptyState("无阻塞待办", "凭据、审批、修复和发布门禁都没有等待用户处理。")}
+          ${renderSimplifiedTodoList(inbox, 5)}
         </div>
       </aside>
+    </div>
+  `;
+}
+
+function renderSimplifiedTodoList(items, limit) {
+  return items.slice(0, limit).map((item) => `
+    <article>
+      <div>
+        <strong>${escapeHtml(item.title)}</strong>
+        <small>${escapeHtml(item.detail)}</small>
+      </div>
+      <button ${item.action ? `data-action="${escapeHtml(item.action)}"` : `data-page-link="${escapeHtml(item.page)}"`} ${item.id ? `data-id="${escapeHtml(item.id)}"` : ""}>${escapeHtml(item.cta)}</button>
+    </article>
+  `).join("") || renderEmptyState("无阻塞待办", "凭据、审批、修复和发布门禁都没有等待用户处理。");
+}
+
+function renderSimplifiedLoopList(title, detail, loops, emptyTitle) {
+  return `
+    <section class="card">
+      <div class="section-title">
+        <div>
+          <h2>${escapeHtml(title)}</h2>
+          <p>${escapeHtml(detail)}</p>
+        </div>
+        <span class="pill">${loops.length}</span>
+      </div>
+      ${loops.length ? renderSimplifiedLoopRows(loops) : renderEmptyState(emptyTitle, detail)}
+    </section>
+  `;
+}
+
+function renderSimplifiedLoopRows(loops) {
+  return `
+    <div class="source-ga-loop-list">
+      ${loops.map((loop) => `
+        <article>
+          <div>
+            <strong>${escapeHtml(loop.id)}</strong>
+            <small>${escapeHtml(loop.objective ?? loop.sourceClosure?.targetVersion ?? "Loop run")}</small>
+          </div>
+          <span>${escapeHtml(loop.status ?? "-")}</span>
+          <span>${escapeHtml(`${loop.currentIteration ?? 0}/${loop.stopPolicy?.maxIterations ?? "-"}`)}</span>
+          <span>${escapeHtml(loop.sourceClosure?.closureState ?? "-")}</span>
+          <button data-loop-workspace-view="advanced" data-loop-detail-id="${escapeHtml(loop.id)}">细节</button>
+        </article>
+      `).join("")}
     </div>
   `;
 }
@@ -3859,6 +3940,12 @@ function bindPageLinks() {
 }
 
 function bindLoopWorkspace() {
+  for (const button of content.querySelectorAll("[data-loop-execution-tab]")) {
+    button.addEventListener("click", () => {
+      state.loopExecutionTab = button.dataset.loopExecutionTab ?? "current";
+      render();
+    });
+  }
   for (const button of content.querySelectorAll("[data-loop-workspace-view]")) {
     button.addEventListener("click", () => {
       state.loopWorkspaceView = button.dataset.loopWorkspaceView ?? "overview";

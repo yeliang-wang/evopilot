@@ -362,6 +362,34 @@
   background: #fbfcfe;
 }
 
+.source-ga-loop-list {
+  display: grid;
+  gap: 10px;
+}
+
+.source-ga-loop-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px 88px 130px auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fbfcfe;
+}
+
+.source-ga-loop-list strong,
+.source-ga-loop-list small,
+.source-ga-loop-list span {
+  overflow-wrap: anywhere;
+}
+
+.source-ga-loop-list small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+}
+
 .source-ga-release-hero {
   grid-template-columns: minmax(0, 1fr) 280px;
 }
@@ -380,7 +408,8 @@
   .source-ga-stepper,
   .source-ga-wizard-summary,
   .source-ga-primary-loop-meta,
-  .source-ga-loop-progress {
+  .source-ga-loop-progress,
+  .source-ga-loop-list article {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -390,6 +419,7 @@
   .source-ga-wizard-summary,
   .source-ga-primary-loop-meta,
   .source-ga-loop-progress,
+  .source-ga-loop-list article,
   .source-ga-wizard-form > div,
   .source-ga-next-item {
     grid-template-columns: 1fr;
