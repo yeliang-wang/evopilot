@@ -1320,6 +1320,16 @@ test("prod mode disables anonymous admin, sample data, and auto project registra
     () => createServer({ dataRoot: fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-prod-no-token-")) }),
     /EVOPILOT_PROD_REQUIRES_TOKENS/
   );
+  assert.throws(
+    () => createServer({
+      dataRoot: fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-prod-no-llm-")),
+      runtimeMode: "prod",
+      tokens: [
+        { name: "admin", token: "admin-token", role: "admin" }
+      ]
+    }),
+    /EVOPILOT_PROD_REQUIRES_LLM_PROVIDER/
+  );
 
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-prod-"));
   const server = createServer({

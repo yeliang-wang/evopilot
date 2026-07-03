@@ -1096,6 +1096,8 @@ interface ExecutorAdapterExecutionInput {
   sandbox: LoopSandboxPolicy;
   sandboxEnforcement: LoopSandboxEnforcement;
   now: string;
+  llmClient?: LlmTaskClient;
+  requireLlm: boolean;
 }
 
 interface ExecutorAdapterExecutionOutput {
@@ -1109,7 +1111,7 @@ interface ExecutorAdapterExecutionOutput {
 interface ExecutorAdapter {
   id: string;
   nodeType: ExecutorNodeType;
-  execute(input: ExecutorAdapterExecutionInput): ExecutorAdapterExecutionOutput;
+  execute(input: ExecutorAdapterExecutionInput): ExecutorAdapterExecutionOutput | Promise<ExecutorAdapterExecutionOutput>;
 }
 
 interface LoopEvidenceSet {
@@ -1587,15 +1589,15 @@ interface RolloutStrategyReport {
 }
 
 export function createServer(options: EvoPilotServerOptions): http.Server {
-  const store = new FileStore(options.dataRoot);
   const profile = options.profile ?? domainforgeFabricProfile;
   const runtime = resolveRuntimeConfig(options);
   const llmClient = options.llmClient ?? createLlmClientFromEnv();
   const requireLlm = runtime.requireLlm;
+  const tokens = normalizeTokens(options);
+  assertProductionRuntimeIsConfigured(runtime, tokens, llmClient);
+  const store = new FileStore(options.dataRoot, { llmClient, requireLlm });
   const proofOpsCore = loadProofOpsCoreContract(options.proofOpsCoreContractPath);
   store.ensureRuleMemories(profile.triggerRules ?? defaultTriggerRules);
-  const tokens = normalizeTokens(options);
-  assertProductionRuntimeIsConfigured(runtime, tokens);
   if (runtime.autoRegisterProfileProject) {
     store.ensureProject({
       id: profile.id,
@@ -1859,7 +1861,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       if (request.method === "POST" && url.pathname === "/api/v1/loop-orchestration/advance") {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const body = await readJson(request, options.maxBodyBytes);
-        const result = advanceLoopOrchestrationTarget(store, auth.actor, {
+        const result = await advanceLoopOrchestrationTarget(store, auth.actor, {
           targetId: optionalTrimmedString(body.targetId),
           projectId: optionalTrimmedString(body.projectId),
           targetVersion: optionalTrimmedString(body.targetVersion),
@@ -2116,7 +2118,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           if (existing) return writeJson(response, 200, existing);
         }
         const body = await readJson(request, options.maxBodyBytes);
-        const loop = store.startLoop(decodeURIComponent(loopStartMatch[1]), auth.actor, {
+        const loop = await store.startLoop(decodeURIComponent(loopStartMatch[1]), auth.actor, {
           forceDecision: normalizeLoopDecision(body.forceDecision),
           evidence: Array.isArray(body.evidence) ? body.evidence.map(String) : undefined
         });
@@ -2135,7 +2137,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           if (existing) return writeJson(response, 200, existing);
         }
         const body = await readJson(request, options.maxBodyBytes);
-        const loop = store.resumeLoop(decodeURIComponent(loopResumeMatch[1]), auth.actor, {
+        const loop = await store.resumeLoop(decodeURIComponent(loopResumeMatch[1]), auth.actor, {
           forceDecision: normalizeLoopDecision(body.forceDecision),
           evidence: Array.isArray(body.evidence) ? body.evidence.map(String) : undefined
         });
@@ -2149,7 +2151,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       if (request.method === "POST" && loopReplayMatch) {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const body = await readJson(request, options.maxBodyBytes);
-        const loop = store.replayLoop(decodeURIComponent(loopReplayMatch[1]), auth.actor, {
+        const loop = await store.replayLoop(decodeURIComponent(loopReplayMatch[1]), auth.actor, {
           fromIteration: Number(body.fromIteration ?? body.iteration ?? 1),
           contextPatch: isRecord(body.contextPatch) ? body.contextPatch : isRecord(body.context) ? body.context : undefined,
           evidence: Array.isArray(body.evidence) ? body.evidence.map(String) : undefined,
@@ -2171,7 +2173,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       if (request.method === "POST" && loopTimeTravelReplayMatch) {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const body = await readJson(request, options.maxBodyBytes);
-        const result = store.replayLoopWithDiff(decodeURIComponent(loopTimeTravelReplayMatch[1]), auth.actor, {
+        const result = await store.replayLoopWithDiff(decodeURIComponent(loopTimeTravelReplayMatch[1]), auth.actor, {
           fromIteration: Number(body.fromIteration ?? body.iteration ?? 1),
           contextPatch: isRecord(body.contextPatch) ? body.contextPatch : isRecord(body.context) ? body.context : undefined,
           evidence: Array.isArray(body.evidence) ? body.evidence.map(String) : undefined,
@@ -3144,7 +3146,10 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
 }
 
 class FileStore {
-  constructor(private readonly dataRoot: string) {
+  constructor(
+    private readonly dataRoot: string,
+    private readonly executionRuntime: { llmClient?: LlmTaskClient; requireLlm?: boolean } = {}
+  ) {
     fs.mkdirSync(this.dataRoot, { recursive: true });
     fs.mkdirSync(this.runsDir, { recursive: true });
     fs.mkdirSync(this.projectsDir, { recursive: true });
@@ -4773,18 +4778,18 @@ class FileStore {
     return buildLoopCheckpoints(loop);
   }
 
-  replayLoopWithDiff(id: string, actor: string, input: {
+  async replayLoopWithDiff(id: string, actor: string, input: {
     fromIteration: number;
     contextPatch?: Record<string, unknown>;
     evidence?: string[];
     artifacts?: LoopArtifact[];
     forceDecision?: LoopDecision;
-  }): { loop: LoopRun; checkpoint?: LoopCheckpoint; replayDiff: LoopReplayDiff } | undefined {
+  }): Promise<{ loop: LoopRun; checkpoint?: LoopCheckpoint; replayDiff: LoopReplayDiff } | undefined> {
     const before = this.readLoop(id);
     if (!before) return undefined;
     const fromIteration = Math.max(1, Math.floor(Number(input.fromIteration) || 1));
     const checkpoint = buildLoopCheckpoints(before).find((item) => item.iterationIndex === fromIteration);
-    const replayed = this.replayLoop(id, actor, input);
+    const replayed = await this.replayLoop(id, actor, input);
     if (!replayed) return undefined;
     return {
       loop: replayed,
@@ -4908,11 +4913,11 @@ class FileStore {
     return this.writeLoop(loop);
   }
 
-  startLoop(id: string, actor: string, input: { forceDecision?: LoopDecision; evidence?: string[]; artifacts?: LoopArtifact[] } = {}): LoopRun | undefined {
+  async startLoop(id: string, actor: string, input: { forceDecision?: LoopDecision; evidence?: string[]; artifacts?: LoopArtifact[] } = {}): Promise<LoopRun | undefined> {
     const loop = this.readLoop(id);
     if (!loop) return undefined;
     if (loop.status === "CANCELLED" || loop.status === "SUCCEEDED" || loop.status === "FAILED") return loop;
-    return this.runLoopIteration({
+    return await this.runLoopIteration({
       loop: {
         ...loop,
         status: "RUNNING",
@@ -4923,23 +4928,23 @@ class FileStore {
     });
   }
 
-  resumeLoop(id: string, actor: string, input: { forceDecision?: LoopDecision; evidence?: string[]; artifacts?: LoopArtifact[] } = {}): LoopRun | undefined {
+  async resumeLoop(id: string, actor: string, input: { forceDecision?: LoopDecision; evidence?: string[]; artifacts?: LoopArtifact[] } = {}): Promise<LoopRun | undefined> {
     const loop = this.readLoop(id);
     if (!loop) return undefined;
     if (loop.status === "WAITING_APPROVAL" && loop.approvals.some((approval) => approval.status === "PENDING")) {
       throw httpError(409, "LOOP_APPROVAL_REQUIRED", "Loop requires approval before it can resume.");
     }
     if (["CANCELLED", "SUCCEEDED", "FAILED"].includes(loop.status)) return loop;
-    return this.runLoopIteration({ loop: { ...loop, status: "RUNNING" }, actor, ...input });
+    return await this.runLoopIteration({ loop: { ...loop, status: "RUNNING" }, actor, ...input });
   }
 
-  replayLoop(id: string, actor: string, input: {
+  async replayLoop(id: string, actor: string, input: {
     fromIteration: number;
     contextPatch?: Record<string, unknown>;
     evidence?: string[];
     artifacts?: LoopArtifact[];
     forceDecision?: LoopDecision;
-  }): LoopRun | undefined {
+  }): Promise<LoopRun | undefined> {
     const loop = this.readLoop(id);
     if (!loop) return undefined;
     const fromIteration = Math.max(1, Math.floor(Number(input.fromIteration) || 1));
@@ -4969,7 +4974,7 @@ class FileStore {
       ],
       updatedAt: new Date().toISOString()
     };
-    return this.runLoopIteration({
+    return await this.runLoopIteration({
       loop: replayBase,
       actor,
       forceDecision: input.forceDecision,
@@ -5063,7 +5068,7 @@ class FileStore {
     return { recovered, blocked };
   }
 
-  private runLoopIteration(args: {
+  private async runLoopIteration(args: {
     loop: LoopRun;
     actor: string;
     forceDecision?: LoopDecision;
@@ -5071,14 +5076,14 @@ class FileStore {
     artifacts?: LoopArtifact[];
     replayOfIterationId?: string;
     contextPatch?: Record<string, unknown>;
-  }): LoopRun {
+  }): Promise<LoopRun> {
     const graph = this.readExecutorGraph(args.loop.executorGraphId) ?? defaultExecutorGraph();
     const now = new Date().toISOString();
     const nextIndex = args.loop.currentIteration + 1;
     const startedAt = now;
     const iterationWorkspace = path.join(this.loopWorkspacesDir, safeFileName(args.loop.id), `iteration-${nextIndex}`);
     fs.mkdirSync(iterationWorkspace, { recursive: true });
-    const steps = graph.nodes.map((node, index) => executeLoopNode({
+    const steps = await Promise.all(graph.nodes.map((node, index) => executeLoopNode({
       node,
       loop: args.loop,
       iterationIndex: nextIndex,
@@ -5089,8 +5094,10 @@ class FileStore {
       coordination: normalizeExecutorCoordinationPlan(graph),
       sandbox: args.loop.sandbox,
       sandboxEnforcement: evaluateLoopSandboxEnforcement(args.loop.sandbox),
-      now: new Date(Date.now() + index).toISOString()
-    }));
+      now: new Date(Date.now() + index).toISOString(),
+      llmClient: this.executionRuntime.llmClient,
+      requireLlm: this.executionRuntime.requireLlm === true
+    })));
     const failedSteps = steps.filter((step) => step.status === "FAILED");
     const waitingApproval = steps.some((step) => step.status === "WAITING_APPROVAL");
     const evidenceStatus: LoopEvidenceSet["status"] = failedSteps.length > 0 ? "FAIL" : waitingApproval ? "BLOCKED" : "PASS";
@@ -6144,7 +6151,7 @@ function loopOrchestrationTargets(store: FileStore): LoopOrchestrationTarget[] {
   });
 }
 
-function advanceLoopOrchestrationTarget(store: FileStore, actor: string, input: {
+async function advanceLoopOrchestrationTarget(store: FileStore, actor: string, input: {
   targetId?: string;
   projectId?: string;
   targetVersion?: string;
@@ -6152,7 +6159,7 @@ function advanceLoopOrchestrationTarget(store: FileStore, actor: string, input: 
   controlPlaneUrl?: string;
   deployConnectorId?: string;
   autoStart?: boolean;
-}): LoopOrchestrationAdvanceResult {
+}): Promise<LoopOrchestrationAdvanceResult> {
   const targets = loopOrchestrationTargets(store);
   const target = input.targetId
     ? targets.find((item) => item.id === input.targetId)
@@ -6169,7 +6176,7 @@ function advanceLoopOrchestrationTarget(store: FileStore, actor: string, input: 
     evidence.push(`loopCreated=${loop.id}`);
   }
   if (input.autoStart !== false && loop.status === "PENDING") {
-    loop = store.startLoop(loop.id, actor, {
+    loop = await store.startLoop(loop.id, actor, {
       evidence: [
         `orchestrationTarget=${target.id}`,
         "codexLoopTarget=true",
@@ -6179,7 +6186,7 @@ function advanceLoopOrchestrationTarget(store: FileStore, actor: string, input: 
     action = "start-loop";
     advanced = true;
   } else if (input.autoStart !== false && (loop.status === "RUNNING" || loop.status === "BLOCKED")) {
-    loop = store.resumeLoop(loop.id, actor, {
+    loop = await store.resumeLoop(loop.id, actor, {
       evidence: [
         `orchestrationTarget=${target.id}`,
         "codexLoopTarget=true",
@@ -6235,7 +6242,7 @@ async function runLoopOrchestrationAutopilot(store: FileStore, actor: string, bo
   };
 
   try {
-    const advanced = advanceLoopOrchestrationTarget(store, actor, {
+    const advanced = await advanceLoopOrchestrationTarget(store, actor, {
       targetId: optionalTrimmedString(request.targetId),
       projectId: optionalTrimmedString(request.projectId),
       targetVersion: optionalTrimmedString(request.targetVersion),
@@ -6277,7 +6284,7 @@ async function runLoopOrchestrationAutopilot(store: FileStore, actor: string, bo
           detail: "Pending loop approval was explicitly approved by autopilot request.",
           evidence: [`approvedBy=${actor}`, "approveHumanGate=true"]
         });
-        loop = store.resumeLoop(loop.id, actor, {
+        loop = await store.resumeLoop(loop.id, actor, {
           forceDecision: "SUCCEED",
           evidence: ["autopilotHumanGateApproved=true", `autopilotActor=${actor}`]
         }) ?? loop;
@@ -6293,12 +6300,12 @@ async function runLoopOrchestrationAutopilot(store: FileStore, actor: string, bo
       return finalizeLoopOrchestrationAutopilot({ status: "BLOCKED", target, loop, releaseRun, stages, evidence, nextAction: "human-approval" });
     }
     if (loop.status === "PENDING") {
-      loop = store.startLoop(loop.id, actor, { evidence: ["autopilot.iterate=start"] }) ?? loop;
+      loop = await store.startLoop(loop.id, actor, { evidence: ["autopilot.iterate=start"] }) ?? loop;
       iterated = true;
       continue;
     }
     if (loop.status === "RUNNING" || loop.status === "BLOCKED") {
-      loop = store.resumeLoop(loop.id, actor, { evidence: ["autopilot.iterate=resume"] }) ?? loop;
+      loop = await store.resumeLoop(loop.id, actor, { evidence: ["autopilot.iterate=resume"] }) ?? loop;
       iterated = true;
       continue;
     }
@@ -7874,86 +7881,276 @@ class ExecutorAdapterRegistry {
   }
 }
 
-const executorAdapterRegistry = new ExecutorAdapterRegistry([
-  createPolicyAwareExecutorAdapter("evopilot.llm-context-adapter", "llm"),
-  createPolicyAwareExecutorAdapter("evopilot.code-upgrader-adapter", "code-upgrader"),
-  createPolicyAwareExecutorAdapter("evopilot.ci-adapter", "ci"),
-  createPolicyAwareExecutorAdapter("evopilot.validator-adapter", "validator"),
-  createPolicyAwareExecutorAdapter("evopilot.approval-adapter", "approval"),
-  createPolicyAwareExecutorAdapter("evopilot.release-action-adapter", "release-action")
-]);
+function createExecutorAdapterRegistry(): ExecutorAdapterRegistry {
+  return new ExecutorAdapterRegistry([
+    createLlmContextExecutorAdapter("evopilot.llm-context-adapter"),
+    createPolicyAwareExecutorAdapter("evopilot.code-upgrader-adapter", "code-upgrader"),
+    createPolicyAwareExecutorAdapter("evopilot.ci-adapter", "ci"),
+    createPolicyAwareExecutorAdapter("evopilot.validator-adapter", "validator"),
+    createPolicyAwareExecutorAdapter("evopilot.approval-adapter", "approval"),
+    createPolicyAwareExecutorAdapter("evopilot.release-action-adapter", "release-action")
+  ]);
+}
+
+function createLlmContextExecutorAdapter(id: string): ExecutorAdapter {
+  return {
+    id,
+    nodeType: "llm",
+    async execute(input) {
+      const policyResult = policyBlockedExecutorResult(id, "llm", input);
+      if (policyResult) return policyResult;
+      if (!input.llmClient) {
+        if (input.requireLlm) {
+          return failedExecutorResult(id, "llm", input, "LLM_REQUIRED_FOR_LOOP_EXECUTOR", "LLM provider is not configured for loop executor.");
+        }
+        return policyAwareExecutorSuccess(id, "llm", input, {
+          result: "llm skipped because no provider is configured in debug mode",
+          executionMode: "debug-no-provider"
+        }, ["llm.executionMode=debug-no-provider"]);
+      }
+      const started = Date.parse(input.now);
+      const response = await input.llmClient.generate({
+        caller: "evopilot-loop-runtime",
+        intent: "plan.generation",
+        outputContract: "markdown_document",
+        latencyClass: "batch",
+        complexity: "high",
+        outputSize: "large",
+        metadata: {
+          productFlow: "loop-executor",
+          loopId: input.loop.id,
+          nodeId: input.node.id,
+          projectId: input.loop.projectId,
+          executorGraphId: input.loop.executorGraphId,
+          sourceProjectId: input.loop.sourceClosure.sourceProjectId,
+          sourceProvider: input.loop.sourceClosure.repositoryProvider
+        },
+        prompt: loopLlmExecutorPrompt(input)
+      });
+      const totalTokens = Number(response.usage?.totalTokens ?? 0);
+      const costUsd = estimateLlmCostUsd(totalTokens);
+      const commonOutput = {
+        workspacePath: input.nodeWorkspace,
+        executorBoundary: executorBoundaryLabel(input.node.type),
+        adapterId: id,
+        coordinationMode: input.coordination.mode,
+        sandboxRuntime: input.sandbox.runtime,
+        credentialScope: input.sandbox.credentialScope,
+        network: input.sandbox.network,
+        sandboxEnforcement: input.sandboxEnforcement.status,
+        sourceClosure: input.loop.sourceClosure,
+        provider: response.provider,
+        model: response.model,
+        totalTokens,
+        tokens: totalTokens,
+        costUsd,
+        durationMs: response.durationMs,
+        resolvedIntent: response.resolvedIntent,
+        resolvedProfile: response.resolvedProfile,
+        llmRequestId: response.requestId,
+        finishReason: response.finishReason,
+        truncated: response.truncated === true
+      };
+      if (!response.success) {
+        return {
+          status: "FAILED",
+          completedAt: new Date(started + Math.max(1, response.durationMs ?? 1)).toISOString(),
+          output: {
+            ...commonOutput,
+            reason: response.errorMessage ?? response.errorCode ?? "LLM executor failed",
+            errorCode: response.errorCode,
+            errorMessage: response.errorMessage
+          },
+          evidence: [
+            ...executorAdapterEvidence(id, "llm", input),
+            "llm.executionMode=provider",
+            `llm.provider=${response.provider ?? "unknown"}`,
+            `llm.model=${response.model ?? "unknown"}`,
+            `llm.totalTokens=${totalTokens}`,
+            `llm.costUsd=${costUsd}`,
+            `llm.success=false`,
+            `status=FAILED`
+          ],
+          failureSignature: `llm:${response.errorCode ?? "provider-failed"}`
+        };
+      }
+      return {
+        status: "SUCCEEDED",
+        completedAt: new Date(started + Math.max(1, response.durationMs ?? 1)).toISOString(),
+        output: {
+          ...commonOutput,
+          result: "llm provider completed",
+          planMarkdown: response.text,
+          usage: response.usage
+        },
+        evidence: [
+          ...executorAdapterEvidence(id, "llm", input),
+          "llm.executionMode=provider",
+          `llm.provider=${response.provider ?? "unknown"}`,
+          `llm.model=${response.model ?? "unknown"}`,
+          `llm.totalTokens=${totalTokens}`,
+          `llm.costUsd=${costUsd}`,
+          `llm.success=true`,
+          `status=SUCCEEDED`
+        ]
+      };
+    }
+  };
+}
+
+function policyBlockedExecutorResult(id: string, nodeType: ExecutorNodeType, input: ExecutorAdapterExecutionInput): ExecutorAdapterExecutionOutput | undefined {
+  const blockedByCircuit = input.previousFailureCount >= input.loop.retryPolicy.circuitBreakerFailures && input.node.type !== "approval";
+  const blockedBySandbox = input.sandboxEnforcement.status === "FAILED" && input.node.type !== "approval";
+  const forcedFailure = input.forceDecision === "FAIL" || input.forceDecision === "BLOCK" || input.forceDecision === "REPAIR";
+  const waitingApproval = input.node.type === "approval" && input.loop.stopPolicy.requireApprovalForRelease && input.iterationIndex >= input.loop.stopPolicy.maxIterations;
+  if (waitingApproval) {
+    return {
+      status: "WAITING_APPROVAL",
+      output: executorOutputBase(id, input, {
+        reason: "approval gate reached"
+      }),
+      evidence: [...executorAdapterEvidence(id, nodeType, input), "status=WAITING_APPROVAL"]
+    };
+  }
+  if (!blockedByCircuit && !blockedBySandbox && !forcedFailure) return undefined;
+  return failedExecutorResult(
+    id,
+    nodeType,
+    input,
+    blockedBySandbox ? "SANDBOX_ENFORCEMENT_FAILED" : "LOOP_POLICY_BLOCKED",
+    blockedBySandbox ? "sandbox enforcement failed" : "loop policy blocked execution",
+    blockedBySandbox ? `${input.node.type}:sandbox-enforcement-failed` : `${input.node.type}:policy-or-forced-failure`
+  );
+}
+
+function failedExecutorResult(
+  id: string,
+  nodeType: ExecutorNodeType,
+  input: ExecutorAdapterExecutionInput,
+  errorCode: string,
+  reason: string,
+  failureSignature = `${input.node.type}:${errorCode.toLowerCase()}`
+): ExecutorAdapterExecutionOutput {
+  return {
+    status: "FAILED",
+    completedAt: new Date(Date.parse(input.now) + 1).toISOString(),
+    output: executorOutputBase(id, input, { reason, errorCode }),
+    evidence: [...executorAdapterEvidence(id, nodeType, input), `errorCode=${errorCode}`, "status=FAILED"],
+    failureSignature
+  };
+}
+
+function policyAwareExecutorSuccess(
+  id: string,
+  nodeType: ExecutorNodeType,
+  input: ExecutorAdapterExecutionInput,
+  extraOutput: Record<string, unknown> = {},
+  extraEvidence: string[] = []
+): ExecutorAdapterExecutionOutput {
+  return {
+    status: "SUCCEEDED",
+    completedAt: new Date(Date.parse(input.now) + 1).toISOString(),
+    output: executorOutputBase(id, input, {
+      result: `${input.node.type} completed`,
+      ...extraOutput
+    }),
+    evidence: [...executorAdapterEvidence(id, nodeType, input), ...extraEvidence, "status=SUCCEEDED"]
+  };
+}
+
+function executorOutputBase(id: string, input: ExecutorAdapterExecutionInput, extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    ...extra,
+    workspacePath: input.nodeWorkspace,
+    executorBoundary: executorBoundaryLabel(input.node.type),
+    adapterId: id,
+    coordinationMode: input.coordination.mode,
+    sandboxRuntime: input.sandbox.runtime,
+    credentialScope: input.sandbox.credentialScope,
+    network: input.sandbox.network,
+    sandboxEnforcement: input.sandboxEnforcement.status,
+    sourceClosure: input.loop.sourceClosure
+  };
+}
+
+function executorAdapterEvidence(id: string, nodeType: ExecutorNodeType, input: ExecutorAdapterExecutionInput): string[] {
+  return [
+    `adapter=${id}`,
+    `adapterNodeType=${nodeType}`,
+    `executorBoundary=${executorBoundaryLabel(input.node.type)}`,
+    `coordinationMode=${input.coordination.mode}`,
+    `sandboxRuntime=${input.sandbox.runtime}`,
+    `sandboxNetwork=${input.sandbox.network}`,
+    `sandboxEnforcement=${input.sandboxEnforcement.status}`,
+    `credentialScope=${input.sandbox.credentialScope}`,
+    `sourceProjectId=${input.loop.sourceClosure.sourceProjectId}`,
+    `sourceProvider=${input.loop.sourceClosure.repositoryProvider}`,
+    `sourceRef=${input.loop.sourceClosure.sourceUrl ?? input.loop.sourceClosure.sourceRoot ?? "unknown"}`,
+    `sourceBranch=${input.loop.sourceClosure.sourceBranch}`,
+    `releaseStrategy=${input.loop.sourceClosure.releaseStrategy}`,
+    `requiredGates=${input.loop.sourceClosure.requiredGates.join(",")}`,
+    `targetVersion=${input.loop.sourceClosure.targetVersion ?? "unspecified"}`,
+    `deploymentEnvironment=${input.loop.sourceClosure.deploymentEnvironment ?? "production"}`
+  ];
+}
 
 function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType): ExecutorAdapter {
   return {
     id,
     nodeType,
     execute(input) {
-      const boundary = executorBoundaryLabel(input.node.type);
-      const blockedByCircuit = input.previousFailureCount >= input.loop.retryPolicy.circuitBreakerFailures && input.node.type !== "approval";
-      const blockedBySandbox = input.sandboxEnforcement.status === "FAILED" && input.node.type !== "approval";
-      const forcedFailure = input.forceDecision === "FAIL" || input.forceDecision === "BLOCK" || input.forceDecision === "REPAIR";
-      const waitingApproval = input.node.type === "approval" && input.loop.stopPolicy.requireApprovalForRelease && input.iterationIndex >= input.loop.stopPolicy.maxIterations;
-      const status: ExecutorStepResult["status"] = blockedByCircuit || forcedFailure
-        ? "FAILED"
-        : blockedBySandbox
-          ? "FAILED"
-        : waitingApproval
-          ? "WAITING_APPROVAL"
-          : "SUCCEEDED";
-      return {
-        status,
-        completedAt: status === "WAITING_APPROVAL" ? undefined : new Date(Date.parse(input.now) + 1).toISOString(),
-        output: status === "SUCCEEDED"
-          ? {
-              result: `${input.node.type} completed`,
-              workspacePath: input.nodeWorkspace,
-              executorBoundary: boundary,
-              adapterId: id,
-              coordinationMode: input.coordination.mode,
-              sandboxRuntime: input.sandbox.runtime,
-              credentialScope: input.sandbox.credentialScope,
-      network: input.sandbox.network,
-      sandboxEnforcement: input.sandboxEnforcement.status,
-      sourceClosure: input.loop.sourceClosure
-            }
-          : {
-              reason: status === "WAITING_APPROVAL" ? "approval gate reached" : blockedBySandbox ? "sandbox enforcement failed" : "loop policy blocked execution",
-              workspacePath: input.nodeWorkspace,
-              executorBoundary: boundary,
-              adapterId: id,
-              coordinationMode: input.coordination.mode,
-              sandboxRuntime: input.sandbox.runtime,
-              credentialScope: input.sandbox.credentialScope,
-              network: input.sandbox.network,
-              sandboxEnforcement: input.sandboxEnforcement.status,
-              sourceClosure: input.loop.sourceClosure
-            },
-        evidence: [
-          `adapter=${id}`,
-          `adapterNodeType=${nodeType}`,
-          `executorBoundary=${boundary}`,
-          `coordinationMode=${input.coordination.mode}`,
-          `sandboxRuntime=${input.sandbox.runtime}`,
-          `sandboxNetwork=${input.sandbox.network}`,
-          `sandboxEnforcement=${input.sandboxEnforcement.status}`,
-          `credentialScope=${input.sandbox.credentialScope}`,
-          `sourceProjectId=${input.loop.sourceClosure.sourceProjectId}`,
-          `sourceProvider=${input.loop.sourceClosure.repositoryProvider}`,
-          `sourceRef=${input.loop.sourceClosure.sourceUrl ?? input.loop.sourceClosure.sourceRoot ?? "unknown"}`,
-          `sourceBranch=${input.loop.sourceClosure.sourceBranch}`,
-          `releaseStrategy=${input.loop.sourceClosure.releaseStrategy}`,
-          `requiredGates=${input.loop.sourceClosure.requiredGates.join(",")}`,
-          `targetVersion=${input.loop.sourceClosure.targetVersion ?? "unspecified"}`,
-          `deploymentEnvironment=${input.loop.sourceClosure.deploymentEnvironment ?? "production"}`,
-          `status=${status}`
-        ],
-        failureSignature: status === "FAILED" ? `${input.node.type}:${blockedBySandbox ? "sandbox-enforcement-failed" : "policy-or-forced-failure"}` : undefined
-      };
+      return policyBlockedExecutorResult(id, nodeType, input) ?? policyAwareExecutorSuccess(id, nodeType, input);
     }
   };
 }
 
-function executeLoopNode(args: {
+function loopLlmExecutorPrompt(input: ExecutorAdapterExecutionInput): string {
+  return [
+    "# EvoPilot Loop Executor Plan",
+    "",
+    "You are the real LLM executor for an EvoPilot production loop. Produce a concise Markdown plan that can be audited by the control plane.",
+    "",
+    "## Loop",
+    `- loopId: ${input.loop.id}`,
+    `- projectId: ${input.loop.projectId}`,
+    `- objective: ${input.loop.objective}`,
+    `- currentIteration: ${input.iterationIndex}`,
+    `- executorGraphId: ${input.loop.executorGraphId}`,
+    "",
+    "## Source Closure",
+    `- sourceProjectId: ${input.loop.sourceClosure.sourceProjectId}`,
+    `- provider: ${input.loop.sourceClosure.repositoryProvider}`,
+    `- sourceRef: ${input.loop.sourceClosure.sourceUrl ?? input.loop.sourceClosure.sourceRoot ?? "unknown"}`,
+    `- branch: ${input.loop.sourceClosure.sourceBranch}`,
+    `- targetVersion: ${input.loop.sourceClosure.targetVersion ?? "unspecified"}`,
+    `- requiredGates: ${input.loop.sourceClosure.requiredGates.join(", ")}`,
+    `- releaseStrategy: ${input.loop.sourceClosure.releaseStrategy}`,
+    "",
+    "## Runtime Boundary",
+    `- sandboxRuntime: ${input.sandbox.runtime}`,
+    `- sandboxNetwork: ${input.sandbox.network}`,
+    `- credentialScope: ${input.sandbox.credentialScope}`,
+    `- sandboxEnforcement: ${input.sandboxEnforcement.status}`,
+    "",
+    "## Required Output",
+    "- Current code/product facts implied by the loop context.",
+    "- Execution plan for this iteration.",
+    "- Expected code, validation, release, and evidence gates.",
+    "- Risks, blockers, and required human approval points.",
+    "- Keep it actionable and specific; do not claim that code was changed unless a downstream executor actually changes it.",
+    "",
+    "## Context",
+    JSON.stringify(input.loop.context ?? {}, null, 2)
+  ].join("\n");
+}
+
+function estimateLlmCostUsd(totalTokens: number): number {
+  const pricePerThousand = Number(process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD ?? "0");
+  if (!Number.isFinite(pricePerThousand) || pricePerThousand <= 0 || totalTokens <= 0) return 0;
+  return Number(((totalTokens / 1000) * pricePerThousand).toFixed(6));
+}
+
+async function executeLoopNode(args: {
   node: ExecutorNode;
   loop: LoopRun;
   iterationIndex: number;
@@ -7965,7 +8162,9 @@ function executeLoopNode(args: {
   sandbox: LoopSandboxPolicy;
   sandboxEnforcement: LoopSandboxEnforcement;
   now: string;
-}): ExecutorStepResult {
+  llmClient?: LlmTaskClient;
+  requireLlm: boolean;
+}): Promise<ExecutorStepResult> {
   const workspacePath = path.join(args.workspaceRoot, safeFileName(args.node.id));
   fs.mkdirSync(workspacePath, { recursive: true });
   const nodeCoordination = args.coordination.nodes.find((node) => node.nodeId === args.node.id);
@@ -7983,8 +8182,8 @@ function executeLoopNode(args: {
     `allowedPaths=${args.sandbox.allowedPaths.join(",")}`,
     `deniedPaths=${args.sandbox.deniedPaths.join(",")}`
   ];
-  const adapter = executorAdapterRegistry.resolve(args.node);
-  const adapterResult = adapter.execute({
+  const adapter = createExecutorAdapterRegistry().resolve(args.node);
+  const adapterResult = await adapter.execute({
     node: args.node,
     loop: args.loop,
     iterationIndex: args.iterationIndex,
@@ -7996,7 +8195,9 @@ function executeLoopNode(args: {
     coordination: args.coordination,
     sandbox: args.sandbox,
     sandboxEnforcement: args.sandboxEnforcement,
-    now: args.now
+    now: args.now,
+    llmClient: args.llmClient,
+    requireLlm: args.requireLlm
   });
   return {
     nodeId: args.node.id,
@@ -13167,12 +13368,13 @@ function resolveRuntimeConfig(options: EvoPilotServerOptions): RuntimeConfig {
   };
 }
 
-function assertProductionRuntimeIsConfigured(runtime: RuntimeConfig, tokens: AuthToken[]): void {
+function assertProductionRuntimeIsConfigured(runtime: RuntimeConfig, tokens: AuthToken[], llmClient?: LlmTaskClient): void {
   if (runtime.mode !== "prod") return;
   if (runtime.allowAnonymousAdmin) throw new Error("EVOPILOT_PROD_FORBIDS_ANONYMOUS_ADMIN");
   if (runtime.allowMockIntegrations) throw new Error("EVOPILOT_PROD_FORBIDS_MOCK_INTEGRATIONS");
   if (!runtime.requireLlm) throw new Error("EVOPILOT_PROD_REQUIRES_LLM");
   if (tokens.length === 0) throw new Error("EVOPILOT_PROD_REQUIRES_TOKENS");
+  if (!llmClient) throw new Error("EVOPILOT_PROD_REQUIRES_LLM_PROVIDER");
 }
 
 function requireBodyString(value: unknown, errorCode: string, runtime: RuntimeConfig, debugFallback?: string): string {

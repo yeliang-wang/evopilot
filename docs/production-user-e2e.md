@@ -95,6 +95,7 @@ EVOPILOT_REAL_VALIDATION_COMMANDS=npm run check
 ## 代码升级与 CI/CD 验收点
 
 - 代码升级执行器必须调用真实 LLM 生成结构化升级计划。
+- Loop Runtime 的 `llm` executor 必须调用真实 LLM Gateway 生成本轮计划，并在 loop trace 中保留 `provider`、`model`、`totalTokens`、`costUsd`；生产模式下缺少 LLM provider 时服务必须拒绝启动，不能把 `llm` 节点标记为空跑成功。
 - 代码升级执行器必须接收当前 Git 基线代码上下文；修改已有文件时必须基于当前文件内容完整改写，不能只根据方案猜测代码。
 - 代码升级执行器必须产生至少一个真实项目实现、测试、脚本或配置文件变更；仅写入 `.evopilot/upgrades/`、`.evopilot/runtime-upgrades/` 或 `docs/evopilot-upgrades/` 不能视为生产代码升级。
 - EvoPilot 会根据项目当前 Git 基线推导代码升级允许路径，并把允许路径和受保护路径一起传给代码升级执行器。

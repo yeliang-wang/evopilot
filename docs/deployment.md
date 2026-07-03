@@ -68,7 +68,8 @@ EVOPILOT_RUN_MODE=prod
 生产模式要求：
 
 - 必须配置 `EVOPILOT_TOKENS` 或 `EVOPILOT_API_TOKEN`。
-- `EVOPILOT_REQUIRE_LLM` 默认等于 `true`，LLM 未配置或失败时直接阻断。
+- `EVOPILOT_REQUIRE_LLM` 默认等于 `true`，必须配置真实 LLM provider；缺少 `EVOPILOT_LLM_BASE_URL`、`EVOPILOT_LLM_MODEL_NAME` 或 `EVOPILOT_LLM_API_KEY` 时，生产服务会拒绝启动并返回 `EVOPILOT_PROD_REQUIRES_LLM_PROVIDER`。
+- Loop Runtime 的 `llm` executor 会调用真实 LLM Gateway，成功后把 `provider`、`model`、`totalTokens`、`costUsd` 写入 executor output、evidence 和 trace；调用失败时节点失败，不允许在生产模式下空跑成功。
 - 不允许无鉴权 admin。
 - 不允许模拟集成链路。
 - 不自动注册内置项目画像。

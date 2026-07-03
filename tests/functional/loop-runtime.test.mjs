@@ -670,6 +670,84 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
   }
 });
 
+test("production loop llm executor calls real llm client and records usage", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-loop-real-llm-"));
+  const previousPrice = process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD;
+  process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD = "0.002";
+  let callCount = 0;
+  let capturedPrompt = "";
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "prod",
+    requireLlm: true,
+    llmClient: {
+      async generate(request) {
+        callCount += 1;
+        capturedPrompt = request.prompt;
+        return {
+          requestId: request.requestId ?? "loop-llm-request",
+          success: true,
+          text: "# Plan\n\nUse tenant and workspace scoped contracts.",
+          provider: "zhipu",
+          model: "glm-5.1",
+          durationMs: 5,
+          usage: { inputTokens: 1000, outputTokens: 500, totalTokens: 1500 },
+          resolvedIntent: request.intent,
+          resolvedProfile: "deep-reasoning"
+        };
+      }
+    },
+    tokens: [
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "viewer", token: "viewer-token", role: "viewer" }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const created = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "tenant-workspace-real-llm",
+        projectId: "evopilot-github",
+        objective: "Define tenant and workspace model for EvoPilot SaaS.",
+        sourceClosure: {
+          sourceProjectId: "evopilot-github",
+          repositoryProvider: "github",
+          sourceUrl: "https://github.com/yeliang-wang/EvoPilot.git",
+          sourceBranch: "main",
+          targetVersion: "saas-tenant-workspace",
+          releaseStrategy: "github-push"
+        }
+      }
+    });
+    assert.equal(created.status, 201);
+    const started = await jsonFetch(`${baseUrl}/api/v1/loops/tenant-workspace-real-llm/start`, {
+      method: "POST",
+      token: "operator-token"
+    });
+    assert.equal(started.status, 200);
+    assert.equal(callCount, 1);
+    assert.match(capturedPrompt, /Define tenant and workspace model/);
+    const llmStep = started.body.data.iterations[0].executorSteps.find((step) => step.type === "llm");
+    assert.equal(llmStep.status, "SUCCEEDED");
+    assert.equal(llmStep.output.provider, "zhipu");
+    assert.equal(llmStep.output.model, "glm-5.1");
+    assert.equal(llmStep.output.totalTokens, 1500);
+    assert.equal(llmStep.output.costUsd, 0.003);
+    assert.equal(started.body.data.trace.totalTokens, undefined);
+    assert.deepEqual(started.body.data.trace.cost, { estimatedUsd: 0.003, totalTokens: 1500 });
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "llm.executionMode=provider"));
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "llm.provider=zhipu"));
+  } finally {
+    if (previousPrice === undefined) delete process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD;
+    else process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD = previousPrice;
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("Loop source closure executes GitHub source writeback gates", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-source-closure-"));
   const github = createFakeSourceClosureGitHubServer();
