@@ -380,7 +380,7 @@ function sourceToGaExperienceModel() {
   const project = state.projects.find((item) => item.id === activeLoop?.projectId || item.id === activeLoop?.sourceClosure?.sourceProjectId)
     ?? state.projects.find((item) => /已验证|健康/.test(`${item.validation}${item.status}`))
     ?? state.projects[0];
-  const releaseRun = activeLoop ? latestSourceReleaseRun(activeLoop.id) ?? latestReleaseRun : latestReleaseRun;
+  const releaseRun = activeLoop ? latestSourceReleaseRun(activeLoop.id) : latestReleaseRun;
   const closureState = activeLoop?.sourceClosure?.closureState ?? releaseRun?.status ?? "PLANNED";
   const decisionStatus = releaseDecisionLabel(releaseRun);
   const prUrl = releaseRun?.artifacts?.pullRequestUrl

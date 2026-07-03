@@ -278,6 +278,8 @@ async function assertDashboardContract(baseUrl) {
   assert.doesNotMatch(app, /PDF 下载/);
   assert.match(app, /postJson\("\/api\/v1\/projects"/);
   assert.match(app, /projectRegistrationPayload/);
+  assert.match(app, /const releaseRun = activeLoop \? latestSourceReleaseRun\(activeLoop\.id\) : latestReleaseRun;/);
+  assert.doesNotMatch(app, /latestSourceReleaseRun\(activeLoop\.id\) \?\? latestReleaseRun/);
   for (const removed of ["演进计划", "新建评审"]) {
     assert.doesNotMatch(app, new RegExp(removed));
   }
