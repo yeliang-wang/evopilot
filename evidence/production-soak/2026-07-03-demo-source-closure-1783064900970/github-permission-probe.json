@@ -18,7 +18,13 @@
     "putFile": {
       "status": "skipped",
       "message": "branch create failed or skipped"
+    },
+    "createPullRequestFromTemporarySshBranch": {
+      "status": 403,
+      "message": "Resource not accessible by personal access token",
+      "temporaryBranch": "evopilot/pr-permission-probe-1783065412",
+      "temporaryBranchDeleted": true
     }
   },
-  "conclusion": "The production token can read the demo repository but cannot create branches or write contents. The token permission must be expanded in GitHub before the source-closure E2E can reach GA."
+  "conclusion": "The production token can read the demo repository but cannot create branches, write contents, or create pull requests. The token permission must be expanded in GitHub before the source-closure E2E can reach GA."
 }

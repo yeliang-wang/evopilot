@@ -21,6 +21,9 @@ The blocking portion is GitHub writeback permission:
 - GitHub returned `403 Forbidden`.
 - A direct GitHub API permission probe with the same production token could read `main` but failed on `POST /repos/yeliang-wang/evopilot-demo-node-api/git/refs`.
 - GitHub's response was `Resource not accessible by personal access token`.
+- A follow-up permission split test pushed a temporary branch with local SSH credentials, then used the same production token to create a pull request from that branch.
+- GitHub also returned `403` for `POST /repos/yeliang-wang/evopilot-demo-node-api/pulls`, so the token is missing pull request write permission as well as contents/ref write permission.
+- The temporary branch `evopilot/pr-permission-probe-1783065412` was deleted after the probe.
 
 ## Evidence Files
 
@@ -31,11 +34,11 @@ The blocking portion is GitHub writeback permission:
 
 ## Diagnosis
 
-The token belongs to the correct GitHub user and the user has push/admin permission on the repository, but the fine-grained PAT itself is not authorized for write operations on this repository. The current EvoPilot GitHub source-closure implementation uses GitHub API token writeback for branch creation, file upsert, pull request creation, and pull request merge. There is no SSH fallback for the `github` provider path.
+The token belongs to the correct GitHub user and the user has push/admin permission on the repository, but the fine-grained PAT itself is not authorized for source-closure write operations on this repository. The current EvoPilot GitHub source-closure implementation uses GitHub API token writeback for branch creation, file upsert, pull request creation, and pull request merge. There is no SSH fallback for the `github` provider path, and a hybrid SSH-branch plus token-PR flow is also blocked because pull request creation returns `403`.
 
 ## External Action Required
 
-Update the fine-grained PAT named `EvoPilot source writeback` so it includes `yeliang-wang/evopilot-demo-node-api` with repository contents write access. GitHub requires email sudo verification before editing the token settings page, so this cannot be completed from the production API or local repo alone.
+Update the fine-grained PAT named `EvoPilot source writeback` so it includes `yeliang-wang/evopilot-demo-node-api` with repository contents write access and pull request write access. GitHub requires email sudo verification before editing the token settings page, so this cannot be completed from the production API or local repo alone.
 
 After the token permission is updated, rerun `.tmp/run-demo-source-closure-e2e.mjs` to produce the final evidence:
 
