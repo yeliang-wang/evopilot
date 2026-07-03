@@ -101,6 +101,18 @@ The target runtime now owns the next six GA-alignment targets as product objects
 
 These objects are exposed through `/api/v1/loop-target-runtime/*` and aggregated by `GET /api/v1/loop-target-runtime/summary`, so Dashboard, Codex, or another client can reuse the same product control-plane contract.
 
+The same target-loop layer now owns the SaaS cloud-service evolution backlog. These targets are product objects, not throwaway validation prompts:
+
+- `tenant-workspace-model`: explicit tenant, workspace, membership, role, project ownership, credential scope, loop evidence, release evidence, and single-tenant migration contracts.
+- `github-app-onboarding`: GitHub App installation, repository picker, least-privilege permissions, webhook signature verification, and installation-token lifecycle.
+- `secret-vault-and-credential-boundary`: encrypted secret references, no-plaintext responses or logs, rotation, revocation, audit, and credential preflight.
+- `quota-rate-limit-billing-foundation`: usage accounting, plan, quota, rate-limit, budget, and product-visible stop conditions.
+- `production-observability-domain-https`: managed domain, HTTPS ingress, public service health, structured logs, metrics, alerts, and incident evidence.
+- `worker-queue-and-postgres-store`: durable relational ownership, queued workers, retry, lease recovery, backup, restore, and migration boundaries.
+- `saas-onboarding-dashboard`: guided first workspace path from GitHub connection to repository selection, first target, first loop, teammate invitation, and release conclusion.
+
+For self-evolution, production should register the GitHub EvoPilot repository as `evopilot-github` and advance `tenant-workspace-model` explicitly. This keeps the running controller as the system of record while source changes still flow through repository, loop evidence, release policy, and deployment closure.
+
 Context time travel, release repair, worker failover, sandbox proof, and streaming trace inspection are also control-plane surfaces, not side scripts. `GET /api/v1/loops/{loopId}/checkpoints` derives replayable checkpoints from durable iterations, and `POST /api/v1/loops/{loopId}/time-travel/replay` records edited context plus replay diff evidence before continuing through the same executor graph. Release Run Auto Repair Workbench reads `repair-candidates`, supports single-row and batch repair, and removes a candidate only after a subsequent run reaches a non-failed terminal state such as `PROMOTED`. `GET /api/v1/loop-workers/queue` and `POST /api/v1/loop-workers/claim` expose the durable queue, worker lease renewal, expired-lease failover, crash-resume readiness, and duplicate source-closure side-effect guard to Dashboard and automation. `GET /api/v1/loops/{loopId}/sandbox-proof` generates executable Docker/K8s boundary proof, and `POST /api/v1/loops/{loopId}/sandbox-proof/verify` writes boundary verification evidence into the loop. `GET /api/v1/loops/{loopId}/trace-tree` and `GET /api/v1/loops/{loopId}/events` expose trace trees, JSON event lists, and SSE streams for checkpoint, executor-step, cost, failure-group, replay-diff, and sandbox-proof events.
 
 The remaining target-loop capabilities are now part of the product runtime:

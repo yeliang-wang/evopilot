@@ -248,7 +248,14 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
       "adversarial-evaluator-agent",
       "recurring-loop-scheduler",
       "loop-memory-inbox",
-      "budget-and-judgment-guardrails"
+      "budget-and-judgment-guardrails",
+      "tenant-workspace-model",
+      "github-app-onboarding",
+      "secret-vault-and-credential-boundary",
+      "quota-rate-limit-billing-foundation",
+      "production-observability-domain-https",
+      "worker-queue-and-postgres-store",
+      "saas-onboarding-dashboard"
     ]) {
       const target = targets.body.data.find((item) => item.id === id);
       assert.ok(target, `${id} should be exposed as a target-loop backlog item`);
@@ -294,6 +301,27 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(advancedAgain.body.data.loop.id, advanced.body.data.loop.id);
     assert.equal(advancedAgain.body.data.action, "resume-loop");
     assert.equal(advancedAgain.body.data.loop.currentIteration, 2);
+
+    const tenantWorkspaceAdvanced = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/advance`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        targetId: "tenant-workspace-model",
+        projectId: "workbuddy",
+        targetVersion: "saas-tenant-workspace-2026-07-03",
+        controlPlaneUrl: baseUrl,
+        autoStart: true
+      }
+    });
+    assert.equal(tenantWorkspaceAdvanced.status, 201);
+    assert.equal(tenantWorkspaceAdvanced.body.data.target.id, "tenant-workspace-model");
+    assert.equal(tenantWorkspaceAdvanced.body.data.target.layer, "context");
+    assert.equal(tenantWorkspaceAdvanced.body.data.target.status, "RUNNING");
+    assert.equal(tenantWorkspaceAdvanced.body.data.action, "start-loop");
+    assert.equal(tenantWorkspaceAdvanced.body.data.loop.context.orchestrationTargetId, "tenant-workspace-model");
+    assert.equal(tenantWorkspaceAdvanced.body.data.loop.sourceClosure.targetVersion, "saas-tenant-workspace-2026-07-03");
+    assert.ok(tenantWorkspaceAdvanced.body.data.loop.context.acceptanceCriteria.length >= 3);
+    assert.ok(tenantWorkspaceAdvanced.body.data.evidence.some((item) => item === "target=tenant-workspace-model"));
 
     const discoveryAdvanced = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/advance`, {
       method: "POST",

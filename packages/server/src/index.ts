@@ -3447,7 +3447,14 @@ class FileStore {
       "adversarial-evaluator-agent",
       "recurring-loop-scheduler",
       "loop-memory-inbox",
-      "budget-and-judgment-guardrails"
+      "budget-and-judgment-guardrails",
+      "tenant-workspace-model",
+      "github-app-onboarding",
+      "secret-vault-and-credential-boundary",
+      "quota-rate-limit-billing-foundation",
+      "production-observability-domain-https",
+      "worker-queue-and-postgres-store",
+      "saas-onboarding-dashboard"
     ].includes(target.id));
     const insights = this.discoverOpportunityInsights();
     const traces = this.listLoopTraces();
@@ -6030,6 +6037,90 @@ function loopOrchestrationTargetDefinitions(): Array<Omit<LoopOrchestrationTarge
         "Runtime records per-node cost, confidence, blast-radius, and policy judgment evidence for each iteration.",
         "Autopilot blocks or routes to human review when budget, confidence, or release-judgment thresholds are exceeded."
       ]
+    },
+    {
+      id: "tenant-workspace-model",
+      title: "Tenant Workspace Model",
+      layer: "context",
+      presetId: "codex-target-loop",
+      objective: "Define the tenant, workspace, membership, role, project ownership, and evidence scoping model required before EvoPilot can be opened as a cloud service.",
+      acceptanceCriteria: [
+        "Tenant, organization or workspace, user membership, role, and project ownership contracts are explicit and versioned.",
+        "Projects, credentials, loop runs, source release runs, audit records, and release evidence can be queried and scoped by tenant or workspace.",
+        "Migration preserves single-tenant self-hosted mode while making tenantId and workspaceId mandatory at the cloud boundary."
+      ]
+    },
+    {
+      id: "github-app-onboarding",
+      title: "GitHub App Onboarding",
+      layer: "harness",
+      presetId: "codex-target-loop",
+      objective: "Replace ad hoc repository tokens with a GitHub App onboarding flow that supports installation, repository selection, least-privilege permissions, webhook verification, and installation-token lifecycle.",
+      acceptanceCriteria: [
+        "Users can connect a GitHub App installation and select repositories without pasting long-lived personal tokens into the dashboard.",
+        "Webhook signature verification, installation-token refresh, and repository permission checks are captured as auditable evidence.",
+        "Loop source closure can resolve writeback credentials from the installation while preserving least privilege and revocation."
+      ]
+    },
+    {
+      id: "secret-vault-and-credential-boundary",
+      title: "Secret Vault and Credential Boundary",
+      layer: "harness",
+      presetId: "codex-target-loop",
+      objective: "Make secret storage, token references, rotation, revocation, and no-plaintext logging a first-class production boundary for multi-tenant EvoPilot.",
+      acceptanceCriteria: [
+        "Credentials are stored and referenced through encrypted secret refs instead of plaintext project payloads.",
+        "API responses, dashboard views, loop evidence, and logs never echo secret values.",
+        "Rotation, revocation, audit trail, and credential preflight status are visible to operators and enforced before source closure."
+      ]
+    },
+    {
+      id: "quota-rate-limit-billing-foundation",
+      title: "Quota Rate Limit Billing Foundation",
+      layer: "loop",
+      presetId: "codex-target-loop",
+      objective: "Introduce the usage accounting, plan, quota, rate limit, and budget stop-condition foundation needed for EvoPilot to behave like a cloud service.",
+      acceptanceCriteria: [
+        "Loop runtime records usage for projects, tenants, workspaces, source operations, tokens, time, and release attempts.",
+        "Plans and quotas can cap loop concurrency, execution duration, source closure, and deployment actions.",
+        "Budget and rate-limit stops are surfaced as product-visible next actions instead of generic execution failures."
+      ]
+    },
+    {
+      id: "production-observability-domain-https",
+      title: "Production Observability Domain HTTPS",
+      layer: "harness",
+      presetId: "codex-target-loop",
+      objective: "Harden public production operation with domain, HTTPS, ingress controls, logs, metrics, alerts, status, and incident evidence suitable for external SaaS users.",
+      acceptanceCriteria: [
+        "Production exposes EvoPilot through a managed domain and HTTPS ingress with documented security boundaries.",
+        "Health, readiness, loop execution, release closure, queue pressure, and credential blockers emit metrics and structured logs.",
+        "Alerts, status evidence, and incident runbooks exist for externally visible service degradation."
+      ]
+    },
+    {
+      id: "worker-queue-and-postgres-store",
+      title: "Worker Queue and Postgres Store",
+      layer: "loop",
+      presetId: "codex-target-loop",
+      objective: "Move cloud execution toward durable Postgres-backed state, queued workers, retry control, backup, restore, and migration contracts.",
+      acceptanceCriteria: [
+        "Projects, loops, releases, credentials, audits, target backlog, schedules, and memory records have durable relational ownership boundaries.",
+        "Worker queue execution supports retry, lease recovery, idempotency, and horizontal scaling without duplicate side effects.",
+        "Backup, restore, and migration procedures are documented and validated against representative production data."
+      ]
+    },
+    {
+      id: "saas-onboarding-dashboard",
+      title: "SaaS Onboarding Dashboard",
+      layer: "context",
+      presetId: "codex-target-loop",
+      objective: "Compress first-run cloud onboarding into a guided path that connects GitHub, selects a repository, chooses a target, starts the first loop, and reaches a release conclusion.",
+      acceptanceCriteria: [
+        "A new workspace can complete GitHub connection, repository selection, target choice, and first loop start from one guided dashboard path.",
+        "The dashboard shows the active loop stage, blocker, evidence, and release conclusion without forcing users through separate feature pages.",
+        "Team invitation and role visibility are available before the workspace is treated as SaaS-ready."
+      ]
     }
   ];
 }
@@ -6963,6 +7054,11 @@ function normalizeStringList(value: unknown, fallback: string[]): string[] {
 function discoveryAffectedFilesForTarget(targetId: string, project: StoredProject): string[] {
   const repositoryHint = project.repository?.provider === "local-git" ? project.repository.root : project.repository?.gitUrl ?? sourceUrlFromRepository(project.repository);
   const base = repositoryHint ? [`repository:${repositoryHint}`] : [];
+  if (targetId === "tenant-workspace-model") return [...base, "packages/server/src/index.ts", "packages/core/src/index.ts", "docs/architecture/loop-runtime.md", "docs/api.md"];
+  if (targetId === "github-app-onboarding" || targetId === "secret-vault-and-credential-boundary") return [...base, "packages/server/src/index.ts", "apps/dashboard/assets/app.js", "docs/api.md"];
+  if (targetId === "quota-rate-limit-billing-foundation" || targetId === "worker-queue-and-postgres-store") return [...base, "packages/core/src/index.ts", "packages/server/src/index.ts", "docs/architecture/loop-runtime.md"];
+  if (targetId === "production-observability-domain-https") return [...base, "packages/server/src/index.ts", "docs/deployment.md", "docs/architecture/loop-runtime.md"];
+  if (targetId === "saas-onboarding-dashboard") return [...base, "apps/dashboard/assets/app.js", "apps/dashboard/assets/styles.css", "docs/user-guide.md"];
   if (targetId === "discovery-skill-runtime" || targetId === "loop-memory-inbox") return [...base, "packages/server/src/index.ts", "apps/dashboard/assets/app.js"];
   if (targetId === "per-finding-worktree-handoff" || targetId === "adversarial-evaluator-agent") return [...base, "packages/server/src/index.ts", "tests/functional/loop-runtime.test.mjs"];
   return [...base, "docs/architecture/loop-runtime.md", "docs/user-guide.md"];
