@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 
 const baseUrl = (process.env.EVOPILOT_BASE_URL ?? "http://127.0.0.1:19876").replace(/\/+$/, "");
 const token = process.env.EVOPILOT_API_TOKEN ?? "";
+const actor = process.env.EVOPILOT_ACTOR ?? "operator";
 const durationSeconds = positiveInteger(process.env.EVOPILOT_LOOP_SOAK_SECONDS, 24 * 60 * 60);
 const intervalSeconds = positiveInteger(process.env.EVOPILOT_LOOP_SOAK_INTERVAL_SECONDS, 30);
 const loopId = process.env.EVOPILOT_LOOP_SOAK_LOOP_ID ?? `loop-soak-${new Date().toISOString().replace(/[^0-9A-Za-z]+/g, "-")}`;
@@ -96,7 +97,7 @@ function runWorker() {
     const [command, ...args] = splitCommand(workerCommand);
     const child = spawn(command, args, {
       cwd: process.cwd(),
-      env: { ...process.env, EVOPILOT_BASE_URL: baseUrl, EVOPILOT_API_TOKEN: token, EVOPILOT_LOOP_WORKER_ONCE: "1" },
+      env: { ...process.env, EVOPILOT_BASE_URL: baseUrl, EVOPILOT_API_TOKEN: token, EVOPILOT_ACTOR: actor, EVOPILOT_LOOP_WORKER_ONCE: "1" },
       stdio: ["ignore", "pipe", "pipe"]
     });
     let stdout = "";
@@ -144,7 +145,7 @@ async function fetchJson(pathname, options, required) {
     headers: {
       ...(options?.headers ?? {}),
       ...(token ? { authorization: `Bearer ${token}` } : {}),
-      "x-evopilot-actor": "loop-soak"
+      "x-evopilot-actor": actor
     }
   });
   const text = await response.text();

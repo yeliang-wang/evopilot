@@ -14,7 +14,8 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     runtimeMode: "debug",
     tokens: [
       { name: "viewer", token: "viewer-token", role: "viewer" },
-      { name: "operator", token: "operator-token", role: "operator" }
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
     ]
   });
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
@@ -80,6 +81,463 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(storeRuntime.body.data.backend, "file");
     assert.equal(storeRuntime.body.data.recovery, "idempotent-replay");
 
+    const storeReadiness = await jsonFetch(`${baseUrl}/api/v1/loop-store/readiness`, {
+      token: "viewer-token"
+    });
+    assert.equal(storeReadiness.status, 200);
+    assert.equal(storeReadiness.body.data.schema, "evopilot-loop-store-readiness/v1");
+    assert.equal(storeReadiness.body.data.status, "BLOCKED");
+    assert.equal(storeReadiness.body.data.postgresRequired, true);
+    assert.ok(storeReadiness.body.data.blockers.includes("POSTGRES_LOOP_STORE_NOT_CONFIGURED"));
+
+    const tenants = await jsonFetch(`${baseUrl}/api/v1/tenants`, {
+      token: "viewer-token"
+    });
+    assert.equal(tenants.status, 200);
+    assert.ok(tenants.body.data.some((tenant) => tenant.id === "tenant-production" && tenant.status === "ACTIVE"));
+
+    const workspaces = await jsonFetch(`${baseUrl}/api/v1/workspaces`, {
+      token: "viewer-token"
+    });
+    assert.equal(workspaces.status, 200);
+    const defaultWorkspace = workspaces.body.data.find((workspace) => workspace.id === "workspace-agent-products");
+    assert.ok(defaultWorkspace);
+    assert.equal(defaultWorkspace.tenantId, "tenant-production");
+    assert.ok(defaultWorkspace.members.some((member) => member.role === "owner"));
+    assert.ok(defaultWorkspace.members.some((member) => member.role === "admin"));
+    assert.ok(defaultWorkspace.members.some((member) => member.role === "viewer"));
+
+    const invited = await jsonFetch(`${baseUrl}/api/v1/workspaces/workspace-agent-products/invitations`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        email: "developer@example.com",
+        name: "Developer User",
+        role: "developer"
+      }
+    });
+    assert.equal(invited.status, 201);
+    assert.equal(invited.body.data.invitation.id, "developer-example.com");
+    assert.equal(invited.body.data.invitation.role, "developer");
+    assert.equal(invited.body.data.invitation.status, "INVITED");
+
+    const activatedMember = await jsonFetch(`${baseUrl}/api/v1/workspaces/workspace-agent-products/members/developer-example.com`, {
+      method: "PATCH",
+      token: "operator-token",
+      body: { status: "ACTIVE", role: "developer" }
+    });
+    assert.equal(activatedMember.status, 200);
+    assert.ok(activatedMember.body.data.members.some((member) => member.id === "developer-example.com" && member.status === "ACTIVE" && member.role === "developer"));
+
+    const isolatedWorkspace = await jsonFetch(`${baseUrl}/api/v1/workspaces`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "isolated-workspace",
+        name: "Isolated Workspace"
+      }
+    });
+    assert.equal(isolatedWorkspace.status, 201);
+    assert.equal(isolatedWorkspace.body.data.members[0].id, "admin");
+
+    const blockedWorkspaceRead = await jsonFetch(`${baseUrl}/api/v1/workspaces/isolated-workspace`, {
+      token: "viewer-token"
+    });
+    assert.equal(blockedWorkspaceRead.status, 403);
+
+    const privateKeySecret = await jsonFetch(`${baseUrl}/api/v1/secrets`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "github-app-private-key",
+        name: "GitHub App Private Key",
+        kind: "github-app-private-key",
+        value: "-----BEGIN PRIVATE KEY-----\\nlocal-test\\n-----END PRIVATE KEY-----"
+      }
+    });
+    assert.equal(privateKeySecret.status, 201);
+    assert.equal(privateKeySecret.body.data.secretRef, "github-app-private-key");
+    assert.equal(privateKeySecret.body.data.valueConfigured, true);
+    assert.equal(privateKeySecret.body.data.encryption, undefined);
+    assert.equal(privateKeySecret.body.data.value, undefined);
+
+    const webhookSecret = await jsonFetch(`${baseUrl}/api/v1/secrets`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "github-webhook-secret",
+        name: "GitHub Webhook Secret",
+        kind: "github-webhook-secret",
+        value: "webhook-secret"
+      }
+    });
+    assert.equal(webhookSecret.status, 201);
+    assert.equal(webhookSecret.body.data.secretRef, "github-webhook-secret");
+
+    const githubApp = await jsonFetch(`${baseUrl}/api/v1/github-app/installations`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        installationId: "12345",
+        account: "example-org",
+        repositories: ["example-org/workspace-product"],
+        permissions: { contents: "write", pull_requests: "write", metadata: "read" },
+        privateKeySecretRef: "github-app-private-key",
+        webhookSecretRef: "github-webhook-secret"
+      }
+    });
+    assert.equal(githubApp.status, 201);
+    assert.equal(githubApp.body.data.schema, "evopilot-github-app-installation/v1");
+    assert.equal(githubApp.body.data.status, "READY");
+    assert.ok(githubApp.body.data.checks.every((check) => check.status === "PASS"));
+
+    const githubApps = await jsonFetch(`${baseUrl}/api/v1/github-app/installations`, {
+      token: "viewer-token"
+    });
+    assert.equal(githubApps.status, 200);
+    assert.ok(githubApps.body.data.some((installation) => installation.id === "github-app-12345" && installation.status === "READY"));
+
+    const acmeTenant = await jsonFetch(`${baseUrl}/api/v1/tenants`, {
+      method: "POST",
+      token: "admin-token",
+      actor: "operator",
+      tenantId: "tenant-acme",
+      workspaceId: "workspace-acme",
+      body: {
+        id: "tenant-acme",
+        name: "Acme Tenant",
+        plan: "SaaS",
+        status: "ACTIVE"
+      }
+    });
+    assert.equal(acmeTenant.status, 201);
+    assert.equal(acmeTenant.body.data.id, "tenant-acme");
+    assert.equal(acmeTenant.body.data.status, "ACTIVE");
+
+    const acmeWorkspace = await jsonFetch(`${baseUrl}/api/v1/workspaces`, {
+      method: "POST",
+      token: "admin-token",
+      actor: "operator",
+      tenantId: "tenant-acme",
+      workspaceId: "workspace-acme",
+      body: {
+        id: "workspace-acme",
+        tenantId: "tenant-acme",
+        name: "Acme Workspace"
+      }
+    });
+    assert.equal(acmeWorkspace.status, 201);
+    assert.equal(acmeWorkspace.body.data.tenantId, "tenant-acme");
+    assert.ok(acmeWorkspace.body.data.members.some((member) => member.id === "operator" && member.role === "owner"));
+    const tenantListAfterAcme = await jsonFetch(`${baseUrl}/api/v1/tenants`, {
+      token: "viewer-token"
+    });
+    assert.equal(tenantListAfterAcme.status, 200);
+    assert.ok(tenantListAfterAcme.body.data.some((tenant) => tenant.id === "tenant-acme"));
+
+    const acmeSecret = await jsonFetch(`${baseUrl}/api/v1/secrets`, {
+      method: "POST",
+      token: "operator-token",
+      actor: "operator",
+      tenantId: "tenant-acme",
+      workspaceId: "workspace-acme",
+      body: {
+        id: "acme-source-token",
+        name: "Acme Source Token",
+        kind: "github-app-private-key",
+        value: "acme-super-secret-token"
+      }
+    });
+    assert.equal(acmeSecret.status, 201);
+    assert.equal(acmeSecret.body.data.tenantId, "tenant-acme");
+    assert.equal(acmeSecret.body.data.workspaceId, "workspace-acme");
+    assert.equal(acmeSecret.body.data.value, undefined);
+    assert.equal(acmeSecret.body.data.encryption, undefined);
+    assert.equal(JSON.stringify(acmeSecret.body).includes("acme-super-secret-token"), false);
+
+    const acmeWebhookSecret = await jsonFetch(`${baseUrl}/api/v1/secrets`, {
+      method: "POST",
+      token: "operator-token",
+      actor: "operator",
+      tenantId: "tenant-acme",
+      workspaceId: "workspace-acme",
+      body: {
+        id: "acme-webhook-secret",
+        name: "Acme Webhook Secret",
+        kind: "github-webhook-secret",
+        value: "acme-webhook-secret-value"
+      }
+    });
+    assert.equal(acmeWebhookSecret.status, 201);
+    assert.equal(acmeWebhookSecret.body.data.value, undefined);
+    assert.equal(acmeWebhookSecret.body.data.encryption, undefined);
+
+    const acmeGitHubApp = await jsonFetch(`${baseUrl}/api/v1/github-app/installations`, {
+      method: "POST",
+      token: "operator-token",
+      actor: "operator",
+      tenantId: "tenant-acme",
+      workspaceId: "workspace-acme",
+      body: {
+        installationId: "67890",
+        account: "acme-org",
+        repositories: ["acme-org/tenant-product"],
+        permissions: { contents: "write", metadata: "read" },
+        privateKeySecretRef: "acme-source-token",
+        webhookSecretRef: "acme-webhook-secret"
+      }
+    });
+    assert.equal(acmeGitHubApp.status, 201);
+    assert.equal(acmeGitHubApp.body.data.tenantId, "tenant-acme");
+    assert.equal(acmeGitHubApp.body.data.workspaceId, "workspace-acme");
+
+    const acmeProject = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      actor: "operator",
+      tenantId: "tenant-acme",
+      workspaceId: "workspace-acme",
+      body: {
+        id: "acme-project",
+        name: "Acme Project",
+        repository: {
+          provider: "local-git",
+          root: process.cwd(),
+          defaultBranch: "main"
+        }
+      }
+    });
+    assert.equal(acmeProject.status, 201);
+    assert.equal(acmeProject.body.data.tenantId, "tenant-acme");
+    assert.equal(acmeProject.body.data.workspaceId, "workspace-acme");
+
+    const acmeLoop = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      actor: "operator",
+      tenantId: "tenant-acme",
+      workspaceId: "workspace-acme",
+      body: {
+        id: "acme-loop",
+        projectId: "acme-project",
+        objective: "Prove acme scoped loop isolation."
+      }
+    });
+    assert.equal(acmeLoop.status, 201);
+    assert.equal(acmeLoop.body.data.tenantId, "tenant-acme");
+    assert.equal(acmeLoop.body.data.workspaceId, "workspace-acme");
+
+    const acmeReleaseEvidence = await jsonFetch(`${baseUrl}/api/v1/release/evidence`, {
+      method: "POST",
+      token: "operator-token",
+      actor: "operator",
+      tenantId: "tenant-acme",
+      workspaceId: "workspace-acme",
+      body: {
+        id: "acme-release-evidence",
+        candidate: "acme-release-candidate"
+      }
+    });
+    assert.equal(acmeReleaseEvidence.status, 201);
+    assert.equal(acmeReleaseEvidence.body.data.tenantId, "tenant-acme");
+    assert.equal(acmeReleaseEvidence.body.data.workspaceId, "workspace-acme");
+
+    const defaultScopedProjects = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      token: "viewer-token"
+    });
+    assert.equal(defaultScopedProjects.status, 200);
+    assert.ok(!defaultScopedProjects.body.data.some((project) => project.id === "acme-project"));
+
+    const defaultScopedLoops = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      token: "viewer-token"
+    });
+    assert.equal(defaultScopedLoops.status, 200);
+    assert.ok(!defaultScopedLoops.body.data.some((loop) => loop.id === "acme-loop"));
+
+    const defaultScopedSecrets = await jsonFetch(`${baseUrl}/api/v1/secrets`, {
+      token: "viewer-token"
+    });
+    assert.equal(defaultScopedSecrets.status, 200);
+    assert.ok(!defaultScopedSecrets.body.data.some((secret) => secret.id === "acme-source-token"));
+    assert.equal(JSON.stringify(defaultScopedSecrets.body).includes("acme-super-secret-token"), false);
+
+    const defaultScopedGithubApps = await jsonFetch(`${baseUrl}/api/v1/github-app/installations`, {
+      token: "viewer-token"
+    });
+    assert.equal(defaultScopedGithubApps.status, 200);
+    assert.ok(!defaultScopedGithubApps.body.data.some((installation) => installation.id === "github-app-67890"));
+
+    const defaultScopedEvidence = await jsonFetch(`${baseUrl}/api/v1/release/evidence`, {
+      token: "viewer-token"
+    });
+    assert.equal(defaultScopedEvidence.status, 200);
+    assert.ok(!defaultScopedEvidence.body.data.some((item) => item.id === "acme-release-evidence"));
+
+    const blockedDirectEvidenceRead = await jsonFetch(`${baseUrl}/api/v1/release/evidence/acme-release-evidence`, {
+      token: "viewer-token"
+    });
+    assert.equal(blockedDirectEvidenceRead.status, 403);
+
+    const ownedProject = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "workspace-owned-project",
+        name: "Workspace Owned Project",
+        repository: {
+          provider: "local-git",
+          root: process.cwd(),
+          defaultBranch: "main"
+        }
+      }
+    });
+    assert.equal(ownedProject.status, 201);
+    assert.equal(ownedProject.body.data.tenantId, "tenant-production");
+    assert.equal(ownedProject.body.data.workspaceId, "workspace-agent-products");
+
+    const movedProject = await jsonFetch(`${baseUrl}/api/v1/projects/workspace-owned-project/ownership`, {
+      method: "PATCH",
+      token: "admin-token",
+      body: {
+        tenantId: "tenant-production",
+        workspaceId: "isolated-workspace"
+      }
+    });
+    assert.equal(movedProject.status, 200);
+    assert.equal(movedProject.body.data.workspaceId, "isolated-workspace");
+
+    const viewerProjects = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      token: "viewer-token"
+    });
+    assert.equal(viewerProjects.status, 200);
+    assert.ok(!viewerProjects.body.data.some((project) => project.id === "workspace-owned-project"));
+
+    const limitedWorkspace = await jsonFetch(`${baseUrl}/api/v1/workspaces`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "limited-workspace",
+        name: "Limited Workspace",
+        quotas: { projects: 1, loops: 1, evidenceGb: 1 }
+      }
+    });
+    assert.equal(limitedWorkspace.status, 201);
+    assert.equal(limitedWorkspace.body.data.quotas.projects, 1);
+    assert.equal(limitedWorkspace.body.data.quotas.loops, 1);
+
+    const quotaProject = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "quota-project",
+        name: "Quota Project",
+        workspaceId: "limited-workspace",
+        repository: {
+          provider: "local-git",
+          root: process.cwd(),
+          defaultBranch: "main"
+        }
+      }
+    });
+    assert.equal(quotaProject.status, 201);
+    assert.equal(quotaProject.body.data.workspaceId, "limited-workspace");
+
+    const blockedQuotaProject = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "quota-project-2",
+        name: "Quota Project 2",
+        workspaceId: "limited-workspace",
+        repository: {
+          provider: "local-git",
+          root: process.cwd(),
+          defaultBranch: "main"
+        }
+      }
+    });
+    assert.equal(blockedQuotaProject.status, 429);
+    assert.equal(blockedQuotaProject.body.error, "WORKSPACE_PROJECT_QUOTA_EXCEEDED");
+
+    const quotaLoop = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "quota-loop",
+        projectId: "quota-project",
+        objective: "Prove quota-bound loop creation.",
+        workspaceId: "limited-workspace"
+      }
+    });
+    assert.equal(quotaLoop.status, 201);
+    assert.equal(quotaLoop.body.data.workspaceId, "limited-workspace");
+
+    const blockedQuotaLoop = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "quota-loop-2",
+        projectId: "quota-project",
+        objective: "This loop should exceed the workspace quota.",
+        workspaceId: "limited-workspace"
+      }
+    });
+    assert.equal(blockedQuotaLoop.status, 429);
+    assert.equal(blockedQuotaLoop.body.error, "WORKSPACE_LOOP_QUOTA_EXCEEDED");
+
+    const limitedUsage = await jsonFetch(`${baseUrl}/api/v1/workspaces/limited-workspace/usage`, {
+      token: "admin-token"
+    });
+    assert.equal(limitedUsage.status, 200);
+    assert.equal(limitedUsage.body.data.projects.used, 1);
+    assert.equal(limitedUsage.body.data.loops.used, 1);
+    assert.ok(limitedUsage.body.data.evidence.some((item) => item === "projects=1/1"));
+
+    const saasObservability = await jsonFetch(`${baseUrl}/api/v1/saas/observability`, {
+      token: "viewer-token"
+    });
+    assert.equal(saasObservability.status, 200);
+    assert.equal(saasObservability.body.data.schema, "evopilot-saas-observability/v1");
+    assert.ok(saasObservability.body.data.tenantCount >= 1);
+    assert.ok(saasObservability.body.data.workspaceCount >= 3);
+    assert.ok(saasObservability.body.data.secretRefCount >= 3);
+    assert.ok(saasObservability.body.data.githubAppReadyCount >= 2);
+    assert.equal(saasObservability.body.data.postgresStoreReady, false);
+    assert.ok(saasObservability.body.data.blockers.includes("POSTGRES_LOOP_STORE_NOT_CONFIGURED"));
+
+    const metrics = await fetch(`${baseUrl}/api/v1/metrics`, {
+      headers: authHeaders("viewer-token")
+    });
+    assert.equal(metrics.status, 200);
+    const metricsText = await metrics.text();
+    assert.match(metricsText, /evopilot_saas_workspaces_total \d+/);
+    assert.match(metricsText, /evopilot_saas_postgres_store_ready 0/);
+
+    const releaseEvidence = await jsonFetch(`${baseUrl}/api/v1/release/evidence`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "workspace-release-evidence",
+        candidate: "workspace-release-candidate"
+      }
+    });
+    assert.equal(releaseEvidence.status, 201);
+    assert.equal(releaseEvidence.body.data.tenantId, "tenant-production");
+    assert.equal(releaseEvidence.body.data.workspaceId, "workspace-agent-products");
+    assert.equal(releaseEvidence.body.data.releaseDecisionId, "decision-workspace-release-evidence");
+
+    const releaseEvidenceList = await jsonFetch(`${baseUrl}/api/v1/release/evidence`, {
+      token: "viewer-token"
+    });
+    assert.equal(releaseEvidenceList.status, 200);
+    assert.ok(releaseEvidenceList.body.data.some((item) => item.id === "workspace-release-evidence" && item.tenantId === "tenant-production" && item.workspaceId === "workspace-agent-products"));
+
+    const releaseDecisions = await jsonFetch(`${baseUrl}/api/v1/release/decisions`, {
+      token: "viewer-token"
+    });
+    assert.equal(releaseDecisions.status, 200);
+    assert.ok(releaseDecisions.body.data.some((decision) => decision.id === "decision-workspace-release-evidence" && decision.tenantId === "tenant-production" && decision.workspaceId === "workspace-agent-products"));
+
     const created = await jsonFetch(`${baseUrl}/api/v1/loops`, {
       method: "POST",
       token: "operator-token",
@@ -126,6 +584,8 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(created.status, 201);
     assert.equal(created.body.data.schema, "evopilot-loop-run/v1");
     assert.equal(created.body.data.status, "PENDING");
+    assert.equal(created.body.data.tenantId, "tenant-production");
+    assert.equal(created.body.data.workspaceId, "workspace-agent-products");
     assert.equal(created.body.data.executorGraphId, "product-evolution-dag");
     assert.equal(created.body.data.controlPlaneUrl, "http://8.153.72.80");
     assert.equal(created.body.data.sourceClosure.repositoryProvider, "github");
@@ -250,12 +710,21 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
       "loop-memory-inbox",
       "budget-and-judgment-guardrails",
       "tenant-workspace-model",
+      "workspace-rbac-and-invitation",
       "github-app-onboarding",
       "secret-vault-and-credential-boundary",
+      "project-workspace-ownership",
       "quota-rate-limit-billing-foundation",
-      "production-observability-domain-https",
       "worker-queue-and-postgres-store",
-      "saas-onboarding-dashboard"
+      "tenant-aware-release-evidence",
+      "multi-tenant-security-regression-suite",
+      "saas-production-observability",
+      "saas-onboarding-dashboard",
+      "saas-field-e2e-source-to-ga",
+      "saas-release-matrix",
+      "saas-ga-soak-active",
+      "saas-ga-release-decision",
+      "announce-saas-multi-tenant-ga-stable"
     ]) {
       const target = targets.body.data.find((item) => item.id === id);
       assert.ok(target, `${id} should be exposed as a target-loop backlog item`);
@@ -319,9 +788,14 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(tenantWorkspaceAdvanced.body.data.target.status, "RUNNING");
     assert.equal(tenantWorkspaceAdvanced.body.data.action, "start-loop");
     assert.equal(tenantWorkspaceAdvanced.body.data.loop.context.orchestrationTargetId, "tenant-workspace-model");
+    assert.equal(tenantWorkspaceAdvanced.body.data.loop.tenantId, "tenant-production");
+    assert.equal(tenantWorkspaceAdvanced.body.data.loop.workspaceId, "workspace-agent-products");
     assert.equal(tenantWorkspaceAdvanced.body.data.loop.sourceClosure.targetVersion, "saas-tenant-workspace-2026-07-03");
     assert.ok(tenantWorkspaceAdvanced.body.data.loop.context.acceptanceCriteria.length >= 3);
     assert.ok(tenantWorkspaceAdvanced.body.data.evidence.some((item) => item === "target=tenant-workspace-model"));
+    assert.ok(tenantWorkspaceAdvanced.body.data.target.evidence.some((item) => item === "tenant=tenant-production"));
+    assert.ok(tenantWorkspaceAdvanced.body.data.target.evidence.some((item) => item === "workspace=workspace-agent-products"));
+    assert.ok(tenantWorkspaceAdvanced.body.data.target.evidence.some((item) => item === "membershipModel=owner,admin,developer,viewer"));
 
     const discoveryAdvanced = await jsonFetch(`${baseUrl}/api/v1/loop-orchestration/advance`, {
       method: "POST",
@@ -549,6 +1023,16 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     });
     assert.equal(artifacts.status, 200);
     assert.ok(artifacts.body.data.length >= 2);
+
+    const audit = await jsonFetch(`${baseUrl}/api/v1/audit`, {
+      token: "viewer-token"
+    });
+    assert.equal(audit.status, 200);
+    assert.ok(audit.body.data.some((record) => record.action === "workspace.invitation.created" && record.tenantId === "tenant-production" && record.workspaceId === "workspace-agent-products"));
+    assert.ok(audit.body.data.some((record) => record.action === "workspace.member.updated" && record.metadata.memberId === "developer-example.com"));
+    assert.ok(audit.body.data.some((record) => record.action === "project.ownership.updated" && record.metadata.workspaceId === "isolated-workspace"));
+    assert.ok(audit.body.data.some((record) => record.action === "secret.created" && record.metadata.kind === "github-app-private-key"));
+    assert.ok(audit.body.data.some((record) => record.action === "github-app.installation.upserted" && record.metadata.status === "READY"));
 
     const timeTravelReplay = await jsonFetch(`${baseUrl}/api/v1/loops/workbuddy-long-task/time-travel/replay`, {
       method: "POST",
@@ -2268,7 +2752,7 @@ async function jsonFetch(url, options = {}) {
   const response = await fetch(url, {
     method: options.method ?? "GET",
     headers: {
-      ...authHeaders(options.token, Boolean(options.body)),
+      ...authHeaders(options.token, Boolean(options.body), options),
       ...(options.idempotencyKey ? { "x-idempotency-key": options.idempotencyKey } : {})
     },
     body: options.body ? JSON.stringify(options.body) : undefined
@@ -2465,9 +2949,12 @@ async function waitFor(probe, timeoutMs = 2000) {
   throw new Error("Timed out waiting for condition.");
 }
 
-function authHeaders(token, json = false) {
+function authHeaders(token, json = false, scope = {}) {
   return {
     authorization: `Bearer ${token}`,
+    ...(scope.actor ? { "x-evopilot-actor": scope.actor } : {}),
+    ...(scope.tenantId ? { "x-evopilot-tenant": scope.tenantId } : {}),
+    ...(scope.workspaceId ? { "x-evopilot-workspace": scope.workspaceId } : {}),
     ...(json ? { "content-type": "application/json" } : {})
   };
 }

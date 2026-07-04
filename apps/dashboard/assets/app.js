@@ -1,37 +1,42 @@
 const navSections = [
   {
-    label: "Source-to-GA",
+    label: "SaaS 控制面",
     items: [
-      { id: "工作台", title: "工作台", detail: "当前任务与下一步" },
-      { id: "主链路向导", title: "主链路向导", detail: "接入到 GA 的四步流程" },
-      { id: "项目接入", title: "项目", detail: "GitHub 与凭据" },
-      { id: "Loop 执行", title: "Loop", detail: "当前、待处理、历史" },
-      { id: "评估与发布", title: "发布", detail: "GO / NO-GO 与证据" }
-    ]
-  },
-  {
-    label: "支撑",
-    items: [
-      { id: "历史审计", title: "历史", detail: "审计与证据归档" },
-      { id: "帮助手册", title: "帮助", detail: "场景教程" }
+      { id: "租户总览", title: "租户", detail: "组织、用量、风险" },
+      { id: "工作区", title: "工作区", detail: "成员、项目、边界" },
+      { id: "项目", title: "项目", detail: "仓库与接入" },
+      { id: "凭据", title: "凭据", detail: "GitHub App 与 Vault" },
+      { id: "Loops", title: "Loops", detail: "运行队列与闭环" },
+      { id: "发布证据", title: "发布", detail: "GO / NO-GO 与证据" },
+      { id: "审计", title: "审计", detail: "操作与证据归档" }
     ]
   }
 ];
 const navItems = navSections.flatMap((section) => section.items.map((item) => item.id));
+const routedPages = [...navItems, "帮助手册"];
 const pageAliases = {
-  首页: "工作台",
-  主链路: "主链路向导",
-  向导: "主链路向导",
-  项目: "项目接入",
-  接入项目: "项目接入",
-  证据策略: "发现与目标",
-  评测集: "发现与目标",
-  机会点: "发现与目标",
-  Loop: "Loop 执行",
-  发布: "评估与发布",
-  流水线: "评估与发布",
-  历史记录: "历史审计",
-  历史: "历史审计",
+  首页: "租户总览",
+  工作台: "租户总览",
+  Tenant: "租户总览",
+  租户: "租户总览",
+  Workspace: "工作区",
+  主链路: "工作区",
+  主链路向导: "工作区",
+  向导: "工作区",
+  项目接入: "项目",
+  接入项目: "项目",
+  证据策略: "工作区",
+  发现与目标: "工作区",
+  评测集: "工作区",
+  机会点: "工作区",
+  Loop: "Loops",
+  "Loop 执行": "Loops",
+  发布: "发布证据",
+  评估与发布: "发布证据",
+  流水线: "发布证据",
+  历史记录: "审计",
+  历史审计: "审计",
+  历史: "审计",
   帮助: "帮助手册",
   操作手册: "帮助手册"
 };
@@ -39,12 +44,46 @@ const requestedPage = new URLSearchParams(window.location.search).get("page");
 const initialPage = normalizePage(requestedPage);
 
 const state = {
-  active: navItems.includes(initialPage) ? initialPage : "工作台",
+  active: routedPages.includes(initialPage) ? initialPage : "租户总览",
   apiStatus: "示例数据",
   apiToken: window.localStorage.getItem("evopilot.apiToken") ?? "",
   authNotice: "",
   isLoading: true,
   operationNotice: "",
+  saasScope: {
+    tenantId: "tenant-production",
+    workspaceId: "workspace-agent-products",
+    plan: "Self-hosted SaaS",
+    region: "cn-shanghai",
+    tenantStatus: "MIGRATION_READY",
+    workspaceStatus: "BOUNDARY_DRAFT",
+    members: [
+      { name: "Owner", role: "tenant-admin", status: "ACTIVE" },
+      { name: "Release Operator", role: "operator", status: "INVITED" },
+      { name: "Viewer", role: "viewer", status: "READY" }
+    ],
+    quotas: {
+      loops: 120,
+      loopsUsed: 17,
+      projects: 20,
+      projectsUsed: 2,
+      evidenceGb: 100,
+      evidenceUsedGb: 8
+    },
+    boundaries: [
+      "tenant-workspace-model",
+      "github-app-onboarding",
+      "secret-vault-and-credential-boundary",
+      "worker-queue-and-postgres-store"
+    ]
+  },
+  tenants: [],
+  workspaces: [],
+  workspaceUsage: undefined,
+  secrets: [],
+  githubAppInstallations: [],
+  loopStoreReadiness: undefined,
+  saasObservability: undefined,
   projectRegistration: {
     message: "",
     status: ""
@@ -324,6 +363,7 @@ const state = {
 const nav = document.querySelector("#nav");
 const content = document.querySelector("#content");
 const title = document.querySelector("#page-title");
+const topHelpButton = document.querySelector("#top-help-button");
 
 function normalizePage(page) {
   return pageAliases[page] ?? page;
@@ -331,6 +371,16 @@ function normalizePage(page) {
 
 function setActivePage(page) {
   state.active = normalizePage(page);
+}
+
+function helpManualUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.set("page", "帮助手册");
+  return url.toString();
+}
+
+function openHelpManual() {
+  window.open(helpManualUrl(), "_blank", "noopener");
 }
 
 function renderNav() {
@@ -348,8 +398,8 @@ function renderNav() {
   for (const button of nav.querySelectorAll("button")) {
     button.addEventListener("click", () => {
       setActivePage(button.dataset.page);
-      if (normalizePage(button.dataset.page) === "评估与发布") state.releaseWorkspaceView = "simple";
-      if (normalizePage(button.dataset.page) === "Loop 执行") state.loopWorkspaceView = "overview";
+      if (normalizePage(button.dataset.page) === "发布证据") state.releaseWorkspaceView = "simple";
+      if (normalizePage(button.dataset.page) === "Loops") state.loopWorkspaceView = "overview";
       render();
     });
   }
@@ -357,19 +407,513 @@ function renderNav() {
 
 function renderPage(page) {
   const normalized = normalizePage(page);
-  if (normalized === "工作台") return renderHome();
-  if (normalized === "主链路向导") return renderSourceToGaWizard();
-  if (normalized === "项目接入") return renderProjects();
-  if (normalized === "发现与目标") return renderDiscoveryAndTargets();
-  if (normalized === "Loop 执行") return renderLoopExecution();
-  if (normalized === "评估与发布") return renderEvaluationAndRelease();
-  if (normalized === "历史审计") return renderHistory();
+  if (normalized === "租户总览") return renderSaasTenantOverview();
+  if (normalized === "工作区") return renderSaasWorkspace();
+  if (normalized === "项目") return renderProjects();
+  if (normalized === "凭据") return renderSaasCredentialCenter();
+  if (normalized === "Loops") return renderLoopExecution();
+  if (normalized === "发布证据") return renderEvaluationAndRelease();
+  if (normalized === "审计") return renderHistory();
   if (normalized === "帮助手册") return renderGuidedHelpManual();
-  return "";
+  return renderSaasTenantOverview();
 }
 
 function renderHome() {
   return renderSimplifiedHome();
+}
+
+function saasScopeModel() {
+  const scope = state.saasScope;
+  const activeTenant = state.tenants.find((tenant) => tenant.id === scope.tenantId) ?? state.tenants[0];
+  const activeWorkspace = state.workspaces.find((workspace) => workspace.id === scope.workspaceId) ?? state.workspaces[0];
+  const members = activeWorkspace?.members ?? scope.members;
+  const usage = state.workspaceUsage;
+  const quotas = usage ? {
+    loops: usage.loops.limit,
+    loopsUsed: usage.loops.used,
+    projects: usage.projects.limit,
+    projectsUsed: usage.projects.used,
+    evidenceGb: usage.evidenceGb.limit,
+    evidenceUsedGb: usage.evidenceGb.used
+  } : scope.quotas;
+  const effectiveScope = {
+    ...scope,
+    tenantId: activeWorkspace?.tenantId ?? activeTenant?.id ?? scope.tenantId,
+    workspaceId: activeWorkspace?.id ?? scope.workspaceId,
+    tenantStatus: activeTenant?.status ?? scope.tenantStatus,
+    workspaceStatus: activeWorkspace?.status ?? scope.workspaceStatus,
+    members,
+    quotas
+  };
+  const verifiedProjects = state.projects.filter((project) => /已验证|健康/.test(`${project.validation}${project.status}`));
+  const githubProjects = state.projects.filter((project) => project.repositoryMeta?.provider === "github" || /github/i.test(String(project.repository)));
+  const credentialBlocked = state.projects.filter((project) => project.hasRepository && !/已配置|tokenRef|inline|无需|local-git/.test(String(project.credentials)));
+  const activeLoops = state.loops.filter((loop) => ["RUNNING", "WAITING_APPROVAL", "BLOCKED"].includes(loop.status));
+  const releaseReady = state.sourceReleaseRuns.filter((run) => ["PROMOTED", "SUCCEEDED"].includes(run.status));
+  const releaseBlocked = state.sourceReleaseRuns.filter((run) => ["FAILED", "HEALTH_FAILED", "ROLLED_BACK", "POLICY_BLOCKED"].includes(run.status));
+  const saasTargets = state.loopOrchestrationTargets.filter((target) => /tenant|workspace|github-app|secret|vault|quota|billing|postgres|saas|observability/i.test(`${target.id} ${target.title}`));
+  const currentTarget = saasTargets.find((target) => target.status === "RUNNING")
+    ?? state.loopOrchestrationTargets.find((target) => target.id === "tenant-workspace-model")
+    ?? state.loopOrchestrationTargets[0];
+  return {
+    scope: effectiveScope,
+    verifiedProjects,
+    githubProjects,
+    credentialBlocked,
+    activeLoops,
+    releaseReady,
+    releaseBlocked,
+    saasTargets,
+    currentTarget,
+    workspaceCount: state.saasObservability?.workspaceCount ?? Math.max(state.workspaces.length, 1),
+    memberCount: members.length,
+    auditCount: state.history.length + state.sourceReleaseRuns.length + state.loopWorkerQueue.length
+  };
+}
+
+function renderTenantScopeBar() {
+  const model = saasScopeModel();
+  return `
+    <section class="tenant-scope-bar" aria-label="Tenant and workspace scope">
+      <div>
+        <span>Tenant</span>
+        <strong>${escapeHtml(model.scope.tenantId)}</strong>
+        <small>${escapeHtml(model.scope.plan)} / ${escapeHtml(model.scope.region)}</small>
+      </div>
+      <div>
+        <span>Workspace</span>
+        <strong>${escapeHtml(model.scope.workspaceId)}</strong>
+        <small>${escapeHtml(model.scope.workspaceStatus)} / ${model.memberCount} members</small>
+      </div>
+      <div>
+        <span>SaaS target</span>
+        <strong>${escapeHtml(model.currentTarget?.id ?? "tenant-workspace-model")}</strong>
+        <small>${escapeHtml(model.currentTarget?.nextAction ?? "等待推进多租户模型")}</small>
+      </div>
+      <div>
+        <span>Evidence boundary</span>
+        <strong>${model.releaseReady.length} promoted</strong>
+        <small>${model.releaseBlocked.length} blocked / ${model.auditCount} audit objects</small>
+      </div>
+    </section>
+  `;
+}
+
+function renderSaasTenantOverview() {
+  const model = saasScopeModel();
+  const onboarding = sourceToGaExperienceModel();
+  const launchSteps = firstLoopLaunchSteps(onboarding);
+  const templates = loopTemplateCards(onboarding);
+  const nextActions = dashboardNextActions(model, onboarding);
+  const quotaRows = [
+    ["Loop quota", model.scope.quotas.loopsUsed, model.scope.quotas.loops],
+    ["Project quota", model.scope.quotas.projectsUsed, model.scope.quotas.projects],
+    ["Evidence storage", model.scope.quotas.evidenceUsedGb, model.scope.quotas.evidenceGb]
+  ];
+  const milestones = [
+    {
+      title: "Tenant / Workspace 模型",
+      detail: "租户、工作区、成员、项目归属和证据边界成为第一层上下文。",
+      status: model.currentTarget?.id === "tenant-workspace-model" ? "RUNNING" : "PLANNED",
+      page: "工作区"
+    },
+    {
+      title: "GitHub App 接入",
+      detail: "从手工 token 切到 installation、repo picker 和最小权限。",
+      status: model.githubProjects.length ? "PARTIAL" : "NEXT",
+      page: "凭据"
+    },
+    {
+      title: "Secret Vault 边界",
+      detail: "tokenRef、deploy credential、LLM key 不进入页面明文和证据日志。",
+      status: model.credentialBlocked.length ? "BLOCKED" : "DRAFT",
+      page: "凭据"
+    },
+    {
+      title: "Postgres Worker Queue",
+      detail: "loop store、lease、artifact、evidence 进入 tenant/workspace scope。",
+      status: state.loopStore?.backend ?? "PLANNED",
+      page: "Loops"
+    }
+  ];
+  return `
+    <section class="saas-hero product-launch-hero" aria-label="SaaS tenant overview">
+      <div>
+        <span class="eyebrow">SaaS service control plane</span>
+        <h2>先跑通第一条 Source-to-GA Loop</h2>
+        <p>Dashboard 默认按主流 SaaS 产品的上手路径组织：接入项目、配置凭据、选择模板、启动 Loop、查看发布证据。Tenant 和 Workspace 是边界，不再打断第一次操作。</p>
+        <div class="saas-hero-actions">
+          <button class="primary" data-page-link="${escapeHtml(onboarding.nextAction.page)}">${escapeHtml(onboarding.nextAction.label)}</button>
+          <button data-page-link="项目">接入项目</button>
+          <button data-page-link="帮助手册">查看 10 分钟教程</button>
+        </div>
+      </div>
+      <aside class="saas-status-panel">
+        <span>Next best action</span>
+        <strong>${escapeHtml(onboarding.nextAction.label)}</strong>
+        <small>${escapeHtml(onboarding.nextAction.detail)}</small>
+      </aside>
+    </section>
+    <section class="first-loop-launchpad" aria-label="First Loop launch checklist">
+      <div class="section-title">
+        <div>
+          <h2>首次启动清单</h2>
+          <p>把复杂能力收敛成 4 步，用户不需要先理解全部治理概念。</p>
+        </div>
+        <span class="pill ${onboarding.decisionGo ? "good" : "warn"}">${onboarding.currentStep}/4</span>
+      </div>
+      <div class="launch-step-grid">
+        ${launchSteps.map((step) => `
+          <article class="${step.done ? "done" : step.current ? "current" : ""}">
+            <span>${step.index}</span>
+            <div>
+              <strong>${escapeHtml(step.title)}</strong>
+              <small>${escapeHtml(step.detail)}</small>
+            </div>
+            <button ${step.disabled ? "disabled" : ""} data-page-link="${escapeHtml(step.page)}">${escapeHtml(step.cta)}</button>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+    <div class="product-dashboard-grid">
+      <section class="card loop-template-center">
+        <div class="section-title">
+          <div>
+            <h2>Loop 模板中心</h2>
+            <p>用模板启动，而不是让用户从空白 graph 开始。</p>
+          </div>
+          <button data-page-link="Loops">创建 Loop</button>
+        </div>
+        <div class="loop-template-grid">
+          ${templates.map((template) => `
+            <article>
+              <div>
+                <span>${escapeHtml(template.badge)}</span>
+                <strong>${escapeHtml(template.title)}</strong>
+                <small>${escapeHtml(template.detail)}</small>
+              </div>
+              <button class="${template.primary ? "primary" : ""}" data-page-link="${escapeHtml(template.page)}">${escapeHtml(template.cta)}</button>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+      <aside class="card next-action-panel">
+        <div class="section-title">
+          <div>
+            <h2>下一步</h2>
+            <p>只显示会推动首条 Loop 的动作。</p>
+          </div>
+        </div>
+        <div class="next-action-list">
+          ${nextActions.map((action) => `
+            <article>
+              <div>
+                <strong>${escapeHtml(action.title)}</strong>
+                <small>${escapeHtml(action.detail)}</small>
+              </div>
+              <button data-page-link="${escapeHtml(action.page)}">${escapeHtml(action.cta)}</button>
+            </article>
+          `).join("")}
+        </div>
+      </aside>
+    </div>
+    <section class="saas-metric-grid" aria-label="SaaS readiness metrics">
+      ${[
+        ["Workspaces", model.workspaceCount, `${model.memberCount} members scoped`],
+        ["Projects", state.projects.length, `${model.verifiedProjects.length} verified`],
+        ["Credential blockers", model.credentialBlocked.length, "source writeback readiness"],
+        ["Release evidence", state.sourceReleaseRuns.length, `${model.releaseReady.length} promoted`]
+      ].map(([label, value, detail]) => `
+        <article>
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(String(value))}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </article>
+      `).join("")}
+    </section>
+    <div class="saas-overview-grid">
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>SaaS 演进路线</h2>
+            <p>先固化服务化边界，再把 Source-to-GA 放进每个 workspace 的生产闭环。</p>
+          </div>
+        </div>
+        <div class="saas-milestone-list">
+          ${milestones.map((item) => `
+            <article>
+              <div>
+                <strong>${escapeHtml(item.title)}</strong>
+                <small>${escapeHtml(item.detail)}</small>
+              </div>
+              <span class="pill ${/BLOCKED|NEXT/.test(item.status) ? "warn" : "good"}">${escapeHtml(item.status)}</span>
+              <button data-page-link="${escapeHtml(item.page)}">进入</button>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>租户配额</h2>
+            <p>先让 SaaS 控制面展示资源边界，后续接真实 billing / quota store。</p>
+          </div>
+        </div>
+        <div class="quota-list">
+          ${quotaRows.map(([label, used, total]) => `
+            <div>
+              <span>${escapeHtml(label)}</span>
+              <strong>${used}/${total}</strong>
+              <progress value="${Number(used)}" max="${Number(total)}"></progress>
+            </div>
+          `).join("")}
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function firstLoopLaunchSteps(model) {
+  return [
+    {
+      index: 1,
+      title: "接入项目",
+      detail: model.verified ? `${model.project?.name ?? "项目"} 已验证` : "选择 GitHub/GitLab/local Git 项目",
+      page: "项目",
+      cta: model.verified ? "查看项目" : "开始接入",
+      done: model.verified,
+      current: model.currentStep === 1
+    },
+    {
+      index: 2,
+      title: "配置凭据",
+      detail: model.credentialsReady ? "写回凭据已就绪" : "配置 tokenRef、GitHub App 或本地写权限",
+      page: "凭据",
+      cta: model.credentialsReady ? "查看凭据" : "去配置",
+      done: model.credentialsReady,
+      current: model.currentStep === 2
+    },
+    {
+      index: 3,
+      title: "启动 Loop",
+      detail: model.hasTarget ? "已有 target 或运行记录" : "从模板创建 Source-to-GA Loop",
+      page: "Loops",
+      cta: model.hasTarget ? "进入 Loops" : "选模板",
+      done: model.hasTarget,
+      current: model.currentStep === 3
+    },
+    {
+      index: 4,
+      title: "发布证据",
+      detail: model.decisionGo ? "GO 证据可复盘" : "等待 release decision 和审计证据",
+      page: "发布证据",
+      cta: model.decisionGo ? "查看 GO" : "看进度",
+      done: model.decisionGo,
+      current: model.currentStep === 4
+    }
+  ];
+}
+
+function loopTemplateCards(model) {
+  return [
+    {
+      badge: "推荐",
+      title: "GitHub 项目到 GA Release",
+      detail: "接入 repo、生成 target、执行 source closure、输出 GO / NO-GO。",
+      page: model.verified ? "Loops" : "项目",
+      cta: model.verified ? "使用模板" : "先接入项目",
+      primary: true
+    },
+    {
+      badge: "已有系统",
+      title: "已有 CI 项目接入",
+      detail: "复用 Jenkins/GitLab/local Git，把代码升级和 CI/CD 接进 Loop。",
+      page: "项目",
+      cta: "配置项目"
+    },
+    {
+      badge: "修复",
+      title: "失败发布修复",
+      detail: "从 failed release run 进入修复队列，复用 source closure 避免重复副作用。",
+      page: "发布证据",
+      cta: "查看修复"
+    },
+    {
+      badge: "自演进",
+      title: "EvoPilot 自演进",
+      detail: "把 EvoPilot 仓库作为受控目标项目，保留审批、回滚和审计边界。",
+      page: "项目",
+      cta: "注册目标"
+    }
+  ];
+}
+
+function dashboardNextActions(scopeModel, onboarding) {
+  const actions = [
+    {
+      title: onboarding.nextAction.label,
+      detail: onboarding.nextAction.detail,
+      page: onboarding.nextAction.page,
+      cta: "继续"
+    }
+  ];
+  if (!onboarding.verified) {
+    actions.push({
+      title: "使用 Field Evidence Kit",
+      detail: "用内置样例快速体验项目接入和证据导入。",
+      page: "项目",
+      cta: "打开样例"
+    });
+  }
+  if (scopeModel.credentialBlocked.length) {
+    actions.push({
+      title: "处理凭据阻塞",
+      detail: `${scopeModel.credentialBlocked.length} 个项目缺少源码写回凭据。`,
+      page: "凭据",
+      cta: "处理"
+    });
+  }
+  actions.push({
+    title: "按教程跑一遍",
+    detail: "按截图式步骤完成 Tenant / Workspace 到首个 Loop。",
+    page: "帮助手册",
+    cta: "查看"
+  });
+  return actions.slice(0, 4);
+}
+
+function renderSaasWorkspace() {
+  const model = saasScopeModel();
+  const workspaceProjects = state.projects;
+  const workspaceTargets = model.saasTargets.length ? model.saasTargets : state.loopOrchestrationTargets;
+  return `
+    <section class="workspace-control-plane" aria-label="Workspace control plane">
+      <div class="workspace-control-head">
+        <div>
+          <span class="eyebrow">Workspace boundary</span>
+          <h2>${escapeHtml(model.scope.workspaceId)}</h2>
+          <p>工作区负责成员、项目所有权、凭据作用域、Loop 运行和发布证据归属；Source-to-GA 不再是全局单机流程。</p>
+        </div>
+        <div class="workspace-owner-card">
+          <span>Owner boundary</span>
+          <strong>${escapeHtml(model.scope.tenantId)}</strong>
+          <small>${escapeHtml(model.scope.workspaceStatus)}</small>
+        </div>
+      </div>
+      <div class="workspace-domain-grid">
+        ${[
+          ["Members", model.scope.members.length, "RBAC / invitation / audit"],
+          ["Projects", workspaceProjects.length, "workspace scoped source projects"],
+          ["Loops", state.loops.length, "tenant-aware execution queue"],
+          ["Evidence", state.sourceReleaseRuns.length + state.history.length, "release and audit objects"]
+        ].map(([label, value, detail]) => `
+          <article>
+            <span>${escapeHtml(label)}</span>
+            <strong>${escapeHtml(String(value))}</strong>
+            <small>${escapeHtml(detail)}</small>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+    <div class="workspace-saas-grid">
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>成员与角色</h2>
+            <p>Dashboard 先展示多租户角色模型，后续接入真实邀请、SSO 和审计策略。</p>
+          </div>
+        </div>
+        <div class="member-list">
+          ${model.scope.members.map((member) => `
+            <article>
+              <div>
+                <strong>${escapeHtml(member.name)}</strong>
+                <small>${escapeHtml(member.role)}</small>
+              </div>
+              <span class="pill ${member.status === "ACTIVE" ? "good" : "warn"}">${escapeHtml(member.status)}</span>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>Workspace SaaS Targets</h2>
+            <p>这些 target 决定 EvoPilot 服务化前必须具备的租户、凭据、配额和持久化能力。</p>
+          </div>
+        </div>
+        <div class="saas-target-list">
+          ${workspaceTargets.slice(0, 6).map((target) => `
+            <article>
+              <div>
+                <strong>${escapeHtml(target.id ?? target.title)}</strong>
+                <small>${escapeHtml(target.nextAction ?? target.title ?? "等待推进")}</small>
+              </div>
+              <span class="pill ${target.status === "RUNNING" ? "warn" : "good"}">${escapeHtml(target.status ?? "PENDING")}</span>
+            </article>
+          `).join("") || renderEmptyState("暂无 SaaS target", "先推进 tenant-workspace-model，再展开 GitHub App、secret vault、quota 和 Postgres worker queue。")}
+        </div>
+      </section>
+    </div>
+    <div class="target-runtime-lists">
+      ${renderLoopTargetRuntimePanel()}
+      ${renderLoopTargetBacklogPanel()}
+    </div>
+    ${renderSourceToGaWizard()}
+  `;
+}
+
+function renderSaasCredentialCenter() {
+  const model = saasScopeModel();
+  const readyGithubApps = state.githubAppInstallations.filter((installation) => installation.status === "READY");
+  const activeSecrets = state.secrets.filter((secret) => secret.status === "ACTIVE");
+  const vaultRows = [
+    ["GitHub App", readyGithubApps.length ? "READY" : model.githubProjects.length ? "PARTIAL" : "PLANNED", `${readyGithubApps.length}/${state.githubAppInstallations.length} installations ready`],
+    ["Secret Vault", activeSecrets.length ? "READY" : "CONFIGURE", `${activeSecrets.length} active secret refs / plaintext hidden`],
+    ["Source writeback", model.credentialBlocked.length ? "BLOCKED" : "READY", "tokenRef / branch / PR-MR permissions"],
+    ["Deploy credentials", state.deployConnectors.length ? "READY" : "CONFIGURE", "ECS、K8s、HTTP webhook secret scope"],
+    ["LLM provider keys", state.apiStatus === "实时数据" ? "READY" : "CONFIGURE", "discovery、evaluator、code upgrade route"],
+    ["Audit redaction", "REQUIRED", "secret 不进入页面明文、trace、release evidence"]
+  ];
+  return `
+    <section class="credential-center" aria-label="Credential and vault center">
+      <div>
+        <span class="eyebrow">Credential boundary</span>
+        <h2>GitHub App 与 Secret Vault 是 SaaS 化优先入口</h2>
+        <p>当前页面把项目凭据、部署连接器和运行密钥合并成 workspace 级凭据中心，避免多租户后凭据散落在项目表单和环境变量里。</p>
+      </div>
+      <div class="credential-action-card">
+        <span>Next boundary</span>
+        <strong>${model.credentialBlocked.length ? "配置源码写回凭据" : readyGithubApps.length ? "检查 Postgres 与发布证据" : "推进 GitHub App onboarding"}</strong>
+        <small>${model.credentialBlocked.length} source blockers / ${activeSecrets.length} secret refs / ${state.deployConnectors.length} deploy connectors</small>
+      </div>
+    </section>
+    <div class="credential-grid">
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>Vault readiness</h2>
+            <p>凭据页读取 workspace 级 secret refs 与 GitHub App installation readiness；API 响应不会回显明文或加密 payload。</p>
+          </div>
+        </div>
+        <div class="vault-list">
+          ${vaultRows.map(([name, status, detail]) => `
+            <article>
+              <div>
+                <strong>${escapeHtml(name)}</strong>
+                <small>${escapeHtml(detail)}</small>
+              </div>
+              <span class="pill ${status === "READY" ? "good" : "warn"}">${escapeHtml(status)}</span>
+            </article>
+          `).join("")}
+        </div>
+      </section>
+      <section class="embedded-panel">
+        ${renderGuidedOnboardingPanel()}
+      </section>
+    </div>
+    ${renderConnectorMarketplaceSettings()}
+  `;
 }
 
 function sourceToGaExperienceModel() {
@@ -396,14 +940,14 @@ function sourceToGaExperienceModel() {
   const decisionGo = decisionStatus === "GO" || (loopDone && mergeCommit);
   const currentStep = !verified ? 1 : !hasTarget ? 2 : !loopDone ? 3 : 4;
   const nextAction = !verified
-    ? { label: "连接 GitHub 项目", page: "项目接入", detail: "选择 repo，完成验证和写回凭据。" }
+    ? { label: "连接 GitHub 项目", page: "项目", detail: "选择 repo，完成验证和写回凭据。" }
     : !credentialsReady
-      ? { label: "配置写回凭据", page: "项目接入", detail: "让 EvoPilot 能创建分支和 PR。" }
+      ? { label: "配置写回凭据", page: "凭据", detail: "让 EvoPilot 能创建分支和 PR。" }
       : !hasTarget
-        ? { label: "生成 GA target", page: "主链路向导", detail: "把当前项目推进到可执行目标。" }
+        ? { label: "生成 GA target", page: "工作区", detail: "把当前项目推进到可执行目标。" }
         : !loopDone
-          ? { label: "启动 Source-to-GA Loop", page: "Loop 执行", detail: "执行写回、PR 和 release gate。" }
-          : { label: "查看发布决策", page: "评估与发布", detail: "确认 GO，并归档本次 GA 证据。" };
+          ? { label: "启动 Source-to-GA Loop", page: "Loops", detail: "执行写回、PR 和 release gate。" }
+          : { label: "查看发布决策", page: "发布证据", detail: "确认 GO，并归档本次 GA 证据。" };
   return {
     project,
     activeLoop,
@@ -624,11 +1168,12 @@ function renderHomeCommandCenter() {
 
 function renderFlowHeader() {
   const steps = [
-    ["项目接入", "Git、凭据、部署边界"],
-    ["发现与目标", "证据、机会点、Target Runtime"],
-    ["Loop 执行", "编排、worker、trace、replay"],
-    ["评估与发布", "CI/CD、guardrail、source closure"],
-    ["历史审计", "完成记录与审计证据"]
+    ["工作区", "成员、项目、证据边界"],
+    ["项目", "Git、仓库、项目归属"],
+    ["凭据", "GitHub App、Vault、部署密钥"],
+    ["Loops", "编排、worker、trace、replay"],
+    ["发布证据", "CI/CD、guardrail、source closure"],
+    ["审计", "完成记录与证据归档"]
   ];
   return `
     <section class="flow-header">
@@ -870,7 +1415,7 @@ function renderSimplifiedLoopTab(activeTab, data) {
           <span class="pill ${inbox.length ? "warn" : "good"}">${inbox.length}</span>
         </div>
         <div class="source-ga-todo-list">
-          ${renderSimplifiedTodoList(inbox, 12)}
+          ${inbox.length ? renderSimplifiedTodoList(inbox, 12) : renderLoopEmptyAction("没有待处理阻塞", "凭据、审批、修复和发布门禁都没有等待用户处理。", "去创建新的 Loop，或查看发布证据。", "Loops", "创建 Loop")}
         </div>
       </section>
     `;
@@ -899,7 +1444,8 @@ function renderSimplifiedLoopTab(activeTab, data) {
           </div>
           ${statusPill(model.loopDone ? "已晋级" : primaryLoop?.status ?? "待启动")}
         </div>
-        ${primaryLoop ? renderSimplifiedLoopCard(primaryLoop, model) : renderEmptyState("还没有 Loop", "连接 GitHub 项目并生成 GA target 后，启动第一个 Source-to-GA Loop。", "把首次路径保持在一个主任务上。")}
+        ${primaryLoop ? renderSimplifiedLoopCard(primaryLoop, model) : renderLoopEmptyAction("还没有 Loop", "连接项目并从模板启动第一条 Source-to-GA Loop。", "先接入项目，再使用推荐模板。", model.verified ? "Loops" : "项目", model.verified ? "选择模板" : "接入项目")}
+        ${!primaryLoop ? renderInlineLoopTemplates(model) : ""}
         ${currentLoops.length > 1 ? renderSimplifiedLoopRows(currentLoops.filter((loop) => loop.id !== primaryLoop?.id).slice(0, 4)) : ""}
       </section>
       <aside class="card">
@@ -911,7 +1457,7 @@ function renderSimplifiedLoopTab(activeTab, data) {
           <span class="pill ${inbox.length ? "warn" : "good"}">${inbox.length}</span>
         </div>
         <div class="source-ga-todo-list">
-          ${renderSimplifiedTodoList(inbox, 5)}
+          ${inbox.length ? renderSimplifiedTodoList(inbox, 5) : renderLoopEmptyAction("无阻塞待办", "当前没有凭据、审批、修复或发布门禁。", "继续推进主 Loop 或查看发布证据。", model.decisionGo ? "发布证据" : "Loops", model.decisionGo ? "查看证据" : "继续 Loop")}
         </div>
       </aside>
     </div>
@@ -927,7 +1473,7 @@ function renderSimplifiedTodoList(items, limit) {
       </div>
       <button ${item.action ? `data-action="${escapeHtml(item.action)}"` : `data-page-link="${escapeHtml(item.page)}"`} ${item.id ? `data-id="${escapeHtml(item.id)}"` : ""}>${escapeHtml(item.cta)}</button>
     </article>
-  `).join("") || renderEmptyState("无阻塞待办", "凭据、审批、修复和发布门禁都没有等待用户处理。");
+  `).join("") || renderLoopEmptyAction("无阻塞待办", "凭据、审批、修复和发布门禁都没有等待用户处理。", "创建或继续一条 Loop。", "Loops", "进入 Loops");
 }
 
 function renderSimplifiedLoopList(title, detail, loops, emptyTitle) {
@@ -940,8 +1486,33 @@ function renderSimplifiedLoopList(title, detail, loops, emptyTitle) {
         </div>
         <span class="pill">${loops.length}</span>
       </div>
-      ${loops.length ? renderSimplifiedLoopRows(loops) : renderEmptyState(emptyTitle, detail)}
+      ${loops.length ? renderSimplifiedLoopRows(loops) : renderLoopEmptyAction(emptyTitle, detail, "这里保持为空是正常的；有运行记录后会自动进入对应分组。", "Loops", "创建 Loop")}
     </section>
+  `;
+}
+
+function renderInlineLoopTemplates(model) {
+  return `
+    <div class="loop-empty-template-strip" aria-label="Loop quick templates">
+      ${loopTemplateCards(model).slice(0, 3).map((template) => `
+        <button data-page-link="${escapeHtml(template.page)}">
+          <span>${escapeHtml(template.badge)}</span>
+          <strong>${escapeHtml(template.title)}</strong>
+          <small>${escapeHtml(template.detail)}</small>
+        </button>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderLoopEmptyAction(titleText, detail, meta, page, cta) {
+  return `
+    <div class="empty-state action-empty" role="status">
+      <strong>${escapeHtml(titleText)}</strong>
+      <span>${escapeHtml(detail)}</span>
+      <small>${escapeHtml(meta)}</small>
+      <button class="primary" data-page-link="${escapeHtml(page)}">${escapeHtml(cta)}</button>
+    </div>
   `;
 }
 
@@ -990,7 +1561,7 @@ function renderSimplifiedLoopCard(loop, model) {
         `).join("")}
       </div>
       <div class="source-ga-home-actions">
-        <button class="primary" data-page-link="${model.decisionGo ? "评估与发布" : "Loop 执行"}">${model.decisionGo ? "查看发布决策" : "继续 Loop"}</button>
+        <button class="primary" data-page-link="${model.decisionGo ? "发布证据" : "Loops"}">${model.decisionGo ? "查看发布决策" : "继续 Loop"}</button>
         ${model.prUrl ? `<a class="button-like" href="${escapeHtml(model.prUrl)}" target="_blank" rel="noreferrer">打开 PR</a>` : ""}
         <button data-loop-workspace-view="advanced">高级细节</button>
       </div>
@@ -2771,52 +3342,188 @@ function renderHistory() {
 
 function renderGuidedHelpManual() {
   const scenarios = helpManualScenarios();
-  const totalSteps = scenarios.reduce((sum, scenario) => sum + scenario.steps.length, 0);
-  const categories = new Set(scenarios.map((scenario) => scenario.category));
+  const roles = helpManualRoles();
   return `
-    <section class="manual-hero" aria-label="EvoPilot guided help manual">
-      <div>
-        <span class="eyebrow">Guided manual</span>
-        <h2>EvoPilot 端到端主链路手册</h2>
-        <p>按真实用户任务组织：从 GitHub demo project 接入生产控制面，到 Discovery、Target、Loop、Autopilot、Release Closure、修复和审计复盘。功能页只作为每一步的落点。</p>
-      </div>
-      <div class="manual-hero-stats">
-        <div><strong>${scenarios.length}</strong><span>主链路场景</span></div>
-        <div><strong>${totalSteps}</strong><span>截图步骤</span></div>
-        <div><strong>${categories.size}</strong><span>任务类型</span></div>
-      </div>
-    </section>
-    <section class="manual-scene-map" aria-label="手册场景目录">
-      ${scenarios.map((scenario, index) => `
-        <a class="manual-scene-link" href="#manual-${escapeHtml(scenario.id)}">
-          <span>${String(index + 1).padStart(2, "0")}</span>
-          <strong>${escapeHtml(scenario.title)}</strong>
-          <small>${escapeHtml(scenario.category)} / ${escapeHtml(scenario.outcome)}</small>
-        </a>
-      `).join("")}
-    </section>
-    ${scenarios.map(renderHelpManualScenario).join("")}
+    <div class="help-doc-page">
+      <header class="help-doc-globalbar" aria-label="帮助文档全局栏">
+        <div class="help-doc-browser-controls" aria-hidden="true">
+          <span></span>
+          <span></span>
+        </div>
+        <label class="help-doc-search">
+          <span>搜索帮助文档</span>
+          <input type="search" placeholder="搜索，也可以输入文档地址直接打开" aria-label="搜索帮助文档">
+        </label>
+        <a class="button-like help-doc-back" href="${escapeHtml(window.location.pathname)}">返回控制台</a>
+      </header>
+      <main class="help-doc-main">
+        <div class="manual-doc-content manual-doc-content-wide">
+          ${renderHelpManualCatalog(scenarios)}
+          ${renderHelpRoleMap(roles)}
+          ${scenarios.map(renderHelpManualScenario).join("")}
+        </div>
+      </main>
+    </div>
   `;
+}
+
+function renderHelpManualCatalog(scenarios) {
+  const catalogGroups = helpManualCatalogGroups(scenarios);
+  const recommended = [
+    ["首次开通 EvoPilot SaaS 多租户环境", "#manual-platform-tenant-provisioning"],
+    ["管理工作区成员与角色", "#manual-tenant-workspace-member-admin"],
+    ["完成第一条 Source-to-GA Loop", "#manual-saas-tenant-workspace-onboarding"],
+    ["复盘发布证据与审计记录", "#manual-release-evidence-review"]
+  ];
+  return `
+    <section class="manual-doc-section manual-catalog-home" id="manual-doc-catalog" aria-label="文档目录">
+      <div class="manual-doc-product-title">
+        <h2>EvoPilot SaaS 多租户控制台</h2>
+        <p>文档目录</p>
+      </div>
+      <div class="manual-catalog-layout">
+        <nav class="manual-catalog-tree" aria-label="产品文档目录">
+          ${catalogGroups.map((group) => `
+            <section>
+              <h3>${escapeHtml(group.title)}</h3>
+              <ul>
+                ${group.children.map((child) => `
+                  <li class="${child.children ? "is-open" : ""}">
+                    <a href="${escapeHtml(child.href)}">${escapeHtml(child.title)}</a>
+                    ${child.children ? `<ul>${child.children.map((nested) => `<li><a href="${escapeHtml(nested.href)}">${escapeHtml(nested.title)}</a></li>`).join("")}</ul>` : ""}
+                  </li>
+                `).join("")}
+              </ul>
+            </section>
+          `).join("")}
+        </nav>
+        <aside class="manual-catalog-aside" aria-label="推荐阅读">
+          <h3>推荐阅读</h3>
+          ${recommended.map(([title, href], index) => `
+            <a href="${escapeHtml(href)}">
+              <span>${String(index + 1).padStart(2, "0")}</span>
+              <strong>${escapeHtml(title)}</strong>
+            </a>
+          `).join("")}
+          <div>
+            <span>常用 API</span>
+            <code>POST /api/v1/tenants</code>
+            <code>POST /api/v1/workspaces</code>
+            <code>POST /api/v1/loops</code>
+            <code>GET /api/v1/release/decisions</code>
+          </div>
+        </aside>
+      </div>
+    </section>
+  `;
+}
+
+function helpManualCatalogGroups(scenarios) {
+  const scenarioLink = (id, fallbackTitle) => {
+    const scenario = scenarios.find((item) => item.id === id);
+    return { title: scenario?.title ?? fallbackTitle, href: `#manual-${id}` };
+  };
+  return [
+    {
+      title: "用户指南",
+      children: [
+        {
+          title: "开始使用",
+          href: "#manual-doc-catalog",
+          children: [
+            { title: "什么是 EvoPilot SaaS 多租户控制台", href: "#manual-doc-catalog" },
+            { title: "角色与权限", href: "#manual-roles" },
+            { title: "控制台页面说明", href: "#manual-roles" }
+          ]
+        },
+        {
+          title: "快速入门",
+          href: "#manual-platform-tenant-provisioning",
+          children: [
+            scenarioLink("platform-tenant-provisioning", "平台管理员创建租户与工作区"),
+            scenarioLink("tenant-workspace-member-admin", "租户管理员管理成员与工作区边界"),
+            scenarioLink("saas-tenant-workspace-onboarding", "Tenant / Workspace 到首个 Source-to-GA Loop")
+          ]
+        }
+      ]
+    },
+    {
+      title: "租户与工作区",
+      children: [
+        scenarioLink("platform-tenant-provisioning", "平台管理员创建租户与工作区"),
+        scenarioLink("tenant-workspace-member-admin", "租户管理员管理成员与工作区边界")
+      ]
+    },
+    {
+      title: "项目、凭据与代码升级",
+      children: [
+        scenarioLink("saas-tenant-workspace-onboarding", "Tenant / Workspace 到首个 Source-to-GA Loop"),
+        scenarioLink("signals-to-code-upgrade", "已有项目从运行信号到代码升级")
+      ]
+    },
+    {
+      title: "Loop、发布与审计",
+      children: [
+        scenarioLink("target-backlog-autopilot", "Target Backlog 到 Autopilot 自动驾驶"),
+        scenarioLink("failed-release-repair", "失败 Release Run 修复闭环"),
+        scenarioLink("release-evidence-review", "发布后证据复盘")
+      ]
+    },
+    {
+      title: "运维与最佳实践",
+      children: [
+        scenarioLink("runtime-recovery", "长任务中断后的 Worker / Replay / Sandbox / Trace 恢复"),
+        scenarioLink("evopilot-self-governance", "EvoPilot 接入 EvoPilot 的受控自演进")
+      ]
+    },
+    {
+      title: "API 参考",
+      children: [
+        { title: "租户 API", href: "#manual-platform-tenant-provisioning" },
+        { title: "工作区成员 API", href: "#manual-tenant-workspace-member-admin" },
+        { title: "Loop Runtime API", href: "#manual-runtime-recovery" },
+        { title: "Release Decision API", href: "#manual-release-evidence-review" }
+      ]
+    }
+  ];
 }
 
 function renderHelpManualScenario(scenario, index) {
   return `
-    <section class="manual-scenario" id="manual-${escapeHtml(scenario.id)}" aria-label="${escapeHtml(scenario.title)}">
+    <section class="manual-scenario manual-doc-section" id="manual-${escapeHtml(scenario.id)}" aria-label="${escapeHtml(scenario.title)}">
       <div class="manual-scenario-head">
         <div>
-          <span class="eyebrow">${escapeHtml(scenario.category)} / Scenario ${index + 1}</span>
+          <span class="eyebrow">${escapeHtml(scenario.category)} / 操作指南 ${index + 1}</span>
           <h2>${escapeHtml(scenario.title)}</h2>
           <p>${escapeHtml(scenario.goal)}</p>
         </div>
         <button data-page-link="${escapeHtml(scenario.page)}">打开${escapeHtml(scenario.page)}</button>
       </div>
-      <div class="manual-scenario-meta">
-        <div><span>适用用户</span><strong>${escapeHtml(scenario.persona)}</strong></div>
-        <div><span>前置条件</span><strong>${scenario.prerequisites.map(escapeHtml).join(" / ")}</strong></div>
-        <div><span>最终结果</span><strong>${escapeHtml(scenario.outcome)}</strong></div>
+      ${scenario.roles?.length ? `<div class="manual-role-tags">${scenario.roles.map((role) => `<span>${escapeHtml(role)}</span>`).join("")}</div>` : ""}
+      <div class="manual-doc-subnav" aria-label="${escapeHtml(scenario.title)}目录">
+        <a href="#manual-${escapeHtml(scenario.id)}-scene">操作场景</a>
+        <a href="#manual-${escapeHtml(scenario.id)}-prerequisites">前提条件</a>
+        <a href="#manual-${escapeHtml(scenario.id)}-steps">操作步骤</a>
+        <a href="#manual-${escapeHtml(scenario.id)}-verify">结果验证</a>
+        <a href="#manual-${escapeHtml(scenario.id)}-next">后续操作</a>
       </div>
-      <div class="manual-step-list">
+      <div class="manual-scenario-meta">
+        <div id="manual-${escapeHtml(scenario.id)}-scene"><span>操作场景</span><strong>${escapeHtml(scenario.persona)}</strong></div>
+        <div id="manual-${escapeHtml(scenario.id)}-prerequisites"><span>前提条件</span><strong>${scenario.prerequisites.map(escapeHtml).join(" / ")}</strong></div>
+        <div id="manual-${escapeHtml(scenario.id)}-verify"><span>结果验证</span><strong>${escapeHtml(scenario.outcome)}</strong></div>
+      </div>
+      <div class="manual-step-list" id="manual-${escapeHtml(scenario.id)}-steps">
         ${scenario.steps.map((step, stepIndex) => renderHelpManualStep(step, stepIndex, scenario.page)).join("")}
+      </div>
+      <div class="manual-doc-footer" id="manual-${escapeHtml(scenario.id)}-next">
+        <div>
+          <span>后续操作</span>
+          <strong>${escapeHtml(scenario.nextStep ?? "进入下一场景继续完成 Source-to-GA 闭环，或切到审计页复盘证据链。")}</strong>
+        </div>
+        <div>
+          <span>相关 API</span>
+          <strong>${(scenario.apis ?? ["/api/v1/loops", "/api/v1/release/decisions"]).map(escapeHtml).join(" / ")}</strong>
+        </div>
       </div>
     </section>
   `;
@@ -2844,7 +3551,7 @@ function renderManualScreenshot(step) {
   return `
     <figure class="manual-screenshot" aria-label="截图：${escapeHtml(step.screenTitle)}">
       <figcaption>
-        <span>截图</span>
+        <span>控制台位置</span>
         <strong>${escapeHtml(step.screenTitle)}</strong>
       </figcaption>
       <div class="manual-browser-frame">
@@ -2870,133 +3577,362 @@ function renderManualScreenshot(step) {
   `;
 }
 
+function renderHelpRoleMap(roles) {
+  const capabilities = [
+    "创建租户",
+    "管理租户与工作区",
+    "邀请成员",
+    "修改角色",
+    "配置 GitHub App/Vault",
+    "接入项目",
+    "启动 Source-to-GA Loop",
+    "发布审批/修复",
+    "审计复盘"
+  ];
+  return `
+    <section class="manual-role-map manual-doc-section" id="manual-roles" aria-label="角色化手册">
+      <div class="manual-role-head">
+        <div>
+          <span class="eyebrow">Access control</span>
+          <h2>角色与权限</h2>
+          <p>在开始操作前，请先确认当前账号角色。平台管理员负责 tenant/workspace 控制面；租户管理员负责工作区成员和凭据边界；开发者、发布负责人、Loop 运维和 Viewer 只在授权范围内推进或审计。</p>
+        </div>
+        <span class="pill good">RBAC: viewer / operator / admin + owner / admin / developer / viewer</span>
+      </div>
+      <div class="manual-role-grid">
+        ${roles.map((role) => `
+          <article class="manual-role-card">
+            <div class="manual-role-card-head">
+              <span>${escapeHtml(role.apiRole)}</span>
+              <h3>${escapeHtml(role.title)}</h3>
+              <p>${escapeHtml(role.scope)}</p>
+            </div>
+            <dl class="manual-role-permissions">
+              <div><dt>工作区角色</dt><dd>${escapeHtml(role.workspaceRole)}</dd></div>
+              <div><dt>主要页面</dt><dd>${role.pages.map(escapeHtml).join(" / ")}</dd></div>
+              <div><dt>可执行</dt><dd>${role.can.map(escapeHtml).join("；")}</dd></div>
+              <div><dt>权限边界</dt><dd>${escapeHtml(role.blocked)}</dd></div>
+            </dl>
+          </article>
+        `).join("")}
+      </div>
+      <div class="manual-role-scenario-grid" aria-label="角色场景矩阵">
+        <div class="manual-role-matrix-head">场景权限矩阵</div>
+        ${capabilities.map((capability) => `<div class="manual-role-matrix-head">${escapeHtml(capability)}</div>`).join("")}
+        ${roles.map((role) => `
+          <div class="manual-role-name">${escapeHtml(role.title)}</div>
+          ${capabilities.map((capability) => {
+            const state = role.scenarios[capability] ?? "blocked";
+            const label = state === "own" ? "可执行" : state === "assist" ? "协作" : state === "read" ? "只读" : "受限";
+            return `<div class="manual-permission manual-permission-${state}">${label}</div>`;
+          }).join("")}
+        `).join("")}
+      </div>
+      <div class="manual-api-strip">
+        <span>租户创建：POST /api/v1/tenants</span>
+        <span>工作区创建：POST /api/v1/workspaces</span>
+        <span>邀请成员：POST /api/v1/workspaces/{workspaceId}/invitations</span>
+        <span>修改角色：PATCH /api/v1/workspaces/{workspaceId}/members/{memberId}</span>
+      </div>
+    </section>
+  `;
+}
+
+function helpManualRoles() {
+  return [
+    {
+      title: "平台管理员",
+      apiRole: "admin",
+      workspaceRole: "全局 admin",
+      scope: "负责 SaaS 控制面初始化、创建租户、创建工作区、跨租户治理和生产发布边界。",
+      pages: ["租户总览", "工作区", "凭据", "发布证据", "审计"],
+      can: ["创建租户", "创建工作区", "邀请租户管理员", "配置 quota/secret/GitHub App", "执行发布修复"],
+      blocked: "必须保留审计和 workspace scope；不能用全局权限绕过 release decision。",
+      scenarios: {
+        "创建租户": "own",
+        "管理租户与工作区": "own",
+        "邀请成员": "own",
+        "修改角色": "own",
+        "配置 GitHub App/Vault": "own",
+        "接入项目": "assist",
+        "启动 Source-to-GA Loop": "assist",
+        "发布审批/修复": "own",
+        "审计复盘": "own"
+      }
+    },
+    {
+      title: "租户管理员",
+      apiRole: "admin 或 operator",
+      workspaceRole: "owner/admin",
+      scope: "管理本租户下的 workspace、成员、凭据边界、项目接入和日常 Loop 授权。",
+      pages: ["工作区", "项目", "凭据", "Loops", "发布证据"],
+      can: ["邀请成员", "修改 workspace 内角色", "配置 GitHub App/Vault", "接入项目", "授权 human gate"],
+      blocked: "不能越权访问其他 tenant/workspace；不能创建全局租户策略。",
+      scenarios: {
+        "创建租户": "assist",
+        "管理租户与工作区": "own",
+        "邀请成员": "own",
+        "修改角色": "own",
+        "配置 GitHub App/Vault": "own",
+        "接入项目": "own",
+        "启动 Source-to-GA Loop": "own",
+        "发布审批/修复": "assist",
+        "审计复盘": "read"
+      }
+    },
+    {
+      title: "Workspace 开发者",
+      apiRole: "operator",
+      workspaceRole: "developer",
+      scope: "在授权 workspace 内接入项目、处理 evidence、形成机会点并执行代码升级。",
+      pages: ["项目", "工作区", "Loops", "发布证据"],
+      can: ["接入项目", "运行 Discovery", "启动 Loop", "查看代码升级过程", "提交修复证据"],
+      blocked: "不能管理租户、修改成员角色或读取其他 workspace 凭据。",
+      scenarios: {
+        "创建租户": "blocked",
+        "管理租户与工作区": "read",
+        "邀请成员": "blocked",
+        "修改角色": "blocked",
+        "配置 GitHub App/Vault": "assist",
+        "接入项目": "own",
+        "启动 Source-to-GA Loop": "own",
+        "发布审批/修复": "assist",
+        "审计复盘": "read"
+      }
+    },
+    {
+      title: "发布负责人",
+      apiRole: "operator/admin",
+      workspaceRole: "admin",
+      scope: "负责 release decision、human gate、失败发布修复、deploy finalizer 和发布后证据闭环。",
+      pages: ["发布证据", "Loops", "审计"],
+      can: ["批准 Release", "修复 Release Run", "执行 Deploy Finalizer", "复盘 GO/NO-GO"],
+      blocked: "不能补充源码凭据或成员权限；证据不足时只能退回处理。",
+      scenarios: {
+        "创建租户": "blocked",
+        "管理租户与工作区": "read",
+        "邀请成员": "blocked",
+        "修改角色": "blocked",
+        "配置 GitHub App/Vault": "assist",
+        "接入项目": "read",
+        "启动 Source-to-GA Loop": "assist",
+        "发布审批/修复": "own",
+        "审计复盘": "own"
+      }
+    },
+    {
+      title: "Loop 运维",
+      apiRole: "operator",
+      workspaceRole: "admin/developer",
+      scope: "处理 worker queue、watchdog、replay、sandbox proof 和 streaming trace 的运行恢复。",
+      pages: ["Loops", "发布证据", "审计"],
+      can: ["Claim worker", "执行 replay", "验证 sandbox proof", "刷新 trace tree", "定位 release gate"],
+      blocked: "不能审批业务发布或修改租户成员；恢复动作必须产生 trace/audit。",
+      scenarios: {
+        "创建租户": "blocked",
+        "管理租户与工作区": "read",
+        "邀请成员": "blocked",
+        "修改角色": "blocked",
+        "配置 GitHub App/Vault": "read",
+        "接入项目": "read",
+        "启动 Source-to-GA Loop": "assist",
+        "发布审批/修复": "assist",
+        "审计复盘": "own"
+      }
+    },
+    {
+      title: "审计 Viewer",
+      apiRole: "viewer",
+      workspaceRole: "viewer",
+      scope: "只读查看 tenant/workspace、release decision、artifacts、audit 和历史证据。",
+      pages: ["租户总览", "工作区", "发布证据", "审计"],
+      can: ["查看发布决策", "读取 artifacts", "复盘 audit", "确认 evidence boundary"],
+      blocked: "不能创建、审批、修复、写入凭据或修改成员。",
+      scenarios: {
+        "创建租户": "read",
+        "管理租户与工作区": "read",
+        "邀请成员": "blocked",
+        "修改角色": "blocked",
+        "配置 GitHub App/Vault": "read",
+        "接入项目": "read",
+        "启动 Source-to-GA Loop": "read",
+        "发布审批/修复": "read",
+        "审计复盘": "own"
+      }
+    }
+  ];
+}
+
 function helpManualScenarios() {
   const navBase = [
-    { label: "工作台" },
-    { label: "项目接入" },
-    { label: "发现与目标" },
-    { label: "Loop 执行" },
-    { label: "评估与发布" },
-    { label: "历史审计" }
+    { label: "租户总览" },
+    { label: "工作区" },
+    { label: "项目" },
+    { label: "凭据" },
+    { label: "Loops" },
+    { label: "发布证据" },
+    { label: "审计" }
   ];
   const navFor = (active) => navBase.map((item) => ({ ...item, active: item.label === active }));
   return [
     {
-      id: "github-demo-ga-release",
-      category: "新手主线",
-      title: "GitHub Demo Project 到 GA Release",
-      page: "项目接入",
-      persona: "第一次接入 EvoPilot 的发布负责人",
-      prerequisites: ["生产控制面 API Token", "GitHub demo 仓库", "GitHub tokenRef", "Jenkins 或 Deploy connector"],
-      outcome: "demo project 形成 source-to-production Loop，并留下 GA Release / GO 证据",
-      goal: "把一个 GitHub demo project 从零接入 EvoPilot 生产环境，跑出可审计的 target loop、Release Run、artifacts 和 release decision。",
+      id: "platform-tenant-provisioning",
+      category: "平台管理",
+      title: "平台管理员创建租户与工作区",
+      page: "租户总览",
+      persona: "负责 SaaS 控制面初始化的平台管理员",
+      roles: ["平台管理员", "租户管理员", "审计 Viewer"],
+      prerequisites: ["admin API Token", "目标租户编码", "初始 owner/admin 成员", "租户配额策略"],
+      outcome: "tenant、workspace、owner/admin、quota 和 audit 边界全部创建并可复盘",
+      goal: "从平台视角完成一个新租户的最小可运营单元：先创建 tenant，再创建 workspace，最后把 owner/admin、配额和审计边界交给租户管理员。",
       steps: [
-        manualStep("连接生产控制面", "在顶部生产控制面输入 EvoPilot API Token。没有 Token 时 Dashboard 只能使用示例数据，不能读写真正项目、Target 和 Release Run。", "顶部提示已配置 API Token，Dashboard 使用真实 EvoPilot API", "生产控制面", "工作台", "Production control", "API Token 解锁真实控制面数据", navFor("工作台"), ["API Token", "实时数据", "项目", "Release Runs"], "工作台", "API Token 缺失或权限不足"),
-        manualStep("注册 GitHub demo project", "进入项目接入，在 Field Evidence Kit 点击预填接入表单，再提交注册。表单只是产品样例入口，提交后仍然调用真实 /api/v1/projects。", "项目列表出现 GitHub demo project，validation 显示已验证或明确阻塞原因", "Field Evidence Kit", "项目接入", "GitHub onboarding", "Product Kit 预填，真实项目注册 API 落库", navFor("项目接入"), ["Field Evidence Kit", "Provider=GitHub", "Git URL", "验证并注册"], "项目接入", "Git URL 不可达、默认分支错误"),
-        manualStep("配置 GitHub 写回 tokenRef", "打开源码写回凭据，保存 GitHub tokenRef 或 inline token，并执行只读预检。生产环境优先使用服务器端 tokenRef。", "凭据状态为 READY，或显示 READ_ONLY/BLOCKED 的具体原因", "源码写回凭据", "项目接入", "SCM credentials", "tokenRef、默认分支、只读预检", navFor("项目接入"), ["Token 环境变量", "只验证", "保存并验证", "READY"], "项目接入", "tokenRef 未解析、token 无写权限"),
-        manualStep("确认交付连接器 ready", "在连接器市场确认 GitHub、Jenkins、Deploy、LLM Route、Sandbox 至少覆盖本次 demo 发布所需边界。", "SCM、CI/CD、Deploy、Runtime 边界都能看到 READY 或明确 CONFIGURE", "连接器市场与设置", "项目接入", "Connector readiness", "源码、流水线、部署、运行时统一检查", navFor("项目接入"), ["GitHub", "Jenkins", "Deploy", "LLM Route", "Sandbox"], "项目接入", "缺少 Jenkins 或 Deploy connector"),
-        manualStep("导入 sample evidence 并运行 Discovery", "进入发现与目标，先导入 Field Evidence Kit 的 sample evidence，再运行 Discovery。sample evidence 会写入真实 evidence run，而不是前端假数据。", "Target Backlog 出现 demo project 的 target，nextAction 可推进", "Sample Evidence 导入", "发现与目标", "Target discovery", "从项目运行信号生成候选目标", navFor("发现与目标"), ["Sample Evidence", "Discovery", "Candidate", "Target Backlog"], "发现与目标", "没有已验证项目或 API Token 权限不足"),
-        manualStep("创建 source-to-production Loop", "进入 Loop 执行，用 Workflow Canvas Editor 选择 source-to-production 模板、release gate、stop policy 和 targetVersion。", "Loop Runtime 出现新 Loop，sourceClosure 带 code-change、push、tag、deploy、health-ready gate", "Workflow Canvas Editor", "Loop 执行", "Source-to-production loop", "typed executor graph 和 release gate 入库", navFor("Loop 执行"), ["Graph template", "Release gate", "targetVersion", "创建闭环 Loop"], "Loop 执行", "release gate 或 targetVersion 缺失"),
-        manualStep("启动 Autopilot 推进目标", "在 Autopilot cockpit 或 Target Backlog 点击一键自动驾驶。Autopilot 会推进 bounded loop，遇到 human gate 或外部阻塞时停下。", "Autopilot run 写入阶段证据；必要时提示 configure-source-credentials 或等待批准", "Autopilot cockpit", "工作台", "Autopilot run", "Connect、Discover、Loop、Evaluate、Release", navFor("工作台"), ["启动一键自动驾驶", "Human gate", "External blocker", "阶段证据"], "工作台", "凭据、审批、预算或策略门禁阻塞"),
-        manualStep("执行 Release Closure", "进入评估与发布，刷新 Release Run，按策略批准 Release、合并 Release 或执行安全自动合并。", "Release Run 晋级到 promoted/succeeded，或留下 policy blocker 和 nextAction", "Release Closure Runtime", "评估与发布", "Release closure", "审批、策略、merge、post-merge deploy", navFor("评估与发布"), ["刷新 Release Run", "批准 Release", "合并 Release", "安全自动合并"], "评估与发布", "policy blocker、健康探测失败、merge 冲突"),
-        manualStep("复盘 GA Release 证据", "进入历史审计，打开历史详情，确认 release decision、release artifacts、source release artifacts、audit 和验证证据齐全。", "能够用历史详情说明该 demo project 是否达到 GA Release / GO", "历史详情", "历史审计", "GA evidence", "release decision 与 artifacts 可复盘", navFor("历史审计"), ["Release Decision", "Artifacts", "Audit", "验证证据"], "历史审计", "只有 CI 成功但没有 release decision")
+        manualStep("创建租户", "在租户总览确认当前 token 是 admin 角色，创建新的 tenant。后台使用 POST /api/v1/tenants 写入租户边界，返回 tenantId 后才能继续创建 workspace。", "新 tenant 出现在租户总览，并带有独立 quota/evidence boundary", "创建租户", "租户总览", "Tenant provisioning", "POST /api/v1/tenants 创建 SaaS 租户边界", navFor("租户总览"), ["tenantId", "displayName", "quota", "evidence boundary"], "租户总览", "Token 不是 admin 或 tenantId 已存在"),
+        manualStep("创建工作区", "在新 tenant 下创建第一个 workspace。后台使用 POST /api/v1/workspaces 绑定 tenantId、workspaceId、名称和默认 owner/admin。", "工作区页可看到新 workspace、默认 owner/admin 和 scoped projects", "创建工作区", "工作区", "Workspace provisioning", "POST /api/v1/workspaces 创建租户内工作区", navFor("工作区"), ["tenantId", "workspaceId", "owner", "default policy"], "工作区", "workspaceId 冲突或 tenantId 不存在"),
+        manualStep("设置配额与使用边界", "进入工作区查看 usage 与 quota，包括项目数、Loop、worker queue、release run 和 evidence 存储。", "GET /api/v1/workspaces/{workspaceId}/usage 返回当前使用量和配额", "租户配额", "工作区", "Quota boundary", "租户配额和 workspace usage 可视化", navFor("工作区"), ["usage", "quota", "Loop budget", "evidence storage"], "工作区", "配额未初始化或 usage scope 不一致"),
+        manualStep("交付租户管理员", "邀请租户管理员进入 workspace，使用 POST /api/v1/workspaces/{workspaceId}/invitations 创建邀请，并确认角色为 owner/admin。", "成员与角色出现租户管理员，状态为 invited 或 active", "邀请成员", "工作区", "Member invitation", "租户管理员接手工作区运营", navFor("工作区"), ["email", "role owner/admin", "invited", "active"], "工作区", "邀请邮箱无效或角色高于操作者权限"),
+        manualStep("确认审计记录", "切到审计页确认 tenant.created、workspace.created、workspace.member.invited 和 quota 初始化记录。", "审计 Viewer 能只读复盘租户开通全过程", "审计复盘", "审计", "Provisioning audit", "平台开通动作全部有审计证据", navFor("审计"), ["tenant.created", "workspace.created", "member.invited", "quota"], "审计", "审计记录缺失或未带 workspace scope")
+      ]
+    },
+    {
+      id: "tenant-workspace-member-admin",
+      category: "租户运营",
+      title: "租户管理员管理成员与工作区边界",
+      page: "工作区",
+      persona: "负责本租户 workspace 日常运营的 owner/admin",
+      roles: ["租户管理员", "Workspace 开发者", "审计 Viewer"],
+      prerequisites: ["workspace owner/admin 权限", "已创建 workspace", "成员邮箱", "GitHub App/Vault 凭据边界"],
+      outcome: "开发者、Viewer、凭据、项目和 Loop 都被限制在同一 workspace 内",
+      goal: "租户管理员不需要理解全局控制面，只需要在自己的 workspace 中完成成员邀请、角色调整、凭据检查和项目授权。",
+      steps: [
+        manualStep("检查成员与角色", "进入工作区的成员与角色区，确认 owner/admin/developer/viewer 四级边界。owner/admin 负责成员管理，developer 负责项目和 Loop，viewer 只读审计。", "成员列表显示 owner/admin/developer/viewer，并能区分 active/invited", "成员与角色", "工作区", "Workspace RBAC", "workspace 内角色边界清晰", navFor("工作区"), ["owner", "admin", "developer", "viewer"], "工作区", "成员没有 workspaceId 或角色不在允许集合内"),
+        manualStep("邀请开发者或 Viewer", "使用 POST /api/v1/workspaces/{workspaceId}/invitations 邀请 developer 或 viewer。邀请只在当前 workspace 生效。", "成员状态进入 invited，审计记录 member.invited", "邀请成员", "工作区", "Invitation flow", "按 workspace scope 邀请成员", navFor("工作区"), ["developer", "viewer", "invited", "audit"], "工作区", "操作者不是 owner/admin 或邮箱重复"),
+        manualStep("修改角色或状态", "需要升降级时使用 PATCH /api/v1/workspaces/{workspaceId}/members/{memberId} 修改 role/status，并复核权限矩阵。", "成员角色更新后，开发者可执行 Loop，Viewer 仍保持只读", "修改角色", "工作区", "Role update", "PATCH 成员角色并留下审计", navFor("工作区"), ["role", "status", "active", "suspended"], "工作区", "试图把成员升到高于操作者权限或跨 workspace 修改"),
+        manualStep("配置 GitHub App/Vault", "进入凭据页配置或检查 GitHub App installation、tokenRef、deploy secret、LLM route 和 audit redaction。开发者只看到可用状态，不读取明文。", "Vault readiness 通过，项目接入和 Loop 可引用 tokenRef", "配置 GitHub App/Vault", "凭据", "Credential scope", "Secret Vault 按 workspace 隔离", navFor("凭据"), ["GitHub App", "tokenRef", "deploy secret", "audit redaction"], "凭据", "凭据没有绑定 workspace 或返回明文 secret"),
+        manualStep("验证隔离效果", "用 developer 启动 Source-to-GA Loop，再用 viewer 查看发布证据和审计；确认其他 workspace 项目、Loop、凭据不可见。", "developer 可以推进 Loop，viewer 只能审计，跨 workspace 数据不可见", "Workspace boundary", "发布证据", "Scoped execution", "成员权限、项目、Loop 和 release evidence 同 workspace 闭环", navFor("发布证据"), ["Source-to-GA", "viewer read-only", "workspace boundary", "release evidence"], "发布证据", "跨 workspace 数据泄露或 Viewer 获得写权限")
+      ]
+    },
+    {
+      id: "saas-tenant-workspace-onboarding",
+      category: "SaaS 主线",
+      title: "Tenant / Workspace 到首个 Source-to-GA Loop",
+      page: "租户总览",
+      persona: "第一次配置 EvoPilot SaaS 控制台的租户管理员",
+      roles: ["租户管理员", "Workspace 开发者", "发布负责人"],
+      prerequisites: ["生产控制面 API Token", "目标 tenant/workspace", "GitHub App 或 tokenRef", "部署与 LLM 凭据边界"],
+      outcome: "workspace 完成项目接入、凭据预检、首个 Loop 和发布证据归属",
+      goal: "把 EvoPilot 从单机控制台使用方式切换为 SaaS 多租户操作方式：先确认 tenant/workspace/member/credential 边界，再在工作区内推进项目闭环。",
+      steps: [
+        manualStep("连接多租户生产控制面", "在顶部生产控制面输入 EvoPilot API Token。没有 Token 时 Dashboard 只能使用示例数据，不能读写真正 tenant、workspace、Loop 和发布证据。", "顶部提示已配置 API Token，Dashboard 使用真实 tenant/workspace scope", "多租户生产控制面", "租户总览", "Production control", "API Token 解锁真实租户、工作区和发布证据数据", navFor("租户总览"), ["API Token", "Tenant", "Workspace", "Release evidence"], "租户总览", "API Token 缺失或权限不足"),
+        manualStep("确认 Tenant 和 Workspace 边界", "进入租户总览，先确认当前 tenant、workspace、SaaS target、配额和 evidence boundary。不要直接从项目表单开始，否则后续凭据和证据归属会不清楚。", "租户总览显示 tenant-production、workspace-agent-products 和 SaaS 演进路线", "SaaS service control plane", "租户总览", "Tenant scope", "Tenant / Workspace / SaaS target / Evidence boundary", navFor("租户总览"), ["Tenant", "Workspace", "SaaS target", "租户配额"], "租户总览", "租户或工作区上下文缺失"),
+        manualStep("检查成员、角色和 SaaS targets", "进入工作区，确认成员、角色、项目、Loop 和 evidence 都在同一个 workspace 下；同时检查 tenant-workspace-model、GitHub App、Secret Vault、Quota、Postgres Worker Queue 等 SaaS targets。", "工作区显示成员与角色、Workspace SaaS Targets、Target Runtime 和 Target Backlog", "Workspace boundary", "工作区", "Workspace control", "成员、项目、Loop 和证据归属在同一工作区", navFor("工作区"), ["Members", "Projects", "Workspace SaaS Targets", "Target Runtime"], "工作区", "成员角色或项目归属不明确"),
+        manualStep("配置 GitHub App 与 Vault 边界", "进入凭据页，确认 GitHub App、source writeback、deploy credentials、LLM provider keys 和 audit redaction。生产环境优先使用 GitHub App installation 或服务器端 tokenRef。", "Vault readiness 显示各类凭据状态，source blocker 有明确 next boundary", "GitHub App 与 Secret Vault", "凭据", "Credential boundary", "workspace 级凭据中心统一管理源码、部署和 LLM 密钥", navFor("凭据"), ["GitHub App", "Source writeback", "Deploy credentials", "Audit redaction"], "凭据", "tokenRef 未解析、GitHub App 未安装或 secret 明文泄露风险"),
+        manualStep("在 Workspace 内接入项目", "进入项目页注册 GitHub、GitLab 或本地 Git 项目。项目必须归属到当前 workspace，凭据只保存引用或预检结果，不在 API 响应中明文返回。", "项目列表出现目标项目，validation 显示已验证或明确阻塞原因", "Project workspace", "项目", "Project onboarding", "项目注册进入 workspace scoped source project", navFor("项目"), ["Provider", "Git URL", "默认分支", "验证并注册"], "项目", "Git URL 不可达、默认分支错误或项目归属缺失"),
+        manualStep("在工作区内生成目标", "回到工作区，使用 Target Runtime 或 Target Backlog 运行 Discovery、查看候选目标，并把目标推进到 Codex-backed target loop。", "Target Backlog 出现当前 workspace 下的 target，nextAction 可推进", "Workspace SaaS Targets", "工作区", "Target runtime", "Discovery、Target Runtime 和 Backlog 都带 workspace 语义", navFor("工作区"), ["Discovery Runtime", "Target Backlog", "推进下一 Target", "nextAction"], "工作区", "没有已验证项目或 evidence 不属于当前 workspace"),
+        manualStep("创建并执行 Source-to-GA Loop", "进入 Loops，用 Workflow Canvas Editor 创建 source-to-production loop，或从 Backlog/Autopilot 推进。Loop 运行时必须携带 workspace、sourceClosure、worker/sandbox 和 human gate 证据。", "Loop Runtime 出现新 Loop，sourceClosure 带 code-change、push、tag、deploy、health-ready gate", "Loop 执行工作区", "Loops", "Loop runtime", "workspace scoped LoopRun 和 sourceClosure 入库", navFor("Loops"), ["Graph template", "Worker Queue", "Source Closure", "Human gate"], "Loops", "release gate、workspace scope 或 targetVersion 缺失"),
+        manualStep("查看发布证据和审计归属", "进入发布证据页刷新 Release Run，按策略批准 Release、合并 Release 或执行安全自动合并；完成后进入审计页确认 release decision、artifacts、audit 和 workspace 归属。", "Release Run 晋级到 promoted/succeeded，审计页能复盘 GO / NO-GO 证据", "Release Closure Runtime", "发布证据", "Release evidence", "发布结论、artifacts 和 audit 都归属当前 workspace", navFor("发布证据"), ["刷新 Release Run", "批准 Release", "GO / NO-GO", "Audit"], "发布证据", "policy blocker、健康探测失败、merge 冲突或审计归属缺失")
       ]
     },
     {
       id: "signals-to-code-upgrade",
       category: "日常进化",
       title: "已有项目从运行信号到代码升级",
-      page: "发现与目标",
+      page: "工作区",
       persona: "负责日常演进的项目维护者",
+      roles: ["Workspace 开发者", "租户管理员"],
       prerequisites: ["项目已接入", "有 Trace/Eval/生产/人工信号", "代码升级连接器可用"],
       outcome: "运行信号转成机会点、进化方案、code upgrade 和 CI/CD 证据",
       goal: "用户不从注册项目开始，而是从已有项目的运行证据出发，完成一次可评审、可验证的代码升级。",
       steps: [
-        manualStep("读取项目运行证据", "进入发现与目标，查看 Discovery Runtime、Eval Dataset、Regression Suite 和运行证据来源。", "能看到触发来源、触发时间、IP、证据摘要或评测集", "运行证据", "发现与目标", "Evidence intake", "Trace、Eval、生产信号进入机会点链路", navFor("发现与目标"), ["触发来源", "触发时间", "IP", "证据摘要"], "发现与目标", "证据不足或样本未标注"),
-        manualStep("形成机会点", "勾选相关评测集，点击形成机会点，生成带目标、影响、置信度和归因的候选演进。", "机会点进入待确认或可排期状态", "形成机会点", "发现与目标", "Opportunity draft", "评测集变成可执行机会点", navFor("发现与目标"), ["Eval Dataset", "Regression Suite", "形成机会点", "置信度"], "发现与目标", "评测集和目标不匹配"),
-        manualStep("评审 Markdown 方案", "打开查看方案，阅读问题、决策、替代方案、影响和验证契约，必要时编辑 Markdown 方案正文。", "方案被确认，进入交付执行入口", "编辑进化方案", "发现与目标", "Review plan", "Markdown 方案正文和验证契约", navFor("发现与目标"), ["查看方案", "编辑进化方案", "提交方案修改", "确认进化"], "发现与目标", "方案缺少验证命令或范围过大"),
-        manualStep("触发代码升级", "确认进化后选择马上开始或保存排期。EvoPilot 会启动 code upgrade run 并记录白盒执行事件。", "代码升级过程出现 execution-transcript 和 changed files", "代码升级过程", "评估与发布", "Code upgrade", "白盒执行、文件变更、验证命令", navFor("评估与发布"), ["根据方案进行代码升级", "白盒执行", "查看原始执行事件", "execution-transcript"], "评估与发布", "allowed paths 或连接器权限不足"),
-        manualStep("检查 CI/CD 阶段", "在 CI/CD 阶段视图查看单元测试、冒烟测试、功能闭环测试和质量报告。", "每个阶段有状态、耗时和失败原因", "CI/CD 阶段视图", "评估与发布", "Delivery pipeline", "代码升级进入流水线验证", navFor("评估与发布"), ["单元测试", "冒烟测试", "功能闭环测试", "质量报告"], "评估与发布", "测试失败或 Jenkins Job 配置错误")
+        manualStep("读取项目运行证据", "进入工作区，查看 Discovery Runtime、Eval Dataset、Regression Suite 和运行证据来源。", "能看到触发来源、触发时间、IP、证据摘要或评测集", "运行证据", "工作区", "Evidence intake", "Trace、Eval、生产信号进入机会点链路", navFor("工作区"), ["触发来源", "触发时间", "IP", "证据摘要"], "工作区", "证据不足或样本未标注"),
+        manualStep("形成机会点", "勾选相关评测集，点击形成机会点，生成带目标、影响、置信度和归因的候选演进。", "机会点进入待确认或可排期状态", "形成机会点", "工作区", "Opportunity draft", "评测集变成可执行机会点", navFor("工作区"), ["Eval Dataset", "Regression Suite", "形成机会点", "置信度"], "工作区", "评测集和目标不匹配"),
+        manualStep("评审 Markdown 方案", "打开查看方案，阅读问题、决策、替代方案、影响和验证契约，必要时编辑 Markdown 方案正文。", "方案被确认，进入交付执行入口", "编辑进化方案", "工作区", "Review plan", "Markdown 方案正文和验证契约", navFor("工作区"), ["查看方案", "编辑进化方案", "提交方案修改", "确认进化"], "工作区", "方案缺少验证命令或范围过大"),
+        manualStep("触发代码升级", "确认进化后选择马上开始或保存排期。EvoPilot 会启动 code upgrade run 并记录白盒执行事件。", "代码升级过程出现 execution-transcript 和 changed files", "代码升级过程", "发布证据", "Code upgrade", "白盒执行、文件变更、验证命令", navFor("发布证据"), ["根据方案进行代码升级", "白盒执行", "查看原始执行事件", "execution-transcript"], "发布证据", "allowed paths 或连接器权限不足"),
+        manualStep("检查 CI/CD 阶段", "在 CI/CD 阶段视图查看单元测试、冒烟测试、功能闭环测试和质量报告。", "每个阶段有状态、耗时和失败原因", "CI/CD 阶段视图", "发布证据", "Delivery pipeline", "代码升级进入流水线验证", navFor("发布证据"), ["单元测试", "冒烟测试", "功能闭环测试", "质量报告"], "发布证据", "测试失败或 Jenkins Job 配置错误")
       ]
     },
     {
       id: "target-backlog-autopilot",
       category: "自动驾驶",
       title: "Target Backlog 到 Autopilot 自动驾驶",
-      page: "发现与目标",
+      page: "工作区",
       persona: "持续演进负责人",
+      roles: ["租户管理员", "Workspace 开发者", "Loop 运维"],
       prerequisites: ["Target Backlog 已有目标", "项目凭据和连接器就绪", "允许 human gate 暂停"],
       outcome: "target 被推进到 Loop Runtime，并通过 Autopilot 形成阶段证据",
       goal: "从已经存在的 Target Backlog 出发，用户只处理 nextAction、human gate 和 external blocker，不重复描述上下文。",
       steps: [
-        manualStep("筛选下一目标", "进入 Target Loop Backlog，按 Sandbox、Context、Harness、Loop 层查看目标、验收标准、证据和 nextAction。", "能识别下一目标和 stop condition", "Target Loop Backlog", "发现与目标", "Backlog", "按层推进 Codex target loop", navFor("发现与目标"), ["Target", "层", "下一步", "验收"], "发现与目标", "目标缺少验收标准"),
-        manualStep("推进下一 Target", "点击推进下一 Target，让 EvoPilot 创建或推进 Codex-backed target loop，保留 acceptance criteria 和上下文。", "Loop Runtime 显示最新轮次、证据和 stop condition", "推进下一 Target", "发现与目标", "Advance target", "创建或推进目标循环", navFor("发现与目标"), ["推进下一 Target", "Loop Runtime", "证据", "stop condition"], "发现与目标", "目标已被其他 worker claim"),
-        manualStep("启动一键自动驾驶", "对目标点击自动驾驶，观察返回的 Autopilot run：阶段状态、nextAction、external blocker 和 releaseRun。", "Autopilot 状态写入页面，source release run 同步到发布页", "一键自动驾驶", "发现与目标", "Autopilot", "bounded loop 不绕过 human gate", navFor("发现与目标"), ["自动驾驶", "nextAction", "External blocker", "releaseRun"], "发现与目标", "没有 human gate 授权或缺少源码凭据"),
-        manualStep("处理人工待办", "回到工作台人工待办中心，处理待补凭据、待批准、待修复或待发布动作。", "待办队列对应阻塞项被清理或转入下一步", "人工待办中心", "工作台", "Human action", "集中处理 Autopilot 阻塞", navFor("工作台"), ["待补凭据", "待批准", "待修复", "待发布"], "工作台", "审批人不明确或缺少权限")
+        manualStep("筛选下一目标", "进入 Target Loop Backlog，按 Sandbox、Context、Harness、Loop 层查看目标、验收标准、证据和 nextAction。", "能识别下一目标和 stop condition", "Target Loop Backlog", "工作区", "Backlog", "按层推进 Codex target loop", navFor("工作区"), ["Target", "层", "下一步", "验收"], "工作区", "目标缺少验收标准"),
+        manualStep("推进下一 Target", "点击推进下一 Target，让 EvoPilot 创建或推进 Codex-backed target loop，保留 acceptance criteria 和上下文。", "Loop Runtime 显示最新轮次、证据和 stop condition", "推进下一 Target", "工作区", "Advance target", "创建或推进目标循环", navFor("工作区"), ["推进下一 Target", "Loop Runtime", "证据", "stop condition"], "工作区", "目标已被其他 worker claim"),
+        manualStep("启动一键自动驾驶", "对目标点击自动驾驶，观察返回的 Autopilot run：阶段状态、nextAction、external blocker 和 releaseRun。", "Autopilot 状态写入页面，source release run 同步到发布页", "一键自动驾驶", "工作区", "Autopilot", "bounded loop 不绕过 human gate", navFor("工作区"), ["自动驾驶", "nextAction", "External blocker", "releaseRun"], "工作区", "没有 human gate 授权或缺少源码凭据"),
+        manualStep("处理人工待办", "回到租户总览人工待办中心，处理待补凭据、待批准、待修复或待发布动作。", "待办队列对应阻塞项被清理或转入下一步", "人工待办中心", "租户总览", "Human action", "集中处理 Autopilot 阻塞", navFor("租户总览"), ["待补凭据", "待批准", "待修复", "待发布"], "租户总览", "审批人不明确或缺少权限")
       ]
     },
     {
       id: "failed-release-repair",
       category: "生产修复",
       title: "失败 Release Run 修复闭环",
-      page: "评估与发布",
+      page: "发布证据",
       persona: "发布负责人或值班运维",
+      roles: ["发布负责人", "Loop 运维", "租户管理员"],
       prerequisites: ["存在 FAILED/HEALTH_FAILED/ROLLED_BACK/stale release run", "修复权限", "部署连接器可用"],
       outcome: "失败发布进入 repair candidate，修复后从队列移除并写回 promoted 或明确失败原因",
       goal: "当 source release 失败时，用户从 repair queue 出发，完成诊断、修复、deploy finalizer 和复验。",
       steps: [
-        manualStep("刷新修复队列", "进入评估与发布，刷新 Release Run Auto Repair Workbench，查看 failed/stale release run 的来源、原因和建议。", "修复队列列出候选项和建议动作", "Release Run Auto Repair Workbench", "评估与发布", "Repair queue", "失败发布进入默认修复队列", navFor("评估与发布"), ["FAILED", "HEALTH_FAILED", "原因", "建议"], "评估与发布", "release run 没有进入候选队列"),
-        manualStep("执行单项或批量修复", "对具体 release run 点击修复，或使用一键修复队列。EvoPilot 会复用 source-closure path，避免重复副作用。", "修复结果显示成功、失败或跳过数量", "一键修复队列", "评估与发布", "Repair execution", "复用 source-to-production closure", navFor("评估与发布"), ["修复", "一键修复队列", "duplicate guard", "结果"], "评估与发布", "工作区脏、merge 冲突、健康检查失败"),
-        manualStep("检查 Deploy Finalizer", "查看 Deploy Finalizer Workbench，确认 post-merge deploy、health-ready、rollback 或 finalizer 状态。", "post-merge deploy 有明确成功、失败或回滚证据", "Deploy Finalizer Workbench", "评估与发布", "Post merge deploy", "部署闭环与健康探测", navFor("评估与发布"), ["Post Merge Deploy", "health-ready", "rollback", "finalizer"], "评估与发布", "部署连接器超时或健康路径错误"),
-        manualStep("复盘修复结果", "打开历史审计和 Release Artifacts，确认修复后的 release run 是否 promoted，失败时保留 blocker 证据。", "审计记录能解释失败原因或晋级证据", "历史详情", "历史审计", "Repair audit", "修复闭环可审计", navFor("历史审计"), ["Artifacts", "Audit", "Promoted", "Blocker"], "历史审计", "修复成功但审计证据缺失")
+        manualStep("刷新修复队列", "进入发布证据，刷新 Release Run Auto Repair Workbench，查看 failed/stale release run 的来源、原因和建议。", "修复队列列出候选项和建议动作", "Release Run Auto Repair Workbench", "发布证据", "Repair queue", "失败发布进入默认修复队列", navFor("发布证据"), ["FAILED", "HEALTH_FAILED", "原因", "建议"], "发布证据", "release run 没有进入候选队列"),
+        manualStep("执行单项或批量修复", "对具体 release run 点击修复，或使用一键修复队列。EvoPilot 会复用 source-closure path，避免重复副作用。", "修复结果显示成功、失败或跳过数量", "一键修复队列", "发布证据", "Repair execution", "复用 source-to-production closure", navFor("发布证据"), ["修复", "一键修复队列", "duplicate guard", "结果"], "发布证据", "工作区脏、merge 冲突、健康检查失败"),
+        manualStep("检查 Deploy Finalizer", "查看 Deploy Finalizer Workbench，确认 post-merge deploy、health-ready、rollback 或 finalizer 状态。", "post-merge deploy 有明确成功、失败或回滚证据", "Deploy Finalizer Workbench", "发布证据", "Post merge deploy", "部署闭环与健康探测", navFor("发布证据"), ["Post Merge Deploy", "health-ready", "rollback", "finalizer"], "发布证据", "部署连接器超时或健康路径错误"),
+        manualStep("复盘修复结果", "打开审计和 Release Artifacts，确认修复后的 release run 是否 promoted，失败时保留 blocker 证据。", "审计记录能解释失败原因或晋级证据", "历史详情", "审计", "Repair audit", "修复闭环可审计", navFor("审计"), ["Artifacts", "Audit", "Promoted", "Blocker"], "审计", "修复成功但审计证据缺失")
       ]
     },
     {
       id: "runtime-recovery",
       category: "运维恢复",
       title: "长任务中断后的 Worker / Replay / Sandbox / Trace 恢复",
-      page: "Loop 执行",
+      page: "Loops",
       persona: "Loop 运维和值班工程师",
+      roles: ["Loop 运维", "发布负责人"],
       prerequisites: ["存在运行中或阻塞 Loop", "可读取 worker queue 和 trace", "允许 replay 或 watchdog"],
       outcome: "卡住的 Loop 被定位到 worker、context、sandbox、trace 或 release gate，并继续或形成人工阻塞",
       goal: "当长任务中断或状态不清时，用 Dashboard 的 runtime workbench 找到当前阻塞点并恢复。",
       steps: [
-        manualStep("查看 Source-to-GA 动态链路定位阻塞", "打开 Source-to-GA 本体链路图，选择当前 loopId，用 Git Project、Discovery、Target、Executor Graph、Worker/Sandbox、Human Gate、Source Closure、CI/CD Deploy、Release Decision 和 GA Release 判断卡点。", "能定位当前节点、阻塞类型、关联 API 和下一动作", "Source-to-GA 本体链路图", "Loop 执行", "Dynamic ontology map", "同一张动态图根据所选 Loop Run 实时展示从源码到 GA 的进度", navFor("Loop 执行"), ["Loop 选择器", "当前节点高亮", "Node Inspector", "实时事件流"], "Loop 执行", "状态数据未刷新或 release decision 缺失"),
-        manualStep("Claim worker 或执行 Watchdog", "在 Worker Queue Workbench 中 claim 下一 Loop，或触发 Watchdog 检查 expired lease、crash-resume 和 side-effect guard。", "worker lease 更新或 watchdog 给出恢复动作", "Worker Queue Workbench", "Loop 执行", "Worker recovery", "claimable loop 和 lease 过期恢复", navFor("Loop 执行"), ["Claim 下一 Loop", "Watchdog", "Lease", "side-effect guard"], "Loop 执行", "已有 worker 持有有效 lease"),
-        manualStep("执行 Context Time Travel Replay", "在 Context Time Travel Workbench 选择 checkpoint，编辑 context JSON 并 Replay 生成 Diff。", "出现 replay diff，Loop 从指定 checkpoint 继续", "Context Time Travel Workbench", "Loop 执行", "Replay", "修改上下文后继续执行", navFor("Loop 执行"), ["Checkpoint", "Replay 并生成 Diff", "contextPatch", "diff"], "Loop 执行", "context JSON 无效或 checkpoint 不存在"),
-        manualStep("验证 Sandbox 和 Trace", "用 Sandbox Boundary Workbench 验证 Docker/K8s 边界，用 Streaming Trace Workbench 读取 trace tree 和 events。", "sandbox proof、trace tree、events 都有可读证据", "Sandbox Boundary Workbench", "Loop 执行", "Runtime proof", "沙箱边界、trace tree 和事件流", navFor("Loop 执行"), ["验证 Sandbox Proof", "刷新 Trace Tree", "/events", "failure-group"], "Loop 执行", "沙箱权限不足或事件流断开")
+        manualStep("查看 Source-to-GA 动态链路定位阻塞", "打开 Source-to-GA 本体链路图，选择当前 loopId，用 Git Project、Discovery、Target、Executor Graph、Worker/Sandbox、Human Gate、Source Closure、CI/CD Deploy、Release Decision 和 GA Release 判断卡点。", "能定位当前节点、阻塞类型、关联 API 和下一动作", "Source-to-GA 本体链路图", "Loops", "Dynamic ontology map", "同一张动态图根据所选 Loop Run 实时展示从源码到 GA 的进度", navFor("Loops"), ["Loop 选择器", "当前节点高亮", "Node Inspector", "实时事件流"], "Loops", "状态数据未刷新或 release decision 缺失"),
+        manualStep("Claim worker 或执行 Watchdog", "在 Worker Queue Workbench 中 claim 下一 Loop，或触发 Watchdog 检查 expired lease、crash-resume 和 side-effect guard。", "worker lease 更新或 watchdog 给出恢复动作", "Worker Queue Workbench", "Loops", "Worker recovery", "claimable loop 和 lease 过期恢复", navFor("Loops"), ["Claim 下一 Loop", "Watchdog", "Lease", "side-effect guard"], "Loops", "已有 worker 持有有效 lease"),
+        manualStep("执行 Context Time Travel Replay", "在 Context Time Travel Workbench 选择 checkpoint，编辑 context JSON 并 Replay 生成 Diff。", "出现 replay diff，Loop 从指定 checkpoint 继续", "Context Time Travel Workbench", "Loops", "Replay", "修改上下文后继续执行", navFor("Loops"), ["Checkpoint", "Replay 并生成 Diff", "contextPatch", "diff"], "Loops", "context JSON 无效或 checkpoint 不存在"),
+        manualStep("验证 Sandbox 和 Trace", "用 Sandbox Boundary Workbench 验证 Docker/K8s 边界，用 Streaming Trace Workbench 读取 trace tree 和 events。", "sandbox proof、trace tree、events 都有可读证据", "Sandbox Boundary Workbench", "Loops", "Runtime proof", "沙箱边界、trace tree 和事件流", navFor("Loops"), ["验证 Sandbox Proof", "刷新 Trace Tree", "/events", "failure-group"], "Loops", "沙箱权限不足或事件流断开")
       ]
     },
     {
       id: "evopilot-self-governance",
       category: "自举治理",
       title: "EvoPilot 接入 EvoPilot 的受控自演进",
-      page: "项目接入",
+      page: "项目",
       persona: "EvoPilot 管理员",
+      roles: ["平台管理员", "租户管理员", "发布负责人"],
       prerequisites: ["EvoPilot 仓库路径或远程仓库", "明确允许的改动范围", "独立审批人"],
       outcome: "EvoPilot 作为目标项目被治理，而不是运行中的 controller 直接自改",
-      goal: "把当前 EvoPilot 仓库作为被治理项目接入自身控制面，形成受控 self-evolution loop，并明确自举边界。",
+      goal: "把当前 EvoPilot 仓库作为被治理项目自身控制面，形成受控 self-evolution loop，并明确自举边界。",
       steps: [
-        manualStep("注册 EvoPilot 仓库为目标项目", "在项目接入中选择 Local Git 或 GitHub，把 EvoPilot 仓库作为目标项目接入，并配置默认分支和凭据。", "项目工作区显示 EvoPilot 项目和源码凭据状态", "Project workspace", "项目接入", "Self target", "EvoPilot 作为被治理项目接入", navFor("项目接入"), ["Local Git", "GitHub", "默认分支", "Credentials"], "项目接入", "把 controller 运行目录和目标改动范围混淆"),
-        manualStep("限定自演进范围", "在方案或 Loop 创建时明确 allowed paths、validation commands、rollback metadata 和人工审批边界。", "Loop 的上下文包含允许路径、验证命令和 rollback 信息", "Workflow Canvas Editor", "Loop 执行", "Governed self-loop", "自演进必须受限并可回滚", navFor("Loop 执行"), ["allowed paths", "validation commands", "rollback", "human gate"], "Loop 执行", "范围过大或没有审批人"),
-        manualStep("执行自举 Loop", "启动 source-to-production loop，但在 human gate、release policy 和 safe merge 前必须停下等待审批。", "Loop Runtime 显示 WAITING_APPROVAL 或 release policy 状态", "Loop Runtime", "Loop 执行", "Self-evolution loop", "不绕过治理的自举执行", navFor("Loop 执行"), ["WAITING_APPROVAL", "Release policy", "safe merge", "evidence"], "Loop 执行", "自动合并绕过审批"),
-        manualStep("审计自举结果", "在历史审计中确认自举变更的 release decision、artifact、audit 和回滚证据。", "能区分目标项目自演进和控制器进程自修改", "历史详情", "历史审计", "Self audit", "自举 Loop 可审计", navFor("历史审计"), ["release decision", "artifact", "audit", "rollback"], "历史审计", "只看到文件变更，没有 release decision")
+        manualStep("注册 EvoPilot 仓库为目标项目", "在项目中选择 Local Git 或 GitHub，把 EvoPilot 仓库作为目标项目，并配置默认分支和凭据。", "项目工作区显示 EvoPilot 项目和源码凭据状态", "Project workspace", "项目", "Self target", "EvoPilot 作为被治理项目", navFor("项目"), ["Local Git", "GitHub", "默认分支", "Credentials"], "项目", "把 controller 运行目录和目标改动范围混淆"),
+        manualStep("限定自演进范围", "在方案或 Loop 创建时明确 allowed paths、validation commands、rollback metadata 和人工审批边界。", "Loop 的上下文包含允许路径、验证命令和 rollback 信息", "Workflow Canvas Editor", "Loops", "Governed self-loop", "自演进必须受限并可回滚", navFor("Loops"), ["allowed paths", "validation commands", "rollback", "human gate"], "Loops", "范围过大或没有审批人"),
+        manualStep("执行自举 Loop", "启动 source-to-production loop，但在 human gate、release policy 和 safe merge 前必须停下等待审批。", "Loop Runtime 显示 WAITING_APPROVAL 或 release policy 状态", "Loop Runtime", "Loops", "Self-evolution loop", "不绕过治理的自举执行", navFor("Loops"), ["WAITING_APPROVAL", "Release policy", "safe merge", "evidence"], "Loops", "自动合并绕过审批"),
+        manualStep("审计自举结果", "在审计中确认自举变更的 release decision、artifact、audit 和回滚证据。", "能区分目标项目自演进和控制器进程自修改", "历史详情", "审计", "Self audit", "自举 Loop 可审计", navFor("审计"), ["release decision", "artifact", "audit", "rollback"], "审计", "只看到文件变更，没有 release decision")
       ]
     },
     {
       id: "release-evidence-review",
       category: "审计复盘",
       title: "发布后证据复盘",
-      page: "历史审计",
+      page: "审计",
       persona: "审计者、发布负责人或治理负责人",
+      roles: ["审计 Viewer", "发布负责人", "平台管理员"],
       prerequisites: ["至少完成一次 Loop 或 Release Run", "可读取历史、artifacts、audit"],
       outcome: "能够判断一次交付是否真正达到 GO / CONDITIONAL-GO / NO-GO，而不是只看健康检查",
       goal: "从历史记录、release artifacts、source release artifacts、audit 和 evaluation evidence 复盘发布是否可信。",
       steps: [
-        manualStep("打开历史详情", "在历史记录中查看项目、完成时间、结果、验证证据、产物、关联评测集和流水线。", "可以复盘一次完整演进的证据链", "历史详情", "历史审计", "Audit detail", "完成记录和审计证据", navFor("历史审计"), ["完成时间", "结果", "验证证据", "产物"], "历史审计", "历史记录缺少 artifact"),
-        manualStep("对照 release decision", "回到评估与发布，确认 Release Cockpit、Release Closure Runtime 和 release decision 是否给出 GO / CONDITIONAL-GO / NO-GO。", "发布结论来自 release decision，而不是单次 CI 成功", "Release cockpit", "评估与发布", "Release decision", "产品原生发布判断", navFor("评估与发布"), ["GO", "CONDITIONAL-GO", "NO-GO", "release decision"], "评估与发布", "只有健康检查，没有发布判断"),
-        manualStep("检查 artifacts 和 audit", "查看 Release Artifacts、Source Release Artifacts、audit、评测集和流水线证据是否能闭合。", "证据能覆盖代码变更、测试、部署、健康探测和审批", "Source Release Artifacts", "评估与发布", "Artifacts", "发布证据闭环", navFor("评估与发布"), ["Release Artifacts", "Source Release Artifacts", "Audit", "评测集"], "评估与发布", "artifact 链路断裂或审批记录缺失"),
-        manualStep("回跳补齐缺失证据", "如果发现缺口，从历史审计回到发现与目标、Loop 执行或评估与发布补齐证据或重新执行修复。", "缺失证据进入对应工作台处理", "历史审计回放", "历史审计", "Evidence gap", "从复盘回到执行工作台", navFor("历史审计"), ["发现与目标", "Loop 执行", "评估与发布", "修复"], "历史审计", "无法定位缺失证据归属")
+        manualStep("打开历史详情", "在历史记录中查看项目、完成时间、结果、验证证据、产物、关联评测集和流水线。", "可以复盘一次完整演进的证据链", "历史详情", "审计", "Audit detail", "完成记录和审计证据", navFor("审计"), ["完成时间", "结果", "验证证据", "产物"], "审计", "历史记录缺少 artifact"),
+        manualStep("对照 release decision", "回到发布证据，确认 Release Cockpit、Release Closure Runtime 和 release decision 是否给出 GO / CONDITIONAL-GO / NO-GO。", "发布结论来自 release decision，而不是单次 CI 成功", "Release cockpit", "发布证据", "Release decision", "产品原生发布判断", navFor("发布证据"), ["GO", "CONDITIONAL-GO", "NO-GO", "release decision"], "发布证据", "只有健康检查，没有发布判断"),
+        manualStep("检查 artifacts 和 audit", "查看 Release Artifacts、Source Release Artifacts、audit、评测集和流水线证据是否能闭合。", "证据能覆盖代码变更、测试、部署、健康探测和审批", "Source Release Artifacts", "发布证据", "Artifacts", "发布证据闭环", navFor("发布证据"), ["Release Artifacts", "Source Release Artifacts", "Audit", "评测集"], "发布证据", "artifact 链路断裂或审批记录缺失"),
+        manualStep("回跳补齐缺失证据", "如果发现缺口，从审计回到工作区、Loops或发布证据补齐证据或重新执行修复。", "缺失证据进入对应租户总览处理", "审计回放", "审计", "Evidence gap", "从复盘回到执行租户总览", navFor("审计"), ["工作区", "Loops", "发布证据", "修复"], "审计", "无法定位缺失证据归属")
       ]
     }
   ];
@@ -3872,10 +4808,12 @@ function translateImpactPill(impact) {
 }
 
 function render() {
-  title.textContent = state.active;
+  const isHelpManual = state.active === "帮助手册";
+  document.body.classList.toggle("help-page-mode", isHelpManual);
+  title.textContent = isHelpManual ? "帮助文档" : state.active;
   renderNav();
-  content.innerHTML = `${renderAuthBar()}${renderPage(state.active)}`;
-  bindAuthBar();
+  content.innerHTML = `${isHelpManual ? "" : `${renderAuthBar()}${renderTenantScopeBar()}`}${renderPage(state.active)}`;
+  if (!isHelpManual) bindAuthBar();
   bindFlowHeader();
   bindLoopWorkspace();
   bindPageLinks();
@@ -3887,12 +4825,16 @@ function render() {
   bindHistoryActions();
 }
 
+if (topHelpButton) {
+  topHelpButton.addEventListener("click", openHelpManual);
+}
+
 function renderAuthBar() {
   return `
     <section class="auth-bar">
       <div>
-        <strong>生产控制面</strong>
-        <span>${state.apiToken ? "已配置 API Token，Dashboard 使用真实 EvoPilot API。" : "生产模式需要 API Token 才能读取真实控制面数据。"}</span>
+        <strong>多租户生产控制面</strong>
+        <span>${state.apiToken ? "已配置 API Token，Dashboard 使用真实 EvoPilot API 和当前 tenant/workspace scope。" : "生产模式需要 API Token 才能读取真实租户、工作区、Loop 和发布证据数据。"}</span>
         ${state.authNotice ? `<small>${state.authNotice}</small>` : ""}
       </div>
       <form id="api-token-form">
@@ -3927,6 +4869,7 @@ function bindAuthBar() {
 
 async function refreshData() {
   await Promise.all([
+    loadSaasControlPlane(),
     loadProjects(),
     loadSummary(),
     loadRules(),
@@ -3938,10 +4881,63 @@ async function refreshData() {
   ]);
 }
 
+async function loadSaasControlPlane() {
+  try {
+    const [tenantsResponse, workspacesResponse, secretsResponse, githubAppsResponse, storeReadinessResponse, observabilityResponse] = await Promise.all([
+      apiFetch("/api/v1/tenants"),
+      apiFetch("/api/v1/workspaces"),
+      apiFetch("/api/v1/secrets"),
+      apiFetch("/api/v1/github-app/installations"),
+      apiFetch("/api/v1/loop-store/readiness"),
+      apiFetch("/api/v1/saas/observability")
+    ]);
+    if (tenantsResponse.ok) {
+      const { data } = await tenantsResponse.json();
+      state.tenants = Array.isArray(data) ? data : [];
+    }
+    if (workspacesResponse.ok) {
+      const { data } = await workspacesResponse.json();
+      state.workspaces = Array.isArray(data) ? data : [];
+      const activeWorkspace = state.workspaces.find((workspace) => workspace.id === state.saasScope.workspaceId) ?? state.workspaces[0];
+      if (activeWorkspace) {
+        state.saasScope.tenantId = activeWorkspace.tenantId ?? state.saasScope.tenantId;
+        state.saasScope.workspaceId = activeWorkspace.id;
+        const usageResponse = await apiFetch(`/api/v1/workspaces/${encodeURIComponent(activeWorkspace.id)}/usage`);
+        if (usageResponse.ok) {
+          const { data: usageData } = await usageResponse.json();
+          state.workspaceUsage = usageData;
+        }
+      }
+    }
+    if (secretsResponse.ok) {
+      const { data } = await secretsResponse.json();
+      state.secrets = Array.isArray(data) ? data : [];
+    }
+    if (githubAppsResponse.ok) {
+      const { data } = await githubAppsResponse.json();
+      state.githubAppInstallations = Array.isArray(data) ? data : [];
+    }
+    if (storeReadinessResponse.ok) {
+      const { data } = await storeReadinessResponse.json();
+      state.loopStoreReadiness = data;
+    }
+    if (observabilityResponse.ok) {
+      const { data } = await observabilityResponse.json();
+      state.saasObservability = data;
+    }
+  } catch {
+    // 静态打开 Dashboard 时保留内置 SaaS 示例模型。
+  }
+}
+
 function bindPageLinks() {
   for (const button of content.querySelectorAll("[data-page-link]")) {
     button.addEventListener("click", () => {
       if (button.dataset.loopWorkspaceView === "advanced") state.loopWorkspaceView = "advanced";
+      if (normalizePage(button.dataset.pageLink) === "帮助手册") {
+        openHelpManual();
+        return;
+      }
       setActivePage(button.dataset.pageLink);
       render();
     });
@@ -3954,8 +4950,7 @@ function bindPageLinks() {
   }
   for (const button of content.querySelectorAll('[data-action="go-field-evidence-manual"]')) {
     button.addEventListener("click", () => {
-      setActivePage("帮助手册");
-      render();
+      openHelpManual();
     });
   }
   for (const button of content.querySelectorAll('[data-action="show-release-advanced"]')) {
@@ -5178,6 +6173,8 @@ function apiFetch(url, options = {}) {
     ...options,
     headers: {
       ...(options.headers ?? {}),
+      "x-evopilot-tenant": state.saasScope.tenantId,
+      "x-evopilot-workspace": state.saasScope.workspaceId,
       ...(state.apiToken ? { authorization: `Bearer ${state.apiToken}` } : {})
     }
   });

@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
-import { randomUUID } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from "node:crypto";
 import { GitHubHttpAdapter, type GitHubPullRequestDraft } from "@evopilot/adapter-github";
 import { GitLabHttpAdapter } from "@evopilot/adapter-gitlab";
 import { JenkinsClient, type JenkinsConnectorConfig } from "@evopilot/adapter-jenkins";
@@ -78,6 +78,9 @@ export interface AuthToken {
   role: AuthRole;
 }
 
+const DEFAULT_TENANT_ID = "tenant-production";
+const DEFAULT_WORKSPACE_ID = "workspace-agent-products";
+
 export interface DeliveryExecutorResult {
   ciStatus: "PASSED" | "FAILED";
   validationSummary?: string;
@@ -108,6 +111,8 @@ interface StoredProject {
   id: string;
   name: string;
   profileId: string;
+  tenantId: string;
+  workspaceId: string;
   repository?: ProjectRepositoryRegistration;
   cicd?: ProjectCicdConfiguration;
   runtime?: ProjectRuntimeConfiguration;
@@ -240,6 +245,8 @@ interface AuditRecord {
   actor: string;
   action: string;
   target: string;
+  tenantId: string;
+  workspaceId: string;
   timestamp: string;
   metadata?: Record<string, unknown>;
 }
@@ -375,6 +382,81 @@ interface ScheduledEvolution {
 interface AuthContext {
   actor: string;
   role: AuthRole;
+  tenantId: string;
+  workspaceId: string;
+}
+
+type WorkspaceMemberRole = "owner" | "admin" | "developer" | "viewer";
+
+interface TenantRecord {
+  schema: "evopilot-tenant/v1";
+  id: string;
+  name: string;
+  status: "ACTIVE" | "SUSPENDED";
+  plan: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface WorkspaceRecord {
+  schema: "evopilot-workspace/v1";
+  id: string;
+  tenantId: string;
+  name: string;
+  status: "ACTIVE" | "BOUNDARY_DRAFT" | "SUSPENDED";
+  members: Array<{
+    id: string;
+    name: string;
+    role: WorkspaceMemberRole;
+    status: "ACTIVE" | "INVITED" | "SUSPENDED";
+  }>;
+  quotas: {
+    loops: number;
+    projects: number;
+    evidenceGb: number;
+  };
+  createdAt: string;
+  updatedAt: string;
+}
+
+type SecretKind = "github-app-private-key" | "github-webhook-secret" | "source-token" | "deploy-token" | "llm-key" | "generic";
+
+interface SecretRecord {
+  schema: "evopilot-secret/v1";
+  id: string;
+  tenantId: string;
+  workspaceId: string;
+  name: string;
+  kind: SecretKind;
+  status: "ACTIVE" | "REVOKED";
+  version: number;
+  encryption: {
+    algorithm: "aes-256-gcm";
+    iv: string;
+    tag: string;
+    ciphertext: string;
+  };
+  createdAt: string;
+  updatedAt: string;
+  rotatedAt?: string;
+  revokedAt?: string;
+}
+
+interface GitHubAppInstallationRecord {
+  schema: "evopilot-github-app-installation/v1";
+  id: string;
+  tenantId: string;
+  workspaceId: string;
+  installationId: string;
+  account: string;
+  repositories: string[];
+  permissions: Record<string, string>;
+  privateKeySecretRef?: string;
+  webhookSecretRef?: string;
+  status: "READY" | "BLOCKED" | "REVOKED";
+  checks: Array<{ id: string; status: "PASS" | "FAIL"; evidence: string[] }>;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface RuleMemory {
@@ -486,6 +568,8 @@ interface ReleaseRisk {
 
 interface ReleaseEvidenceBundle {
   id: string;
+  tenantId: string;
+  workspaceId: string;
   candidate: string;
   status: "GO" | "CONDITIONAL-GO" | "NO-GO";
   releaseTargetId?: string;
@@ -525,6 +609,8 @@ interface ReleaseEvidenceBundle {
 
 interface ReleaseEvidenceListItem {
   id: string;
+  tenantId: string;
+  workspaceId: string;
   candidate: string;
   status: ReleaseEvidenceBundle["status"];
   releaseTargetId?: string;
@@ -589,6 +675,8 @@ interface ReleaseDecisionCriterion {
 
 interface ReleaseDecision {
   id: string;
+  tenantId: string;
+  workspaceId: string;
   candidate: string;
   targetId: string;
   evidenceBundleId: string;
@@ -737,6 +825,8 @@ interface SourceReleaseClosureRun {
   loopId: string;
   projectId: string;
   sourceProjectId: string;
+  tenantId: string;
+  workspaceId: string;
   provider: LoopSourceClosure["repositoryProvider"];
   releaseStrategy: LoopSourceClosure["releaseStrategy"];
   sourceRef: {
@@ -1279,6 +1369,8 @@ interface LoopRun {
   id: string;
   source: LoopTriggerSource;
   projectId: string;
+  tenantId: string;
+  workspaceId: string;
   objective: string;
   status: LoopRunStatus;
   currentIteration: number;
@@ -1605,6 +1697,8 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       id: profile.id,
       name: profile.name,
       profileId: profile.id,
+      tenantId: DEFAULT_TENANT_ID,
+      workspaceId: DEFAULT_WORKSPACE_ID,
       validation: {
         status: "VERIFIED",
         checkedAt: new Date().toISOString(),
@@ -1673,7 +1767,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       }
       if (request.method === "GET" && url.pathname === "/api/v1/metrics") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        return writeText(response, 200, renderMetrics(store.summary()));
+        return writeText(response, 200, renderMetrics(store.summary(), store.saasObservability()));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/profiles") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -1831,7 +1925,219 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       }
       if (request.method === "GET" && url.pathname === "/api/v1/release/decisions") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        return writeJson(response, 200, envelope(store.listReleaseDecisions().slice(-20).reverse()));
+        return writeJson(response, 200, envelope(store.listReleaseDecisions()
+          .filter((decision) => canAccessScopedResource(auth, decision.tenantId, decision.workspaceId))
+          .slice(-20)
+          .reverse()));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/tenants") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listTenants()));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/tenants") {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const now = new Date().toISOString();
+        const tenantId = safeFileName(optionalTrimmedString(body.id) ?? optionalTrimmedString(body.name) ?? `tenant-${Date.now()}`);
+        const tenant = store.writeTenant({
+          schema: "evopilot-tenant/v1",
+          id: tenantId,
+          name: optionalTrimmedString(body.name) ?? tenantId,
+          status: normalizeTenantStatus(body.status),
+          plan: optionalTrimmedString(body.plan) ?? "SaaS",
+          createdAt: store.readTenant(tenantId)?.createdAt ?? now,
+          updatedAt: now
+        });
+        store.appendAudit(audit(auth, "tenant.upserted", tenant.id, { status: tenant.status, plan: tenant.plan }));
+        return writeJson(response, 201, envelope(tenant));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/workspaces") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const tenantId = optionalTrimmedString(url.searchParams.get("tenantId")) ?? auth.tenantId;
+        return writeJson(response, 200, envelope(store.listWorkspaces(tenantId)));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/secrets") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listSecrets(auth.tenantId, auth.workspaceId).map(maskSecret)));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/secrets") {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const tenantId = safeFileName(optionalTrimmedString(body.tenantId) ?? auth.tenantId);
+        const workspaceId = safeFileName(optionalTrimmedString(body.workspaceId) ?? auth.workspaceId);
+        const workspace = store.readWorkspace(workspaceId);
+        if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
+        if (!canAccessWorkspace(auth, workspace, "admin")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+        if (workspace.tenantId !== tenantId) return writeJson(response, 409, { error: "SECRET_WORKSPACE_TENANT_MISMATCH" });
+        const value = optionalTrimmedString(body.value);
+        if (!value) return writeJson(response, 400, { error: "SECRET_VALUE_REQUIRED" });
+        const now = new Date().toISOString();
+        const id = safeFileName(optionalTrimmedString(body.id) ?? optionalTrimmedString(body.name) ?? `secret-${Date.now()}`);
+        const existing = store.readSecret(id);
+        const secret = store.writeSecret({
+          schema: "evopilot-secret/v1",
+          id,
+          tenantId,
+          workspaceId,
+          name: optionalTrimmedString(body.name) ?? id,
+          kind: normalizeSecretKind(body.kind),
+          status: "ACTIVE",
+          version: existing ? existing.version + 1 : 1,
+          encryption: encryptSecretValue(value),
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+          rotatedAt: existing ? now : undefined
+        });
+        store.appendAudit(audit(auth, existing ? "secret.rotated" : "secret.created", secret.id, { kind: secret.kind, version: secret.version }));
+        return writeJson(response, existing ? 200 : 201, envelope(maskSecret(secret)));
+      }
+      const secretRevokeMatch = url.pathname.match(/^\/api\/v1\/secrets\/([^/]+)\/revoke$/);
+      if (request.method === "POST" && secretRevokeMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const secret = store.readSecret(decodeURIComponent(secretRevokeMatch[1]));
+        if (!secret) return writeJson(response, 404, { error: "SECRET_NOT_FOUND" });
+        const workspace = store.readWorkspace(secret.workspaceId);
+        if (!workspace || !canAccessWorkspace(auth, workspace, "admin")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+        const updated = store.writeSecret({ ...secret, status: "REVOKED", revokedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+        store.appendAudit(audit(auth, "secret.revoked", updated.id, { kind: updated.kind, version: updated.version }));
+        return writeJson(response, 200, envelope(maskSecret(updated)));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/github-app/installations") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.listGitHubAppInstallations(auth.tenantId, auth.workspaceId).map(maskGitHubAppInstallation)));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/github-app/installations") {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const tenantId = safeFileName(optionalTrimmedString(body.tenantId) ?? auth.tenantId);
+        const workspaceId = safeFileName(optionalTrimmedString(body.workspaceId) ?? auth.workspaceId);
+        const workspace = store.readWorkspace(workspaceId);
+        if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
+        if (!canAccessWorkspace(auth, workspace, "admin")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+        if (workspace.tenantId !== tenantId) return writeJson(response, 409, { error: "GITHUB_APP_WORKSPACE_TENANT_MISMATCH" });
+        const now = new Date().toISOString();
+        const installationId = requireBodyString(body.installationId, "GITHUB_APP_INSTALLATION_ID_REQUIRED", runtime);
+        const id = safeFileName(optionalTrimmedString(body.id) ?? `github-app-${installationId}`);
+        const draft = {
+          privateKeySecretRef: optionalTrimmedString(body.privateKeySecretRef),
+          webhookSecretRef: optionalTrimmedString(body.webhookSecretRef),
+          repositories: Array.isArray(body.repositories) ? body.repositories.map(String).filter(Boolean) : [],
+          permissions: isRecord(body.permissions) ? Object.fromEntries(Object.entries(body.permissions).map(([key, value]) => [key, String(value)])) : {}
+        };
+        const checks = githubAppInstallationChecks(store, tenantId, workspaceId, draft);
+        const installation = store.writeGitHubAppInstallation({
+          schema: "evopilot-github-app-installation/v1",
+          id,
+          tenantId,
+          workspaceId,
+          installationId,
+          account: requireBodyString(body.account, "GITHUB_APP_ACCOUNT_REQUIRED", runtime),
+          repositories: draft.repositories,
+          permissions: draft.permissions,
+          privateKeySecretRef: draft.privateKeySecretRef,
+          webhookSecretRef: draft.webhookSecretRef,
+          status: checks.every((check) => check.status === "PASS") ? "READY" : "BLOCKED",
+          checks,
+          createdAt: store.readGitHubAppInstallation(id)?.createdAt ?? now,
+          updatedAt: now
+        });
+        store.appendAudit(audit(auth, "github-app.installation.upserted", installation.id, {
+          installationId: installation.installationId,
+          status: installation.status,
+          repositories: installation.repositories.length
+        }));
+        return writeJson(response, installation.status === "READY" ? 201 : 409, envelope(maskGitHubAppInstallation(installation)));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/workspaces") {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const now = new Date().toISOString();
+        const workspaceId = safeFileName(optionalTrimmedString(body.id) ?? optionalTrimmedString(body.name) ?? `workspace-${Date.now()}`);
+        const workspace: WorkspaceRecord = {
+          schema: "evopilot-workspace/v1",
+          id: workspaceId,
+          tenantId: safeFileName(optionalTrimmedString(body.tenantId) ?? auth.tenantId),
+          name: optionalTrimmedString(body.name) ?? workspaceId,
+          status: normalizeWorkspaceStatus(body.status),
+          members: [
+            {
+              id: safeFileName(auth.actor),
+              name: auth.actor,
+              role: "owner",
+              status: "ACTIVE"
+            }
+          ],
+          quotas: normalizeWorkspaceQuotas(body.quotas),
+          createdAt: now,
+          updatedAt: now
+        };
+        store.ensureTenant(workspace.tenantId, optionalTrimmedString(body.tenantName) ?? workspace.tenantId);
+        store.writeWorkspace(workspace);
+        store.appendAudit(audit(auth, "workspace.created", workspace.id, { tenantId: workspace.tenantId, memberCount: workspace.members.length }));
+        return writeJson(response, 201, envelope(workspace));
+      }
+      const workspaceMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)$/);
+      if (request.method === "GET" && workspaceMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const workspace = store.readWorkspace(decodeURIComponent(workspaceMatch[1]));
+        if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
+        if (!canAccessWorkspace(auth, workspace, "viewer")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+        return writeJson(response, 200, envelope(workspace));
+      }
+      const workspaceInviteMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/invitations$/);
+      if (request.method === "POST" && workspaceInviteMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const workspace = store.readWorkspace(decodeURIComponent(workspaceInviteMatch[1]));
+        if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
+        if (!canAccessWorkspace(auth, workspace, "admin")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const role = normalizeWorkspaceMemberRole(body.role, "viewer");
+        const memberId = safeFileName(optionalTrimmedString(body.id) ?? optionalTrimmedString(body.email) ?? optionalTrimmedString(body.name) ?? `invite-${Date.now()}`);
+        const member = {
+          id: memberId,
+          name: optionalTrimmedString(body.name) ?? optionalTrimmedString(body.email) ?? memberId,
+          role,
+          status: "INVITED" as const
+        };
+        const updated = store.writeWorkspace({
+          ...workspace,
+          members: [...workspace.members.filter((item) => item.id !== memberId), member],
+          updatedAt: new Date().toISOString()
+        });
+        store.appendAudit(audit(auth, "workspace.invitation.created", updated.id, { memberId, role }));
+        return writeJson(response, 201, envelope({ workspace: updated, invitation: member }));
+      }
+      const workspaceMemberMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/members\/([^/]+)$/);
+      if (request.method === "PATCH" && workspaceMemberMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const workspace = store.readWorkspace(decodeURIComponent(workspaceMemberMatch[1]));
+        if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
+        if (!canAccessWorkspace(auth, workspace, "admin")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+        const memberId = safeFileName(decodeURIComponent(workspaceMemberMatch[2]));
+        const body = await readJson(request, options.maxBodyBytes);
+        const member = workspace.members.find((item) => item.id === memberId);
+        if (!member) return writeJson(response, 404, { error: "WORKSPACE_MEMBER_NOT_FOUND" });
+        const nextRole = body.role === undefined ? member.role : normalizeWorkspaceMemberRole(body.role, member.role);
+        const nextStatus = body.status === undefined ? member.status : normalizeWorkspaceMemberStatus(body.status, member.status);
+        const nextMembers = workspace.members.map((item) => item.id === memberId ? { ...item, role: nextRole, status: nextStatus } : item);
+        if (!nextMembers.some((item) => item.role === "owner" && item.status === "ACTIVE")) {
+          return writeJson(response, 409, { error: "WORKSPACE_REQUIRES_ACTIVE_OWNER" });
+        }
+        const updated = store.writeWorkspace({
+          ...workspace,
+          members: nextMembers,
+          updatedAt: new Date().toISOString()
+        });
+        store.appendAudit(audit(auth, "workspace.member.updated", updated.id, { memberId, role: nextRole, status: nextStatus }));
+        return writeJson(response, 200, envelope(updated));
+      }
+      const workspaceUsageMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/usage$/);
+      if (request.method === "GET" && workspaceUsageMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const workspace = store.readWorkspace(decodeURIComponent(workspaceUsageMatch[1]));
+        if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
+        if (!canAccessWorkspace(auth, workspace, "viewer")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+        return writeJson(response, 200, envelope(workspaceUsage(store, workspace)));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/executor-graphs") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -1847,6 +2153,14 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       if (request.method === "GET" && url.pathname === "/api/v1/loop-store") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
         return writeJson(response, 200, envelope(store.loopStoreRuntime()));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/loop-store/readiness") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(loopStoreReadiness(store.loopStoreRuntime())));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/saas/observability") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.saasObservability()));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/loop-observability") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -1994,6 +2308,8 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           id: body.id ? String(body.id) : undefined,
           source: "api",
           projectId,
+          tenantId: auth.tenantId,
+          workspaceId: auth.workspaceId,
           objective: optionalTrimmedString(body.objective) ?? preset.defaultObjective,
           executorGraphId: graph.id,
           controlPlaneUrl: optionalTrimmedString(body.controlPlaneUrl) ?? preset.controlPlaneUrl,
@@ -2081,7 +2397,10 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       }
       if (request.method === "GET" && url.pathname === "/api/v1/loops") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        return writeJson(response, 200, envelope(store.listLoops().slice(-50).reverse()));
+        return writeJson(response, 200, envelope(store.listLoops()
+          .filter((loop) => canAccessScopedResource(auth, loop.tenantId, loop.workspaceId))
+          .slice(-50)
+          .reverse()));
       }
       if (request.method === "POST" && url.pathname === "/api/v1/loops") {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -2093,10 +2412,23 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const body = await readJson(request, options.maxBodyBytes);
         const objective = String(body.objective ?? "").trim();
         if (!objective) return writeJson(response, 400, { error: "LOOP_OBJECTIVE_REQUIRED" });
+        const projectId = body.projectId ? safeFileName(String(body.projectId)) : "evopilot";
+        const project = store.readProject(projectId);
+        const tenantId = safeFileName(optionalTrimmedString(body.tenantId) ?? project?.tenantId ?? auth.tenantId);
+        const workspaceId = safeFileName(optionalTrimmedString(body.workspaceId) ?? project?.workspaceId ?? auth.workspaceId);
+        const workspace = store.readWorkspace(workspaceId);
+        if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
+        if (!canAccessWorkspace(auth, workspace, "developer")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+        const usage = workspaceUsage(store, workspace);
+        if (usage.loops.used >= usage.loops.limit) {
+          return writeJson(response, 429, { error: "WORKSPACE_LOOP_QUOTA_EXCEEDED", detail: usage });
+        }
         const loop = store.createLoop({
           id: body.id ? String(body.id) : undefined,
           source: normalizeLoopTriggerSource(body.source),
-          projectId: body.projectId ? String(body.projectId) : undefined,
+          projectId,
+          tenantId,
+          workspaceId,
           objective,
           executorGraphId: body.executorGraphId ? String(body.executorGraphId) : undefined,
           controlPlaneUrl: body.controlPlaneUrl ? String(body.controlPlaneUrl) : undefined,
@@ -2563,13 +2895,18 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       }
       if (request.method === "GET" && url.pathname === "/api/v1/release/evidence") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        return writeJson(response, 200, envelope(store.listReleaseEvidenceSummaries().slice(-20).reverse()));
+        return writeJson(response, 200, envelope(store.listReleaseEvidenceSummaries()
+          .filter((bundle) => canAccessScopedResource(auth, bundle.tenantId, bundle.workspaceId))
+          .slice(-20)
+          .reverse()));
       }
       if (request.method === "POST" && url.pathname === "/api/v1/release/evidence") {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const body = await readJson(request, options.maxBodyBytes);
         const bundle = store.generateReleaseEvidenceBundle({
           id: body.id ? String(body.id) : undefined,
+          tenantId: optionalTrimmedString(body.tenantId) ?? auth.tenantId,
+          workspaceId: optionalTrimmedString(body.workspaceId) ?? auth.workspaceId,
           candidate: body.candidate ? String(body.candidate) : undefined,
           releaseTargetId: body.releaseTargetId ? String(body.releaseTargetId) : undefined,
           scenarioMatrix: normalizeScenarioMatrix(body.scenarioMatrix),
@@ -2583,6 +2920,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const bundle = store.readReleaseEvidenceBundle(decodeURIComponent(releaseEvidenceMatch[1]));
         if (!bundle) return writeJson(response, 404, { error: "RELEASE_EVIDENCE_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, bundle.tenantId, bundle.workspaceId)) return writeJson(response, 403, { error: "RELEASE_EVIDENCE_FORBIDDEN" });
         return writeJson(response, 200, envelope(bundle));
       }
       const batchMatch = url.pathname.match(/^\/api\/v1\/evolution-batches\/([^/]+)$/);
@@ -2751,13 +3089,42 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       }
       if (request.method === "GET" && url.pathname === "/api/v1/projects") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        return writeJson(response, 200, envelope(store.listProjects().map(maskProject)));
+        return writeJson(response, 200, envelope(store.listProjects()
+          .filter((project) => canAccessScopedResource(auth, project.tenantId, project.workspaceId))
+          .map(maskProject)));
+      }
+      const projectOwnershipMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/ownership$/);
+      if (request.method === "PATCH" && projectOwnershipMatch) {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const project = store.readProject(decodeURIComponent(projectOwnershipMatch[1]));
+        if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const tenantId = safeFileName(optionalTrimmedString(body.tenantId) ?? project.tenantId);
+        const workspaceId = safeFileName(optionalTrimmedString(body.workspaceId) ?? project.workspaceId);
+        const workspace = store.readWorkspace(workspaceId);
+        if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
+        if (workspace.tenantId !== tenantId) return writeJson(response, 409, { error: "PROJECT_WORKSPACE_TENANT_MISMATCH" });
+        const updated = {
+          ...project,
+          tenantId,
+          workspaceId,
+          updatedAt: new Date().toISOString()
+        };
+        store.writeProject(updated);
+        store.appendAudit(audit(auth, "project.ownership.updated", updated.id, {
+          fromTenantId: project.tenantId,
+          fromWorkspaceId: project.workspaceId,
+          tenantId,
+          workspaceId
+        }));
+        return writeJson(response, 200, envelope(maskProject(updated)));
       }
       const projectDiagnosticsMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/diagnostics$/);
       if (request.method === "GET" && projectDiagnosticsMatch) {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const project = store.readProject(decodeURIComponent(projectDiagnosticsMatch[1]));
         if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
         return writeJson(response, 200, envelope(await diagnoseProjectRuntime({ store, project, runtime })));
       }
       const projectSourceCredentialMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/source-credentials$/);
@@ -2765,6 +3132,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const project = store.readProject(decodeURIComponent(projectSourceCredentialMatch[1]));
         if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
         if (!project.repository) return writeJson(response, 409, { error: "PROJECT_REPOSITORY_NOT_CONFIGURED" });
         const body = await readJson(request, options.maxBodyBytes);
         const updated = updateProjectSourceCredentials(project, body);
@@ -2786,6 +3154,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!hasRole(auth, request.method === "POST" ? "operator" : "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const project = store.readProject(decodeURIComponent(projectSourceCredentialPreflightMatch[1]));
         if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
         const readiness = await checkSourceCredentialReadiness(project);
         if (request.method === "POST") {
           store.appendAudit(audit(auth, "project.source-credentials-preflight", project.id, {
@@ -2809,6 +3178,15 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const body = await readJson(request, options.maxBodyBytes);
         const now = new Date().toISOString();
         const projectId = String(body.id ?? "").trim();
+        const tenantId = safeFileName(optionalTrimmedString(body.tenantId) ?? auth.tenantId);
+        const workspaceId = safeFileName(optionalTrimmedString(body.workspaceId) ?? auth.workspaceId);
+        const workspace = store.readWorkspace(workspaceId);
+        if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
+        if (workspace.tenantId !== tenantId) return writeJson(response, 409, { error: "PROJECT_WORKSPACE_TENANT_MISMATCH" });
+        const usage = workspaceUsage(store, workspace);
+        if (usage.projects.used >= usage.projects.limit) {
+          return writeJson(response, 429, { error: "WORKSPACE_PROJECT_QUOTA_EXCEEDED", detail: usage });
+        }
         const repository = normalizeProjectRepository(body);
         const validation = await validateProjectRepository(repository);
         const cicd = normalizeProjectCicd(body, projectId);
@@ -2817,6 +3195,8 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           id: projectId,
           name: String(body.name ?? body.id ?? "").trim(),
           profileId: String(body.profileId ?? profile.id),
+          tenantId,
+          workspaceId,
           repository,
           cicd: cicd.projectCicd,
           runtime: projectRuntime,
@@ -3155,6 +3535,10 @@ class FileStore {
     private readonly executionRuntime: { llmClient?: LlmTaskClient; requireLlm?: boolean } = {}
   ) {
     fs.mkdirSync(this.dataRoot, { recursive: true });
+    fs.mkdirSync(this.tenantsDir, { recursive: true });
+    fs.mkdirSync(this.workspacesDir, { recursive: true });
+    fs.mkdirSync(this.secretsDir, { recursive: true });
+    fs.mkdirSync(this.githubAppInstallationsDir, { recursive: true });
     fs.mkdirSync(this.runsDir, { recursive: true });
     fs.mkdirSync(this.projectsDir, { recursive: true });
     fs.mkdirSync(path.dirname(this.auditFile), { recursive: true });
@@ -3188,6 +3572,23 @@ class FileStore {
     fs.mkdirSync(this.loopMemoryInboxDir, { recursive: true });
     fs.mkdirSync(this.guardrailEvaluationsDir, { recursive: true });
     this.ensureMetadata();
+    this.ensureDefaultTenantWorkspace();
+  }
+
+  get tenantsDir(): string {
+    return path.join(this.dataRoot, "tenants");
+  }
+
+  get workspacesDir(): string {
+    return path.join(this.dataRoot, "workspaces");
+  }
+
+  get secretsDir(): string {
+    return path.join(this.dataRoot, "secrets");
+  }
+
+  get githubAppInstallationsDir(): string {
+    return path.join(this.dataRoot, "github-app-installations");
   }
 
   get runsDir(): string {
@@ -3426,6 +3827,67 @@ class FileStore {
     };
   }
 
+  saasObservability(): object {
+    const tenants = this.listTenants();
+    const workspaces = this.listWorkspaces();
+    const projects = this.listProjects();
+    const loops = this.listLoops();
+    const secrets = this.listSecrets();
+    const githubApps = this.listGitHubAppInstallations();
+    const releaseDecisions = this.listReleaseDecisions();
+    const releaseEvidence = this.listReleaseEvidenceSummaries();
+    const loopTraces = this.listLoopTraces();
+    const queue = this.listLoopWorkerQueue();
+    const storeReadiness = loopStoreReadiness(this.loopStoreRuntime());
+    const quotaBlocked = workspaces
+      .map((workspace) => workspaceUsage(this, workspace))
+      .filter((usage) => usage.projects.remaining === 0 || usage.loops.remaining === 0 || usage.evidenceGb.remaining === 0);
+    const credentialBlocked = githubApps.filter((installation) => installation.status !== "READY");
+    const runningLoops = loops.filter((loop) => loop.status === "RUNNING").length;
+    const blockedLoops = loops.filter((loop) => loop.status === "BLOCKED" || loop.status === "FAILED").length;
+    const queueClaimable = queue.filter((item) => item.claimable).length;
+    const blockers = [
+      ...storeReadiness.blockers,
+      ...credentialBlocked.map((installation) => `GITHUB_APP_BLOCKED:${installation.id}`),
+      ...quotaBlocked.map((usage) => `WORKSPACE_QUOTA_EXHAUSTED:${usage.workspaceId}`)
+    ];
+    return {
+      schema: "evopilot-saas-observability/v1",
+      status: blockers.length === 0 ? "READY" : "BLOCKED",
+      tenantCount: tenants.length,
+      workspaceCount: workspaces.length,
+      projectCount: projects.length,
+      loopCount: loops.length,
+      runningLoopCount: runningLoops,
+      blockedLoopCount: blockedLoops,
+      secretRefCount: secrets.length,
+      githubAppInstallationCount: githubApps.length,
+      githubAppReadyCount: githubApps.filter((installation) => installation.status === "READY").length,
+      releaseEvidenceCount: releaseEvidence.length,
+      releaseDecisionCount: releaseDecisions.length,
+      loopTraceCount: loopTraces.length,
+      queueClaimableCount: queueClaimable,
+      queueLeasedCount: queue.length - queueClaimable,
+      postgresStoreReady: storeReadiness.status === "READY",
+      quotaBlockedWorkspaceCount: quotaBlocked.length,
+      credentialBlockedCount: credentialBlocked.length,
+      blockers,
+      evidence: [
+        `tenants=${tenants.length}`,
+        `workspaces=${workspaces.length}`,
+        `projects=${projects.length}`,
+        `loops=${loops.length}`,
+        `runningLoops=${runningLoops}`,
+        `blockedLoops=${blockedLoops}`,
+        `secretRefs=${secrets.length}`,
+        `githubAppsReady=${githubApps.filter((installation) => installation.status === "READY").length}/${githubApps.length}`,
+        `queueClaimable=${queueClaimable}`,
+        `postgresStoreReady=${storeReadiness.status === "READY"}`
+      ],
+      evaluatedAt: new Date().toISOString()
+    };
+  }
+
   loopTargetRuntimeSummary(): object {
     return {
       discoveryCandidates: this.listDiscoverySkillCandidates().slice(-20).reverse(),
@@ -3460,10 +3922,19 @@ class FileStore {
       "tenant-workspace-model",
       "github-app-onboarding",
       "secret-vault-and-credential-boundary",
+      "workspace-rbac-and-invitation",
+      "project-workspace-ownership",
       "quota-rate-limit-billing-foundation",
-      "production-observability-domain-https",
       "worker-queue-and-postgres-store",
-      "saas-onboarding-dashboard"
+      "tenant-aware-release-evidence",
+      "multi-tenant-security-regression-suite",
+      "saas-production-observability",
+      "saas-onboarding-dashboard",
+      "saas-field-e2e-source-to-ga",
+      "saas-release-matrix",
+      "saas-ga-soak-active",
+      "saas-ga-release-decision",
+      "announce-saas-multi-tenant-ga-stable"
     ].includes(target.id));
     const insights = this.discoverOpportunityInsights();
     const traces = this.listLoopTraces();
@@ -3728,6 +4199,199 @@ class FileStore {
     atomicWriteJson(path.join(this.runsDir, `${run.id}.json`), run);
   }
 
+  ensureDefaultTenantWorkspace(): void {
+    const now = new Date().toISOString();
+    if (!fs.existsSync(path.join(this.tenantsDir, `${DEFAULT_TENANT_ID}.json`))) {
+      this.writeTenant({
+        schema: "evopilot-tenant/v1",
+        id: DEFAULT_TENANT_ID,
+        name: "EvoPilot Production Tenant",
+        status: "ACTIVE",
+        plan: "Self-hosted SaaS",
+        createdAt: now,
+        updatedAt: now
+      });
+    }
+    if (!fs.existsSync(path.join(this.workspacesDir, `${DEFAULT_WORKSPACE_ID}.json`))) {
+      this.writeWorkspace({
+        schema: "evopilot-workspace/v1",
+        id: DEFAULT_WORKSPACE_ID,
+        tenantId: DEFAULT_TENANT_ID,
+        name: "Agent Products Workspace",
+        status: "BOUNDARY_DRAFT",
+        members: [
+          { id: "owner", name: "Owner", role: "owner", status: "ACTIVE" },
+          { id: "operator", name: "Operator", role: "admin", status: "ACTIVE" },
+          { id: "viewer", name: "Viewer", role: "viewer", status: "ACTIVE" }
+        ],
+        quotas: {
+          loops: 120,
+          projects: 20,
+          evidenceGb: 100
+        },
+        createdAt: now,
+        updatedAt: now
+      });
+    }
+  }
+
+  listTenants(): TenantRecord[] {
+    return fs.readdirSync(this.tenantsDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => JSON.parse(fs.readFileSync(path.join(this.tenantsDir, file), "utf8")) as TenantRecord);
+  }
+
+  readTenant(id: string): TenantRecord | undefined {
+    const file = path.join(this.tenantsDir, `${safeFileName(id)}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return JSON.parse(fs.readFileSync(file, "utf8")) as TenantRecord;
+  }
+
+  writeTenant(tenant: TenantRecord): TenantRecord {
+    atomicWriteJson(path.join(this.tenantsDir, `${safeFileName(tenant.id)}.json`), tenant);
+    return tenant;
+  }
+
+  ensureTenant(id: string, name = id): TenantRecord {
+    const existing = this.readTenant(id);
+    if (existing) return existing;
+    const now = new Date().toISOString();
+    return this.writeTenant({
+      schema: "evopilot-tenant/v1",
+      id: safeFileName(id),
+      name,
+      status: "ACTIVE",
+      plan: "SaaS",
+      createdAt: now,
+      updatedAt: now
+    });
+  }
+
+  listWorkspaces(tenantId?: string): WorkspaceRecord[] {
+    return fs.readdirSync(this.workspacesDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => this.hydrateWorkspace(JSON.parse(fs.readFileSync(path.join(this.workspacesDir, file), "utf8"))))
+      .filter((workspace) => !tenantId || workspace.tenantId === tenantId);
+  }
+
+  readWorkspace(id: string): WorkspaceRecord | undefined {
+    const file = path.join(this.workspacesDir, `${safeFileName(id)}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return this.hydrateWorkspace(JSON.parse(fs.readFileSync(file, "utf8")));
+  }
+
+  writeWorkspace(workspace: WorkspaceRecord): WorkspaceRecord {
+    const hydrated = this.hydrateWorkspace(workspace);
+    atomicWriteJson(path.join(this.workspacesDir, `${safeFileName(hydrated.id)}.json`), hydrated);
+    return hydrated;
+  }
+
+  private hydrateWorkspace(workspace: any): WorkspaceRecord {
+    const now = new Date().toISOString();
+    return {
+      schema: "evopilot-workspace/v1",
+      id: safeFileName(String(workspace.id ?? DEFAULT_WORKSPACE_ID)),
+      tenantId: safeFileName(String(workspace.tenantId ?? DEFAULT_TENANT_ID)),
+      name: String(workspace.name ?? workspace.id ?? DEFAULT_WORKSPACE_ID),
+      status: normalizeWorkspaceStatus(workspace.status),
+      members: Array.isArray(workspace.members) ? workspace.members.map((member: any) => ({
+        id: safeFileName(String(member.id ?? member.name ?? `member-${Date.now()}`)),
+        name: String(member.name ?? member.id ?? "Member"),
+        role: normalizeWorkspaceMemberRole(member.role, "viewer"),
+        status: normalizeWorkspaceMemberStatus(member.status, "ACTIVE")
+      })) : [],
+      quotas: normalizeWorkspaceQuotas(workspace.quotas),
+      createdAt: String(workspace.createdAt ?? now),
+      updatedAt: String(workspace.updatedAt ?? workspace.createdAt ?? now)
+    };
+  }
+
+  listSecrets(tenantId?: string, workspaceId?: string): SecretRecord[] {
+    return fs.readdirSync(this.secretsDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => this.hydrateSecret(JSON.parse(fs.readFileSync(path.join(this.secretsDir, file), "utf8"))))
+      .filter((secret) => (!tenantId || secret.tenantId === tenantId) && (!workspaceId || secret.workspaceId === workspaceId));
+  }
+
+  readSecret(id: string): SecretRecord | undefined {
+    const file = path.join(this.secretsDir, `${safeFileName(id)}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return this.hydrateSecret(JSON.parse(fs.readFileSync(file, "utf8")));
+  }
+
+  writeSecret(secret: SecretRecord): SecretRecord {
+    const hydrated = this.hydrateSecret(secret);
+    atomicWriteJson(path.join(this.secretsDir, `${safeFileName(hydrated.id)}.json`), hydrated);
+    return hydrated;
+  }
+
+  private hydrateSecret(secret: any): SecretRecord {
+    const now = new Date().toISOString();
+    return {
+      schema: "evopilot-secret/v1",
+      id: safeFileName(String(secret.id ?? `secret-${Date.now()}`)),
+      tenantId: safeFileName(String(secret.tenantId ?? DEFAULT_TENANT_ID)),
+      workspaceId: safeFileName(String(secret.workspaceId ?? DEFAULT_WORKSPACE_ID)),
+      name: String(secret.name ?? secret.id ?? "Secret"),
+      kind: normalizeSecretKind(secret.kind),
+      status: String(secret.status ?? "ACTIVE").toUpperCase() === "REVOKED" ? "REVOKED" : "ACTIVE",
+      version: clampPositiveInteger(secret.version, 1),
+      encryption: secret.encryption,
+      createdAt: String(secret.createdAt ?? now),
+      updatedAt: String(secret.updatedAt ?? secret.createdAt ?? now),
+      rotatedAt: optionalTrimmedString(secret.rotatedAt),
+      revokedAt: optionalTrimmedString(secret.revokedAt)
+    };
+  }
+
+  listGitHubAppInstallations(tenantId?: string, workspaceId?: string): GitHubAppInstallationRecord[] {
+    return fs.readdirSync(this.githubAppInstallationsDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => this.hydrateGitHubAppInstallation(JSON.parse(fs.readFileSync(path.join(this.githubAppInstallationsDir, file), "utf8"))))
+      .filter((installation) => (!tenantId || installation.tenantId === tenantId) && (!workspaceId || installation.workspaceId === workspaceId));
+  }
+
+  readGitHubAppInstallation(id: string): GitHubAppInstallationRecord | undefined {
+    const file = path.join(this.githubAppInstallationsDir, `${safeFileName(id)}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return this.hydrateGitHubAppInstallation(JSON.parse(fs.readFileSync(file, "utf8")));
+  }
+
+  writeGitHubAppInstallation(installation: GitHubAppInstallationRecord): GitHubAppInstallationRecord {
+    const hydrated = this.hydrateGitHubAppInstallation(installation);
+    atomicWriteJson(path.join(this.githubAppInstallationsDir, `${safeFileName(hydrated.id)}.json`), hydrated);
+    return hydrated;
+  }
+
+  private hydrateGitHubAppInstallation(installation: any): GitHubAppInstallationRecord {
+    const now = new Date().toISOString();
+    const checks = Array.isArray(installation.checks) ? installation.checks : [];
+    return {
+      schema: "evopilot-github-app-installation/v1",
+      id: safeFileName(String(installation.id ?? installation.installationId ?? `github-app-${Date.now()}`)),
+      tenantId: safeFileName(String(installation.tenantId ?? DEFAULT_TENANT_ID)),
+      workspaceId: safeFileName(String(installation.workspaceId ?? DEFAULT_WORKSPACE_ID)),
+      installationId: String(installation.installationId ?? ""),
+      account: String(installation.account ?? ""),
+      repositories: Array.isArray(installation.repositories) ? installation.repositories.map(String) : [],
+      permissions: isRecord(installation.permissions) ? Object.fromEntries(Object.entries(installation.permissions).map(([key, value]) => [key, String(value)])) : {},
+      privateKeySecretRef: optionalTrimmedString(installation.privateKeySecretRef),
+      webhookSecretRef: optionalTrimmedString(installation.webhookSecretRef),
+      status: installation.status === "READY" || installation.status === "REVOKED" ? installation.status : "BLOCKED",
+      checks: checks.map((check: any) => ({
+        id: String(check.id ?? "unknown"),
+        status: check.status === "PASS" ? "PASS" : "FAIL",
+        evidence: Array.isArray(check.evidence) ? check.evidence.map(String) : []
+      })),
+      createdAt: String(installation.createdAt ?? now),
+      updatedAt: String(installation.updatedAt ?? installation.createdAt ?? now)
+    };
+  }
+
   listProjects(): StoredProject[] {
     return fs.readdirSync(this.projectsDir)
       .filter((file) => file.endsWith(".json"))
@@ -3753,6 +4417,8 @@ class FileStore {
   private hydrateProject(project: any): StoredProject {
     return {
       ...project,
+      tenantId: safeFileName(String(project.tenantId ?? DEFAULT_TENANT_ID)),
+      workspaceId: safeFileName(String(project.workspaceId ?? DEFAULT_WORKSPACE_ID)),
       validation: project.validation ?? {
         status: "VERIFIED",
         checkedAt: project.createdAt ?? new Date().toISOString(),
@@ -3785,7 +4451,15 @@ class FileStore {
     return fs.readFileSync(this.auditFile, "utf8")
       .split("\n")
       .filter(Boolean)
-      .map((line) => JSON.parse(line) as AuditRecord);
+      .map((line) => this.hydrateAuditRecord(JSON.parse(line)));
+  }
+
+  private hydrateAuditRecord(record: any): AuditRecord {
+    return {
+      ...record,
+      tenantId: safeFileName(String(record.tenantId ?? DEFAULT_TENANT_ID)),
+      workspaceId: safeFileName(String(record.workspaceId ?? DEFAULT_WORKSPACE_ID))
+    } as AuditRecord;
   }
 
   readIdempotency(key: string): unknown | undefined {
@@ -4567,7 +5241,7 @@ class FileStore {
     return fs.readdirSync(this.releaseEvidenceDir)
       .filter((file) => file.endsWith(".json"))
       .sort()
-      .map((file) => JSON.parse(fs.readFileSync(path.join(this.releaseEvidenceDir, file), "utf8")) as ReleaseEvidenceBundle);
+      .map((file) => this.hydrateReleaseEvidenceBundle(JSON.parse(fs.readFileSync(path.join(this.releaseEvidenceDir, file), "utf8"))));
   }
 
   listReleaseEvidenceSummaries(): ReleaseEvidenceListItem[] {
@@ -4577,12 +5251,21 @@ class FileStore {
   readReleaseEvidenceBundle(id: string): ReleaseEvidenceBundle | undefined {
     const file = path.join(this.releaseEvidenceDir, `${safeFileName(id)}.json`);
     if (!fs.existsSync(file)) return undefined;
-    return JSON.parse(fs.readFileSync(file, "utf8")) as ReleaseEvidenceBundle;
+    return this.hydrateReleaseEvidenceBundle(JSON.parse(fs.readFileSync(file, "utf8")));
   }
 
   writeReleaseEvidenceBundle(bundle: ReleaseEvidenceBundle): ReleaseEvidenceBundle {
-    atomicWriteJson(path.join(this.releaseEvidenceDir, `${safeFileName(bundle.id)}.json`), bundle);
-    return bundle;
+    const hydrated = this.hydrateReleaseEvidenceBundle(bundle);
+    atomicWriteJson(path.join(this.releaseEvidenceDir, `${safeFileName(hydrated.id)}.json`), hydrated);
+    return hydrated;
+  }
+
+  private hydrateReleaseEvidenceBundle(bundle: any): ReleaseEvidenceBundle {
+    return {
+      ...bundle,
+      tenantId: safeFileName(String(bundle.tenantId ?? DEFAULT_TENANT_ID)),
+      workspaceId: safeFileName(String(bundle.workspaceId ?? DEFAULT_WORKSPACE_ID))
+    } as ReleaseEvidenceBundle;
   }
 
   listReleaseTargets(): ReleaseTargetProfile[] {
@@ -4611,26 +5294,35 @@ class FileStore {
     return fs.readdirSync(this.releaseDecisionsDir)
       .filter((file) => file.endsWith(".json"))
       .sort()
-      .map((file) => JSON.parse(fs.readFileSync(path.join(this.releaseDecisionsDir, file), "utf8")) as ReleaseDecision)
+      .map((file) => this.hydrateReleaseDecision(JSON.parse(fs.readFileSync(path.join(this.releaseDecisionsDir, file), "utf8"))))
       .sort((left, right) => Date.parse(left.generatedAt) - Date.parse(right.generatedAt));
   }
 
   readReleaseDecision(id: string): ReleaseDecision | undefined {
     const file = path.join(this.releaseDecisionsDir, `${safeFileName(id)}.json`);
     if (!fs.existsSync(file)) return undefined;
-    return JSON.parse(fs.readFileSync(file, "utf8")) as ReleaseDecision;
+    return this.hydrateReleaseDecision(JSON.parse(fs.readFileSync(file, "utf8")));
   }
 
   writeReleaseDecision(decision: ReleaseDecision): ReleaseDecision {
-    atomicWriteJson(path.join(this.releaseDecisionsDir, `${safeFileName(decision.id)}.json`), decision);
-    return decision;
+    const hydrated = this.hydrateReleaseDecision(decision);
+    atomicWriteJson(path.join(this.releaseDecisionsDir, `${safeFileName(hydrated.id)}.json`), hydrated);
+    return hydrated;
+  }
+
+  private hydrateReleaseDecision(decision: any): ReleaseDecision {
+    return {
+      ...decision,
+      tenantId: safeFileName(String(decision.tenantId ?? DEFAULT_TENANT_ID)),
+      workspaceId: safeFileName(String(decision.workspaceId ?? DEFAULT_WORKSPACE_ID))
+    } as ReleaseDecision;
   }
 
   listSourceReleaseClosureRuns(loopId?: string): SourceReleaseClosureRun[] {
     const runs = fs.readdirSync(this.sourceReleaseRunsDir)
       .filter((file) => file.endsWith(".json"))
       .sort()
-      .map((file) => JSON.parse(fs.readFileSync(path.join(this.sourceReleaseRunsDir, file), "utf8")) as SourceReleaseClosureRun)
+      .map((file) => this.hydrateSourceReleaseClosureRun(JSON.parse(fs.readFileSync(path.join(this.sourceReleaseRunsDir, file), "utf8"))))
       .sort((left, right) => Date.parse(left.createdAt) - Date.parse(right.createdAt));
     return loopId ? runs.filter((run) => run.loopId === loopId) : runs;
   }
@@ -4638,12 +5330,23 @@ class FileStore {
   readSourceReleaseClosureRun(id: string): SourceReleaseClosureRun | undefined {
     const file = path.join(this.sourceReleaseRunsDir, `${safeFileName(id)}.json`);
     if (!fs.existsSync(file)) return undefined;
-    return JSON.parse(fs.readFileSync(file, "utf8")) as SourceReleaseClosureRun;
+    return this.hydrateSourceReleaseClosureRun(JSON.parse(fs.readFileSync(file, "utf8")));
   }
 
   writeSourceReleaseClosureRun(run: SourceReleaseClosureRun): SourceReleaseClosureRun {
-    atomicWriteJson(path.join(this.sourceReleaseRunsDir, `${safeFileName(run.id)}.json`), run);
-    return run;
+    const hydrated = this.hydrateSourceReleaseClosureRun(run);
+    atomicWriteJson(path.join(this.sourceReleaseRunsDir, `${safeFileName(hydrated.id)}.json`), hydrated);
+    return hydrated;
+  }
+
+  private hydrateSourceReleaseClosureRun(run: any): SourceReleaseClosureRun {
+    const loop = run.loopId ? this.readLoop(String(run.loopId)) : undefined;
+    const project = run.projectId ? this.readProject(String(run.projectId)) : undefined;
+    return {
+      ...run,
+      tenantId: safeFileName(String(run.tenantId ?? loop?.tenantId ?? project?.tenantId ?? DEFAULT_TENANT_ID)),
+      workspaceId: safeFileName(String(run.workspaceId ?? loop?.workspaceId ?? project?.workspaceId ?? DEFAULT_WORKSPACE_ID))
+    } as SourceReleaseClosureRun;
   }
 
   listSourceReleaseDeployFinalizers(status?: SourceReleaseDeployFinalizer["status"]): SourceReleaseDeployFinalizer[] {
@@ -4841,17 +5544,22 @@ class FileStore {
 
   private hydrateLoop(loop: any): LoopRun {
     const graph = this.readExecutorGraph(String(loop.executorGraphId ?? "default-loop-engineering")) ?? defaultExecutorGraph();
+    const project = this.readProject(String(loop.projectId ?? "evopilot"));
+    const tenantId = safeFileName(String(loop.tenantId ?? project?.tenantId ?? DEFAULT_TENANT_ID));
+    const workspaceId = safeFileName(String(loop.workspaceId ?? project?.workspaceId ?? DEFAULT_WORKSPACE_ID));
     const hydrated: LoopRun = {
       ...loop,
       schema: "evopilot-loop-run/v1",
       source: normalizeLoopTriggerSource(loop.source),
+      tenantId,
+      workspaceId,
       status: normalizeLoopRunStatus(loop.status),
       currentIteration: Number.isFinite(Number(loop.currentIteration)) ? Number(loop.currentIteration) : 0,
       executorGraphId: String(loop.executorGraphId ?? graph.id),
       stopPolicy: normalizeLoopStopPolicy(loop.stopPolicy),
       retryPolicy: normalizeLoopRetryPolicy(loop.retryPolicy),
       context: isRecord(loop.context) ? loop.context : {},
-      sourceClosure: normalizeLoopSourceClosure(loop.sourceClosure ?? loop.context?.sourceClosure, this.readProject(String(loop.projectId ?? "evopilot")), loop.controlPlaneUrl),
+      sourceClosure: normalizeLoopSourceClosure(loop.sourceClosure ?? loop.context?.sourceClosure, project, loop.controlPlaneUrl),
       store: normalizeLoopStoreRuntime(loop.store),
       sandbox: normalizeLoopSandboxPolicy(loop.sandbox ?? loop.context?.sandbox),
       sandboxEnforcement: evaluateLoopSandboxEnforcement(normalizeLoopSandboxPolicy(loop.sandbox ?? loop.context?.sandbox)),
@@ -4877,6 +5585,8 @@ class FileStore {
     objective: string;
     executorGraphId?: string;
     controlPlaneUrl?: string;
+    tenantId?: string;
+    workspaceId?: string;
     sourceClosure?: Partial<LoopSourceClosure>;
     stopPolicy?: Partial<LoopStopPolicy>;
     retryPolicy?: Partial<LoopRetryPolicy>;
@@ -4886,6 +5596,8 @@ class FileStore {
     const now = new Date().toISOString();
     const projectId = safeFileName(String(input.projectId ?? "evopilot"));
     const project = this.readProject(projectId);
+    const tenantId = safeFileName(String(input.tenantId ?? project?.tenantId ?? DEFAULT_TENANT_ID));
+    const workspaceId = safeFileName(String(input.workspaceId ?? project?.workspaceId ?? DEFAULT_WORKSPACE_ID));
     const id = safeFileName(input.id ?? `loop-${projectId}-${Date.now()}`);
     const graph = this.readExecutorGraph(input.executorGraphId ?? "default-loop-engineering") ?? defaultExecutorGraph();
     if (graph.id !== "default-loop-engineering") this.writeExecutorGraph(graph);
@@ -4894,6 +5606,8 @@ class FileStore {
       id,
       source: input.source ?? "api",
       projectId,
+      tenantId,
+      workspaceId,
       objective: input.objective,
       status: "PENDING",
       currentIteration: 0,
@@ -4912,7 +5626,7 @@ class FileStore {
       evidenceSets: [],
       artifacts: [],
       approvals: [],
-      timeline: [loopTimelineEvent("CREATED", `Loop ${id} created from ${input.source ?? "api"}.`, { objective: input.objective, projectId, sourceClosure: normalizeLoopSourceClosure(input.sourceClosure ?? input.context?.sourceClosure, project, input.controlPlaneUrl) })],
+      timeline: [loopTimelineEvent("CREATED", `Loop ${id} created from ${input.source ?? "api"}.`, { objective: input.objective, projectId, tenantId, workspaceId, sourceClosure: normalizeLoopSourceClosure(input.sourceClosure ?? input.context?.sourceClosure, project, input.controlPlaneUrl) })],
       createdAt: now,
       updatedAt: now
     };
@@ -5363,6 +6077,8 @@ class FileStore {
 
   generateReleaseEvidenceBundle(input: {
     id?: string;
+    tenantId?: string;
+    workspaceId?: string;
     candidate?: string;
     releaseTargetId?: string;
     scenarioMatrix?: ReleaseScenarioResult[];
@@ -5370,16 +6086,30 @@ class FileStore {
   }): ReleaseEvidenceBundle {
     const now = new Date().toISOString();
     const id = safeFileName(input.id ?? `release-evidence-${Date.now()}`);
+    const tenantId = safeFileName(String(input.tenantId ?? DEFAULT_TENANT_ID));
+    const workspaceId = safeFileName(String(input.workspaceId ?? DEFAULT_WORKSPACE_ID));
+    const releaseTargetId = input.releaseTargetId ?? "ga";
+    const target = this.readReleaseTarget(releaseTargetId) ?? defaultGAReleaseTarget();
     const summary = compactReleaseEvidenceSummary(this.summary() as Record<string, unknown>);
-    const projects = this.listProjects();
+    const projects = this.listProjects().filter((project) => project.tenantId === tenantId && project.workspaceId === workspaceId);
+    const scopedProjectIds = new Set(projects.map((project) => project.id));
     const soakReports = this.listSoakReports();
-    const pipelines = this.listPipelines();
-    const codeUpgrades = this.listCodeUpgradeRuns();
-    const readiness = this.computeReleaseReadinessReports();
-    const rollout = this.computeRolloutStrategyReports();
-    const policyEvaluations = this.evaluateGovernancePolicies();
+    const pipelines = this.listPipelines().filter((pipeline) => scopedProjectIds.has(pipeline.projectId));
+    const codeUpgrades = this.listCodeUpgradeRuns().filter((upgrade) => scopedProjectIds.has(upgrade.projectId));
+    const sourceReleaseRuns = this.listSourceReleaseClosureRuns()
+      .filter((run) => scopedProjectIds.has(run.projectId) && run.tenantId === tenantId && run.workspaceId === workspaceId);
     const scenarioMatrix = mergeScenarioMatrix(defaultReleaseScenarioMatrix({ pipelines, codeUpgrades, projects, summary, now }), input.scenarioMatrix ?? [], now);
-    const riskRegister = this.buildReleaseRiskRegister({ policyEvaluations, readiness, rollout, pipelines, codeUpgrades, scenarioMatrix });
+    const promotedSourceReleaseProjectIds = new Set(sourceReleaseRuns
+      .filter((run) => run.status === "PROMOTED")
+      .map((run) => run.projectId));
+    const saasSourceToGaPassed = releaseTargetId === "saas-ga" &&
+      scenarioMatrix.some((scenario) => scenario.id === "saas-field-e2e-source-to-ga" && scenario.status === "PASS") &&
+      promotedSourceReleaseProjectIds.size > 0;
+    const riskProjectIds = saasSourceToGaPassed ? promotedSourceReleaseProjectIds : scopedProjectIds;
+    const readiness = this.computeReleaseReadinessReports().filter((report) => riskProjectIds.has(report.projectId));
+    const rollout = this.computeRolloutStrategyReports().filter((report) => riskProjectIds.has(report.projectId));
+    const policyEvaluations = this.evaluateGovernancePolicies().filter((evaluation) => riskProjectIds.has(evaluation.scope));
+    const riskRegister = this.buildReleaseRiskRegister({ policyEvaluations, readiness, rollout, pipelines, codeUpgrades, sourceReleaseRuns, scenarioMatrix, releaseTargetId, requiredScenarioIds: target.requiredScenarioIds });
     const failedRequiredScenarioCount = scenarioMatrix.filter((scenario) => scenario.required && (scenario.status === "FAIL" || scenario.status === "NOT-RUN")).length;
     const openHighRiskCount = riskRegister.filter((risk) => risk.status === "OPEN" && (risk.severity === "HIGH" || risk.severity === "CRITICAL")).length;
     const status: ReleaseEvidenceBundle["status"] = failedRequiredScenarioCount > 0 || openHighRiskCount > 0
@@ -5389,9 +6119,11 @@ class FileStore {
         : "GO";
     const bundle: ReleaseEvidenceBundle = {
       id,
+      tenantId,
+      workspaceId,
       candidate: input.candidate ?? `candidate-${now}`,
       status,
-      releaseTargetId: input.releaseTargetId ?? "ga",
+      releaseTargetId,
       generatedAt: now,
       summary,
       sourceSoakReportIds: soakReports.map((report) => report.id),
@@ -5436,7 +6168,6 @@ class FileStore {
       createdAt: now,
       updatedAt: now
     };
-    const target = this.readReleaseTarget(bundle.releaseTargetId ?? "ga") ?? defaultGAReleaseTarget();
     const decision = this.generateReleaseDecision({ target, evidenceBundle: bundle, scenarioMatrix, riskRegister, summary, now });
     const releaseBundle = {
       ...bundle,
@@ -5500,6 +6231,8 @@ class FileStore {
         : "GO";
     return {
       id: `decision-${safeFileName(evidenceBundle.id)}`,
+      tenantId: evidenceBundle.tenantId,
+      workspaceId: evidenceBundle.workspaceId,
       candidate: evidenceBundle.candidate,
       targetId: target.id,
       evidenceBundleId: evidenceBundle.id,
@@ -5563,10 +6296,19 @@ class FileStore {
     rollout: RolloutStrategyReport[];
     pipelines: PipelineRun[];
     codeUpgrades: CodeUpgradeRun[];
+    sourceReleaseRuns: SourceReleaseClosureRun[];
     scenarioMatrix: ReleaseScenarioResult[];
+    releaseTargetId: string;
+    requiredScenarioIds: string[];
   }): ReleaseRisk[] {
     const risks: ReleaseRisk[] = [];
+    const projectsWithPromotedSourceRelease = new Set(args.sourceReleaseRuns
+      .filter((run) => run.status === "PROMOTED")
+      .map((run) => run.projectId));
+    const sourceToGaEvidenceSatisfiesProjectClosure = args.releaseTargetId === "saas-ga" &&
+      args.scenarioMatrix.some((scenario) => scenario.id === "saas-field-e2e-source-to-ga" && scenario.status === "PASS");
     for (const policy of args.policyEvaluations.filter((item) => item.status !== "PASSED")) {
+      if (sourceToGaEvidenceSatisfiesProjectClosure && projectsWithPromotedSourceRelease.has(policy.scope)) continue;
       risks.push({
         id: `risk-policy-${safeFileName(policy.id)}`,
         severity: policy.severity,
@@ -5578,6 +6320,7 @@ class FileStore {
       });
     }
     for (const report of args.readiness.filter((item) => item.status === "BLOCKED")) {
+      if (sourceToGaEvidenceSatisfiesProjectClosure && projectsWithPromotedSourceRelease.has(report.projectId)) continue;
       const failedGate = report.gates.find((gate) => gate.status === "FAILED");
       risks.push({
         id: `risk-readiness-${safeFileName(report.projectId)}`,
@@ -5590,6 +6333,7 @@ class FileStore {
       });
     }
     for (const report of args.rollout.filter((item) => item.status === "BLOCKED")) {
+      if (sourceToGaEvidenceSatisfiesProjectClosure && projectsWithPromotedSourceRelease.has(report.projectId)) continue;
       risks.push({
         id: `risk-rollout-${safeFileName(report.projectId)}`,
         severity: "HIGH",
@@ -5622,7 +6366,8 @@ class FileStore {
         recommendedAction: "确认代码升级失败不会触发 CI/CD，并释放或失败对应进化批次。"
       });
     }
-    for (const scenario of args.scenarioMatrix.filter((item) => item.required && (item.status === "FAIL" || item.status === "NOT-RUN"))) {
+    const targetRequiredScenarios = new Set(args.requiredScenarioIds);
+    for (const scenario of args.scenarioMatrix.filter((item) => targetRequiredScenarios.has(item.id) && item.required && (item.status === "FAIL" || item.status === "NOT-RUN"))) {
       risks.push({
         id: `risk-scenario-${safeFileName(scenario.id)}`,
         severity: "HIGH",
@@ -6076,6 +6821,18 @@ function loopOrchestrationTargetDefinitions(): Array<Omit<LoopOrchestrationTarge
       ]
     },
     {
+      id: "workspace-rbac-and-invitation",
+      title: "Workspace RBAC and Invitation",
+      layer: "harness",
+      presetId: "codex-target-loop",
+      objective: "Make workspace membership, invitation, role assignment, scoped API access, and audit attribution production-ready for a multi-tenant SaaS control plane.",
+      acceptanceCriteria: [
+        "Owner, admin, developer, and viewer permissions are enforced for workspace reads, writes, approvals, and release actions.",
+        "Workspace invitations, membership state, role changes, and access revocation are recorded as auditable events.",
+        "Cross-workspace and cross-tenant access attempts are denied with explicit blocker evidence instead of falling through to global data."
+      ]
+    },
+    {
       id: "secret-vault-and-credential-boundary",
       title: "Secret Vault and Credential Boundary",
       layer: "harness",
@@ -6085,6 +6842,18 @@ function loopOrchestrationTargetDefinitions(): Array<Omit<LoopOrchestrationTarge
         "Credentials are stored and referenced through encrypted secret refs instead of plaintext project payloads.",
         "API responses, dashboard views, loop evidence, and logs never echo secret values.",
         "Rotation, revocation, audit trail, and credential preflight status are visible to operators and enforced before source closure."
+      ]
+    },
+    {
+      id: "project-workspace-ownership",
+      title: "Project Workspace Ownership",
+      layer: "context",
+      presetId: "codex-target-loop",
+      objective: "Make every GitHub, GitLab, and local Git project belong to an explicit workspace with scoped credentials, loops, source closures, release evidence, and audit history.",
+      acceptanceCriteria: [
+        "Project registration requires a workspace boundary and preserves compatibility for existing single-tenant self-hosted projects.",
+        "Project lists, credentials, loop runs, release runs, and audit history are filtered by workspace scope.",
+        "Moving, archiving, or deleting a project preserves release evidence and produces auditable ownership evidence."
       ]
     },
     {
@@ -6100,18 +6869,6 @@ function loopOrchestrationTargetDefinitions(): Array<Omit<LoopOrchestrationTarge
       ]
     },
     {
-      id: "production-observability-domain-https",
-      title: "Production Observability Domain HTTPS",
-      layer: "harness",
-      presetId: "codex-target-loop",
-      objective: "Harden public production operation with domain, HTTPS, ingress controls, logs, metrics, alerts, status, and incident evidence suitable for external SaaS users.",
-      acceptanceCriteria: [
-        "Production exposes EvoPilot through a managed domain and HTTPS ingress with documented security boundaries.",
-        "Health, readiness, loop execution, release closure, queue pressure, and credential blockers emit metrics and structured logs.",
-        "Alerts, status evidence, and incident runbooks exist for externally visible service degradation."
-      ]
-    },
-    {
       id: "worker-queue-and-postgres-store",
       title: "Worker Queue and Postgres Store",
       layer: "loop",
@@ -6124,6 +6881,42 @@ function loopOrchestrationTargetDefinitions(): Array<Omit<LoopOrchestrationTarge
       ]
     },
     {
+      id: "tenant-aware-release-evidence",
+      title: "Tenant Aware Release Evidence",
+      layer: "context",
+      presetId: "codex-target-loop",
+      objective: "Scope release decisions, source release runs, artifacts, deployment proof, and audit replay by tenant and workspace so SaaS users can trust evidence boundaries.",
+      acceptanceCriteria: [
+        "Release decisions, source release runs, pull requests, merge commits, deployments, artifacts, and audit records carry tenant and workspace scope.",
+        "Dashboard and API can replay release evidence for one workspace without exposing unrelated tenant data.",
+        "Missing or mismatched tenant/workspace evidence blocks GA release promotion for SaaS targets."
+      ]
+    },
+    {
+      id: "multi-tenant-security-regression-suite",
+      title: "Multi Tenant Security Regression Suite",
+      layer: "harness",
+      presetId: "codex-target-loop",
+      objective: "Build the regression suite that proves tenant isolation, credential redaction, RBAC, scoped API tokens, and release-evidence boundaries before SaaS GA.",
+      acceptanceCriteria: [
+        "Tests cover cross-tenant read and write denial for projects, loops, credentials, release evidence, and audit records.",
+        "Credential leakage tests prove secrets are not returned through API responses, dashboard state, traces, logs, or release artifacts.",
+        "Regression evidence is required by the SaaS GA release target and fails the target when any isolation scenario is missing."
+      ]
+    },
+    {
+      id: "saas-production-observability",
+      title: "SaaS Production Observability",
+      layer: "harness",
+      presetId: "codex-target-loop",
+      objective: "Harden public production operation with domain, HTTPS, ingress controls, logs, metrics, alerts, status, and incident evidence suitable for external SaaS users.",
+      acceptanceCriteria: [
+        "Production exposes EvoPilot through a managed domain and HTTPS ingress with documented security boundaries.",
+        "Health, readiness, loop execution, release closure, queue pressure, quota, and credential blockers emit metrics and structured logs.",
+        "Alerts, status evidence, and incident runbooks exist for externally visible service degradation."
+      ]
+    },
+    {
       id: "saas-onboarding-dashboard",
       title: "SaaS Onboarding Dashboard",
       layer: "context",
@@ -6133,6 +6926,66 @@ function loopOrchestrationTargetDefinitions(): Array<Omit<LoopOrchestrationTarge
         "A new workspace can complete GitHub connection, repository selection, target choice, and first loop start from one guided dashboard path.",
         "The dashboard shows the active loop stage, blocker, evidence, and release conclusion without forcing users through separate feature pages.",
         "Team invitation and role visibility are available before the workspace is treated as SaaS-ready."
+      ]
+    },
+    {
+      id: "saas-field-e2e-source-to-ga",
+      title: "SaaS Field E2E Source to GA",
+      layer: "loop",
+      presetId: "codex-target-loop",
+      objective: "Run a real workspace-scoped Source-to-GA journey from GitHub App onboarding through loop execution, PR, CI/CD, deploy, release decision, and audit replay.",
+      acceptanceCriteria: [
+        "A workspace completes GitHub App repository onboarding and starts a Source-to-GA loop without plaintext source credentials.",
+        "The loop produces PR, CI/CD, deployment, health, release decision, and audit evidence under the same workspace boundary.",
+        "The field E2E transcript and screenshots are archived as reusable SaaS GA release evidence."
+      ]
+    },
+    {
+      id: "saas-release-matrix",
+      title: "SaaS Release Matrix",
+      layer: "loop",
+      presetId: "codex-target-loop",
+      objective: "Define and execute the SaaS GA scenario matrix covering new tenants, workspaces, migrations, missing credentials, RBAC denial, worker recovery, release repair, audit replay, and quota blockers.",
+      acceptanceCriteria: [
+        "The release matrix includes new tenant, new workspace, single-tenant migration, GitHub App onboarding, credential blocker, RBAC denial, worker crash, release repair, audit replay, and quota blocker scenarios.",
+        "Each required scenario has executable evidence, owner, status, blocker, and repair action.",
+        "SaaS GA release decisions fail when any required matrix scenario is missing or blocked."
+      ]
+    },
+    {
+      id: "saas-ga-soak-active",
+      title: "SaaS GA Active Soak",
+      layer: "loop",
+      presetId: "codex-target-loop",
+      objective: "Run an active multi-tenant soak with representative projects, workspaces, source closures, workers, release evidence, and no high open risks.",
+      acceptanceCriteria: [
+        "At least two tenants, three workspaces, five projects, and five successful Source-to-GA loops are exercised under active workload.",
+        "Active soak covers worker queue, credential resolution, release repair, audit replay, quota handling, and production observability.",
+        "The soak report records duration, deltas, failures, residual risks, and release-decision evidence for the SaaS GA target."
+      ]
+    },
+    {
+      id: "saas-ga-release-decision",
+      title: "SaaS GA Release Decision",
+      layer: "loop",
+      presetId: "codex-target-loop",
+      objective: "Create an independent saas-ga release target and require a product-native GO decision before the SaaS multi-tenant version can be called GA stable.",
+      acceptanceCriteria: [
+        "A saas-ga or multi-tenant-ga release target exists with criteria for tenant model, workspace RBAC, GitHub App, vault, quota, Postgres store, observability, field E2E, release matrix, and active soak.",
+        "GET /api/v1/release/decisions for the SaaS target returns GO only when all required SaaS criteria and scenarios pass.",
+        "The release decision is separate from the existing ga target so core control-plane GA cannot be mistaken for SaaS multi-tenant GA."
+      ]
+    },
+    {
+      id: "announce-saas-multi-tenant-ga-stable",
+      title: "Announce SaaS Multi Tenant GA Stable",
+      layer: "loop",
+      presetId: "codex-target-loop",
+      objective: "Promote the SaaS multi-tenant version only after the saas-ga release decision is GO and the public product surfaces reference that evidence.",
+      acceptanceCriteria: [
+        "README, Dashboard, release evidence, release notes, and version tag point to the SaaS GA decision rather than the generic ga target.",
+        "The announcement includes the target ID, decision ID, release matrix summary, active soak evidence, and residual risk status.",
+        "The release is not announced when the SaaS GA decision is CONDITIONAL-GO, NO-GO, missing, or only backed by dashboard/UI evidence."
       ]
     }
   ];
@@ -6584,6 +7437,7 @@ function externalBlockerEvidence(blocker: LoopExternalBlocker): string[] {
 }
 
 function inferLoopExternalBlocker(target: Pick<LoopOrchestrationTarget, "id">, loop: LoopRun): LoopExternalBlocker | undefined {
+  if (loop.sourceClosure.closureState === "PROMOTED") return undefined;
   const preflightEvidence = [...loop.evidenceSets].reverse().find((set) =>
     set.validator === "evopilot-source-closure-preflight" &&
     set.status === "FAIL" &&
@@ -6780,6 +7634,9 @@ function targetEvidence(target: Pick<LoopOrchestrationTarget, "id" | "layer" | "
     `layer=${target.layer}`,
     `acceptanceCriteria=${target.acceptanceCriteria.length}`,
     loop ? `loop=${loop.id}` : "loop=not-created",
+    loop ? `tenant=${loop.tenantId}` : `tenant=${DEFAULT_TENANT_ID}`,
+    loop ? `workspace=${loop.workspaceId}` : `workspace=${DEFAULT_WORKSPACE_ID}`,
+    target.id === "tenant-workspace-model" ? "membershipModel=owner,admin,developer,viewer" : "membershipModel=not-targeted",
     loop ? `loopStatus=${loop.status}` : "loopStatus=PENDING",
     loop ? `iteration=${loop.currentIteration}/${loop.stopPolicy.maxIterations}` : "iteration=0",
     loop ? `sourceClosure=${loop.sourceClosure.closureState}` : "sourceClosure=not-started",
@@ -6822,6 +7679,41 @@ function normalizeLoopStoreRuntime(input?: Partial<LoopStoreRuntime>): LoopStore
     durable: true,
     lockProvider: backend === "postgres" ? "postgres-advisory-lock" : backend === "sqlite" ? "sqlite-transaction" : "file-lease",
     recovery: "idempotent-replay"
+  };
+}
+
+function loopStoreReadiness(runtime: LoopStoreRuntime): {
+  schema: "evopilot-loop-store-readiness/v1";
+  status: "READY" | "BLOCKED";
+  backend: LoopStoreBackendType;
+  postgresRequired: boolean;
+  postgresConfigured: boolean;
+  lockProvider: LoopStoreRuntime["lockProvider"];
+  recovery: LoopStoreRuntime["recovery"];
+  blockers: string[];
+  evidence: string[];
+  evaluatedAt: string;
+} {
+  const postgresConfigured = runtime.backend === "postgres" && Boolean(runtime.dsn);
+  const postgresRequired = true;
+  const blockers = postgresConfigured ? [] : ["POSTGRES_LOOP_STORE_NOT_CONFIGURED"];
+  return {
+    schema: "evopilot-loop-store-readiness/v1",
+    status: blockers.length === 0 ? "READY" : "BLOCKED",
+    backend: runtime.backend,
+    postgresRequired,
+    postgresConfigured,
+    lockProvider: runtime.lockProvider,
+    recovery: runtime.recovery,
+    blockers,
+    evidence: [
+      `backend=${runtime.backend}`,
+      `dsnConfigured=${Boolean(runtime.dsn)}`,
+      `lockProvider=${runtime.lockProvider}`,
+      `recovery=${runtime.recovery}`,
+      postgresConfigured ? "postgresReadiness=READY" : "postgresReadiness=BLOCKED"
+    ],
+    evaluatedAt: new Date().toISOString()
   };
 }
 
@@ -7051,6 +7943,172 @@ function optionalTrimmedString(value: unknown): string | undefined {
   return text || undefined;
 }
 
+function normalizeWorkspaceStatus(value: unknown): WorkspaceRecord["status"] {
+  const status = String(value ?? "").trim().toUpperCase();
+  if (status === "ACTIVE" || status === "BOUNDARY_DRAFT" || status === "SUSPENDED") return status;
+  return "ACTIVE";
+}
+
+function normalizeTenantStatus(value: unknown): TenantRecord["status"] {
+  const status = String(value ?? "").trim().toUpperCase();
+  if (status === "ACTIVE" || status === "SUSPENDED") return status;
+  return "ACTIVE";
+}
+
+function normalizeWorkspaceMemberRole(value: unknown, fallback: WorkspaceMemberRole): WorkspaceMemberRole {
+  const role = String(value ?? "").trim().toLowerCase();
+  if (role === "owner" || role === "admin" || role === "developer" || role === "viewer") return role;
+  return fallback;
+}
+
+function normalizeWorkspaceMemberStatus(value: unknown, fallback: WorkspaceRecord["members"][number]["status"]): WorkspaceRecord["members"][number]["status"] {
+  const status = String(value ?? "").trim().toUpperCase();
+  if (status === "ACTIVE" || status === "INVITED" || status === "SUSPENDED") return status;
+  return fallback;
+}
+
+function normalizeWorkspaceQuotas(value: unknown): WorkspaceRecord["quotas"] {
+  const source = isRecord(value) ? value : {};
+  return {
+    loops: clampPositiveInteger(source.loops, 120),
+    projects: clampPositiveInteger(source.projects, 20),
+    evidenceGb: clampPositiveInteger(source.evidenceGb, 100)
+  };
+}
+
+function normalizeSecretKind(value: unknown): SecretKind {
+  const kind = String(value ?? "").trim();
+  if (kind === "github-app-private-key" || kind === "github-webhook-secret" || kind === "source-token" || kind === "deploy-token" || kind === "llm-key" || kind === "generic") return kind;
+  return "generic";
+}
+
+function canAccessWorkspace(auth: AuthContext, workspace: WorkspaceRecord, required: WorkspaceMemberRole): boolean {
+  if (auth.role === "admin") return true;
+  if (workspace.tenantId !== auth.tenantId) return false;
+  const member = workspace.members.find((item) => item.id === auth.actor && item.status === "ACTIVE");
+  if (!member) return false;
+  const rank: Record<WorkspaceMemberRole, number> = { viewer: 1, developer: 2, admin: 3, owner: 4 };
+  return rank[member.role] >= rank[required];
+}
+
+function canAccessScopedResource(auth: AuthContext, tenantId: string, workspaceId: string): boolean {
+  if (auth.role === "admin") return true;
+  return auth.tenantId === tenantId && auth.workspaceId === workspaceId;
+}
+
+function secretEncryptionKey(): Buffer {
+  const material = process.env.EVOPILOT_SECRET_MASTER_KEY || "evopilot-debug-local-secret-master-key";
+  return createHash("sha256").update(material).digest();
+}
+
+function encryptSecretValue(value: string): SecretRecord["encryption"] {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", secretEncryptionKey(), iv);
+  const ciphertext = Buffer.concat([cipher.update(value, "utf8"), cipher.final()]);
+  return {
+    algorithm: "aes-256-gcm",
+    iv: iv.toString("base64"),
+    tag: cipher.getAuthTag().toString("base64"),
+    ciphertext: ciphertext.toString("base64")
+  };
+}
+
+function decryptSecretValue(secret: SecretRecord): string {
+  const decipher = createDecipheriv("aes-256-gcm", secretEncryptionKey(), Buffer.from(secret.encryption.iv, "base64"));
+  decipher.setAuthTag(Buffer.from(secret.encryption.tag, "base64"));
+  return Buffer.concat([
+    decipher.update(Buffer.from(secret.encryption.ciphertext, "base64")),
+    decipher.final()
+  ]).toString("utf8");
+}
+
+function maskSecret(secret: SecretRecord): Omit<SecretRecord, "encryption"> & { secretRef: string; valueConfigured: boolean } {
+  const { encryption, ...safe } = secret;
+  return {
+    ...safe,
+    secretRef: secret.id,
+    valueConfigured: Boolean(encryption?.ciphertext)
+  };
+}
+
+function githubAppInstallationChecks(store: FileStore, tenantId: string, workspaceId: string, installation: Pick<GitHubAppInstallationRecord, "privateKeySecretRef" | "webhookSecretRef" | "repositories" | "permissions">): GitHubAppInstallationRecord["checks"] {
+  const privateKey = installation.privateKeySecretRef ? store.readSecret(installation.privateKeySecretRef) : undefined;
+  const webhookSecret = installation.webhookSecretRef ? store.readSecret(installation.webhookSecretRef) : undefined;
+  const privateKeyReady = privateKey && privateKey.status === "ACTIVE" && privateKey.kind === "github-app-private-key" && privateKey.tenantId === tenantId && privateKey.workspaceId === workspaceId;
+  const webhookSecretReady = webhookSecret && webhookSecret.status === "ACTIVE" && webhookSecret.kind === "github-webhook-secret" && webhookSecret.tenantId === tenantId && webhookSecret.workspaceId === workspaceId;
+  return [
+    {
+      id: "private-key-secret-ref",
+      status: privateKeyReady ? "PASS" : "FAIL",
+      evidence: [installation.privateKeySecretRef ? `secretRef=${installation.privateKeySecretRef}` : "secretRef=missing"]
+    },
+    {
+      id: "webhook-secret-ref",
+      status: webhookSecretReady ? "PASS" : "FAIL",
+      evidence: [installation.webhookSecretRef ? `secretRef=${installation.webhookSecretRef}` : "secretRef=missing"]
+    },
+    {
+      id: "repository-selection",
+      status: installation.repositories.length > 0 ? "PASS" : "FAIL",
+      evidence: [`repositories=${installation.repositories.length}`]
+    },
+    {
+      id: "least-privilege-permissions",
+      status: Object.keys(installation.permissions).length > 0 ? "PASS" : "FAIL",
+      evidence: Object.entries(installation.permissions).map(([key, value]) => `${key}=${value}`)
+    }
+  ];
+}
+
+function maskGitHubAppInstallation(installation: GitHubAppInstallationRecord): GitHubAppInstallationRecord {
+  return installation;
+}
+
+function workspaceUsage(store: FileStore, workspace: WorkspaceRecord): {
+  schema: "evopilot-workspace-usage/v1";
+  tenantId: string;
+  workspaceId: string;
+  projects: { used: number; limit: number; remaining: number };
+  loops: { used: number; limit: number; remaining: number };
+  evidenceGb: { used: number; limit: number; remaining: number };
+  evidence: string[];
+  evaluatedAt: string;
+} {
+  const projectsUsed = store.listProjects().filter((project) => project.tenantId === workspace.tenantId && project.workspaceId === workspace.id).length;
+  const workspaceLoops = store.listLoops().filter((loop) => loop.tenantId === workspace.tenantId && loop.workspaceId === workspace.id);
+  const loopsUsed = workspaceLoops.length;
+  const evidenceBytes = Buffer.byteLength(JSON.stringify(workspaceLoops.flatMap((loop) => loop.evidenceSets)), "utf8");
+  const evidenceGbUsed = Number((evidenceBytes / (1024 * 1024 * 1024)).toFixed(6));
+  return {
+    schema: "evopilot-workspace-usage/v1",
+    tenantId: workspace.tenantId,
+    workspaceId: workspace.id,
+    projects: {
+      used: projectsUsed,
+      limit: workspace.quotas.projects,
+      remaining: Math.max(0, workspace.quotas.projects - projectsUsed)
+    },
+    loops: {
+      used: loopsUsed,
+      limit: workspace.quotas.loops,
+      remaining: Math.max(0, workspace.quotas.loops - loopsUsed)
+    },
+    evidenceGb: {
+      used: evidenceGbUsed,
+      limit: workspace.quotas.evidenceGb,
+      remaining: Math.max(0, Number((workspace.quotas.evidenceGb - evidenceGbUsed).toFixed(6)))
+    },
+    evidence: [
+      `tenant=${workspace.tenantId}`,
+      `workspace=${workspace.id}`,
+      `projects=${projectsUsed}/${workspace.quotas.projects}`,
+      `loops=${loopsUsed}/${workspace.quotas.loops}`,
+      `evidenceGb=${evidenceGbUsed}/${workspace.quotas.evidenceGb}`
+    ],
+    evaluatedAt: new Date().toISOString()
+  };
+}
+
 function readJsonDir<T>(dir: string): T[] {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir)
@@ -7068,10 +8126,16 @@ function discoveryAffectedFilesForTarget(targetId: string, project: StoredProjec
   const repositoryHint = project.repository?.provider === "local-git" ? project.repository.root : project.repository?.gitUrl ?? sourceUrlFromRepository(project.repository);
   const base = repositoryHint ? [`repository:${repositoryHint}`] : [];
   if (targetId === "tenant-workspace-model") return [...base, "packages/server/src/index.ts", "packages/core/src/index.ts", "docs/architecture/loop-runtime.md", "docs/api.md"];
+  if (targetId === "workspace-rbac-and-invitation") return [...base, "packages/server/src/index.ts", "docs/api.md", "docs/user-guide.md"];
   if (targetId === "github-app-onboarding" || targetId === "secret-vault-and-credential-boundary") return [...base, "packages/server/src/index.ts", "apps/dashboard/assets/app.js", "docs/api.md"];
+  if (targetId === "project-workspace-ownership" || targetId === "tenant-aware-release-evidence") return [...base, "packages/server/src/index.ts", "apps/dashboard/assets/app.js", "docs/architecture/loop-runtime.md"];
   if (targetId === "quota-rate-limit-billing-foundation" || targetId === "worker-queue-and-postgres-store") return [...base, "packages/core/src/index.ts", "packages/server/src/index.ts", "docs/architecture/loop-runtime.md"];
-  if (targetId === "production-observability-domain-https") return [...base, "packages/server/src/index.ts", "docs/deployment.md", "docs/architecture/loop-runtime.md"];
+  if (targetId === "multi-tenant-security-regression-suite") return [...base, "tests/functional/loop-runtime.test.mjs", "tests/smoke/server-and-dashboard.test.mjs", "docs/api.md"];
+  if (targetId === "saas-production-observability") return [...base, "packages/server/src/index.ts", "docs/deployment.md", "docs/architecture/loop-runtime.md"];
   if (targetId === "saas-onboarding-dashboard") return [...base, "apps/dashboard/assets/app.js", "apps/dashboard/assets/styles.css", "docs/user-guide.md"];
+  if (targetId === "saas-field-e2e-source-to-ga") return [...base, "tests/e2e/dashboard-product-flow.test.mjs", "evidence/production-soak", "docs/user-guide.md"];
+  if (targetId === "saas-release-matrix" || targetId === "saas-ga-soak-active") return [...base, "scripts/release-matrix-project-loop.mjs", "scripts/loop-soak.mjs", "evidence/production-soak"];
+  if (targetId === "saas-ga-release-decision" || targetId === "announce-saas-multi-tenant-ga-stable") return [...base, "packages/server/src/index.ts", "README.md", "templates/release-readiness-review.md"];
   if (targetId === "discovery-skill-runtime" || targetId === "loop-memory-inbox") return [...base, "packages/server/src/index.ts", "apps/dashboard/assets/app.js"];
   if (targetId === "per-finding-worktree-handoff" || targetId === "adversarial-evaluator-agent") return [...base, "packages/server/src/index.ts", "tests/functional/loop-runtime.test.mjs"];
   return [...base, "docs/architecture/loop-runtime.md", "docs/user-guide.md"];
@@ -7127,6 +8191,8 @@ function syntheticEvoPilotProject(): StoredProject {
     id: "evopilot",
     name: "EvoPilot",
     profileId: "evopilot",
+    tenantId: DEFAULT_TENANT_ID,
+    workspaceId: DEFAULT_WORKSPACE_ID,
     repository: {
       provider: "github",
       owner: "yeliang-wang",
@@ -9393,6 +10459,8 @@ function buildSourceReleaseClosureRun(loop: LoopRun, actor?: string, id?: string
     loopId: loop.id,
     projectId: loop.projectId,
     sourceProjectId: closure.sourceProjectId,
+    tenantId: loop.tenantId,
+    workspaceId: loop.workspaceId,
     provider: closure.repositoryProvider,
     releaseStrategy: closure.releaseStrategy,
     sourceRef: {
@@ -10900,6 +11968,8 @@ function releaseEvidenceListItem(bundle: ReleaseEvidenceBundle): ReleaseEvidence
   const summary = bundle.summary ?? {};
   return {
     id: bundle.id,
+    tenantId: bundle.tenantId,
+    workspaceId: bundle.workspaceId,
     candidate: bundle.candidate,
     status: bundle.status,
     releaseTargetId: bundle.releaseTargetId,
@@ -13418,7 +14488,7 @@ function writeText(response: http.ServerResponse, statusCode: number, body: stri
   response.end(body);
 }
 
-function renderMetrics(summary: any): string {
+function renderMetrics(summary: any, saasObservability?: any): string {
   return [
     "# TYPE evopilot_projects_total gauge",
     `evopilot_projects_total ${summary.projectCount}`,
@@ -13443,7 +14513,23 @@ function renderMetrics(summary: any): string {
     "# TYPE evopilot_release_readiness_score gauge",
     `evopilot_release_readiness_score ${summary.releaseReadinessScore ?? 100}`,
     "# TYPE evopilot_release_blocked_total gauge",
-    `evopilot_release_blocked_total ${summary.releaseBlockedCount ?? 0}`
+    `evopilot_release_blocked_total ${summary.releaseBlockedCount ?? 0}`,
+    "# TYPE evopilot_saas_tenants_total gauge",
+    `evopilot_saas_tenants_total ${saasObservability?.tenantCount ?? 0}`,
+    "# TYPE evopilot_saas_workspaces_total gauge",
+    `evopilot_saas_workspaces_total ${saasObservability?.workspaceCount ?? 0}`,
+    "# TYPE evopilot_saas_running_loops_total gauge",
+    `evopilot_saas_running_loops_total ${saasObservability?.runningLoopCount ?? 0}`,
+    "# TYPE evopilot_saas_blocked_loops_total gauge",
+    `evopilot_saas_blocked_loops_total ${saasObservability?.blockedLoopCount ?? 0}`,
+    "# TYPE evopilot_saas_github_app_ready_total gauge",
+    `evopilot_saas_github_app_ready_total ${saasObservability?.githubAppReadyCount ?? 0}`,
+    "# TYPE evopilot_saas_credential_blockers_total gauge",
+    `evopilot_saas_credential_blockers_total ${saasObservability?.credentialBlockedCount ?? 0}`,
+    "# TYPE evopilot_saas_quota_blocked_workspaces_total gauge",
+    `evopilot_saas_quota_blocked_workspaces_total ${saasObservability?.quotaBlockedWorkspaceCount ?? 0}`,
+    "# TYPE evopilot_saas_postgres_store_ready gauge",
+    `evopilot_saas_postgres_store_ready ${saasObservability?.postgresStoreReady ? 1 : 0}`
   ].join("\n");
 }
 
@@ -13492,16 +14578,26 @@ function normalizeTokens(options: EvoPilotServerOptions): AuthToken[] {
   return [];
 }
 
+function requestScope(request: http.IncomingMessage): Pick<AuthContext, "tenantId" | "workspaceId"> {
+  const tenantId = optionalTrimmedString(request.headers["x-evopilot-tenant"]) ?? DEFAULT_TENANT_ID;
+  const workspaceId = optionalTrimmedString(request.headers["x-evopilot-workspace"]) ?? DEFAULT_WORKSPACE_ID;
+  return {
+    tenantId: safeFileName(tenantId),
+    workspaceId: safeFileName(workspaceId)
+  };
+}
+
 function authorize(request: http.IncomingMessage, tokens: AuthToken[], runtime: RuntimeConfig): AuthContext | undefined {
+  const scope = requestScope(request);
   if (tokens.length === 0) {
     if (!runtime.allowAnonymousAdmin) return undefined;
-    return { actor: String(request.headers["x-evopilot-actor"] ?? "system"), role: "admin" };
+    return { actor: String(request.headers["x-evopilot-actor"] ?? "system"), role: "admin", ...scope };
   }
   const value = String(request.headers.authorization ?? "");
   const token = value.startsWith("Bearer ") ? value.slice("Bearer ".length) : "";
   const matched = tokens.find((item) => item.token === token);
   if (!matched) return undefined;
-  return { actor: String(request.headers["x-evopilot-actor"] ?? matched.name), role: matched.role };
+  return { actor: String(request.headers["x-evopilot-actor"] ?? matched.name), role: matched.role, ...scope };
 }
 
 function hasRole(context: AuthContext, required: AuthRole): boolean {
@@ -13515,6 +14611,8 @@ function audit(context: AuthContext, action: string, target: string, metadata?: 
     actor: context.actor,
     action,
     target,
+    tenantId: context.tenantId,
+    workspaceId: context.workspaceId,
     timestamp: new Date().toISOString(),
     metadata
   };

@@ -28,6 +28,7 @@ test("Loop worker process advances durable loops and loop soak proves runtime co
     const worker = await runNodeScript("scripts/loop-worker.mjs", ["--once"], {
       EVOPILOT_BASE_URL: baseUrl,
       EVOPILOT_API_TOKEN: "operator-token",
+      EVOPILOT_ACTOR: "operator",
       EVOPILOT_LOOP_WORKER_ID: "test-worker",
       EVOPILOT_LOOP_WORKER_ONCE: "1"
     });
@@ -54,6 +55,7 @@ test("Loop worker process advances durable loops and loop soak proves runtime co
     const preferredWorker = await runNodeScript("scripts/loop-worker.mjs", ["--once"], {
       EVOPILOT_BASE_URL: baseUrl,
       EVOPILOT_API_TOKEN: "operator-token",
+      EVOPILOT_ACTOR: "operator",
       EVOPILOT_LOOP_WORKER_ID: "preferred-test-worker",
       EVOPILOT_LOOP_WORKER_LOOP_ID: "preferred-worker-loop",
       EVOPILOT_LOOP_WORKER_ONCE: "1"
@@ -68,6 +70,7 @@ test("Loop worker process advances durable loops and loop soak proves runtime co
     const soak = await runNodeScript("scripts/loop-soak.mjs", [], {
       EVOPILOT_BASE_URL: baseUrl,
       EVOPILOT_API_TOKEN: "operator-token",
+      EVOPILOT_ACTOR: "operator",
       EVOPILOT_LOOP_SOAK_SECONDS: "1",
       EVOPILOT_LOOP_SOAK_INTERVAL_SECONDS: "1",
       EVOPILOT_LOOP_SOAK_LOOP_ID: "worker-soak-loop",
@@ -105,7 +108,7 @@ async function post(baseUrl, pathname, body) {
 function authHeaders() {
   return {
     authorization: "Bearer operator-token",
-    "x-evopilot-actor": "test"
+    "x-evopilot-actor": "operator"
   };
 }
 

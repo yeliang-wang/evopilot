@@ -1,0 +1,246 @@
+{
+  "schema": "agent-octopus-project-profile/v1",
+  "projectId": "evopilot",
+  "releaseTarget": "GA",
+  "lifecycleId": "evopilot-ga-release-matrix",
+  "projectRoot": "/Users/wangyejing/project/harness/EvoPilot",
+  "targetPlan": {
+    "finalGoal": "EvoPilot reaches GA Release Target with product-native GA release decision GO.",
+    "phaseGoals": [
+      "readiness: verify real EvoPilot server, code-upgrader, GitLab, Jenkins, GLM/LLM, data root, release API, and runner boundaries",
+      "coverage-matrix: register production representative sandbox projects and cover project onboarding, release evidence, code upgrade, SCM, CI/CD, LLM analysis, risk register, and release decision",
+      "repair-loop: diagnose, productize fixes, and verify failed matrix rows without rerun-only behavior",
+      "soak-and-ga-decision: produce final product-native GA release decision with full decision chain"
+    ],
+    "acceptanceCriteria": [
+      "npm run check passes",
+      "production E2E passes",
+      "Jenkins evidence uses real external or production-grade boundary",
+      "GitLab evidence uses real token and real repository interaction",
+      "LLM/GLM evidence uses real invocation chain",
+      "GA required coverage matrix rows are PASS or explicitly NO-GO/BLOCKED with evidence",
+      "no mock/fake/stub/simulator/fixture-only/smoke-only/chat-only evidence is used as GA proof",
+      "each phase prints evidence, rule, options, decision, rationale, and next action"
+    ],
+    "finalDecision": ["GO", "CONDITIONAL-GO", "NO-GO", "BLOCKED"]
+  },
+  "targetPlanConfirmation": {
+    "status": "confirmed",
+    "confirmedAt": "2026-06-20T05:58:24.139Z",
+    "confirmedBy": "user",
+    "instruction": "确认按此 target plan 重启"
+  },
+  "runner": {
+    "mode": "continuous",
+    "intervalMs": 1800000,
+    "blockerPolicy": {
+      "mode": "stop-on-required-blocker",
+      "reason": "GA release coverage blockers require productized repair before the next loop run.",
+      "nextAction": "Stop the matrix loop, repair the product blocker with real evidence, verify targeted checks, then resume the runner.",
+      "exitCode": 2,
+      "repairWorkflows": {
+        "enabled": true,
+        "types": [
+          "product-defect",
+          "repository-quality",
+          "runtime-health",
+          "external-ci-boundary",
+          "scm-boundary",
+          "llm-boundary",
+          "soak-governance",
+          "scenario-evidence-gap",
+          "risk-closure",
+          "coverage-evidence-gap",
+          "release-criterion"
+        ]
+      }
+    },
+    "finalReports": {
+      "markdown": "data/production-lifecycle/evopilot-ga-release-matrix/final-report.md",
+      "json": "data/production-lifecycle/evopilot-ga-release-matrix/final-report.json",
+      "includeIterationTargetSummaries": true,
+      "includeFinalTargetSummary": true
+    }
+  },
+  "envFiles": [
+    "data/evopilot/llm.env",
+    "data/evopilot/production-e2e.env"
+  ],
+  "auth": {
+    "header": "authorization",
+    "scheme": "Bearer",
+    "tokenEnv": "EVOPILOT_API_TOKEN",
+    "defaultToken": "evopilot-48h-local-token"
+  },
+  "baseUrl": "http://127.0.0.1:19876",
+  "steps": [
+    {
+      "id": "evopilot-api-health",
+      "type": "health",
+      "capability": "runtime",
+      "scenario": "evopilot-api-health",
+      "url": "http://127.0.0.1:19876/health",
+      "auth": false,
+      "expect": { "status": "UP" },
+      "requiredEvidence": "GET /health returns UP",
+      "required": true
+    },
+    {
+      "id": "code-upgrader-health",
+      "type": "health",
+      "capability": "runtime",
+      "scenario": "code-upgrader-health",
+      "url": "http://127.0.0.1:3000/health",
+      "auth": false,
+      "expect": { "status": "UP" },
+      "requiredEvidence": "GET code-upgrader /health returns UP",
+      "required": true
+    },
+    {
+      "id": "production-representative-sandbox",
+      "type": "sandbox-verify",
+      "capability": "representative-projects",
+      "scenario": "sandbox-contract",
+      "includeFault": true,
+      "requiredEvidence": "verify-sandbox.py --generated --include-fault",
+      "required": true
+    },
+    {
+      "id": "representative-project-registration",
+      "type": "sandbox-register",
+      "capability": "project-registration",
+      "scenario": "representative-project-registration",
+      "target": "evopilot",
+      "baseUrl": "http://127.0.0.1:19876",
+      "profile": "sandbox/production-representative/profiles/evopilot.release-matrix.json",
+      "requiredEvidence": "POST /api/v1/projects plus GET /api/v1/projects shows representative projects as VERIFIED",
+      "required": true
+    },
+    {
+      "id": "jenkins-boundary",
+      "type": "boundary",
+      "capability": "external-boundary",
+      "scenario": "jenkins",
+      "url": "http://172.18.124.14:8080/login",
+      "auth": false,
+      "requiredEvidence": "Jenkins /login reachable through real external boundary",
+      "required": true
+    },
+    {
+      "id": "gitlab-boundary",
+      "type": "boundary",
+      "capability": "external-boundary",
+      "scenario": "gitlab",
+      "url": "https://gitlab.transwarp.io/api/v4/version",
+      "headers": { "PRIVATE-TOKEN": { "env": "EVOPILOT_REAL_PROJECT_TOKEN" } },
+      "requiredEvidence": "GitLab /api/v4/version reachable with token",
+      "required": true
+    },
+    {
+      "id": "llm-boundary",
+      "type": "boundary",
+      "capability": "external-boundary",
+      "scenario": "glm-llm",
+      "envRequired": ["EVOPILOT_LLM_PROVIDER_NAME", "EVOPILOT_LLM_MODEL_NAME", "EVOPILOT_LLM_API_KEY"],
+      "requiredEvidence": "LLM provider, model, and API key configured without printing secrets",
+      "required": true
+    },
+    {
+      "id": "project-check",
+      "type": "command",
+      "capability": "repository",
+      "scenario": "npm-check",
+      "command": "npm",
+      "args": ["run", "check"],
+      "timeoutMs": 1800000,
+      "envUnset": [
+        "EVOPILOT_CODE_UPGRADER_API_KEY",
+        "EVOPILOT_CODE_UPGRADER_BASE_URL",
+        "EVOPILOT_CODE_UPGRADER_MODEL",
+        "EVOPILOT_CODE_UPGRADER_WORKSPACE_MODE",
+        "EVOPILOT_LLM_API_KEY",
+        "EVOPILOT_LLM_BASE_URL",
+        "EVOPILOT_LLM_CONTEXT_COMPRESSION_ENABLED",
+        "EVOPILOT_LLM_CONTEXT_HEAD_CHARS",
+        "EVOPILOT_LLM_CONTEXT_MAX_PROMPT_CHARS",
+        "EVOPILOT_LLM_CONTEXT_TAIL_CHARS",
+        "EVOPILOT_LLM_DEEP_THINKING",
+        "EVOPILOT_LLM_DEFAULT_MAX_OUTPUT_TOKENS",
+        "EVOPILOT_LLM_MAX_OUTPUT_TOKENS",
+        "EVOPILOT_LLM_MAX_RETRIES",
+        "EVOPILOT_LLM_METRICS_ENABLED",
+        "EVOPILOT_LLM_METRICS_PATH",
+        "EVOPILOT_LLM_MODEL_NAME",
+        "EVOPILOT_LLM_PROVIDER_NAME",
+        "EVOPILOT_LLM_TEMPERATURE",
+        "EVOPILOT_LLM_THINKING",
+        "EVOPILOT_LLM_TIMEOUT_SECONDS",
+        "EVOPILOT_PRODUCTION_E2E_POLL_MS",
+        "EVOPILOT_PRODUCTION_E2E_TIMEOUT_MS",
+        "EVOPILOT_PRODUCT_JENKINS_API_TOKEN",
+        "EVOPILOT_PRODUCT_JENKINS_BASE_URL",
+        "EVOPILOT_PRODUCT_JENKINS_JOB",
+        "EVOPILOT_PRODUCT_JENKINS_USERNAME",
+        "EVOPILOT_REAL_PROJECT_BASE_URL",
+        "EVOPILOT_REAL_PROJECT_DEFAULT_BRANCH",
+        "EVOPILOT_REAL_PROJECT_GIT_URL",
+        "EVOPILOT_REAL_PROJECT_ID",
+        "EVOPILOT_REAL_PROJECT_NAME",
+        "EVOPILOT_REAL_PROJECT_OWNER",
+        "EVOPILOT_REAL_PROJECT_PASSWORD",
+        "EVOPILOT_REAL_PROJECT_PROVIDER",
+        "EVOPILOT_REAL_PROJECT_REMOTE_ID",
+        "EVOPILOT_REAL_PROJECT_REPO",
+        "EVOPILOT_REAL_PROJECT_ROOT",
+        "EVOPILOT_REAL_PROJECT_TOKEN",
+        "EVOPILOT_REAL_PROJECT_TOKEN_REF",
+        "EVOPILOT_REAL_PROJECT_USERNAME",
+        "EVOPILOT_REAL_VALIDATION_COMMANDS"
+      ],
+      "requiredEvidence": "npm run check exits 0",
+      "required": true
+    },
+    {
+      "id": "production-e2e",
+      "type": "command",
+      "capability": "production-e2e",
+      "scenario": "real-external-boundaries",
+      "command": "npm",
+      "args": ["run", "test:e2e:production"],
+      "timeoutMs": 1800000,
+      "requiredEvidence": "npm run test:e2e:production exits 0 using real LLM, SCM, code-upgrader, and Jenkins boundaries",
+      "required": true
+    },
+    {
+      "id": "representative-project-loop",
+      "type": "command",
+      "capability": "representative-projects",
+      "scenario": "project-level-evolution-loop",
+      "command": "node",
+      "args": ["scripts/release-matrix-project-loop.mjs"],
+      "timeoutMs": 7200000,
+      "requiredEvidence": "Each registered production representative project completes run, review confirmation, code upgrade, and Jenkins CI/CD through EvoPilot product APIs",
+      "required": true
+    },
+    {
+      "id": "release-evidence",
+      "type": "release-evidence",
+      "capability": "release-evidence",
+      "scenario": "product-native-evidence",
+      "url": "http://127.0.0.1:19876/api/v1/release/evidence",
+      "summaryUrl": "http://127.0.0.1:19876/api/v1/summary",
+      "requiredEvidence": "POST /api/v1/release/evidence creates product-native release evidence",
+      "required": true
+    },
+    {
+      "id": "release-decision",
+      "type": "release-decision",
+      "capability": "release-decision",
+      "scenario": "product-native-ga-decision",
+      "url": "http://127.0.0.1:19876/api/v1/release/decisions",
+      "goStatus": "GO",
+      "requiredEvidence": "GET /api/v1/release/decisions returns latest product-native GA decision",
+      "required": true
+    }
+  ]
+}

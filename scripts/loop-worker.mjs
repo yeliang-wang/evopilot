@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 const baseUrl = (process.env.EVOPILOT_BASE_URL ?? "http://127.0.0.1:19876").replace(/\/+$/, "");
 const token = process.env.EVOPILOT_API_TOKEN ?? process.env.EVOPILOT_ADMIN_TOKEN ?? "";
 const workerId = process.env.EVOPILOT_LOOP_WORKER_ID ?? `loop-worker-${crypto.randomUUID().slice(0, 8)}`;
+const actor = process.env.EVOPILOT_ACTOR ?? workerId;
 const preferredLoopId = process.env.EVOPILOT_LOOP_WORKER_LOOP_ID ?? "";
 const pollIntervalMs = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_POLL_MS, 2000);
 const leaseSeconds = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_LEASE_SECONDS, 30);
@@ -96,7 +97,7 @@ async function post(pathname, body) {
 function headers() {
   return {
     ...(token ? { authorization: `Bearer ${token}` } : {}),
-    "x-evopilot-actor": workerId
+    "x-evopilot-actor": actor
   };
 }
 

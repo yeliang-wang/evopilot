@@ -120,8 +120,8 @@ EvoPilot ships a reusable Field Evidence Kit so the Source-to-GA loop can be dem
 
 | Asset | Location | Role |
 |---|---|---|
-| GitHub demo project onboarding | `examples/github-demo-projects/` and Dashboard `项目接入` | Product Kit: prefill a real project registration payload and submit it through `/api/v1/projects`. |
-| Sample evidence import | Dashboard `发现与目标` | Product Kit: write minimal real evidence through `/api/v1/evidence/events`, then run Discovery and create Target Backlog. |
+| GitHub demo project onboarding | `examples/github-demo-projects/` and Dashboard `项目` | Product Kit: prefill a real project registration payload and submit it through `/api/v1/projects`. |
+| Sample evidence import | Dashboard `工作区` | Product Kit: write minimal real evidence through `/api/v1/evidence/events`, then run Discovery and create Target Backlog. |
 | GitHub workflow templates | `examples/github-workflows/` | Product Kit: show how issues, PR comments, CI failures, and release blockers can call EvoPilot. |
 | Executor adapter examples | `examples/executor-adapters/` | Product Kit: show how external agent or workflow runtimes fit behind `ExecutorAdapter`. |
 | Case studies and comparisons | `docs/case-studies/`, `docs/comparisons/` | Product Kit: make the product boundary and mainstream loop-harness alignment auditable. |
@@ -159,7 +159,21 @@ GET /api/v1/loops/{loopId}/events
 GET /api/v1/loops/{loopId}/sandbox-proof
 POST /api/v1/loops/{loopId}/sandbox-proof/verify
 GET /api/v1/loop-store
+GET /api/v1/loop-store/readiness
 GET /api/v1/loop-observability
+GET /api/v1/saas/observability
+GET /api/v1/tenants
+GET /api/v1/workspaces
+POST /api/v1/workspaces
+GET /api/v1/workspaces/{workspaceId}
+POST /api/v1/workspaces/{workspaceId}/invitations
+PATCH /api/v1/workspaces/{workspaceId}/members/{memberId}
+GET /api/v1/workspaces/{workspaceId}/usage
+GET /api/v1/secrets
+POST /api/v1/secrets
+POST /api/v1/secrets/{secretId}/revoke
+GET /api/v1/github-app/installations
+POST /api/v1/github-app/installations
 POST /api/v1/loop-workers/heartbeat
 GET /api/v1/loop-workers/queue
 POST /api/v1/loop-workers/claim
@@ -190,9 +204,11 @@ For GitHub, GitLab, and local Git repositories, an admin can execute the closure
 
 The Dashboard also exposes a closed-loop orchestration workbench. `GET /api/v1/loop-orchestration/presets` lists productized loop presets, and `POST /api/v1/loop-orchestration/instantiate` creates a standard source-to-production target loop with a typed executor graph, Docker sandbox enforcement evidence, worker/watchdog continuity, deploy connector binding, and health-ready rollback semantics. When the Dashboard Workflow Canvas Editor submits routing and release-gate choices, EvoPilot now converts that visual canvas into a persisted `evopilot-executor-graph/v1` contract instead of storing it only as UI context. `GET /api/v1/loops/{loopId}/executor-graph` returns the loop-bound graph, coordination plan, validation result, capabilities, and evidence, while `GET /api/v1/loops/{loopId}/events` emits an `executor-graph` stream event for the same contract. `GET /api/v1/loop-orchestration/targets` exposes the product target backlog across Sandbox, Context, Harness, and Loop layers; `POST /api/v1/loop-orchestration/advance` creates or advances the next Codex-backed target loop, records next action and stop condition, and keeps acceptance criteria as loop context. `POST /api/v1/loop-orchestration/autopilot` is the production self-evolution autopilot: it advances a target through bounded loop iterations, stops at human gates unless explicitly approved, executes source closure with an auditable change artifact, evaluates release policy, runs safe auto-merge, and closes with post-merge deployment evidence. If autopilot reaches an external dependency it cannot repair itself, such as a missing or unresolved GitHub/GitLab writeback token, it returns `BLOCKED / nextAction=configure-source-credentials` with an `evopilot-external-blocker/v1` payload; Dashboard shows the recovery action in Target Loop Backlog and provides a source credential form so users can bind a server-side `tokenRef` or inline token, save, preflight, and resume the same target loop. Executor graphs now preserve typed edges, conditional routes, fan-out/fan-in edges, nested subgraph markers, and schema validation evidence in the graph contract.
 
-The next six GA-alignment targets are now product runtime capabilities, not only backlog labels. Discovery runtime scans registered GitHub/GitLab/local projects plus trace, evaluation, production, and manual signals into `evopilot-discovery-skill-candidate/v1` records and writes provenance into the memory inbox. Per-finding handoff allocates an isolated workspace, target branch, allowed paths, validation commands, and rollback metadata. The adversarial evaluator independently challenges loop evidence and blocks missing source-closure or release-decision proof. Recurring schedules persist cadence, trigger rules, budget, next-run time, and idempotency key. The memory inbox stores findings, feedback, failed evaluations, release learnings, and operator notes for triage or conversion. Budget and judgment guardrails evaluate cost, tokens, duration, changed files, confidence, and release judgment before autonomous loops proceed.
+The GA-alignment target backlog is now product runtime capability, not only backlog labels. Discovery runtime scans registered GitHub/GitLab/local projects plus trace, evaluation, production, and manual signals into `evopilot-discovery-skill-candidate/v1` records and writes provenance into the memory inbox. Per-finding handoff allocates an isolated workspace, target branch, allowed paths, validation commands, and rollback metadata. The adversarial evaluator independently challenges loop evidence and blocks missing source-closure or release-decision proof. Recurring schedules persist cadence, trigger rules, budget, next-run time, and idempotency key. The memory inbox stores findings, feedback, failed evaluations, release learnings, and operator notes for triage or conversion. Budget and judgment guardrails evaluate cost, tokens, duration, changed files, confidence, and release judgment before autonomous loops proceed.
 
-The same target backlog now includes the SaaS cloud-service evolution path for opening EvoPilot as a shared platform. `tenant-workspace-model` is the first target: it makes tenant, workspace, membership, role, project ownership, credential scope, loop evidence, release evidence, and single-tenant migration boundaries explicit before external users are onboarded. Follow-on SaaS targets cover GitHub App onboarding, secret vault and credential boundaries, quota/rate-limit/billing foundations, production domain/HTTPS/observability, worker queue plus Postgres-backed durability, and a guided SaaS onboarding dashboard. These are not temporary validation prompts; they are product target objects exposed through `GET /api/v1/loop-orchestration/targets`, can be advanced with `POST /api/v1/loop-orchestration/advance`, and can be used by the production self-evolution loop when EvoPilot registers its own GitHub repository as `evopilot-github`.
+The same target backlog now includes the SaaS cloud-service evolution path for opening EvoPilot as a shared platform. Tenant/workspace defaults, workspace RBAC and invitation, scoped project ownership, encrypted secret refs, GitHub App installation readiness, workspace quotas, tenant-aware release evidence, cross-tenant regression coverage, and SaaS observability are implemented as real APIs and functional tests. Postgres-backed loop storage remains an explicit readiness gate: `GET /api/v1/loop-store/readiness` returns `BLOCKED` until `EVOPILOT_LOOP_STORE_BACKEND=postgres` and a DSN are configured, so this cannot be hidden by Dashboard success.
+
+The SaaS GA ladder is exposed through `GET /api/v1/loop-orchestration/targets` and advances in this order: `tenant-workspace-model`, `workspace-rbac-and-invitation`, `github-app-onboarding`, `secret-vault-and-credential-boundary`, `project-workspace-ownership`, `quota-rate-limit-billing-foundation`, `worker-queue-and-postgres-store`, `tenant-aware-release-evidence`, `multi-tenant-security-regression-suite`, `saas-production-observability`, `saas-onboarding-dashboard`, `saas-field-e2e-source-to-ga`, `saas-release-matrix`, `saas-ga-soak-active`, `saas-ga-release-decision`, and only then `announce-saas-multi-tenant-ga-stable`. These are product target objects, not temporary validation prompts. The final release claim is valid only when `GET /api/v1/release/decisions` returns a SaaS GA `GO` decision for the multi-tenant target.
 
 The same Dashboard page now includes reusable product workbenches for the remaining loop-harness gaps. Release Closure Runtime reads source-release run records, refreshes the current source-to-production plan from `GET /api/v1/loops/{loopId}/source-closure/plan`, and exposes approve, merge, and safe auto-merge controls backed by `POST /api/v1/loops/{loopId}/source-closure/review-decision`; the view shows policy blockers and post-merge deployment status before an operator promotes a release. Release Run Auto Repair Workbench lists failed or stale release runs, supports row-level repair and batch repair, and removes a candidate after the repaired run reaches `PROMOTED`. A production drill on the ECS deployment verified this path with a local Git target moving from `PLANNED` to `FAILED` on a dirty worktree and then to `PROMOTED` after Dashboard repair. Context Time Travel lists checkpoints from `GET /api/v1/loops/{loopId}/checkpoints`, lets an operator edit context JSON, and submits `POST /api/v1/loops/{loopId}/time-travel/replay` to continue from the selected iteration with a replay diff. Worker Queue Workbench uses `GET /api/v1/loop-workers/queue` and `POST /api/v1/loop-workers/claim` to show claimable loops, active or expired leases, crash-resume readiness, and duplicate source-closure side-effect protection. Sandbox Boundary Workbench exposes executable Docker/K8s boundary proof through `GET /api/v1/loops/{loopId}/sandbox-proof` and writes verification evidence through `POST /api/v1/loops/{loopId}/sandbox-proof/verify`. Streaming Trace Workbench uses `GET /api/v1/loops/{loopId}/trace-tree` and `GET /api/v1/loops/{loopId}/events` for trace tree, checkpoint, cost, failure-group, replay-diff, sandbox-proof, and SSE event inspection.
 
@@ -329,23 +345,24 @@ http://127.0.0.1:19876/
 
 ## 控制台
 
-Dashboard 位于 `apps/dashboard/`，当前一级菜单按首次 Source-to-GA 操作路径组织，目标是让新用户用最少点击完成“接入项目 -> 生成 GA 目标 -> 启动 Loop -> 查看发布结论”：
+Dashboard 位于 `apps/dashboard/`，当前一级菜单已经按 SaaS 服务化和多租户控制面组织。默认首屏不是概念说明页，而是面向第一次使用的启动台：`接入项目 -> 配置凭据 -> 启动 Loop -> 查看发布证据`。Source-to-GA 仍然是核心执行链路，但它被放入 `Tenant -> Workspace -> Project -> Loop -> Release Evidence -> Audit` 的上下文中运行；租户、工作区和凭据边界作为操作前提展示，不打断首条 Loop 的上手路径。
 
 | 菜单 | 用途 |
 |---|---|
-| 工作台 | 默认展示当前 Source-to-GA 任务、下一步动作、四步进度和关键发布结论，不再把所有运行时模块铺满首页。 |
-| 主链路向导 | 用向导式页面串联 GitHub 项目接入、GA target、Loop 启动和发布决策，是第一次完成 Source-to-GA 的最短路径入口。 |
-| 项目接入 | 通过 GitHub、GitLab 或本地 Git 向导注册项目，验证源码凭据、CI/CD 和部署连接器；同时保留 Field Evidence Kit 样例入口、Project Workspace 和 Connector Marketplace 设置视图。 |
-| Loop 执行 | 默认把 Loop 分为“当前、待处理、历史”三组，优先显示下一步和状态；需要 trace、replay、sandbox、worker queue、Workflow Canvas 时再进入高级控制台。 |
-| 评估与发布 | 默认先给出 `GO` / `CONDITIONAL-GO` / `NO-GO`、PR、merge commit、post-merge deploy 和下一步动作；完整 evidence matrix、guardrail、repair queue 和 deploy finalizer 保留在高级视图。 |
-| 历史审计 | 查看已完成演进、验证证据、产物和审计链路。 |
-| 帮助手册 | 按场景化步骤展示用户手册，覆盖从 GitHub demo project 接入到 loop target 达到 GA Release 的端到端教程。 |
+| 租户总览 | 默认展示首次启动清单、Loop 模板中心、下一步动作、tenant/workspace 状态、配额和服务化演进路线。用户优先完成第一条 Source-to-GA Loop，管理员仍能看到 `tenant-workspace-model`、GitHub App 接入、Secret Vault 边界、Postgres Worker Queue。 |
+| 工作区 | 展示 workspace 成员、角色、项目、Loop、发布证据和 SaaS targets，并保留 Source-to-GA 向导、Target Runtime、Target Loop Backlog。 |
+| 项目 | 通过 GitHub、GitLab 或本地 Git 注册项目，验证源码归属和项目级工作区；Field Evidence Kit 仍作为可复现样例入口。 |
+| 凭据 | 作为 workspace 级凭据中心，聚合 GitHub App、source writeback、deploy credentials、LLM provider keys 和 audit redaction，避免多租户后凭据散落在项目表单或环境变量里。 |
+| Loops | 默认把 Loop 分为“当前、待处理、历史”三组，优先显示下一步和状态；需要 trace、replay、sandbox、worker queue、Workflow Canvas 时再进入高级控制台。 |
+| 发布证据 | 默认先给出 `GO` / `CONDITIONAL-GO` / `NO-GO`、PR、merge commit、post-merge deploy 和下一步动作；完整 evidence matrix、guardrail、repair queue 和 deploy finalizer 保留在高级视图。 |
+| 审计 | 查看已完成演进、验证证据、产物和审计链路。 |
+| 帮助手册 | 按公有云帮助中心的信息架构展示文档中心、本页目录、快速上手流程、角色权限、操作场景、前提条件、操作步骤、结果验证、后续操作和相关 API。 |
 
-旧入口仍保持兼容：`首页` 映射到 `工作台`，`主链路` / `向导` 映射到 `主链路向导`，`接入项目` / `项目` 映射到 `项目接入`，`证据策略` / `评测集` / `机会点` 映射到 `发现与目标`，`Loop` 映射到 `Loop 执行`，`流水线` / `发布` 映射到 `评估与发布`，`历史记录` / `历史` 映射到 `历史审计`。
+旧入口仍保持兼容：`首页` / `工作台` 映射到 `租户总览`，`主链路` / `主链路向导` / `向导` 映射到 `工作区`，`项目接入` / `接入项目` 映射到 `项目`，`证据策略` / `发现与目标` / `评测集` / `机会点` 映射到 `工作区`，`Loop` / `Loop 执行` 映射到 `Loops`，`流水线` / `发布` / `评估与发布` 映射到 `发布证据`，`历史记录` / `历史审计` / `历史` 映射到 `审计`。
 
-Loop 执行页不再把所有 Loop 的运行细节堆在一张长页。默认页回答“现在该处理哪个 Loop”，高级控制台仍提供总览、详情和创建三类工作区：总览页处理 Target Backlog、Loop Runtime 列表和 Worker Queue；Loop 详情页回答“这个 Loop 走到哪一步、为什么卡住、下一步做什么”；创建页回答“如何创建或调整新的 Loop graph”。详情页里的 Source-to-GA 动态本体链路图不是静态流程图；它把当前选中的 LoopRun 与项目、Discovery、Target Backlog、ExecutorGraph、worker/sandbox、human gate、`sourceClosure`、deploy finalizer、`sourceReleaseRun` 和 release decision 合成一条可读链路：`SCM/Git Project -> Discovery Candidate -> Target Backlog -> Executor Graph -> Worker + Sandbox -> Human Gate -> Source Closure -> CI/CD + Deploy -> Release Decision -> GA Release`。
+Loops 页不再把所有运行细节堆在一张长页。默认页回答“现在该处理哪个 Loop”，并在没有运行记录时直接给出可点击模板，而不是只展示空状态。高级控制台仍提供总览、详情和创建三类工作区：总览页处理 Target Backlog、Loop Runtime 列表和 Worker Queue；Loop 详情页回答“这个 Loop 走到哪一步、为什么卡住、下一步做什么”；创建页回答“如何创建或调整新的 Loop graph”。详情页里的 Source-to-GA 动态本体链路图不是静态流程图；它把当前选中的 LoopRun 与项目、Discovery、Target Backlog、ExecutorGraph、worker/sandbox、human gate、`sourceClosure`、deploy finalizer、`sourceReleaseRun` 和 release decision 合成一条可读链路：`SCM/Git Project -> Discovery Candidate -> Target Backlog -> Executor Graph -> Worker + Sandbox -> Human Gate -> Source Closure -> CI/CD + Deploy -> Release Decision -> GA Release`。
 
-工作台还会展示平均服务分、SLO 健康、错误预算、失败策略、供应链风险、运行时就绪、成本健康、发布就绪、发布阻断、灰度就绪和灰度阻断。供应链风险和运行时就绪来自 `runtimes/runtime-lock.json`，成本健康来自运行证据中的 `costUsd`、`totalTokens`、`inputTokens`、`outputTokens` 等字段，发布就绪度来自 `/api/v1/release/readiness`，灰度策略来自 `/api/v1/rollout/strategies`。
+租户总览会展示 workspace 数量、项目数、凭据阻塞、发布证据、Loop 配额、项目配额和 evidence storage 配额，同时提供 `GitHub 项目到 GA Release`、`已有 CI 项目接入`、`失败发布修复`、`EvoPilot 自演进` 四类模板入口。当前页面中的 tenant/workspace 数据先作为控制台信息架构和操作心智落点；后续服务化实现应把它们接入真实 tenant store、workspace membership、GitHub App installation、secret vault、quota/billing、Postgres loop store 和 worker queue。
 
 也可以只打开静态控制台：
 
