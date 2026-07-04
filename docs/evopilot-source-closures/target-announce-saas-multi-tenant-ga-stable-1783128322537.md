@@ -2,8 +2,9 @@
 
 - loopId: target-announce-saas-multi-tenant-ga-stable-1783128322537
 - targetId: announce-saas-multi-tenant-ga-stable
-- decisionId: decision-saas-ga-field-e2e-postgres-1783128292354
-- evidenceBundleId: saas-ga-field-e2e-postgres-1783128292354
+- releaseTargetId: saas-ga
+- decisionId: decision-saas-ga-field-e2e-postgres-target-1783173845
+- evidenceBundleId: saas-ga-field-e2e-postgres-target-1783173845
 - releaseDecision: GO
 - passedCriteria: 11
 - failedCriteria: 0
