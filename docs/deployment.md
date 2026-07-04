@@ -39,6 +39,15 @@ Compose 会同时启动 `evopilot-server` 和 `evopilot-loop-worker`。生产连
 - `evopilot-loop-worker` 通过 `/api/v1/loop-workers/claim` 领取可执行 loop，写入 heartbeat lease，再调用 `start` 或 `resume` 推进下一轮。
 - 如果只运行 server，Loop 会停在 `RUNNING / claimable=true / nextAction=claim`，这表示状态可恢复、可领取，但不是后台正在执行。
 
+SaaS 多租户 GA 还要求 Loop Store 使用 Postgres-backed readiness。Compose 默认给 `evopilot-server` 和 `evopilot-loop-worker` 配置：
+
+```text
+EVOPILOT_LOOP_STORE_BACKEND=postgres
+EVOPILOT_LOOP_STORE_DSN=postgres://evopilot:<password>@evopilot-postgres:5432/evopilot
+```
+
+`GET /api/v1/loop-store/readiness` 不只检查环境变量；当 backend 为 `postgres` 时会解析 DSN 并探测 Postgres TCP 端口。只有返回 `status=READY`、`postgresConfigured=true`、`postgresReachable=true` 且 `blockers=[]`，`worker-queue-and-postgres-store` 才能作为 SaaS GA 场景证据。
+
 常用 worker 环境变量：
 
 ```text

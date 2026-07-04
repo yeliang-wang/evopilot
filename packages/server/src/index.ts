@@ -1,4 +1,5 @@
 import http from "node:http";
+import net from "node:net";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -2156,7 +2157,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       }
       if (request.method === "GET" && url.pathname === "/api/v1/loop-store/readiness") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        return writeJson(response, 200, envelope(loopStoreReadiness(store.loopStoreRuntime())));
+        return writeJson(response, 200, envelope(await loopStoreReadiness(store.loopStoreRuntime(), { verifyConnection: true })));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/saas/observability") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -3838,7 +3839,7 @@ class FileStore {
     const releaseEvidence = this.listReleaseEvidenceSummaries();
     const loopTraces = this.listLoopTraces();
     const queue = this.listLoopWorkerQueue();
-    const storeReadiness = loopStoreReadiness(this.loopStoreRuntime());
+    const storeReadiness = loopStoreReadinessSnapshot(this.loopStoreRuntime());
     const quotaBlocked = workspaces
       .map((workspace) => workspaceUsage(this, workspace))
       .filter((usage) => usage.projects.remaining === 0 || usage.loops.remaining === 0 || usage.evidenceGb.remaining === 0);
@@ -7682,7 +7683,49 @@ function normalizeLoopStoreRuntime(input?: Partial<LoopStoreRuntime>): LoopStore
   };
 }
 
-function loopStoreReadiness(runtime: LoopStoreRuntime): {
+async function loopStoreReadiness(runtime: LoopStoreRuntime, options: { verifyConnection?: boolean } = {}): Promise<{
+  schema: "evopilot-loop-store-readiness/v1";
+  status: "READY" | "BLOCKED";
+  backend: LoopStoreBackendType;
+  postgresRequired: boolean;
+  postgresConfigured: boolean;
+  postgresReachable?: boolean;
+  lockProvider: LoopStoreRuntime["lockProvider"];
+  recovery: LoopStoreRuntime["recovery"];
+  blockers: string[];
+  evidence: string[];
+  evaluatedAt: string;
+}> {
+  const postgresConfigured = runtime.backend === "postgres" && Boolean(runtime.dsn);
+  const postgresRequired = true;
+  const reachable = postgresConfigured && options.verifyConnection ? await probePostgresDsn(runtime.dsn) : undefined;
+  const blockers = !postgresConfigured
+    ? ["POSTGRES_LOOP_STORE_NOT_CONFIGURED"]
+    : reachable === false
+      ? ["POSTGRES_LOOP_STORE_UNREACHABLE"]
+      : [];
+  return {
+    schema: "evopilot-loop-store-readiness/v1",
+    status: blockers.length === 0 ? "READY" : "BLOCKED",
+    backend: runtime.backend,
+    postgresRequired,
+    postgresConfigured,
+    postgresReachable: reachable,
+    lockProvider: runtime.lockProvider,
+    recovery: runtime.recovery,
+    blockers,
+    evidence: [
+      `backend=${runtime.backend}`,
+      `dsnConfigured=${Boolean(runtime.dsn)}`,
+      `lockProvider=${runtime.lockProvider}`,
+      `recovery=${runtime.recovery}`,
+      reachable === undefined ? `postgresReadiness=${postgresConfigured ? "READY" : "BLOCKED"}` : `postgresReachable=${reachable}`
+    ],
+    evaluatedAt: new Date().toISOString()
+  };
+}
+
+function loopStoreReadinessSnapshot(runtime: LoopStoreRuntime): {
   schema: "evopilot-loop-store-readiness/v1";
   status: "READY" | "BLOCKED";
   backend: LoopStoreBackendType;
@@ -7695,13 +7738,12 @@ function loopStoreReadiness(runtime: LoopStoreRuntime): {
   evaluatedAt: string;
 } {
   const postgresConfigured = runtime.backend === "postgres" && Boolean(runtime.dsn);
-  const postgresRequired = true;
   const blockers = postgresConfigured ? [] : ["POSTGRES_LOOP_STORE_NOT_CONFIGURED"];
   return {
     schema: "evopilot-loop-store-readiness/v1",
     status: blockers.length === 0 ? "READY" : "BLOCKED",
     backend: runtime.backend,
-    postgresRequired,
+    postgresRequired: true,
     postgresConfigured,
     lockProvider: runtime.lockProvider,
     recovery: runtime.recovery,
@@ -7715,6 +7757,38 @@ function loopStoreReadiness(runtime: LoopStoreRuntime): {
     ],
     evaluatedAt: new Date().toISOString()
   };
+}
+
+async function probePostgresDsn(maskedDsn: string | undefined): Promise<boolean> {
+  const endpoint = parsePostgresEndpoint(maskedDsn);
+  if (!endpoint) return false;
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ host: endpoint.host, port: endpoint.port });
+    const timer = setTimeout(() => {
+      socket.destroy();
+      resolve(false);
+    }, 2000);
+    socket.once("connect", () => {
+      clearTimeout(timer);
+      socket.end();
+      resolve(true);
+    });
+    socket.once("error", () => {
+      clearTimeout(timer);
+      resolve(false);
+    });
+  });
+}
+
+function parsePostgresEndpoint(maskedDsn: string | undefined): { host: string; port: number } | undefined {
+  if (!maskedDsn) return undefined;
+  try {
+    const url = new URL(maskedDsn);
+    if (url.protocol !== "postgres:" && url.protocol !== "postgresql:") return undefined;
+    return { host: url.hostname, port: Number(url.port || 5432) };
+  } catch {
+    return undefined;
+  }
 }
 
 function normalizeLoopStoreBackend(value: unknown): LoopStoreBackendType {

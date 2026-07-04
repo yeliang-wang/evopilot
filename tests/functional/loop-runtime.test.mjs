@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import http from "node:http";
+import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -1151,6 +1152,48 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(feishu.body.data.loop.source, "im");
   } finally {
     await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("loop store readiness verifies Postgres TCP reachability", async () => {
+  const previousBackend = process.env.EVOPILOT_LOOP_STORE_BACKEND;
+  const previousDsn = process.env.EVOPILOT_LOOP_STORE_DSN;
+  const pgProbe = net.createServer((socket) => socket.end());
+  await new Promise((resolve) => pgProbe.listen(0, "127.0.0.1", resolve));
+  const pgAddress = pgProbe.address();
+  process.env.EVOPILOT_LOOP_STORE_BACKEND = "postgres";
+  process.env.EVOPILOT_LOOP_STORE_DSN = `postgres://evopilot:secret@127.0.0.1:${pgAddress.port}/evopilot`;
+
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-loop-store-postgres-"));
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    tokens: [
+      { name: "viewer", token: "viewer-token", role: "viewer" }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  try {
+    const storeReadiness = await jsonFetch(`${baseUrl}/api/v1/loop-store/readiness`, {
+      token: "viewer-token"
+    });
+    assert.equal(storeReadiness.status, 200);
+    assert.equal(storeReadiness.body.data.status, "READY");
+    assert.equal(storeReadiness.body.data.backend, "postgres");
+    assert.equal(storeReadiness.body.data.postgresConfigured, true);
+    assert.equal(storeReadiness.body.data.postgresReachable, true);
+    assert.deepEqual(storeReadiness.body.data.blockers, []);
+    assert.ok(storeReadiness.body.data.evidence.includes("postgresReachable=true"));
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await new Promise((resolve) => pgProbe.close(resolve));
+    if (previousBackend === undefined) delete process.env.EVOPILOT_LOOP_STORE_BACKEND;
+    else process.env.EVOPILOT_LOOP_STORE_BACKEND = previousBackend;
+    if (previousDsn === undefined) delete process.env.EVOPILOT_LOOP_STORE_DSN;
+    else process.env.EVOPILOT_LOOP_STORE_DSN = previousDsn;
   }
 });
 

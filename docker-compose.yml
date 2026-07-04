@@ -6,6 +6,8 @@ services:
     depends_on:
       evopilot-code-upgrader:
         condition: service_healthy
+      evopilot-postgres:
+        condition: service_healthy
     environment:
       EVOPILOT_PORT: "19876"
       EVOPILOT_HOST: "0.0.0.0"
@@ -13,6 +15,8 @@ services:
       EVOPILOT_DATA_ROOT: "/var/lib/evopilot"
       EVOPILOT_DASHBOARD_ROOT: "/app/apps/dashboard"
       EVOPILOT_CODE_UPGRADER_BASE_URL: "http://evopilot-code-upgrader:3000"
+      EVOPILOT_LOOP_STORE_BACKEND: "postgres"
+      EVOPILOT_LOOP_STORE_DSN: "postgres://evopilot:evopilot-postgres-password@evopilot-postgres:5432/evopilot"
       EVOPILOT_TOKENS: "admin:change-me-admin-token:admin,operator:change-me-operator-token:operator,viewer:change-me-viewer-token:viewer"
     volumes:
       - evopilot-data:/var/lib/evopilot
@@ -26,6 +30,8 @@ services:
       EVOPILOT_BASE_URL: "http://evopilot-server:19876"
       EVOPILOT_RUN_MODE: "prod"
       EVOPILOT_DATA_ROOT: "/var/lib/evopilot"
+      EVOPILOT_LOOP_STORE_BACKEND: "postgres"
+      EVOPILOT_LOOP_STORE_DSN: "postgres://evopilot:evopilot-postgres-password@evopilot-postgres:5432/evopilot"
       EVOPILOT_API_TOKEN: "${EVOPILOT_API_TOKEN:-change-me-operator-token}"
       EVOPILOT_LOOP_WORKER_ID: "evopilot-prod-worker"
       EVOPILOT_LOOP_WORKER_POLL_MS: "5000"
@@ -61,8 +67,23 @@ services:
       timeout: 10s
       retries: 15
 
+  evopilot-postgres:
+    image: docker.m.daocloud.io/library/postgres:16-alpine
+    environment:
+      POSTGRES_DB: evopilot
+      POSTGRES_USER: evopilot
+      POSTGRES_PASSWORD: evopilot-postgres-password
+    volumes:
+      - evopilot-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evopilot -d evopilot"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
 volumes:
   evopilot-data:
   evopilot-code-upgrader-state:
   evopilot-code-upgrader-data:
   evopilot-workspaces:
+  evopilot-postgres-data:
