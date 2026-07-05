@@ -3840,12 +3840,15 @@ class FileStore {
     const loopTraces = this.listLoopTraces();
     const queue = this.listLoopWorkerQueue();
     const storeReadiness = loopStoreReadinessSnapshot(this.loopStoreRuntime());
+    const sourceReleaseRuns = this.listSourceReleaseClosureRuns();
+    const latestSaasGoDecision = latestSaasGoReleaseDecision(releaseDecisions);
+    const latestSaasGoAt = latestSaasGoDecision ? Date.parse(latestSaasGoDecision.generatedAt) : undefined;
     const quotaBlocked = workspaces
       .map((workspace) => workspaceUsage(this, workspace))
       .filter((usage) => usage.projects.remaining === 0 || usage.loops.remaining === 0 || usage.evidenceGb.remaining === 0);
     const credentialBlocked = githubApps.filter((installation) => installation.status !== "READY");
     const runningLoops = loops.filter((loop) => loop.status === "RUNNING").length;
-    const blockedLoops = loops.filter((loop) => loop.status === "BLOCKED" || loop.status === "FAILED").length;
+    const blockedLoops = loops.filter((loop) => isOpenBlockedLoop(loop, sourceReleaseRuns, latestSaasGoAt)).length;
     const queueClaimable = queue.filter((item) => item.claimable).length;
     const blockers = [
       ...storeReadiness.blockers,
@@ -7795,6 +7798,28 @@ function normalizeLoopStoreBackend(value: unknown): LoopStoreBackendType {
   const backend = String(value ?? "file").toLowerCase();
   if (backend === "sqlite" || backend === "postgres") return backend;
   return "file";
+}
+
+function latestSaasGoReleaseDecision(decisions: ReleaseDecision[]): ReleaseDecision | undefined {
+  return decisions
+    .filter((decision) => decision.status === "GO" && /saas|multi-tenant/i.test(`${decision.id} ${decision.targetId}`))
+    .sort((left, right) => Date.parse(left.generatedAt) - Date.parse(right.generatedAt))
+    .at(-1);
+}
+
+function isOpenBlockedLoop(loop: LoopRun, sourceReleaseRuns: SourceReleaseClosureRun[], latestSaasGoAt?: number): boolean {
+  if (loop.status !== "BLOCKED" && loop.status !== "FAILED") return false;
+  if (["PROMOTED", "SUCCEEDED"].includes(String(loop.sourceClosure?.closureState))) return false;
+  const loopTime = Date.parse(loop.updatedAt ?? loop.createdAt ?? "");
+  if (latestSaasGoAt !== undefined && Number.isFinite(latestSaasGoAt) && Number.isFinite(loopTime) && loopTime <= latestSaasGoAt) return false;
+  return !sourceReleaseRuns.some((run) => {
+    if (!["PROMOTED", "SUCCEEDED"].includes(run.status)) return false;
+    const sameLoop = run.loopId === loop.id;
+    const sameProject = run.projectId === loop.projectId;
+    if (!sameLoop && !sameProject) return false;
+    const runTime = Date.parse(run.updatedAt ?? run.createdAt ?? "");
+    return Number.isFinite(runTime) && (!Number.isFinite(loopTime) || runTime >= loopTime);
+  });
 }
 
 function maskDsn(value: string): string {

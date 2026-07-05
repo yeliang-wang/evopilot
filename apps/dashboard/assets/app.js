@@ -451,7 +451,7 @@ function saasScopeModel() {
   const credentialBlocked = state.projects.filter((project) => project.hasRepository && !/已配置|tokenRef|inline|无需|local-git/.test(String(project.credentials)));
   const activeLoops = state.loops.filter((loop) => ["RUNNING", "WAITING_APPROVAL", "BLOCKED"].includes(loop.status));
   const releaseReady = state.sourceReleaseRuns.filter((run) => ["PROMOTED", "SUCCEEDED"].includes(run.status));
-  const releaseBlocked = state.sourceReleaseRuns.filter((run) => ["FAILED", "HEALTH_FAILED", "ROLLED_BACK", "POLICY_BLOCKED"].includes(run.status));
+  const releaseBlocked = state.sourceReleaseRuns.filter((run) => isOpenBlockedSourceReleaseRun(run, state.sourceReleaseRuns));
   const saasTargets = state.loopOrchestrationTargets.filter((target) => /tenant|workspace|github-app|secret|vault|quota|billing|postgres|saas|observability/i.test(`${target.id} ${target.title}`));
   const currentTarget = saasTargets.find((target) => target.status === "RUNNING")
     ?? state.loopOrchestrationTargets.find((target) => target.id === "tenant-workspace-model")
@@ -470,6 +470,19 @@ function saasScopeModel() {
     memberCount: members.length,
     auditCount: state.history.length + state.sourceReleaseRuns.length + state.loopWorkerQueue.length
   };
+}
+
+function isOpenBlockedSourceReleaseRun(run, runs) {
+  if (!["FAILED", "HEALTH_FAILED", "ROLLED_BACK", "POLICY_BLOCKED"].includes(String(run.status))) return false;
+  const runTime = Date.parse(run.updatedAt ?? run.createdAt ?? "");
+  return !runs.some((candidate) => {
+    if (!["PROMOTED", "SUCCEEDED"].includes(String(candidate.status))) return false;
+    const sameLoop = candidate.loopId && candidate.loopId === run.loopId;
+    const sameProject = candidate.projectId && candidate.projectId === run.projectId;
+    if (!sameLoop && !sameProject) return false;
+    const candidateTime = Date.parse(candidate.updatedAt ?? candidate.createdAt ?? "");
+    return Number.isFinite(candidateTime) && (!Number.isFinite(runTime) || candidateTime >= runTime);
+  });
 }
 
 function productionReadinessModel(scopeModel, onboarding) {
