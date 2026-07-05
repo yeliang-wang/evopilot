@@ -1926,8 +1926,16 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       }
       if (request.method === "GET" && url.pathname === "/api/v1/release/decisions") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        return writeJson(response, 200, envelope(store.listReleaseDecisions()
+        const targetId = optionalTrimmedString(url.searchParams.get("targetId"));
+        const currentOnly = url.searchParams.get("current") === "true";
+        const decisions = store.listReleaseDecisions()
           .filter((decision) => canAccessScopedResource(auth, decision.tenantId, decision.workspaceId))
+          .filter((decision) => !targetId || decision.targetId === targetId);
+        if (currentOnly) {
+          const current = currentReleaseDecision(decisions);
+          return writeJson(response, 200, envelope(current ? [current] : []));
+        }
+        return writeJson(response, 200, envelope(decisions
           .slice(-20)
           .reverse()));
       }
@@ -3764,6 +3772,9 @@ class FileStore {
     const costReports = this.computeCostReports();
     const releaseReadiness = this.computeReleaseReadinessReports();
     const rolloutStrategies = this.computeRolloutStrategyReports();
+    const releaseDecisions = this.listReleaseDecisions();
+    const latestDecision = releaseDecisions.slice(-1)[0];
+    const currentDecision = currentReleaseDecision(releaseDecisions);
     return {
       projectCount: this.listProjects().length,
       runCount: runs.length,
@@ -3817,8 +3828,10 @@ class FileStore {
       recentSoakReports: this.listSoakReports().slice(-5).reverse(),
       recentReleaseEvidence: this.listReleaseEvidenceSummaries().slice(-5).reverse(),
       releaseTargetCount: this.listReleaseTargets().length,
-      releaseDecisionCount: this.listReleaseDecisions().length,
-      latestReleaseDecision: this.listReleaseDecisions().slice(-1)[0],
+      releaseDecisionCount: releaseDecisions.length,
+      latestReleaseDecision: latestDecision,
+      currentReleaseDecision: currentDecision,
+      currentReleaseTargetId: currentDecision?.targetId ?? "saas-ga",
       targetLoopCount: this.listTargetLoops().length,
       latestTargetLoop: this.listTargetLoops().slice(-1)[0],
       discoveryCandidateCount: this.listDiscoverySkillCandidates().length,
@@ -6102,7 +6115,11 @@ class FileStore {
     const codeUpgrades = this.listCodeUpgradeRuns().filter((upgrade) => scopedProjectIds.has(upgrade.projectId));
     const sourceReleaseRuns = this.listSourceReleaseClosureRuns()
       .filter((run) => scopedProjectIds.has(run.projectId) && run.tenantId === tenantId && run.workspaceId === workspaceId);
-    const scenarioMatrix = mergeScenarioMatrix(defaultReleaseScenarioMatrix({ pipelines, codeUpgrades, projects, summary, now }), input.scenarioMatrix ?? [], now);
+    const scenarioMatrix = alignScenarioMatrixToReleaseTarget(
+      mergeScenarioMatrix(defaultReleaseScenarioMatrix({ pipelines, codeUpgrades, projects, summary, now }), input.scenarioMatrix ?? [], now),
+      target,
+      now
+    );
     const promotedSourceReleaseProjectIds = new Set(sourceReleaseRuns
       .filter((run) => run.status === "PROMOTED")
       .map((run) => run.projectId));
@@ -6114,7 +6131,8 @@ class FileStore {
     const rollout = this.computeRolloutStrategyReports().filter((report) => riskProjectIds.has(report.projectId));
     const policyEvaluations = this.evaluateGovernancePolicies().filter((evaluation) => riskProjectIds.has(evaluation.scope));
     const riskRegister = this.buildReleaseRiskRegister({ policyEvaluations, readiness, rollout, pipelines, codeUpgrades, sourceReleaseRuns, scenarioMatrix, releaseTargetId, requiredScenarioIds: target.requiredScenarioIds });
-    const failedRequiredScenarioCount = scenarioMatrix.filter((scenario) => scenario.required && (scenario.status === "FAIL" || scenario.status === "NOT-RUN")).length;
+    const targetRequiredScenarios = new Set(target.requiredScenarioIds);
+    const failedRequiredScenarioCount = scenarioMatrix.filter((scenario) => targetRequiredScenarios.has(scenario.id) && scenario.required && (scenario.status === "FAIL" || scenario.status === "NOT-RUN")).length;
     const openHighRiskCount = riskRegister.filter((risk) => risk.status === "OPEN" && (risk.severity === "HIGH" || risk.severity === "CRITICAL")).length;
     const status: ReleaseEvidenceBundle["status"] = failedRequiredScenarioCount > 0 || openHighRiskCount > 0
       ? "NO-GO"
@@ -7805,6 +7823,13 @@ function latestSaasGoReleaseDecision(decisions: ReleaseDecision[]): ReleaseDecis
     .filter((decision) => decision.status === "GO" && /saas|multi-tenant/i.test(`${decision.id} ${decision.targetId}`))
     .sort((left, right) => Date.parse(left.generatedAt) - Date.parse(right.generatedAt))
     .at(-1);
+}
+
+function currentReleaseDecision(decisions: ReleaseDecision[]): ReleaseDecision | undefined {
+  const ordered = [...decisions].sort((left, right) => Date.parse(left.generatedAt) - Date.parse(right.generatedAt));
+  return ordered
+    .filter((decision) => decision.targetId === "saas-ga")
+    .at(-1) ?? ordered.at(-1);
 }
 
 function isOpenBlockedLoop(loop: LoopRun, sourceReleaseRuns: SourceReleaseClosureRun[], latestSaasGoAt?: number): boolean {
@@ -12063,6 +12088,25 @@ function mergeScenarioMatrix(defaults: ReleaseScenarioResult[], overrides: Relea
   return [...merged.values()];
 }
 
+function alignScenarioMatrixToReleaseTarget(matrix: ReleaseScenarioResult[], target: ReleaseTargetProfile, now: string): ReleaseScenarioResult[] {
+  const requiredScenarioIds = new Set(target.requiredScenarioIds);
+  if (target.id === "ga") return matrix.map((item) => ({ ...item, required: requiredScenarioIds.has(item.id) || item.required }));
+  return matrix.map((item) => {
+    if (requiredScenarioIds.has(item.id)) return { ...item, required: true };
+    return {
+      ...item,
+      status: item.status === "PASS" ? "PASS" : "NOT-APPLICABLE",
+      required: false,
+      evidence: [
+        ...item.evidence,
+        `notApplicableForTarget=${target.id}`,
+        "legacy GA scenario is retained for audit history but is not a release blocker for the current SaaS multi-tenant target"
+      ],
+      updatedAt: item.updatedAt ?? now
+    };
+  });
+}
+
 function releaseEvidenceListItem(bundle: ReleaseEvidenceBundle): ReleaseEvidenceListItem {
   const summary = bundle.summary ?? {};
   return {
@@ -12088,7 +12132,7 @@ function releaseEvidenceListItem(bundle: ReleaseEvidenceBundle): ReleaseEvidence
       passed: bundle.scenarioMatrix.filter((scenarioItem) => scenarioItem.status === "PASS").length,
       failed: bundle.scenarioMatrix.filter((scenarioItem) => scenarioItem.status === "FAIL").length,
       notRun: bundle.scenarioMatrix.filter((scenarioItem) => scenarioItem.status === "NOT-RUN").length,
-      requiredFailed: bundle.scenarioMatrix.filter((scenarioItem) => scenarioItem.required && scenarioItem.status !== "PASS").length
+      requiredFailed: bundle.scenarioMatrix.filter((scenarioItem) => scenarioItem.required && (scenarioItem.status === "FAIL" || scenarioItem.status === "NOT-RUN")).length
     },
     riskSummary: {
       total: bundle.riskRegister.length,

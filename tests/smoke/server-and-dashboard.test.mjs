@@ -1309,7 +1309,64 @@ test("release evidence endpoint persists release candidate evidence without leak
     assert.equal(summaryBody.data.recentReleaseEvidence[0].id, "rc-2");
     assert.equal(summaryBody.data.recentReleaseEvidence[0].connectedProjects, undefined);
     assert.equal(summaryBody.data.latestReleaseDecision.id, "decision-rc-2");
+    assert.equal(summaryBody.data.currentReleaseDecision.id, "decision-rc-2");
     assert.equal(summaryBody.data.releaseTargetCount, 1);
+
+    const saasTarget = await fetch(`${baseUrl}/api/v1/release/targets`, {
+      method: "POST",
+      headers: { authorization: "Bearer admin-token", "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "saas-ga",
+        name: "SaaS GA",
+        minConnectedProjects: 1,
+        minSucceededSoakSeconds: 0,
+        minSuccessfulRuns: 0,
+        minEvaluationDatasets: 0,
+        minOpportunities: 0,
+        minSuccessfulEvolutionBatches: 0,
+        minSuccessfulCodeUpgrades: 0,
+        minSuccessfulPipelines: 0,
+        requiredScenarioIds: ["saas-field-e2e-source-to-ga"],
+        requireNoHighOpenRisks: false
+      })
+    });
+    assert.equal(saasTarget.status, 201);
+
+    const saasEvidence = await fetch(`${baseUrl}/api/v1/release/evidence`, {
+      method: "POST",
+      headers: { authorization: "Bearer operator-token", "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "saas-rc-1",
+        candidate: "saas-v1.0.0",
+        releaseTargetId: "saas-ga",
+        scenarioMatrix: [
+          { id: "saas-field-e2e-source-to-ga", name: "SaaS Source-to-GA", status: "PASS", evidence: ["promotedSourceToGaLoops=1"], required: true }
+        ]
+      })
+    });
+    assert.equal(saasEvidence.status, 201);
+    const saasEvidenceBody = await saasEvidence.json();
+    assert.equal(saasEvidenceBody.data.releaseTargetId, "saas-ga");
+    assert.equal(saasEvidenceBody.data.scenarioMatrix.find((item) => item.id === "normal-evolution-loop").status, "NOT-APPLICABLE");
+    assert.equal(saasEvidenceBody.data.scenarioMatrix.find((item) => item.id === "normal-evolution-loop").required, false);
+
+    const currentDecision = await fetch(`${baseUrl}/api/v1/release/decisions?current=true`, {
+      headers: { authorization: "Bearer viewer-token" }
+    });
+    assert.equal(currentDecision.status, 200);
+    const currentDecisionBody = await currentDecision.json();
+    assert.equal(currentDecisionBody.data.length, 1);
+    assert.equal(currentDecisionBody.data[0].targetId, "saas-ga");
+    assert.equal(currentDecisionBody.data[0].status, "GO");
+
+    const currentSummary = await fetch(`${baseUrl}/api/v1/summary`, {
+      headers: { authorization: "Bearer viewer-token" }
+    });
+    assert.equal(currentSummary.status, 200);
+    const currentSummaryBody = await currentSummary.json();
+    assert.equal(currentSummaryBody.data.currentReleaseTargetId, "saas-ga");
+    assert.equal(currentSummaryBody.data.currentReleaseDecision.targetId, "saas-ga");
+    assert.equal(currentSummaryBody.data.currentReleaseDecision.status, "GO");
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

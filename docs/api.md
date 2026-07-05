@@ -413,10 +413,14 @@ GET /api/v1/release/targets
 GET /api/v1/release/targets/{targetId}
 POST /api/v1/release/targets
 GET /api/v1/release/decisions
+GET /api/v1/release/decisions?current=true
+GET /api/v1/release/decisions?targetId=saas-ga
 POST /api/v1/release/evidence
 ```
 
 EvoPilot 自身定义“什么才算 GA Release”。外部 AI、通用 sub agent、CI/CD 编排器或人工执行验证时，都应先读取发布目标，再按目标执行场景验证 loop，最后生成 release evidence 和 release decision。
+
+SaaS 多租户版本的正式发布状态以 `targetId=saas-ga` 为当前口径。`GET /api/v1/release/decisions?current=true` 只返回当前正式发布判定；历史 `ga` 判定仍保留为审计记录，但不会替代 SaaS 多租户版本的当前发布结论。`GET /api/v1/summary` 同时返回 `currentReleaseDecision` 和 `currentReleaseTargetId`，Dashboard 应优先使用这两个字段。
 
 默认内置 `ga` 目标：
 
@@ -450,6 +454,8 @@ EvoPilot 自身定义“什么才算 GA Release”。外部 AI、通用 sub agen
 - `mainstream-loop-harness-alignment`
 
 `mainstream-loop-harness-alignment` 用于把 GA stable 的外部基线产品化：release evidence 必须说明 EvoPilot 与 GitHub 主流 Agent/Loop Harness 项目的关键能力对齐，包括 durable execution、checkpoint/persistence、human-in-loop、sandbox、multi-executor coordination、streaming trace、guardrails 和 source-to-production closure。没有这项场景证据时，release decision 会生成独立的 `mainstream-loop-harness-alignment` criterion，并返回 `NO-GO`。
+
+对于 `saas-ga` 这类独立 SaaS 发布目标，不属于该目标 `requiredScenarioIds` 的历史 `ga` 场景会在 evidence matrix 中保留为审计行，并标记为 `NOT-APPLICABLE`、`required=false`；它们不再造成当前 SaaS 发布门禁 `NO-GO`。
 
 `POST /api/v1/release/evidence` 默认使用 `releaseTargetId: "ga"`，返回的证据包会包含：
 

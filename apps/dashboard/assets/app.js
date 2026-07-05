@@ -133,6 +133,8 @@ const state = {
     releaseTargetCount: 0,
     releaseDecisionCount: 0,
     latestReleaseDecisionStatus: "未判定",
+    currentReleaseTargetId: "saas-ga",
+    currentReleaseDecisionId: "",
     canaryReadyCount: 0,
     rolloutBlockedCount: 0,
     evolutionBatchCount: 0,
@@ -492,8 +494,11 @@ function productionReadinessModel(scopeModel, onboarding) {
   const postgresReady = storeBackend === "postgres" && (storeStatus === "READY" || store?.postgresReachable === true);
   const decision = onboarding.decisionGo ? "GO" : releaseDecisionLabel(onboarding.releaseRun, { allowGlobalDecision: true });
   const decisionReady = decision === "GO";
-  const releaseBlockedCount = scopeModel.releaseBlocked.length;
-  const highRiskCount = releaseBlockedCount + Number(state.saasObservability?.blockedLoopCount ?? 0);
+  const observabilityBlockers = Array.isArray(state.saasObservability?.blockers) ? state.saasObservability.blockers.length : 0;
+  const releaseBlockedCount = decisionReady && observabilityBlockers === 0 ? 0 : scopeModel.releaseBlocked.length;
+  const highRiskCount = decisionReady && observabilityBlockers === 0
+    ? 0
+    : releaseBlockedCount + Number(state.saasObservability?.blockedLoopCount ?? 0);
   const dataMode = state.apiStatus === "实时数据" ? "live" : "demo";
   const connected = dataMode === "live" || Boolean(state.apiToken);
   const ready = connected && decisionReady && highRiskCount === 0 && (postgresReady || storeStatus === "READY");
@@ -510,6 +515,8 @@ function productionReadinessModel(scopeModel, onboarding) {
     ready,
     decision,
     decisionReady,
+    currentReleaseTargetId: state.intelligence.currentReleaseTargetId ?? "saas-ga",
+    currentReleaseDecisionId: state.intelligence.currentReleaseDecisionId ?? "",
     storeBackend,
     storeStatus,
     postgresReady,
@@ -564,7 +571,7 @@ function renderProductionReadinessOverview(model, onboarding) {
     </section>
     <section class="production-kpi-grid" aria-label="生产发布关键指标">
       ${[
-        ["发布判定", model.decision, `${model.criteriaPassed} / ${model.criteriaTotal} 项门禁${model.decisionReady ? "通过" : "待确认"}`, model.decisionReady],
+        ["发布判定", model.decision, `${model.currentReleaseTargetId} / ${model.currentReleaseDecisionId || "current decision"} / ${model.criteriaPassed} 项通过`, model.decisionReady],
         ["Loop 存储", model.postgresReady ? "Postgres 就绪" : `${model.storeBackend} / ${model.storeStatus}`, model.postgresReady ? "连接可达，发布门禁可验证" : "生产发布前需要确认持久化边界", model.postgresReady],
         ["租户健康度", `${model.workspaceCount} 个工作区`, `${model.verifiedProjects} 个项目已验证`, model.workspaceCount > 0],
         ["开放风险", `${model.highRiskCount} 高风险`, `${model.blockerCount} 阻塞项 / ${model.promotedReleases} promoted`, model.highRiskCount === 0]
@@ -6277,7 +6284,9 @@ async function loadSummary() {
       releaseEvidenceCount: Array.isArray(data.recentReleaseEvidence) ? data.recentReleaseEvidence.length : state.intelligence.releaseEvidenceCount,
       releaseTargetCount: data.releaseTargetCount ?? state.intelligence.releaseTargetCount,
       releaseDecisionCount: data.releaseDecisionCount ?? state.intelligence.releaseDecisionCount,
-      latestReleaseDecisionStatus: data.latestReleaseDecision?.status ?? state.intelligence.latestReleaseDecisionStatus,
+      latestReleaseDecisionStatus: data.currentReleaseDecision?.status ?? data.latestReleaseDecision?.status ?? state.intelligence.latestReleaseDecisionStatus,
+      currentReleaseTargetId: data.currentReleaseTargetId ?? data.currentReleaseDecision?.targetId ?? state.intelligence.currentReleaseTargetId,
+      currentReleaseDecisionId: data.currentReleaseDecision?.id ?? state.intelligence.currentReleaseDecisionId,
       canaryReadyCount: data.canaryReadyCount ?? state.intelligence.canaryReadyCount,
       rolloutBlockedCount: data.rolloutBlockedCount ?? state.intelligence.rolloutBlockedCount,
       evolutionBatchCount: data.evolutionBatchCount ?? state.intelligence.evolutionBatchCount,
