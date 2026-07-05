@@ -3631,6 +3631,7 @@ function renderHelpManualCatalog(scenarios) {
     ["首次开通 EvoPilot SaaS 多租户环境", "#manual-platform-tenant-provisioning"],
     ["管理工作区成员与角色", "#manual-tenant-workspace-member-admin"],
     ["完成第一条 Source-to-GA Loop", "#manual-saas-tenant-workspace-onboarding"],
+    ["AI 辅助日志诊断与故障定位", "#manual-ai-log-diagnosis"],
     ["复盘发布证据与审计记录", "#manual-release-evidence-review"]
   ];
   return `
@@ -3730,6 +3731,7 @@ function helpManualCatalogGroups(scenarios) {
     {
       title: "运维与最佳实践",
       children: [
+        scenarioLink("ai-log-diagnosis", "AI 辅助日志诊断与故障定位"),
         scenarioLink("runtime-recovery", "长任务中断后的 Worker / Replay / Sandbox / Trace 恢复"),
         scenarioLink("evopilot-self-governance", "EvoPilot 接入 EvoPilot 的受控自演进")
       ]
@@ -3740,6 +3742,7 @@ function helpManualCatalogGroups(scenarios) {
         { title: "租户 API", href: "#manual-platform-tenant-provisioning" },
         { title: "工作区成员 API", href: "#manual-tenant-workspace-member-admin" },
         { title: "Loop Runtime API", href: "#manual-runtime-recovery" },
+        { title: "日志诊断 API", href: "#manual-ai-log-diagnosis" },
         { title: "Release Decision API", href: "#manual-release-evidence-review" }
       ]
     }
@@ -3825,6 +3828,9 @@ function helpManualLiveState(scenario) {
     "failed-release-repair": blockedRelease
       ? ["阻塞", `${scope.releaseBlocked.length} 个发布记录需要修复。`, "进入修复队列", "source closure、deploy health 或 release policy 未通过。", "发布证据", "修复", "blocked"]
       : ["已就绪", "当前没有失败发布记录。", "查看发布中心", "无修复阻塞。", "发布证据", "查看", "done"],
+    "ai-log-diagnosis": state.loopTraces.length || state.saasObservability || readiness.decisionReady
+      ? ["可排查", "生产日志、trace、release decision 和 SaaS observability 已形成关联入口。", "按 requestId 聚合日志包", "优先使用 evopilot-log/v1、correlation 和 diagnosis 字段定位。", "Loops", "打开排障", "done"]
+      : ["待连接", "当前未读取到生产日志关联状态。", "连接生产控制面", "需要 API Token、日志平台和 release evidence。", "租户总览", "连接", "pending"],
     "release-evidence-review": readiness.decisionReady
       ? ["已完成", "发布判定为 GO，证据可归档。", "下载审计包", "当前无高风险阻塞。", "发布证据", "查看证据", "done"]
       : ["待确认", `当前发布判定：${readiness.decision}。`, "核对发布门禁", "release decision 尚未达到 GO。", "发布证据", "核对", "pending"],
@@ -3897,6 +3903,7 @@ function renderHelpRoleMap(roles) {
     "配置 GitHub App/Vault",
     "接入项目",
     "启动 Source-to-GA Loop",
+    "AI 日志诊断",
     "发布审批/修复",
     "审计复盘"
   ];
@@ -3967,6 +3974,7 @@ function helpManualRoles() {
         "配置 GitHub App/Vault": "own",
         "接入项目": "assist",
         "启动 Source-to-GA Loop": "assist",
+        "AI 日志诊断": "own",
         "发布审批/修复": "own",
         "审计复盘": "own"
       }
@@ -3987,6 +3995,7 @@ function helpManualRoles() {
         "配置 GitHub App/Vault": "own",
         "接入项目": "own",
         "启动 Source-to-GA Loop": "own",
+        "AI 日志诊断": "assist",
         "发布审批/修复": "assist",
         "审计复盘": "read"
       }
@@ -4007,6 +4016,7 @@ function helpManualRoles() {
         "配置 GitHub App/Vault": "assist",
         "接入项目": "own",
         "启动 Source-to-GA Loop": "own",
+        "AI 日志诊断": "assist",
         "发布审批/修复": "assist",
         "审计复盘": "read"
       }
@@ -4027,6 +4037,7 @@ function helpManualRoles() {
         "配置 GitHub App/Vault": "assist",
         "接入项目": "read",
         "启动 Source-to-GA Loop": "assist",
+        "AI 日志诊断": "own",
         "发布审批/修复": "own",
         "审计复盘": "own"
       }
@@ -4047,6 +4058,7 @@ function helpManualRoles() {
         "配置 GitHub App/Vault": "read",
         "接入项目": "read",
         "启动 Source-to-GA Loop": "assist",
+        "AI 日志诊断": "own",
         "发布审批/修复": "assist",
         "审计复盘": "own"
       }
@@ -4067,6 +4079,7 @@ function helpManualRoles() {
         "配置 GitHub App/Vault": "read",
         "接入项目": "read",
         "启动 Source-to-GA Loop": "read",
+        "AI 日志诊断": "read",
         "发布审批/修复": "read",
         "审计复盘": "own"
       }
@@ -4194,6 +4207,26 @@ function helpManualScenarios() {
         manualStep("检查 Deploy Finalizer", "查看 Deploy Finalizer Workbench，确认 post-merge deploy、health-ready、rollback 或 finalizer 状态。", "post-merge deploy 有明确成功、失败或回滚证据", "Deploy Finalizer Workbench", "发布证据", "Post merge deploy", "部署闭环与健康探测", navFor("发布证据"), ["Post Merge Deploy", "health-ready", "rollback", "finalizer"], "发布证据", "部署连接器超时或健康路径错误"),
         manualStep("复盘修复结果", "打开审计和 Release Artifacts，确认修复后的 release run 是否 promoted，失败时保留 blocker 证据。", "审计记录能解释失败原因或晋级证据", "历史详情", "审计", "Repair audit", "修复闭环可审计", navFor("审计"), ["Artifacts", "Audit", "Promoted", "Blocker"], "审计", "修复成功但审计证据缺失")
       ]
+    },
+    {
+      id: "ai-log-diagnosis",
+      category: "可观测性",
+      title: "AI 辅助日志诊断与故障定位",
+      page: "Loops",
+      persona: "依靠 GLM、Codex 或值班工程师定位生产故障的 Loop 运维、发布负责人和平台管理员",
+      roles: ["Loop 运维", "发布负责人", "平台管理员", "审计 Viewer"],
+      prerequisites: ["生产日志平台可查询 JSON Lines", "已开启 evopilot-log/v1 结构化日志", "可读取 requestId、tenantId、workspaceId", "具备对应 workspace 的发布或审计权限"],
+      outcome: "能从 requestId 或 releaseRunId 聚合日志、trace、release evidence 和 audit，形成可执行的故障定位结论",
+      goal: "当线上出现错误、性能变慢、发布失败或 Loop 卡住时，用户不在多个页面里猜原因，而是按日志 schema、correlation、diagnosis 和 Dashboard 入口完成定位、修复与复盘。",
+      apis: ["/health", "/ready", "/api/v1/metrics", "/api/v1/loops/{loopId}/trace-tree", "/api/v1/release/decisions", "/api/v1/saas/observability"],
+      steps: [
+        manualStep("确认故障入口和关联标识", "从告警、API 响应或用户反馈中记录 x-request-id、tenantId、workspaceId、loopId、releaseRunId 或 releaseDecisionId。EvoPilot 服务端日志会把这些字段写入 correlation，便于 AI 聚合上下文。", "拿到 requestId 或业务对象 id，并确认对应租户和工作区", "生产告警入口", "租户总览", "Incident intake", "先确认影响范围，再进入日志聚合", navFor("租户总览"), ["requestId", "tenantId", "workspaceId", "releaseRunId"], "租户总览", "告警没有 requestId 或租户范围不清"),
+        manualStep("查询 evopilot-log/v1 JSON Lines", "在日志平台或 journal 中筛选 schema=evopilot-log/v1，再按 correlation.requestId、tenantId、workspaceId、category、outcome 和 latencyBucket 缩小范围。错误日志优先读取 diagnosis.recommendedAction。", "得到同一请求或同一 Loop/Release 的日志包", "结构化日志查询", "Loops", "Log query", "用 schema、category、outcome 和 latencyBucket 快速筛选", navFor("Loops"), ["evopilot-log/v1", "category", "outcome", "latencyBucket"], "Loops", "日志没有结构化字段或 secret 未脱敏"),
+        manualStep("交给 GLM 或 Codex 分析日志包", "把筛选后的日志、trace tree、release decision 和最近 deploy 变更交给 AI，要求它按错误类型、可能原因、影响范围、推荐动作和回滚风险输出结论。不要只贴散乱日志。", "AI 输出可执行的根因假设、验证步骤和推荐处理动作", "AI 日志分析", "Loops", "AI diagnosis", "用结构化上下文减少误判", navFor("Loops"), ["diagnosis", "likelyCause", "recommendedAction", "retriable"], "Loops", "日志片段缺少上下文或包含明文 secret"),
+        manualStep("回到 Dashboard 定位业务对象", "如果 category 是 loop-runtime，进入 Loops 查看 trace tree、worker queue、sandbox proof；如果是 release-governance，进入发布证据查看 release decision、repair queue 和 deploy finalizer；如果是 tenant/workspace，进入工作区或审计页核对 RBAC。", "Dashboard 能定位到对应 Loop、Release、Workspace 或 Audit 记录", "业务对象回跳", "Loops", "Dashboard drill-down", "日志结论回到可操作页面", navFor("Loops"), ["Trace Tree", "Release Decision", "Audit", "Workspace RBAC"], "Loops", "只有日志结论，没有对应操作入口"),
+        manualStep("执行修复并复盘证据", "按推荐动作执行重试、修复 Release Run、补凭据、调整权限或回滚部署。完成后复查 /health、/ready、/api/v1/saas/observability 和 release decision，并在审计页归档处理记录。", "故障状态解除，发布证据和审计能解释处理过程", "故障处理复盘", "审计", "Incident closure", "处理结果进入 release evidence 和 audit", navFor("审计"), ["/health", "/ready", "saas observability", "release decision"], "审计", "修复后没有复验或审计记录")
+      ],
+      nextStep: "将日志包、AI 诊断结论、处理动作和复验结果归档到审计记录；若仍失败，进入失败 Release Run 修复闭环或 Runtime Recovery。"
     },
     {
       id: "runtime-recovery",

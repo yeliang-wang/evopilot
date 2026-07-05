@@ -142,22 +142,23 @@ npm run server:debug
 
 EvoPilot V1.0.0 的主服务、Loop worker 和 soak 脚本都输出 JSON Lines，适合直接被 `systemd journal`、Docker/Kubernetes stdout、Loki、ELK 或云日志采集。
 
-主服务每条日志包含：
+主服务日志使用 `schema: evopilot-log/v1`。这个 schema 面向人和值班 AI 共同排障：同一条日志同时保留 HTTP 结果、租户/工作区范围、关联标识、延迟分桶、错误分类和建议动作。
 
-- `timestamp`
-- `level`
-- `service`
-- `version`
-- `event`
-- `requestId`
-- `method`
-- `path`
-- `statusCode`
-- `durationMs`
-- `actor`
-- `action`
-- `target`
-- `metadata`
+核心字段：
+
+| 字段 | 说明 |
+|---|---|
+| `schema` | 固定为 `evopilot-log/v1`，便于日志平台和 AI prompt 过滤。 |
+| `timestamp` / `level` / `severity` | ISO 时间、程序级别和标准严重级别。 |
+| `service` / `version` / `event` / `category` | 服务、版本、事件名和分类。`category` 包括 `http`、`runtime`、`release`、`worker`、`code-upgrade`、`cicd`、`audit`。 |
+| `requestId` / `correlation.requestId` | API 响应头 `x-request-id` 对应的请求关联 ID。 |
+| `tenantId` / `workspaceId` / `actor` / `role` | 多租户排障范围和操作者角色。 |
+| `method` / `path` / `routeGroup` / `statusCode` | HTTP 请求、业务路由分组和响应状态。 |
+| `durationMs` / `latencyBucket` | 原始耗时和 `<50ms`、`50-199ms`、`200-999ms`、`1-4s`、`5s+` 分桶。 |
+| `outcome` | `success`、`rejected`、`blocked` 或 `failed`。 |
+| `correlation.loopId` / `projectId` / `releaseDecisionId` / `releaseRunId` | 从请求参数或业务上下文提取的故障定位锚点。 |
+| `diagnosis.summary` / `likelyCause` / `recommendedAction` | 给 GLM、Codex 或值班工程师读取的诊断摘要、可能原因和下一步动作。 |
+| `metadata` | 事件附加信息，已递归脱敏。 |
 
 常用事件：
 
@@ -182,10 +183,28 @@ EVOPILOT_LOG_STACK=true
 排障示例：
 
 ```bash
-journalctl -u evopilot -o cat | jq 'select(.requestId=="<request-id>")'
-journalctl -u evopilot -o cat | jq 'select(.event=="http.request.failed")'
-journalctl -u evopilot -o cat | jq 'select(.metadata.loopId=="<loop-id>" or .target=="<loop-id>")'
+journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .correlation.requestId=="<request-id>")'
+journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .outcome=="failed")'
+journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .tenantId=="<tenant-id>" and .workspaceId=="<workspace-id>")'
+journalctl -u evopilot -o cat | jq 'select(.correlation.loopId=="<loop-id>" or .target=="<loop-id>")'
+journalctl -u evopilot -o cat | jq 'select(.category=="release" or .correlation.releaseRunId=="<release-run-id>")'
+journalctl -u evopilot -o cat | jq 'select(.latencyBucket=="1-4s" or .latencyBucket=="5s+") | {timestamp,event,path,durationMs,latencyBucket,tenantId,workspaceId,diagnosis}'
 journalctl -u evopilot-worker -o cat | jq 'select(.event|startswith("loop-worker."))'
 ```
 
 日志会对 `token`、`password`、`secret`、`credential`、`apiKey`、`authorization` 和 Bearer token 做脱敏。连接器密钥和项目凭据不应出现在日志中。
+
+AI 排障建议输入格式：
+
+```text
+请基于以下 EvoPilot evopilot-log/v1 日志、trace tree、release decision 和最近部署信息定位故障。
+请按 1) 影响范围 2) 直接错误 3) 可能根因 4) 推荐处理动作 5) 需要人工确认的风险 输出。
+必须优先使用 correlation.requestId、tenantId、workspaceId、category、outcome、latencyBucket 和 diagnosis 字段，不要基于单条散乱日志下结论。
+```
+
+最小日志包建议包含：
+
+- 同一 `correlation.requestId` 的全部日志。
+- 同一 `loopId`、`releaseRunId` 或 `releaseDecisionId` 的 trace、release decision 和 audit。
+- 最近一次部署或配置变更摘要。
+- `/health`、`/ready`、`/api/v1/saas/observability` 的当前结果。

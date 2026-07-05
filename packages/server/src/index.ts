@@ -253,14 +253,22 @@ interface AuditRecord {
 }
 
 type LogLevel = "debug" | "info" | "warn" | "error";
+type LogSeverity = "DEBUG" | "INFO" | "WARN" | "ERROR";
+type LogCategory = "http" | "auth" | "runtime" | "release" | "worker" | "code-upgrade" | "cicd" | "audit" | "system";
+type LogOutcome = "success" | "rejected" | "failed" | "blocked";
 
 interface LogRecord {
   timestamp?: string;
   level: LogLevel;
+  schema?: "evopilot-log/v1";
+  severity?: LogSeverity;
   service?: "evopilot";
   version?: "1.0.0";
   event: string;
+  category?: LogCategory;
   requestId?: string;
+  tenantId?: string;
+  workspaceId?: string;
   actor?: string;
   role?: AuthRole;
   action?: string;
@@ -269,6 +277,26 @@ interface LogRecord {
   path?: string;
   statusCode?: number;
   durationMs?: number;
+  latencyBucket?: string;
+  routeGroup?: string;
+  outcome?: LogOutcome;
+  correlation?: {
+    requestId?: string;
+    traceId?: string;
+    spanId?: string;
+    parentRequestId?: string;
+    loopId?: string;
+    projectId?: string;
+    releaseDecisionId?: string;
+    releaseRunId?: string;
+  };
+  diagnosis?: {
+    summary?: string;
+    likelyCause?: string;
+    recommendedAction?: string;
+    retriable?: boolean;
+    humanActionRequired?: boolean;
+  };
   error?: string;
   errorCode?: string;
   stack?: string;
@@ -1724,15 +1752,37 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
   return http.createServer(async (request, response) => {
     const startedAt = Date.now();
     const requestId = requestHeader(request, "x-request-id") || randomUUID();
+    const traceId = requestHeader(request, "traceparent")?.split("-")[1] || requestHeader(request, "x-trace-id");
+    const parentRequestId = requestHeader(request, "x-parent-request-id");
+    let requestAuth: AuthContext | undefined;
     response.setHeader("x-request-id", requestId);
     let url = new URL(request.url ?? "/", "http://127.0.0.1");
     response.on("finish", () => {
+      const durationMs = Date.now() - startedAt;
+      const statusCode = response.statusCode;
       logInfo("http.request.completed", {
         requestId,
+        tenantId: requestAuth?.tenantId,
+        workspaceId: requestAuth?.workspaceId,
+        actor: requestAuth?.actor,
+        role: requestAuth?.role,
         method: request.method,
         path: url.pathname,
-        statusCode: response.statusCode,
-        durationMs: Date.now() - startedAt,
+        statusCode,
+        durationMs,
+        latencyBucket: latencyBucket(durationMs),
+        routeGroup: routeGroup(url.pathname),
+        outcome: httpOutcome(statusCode),
+        correlation: {
+          requestId,
+          traceId,
+          parentRequestId,
+          loopId: url.searchParams.get("loopId") ?? undefined,
+          projectId: url.searchParams.get("projectId") ?? undefined,
+          releaseDecisionId: url.searchParams.get("releaseDecisionId") ?? undefined,
+          releaseRunId: url.searchParams.get("releaseRunId") ?? undefined
+        },
+        diagnosis: diagnosisForHttpStatus(statusCode),
         metadata: {
           query: redactUrlSearch(url.searchParams),
           userAgent: requestHeader(request, "user-agent")
@@ -1759,7 +1809,20 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         });
       }
       const auth = authorize(request, tokens, runtime);
+      requestAuth = auth ?? undefined;
       if (!auth) {
+        logWarn("http.request.rejected", {
+          requestId,
+          method: request.method,
+          path: url.pathname,
+          statusCode: 401,
+          routeGroup: routeGroup(url.pathname),
+          outcome: "rejected",
+          errorCode: "UNAUTHORIZED",
+          error: "UNAUTHORIZED",
+          correlation: { requestId, traceId, parentRequestId },
+          diagnosis: diagnosisForHttpStatus(401)
+        });
         return writeJson(response, 401, { error: "UNAUTHORIZED" });
       }
       if (request.method === "GET" && url.pathname === "/api/v1/summary") {
@@ -3519,19 +3582,35 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       if (error instanceof HttpError) {
         logWarn("http.request.rejected", {
           requestId,
+          tenantId: requestAuth?.tenantId,
+          workspaceId: requestAuth?.workspaceId,
+          actor: requestAuth?.actor,
+          role: requestAuth?.role,
           method: request.method,
           path: url.pathname,
           statusCode: error.statusCode,
+          routeGroup: routeGroup(url.pathname),
+          outcome: httpOutcome(error.statusCode),
           errorCode: error.code,
-          error: error.detail ?? error.code
+          error: error.detail ?? error.code,
+          correlation: { requestId, traceId, parentRequestId },
+          diagnosis: diagnosisForHttpStatus(error.statusCode, error.code)
         });
         return writeJson(response, error.statusCode, { error: error.code, detail: error.detail, requestId });
       }
       logError("http.request.failed", error, {
         requestId,
+        tenantId: requestAuth?.tenantId,
+        workspaceId: requestAuth?.workspaceId,
+        actor: requestAuth?.actor,
+        role: requestAuth?.role,
         method: request.method,
         path: url.pathname,
-        statusCode: 500
+        statusCode: 500,
+        routeGroup: routeGroup(url.pathname),
+        outcome: "failed",
+        correlation: { requestId, traceId, parentRequestId },
+        diagnosis: diagnosisForHttpStatus(500)
       });
       return writeJson(response, 500, { error: error instanceof Error ? error.message : String(error), requestId });
     }
@@ -14552,13 +14631,127 @@ function logError(event: string, error: unknown, record: Omit<LogRecord, "level"
   });
 }
 
+function logSeverity(level: LogLevel): LogSeverity {
+  const severities: Record<LogLevel, LogSeverity> = { debug: "DEBUG", info: "INFO", warn: "WARN", error: "ERROR" };
+  return severities[level];
+}
+
+function logCategory(event: string): LogCategory {
+  if (event.startsWith("http.")) return "http";
+  if (event.startsWith("audit.")) return "audit";
+  if (event.startsWith("code-upgrade.")) return "code-upgrade";
+  if (event.startsWith("jenkins.")) return "cicd";
+  if (event.startsWith("loop-worker.")) return "worker";
+  if (event.includes("release")) return "release";
+  if (event.includes("auth")) return "auth";
+  if (event.startsWith("server.") || event.startsWith("process.")) return "runtime";
+  return "system";
+}
+
+function routeGroup(pathname: string): string {
+  if (pathname === "/health" || pathname === "/ready") return "platform-readiness";
+  if (pathname.startsWith("/api/v1/tenants")) return "tenant-control-plane";
+  if (pathname.startsWith("/api/v1/workspaces")) return "workspace-control-plane";
+  if (pathname.startsWith("/api/v1/loops") || pathname.includes("loop-")) return "loop-runtime";
+  if (pathname.includes("release")) return "release-governance";
+  if (pathname.includes("evidence") || pathname.includes("audit")) return "evidence-audit";
+  if (pathname.includes("code-upgrade")) return "code-upgrade";
+  if (pathname.includes("jenkins") || pathname.includes("delivery")) return "cicd";
+  return pathname.startsWith("/api/") ? "api" : "dashboard";
+}
+
+function latencyBucket(durationMs: number): string {
+  if (durationMs < 50) return "<50ms";
+  if (durationMs < 200) return "50-199ms";
+  if (durationMs < 1000) return "200-999ms";
+  if (durationMs < 5000) return "1-4s";
+  return "5s+";
+}
+
+function httpOutcome(statusCode: number): LogOutcome {
+  if (statusCode >= 500) return "failed";
+  if (statusCode === 409 || statusCode === 423 || statusCode === 429) return "blocked";
+  if (statusCode >= 400) return "rejected";
+  return "success";
+}
+
+function diagnosisForHttpStatus(statusCode: number, errorCode?: string): LogRecord["diagnosis"] | undefined {
+  if (statusCode < 400) return undefined;
+  if (statusCode === 401) {
+    return {
+      summary: "Request rejected before authorization.",
+      likelyCause: "Missing, expired, or invalid EvoPilot API token.",
+      recommendedAction: "Verify Authorization: Bearer token, EVOPILOT_TOKENS, and tenant/workspace scope before retrying.",
+      retriable: true,
+      humanActionRequired: true
+    };
+  }
+  if (statusCode === 403) {
+    return {
+      summary: "Request authenticated but blocked by RBAC or tenant/workspace scope.",
+      likelyCause: errorCode ?? "FORBIDDEN",
+      recommendedAction: "Check the role matrix, workspace membership, and requested tenant/workspace ownership.",
+      retriable: false,
+      humanActionRequired: true
+    };
+  }
+  if (statusCode === 404) {
+    return {
+      summary: "Requested route or resource was not found.",
+      likelyCause: errorCode ?? "NOT_FOUND",
+      recommendedAction: "Confirm the API path, resource id, and whether the selected workspace can access it.",
+      retriable: false,
+      humanActionRequired: true
+    };
+  }
+  if (statusCode === 409) {
+    return {
+      summary: "Business guardrail or consistency check blocked the request.",
+      likelyCause: errorCode ?? "CONFLICT",
+      recommendedAction: "Inspect response detail, release blockers, workspace boundary, and audit records before retrying.",
+      retriable: false,
+      humanActionRequired: true
+    };
+  }
+  if (statusCode === 429) {
+    return {
+      summary: "Request was rate limited or quota constrained.",
+      likelyCause: errorCode ?? "RATE_LIMITED",
+      recommendedAction: "Check tenant quota, worker concurrency, and retry after the configured backoff window.",
+      retriable: true,
+      humanActionRequired: false
+    };
+  }
+  if (statusCode >= 500) {
+    return {
+      summary: "Unhandled server error during request processing.",
+      likelyCause: errorCode ?? "SERVER_ERROR",
+      recommendedAction: "Collect logs with the same correlation.requestId, inspect stack traces, loop/release ids, and recent deploy changes.",
+      retriable: true,
+      humanActionRequired: true
+    };
+  }
+  return {
+    summary: "Request was rejected by HTTP validation.",
+    likelyCause: errorCode ?? `HTTP_${statusCode}`,
+    recommendedAction: "Review request payload, role, tenant/workspace scope, and the response error detail.",
+    retriable: false,
+    humanActionRequired: true
+  };
+}
+
 function writeLog(record: LogRecord): void {
   if (!shouldLog(record.level)) return;
   const normalized: LogRecord = {
     timestamp: record.timestamp ?? new Date().toISOString(),
+    schema: "evopilot-log/v1",
     service: "evopilot",
     version: "1.0.0",
+    severity: logSeverity(record.level),
+    category: record.category ?? logCategory(record.event),
     ...record,
+    correlation: record.correlation ? redactLogValue(record.correlation) as LogRecord["correlation"] : undefined,
+    diagnosis: record.diagnosis ? redactLogValue(record.diagnosis) as LogRecord["diagnosis"] : undefined,
     metadata: record.metadata ? redactLogValue(record.metadata) as Record<string, unknown> : undefined,
     error: record.error ? redactSensitiveText(record.error) : undefined,
     stack: includeLogStack() && record.stack ? redactSensitiveText(record.stack) : undefined
