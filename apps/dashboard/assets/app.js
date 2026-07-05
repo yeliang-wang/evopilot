@@ -5184,7 +5184,7 @@ function bindAuthBar() {
 }
 
 async function refreshData() {
-  await Promise.all([
+  await Promise.allSettled([
     loadSaasControlPlane(),
     loadProjects(),
     loadSummary(),
