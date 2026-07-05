@@ -4206,7 +4206,7 @@ function helpManualRoles() {
       title: "未登录用户",
       apiRole: "anonymous",
       workspaceRole: "无",
-      scope: "只允许打开登录页、查看公开帮助和健康检查；不能读取租户、项目、Loop、凭据或发布证据。",
+      scope: "只允许打开登录页、查看公开帮助和健康检查；账号由平台高级管理员或租户管理员创建，不提供公网自助注册；未登录不能读取租户、项目、Loop、凭据或发布证据。",
       pages: ["登录页", "帮助手册"],
       can: ["输入用户名和密码", "查看公开帮助", "访问健康检查"],
       blocked: "不能通过 API Token 进入 Dashboard；不能看到任何租户内数据。",
@@ -5617,6 +5617,7 @@ function renderLoginPage() {
           <p class="eyebrow">AI Agent 产品演进与交付控制</p>
           <h1>登录 EvoPilot 控制台</h1>
           <p>使用平台或租户账号进入工作区。系统会按角色显示管理员、操作员、开发者或审计员对应的数据与操作权限。</p>
+          <p class="login-account-note">账号由平台高级管理员或租户管理员创建。EvoPilot 不提供公网自助注册入口。</p>
         </div>
         <form id="login-form" class="login-form-panel">
           <label>

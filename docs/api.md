@@ -19,7 +19,7 @@ platformAdmin: true
 mustChangePassword: true
 ```
 
-该账号用于首次初始化，登录后必须调用改密接口，不能在生产环境长期使用默认密码。也可以使用 `EVOPILOT_USERS` 预置租户用户：
+该账号用于首次初始化，登录后必须调用改密接口，不能在生产环境长期使用默认密码。EvoPilot 不提供公网自助注册接口；账号开通遵循 `平台高级管理员 -> 租户管理员 -> 租户内用户`：平台高级管理员创建租户、工作区和租户管理员，租户管理员通过用户管理接口创建本租户用户。未登录用户只能访问登录页、公开帮助和健康检查，不能创建租户、创建用户、接入项目或读取租户数据。也可以使用 `EVOPILOT_USERS` 预置租户用户：
 
 ```text
 EVOPILOT_USERS=tenant-admin:<password>:admin:tenant-production:workspace-agent-products:Tenant Admin

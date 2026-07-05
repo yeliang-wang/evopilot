@@ -1496,6 +1496,12 @@ body.login-page-mode {
   line-height: 1.7;
 }
 
+.login-copy .login-account-note {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .login-form-panel {
   display: grid;
   gap: 16px;
