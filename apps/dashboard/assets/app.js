@@ -102,6 +102,7 @@ const state = {
   sourceToGaLoopId: "",
   sourceToGaNodeId: "executor",
   sourceToGaRefreshing: false,
+  dashboardRole: "平台管理员",
   loopTargetRuntime: {
     discoveryCandidates: [],
     findingHandoffs: [],
@@ -471,6 +472,220 @@ function saasScopeModel() {
   };
 }
 
+function productionReadinessModel(scopeModel, onboarding) {
+  const store = state.loopStoreReadiness ?? state.loopStore;
+  const storeStatus = store?.status ?? (store?.backend === "postgres" ? "READY" : "PENDING");
+  const storeBackend = store?.backend ?? state.loopStore?.backend ?? "file";
+  const postgresReady = storeBackend === "postgres" && (storeStatus === "READY" || store?.postgresReachable === true);
+  const decision = onboarding.decisionGo ? "GO" : releaseDecisionLabel(onboarding.releaseRun, { allowGlobalDecision: true });
+  const decisionReady = decision === "GO";
+  const releaseBlockedCount = scopeModel.releaseBlocked.length;
+  const highRiskCount = releaseBlockedCount + Number(state.saasObservability?.blockedLoopCount ?? 0);
+  const dataMode = state.apiStatus === "实时数据" ? "live" : "demo";
+  const connected = dataMode === "live" || Boolean(state.apiToken);
+  const ready = connected && decisionReady && highRiskCount === 0 && (postgresReady || storeStatus === "READY");
+  const status = ready ? "运行正常" : connected ? "待处理" : "待连接";
+  const summary = ready
+    ? "租户、工作区、项目接入、Loop 执行、发布证据和审计链路均处于可用状态。当前没有高风险阻塞，发布结论和证据包可在发布中心查看。"
+    : connected
+      ? "控制台已连接真实数据，请先处理发布门禁、Loop 存储或开放风险，再进入正式发布流程。"
+      : "当前展示内置示例结构。连接 API Token 后，Dashboard 会显示真实租户、工作区、Loop、发布判定和审计证据。";
+  return {
+    status,
+    summary,
+    connected,
+    ready,
+    decision,
+    decisionReady,
+    storeBackend,
+    storeStatus,
+    postgresReady,
+    highRiskCount,
+    blockerCount: releaseBlockedCount,
+    criteriaPassed: decisionReady ? 11 : Math.max(0, Number(state.intelligence.releaseReadyCount ?? 0)),
+    criteriaTotal: 11,
+    workspaceCount: scopeModel.workspaceCount,
+    verifiedProjects: scopeModel.verifiedProjects.length,
+    promotedReleases: scopeModel.releaseReady.length,
+    evidenceCount: state.sourceReleaseRuns.length + state.history.length,
+    dataMode
+  };
+}
+
+function renderProductionReadinessOverview(model, onboarding) {
+  const statusClass = model.ready ? "good" : model.connected ? "warn" : "";
+  const journey = [
+    {
+      title: "接入项目",
+      detail: onboarding.verified ? "项目验证通过" : "连接 GitHub/GitLab/local Git 项目",
+      done: onboarding.verified,
+      page: "项目"
+    },
+    {
+      title: "配置边界",
+      detail: onboarding.credentialsReady ? "凭据与工作区边界就绪" : "配置 workspace、secret vault 和写回凭据",
+      done: onboarding.credentialsReady,
+      page: "凭据"
+    },
+    {
+      title: "启动 Loop",
+      detail: onboarding.loopDone ? "Source-to-GA 闭环已完成" : "启动或继续 Source-to-GA Loop",
+      done: onboarding.loopDone,
+      page: "Loops"
+    },
+    {
+      title: "发布证据",
+      detail: model.decisionReady ? "发布判定为 GO" : "查看发布门禁和证据包",
+      done: model.decisionReady,
+      page: "发布证据"
+    }
+  ];
+  return `
+    <section class="production-readiness-hero" aria-label="生产发布总览">
+      <div>
+        <span class="eyebrow">Production release overview</span>
+        <h2>生产控制面${escapeHtml(model.status)}</h2>
+        <p>${escapeHtml(model.summary)}</p>
+      </div>
+      <span class="production-state ${statusClass}">${escapeHtml(model.status)}</span>
+    </section>
+    <section class="production-kpi-grid" aria-label="生产发布关键指标">
+      ${[
+        ["发布判定", model.decision, `${model.criteriaPassed} / ${model.criteriaTotal} 项门禁${model.decisionReady ? "通过" : "待确认"}`, model.decisionReady],
+        ["Loop 存储", model.postgresReady ? "Postgres 就绪" : `${model.storeBackend} / ${model.storeStatus}`, model.postgresReady ? "连接可达，发布门禁可验证" : "生产发布前需要确认持久化边界", model.postgresReady],
+        ["租户健康度", `${model.workspaceCount} 个工作区`, `${model.verifiedProjects} 个项目已验证`, model.workspaceCount > 0],
+        ["开放风险", `${model.highRiskCount} 高风险`, `${model.blockerCount} 阻塞项 / ${model.promotedReleases} promoted`, model.highRiskCount === 0]
+      ].map(([label, value, detail, good]) => `
+        <article class="${good ? "ready" : "attention"}">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(String(value))}</strong>
+          <small>${escapeHtml(String(detail))}</small>
+        </article>
+      `).join("")}
+    </section>
+    <section class="production-journey-panel" aria-label="生产发布核心路程">
+      <div class="section-title">
+        <div>
+          <h2>生产发布核心路程</h2>
+          <p>用户只需要按这 4 步判断当前发布是否可继续；内部 GA 结论留在 release decision，不作为用户态横幅。</p>
+        </div>
+        <button data-page-link="发布证据">查看发布证据</button>
+      </div>
+      <div class="production-journey-grid">
+        ${journey.map((item) => `
+          <article class="${item.done ? "done" : "pending"}">
+            <strong>${item.done ? "✓ " : ""}${escapeHtml(item.title)}</strong>
+            <small>${escapeHtml(item.detail)}</small>
+            <button data-page-link="${escapeHtml(item.page)}">${item.done ? "查看" : "继续"}</button>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function roleBasedDashboardModel(scopeModel, onboarding, readiness) {
+  const roles = [
+    {
+      id: "平台管理员",
+      title: "平台管理员",
+      detail: "负责租户、生产依赖、全局凭据和发布门禁。",
+      status: readiness.connected ? "运行视图" : "待连接",
+      tasks: [
+        { title: "确认生产控制面", detail: readiness.ready ? "发布门禁和风险状态可用。" : "连接 API Token 后确认真实发布状态。", page: "租户总览", cta: "查看状态" },
+        { title: "检查 Postgres 与 Worker", detail: readiness.postgresReady ? "Loop store 已就绪。" : "确认 Postgres loop store 和 worker queue。", page: "Loops", cta: "检查" },
+        { title: "配置全局凭据", detail: "GitHub App、deploy connector、LLM provider key 统一进入凭据中心。", page: "凭据", cta: "配置" }
+      ]
+    },
+    {
+      id: "租户管理员",
+      title: "租户管理员",
+      detail: "负责工作区、成员、配额、项目归属和凭据边界。",
+      status: `${scopeModel.workspaceCount} 个工作区`,
+      tasks: [
+        { title: "管理工作区成员", detail: `${scopeModel.memberCount} 个成员在当前 workspace scope。`, page: "工作区", cta: "管理" },
+        { title: "处理凭据阻塞", detail: `${scopeModel.credentialBlocked.length} 个项目需要写回凭据确认。`, page: "凭据", cta: "处理" },
+        { title: "查看配额与用量", detail: "确认 Loop、项目和 evidence storage 配额。", page: "租户总览", cta: "查看" }
+      ]
+    },
+    {
+      id: "工作区开发者",
+      title: "工作区开发者",
+      detail: "负责接入项目、启动 Loop、处理 human gate 和修复失败发布。",
+      status: onboarding.hasTarget ? "已有 Loop" : "待启动",
+      tasks: [
+        { title: "接入或查看项目", detail: onboarding.verified ? "项目已验证，可继续 Loop。" : "先完成项目接入和验证。", page: "项目", cta: onboarding.verified ? "查看" : "接入" },
+        { title: "启动 Source-to-GA", detail: onboarding.loopDone ? "闭环已完成，可查看证据。" : "从模板启动或继续 Loop。", page: "Loops", cta: "进入" },
+        { title: "修复失败发布", detail: `${scopeModel.releaseBlocked.length} 个 release run 需要处理。`, page: "发布证据", cta: "查看" }
+      ]
+    },
+    {
+      id: "发布负责人",
+      title: "发布负责人",
+      detail: "负责发布判定、证据包、审批、合并和生产健康检查。",
+      status: readiness.decision,
+      tasks: [
+        { title: "查看发布判定", detail: `当前发布判定：${readiness.decision}。`, page: "发布证据", cta: "查看" },
+        { title: "核对发布证据", detail: `${readiness.evidenceCount} 条发布或审计对象可复盘。`, page: "发布证据", cta: "核对" },
+        { title: "处理开放风险", detail: `${readiness.highRiskCount} 个高风险项。`, page: "审计", cta: "查看" }
+      ]
+    },
+    {
+      id: "审计员",
+      title: "审计员",
+      detail: "负责审计记录、证据归档、发布追溯和风险复盘。",
+      status: `${scopeModel.auditCount} audit objects`,
+      tasks: [
+        { title: "复盘审计记录", detail: "查看操作、审批、发布和修复证据。", page: "审计", cta: "复盘" },
+        { title: "下载发布证据包", detail: "确认 release decision、source closure 和 deploy health。", page: "发布证据", cta: "查看" },
+        { title: "打开帮助手册", detail: "按角色和场景核对操作流程。", page: "帮助手册", cta: "打开" }
+      ]
+    }
+  ];
+  const active = roles.find((role) => role.id === state.dashboardRole) ?? roles[0];
+  return { roles, active };
+}
+
+function renderRoleBasedDashboard(scopeModel, onboarding, readiness) {
+  const model = roleBasedDashboardModel(scopeModel, onboarding, readiness);
+  return `
+    <section class="role-dashboard" aria-label="角色化控制台">
+      <div class="section-title">
+        <div>
+          <h2>按角色处理任务</h2>
+          <p>企业 SaaS 用户不应该先理解全部模块；先选择身份，再处理对应任务。</p>
+        </div>
+      </div>
+      <div class="role-switcher" role="tablist" aria-label="Dashboard 角色">
+        ${model.roles.map((role) => `
+          <button class="${role.id === model.active.id ? "active" : ""}" data-dashboard-role="${escapeHtml(role.id)}" type="button">
+            ${escapeHtml(role.title)}
+          </button>
+        `).join("")}
+      </div>
+      <div class="role-dashboard-body">
+        <aside>
+          <span>当前角色</span>
+          <strong>${escapeHtml(model.active.title)}</strong>
+          <small>${escapeHtml(model.active.detail)}</small>
+          <b>${escapeHtml(model.active.status)}</b>
+        </aside>
+        <div class="role-task-grid">
+          ${model.active.tasks.map((task) => `
+            <article>
+              <div>
+                <strong>${escapeHtml(task.title)}</strong>
+                <small>${escapeHtml(task.detail)}</small>
+              </div>
+              <button data-page-link="${escapeHtml(task.page)}">${escapeHtml(task.cta)}</button>
+            </article>
+          `).join("")}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderTenantScopeBar() {
   const model = saasScopeModel();
   return `
@@ -502,6 +717,7 @@ function renderTenantScopeBar() {
 function renderSaasTenantOverview() {
   const model = saasScopeModel();
   const onboarding = sourceToGaExperienceModel();
+  const readiness = productionReadinessModel(model, onboarding);
   const launchSteps = firstLoopLaunchSteps(onboarding);
   const templates = loopTemplateCards(onboarding);
   const nextActions = dashboardNextActions(model, onboarding);
@@ -537,6 +753,8 @@ function renderSaasTenantOverview() {
     }
   ];
   return `
+    ${renderProductionReadinessOverview(readiness, onboarding)}
+    ${renderRoleBasedDashboard(model, onboarding, readiness)}
     <section class="saas-hero product-launch-hero" aria-label="SaaS tenant overview">
       <div>
         <span class="eyebrow">SaaS service control plane</span>
@@ -569,6 +787,7 @@ function renderSaasTenantOverview() {
             <div>
               <strong>${escapeHtml(step.title)}</strong>
               <small>${escapeHtml(step.detail)}</small>
+              <em>${escapeHtml(step.done ? step.doneLabel : step.blocker)}</em>
             </div>
             <button ${step.disabled ? "disabled" : ""} data-page-link="${escapeHtml(step.page)}">${escapeHtml(step.cta)}</button>
           </article>
@@ -681,6 +900,8 @@ function firstLoopLaunchSteps(model) {
       detail: model.verified ? `${model.project?.name ?? "项目"} 已验证` : "选择 GitHub/GitLab/local Git 项目",
       page: "项目",
       cta: model.verified ? "查看项目" : "开始接入",
+      doneLabel: "完成标志：项目验证通过，可进入凭据边界。",
+      blocker: "常见阻塞：仓库地址不可访问或 source credential 未配置。",
       done: model.verified,
       current: model.currentStep === 1
     },
@@ -690,6 +911,8 @@ function firstLoopLaunchSteps(model) {
       detail: model.credentialsReady ? "写回凭据已就绪" : "配置 tokenRef、GitHub App 或本地写权限",
       page: "凭据",
       cta: model.credentialsReady ? "查看凭据" : "去配置",
+      doneLabel: "完成标志：tokenRef、GitHub App 或 local-git 写回边界通过预检。",
+      blocker: "常见阻塞：tokenRef 未解析、分支不可读或写回权限不足。",
       done: model.credentialsReady,
       current: model.currentStep === 2
     },
@@ -699,6 +922,8 @@ function firstLoopLaunchSteps(model) {
       detail: model.hasTarget ? "已有 target 或运行记录" : "从模板创建 Source-to-GA Loop",
       page: "Loops",
       cta: model.hasTarget ? "进入 Loops" : "选模板",
+      doneLabel: "完成标志：Source-to-GA Loop 已创建并有 worker / trace / sandbox 证据。",
+      blocker: "常见阻塞：未选择模板、worker 未领取或 human gate 等待审批。",
       done: model.hasTarget,
       current: model.currentStep === 3
     },
@@ -708,6 +933,8 @@ function firstLoopLaunchSteps(model) {
       detail: model.decisionGo ? "GO 证据可复盘" : "等待 release decision 和审计证据",
       page: "发布证据",
       cta: model.decisionGo ? "查看 GO" : "看进度",
+      doneLabel: "完成标志：release decision 为 GO，发布证据和审计记录可复盘。",
+      blocker: "常见阻塞：source closure 未完成、deploy health 未通过或 release policy 被阻断。",
       done: model.decisionGo,
       current: model.currentStep === 4
     }
@@ -3489,6 +3716,7 @@ function helpManualCatalogGroups(scenarios) {
 }
 
 function renderHelpManualScenario(scenario, index) {
+  const liveState = helpManualLiveState(scenario);
   return `
     <section class="manual-scenario manual-doc-section" id="manual-${escapeHtml(scenario.id)}" aria-label="${escapeHtml(scenario.title)}">
       <div class="manual-scenario-head">
@@ -3500,6 +3728,19 @@ function renderHelpManualScenario(scenario, index) {
         <button data-page-link="${escapeHtml(scenario.page)}">打开${escapeHtml(scenario.page)}</button>
       </div>
       ${scenario.roles?.length ? `<div class="manual-role-tags">${scenario.roles.map((role) => `<span>${escapeHtml(role)}</span>`).join("")}</div>` : ""}
+      <div class="manual-live-state ${escapeHtml(liveState.tone)}" aria-label="${escapeHtml(scenario.title)}当前状态">
+        <div>
+          <span>当前状态</span>
+          <strong>${escapeHtml(liveState.status)}</strong>
+          <small>${escapeHtml(liveState.detail)}</small>
+        </div>
+        <div>
+          <span>下一步</span>
+          <strong>${escapeHtml(liveState.nextAction)}</strong>
+          <small>${escapeHtml(liveState.blocker)}</small>
+        </div>
+        <button data-page-link="${escapeHtml(liveState.page)}">${escapeHtml(liveState.cta)}</button>
+      </div>
       <div class="manual-doc-subnav" aria-label="${escapeHtml(scenario.title)}目录">
         <a href="#manual-${escapeHtml(scenario.id)}-scene">操作场景</a>
         <a href="#manual-${escapeHtml(scenario.id)}-prerequisites">前提条件</a>
@@ -3527,6 +3768,45 @@ function renderHelpManualScenario(scenario, index) {
       </div>
     </section>
   `;
+}
+
+function helpManualLiveState(scenario) {
+  const scope = saasScopeModel();
+  const onboarding = sourceToGaExperienceModel();
+  const readiness = productionReadinessModel(scope, onboarding);
+  const blockedRelease = scope.releaseBlocked.length > 0;
+  const statusByScenario = {
+    "platform-tenant-provisioning": scope.workspaceCount > 0
+      ? ["已完成", `${scope.workspaceCount} 个工作区已在当前控制面可见。`, "检查生产控制面", "当前无租户创建阻塞。", "租户总览", "查看状态", "done"]
+      : ["待处理", "尚未读取到真实租户和工作区。", "连接 API Token", "未连接真实控制面数据。", "租户总览", "连接", "pending"],
+    "tenant-workspace-member-admin": scope.memberCount > 0
+      ? ["已覆盖", `${scope.memberCount} 个成员已映射到工作区角色。`, "核对成员边界", "如需邀请或改角色，请进入工作区。", "工作区", "管理成员", "done"]
+      : ["待处理", "当前工作区还没有成员模型。", "创建或同步成员", "成员列表为空。", "工作区", "进入工作区", "pending"],
+    "saas-tenant-workspace-onboarding": onboarding.decisionGo
+      ? ["已完成", "首条 Source-to-GA 已形成 GO 证据。", "查看发布证据", "当前无发布阻塞。", "发布证据", "查看证据", "done"]
+      : ["进行中", `当前停在第 ${onboarding.currentStep} 步：${onboarding.nextAction.label}。`, onboarding.nextAction.label, onboarding.nextAction.detail, onboarding.nextAction.page, "继续", "pending"],
+    "signals-to-code-upgrade": state.opportunities.length > 0
+      ? ["可执行", `${state.opportunities.length} 个机会点可进入方案确认或代码升级。`, "选择机会点", "若无真实信号，请先导入 evidence。", "工作区", "查看机会", "done"]
+      : ["待处理", "当前没有真实运行信号形成机会点。", "导入 evidence", "运行信号或评测集为空。", "工作区", "导入", "pending"],
+    "target-backlog-autopilot": state.loopOrchestrationTargets.length > 0
+      ? ["可执行", `${state.loopOrchestrationTargets.length} 个 target 可推进。`, "推进下一 Target", "human gate 未授权时 autopilot 会停下。", "Loops", "打开", "done"]
+      : ["待处理", "当前没有可推进 target。", "生成 target", "项目或目标未创建。", "工作区", "生成", "pending"],
+    "failed-release-repair": blockedRelease
+      ? ["阻塞", `${scope.releaseBlocked.length} 个发布记录需要修复。`, "进入修复队列", "source closure、deploy health 或 release policy 未通过。", "发布证据", "修复", "blocked"]
+      : ["已就绪", "当前没有失败发布记录。", "查看发布中心", "无修复阻塞。", "发布证据", "查看", "done"],
+    "release-evidence-review": readiness.decisionReady
+      ? ["已完成", "发布判定为 GO，证据可归档。", "下载审计包", "当前无高风险阻塞。", "发布证据", "查看证据", "done"]
+      : ["待确认", `当前发布判定：${readiness.decision}。`, "核对发布门禁", "release decision 尚未达到 GO。", "发布证据", "核对", "pending"],
+    "runtime-recovery": state.loopWorkerQueue.length || state.loopTraces.length
+      ? ["可排查", "Worker queue 或 trace 数据可用于恢复。", "打开 Loops 高级工作区", "如 worker 未领取，请先 claim 或检查 lease。", "Loops", "打开", "done"]
+      : ["待连接", "当前没有真实 worker / trace 数据。", "连接控制面", "未读取到 Loop Runtime 运行状态。", "Loops", "查看", "pending"],
+    "evopilot-self-governance": state.projects.some((project) => /evopilot/i.test(`${project.id} ${project.name}`))
+      ? ["已接入", "EvoPilot 项目已在控制面中可见。", "查看自演进 Loop", "source credential 仍需预检。", "项目", "查看", "done"]
+      : ["待处理", "尚未注册 EvoPilot 自身仓库。", "注册 EvoPilot GitHub 项目", "生产服务器不应使用操作者本机 local-git。", "项目", "注册", "pending"]
+  };
+  const fallback = ["待确认", "该场景需要进入对应页面核对真实状态。", "打开页面", "未绑定专用状态判断。", scenario.page ?? "租户总览", "打开", "pending"];
+  const [status, detail, nextAction, blocker, page, cta, tone] = statusByScenario[scenario.id] ?? fallback;
+  return { status, detail, nextAction, blocker, page, cta, tone };
 }
 
 function renderHelpManualStep(step, index, page) {
@@ -4809,13 +5089,15 @@ function translateImpactPill(impact) {
 
 function render() {
   const isHelpManual = state.active === "帮助手册";
+  const isTenantOverview = state.active === "租户总览";
   document.body.classList.toggle("help-page-mode", isHelpManual);
   title.textContent = isHelpManual ? "帮助文档" : state.active;
   renderNav();
-  content.innerHTML = `${isHelpManual ? "" : `${renderAuthBar()}${renderTenantScopeBar()}`}${renderPage(state.active)}`;
+  content.innerHTML = `${isHelpManual ? "" : `${renderAuthBar()}${isTenantOverview ? "" : renderTenantScopeBar()}`}${renderPage(state.active)}`;
   if (!isHelpManual) bindAuthBar();
   bindFlowHeader();
   bindLoopWorkspace();
+  bindRoleDashboard();
   bindPageLinks();
   bindProjectRegistration();
   bindEvaluationDatasets();
@@ -4825,16 +5107,30 @@ function render() {
   bindHistoryActions();
 }
 
+function bindRoleDashboard() {
+  for (const button of content.querySelectorAll("[data-dashboard-role]")) {
+    button.addEventListener("click", () => {
+      state.dashboardRole = button.dataset.dashboardRole;
+      render();
+    });
+  }
+}
+
 if (topHelpButton) {
   topHelpButton.addEventListener("click", openHelpManual);
 }
 
 function renderAuthBar() {
+  const authCopy = state.apiToken
+    ? "已配置 API Token，Dashboard 使用真实 EvoPilot API 和当前 tenant/workspace scope。"
+    : state.apiStatus === "实时数据"
+      ? "控制面已连接实时数据；当前环境未要求浏览器 API Token。生产公网环境仍应启用 RBAC Token。"
+      : "未连接 API Token 时显示产品结构与示例数据；连接后切换到真实租户、工作区、Loop 和发布证据。";
   return `
     <section class="auth-bar">
       <div>
         <strong>多租户生产控制面</strong>
-        <span>${state.apiToken ? "已配置 API Token，Dashboard 使用真实 EvoPilot API 和当前 tenant/workspace scope。" : "生产模式需要 API Token 才能读取真实租户、工作区、Loop 和发布证据数据。"}</span>
+        <span>${escapeHtml(authCopy)}</span>
         ${state.authNotice ? `<small>${state.authNotice}</small>` : ""}
       </div>
       <form id="api-token-form">
@@ -6290,7 +6586,7 @@ async function loadLoops() {
     state.loopOrchestrationPresets = [];
     state.loopOrchestrationTargets = [];
     state.loopTargetRuntime = normalizeLoopTargetRuntime();
-    state.authNotice = `Loop 数据读取失败：${error.message}`;
+    state.authNotice = state.apiToken ? `Loop 数据读取失败：${error.message}` : "";
   }
 }
 

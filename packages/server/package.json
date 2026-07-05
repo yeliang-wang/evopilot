@@ -17,10 +17,12 @@
     "@evopilot/adapter-openhands": "0.1.0",
     "@evopilot/core": "0.1.0",
     "@evopilot/llm": "0.1.0",
-    "@evopilot/profile-domainforge-fabric": "0.1.0"
+    "@evopilot/profile-domainforge-fabric": "0.1.0",
+    "pg": "^8.22.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.20.0",
     "typescript": "^5.6.0"
   }
 }

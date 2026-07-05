@@ -48,6 +48,14 @@ EVOPILOT_LOOP_STORE_DSN=postgres://evopilot:<password>@evopilot-postgres:5432/ev
 
 `GET /api/v1/loop-store/readiness` 不只检查环境变量；当 backend 为 `postgres` 时会解析 DSN 并探测 Postgres TCP 端口。只有返回 `status=READY`、`postgresConfigured=true`、`postgresReachable=true` 且 `blockers=[]`，`worker-queue-and-postgres-store` 才能作为 SaaS GA 场景证据。
 
+文件态业务数据迁移、Postgres business store 备份和恢复见 [SaaS 生产发布包](./saas-production-release-package.md)。生产发布前至少执行：
+
+```bash
+npm run store:postgres:migrate -- --data-root data/evopilot --dry-run
+EVOPILOT_LOOP_STORE_DSN=postgres://evopilot:<password>@127.0.0.1:5432/evopilot \
+  npm run store:postgres:backup -- --out backups/evopilot-postgres-business.jsonl
+```
+
 常用 worker 环境变量：
 
 ```text
