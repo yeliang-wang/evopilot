@@ -448,7 +448,7 @@ npm run server
 
 生产模式要求：
 
-- 必须配置 `EVOPILOT_TOKENS` 或 `EVOPILOT_API_TOKEN`。
+- 必须配置 `EVOPILOT_USERS`、`EVOPILOT_TOKENS` 或 `EVOPILOT_API_TOKEN`。Dashboard 面向最终用户使用 `EVOPILOT_USERS` 用户名/密码登录。
 - `EVOPILOT_REQUIRE_LLM` 默认是 `true`，并且必须配置真实 LLM provider。
 - 不允许匿名 admin。
 - 不允许模拟集成链路。
@@ -469,6 +469,7 @@ npm run server:debug
 | `EVOPILOT_PORT` | HTTP 端口，默认 `19876`。 |
 | `EVOPILOT_HOST` | 监听地址，默认 `127.0.0.1`。 |
 | `EVOPILOT_DATA_ROOT` | 持久化目录，默认 `data/evopilot`。 |
+| `EVOPILOT_USERS` | Dashboard 登录用户，格式为 `username:password:role:tenantId:workspaceId[:displayName]`。 |
 | `EVOPILOT_TOKENS` | 多 Token 配置，格式为 `name:token:role`。 |
 | `EVOPILOT_API_TOKEN` | 单一管理员 Bearer Token。 |
 | `EVOPILOT_DASHBOARD_ROOT` | Dashboard 静态资源目录，默认 `apps/dashboard`。 |
@@ -496,6 +497,7 @@ docker build -t evopilot:1.0.0 .
 ```bash
 docker run --rm \
   -p 19876:19876 \
+  -e EVOPILOT_USERS='admin:change-me-admin-password:admin:tenant-production:workspace-agent-products:PlatformAdmin' \
   -e EVOPILOT_TOKENS='admin:change-me-admin-token:admin,operator:change-me-operator-token:operator,viewer:change-me-viewer-token:viewer' \
   -v evopilot-data:/var/lib/evopilot \
   evopilot:1.0.0
@@ -594,7 +596,7 @@ EvoPilot 已具备可运行的产品闭环代码、中文 Dashboard、真实 LLM
 
 发布到生产环境前，至少需要完成：
 
-- 为目标环境配置真实 `EVOPILOT_TOKENS`。
+- 为目标环境配置真实 `EVOPILOT_USERS` 和自动化用 `EVOPILOT_TOKENS`。
 - 配置真实 LLM。
 - 配置真实项目接入凭据。
 - 配置或启动代码升级执行器。

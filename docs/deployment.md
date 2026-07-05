@@ -6,6 +6,7 @@
 EVOPILOT_PORT=19876 \
 EVOPILOT_RUN_MODE=prod \
 EVOPILOT_DATA_ROOT=data/evopilot \
+EVOPILOT_USERS=admin:change-me-admin-password:admin:tenant-production:workspace-agent-products:PlatformAdmin \
 EVOPILOT_TOKENS=admin:change-me-admin-token:admin,operator:change-me-operator-token:operator,viewer:change-me-viewer-token:viewer \
 npm run server
 ```
@@ -22,6 +23,7 @@ http://127.0.0.1:19876/
 docker build -t evopilot:1.0.0 .
 docker run --rm \
   -p 19876:19876 \
+  -e EVOPILOT_USERS='admin:change-me-admin-password:admin:tenant-production:workspace-agent-products:PlatformAdmin' \
   -e EVOPILOT_TOKENS='admin:change-me-admin-token:admin,operator:change-me-operator-token:operator,viewer:change-me-viewer-token:viewer' \
   -v evopilot-data:/var/lib/evopilot \
   evopilot:1.0.0
@@ -106,7 +108,7 @@ EVOPILOT_RUN_MODE=prod
 
 生产模式要求：
 
-- 必须配置 `EVOPILOT_TOKENS` 或 `EVOPILOT_API_TOKEN`。
+- 必须配置 `EVOPILOT_USERS`、`EVOPILOT_TOKENS` 或 `EVOPILOT_API_TOKEN`。Dashboard 面向用户使用 `EVOPILOT_USERS` 用户名/密码登录；`EVOPILOT_TOKENS` 主要用于自动化和兼容 API 调用。
 - `EVOPILOT_REQUIRE_LLM` 默认等于 `true`，必须配置真实 LLM provider；缺少 `EVOPILOT_LLM_BASE_URL`、`EVOPILOT_LLM_MODEL_NAME` 或 `EVOPILOT_LLM_API_KEY` 时，生产服务会拒绝启动并返回 `EVOPILOT_PROD_REQUIRES_LLM_PROVIDER`。
 - Loop Runtime 的 `llm` executor 会调用真实 LLM Gateway，成功后把 `provider`、`model`、`totalTokens`、`costUsd` 写入 executor output、evidence 和 trace；调用失败时节点失败，不允许在生产模式下空跑成功。
 - 不允许无鉴权 admin。

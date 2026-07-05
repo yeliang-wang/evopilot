@@ -120,6 +120,64 @@ test("server emits production-grade structured logs with request ids and redacti
   assert.match(allLogs, /\[REDACTED\]/);
 });
 
+test("dashboard login exchanges username and password for scoped session token", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-login-"));
+  const server = createServer({
+    dataRoot,
+    apiToken: "legacy-admin-token",
+    users: [
+      {
+        username: "tenant-admin",
+        password: "tenant-password",
+        role: "admin",
+        tenantId: "tenant-production",
+        workspaceId: "workspace-agent-products",
+        displayName: "Tenant Admin"
+      },
+      {
+        username: "auditor",
+        password: "viewer-password",
+        role: "viewer",
+        tenantId: "tenant-production",
+        workspaceId: "workspace-agent-products",
+        displayName: "Audit Viewer"
+      }
+    ],
+    runtimeMode: "debug"
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const failed = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username: "tenant-admin", password: "wrong" })
+    });
+    assert.equal(failed.status, 401);
+    const login = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ username: "tenant-admin", password: "tenant-password" })
+    });
+    assert.equal(login.status, 200);
+    const loginBody = await login.json();
+    assert.equal(loginBody.data.user.username, "tenant-admin");
+    assert.equal(loginBody.data.user.role, "admin");
+    assert.equal(loginBody.data.user.tenantId, "tenant-production");
+    assert.equal(loginBody.data.user.workspaceId, "workspace-agent-products");
+    assert.equal(loginBody.data.user.password, undefined);
+    assert.equal(loginBody.data.user.token, undefined);
+    assert.ok(loginBody.data.token);
+    const summary = await fetch(`${baseUrl}/api/v1/summary`, {
+      headers: { authorization: `Bearer ${loginBody.data.token}` }
+    });
+    assert.equal(summary.status, 200);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("server serves dashboard static files", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-dashboard-"));
   const dashboardRoot = path.resolve("apps/dashboard");

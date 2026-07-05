@@ -10,7 +10,22 @@ GET /health
 
 ## 鉴权
 
-配置 `EVOPILOT_API_TOKEN` 后，所有 `/api/v1/*` 请求都需要：
+Dashboard 用户应通过登录接口输入用户名和密码。服务端使用 `EVOPILOT_USERS` 配置租户用户：
+
+```text
+EVOPILOT_USERS=tenant-admin:<password>:admin:tenant-production:workspace-agent-products:Tenant Admin
+```
+
+登录成功后，后端返回会话 token 和用户身份：
+
+```http
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{"username":"tenant-admin","password":"<password>"}
+```
+
+自动化脚本、CLI 或 Dashboard 登录后的后续请求使用 Bearer token：
 
 ```text
 Authorization: Bearer <token>
@@ -18,7 +33,7 @@ Authorization: Bearer <token>
 
 `/health` 和控制台静态文件保持公开，用于健康探测和本地查看。
 
-可以通过 `EVOPILOT_TOKENS` 配置多角色 Token：
+也可以通过 `EVOPILOT_TOKENS` 配置多角色机器 Token：
 
 ```text
 admin:<token>:admin,operator:<token>:operator,viewer:<token>:viewer

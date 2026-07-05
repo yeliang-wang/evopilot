@@ -47,6 +47,7 @@ const state = {
   active: routedPages.includes(initialPage) ? initialPage : "租户总览",
   apiStatus: "示例数据",
   apiToken: window.localStorage.getItem("evopilot.apiToken") ?? "",
+  currentUser: JSON.parse(window.localStorage.getItem("evopilot.currentUser") || "null"),
   authNotice: "",
   isLoading: true,
   operationNotice: "",
@@ -510,7 +511,7 @@ function productionReadinessModel(scopeModel, onboarding) {
     ? "租户、工作区、项目接入、Loop 执行、发布证据和审计链路均处于可用状态。当前没有高风险阻塞，发布结论和证据包可在发布中心查看。"
     : connected
       ? "控制台已连接真实数据，请先处理发布门禁、Loop 存储或开放风险，再进入正式发布流程。"
-      : "当前展示内置示例结构。连接 API Token 后，Dashboard 会显示真实租户、工作区、Loop、发布判定和审计证据。";
+      : "当前展示内置示例结构。Dashboard 登录后，Dashboard 会显示真实租户、工作区、Loop、发布判定和审计证据。";
   return {
     status,
     summary,
@@ -615,7 +616,7 @@ function roleBasedDashboardModel(scopeModel, onboarding, readiness) {
       detail: "负责租户、生产依赖、全局凭据和发布门禁。",
       status: readiness.connected ? "运行视图" : "待连接",
       tasks: [
-        { title: "确认生产控制面", detail: readiness.ready ? "发布门禁和风险状态可用。" : "连接 API Token 后确认真实发布状态。", page: "租户总览", cta: "查看状态" },
+        { title: "确认生产控制面", detail: readiness.ready ? "发布门禁和风险状态可用。" : "Dashboard 登录后确认真实发布状态。", page: "租户总览", cta: "查看状态" },
         { title: "检查 Postgres 与 Worker", detail: readiness.postgresReady ? "Loop store 已就绪。" : "确认 Postgres loop store 和 worker queue。", page: "Loops", cta: "检查" },
         { title: "配置全局凭据", detail: "GitHub App、deploy connector、LLM provider key 统一进入凭据中心。", page: "凭据", cta: "配置" }
       ]
@@ -3812,7 +3813,7 @@ function helpManualLiveState(scenario) {
   const statusByScenario = {
     "platform-tenant-provisioning": scope.workspaceCount > 0
       ? ["已完成", `${scope.workspaceCount} 个工作区已在当前控制面可见。`, "检查生产控制面", "当前无租户创建阻塞。", "租户总览", "查看状态", "done"]
-      : ["待处理", "尚未读取到真实租户和工作区。", "连接 API Token", "未连接真实控制面数据。", "租户总览", "连接", "pending"],
+      : ["待处理", "尚未读取到真实租户和工作区。", "登录控制台", "未连接真实控制面数据。", "租户总览", "连接", "pending"],
     "tenant-workspace-member-admin": scope.memberCount > 0
       ? ["已覆盖", `${scope.memberCount} 个成员已映射到工作区角色。`, "核对成员边界", "如需邀请或改角色，请进入工作区。", "工作区", "管理成员", "done"]
       : ["待处理", "当前工作区还没有成员模型。", "创建或同步成员", "成员列表为空。", "工作区", "进入工作区", "pending"],
@@ -3830,7 +3831,7 @@ function helpManualLiveState(scenario) {
       : ["已就绪", "当前没有失败发布记录。", "查看发布中心", "无修复阻塞。", "发布证据", "查看", "done"],
     "ai-log-diagnosis": state.loopTraces.length || state.saasObservability || readiness.decisionReady
       ? ["可排查", "生产日志、trace、release decision 和 SaaS observability 已形成关联入口。", "按 requestId 聚合日志包", "优先使用 evopilot-log/v1、correlation 和 diagnosis 字段定位。", "Loops", "打开排障", "done"]
-      : ["待连接", "当前未读取到生产日志关联状态。", "连接生产控制面", "需要 API Token、日志平台和 release evidence。", "租户总览", "连接", "pending"],
+      : ["待连接", "当前未读取到生产日志关联状态。", "连接生产控制面", "需要已登录账号、日志平台和 release evidence。", "租户总览", "连接", "pending"],
     "release-evidence-review": readiness.decisionReady
       ? ["已完成", "发布判定为 GO，证据可归档。", "下载审计包", "当前无高风险阻塞。", "发布证据", "查看证据", "done"]
       : ["待确认", `当前发布判定：${readiness.decision}。`, "核对发布门禁", "release decision 尚未达到 GO。", "发布证据", "核对", "pending"],
@@ -4106,7 +4107,7 @@ function helpManualScenarios() {
       page: "租户总览",
       persona: "负责 SaaS 控制面初始化的平台管理员",
       roles: ["平台管理员", "租户管理员", "审计 Viewer"],
-      prerequisites: ["admin API Token", "目标租户编码", "初始 owner/admin 成员", "租户配额策略"],
+      prerequisites: ["平台管理员账号", "目标租户编码", "初始 owner/admin 成员", "租户配额策略"],
       outcome: "tenant、workspace、owner/admin、quota 和 audit 边界全部创建并可复盘",
       goal: "从平台视角完成一个新租户的最小可运营单元：先创建 tenant，再创建 workspace，最后把 owner/admin、配额和审计边界交给租户管理员。",
       steps: [
@@ -4142,11 +4143,11 @@ function helpManualScenarios() {
       page: "租户总览",
       persona: "第一次配置 EvoPilot SaaS 控制台的租户管理员",
       roles: ["租户管理员", "Workspace 开发者", "发布负责人"],
-      prerequisites: ["生产控制面 API Token", "目标 tenant/workspace", "GitHub App 或 tokenRef", "部署与 LLM 凭据边界"],
+      prerequisites: ["生产控制台账号", "目标 tenant/workspace", "GitHub App 或 tokenRef", "部署与 LLM 凭据边界"],
       outcome: "workspace 完成项目接入、凭据预检、首个 Loop 和发布证据归属",
       goal: "把 EvoPilot 从单机控制台使用方式切换为 SaaS 多租户操作方式：先确认 tenant/workspace/member/credential 边界，再在工作区内推进项目闭环。",
       steps: [
-        manualStep("连接多租户生产控制面", "在顶部生产控制面输入 EvoPilot API Token。没有 Token 时 Dashboard 只能使用示例数据，不能读写真正 tenant、workspace、Loop 和发布证据。", "顶部提示已配置 API Token，Dashboard 使用真实 tenant/workspace scope", "多租户生产控制面", "租户总览", "Production control", "API Token 解锁真实租户、工作区和发布证据数据", navFor("租户总览"), ["API Token", "Tenant", "Workspace", "Release evidence"], "租户总览", "API Token 缺失或权限不足"),
+        manualStep("连接多租户生产控制面", "在顶部登录 EvoPilot 控制台。未登录时 Dashboard 只能使用示例数据，不能读写真正 tenant、workspace、Loop 和发布证据。", "顶部显示当前登录身份，Dashboard 使用真实 tenant/workspace scope", "多租户生产控制面", "租户总览", "Production control", "账号登录解锁真实租户、工作区和发布证据数据", navFor("租户总览"), ["账号登录", "Tenant", "Workspace", "Release evidence"], "租户总览", "未登录或权限不足"),
         manualStep("确认 Tenant 和 Workspace 边界", "进入租户总览，先确认当前 tenant、workspace、SaaS target、配额和 evidence boundary。不要直接从项目表单开始，否则后续凭据和证据归属会不清楚。", "租户总览显示 tenant-production、workspace-agent-products 和 SaaS 演进路线", "SaaS service control plane", "租户总览", "Tenant scope", "Tenant / Workspace / SaaS target / Evidence boundary", navFor("租户总览"), ["Tenant", "Workspace", "SaaS target", "租户配额"], "租户总览", "租户或工作区上下文缺失"),
         manualStep("检查成员、角色和 SaaS targets", "进入工作区，确认成员、角色、项目、Loop 和 evidence 都在同一个 workspace 下；同时检查 tenant-workspace-model、GitHub App、Secret Vault、Quota、Postgres Worker Queue 等 SaaS targets。", "工作区显示成员与角色、Workspace SaaS Targets、Target Runtime 和 Target Backlog", "Workspace boundary", "工作区", "Workspace control", "成员、项目、Loop 和证据归属在同一工作区", navFor("工作区"), ["Members", "Projects", "Workspace SaaS Targets", "Target Runtime"], "工作区", "成员角色或项目归属不明确"),
         manualStep("配置 GitHub App 与 Vault 边界", "进入凭据页，确认 GitHub App、source writeback、deploy credentials、LLM provider keys 和 audit redaction。生产环境优先使用 GitHub App installation 或服务器端 tokenRef。", "Vault readiness 显示各类凭据状态，source blocker 有明确 next boundary", "GitHub App 与 Secret Vault", "凭据", "Credential boundary", "workspace 级凭据中心统一管理源码、部署和 LLM 密钥", navFor("凭据"), ["GitHub App", "Source writeback", "Deploy credentials", "Audit redaction"], "凭据", "tokenRef 未解析、GitHub App 未安装或 secret 明文泄露风险"),
@@ -4323,7 +4324,7 @@ function renderLoopRunTable(loops) {
   return state.isLoading && loops.length === 0
     ? renderLoadingSkeleton("正在读取 Loop runtime、worker lease 与 release evidence")
     : loops.length === 0
-      ? renderEmptyState("暂无 LoopRun", "生产模式请先输入 API Token；命令入口、IM、定时任务或 API 创建后会显示在这里。", "创建闭环 Loop 后会在这里展示 runtime、trace 和源码发布证据。")
+      ? renderEmptyState("暂无 LoopRun", "生产模式请先登录控制台；命令入口、IM、定时任务或 API 创建后会显示在这里。", "创建闭环 Loop 后会在这里展示 runtime、trace 和源码发布证据。")
       : table(["操作", "Loop", "状态", "轮次", "源码闭环", "执行图", "Sandbox", "Worker", "Trace"], loops.map((loop) => [
           renderLoopActions(loop),
           `<strong>${loop.objective}</strong><span class="subtext">${loop.id}</span>`,
@@ -4496,7 +4497,7 @@ function renderLoopWorkerQueuePanel() {
         <button class="primary" data-action="claim-loop-worker">Claim 下一 Loop</button>
         <button data-action="watchdog-loop">Watchdog</button>
       </div>
-      ${state.isLoading && queue.length === 0 ? renderLoadingSkeleton("正在读取 durable worker queue") : queue.length === 0 ? renderEmptyState("暂无 worker queue 数据", "生产模式请先输入 API Token。", "连接后这里会显示 claimable loop、lease 过期状态和 side-effect guard。") : table(["Loop", "状态", "轮次", "Lease", "下一步", "副作用保护"], queue.map((item) => [
+      ${state.isLoading && queue.length === 0 ? renderLoadingSkeleton("正在读取 durable worker queue") : queue.length === 0 ? renderEmptyState("暂无 worker queue 数据", "生产模式请先登录控制台。", "连接后这里会显示 claimable loop、lease 过期状态和 side-effect guard。") : table(["Loop", "状态", "轮次", "Lease", "下一步", "副作用保护"], queue.map((item) => [
         `<strong>${escapeHtml(item.loopId)}</strong><span class="subtext">${escapeHtml(item.objective ?? "")}</span>`,
         statusPill(item.status),
         `${item.currentIteration}/${item.maxIterations}`,
@@ -4533,7 +4534,7 @@ function renderLoopTargetBacklogPanel() {
         <button class="primary" data-action="advance-loop-target" data-target-id="">推进下一 Target</button>
         <button data-action="autopilot-loop-target" data-target-id="">一键自动驾驶</button>
       </div>
-      ${state.isLoading && targets.length === 0 ? renderLoadingSkeleton("正在加载 target loop backlog") : targets.length === 0 ? renderEmptyState("暂无 target backlog", "生产模式请先输入 API Token。", "接入 GitHub/GitLab 或本地目录项目后，目标会按 Sandbox、Context、Harness、Loop 四层进入这里。") : table(["Target", "层", "状态", "下一步", "验收", "证据", "操作"], targets.map((target) => [
+      ${state.isLoading && targets.length === 0 ? renderLoadingSkeleton("正在加载 target loop backlog") : targets.length === 0 ? renderEmptyState("暂无 target backlog", "生产模式请先登录控制台。", "接入 GitHub/GitLab 或本地目录项目后，目标会按 Sandbox、Context、Harness、Loop 四层进入这里。") : table(["Target", "层", "状态", "下一步", "验收", "证据", "操作"], targets.map((target) => [
         `<strong>${escapeHtml(target.title)}</strong><span class="subtext">${escapeHtml(target.id)}${target.loopId ? ` / ${escapeHtml(target.loopId)}` : ""}</span>`,
         escapeHtml(target.layer),
         statusPill(target.status),
@@ -5185,46 +5186,89 @@ if (topHelpButton) {
 }
 
 function renderAuthBar() {
-  const authCopy = state.apiToken
-    ? "已配置 API Token，Dashboard 使用真实 EvoPilot API 和当前 tenant/workspace scope。"
+  const user = state.currentUser;
+  const authCopy = user
+    ? `${user.displayName ?? user.username} 已登录，角色 ${roleLabel(user.role)}，当前范围 ${user.tenantId}/${user.workspaceId}。`
     : state.apiStatus === "实时数据"
-      ? "控制面已连接实时数据；当前环境未要求浏览器 API Token。生产公网环境仍应启用 RBAC Token。"
-      : "未连接 API Token 时显示产品结构与示例数据；连接后切换到真实租户、工作区、Loop 和发布证据。";
+      ? "控制面已连接实时数据；当前环境未要求登录。生产公网环境应启用账号登录和 RBAC。"
+      : "请输入 EvoPilot 用户名和密码。登录后会按平台管理员、租户管理员、开发者或审计员展示对应数据和操作权限。";
   return `
-    <section class="auth-bar">
+    <section class="auth-bar ${user ? "signed-in" : "login-required"}">
       <div>
-        <strong>多租户生产控制面</strong>
+        <strong>${user ? "当前登录身份" : "登录 EvoPilot 控制台"}</strong>
         <span>${escapeHtml(authCopy)}</span>
-        ${state.authNotice ? `<small>${state.authNotice}</small>` : ""}
+        ${state.authNotice ? `<small>${escapeHtml(state.authNotice)}</small>` : ""}
       </div>
-      <form id="api-token-form">
-        <input name="apiToken" type="password" placeholder="EvoPilot API Token" value="${escapeHtml(state.apiToken)}" autocomplete="off" />
-        <button type="submit">${state.apiToken ? "更新" : "连接"}</button>
-        ${state.apiToken ? `<button type="button" data-action="clear-api-token">清除</button>` : ""}
-      </form>
+      ${user ? `
+        <div class="login-session">
+          <span>${escapeHtml(roleLabel(user.role))}</span>
+          <span>${escapeHtml(user.tenantId)} / ${escapeHtml(user.workspaceId)}</span>
+          <button type="button" data-action="logout">退出登录</button>
+        </div>
+      ` : `
+        <form id="login-form" class="login-form">
+          <input name="username" type="text" placeholder="用户名" autocomplete="username" />
+          <input name="password" type="password" placeholder="密码" autocomplete="current-password" />
+          <button type="submit">登录</button>
+        </form>
+      `}
     </section>
   `;
 }
 
 function bindAuthBar() {
-  const form = content.querySelector("#api-token-form");
+  const form = content.querySelector("#login-form");
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const token = String(new FormData(form).get("apiToken") ?? "").trim();
-    state.apiToken = token;
-    if (token) window.localStorage.setItem("evopilot.apiToken", token);
-    else window.localStorage.removeItem("evopilot.apiToken");
-    state.authNotice = token ? "API Token 已保存到本机浏览器，正在刷新真实数据。" : "API Token 已清空。";
+    const payload = {
+      username: String(new FormData(form).get("username") ?? "").trim(),
+      password: String(new FormData(form).get("password") ?? "")
+    };
+    state.authNotice = "正在验证身份。";
+    render();
+    try {
+      const response = await fetch("/api/v1/auth/login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(response.status === 401 ? "用户名或密码错误" : `登录接口状态 ${response.status}`);
+      const { data } = await response.json();
+      setAuthenticatedSession(data.token, data.user);
+      state.authNotice = `${data.user.displayName ?? data.user.username} 登录成功，正在读取工作区数据。`;
+      await refreshData();
+    } catch (error) {
+      clearAuthenticatedSession();
+      state.authNotice = `登录失败：${error.message}`;
+    }
+    render();
+  });
+  content.querySelector('[data-action="logout"]')?.addEventListener("click", async () => {
+    clearAuthenticatedSession();
+    state.authNotice = "已退出登录。";
     await refreshData();
     render();
   });
-  content.querySelector('[data-action="clear-api-token"]')?.addEventListener("click", async () => {
-    state.apiToken = "";
-    window.localStorage.removeItem("evopilot.apiToken");
-    state.authNotice = "API Token 已清空。";
-    await refreshData();
-    render();
-  });
+}
+
+function setAuthenticatedSession(token, user) {
+  state.apiToken = token;
+  state.currentUser = user;
+  if (user?.tenantId) state.saasScope.tenantId = user.tenantId;
+  if (user?.workspaceId) state.saasScope.workspaceId = user.workspaceId;
+  window.localStorage.setItem("evopilot.apiToken", token);
+  window.localStorage.setItem("evopilot.currentUser", JSON.stringify(user));
+}
+
+function clearAuthenticatedSession() {
+  state.apiToken = "";
+  state.currentUser = null;
+  window.localStorage.removeItem("evopilot.apiToken");
+  window.localStorage.removeItem("evopilot.currentUser");
+}
+
+function roleLabel(role) {
+  return role === "admin" ? "管理员" : role === "operator" ? "操作员" : "只读用户";
 }
 
 async function refreshData() {

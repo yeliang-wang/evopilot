@@ -47,6 +47,7 @@ export interface EvoPilotServerOptions {
   profile?: ProjectProfile;
   apiToken?: string;
   tokens?: AuthToken[];
+  users?: AuthUser[];
   dashboardRoot?: string;
   deliveryExecutor?: DeliveryExecutor;
   llmClient?: LlmTaskClient;
@@ -77,6 +78,19 @@ export interface AuthToken {
   name: string;
   token: string;
   role: AuthRole;
+  tenantId?: string;
+  workspaceId?: string;
+  displayName?: string;
+}
+
+export interface AuthUser {
+  username: string;
+  password: string;
+  role: AuthRole;
+  tenantId: string;
+  workspaceId: string;
+  displayName?: string;
+  token?: string;
 }
 
 const DEFAULT_TENANT_ID = "tenant-production";
@@ -1717,7 +1731,9 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
   const llmClient = options.llmClient ?? createLlmClientFromEnv();
   const requireLlm = runtime.requireLlm;
   const tokens = normalizeTokens(options);
-  assertProductionRuntimeIsConfigured(runtime, tokens, llmClient);
+  const users = normalizeUsers(options, tokens, runtime);
+  const authTokens = mergeUserTokens(tokens, users);
+  assertProductionRuntimeIsConfigured(runtime, authTokens, llmClient);
   const store = new FileStore(options.dataRoot, { llmClient, requireLlm });
   const proofOpsCore = loadProofOpsCoreContract(options.proofOpsCoreContractPath);
   store.ensureRuleMemories(profile.triggerRules ?? defaultTriggerRules);
@@ -1742,7 +1758,8 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
     metadata: {
       runtimeMode: runtime.mode,
       dataRoot: options.dataRoot,
-      authRequired: tokens.length > 0,
+      authRequired: authTokens.length > 0,
+      loginEnabled: users.length > 0,
       profileId: profile.id,
       dashboardEnabled: Boolean(options.dashboardRoot)
     }
@@ -1808,7 +1825,36 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           schemaVersion: store.metadata().schemaVersion
         });
       }
-      const auth = authorize(request, tokens, runtime);
+      if (request.method === "POST" && url.pathname === "/api/v1/auth/login") {
+        const body = await readJson(request, options.maxBodyBytes) as Record<string, unknown>;
+        const username = optionalTrimmedString(body.username);
+        const password = body.password === undefined || body.password === null ? "" : String(body.password);
+        const matched = users.find((user) => user.username === username && user.password === password);
+        if (!matched) {
+          logWarn("auth.login.rejected", {
+            requestId,
+            category: "auth",
+            outcome: "rejected",
+            errorCode: "INVALID_CREDENTIALS",
+            error: "INVALID_CREDENTIALS",
+            metadata: { username: username ?? "" }
+          });
+          return writeJson(response, 401, { error: "INVALID_CREDENTIALS", detail: "用户名或密码错误" });
+        }
+        logInfo("auth.login.succeeded", {
+          requestId,
+          category: "auth",
+          tenantId: matched.tenantId,
+          workspaceId: matched.workspaceId,
+          actor: matched.username,
+          role: matched.role
+        });
+        return writeJson(response, 200, envelope({
+          token: userSessionToken(matched),
+          user: publicUser(matched)
+        }));
+      }
+      const auth = authorize(request, authTokens, runtime);
       requestAuth = auth ?? undefined;
       if (!auth) {
         logWarn("http.request.rejected", {
@@ -14914,6 +14960,52 @@ function normalizeTokens(options: EvoPilotServerOptions): AuthToken[] {
   return [];
 }
 
+function normalizeUsers(options: EvoPilotServerOptions, tokens: AuthToken[], runtime: RuntimeConfig): AuthUser[] {
+  if (options.users) return options.users;
+  const envUsers = parseEnvUsers(process.env.EVOPILOT_USERS);
+  if (envUsers?.length) return envUsers;
+  if (runtime.mode !== "debug") return [];
+  return tokens.map((token) => ({
+    username: token.name,
+    password: token.token,
+    role: token.role,
+    tenantId: token.tenantId ?? DEFAULT_TENANT_ID,
+    workspaceId: token.workspaceId ?? DEFAULT_WORKSPACE_ID,
+    displayName: token.displayName ?? token.name,
+    token: token.token
+  }));
+}
+
+function mergeUserTokens(tokens: AuthToken[], users: AuthUser[]): AuthToken[] {
+  const merged = new Map<string, AuthToken>();
+  for (const token of tokens) merged.set(token.token, token);
+  for (const user of users) {
+    const token = userSessionToken(user);
+    if (merged.has(token)) continue;
+    merged.set(token, {
+      name: user.username,
+      token,
+      role: user.role,
+      tenantId: user.tenantId,
+      workspaceId: user.workspaceId,
+      displayName: user.displayName
+    });
+  }
+  return [...merged.values()];
+}
+
+function userSessionToken(user: AuthUser): string {
+  if (user.token) return user.token;
+  return createHash("sha256")
+    .update(["evopilot-session-v1", user.username, user.password, user.role, user.tenantId, user.workspaceId].join(":"))
+    .digest("hex");
+}
+
+function publicUser(user: AuthUser): Omit<AuthUser, "password" | "token"> {
+  const { password: _password, token: _token, ...safe } = user;
+  return safe;
+}
+
 function requestScope(request: http.IncomingMessage): Pick<AuthContext, "tenantId" | "workspaceId"> {
   const tenantId = optionalTrimmedString(request.headers["x-evopilot-tenant"]) ?? DEFAULT_TENANT_ID;
   const workspaceId = optionalTrimmedString(request.headers["x-evopilot-workspace"]) ?? DEFAULT_WORKSPACE_ID;
@@ -14924,15 +15016,19 @@ function requestScope(request: http.IncomingMessage): Pick<AuthContext, "tenantI
 }
 
 function authorize(request: http.IncomingMessage, tokens: AuthToken[], runtime: RuntimeConfig): AuthContext | undefined {
-  const scope = requestScope(request);
+  const requestedScope = requestScope(request);
   if (tokens.length === 0) {
     if (!runtime.allowAnonymousAdmin) return undefined;
-    return { actor: String(request.headers["x-evopilot-actor"] ?? "system"), role: "admin", ...scope };
+    return { actor: String(request.headers["x-evopilot-actor"] ?? "system"), role: "admin", ...requestedScope };
   }
   const value = String(request.headers.authorization ?? "");
   const token = value.startsWith("Bearer ") ? value.slice("Bearer ".length) : "";
   const matched = tokens.find((item) => item.token === token);
   if (!matched) return undefined;
+  const scope = {
+    tenantId: matched.tenantId ?? requestedScope.tenantId,
+    workspaceId: matched.workspaceId ?? requestedScope.workspaceId
+  };
   return { actor: String(request.headers["x-evopilot-actor"] ?? matched.name), role: matched.role, ...scope };
 }
 
@@ -14997,8 +15093,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
   const host = process.env.EVOPILOT_HOST ?? "127.0.0.1";
   const dashboardRoot = process.env.EVOPILOT_DASHBOARD_ROOT ?? path.resolve("apps/dashboard");
   const tokens = parseEnvTokens(process.env.EVOPILOT_TOKENS);
+  const users = parseEnvUsers(process.env.EVOPILOT_USERS);
   const apiToken = process.env.EVOPILOT_API_TOKEN;
-  const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens }).listen(port, host, () => {
+  const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens, users }).listen(port, host, () => {
     const runtimeMode = process.env.EVOPILOT_RUN_MODE ?? process.env.EVOPILOT_MODE ?? (parseBoolean(process.env.EVOPILOT_DEBUG, false) ? "debug" : "prod");
     logInfo("server.started", {
       metadata: {
@@ -15008,7 +15105,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
         runtimeMode,
         dataRoot,
         dashboardRoot,
-        authConfigured: Boolean(apiToken || tokens?.length)
+        authConfigured: Boolean(apiToken || tokens?.length || users?.length),
+        loginEnabled: Boolean(users?.length)
       }
     });
   });
@@ -15049,5 +15147,23 @@ function parseEnvTokens(value: string | undefined): AuthToken[] | undefined {
       throw new Error("EVOPILOT_TOKENS 条目必须使用 name:token:role 格式");
     }
     return { name, token, role };
+  });
+}
+
+function parseEnvUsers(value: string | undefined): AuthUser[] | undefined {
+  if (!value) return undefined;
+  return value.split(",").map((item) => {
+    const [username, password, role, tenantId = DEFAULT_TENANT_ID, workspaceId = DEFAULT_WORKSPACE_ID, displayName] = item.split(":");
+    if (!username || !password || (role !== "viewer" && role !== "operator" && role !== "admin")) {
+      throw new Error("EVOPILOT_USERS 条目必须使用 username:password:role[:tenantId[:workspaceId[:displayName]]] 格式");
+    }
+    return {
+      username,
+      password,
+      role,
+      tenantId: safeFileName(tenantId),
+      workspaceId: safeFileName(workspaceId),
+      displayName: displayName || username
+    };
   });
 }
