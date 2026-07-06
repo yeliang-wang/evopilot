@@ -84,6 +84,8 @@ Content-Type: application/json
 {"currentPassword":"admin","newPassword":"<new-password>"}
 ```
 
+改密成功后响应会同时返回更新后的用户信息和新的会话 token。前端应替换本地 token 后再继续读取控制台数据；旧 token 会因为密码哈希变化而失效。
+
 自动化脚本、CLI 或 Dashboard 登录后的后续请求使用 Bearer token：
 
 ```text
@@ -147,7 +149,7 @@ GET /api/v1/loop-store/readiness
 GET /api/v1/saas/observability
 ```
 
-`GET /api/v1/workspaces/{workspaceId}/usage` 返回 workspace 级项目数、Loop 数和 evidence 容量配额；超过项目或 Loop 配额时，创建接口返回 `429 WORKSPACE_PROJECT_QUOTA_EXCEEDED` 或 `429 WORKSPACE_LOOP_QUOTA_EXCEEDED`。
+`POST /api/v1/workspaces` 会优先使用请求体中的 `id` 或 `workspaceId` 作为持久化 workspace id；`name` 仅作为展示名称。`GET /api/v1/workspaces/{workspaceId}` 和 `GET /api/v1/workspaces/{workspaceId}/usage` 返回 workspace 详情和 workspace 级项目数、Loop 数、evidence 容量配额；超过项目或 Loop 配额时，创建接口返回 `429 WORKSPACE_PROJECT_QUOTA_EXCEEDED` 或 `429 WORKSPACE_LOOP_QUOTA_EXCEEDED`。为兼容历史数据，详情和 usage 查询会尝试解析旧 name/slug，但新集成应始终使用创建接口返回的 `data.id`。
 
 用户管理接口用于 Dashboard “用户与权限”页。`POST /api/v1/users` 由平台高级管理员或租户管理员调用；平台高级管理员可指定任意 tenant/workspace 并创建 `platformAdmin`，租户管理员只能创建本租户用户且不能授予 `platformAdmin`。`PATCH /api/v1/users/{userId}` 支持修改 displayName、role、tenantId、workspaceId、status、mustChangePassword；`POST /api/v1/users/{userId}/reset-password` 会写入新密码哈希并把 `mustChangePassword` 置为 `true`。所有响应都会隐藏 `passwordHash`。
 
@@ -910,6 +912,9 @@ Codex、飞书、企业微信等入口应把用户对话转成 `POST /api/v1/con
 
 ```http
 GET /api/v1/audit
+GET /api/v1/history
 ```
 
 返回追加写入的审计记录，包括项目创建、运行创建、评审决策和交付执行。
+
+`GET /api/v1/history` 是 Dashboard “审计/历史详情”的统一产品历史接口，会按当前登录用户的 tenant/workspace 权限聚合 completed run release、source release run、release decision、code upgrade run 和 audit 摘要。支持 `projectId`、`targetId` 和 `limit` 查询参数，用于发布后证据复盘。

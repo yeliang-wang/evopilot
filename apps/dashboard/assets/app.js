@@ -5319,6 +5319,7 @@ function opportunityFromDraft(draft) {
 }
 
 function historyId(item) {
+  if (item.id) return item.id;
   return `${item.projectId}:${item.title}:${item.completedAt}`;
 }
 
@@ -5448,13 +5449,20 @@ function render() {
   const isHelpManual = state.active === "帮助手册";
   const isTenantOverview = state.active === "租户总览";
   const requiresLogin = !isHelpManual && !state.currentUser;
+  const requiresPasswordChange = !isHelpManual && state.currentUser?.mustChangePassword;
   document.body.classList.toggle("help-page-mode", isHelpManual);
-  document.body.classList.toggle("login-page-mode", requiresLogin);
-  title.textContent = requiresLogin ? "登录" : isHelpManual ? "帮助文档" : state.active;
+  document.body.classList.toggle("login-page-mode", requiresLogin || requiresPasswordChange);
+  title.textContent = requiresLogin ? "登录" : requiresPasswordChange ? "修改密码" : isHelpManual ? "帮助文档" : state.active;
   if (requiresLogin) {
     nav.innerHTML = "";
     content.innerHTML = renderLoginPage();
     bindLoginForm();
+    return;
+  }
+  if (requiresPasswordChange) {
+    nav.innerHTML = "";
+    content.innerHTML = renderPasswordChangePage();
+    bindPasswordChangeForm();
     return;
   }
   renderNav();
@@ -5636,6 +5644,46 @@ function renderLoginPage() {
   `;
 }
 
+function renderPasswordChangePage() {
+  const user = state.currentUser ?? {};
+  return `
+    <section class="login-screen">
+      <div class="login-panel">
+        <div class="login-brand">
+          <div class="brand-mark login-brand-mark">EP</div>
+          <div>
+            <strong>EvoPilot</strong>
+            <span>进化领航</span>
+          </div>
+        </div>
+        <div class="login-copy">
+          <p class="eyebrow">首次登录安全设置</p>
+          <h1>修改默认密码</h1>
+          <p>${escapeHtml(user.displayName ?? user.username ?? "当前用户")} 已通过身份验证。继续使用控制台前，需要把临时密码改为你自己的密码。</p>
+          <p class="login-account-note">修改完成后会自动进入当前租户和工作区。</p>
+        </div>
+        <form id="password-change-form" class="login-form-panel">
+          <label>
+            <span>当前密码</span>
+            <input name="currentPassword" type="password" placeholder="请输入当前临时密码" autocomplete="current-password" autofocus />
+          </label>
+          <label>
+            <span>新密码</span>
+            <input name="newPassword" type="password" placeholder="至少 4 位，不能继续使用 admin" autocomplete="new-password" />
+          </label>
+          <label>
+            <span>确认新密码</span>
+            <input name="confirmPassword" type="password" placeholder="再次输入新密码" autocomplete="new-password" />
+          </label>
+          <button class="primary" type="submit">修改密码并进入控制台</button>
+          <button type="button" data-action="logout">退出登录</button>
+          ${state.authNotice ? `<small class="login-notice">${escapeHtml(state.authNotice)}</small>` : ""}
+        </form>
+      </div>
+    </section>
+  `;
+}
+
 function bindLoginForm() {
   const form = content.querySelector("#login-form");
   form?.addEventListener("submit", async (event) => {
@@ -5655,11 +5703,54 @@ function bindLoginForm() {
       if (!response.ok) throw new Error(response.status === 401 ? "用户名或密码错误" : `登录接口状态 ${response.status}`);
       const { data } = await response.json();
       setAuthenticatedSession(data.token, data.user);
-      state.authNotice = `${data.user.displayName ?? data.user.username} 登录成功，正在读取工作区数据。`;
-      await refreshData();
+      state.authNotice = data.user.mustChangePassword
+        ? `${data.user.displayName ?? data.user.username} 登录成功，请先修改临时密码。`
+        : `${data.user.displayName ?? data.user.username} 登录成功，正在读取工作区数据。`;
+      if (!data.user.mustChangePassword) await refreshData();
     } catch (error) {
       clearAuthenticatedSession();
       state.authNotice = `登录失败：${error.message}`;
+    }
+    render();
+  });
+}
+
+function bindPasswordChangeForm() {
+  const form = content.querySelector("#password-change-form");
+  content.querySelector('[data-action="logout"]')?.addEventListener("click", async () => {
+    clearAuthenticatedSession();
+    state.authNotice = "已退出登录。";
+    await refreshData();
+    render();
+  });
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const formData = new FormData(form);
+    const currentPassword = String(formData.get("currentPassword") ?? "");
+    const newPassword = String(formData.get("newPassword") ?? "");
+    const confirmPassword = String(formData.get("confirmPassword") ?? "");
+    if (newPassword !== confirmPassword) {
+      state.authNotice = "两次输入的新密码不一致。";
+      render();
+      return;
+    }
+    state.authNotice = "正在修改密码。";
+    render();
+    try {
+      const response = await apiFetch("/api/v1/auth/change-password", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(summarizeApiError(data, response.status));
+      const user = data.data?.user ?? data.data;
+      const token = data.data?.token ?? state.apiToken;
+      setAuthenticatedSession(token, user);
+      state.authNotice = "密码已修改，正在进入控制台。";
+      await refreshData();
+    } catch (error) {
+      state.authNotice = `修改密码失败：${error.message}`;
     }
     render();
   });
@@ -5699,6 +5790,7 @@ async function refreshData() {
     loadSaasControlPlane(),
     loadProjects(),
     loadSummary(),
+    loadHistory(),
     loadReleaseTargets(),
     loadReleaseDecisions()
   ]);
@@ -5761,6 +5853,28 @@ async function loadSaasControlPlane() {
     }
   } catch {
     // 静态打开 Dashboard 时保留内置 SaaS 示例模型。
+  }
+}
+
+async function loadHistory() {
+  try {
+    const response = await apiFetch("/api/v1/history");
+    if (!response.ok) throw new Error(`历史接口状态 ${response.status}`);
+    const { data } = await response.json();
+    if (!Array.isArray(data?.entries)) return;
+    state.history = data.entries.slice(0, 20).map((entry) => ({
+      id: entry.id,
+      projectId: entry.projectId ?? entry.tenantId ?? state.saasScope.tenantId,
+      title: entry.title ?? entry.type ?? "历史记录",
+      completedAt: formatDate(entry.occurredAt ?? new Date().toISOString()),
+      result: translateReleaseStatus(entry.status ?? "RECORDED"),
+      evidence: entry.evidence ?? entry.type ?? "历史证据",
+      artifact: entry.artifact ?? entry.source?.releaseDecisionId ?? entry.source?.auditId ?? entry.id,
+      source: entry.source,
+      type: entry.type
+    }));
+  } catch {
+    // Summary can still provide recent history in static or degraded mode.
   }
 }
 

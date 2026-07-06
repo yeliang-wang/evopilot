@@ -1928,7 +1928,9 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (user.username === "admin" && nextPassword === "admin") return writeJson(response, 400, { error: "DEFAULT_ADMIN_PASSWORD_FORBIDDEN" });
         const updated = store.writeUser({ ...user, passwordHash: hashPassword(nextPassword), mustChangePassword: false, updatedAt: new Date().toISOString() });
         store.appendAudit(audit(auth, "user.password.changed", updated.id, { selfService: true }));
-        return writeJson(response, 200, envelope(publicUser(authUserFromRecord(updated))));
+        const nextUser = authUserFromRecord(updated);
+        const safeUser = publicUser(nextUser);
+        return writeJson(response, 200, envelope({ ...safeUser, user: safeUser, token: userSessionToken(nextUser) }));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/summary") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -2308,7 +2310,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const body = await readJson(request, options.maxBodyBytes);
         const now = new Date().toISOString();
-        const workspaceId = safeFileName(optionalTrimmedString(body.id) ?? optionalTrimmedString(body.name) ?? `workspace-${Date.now()}`);
+        const workspaceId = safeFileName(optionalTrimmedString(body.id) ?? optionalTrimmedString(body.workspaceId) ?? `workspace-${Date.now()}`);
         const tenantId = safeFileName(optionalTrimmedString(body.tenantId) ?? auth.tenantId);
         if (!auth.platformAdmin && tenantId !== auth.tenantId) return writeJson(response, 403, { error: "TENANT_FORBIDDEN" });
         const workspace: WorkspaceRecord = {
@@ -2337,7 +2339,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       const workspaceMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)$/);
       if (request.method === "GET" && workspaceMatch) {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        const workspace = store.readWorkspace(decodeURIComponent(workspaceMatch[1]));
+        const workspace = resolveWorkspace(store, decodeURIComponent(workspaceMatch[1]), auth);
         if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
         if (!canAccessWorkspace(auth, workspace, "viewer")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
         return writeJson(response, 200, envelope(workspace));
@@ -2392,7 +2394,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       const workspaceUsageMatch = url.pathname.match(/^\/api\/v1\/workspaces\/([^/]+)\/usage$/);
       if (request.method === "GET" && workspaceUsageMatch) {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        const workspace = store.readWorkspace(decodeURIComponent(workspaceUsageMatch[1]));
+        const workspace = resolveWorkspace(store, decodeURIComponent(workspaceUsageMatch[1]), auth);
         if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
         if (!canAccessWorkspace(auth, workspace, "viewer")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
         return writeJson(response, 200, envelope(workspaceUsage(store, workspace)));
@@ -3763,6 +3765,10 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       if (request.method === "GET" && url.pathname === "/api/v1/audit") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
         return writeJson(response, 200, envelope(store.listAudit()));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/history") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(historyView(store, auth, url)));
       }
       return writeJson(response, 404, { error: "NOT_FOUND" });
     } catch (error) {
@@ -8594,6 +8600,136 @@ function workspaceUsage(store: FileStore, workspace: WorkspaceRecord): {
     evaluatedAt: new Date().toISOString()
   };
 }
+
+function resolveWorkspace(store: FileStore, idOrName: string, auth: AuthContext): WorkspaceRecord | undefined {
+  const requested = safeFileName(idOrName);
+  const direct = store.readWorkspace(requested);
+  if (direct) return direct;
+  const visible = store.listWorkspaces(auth.platformAdmin ? undefined : auth.tenantId);
+  return visible.find((workspace) => {
+    const candidates = [
+      workspace.id,
+      workspace.name,
+      safeFileName(workspace.name),
+      workspace.id.replace(/^Test-WS-/, ""),
+      safeFileName(workspace.name).replace(/^Test-WS-/, "")
+    ];
+    return candidates.some((candidate) => candidate === requested || candidate === idOrName);
+  });
+}
+
+function historyView(store: FileStore, auth: AuthContext, url: URL) {
+  const projectId = optionalTrimmedString(url.searchParams.get("projectId"));
+  const targetId = optionalTrimmedString(url.searchParams.get("targetId"));
+  const limit = Math.max(1, Math.min(200, Number(url.searchParams.get("limit") ?? 50)));
+  const scoped = (tenantId?: string, workspaceId?: string) => canAccessScopedResource(auth, tenantId ?? auth.tenantId, workspaceId ?? auth.workspaceId);
+  const scopedProject = (value?: string) => {
+    if (!value) return auth.platformAdmin;
+    const project = store.readProject(value);
+    if (!project) return auth.platformAdmin;
+    return scoped(project.tenantId, project.workspaceId);
+  };
+  const entries = [
+    ...store.listRuns()
+      .filter((run) => !projectId || run.evidenceBundle.projectId === projectId)
+      .filter((run) => (run as any).tenantId && (run as any).workspaceId
+        ? scoped((run as any).tenantId, (run as any).workspaceId)
+        : scopedProject(run.evidenceBundle.projectId))
+      .flatMap((run) => run.releaseReports.map((release) => ({
+        schema: "evopilot-history-entry/v1",
+        id: `run-release:${run.id}:${release.id}`,
+        type: "run-release",
+        projectId: release.projectId,
+        title: run.opportunities[0]?.title ?? "Evidence run release",
+        status: release.status,
+        occurredAt: release.releasedAt ?? run.evidenceBundle.timeWindow.to,
+        evidence: release.validationSummary,
+        artifact: release.version,
+        source: { runId: run.id, releaseReportId: release.id, evidenceBundleId: run.evidenceBundle.id }
+      }))),
+    ...store.listSourceReleaseClosureRuns()
+      .filter((run) => scoped(run.tenantId, run.workspaceId))
+      .filter((run) => !projectId || run.projectId === projectId || run.sourceProjectId === projectId)
+      .map((run) => ({
+        schema: "evopilot-history-entry/v1",
+        id: `source-release:${run.id}`,
+        type: "source-release",
+        tenantId: run.tenantId,
+        workspaceId: run.workspaceId,
+        projectId: run.projectId,
+        title: `Source release ${run.status}`,
+        status: run.status,
+        occurredAt: run.updatedAt,
+        evidence: run.policy.blockers[0] ?? run.nextAction,
+        artifact: run.artifacts.tag ?? run.artifacts.pullRequestUrl ?? run.artifacts.mergeRequestUrl ?? run.artifacts.commitSha ?? run.sourceRef.releaseBranch ?? run.id,
+        source: { loopId: run.loopId, releaseRunId: run.id, nextAction: run.nextAction }
+      })),
+    ...store.listReleaseDecisions()
+      .filter((decision) => scoped(decision.tenantId, decision.workspaceId))
+      .filter((decision) => !projectId || decision.projectId === projectId)
+      .filter((decision) => !targetId || decision.targetId === targetId)
+      .map((decision) => ({
+        schema: "evopilot-history-entry/v1",
+        id: `release-decision:${decision.id}`,
+        type: "release-decision",
+        tenantId: decision.tenantId,
+        workspaceId: decision.workspaceId,
+        projectId: decision.projectId,
+        title: `Release decision ${decision.status}`,
+        status: decision.status,
+        occurredAt: decision.generatedAt,
+        evidence: `${decision.criteria.filter((item) => item.status === "PASS").length}/${decision.criteria.length} criteria passed`,
+        artifact: decision.evidenceBundleId,
+        source: { releaseDecisionId: decision.id, targetId: decision.targetId }
+      })),
+    ...store.listCodeUpgradeRuns()
+      .filter((run) => !projectId || run.projectId === projectId)
+      .filter((run) => scopedProject(run.projectId))
+      .map((run) => ({
+        schema: "evopilot-history-entry/v1",
+        id: `code-upgrade:${run.id}`,
+        type: "code-upgrade",
+        projectId: run.projectId,
+        title: "Code upgrade run",
+        status: run.status,
+        occurredAt: run.updatedAt,
+        evidence: run.failureReason ?? run.error ?? `${run.artifacts.changedFiles?.length ?? 0} changed files`,
+        artifact: run.artifacts.pullRequestUrl ?? run.artifacts.commitSha ?? run.artifacts.branchName ?? run.id,
+        source: { codeUpgradeRunId: run.id, deliveryPlanId: run.deliveryPlanId }
+      })),
+    ...store.listAudit()
+      .filter((record) => scoped(record.tenantId, record.workspaceId))
+      .filter((record) => !projectId || record.target === projectId || String(record.metadata?.projectId ?? "") === projectId)
+      .map((record) => ({
+        schema: "evopilot-history-entry/v1",
+        id: `audit:${record.id}`,
+        type: "audit",
+        tenantId: record.tenantId,
+        workspaceId: record.workspaceId,
+        title: record.action,
+        status: "RECORDED",
+        occurredAt: record.timestamp,
+        evidence: record.target,
+        artifact: record.actor,
+        source: { auditId: record.id, action: record.action }
+      }))
+  ].sort((left, right) => Date.parse(String(right.occurredAt)) - Date.parse(String(left.occurredAt))).slice(0, limit);
+  return {
+    schema: "evopilot-history/v1",
+    tenantId: auth.tenantId,
+    workspaceId: auth.workspaceId,
+    filters: { projectId, targetId, limit },
+    entries,
+    summary: {
+      total: entries.length,
+      byType: entries.reduce((acc: Record<string, number>, entry) => {
+        acc[String(entry.type)] = (acc[String(entry.type)] ?? 0) + 1;
+        return acc;
+      }, {})
+    }
+  };
+}
+
 
 function readJsonDir<T>(dir: string): T[] {
   if (!fs.existsSync(dir)) return [];

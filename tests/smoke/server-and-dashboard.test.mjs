@@ -233,7 +233,14 @@ test("bootstrap admin, password change, and tenant user management are enforced"
       body: JSON.stringify({ currentPassword: "admin", newPassword: "admin-1234" })
     });
     assert.equal(changed.status, 200);
-    assert.equal((await changed.json()).data.mustChangePassword, false);
+    const changedBody = await changed.json();
+    assert.equal(changedBody.data.mustChangePassword, false);
+    assert.equal(changedBody.data.user.mustChangePassword, false);
+    assert.ok(changedBody.data.token);
+    const changedTokenSummary = await fetch(`${baseUrl}/api/v1/summary`, {
+      headers: { authorization: `Bearer ${changedBody.data.token}` }
+    });
+    assert.equal(changedTokenSummary.status, 200);
 
     const relogin = await fetch(`${baseUrl}/api/v1/auth/login`, {
       method: "POST",
@@ -256,6 +263,13 @@ test("bootstrap admin, password change, and tenant user management are enforced"
       body: JSON.stringify({ id: "workspace-acme", tenantId: "tenant-acme", name: "Acme Workspace" })
     });
     assert.equal(workspace.status, 201);
+    const workspaceBody = await workspace.json();
+    assert.equal(workspaceBody.data.id, "workspace-acme");
+    const workspaceUsage = await fetch(`${baseUrl}/api/v1/workspaces/workspace-acme/usage`, {
+      headers: { authorization: `Bearer ${activeAdminToken}` }
+    });
+    assert.equal(workspaceUsage.status, 200);
+    assert.equal((await workspaceUsage.json()).data.workspaceId, "workspace-acme");
 
     const tenantAdmin = await fetch(`${baseUrl}/api/v1/users`, {
       method: "POST",
@@ -282,6 +296,14 @@ test("bootstrap admin, password change, and tenant user management are enforced"
     });
     assert.equal(tenantAdminLogin.status, 200);
     const tenantToken = (await tenantAdminLogin.json()).data.token;
+
+    const history = await fetch(`${baseUrl}/api/v1/history`, {
+      headers: { authorization: `Bearer ${activeAdminToken}` }
+    });
+    assert.equal(history.status, 200);
+    const historyBody = await history.json();
+    assert.equal(historyBody.data.schema, "evopilot-history/v1");
+    assert.ok(Array.isArray(historyBody.data.entries));
 
     const blockedTenantCreate = await fetch(`${baseUrl}/api/v1/tenants`, {
       method: "POST",
