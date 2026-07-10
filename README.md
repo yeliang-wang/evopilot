@@ -157,6 +157,7 @@ See [docs/api.md](docs/api.md) and [docs/openapi.json](docs/openapi.json) for th
 | Topic | Document |
 |---|---|
 | User and dashboard guide | [docs/user-guide.md](docs/user-guide.md) |
+| CLI reference | [docs/cli.md](docs/cli.md) |
 | API reference | [docs/api.md](docs/api.md) |
 | OpenAPI schema | [docs/openapi.json](docs/openapi.json) |
 | Deployment | [docs/deployment.md](docs/deployment.md) |

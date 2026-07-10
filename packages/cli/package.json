@@ -1,0 +1,21 @@
+{
+  "name": "@evopilot/cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "evopilot": "dist/index.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "npm run build -w @evopilot/client && tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@evopilot/client": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
