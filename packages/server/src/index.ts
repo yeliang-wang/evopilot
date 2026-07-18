@@ -305,7 +305,9 @@ interface LogRecord {
     spanId?: string;
     parentRequestId?: string;
     loopId?: string;
+    goalId?: string;
     projectId?: string;
+    releaseTargetId?: string;
     releaseDecisionId?: string;
     releaseRunId?: string;
   };
@@ -1989,6 +1991,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
     const traceId = requestHeader(request, "traceparent")?.split("-")[1] || requestHeader(request, "x-trace-id");
     const parentRequestId = requestHeader(request, "x-parent-request-id");
     let requestAuth: AuthContext | undefined;
+    let requestErrorCode: string | undefined;
     response.setHeader("x-request-id", requestId);
     let url = new URL(request.url ?? "/", "http://127.0.0.1");
     response.on("finish", () => {
@@ -2007,16 +2010,9 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         latencyBucket: latencyBucket(durationMs),
         routeGroup: routeGroup(url.pathname),
         outcome: httpOutcome(statusCode),
-        correlation: {
-          requestId,
-          traceId,
-          parentRequestId,
-          loopId: url.searchParams.get("loopId") ?? undefined,
-          projectId: url.searchParams.get("projectId") ?? undefined,
-          releaseDecisionId: url.searchParams.get("releaseDecisionId") ?? undefined,
-          releaseRunId: url.searchParams.get("releaseRunId") ?? undefined
-        },
-        diagnosis: diagnosisForHttpStatus(statusCode),
+        errorCode: requestErrorCode,
+        correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+        diagnosis: diagnosisForHttpStatus(statusCode, requestErrorCode),
         metadata: {
           query: redactUrlSearch(url.searchParams),
           userAgent: requestHeader(request, "user-agent")
@@ -2055,6 +2051,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const liveUsers = normalizeUsers(options, tokens, runtime, store);
         const matched = liveUsers.find((user) => user.username === username && verifyPassword(password, user.password));
         if (!matched) {
+          requestErrorCode = "INVALID_CREDENTIALS";
           logWarn("auth.login.rejected", {
             requestId,
             category: "auth",
@@ -2066,6 +2063,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           return writeJson(response, 401, { error: "INVALID_CREDENTIALS", detail: "用户名或密码错误" });
         }
         if (matched.status === "SUSPENDED") {
+          requestErrorCode = "USER_SUSPENDED";
           return writeJson(response, 403, { error: "USER_SUSPENDED", detail: "账号已停用，请联系管理员" });
         }
         const persisted = store.readUser(matched.username);
@@ -2088,6 +2086,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       const auth = authorize(request, mergeUserTokens(tokens, normalizeUsers(options, tokens, runtime, store)), runtime, !explicitAuthConfigured);
       requestAuth = auth ?? undefined;
       if (!auth) {
+        requestErrorCode = "UNAUTHORIZED";
         logWarn("http.request.rejected", {
           requestId,
           method: request.method,
@@ -2097,8 +2096,8 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           outcome: "rejected",
           errorCode: "UNAUTHORIZED",
           error: "UNAUTHORIZED",
-          correlation: { requestId, traceId, parentRequestId },
-          diagnosis: diagnosisForHttpStatus(401)
+          correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+          diagnosis: diagnosisForHttpStatus(401, "UNAUTHORIZED")
         });
         return writeJson(response, 401, { error: "UNAUTHORIZED" });
       }
@@ -4098,6 +4097,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       return writeJson(response, 404, { error: "NOT_FOUND" });
     } catch (error) {
       if (error instanceof HttpError) {
+        requestErrorCode = error.code;
         logWarn("http.request.rejected", {
           requestId,
           tenantId: requestAuth?.tenantId,
@@ -4111,11 +4111,12 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           outcome: httpOutcome(error.statusCode),
           errorCode: error.code,
           error: error.detail ?? error.code,
-          correlation: { requestId, traceId, parentRequestId },
+          correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
           diagnosis: diagnosisForHttpStatus(error.statusCode, error.code)
         });
         return writeJson(response, error.statusCode, { error: error.code, detail: error.detail, requestId });
       }
+      requestErrorCode = "SERVER_ERROR";
       logError("http.request.failed", error, {
         requestId,
         tenantId: requestAuth?.tenantId,
@@ -4127,7 +4128,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         statusCode: 500,
         routeGroup: routeGroup(url.pathname),
         outcome: "failed",
-        correlation: { requestId, traceId, parentRequestId },
+        correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
         diagnosis: diagnosisForHttpStatus(500)
       });
       return writeJson(response, 500, { error: error instanceof Error ? error.message : String(error), requestId });
@@ -14230,7 +14231,7 @@ function redactSensitiveText(text: string): string {
   return text
     .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/g, "Bearer [REDACTED]")
     .replace(/glpat-[A-Za-z0-9_-]+/g, "[REDACTED]")
-    .replace(/(token|password|secret|credential|api[_-]?key)([=:\s]+)([^\\s"',}]+)/gi, "$1$2[REDACTED]");
+    .replace(/(token|password|secret|credential|api[_-]?key)([=:]\s*)([^\s"',}]+)/gi, "$1$2[REDACTED]");
 }
 
 function runFinishedAt(runs: StoredRun[], evidenceBundleId: string): string {
@@ -16712,6 +16713,55 @@ function routeGroup(pathname: string): string {
   return pathname.startsWith("/api/") ? "api" : "dashboard";
 }
 
+function requestCorrelation(url: URL, requestId: string, traceId?: string, parentRequestId?: string): LogRecord["correlation"] {
+  const pathIds = correlationIdsFromPath(url.pathname);
+  const query = (name: string): string | undefined => url.searchParams.get(name) ?? undefined;
+  return {
+    requestId,
+    traceId,
+    parentRequestId,
+    loopId: query("loopId") ?? pathIds.loopId,
+    goalId: query("goalId") ?? pathIds.goalId,
+    projectId: query("projectId") ?? pathIds.projectId,
+    releaseTargetId: query("targetId") ?? query("releaseTargetId") ?? pathIds.releaseTargetId,
+    releaseDecisionId: query("releaseDecisionId") ?? pathIds.releaseDecisionId,
+    releaseRunId: query("releaseRunId") ?? pathIds.releaseRunId
+  };
+}
+
+function correlationIdsFromPath(pathname: string): Partial<NonNullable<LogRecord["correlation"]>> {
+  const sourceReleaseRunRepair = pathname.match(/^\/api\/v1\/loops\/([^/]+)\/source-release-runs\/([^/]+)\/repair$/);
+  if (sourceReleaseRunRepair) {
+    return {
+      loopId: decodePathSegment(sourceReleaseRunRepair[1]),
+      releaseRunId: decodePathSegment(sourceReleaseRunRepair[2])
+    };
+  }
+  const sourceReleaseRun = pathname.match(/^\/api\/v1\/source-release-runs\/([^/]+)$/);
+  if (sourceReleaseRun) return { releaseRunId: decodePathSegment(sourceReleaseRun[1]) };
+  const loop = pathname.match(/^\/api\/v1\/loops\/([^/]+)/);
+  if (loop) return { loopId: decodePathSegment(loop[1]) };
+  const targetLoop = pathname.match(/^\/api\/v1\/target-loops\/([^/]+)/);
+  if (targetLoop) return { loopId: decodePathSegment(targetLoop[1]) };
+  const goal = pathname.match(/^\/api\/v1\/goals\/([^/]+)/);
+  if (goal) return { goalId: decodePathSegment(goal[1]) };
+  const project = pathname.match(/^\/api\/v1\/projects\/([^/]+)/);
+  if (project) return { projectId: decodePathSegment(project[1]) };
+  const releaseTarget = pathname.match(/^\/api\/v1\/release\/targets\/([^/]+)/);
+  if (releaseTarget) return { releaseTargetId: decodePathSegment(releaseTarget[1]) };
+  const releaseDecision = pathname.match(/^\/api\/v1\/release\/decisions\/([^/]+)/);
+  if (releaseDecision) return { releaseDecisionId: decodePathSegment(releaseDecision[1]) };
+  return {};
+}
+
+function decodePathSegment(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function latencyBucket(durationMs: number): string {
   if (durationMs < 50) return "<50ms";
   if (durationMs < 200) return "50-199ms";
@@ -16730,6 +16780,15 @@ function httpOutcome(statusCode: number): LogOutcome {
 function diagnosisForHttpStatus(statusCode: number, errorCode?: string): LogRecord["diagnosis"] | undefined {
   if (statusCode < 400) return undefined;
   if (statusCode === 401) {
+    if (errorCode === "INVALID_CREDENTIALS") {
+      return {
+        summary: "Login request rejected.",
+        likelyCause: "Username or password did not match an active EvoPilot user.",
+        recommendedAction: "Verify the username/password source, reset credentials if needed, and avoid retrying with the same secret in an automated loop.",
+        retriable: false,
+        humanActionRequired: true
+      };
+    }
     return {
       summary: "Request rejected before authorization.",
       likelyCause: "Missing, expired, or invalid EvoPilot API token.",

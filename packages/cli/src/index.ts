@@ -582,6 +582,7 @@ async function loopAction(ctx: RuntimeContext, action: "start" | "approve", id?:
 async function loopRun(ctx: RuntimeContext, id?: string): Promise<number> {
   const startedAt = Date.now();
   const timeoutMs = wrapperTimeoutMs(ctx.args);
+  const until = wrapperUntil(ctx.args, "terminal");
   let loopId = id ?? stringOption(ctx.args, "loop");
   const steps: Array<Record<string, unknown>> = [];
   if (!loopId) {
@@ -610,7 +611,7 @@ async function loopRun(ctx: RuntimeContext, id?: string): Promise<number> {
   let loop: unknown = await readLoop(ctx, loopId);
   printLoopRunStatus(ctx, "loop run", loop, steps, quiet);
   let runIterations = 0;
-  for (let index = 0; index < maxIterations && !hasTimedOut(startedAt, timeoutMs) && shouldContinueLoopRun(loop, ctx.args); index += 1) {
+  for (let index = 0; index < maxIterations && !hasTimedOut(startedAt, timeoutMs) && shouldContinueLoopRun(loop, ctx.args, until); index += 1) {
     runIterations += 1;
     const status = String(field(loop, "status") ?? "");
     if (status === "WAITING_APPROVAL" && hasFlag(ctx.args, "approve-human-gate")) {
@@ -634,15 +635,16 @@ async function loopRun(ctx: RuntimeContext, id?: string): Promise<number> {
     steps.push({ type: `loop.${action}`, loopId, status: field(loop, "status"), iteration: field(loop, "currentIteration") });
     printLoopRunStatus(ctx, "loop run", loop, steps, quiet);
   }
-  if (runIterations >= maxIterations && shouldContinueLoopRun(loop, ctx.args)) {
+  if (runIterations >= maxIterations && shouldContinueLoopRun(loop, ctx.args, until)) {
     steps.push({ type: "loop.max-iterations-reached", loopId, maxIterations });
   }
-  if (hasTimedOut(startedAt, timeoutMs) && shouldContinueLoopRun(loop, ctx.args)) {
+  if (hasTimedOut(startedAt, timeoutMs) && shouldContinueLoopRun(loop, ctx.args, until)) {
     steps.push({ type: "loop.timeout-reached", loopId, timeoutMs });
   }
   const result = {
     schema: "evopilot-cli-loop-run/v1",
     command: "loop run",
+    until,
     loop,
     steps,
     result: loopRunResult(loop),
@@ -923,6 +925,7 @@ async function runGoalWrapper(ctx: RuntimeContext, input: {
 }): Promise<number> {
   const startedAt = Date.now();
   const timeoutMs = wrapperTimeoutMs(ctx.args);
+  const until = wrapperUntil(ctx.args, "terminal");
   const steps = [...input.initialSteps];
   const quiet = hasFlag(ctx.args, "quiet");
   const maxSteps = numberOption(ctx.args, "max-steps") ?? 20;
@@ -943,12 +946,12 @@ async function runGoalWrapper(ctx: RuntimeContext, input: {
   let status = await readGoalRunStatus(ctx, goalId);
   printGoalRunStatus(ctx, input.command, status, steps, quiet);
 
-  if (hasTimedOut(startedAt, timeoutMs) && shouldContinueGoalRun(status)) {
+  if (hasTimedOut(startedAt, timeoutMs) && shouldContinueGoalRun(status, until)) {
     steps.push({ type: "goal.timeout-reached", goalId, timeoutMs });
     return finishGoalRun(ctx, input.command, status, steps, quiet, 2);
   }
 
-  if (field(status, "nextAction") === "plan-goal") {
+  if (field(status, "nextAction") === "plan-goal" && shouldContinueGoalRun(status, until)) {
     const planned = await ctx.client.post(`/api/v1/goals/${encodeURIComponent(goalId)}/plan`, {
       force: hasFlag(ctx.args, "force-plan")
     }, derivedRequestOptions(ctx, "goal-run-plan"));
@@ -958,12 +961,12 @@ async function runGoalWrapper(ctx: RuntimeContext, input: {
     printGoalRunStatus(ctx, input.command, status, steps, quiet);
   }
 
-  if (hasTimedOut(startedAt, timeoutMs) && shouldContinueGoalRun(status)) {
+  if (hasTimedOut(startedAt, timeoutMs) && shouldContinueGoalRun(status, until)) {
     steps.push({ type: "goal.timeout-reached", goalId, timeoutMs });
     return finishGoalRun(ctx, input.command, status, steps, quiet, 2);
   }
 
-  if (field(status, "nextAction") === "approve-plan") {
+  if (field(status, "nextAction") === "approve-plan" && shouldContinueGoalRun(status, until)) {
     if (hasFlag(ctx.args, "no-auto-approve-plan") || hasFlag(ctx.args, "require-plan-approval")) {
       steps.push({ type: "goal.plan-approval-required", goalId, status: "WAITING_HUMAN" });
       return finishGoalRun(ctx, input.command, status, steps, quiet, 2);
@@ -976,7 +979,7 @@ async function runGoalWrapper(ctx: RuntimeContext, input: {
   }
 
   let advanceCount = 0;
-  while (advanceCount < maxSteps && !hasTimedOut(startedAt, timeoutMs) && shouldContinueGoalRun(status)) {
+  while (advanceCount < maxSteps && !hasTimedOut(startedAt, timeoutMs) && shouldContinueGoalRun(status, until)) {
     advanceCount += 1;
     const response = await ctx.client.post(`/api/v1/goals/${encodeURIComponent(goalId)}/advance`, {
       autoStart: hasFlag(ctx.args, "no-auto-start") ? false : undefined,
@@ -997,10 +1000,10 @@ async function runGoalWrapper(ctx: RuntimeContext, input: {
     printGoalRunStatus(ctx, input.command, status, steps, quiet);
   }
 
-  if (advanceCount >= maxSteps && shouldContinueGoalRun(status)) {
+  if (advanceCount >= maxSteps && shouldContinueGoalRun(status, until)) {
     steps.push({ type: "goal.max-steps-reached", goalId, maxSteps });
   }
-  const timedOut = hasTimedOut(startedAt, timeoutMs) && shouldContinueGoalRun(status);
+  const timedOut = hasTimedOut(startedAt, timeoutMs) && shouldContinueGoalRun(status, until);
   if (timedOut) {
     steps.push({ type: "goal.timeout-reached", goalId, timeoutMs });
   }
@@ -1011,6 +1014,7 @@ async function finishGoalRun(ctx: RuntimeContext, command: string, status: unkno
   const result = {
     schema: "evopilot-cli-goal-run/v1",
     command,
+    until: wrapperUntil(ctx.args, "terminal"),
     status,
     steps,
     result: goalRunResult(status, exitCode),
@@ -1117,9 +1121,19 @@ function hasTimedOut(startedAt: number, timeoutMs?: number): boolean {
   return timeoutMs !== undefined && Date.now() - startedAt >= timeoutMs;
 }
 
-function shouldContinueGoalRun(status: unknown): boolean {
+type WrapperUntil = "terminal" | "blocked-or-complete";
+
+function wrapperUntil(args: ParsedArgs, fallback: WrapperUntil): WrapperUntil {
+  const value = stringOption(args, "until");
+  if (value === undefined) return fallback;
+  if (value === "terminal" || value === "blocked-or-complete") return value;
+  throw usage("Option --until must be one of terminal or blocked-or-complete.");
+}
+
+function shouldContinueGoalRun(status: unknown, until: WrapperUntil): boolean {
   const goalStatus = String(field(status, "status") ?? "");
   const nextAction = String(field(status, "nextAction") ?? "");
+  if (until === "blocked-or-complete" && ["COMPLETED", "BLOCKED", "FAILED", "WAITING_HUMAN"].includes(goalStatus)) return false;
   if (["COMPLETED", "BLOCKED", "FAILED", "WAITING_HUMAN"].includes(goalStatus)) return false;
   return !new Set([
     "human-approval",
@@ -1134,8 +1148,9 @@ function shouldContinueGoalRun(status: unknown): boolean {
   ]).has(nextAction);
 }
 
-function shouldContinueLoopRun(loop: unknown, args: ParsedArgs): boolean {
+function shouldContinueLoopRun(loop: unknown, args: ParsedArgs, until: WrapperUntil): boolean {
   const status = String(field(loop, "status") ?? "");
+  if (until === "blocked-or-complete" && status === "BLOCKED") return false;
   if (status === "WAITING_APPROVAL" && !hasFlag(args, "approve-human-gate")) return false;
   return status === "PENDING" || status === "RUNNING" || status === "BLOCKED" || (status === "WAITING_APPROVAL" && hasFlag(args, "approve-human-gate"));
 }
@@ -1481,16 +1496,20 @@ function printHelp(): void {
 Usage:
   evopilot --version
   evopilot auth login --server <url> --username <user> --password <pass>
+  evopilot auth token
   evopilot config path
   evopilot config show
   evopilot status [--json]
   evopilot project register --id <id> --provider <local-git|github|gitlab> [options]
+  evopilot project list
   evopilot project preflight <project-id>
   evopilot project credentials set <project-id> [--token-ref <env>]
   evopilot evidence push --project <id> --file <events.json>
   evopilot target templates
+  evopilot target list
   evopilot target create --project <id> --template <experimental|alpha|beta|rc|ga>
   evopilot target run --project <id> --template <experimental|alpha|beta|rc|ga> --objective <text> [--max-steps <n>] [--timeout <duration>]
+  evopilot target decision <target-id> [--project <id>]
   evopilot goal create --project <id> --target <target-id> --objective <text>
   evopilot goal run [<goal-id>] [--project <id> --target <target-id> --objective <text>] [--max-steps <n>] [--timeout <duration>]
   evopilot goal list [--project <id>] [--target <target-id>] [--status <status>]
@@ -1505,6 +1524,7 @@ Usage:
   evopilot goal evidence-matrix <goal-id>
   evopilot goal final-report <goal-id>
   evopilot loop create --project <id> --target <target-id> --objective <text>
+  evopilot loop list
   evopilot loop run [<loop-id>] [--project <id> --target <target-id> --objective <text>] [--max-iterations <n>] [--timeout <duration>]
   evopilot loop start <loop-id>
   evopilot loop approve <loop-id>
@@ -1535,6 +1555,7 @@ Usage:
   evopilot connector deploy create --id <id> --type <http-webhook|ecs-docker-compose>
   evopilot release gate --project <id> --target <target-id> --scenario <id=PASS>
   evopilot release current
+  evopilot release decisions [--project <id>] [--target <target-id>]
 
 Global options:
   --server <url>              EvoPilot server URL
@@ -1544,6 +1565,7 @@ Global options:
   --actor <id>                Actor scope header
   --idempotency-key <key>     Idempotency key for mutating commands
   --timeout <duration>        Wrapper stop boundary, for example 30s, 10m, or 2h
+  --until <policy>            Wrapper stop policy: terminal or blocked-or-complete
   --json                      Print JSON response data
   --config <file>             Config path, defaults to ~/.evopilot/config.json
 `);

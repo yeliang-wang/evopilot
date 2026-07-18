@@ -14,10 +14,16 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   const help = await runCliText(["--help"]);
   assert.match(help, /evopilot --version/);
   assert.match(help, /evopilot config show/);
+  assert.match(help, /evopilot auth token/);
+  assert.match(help, /evopilot project list/);
+  assert.match(help, /evopilot target list/);
+  assert.match(help, /evopilot target decision/);
   assert.match(help, /evopilot goal create/);
   assert.match(help, /evopilot target run/);
   assert.match(help, /evopilot goal run/);
+  assert.match(help, /evopilot loop list/);
   assert.match(help, /evopilot loop run/);
+  assert.match(help, /evopilot release decisions/);
 
   const version = await runCliText(["--version"]);
   assert.equal(version.trim(), "0.1.0");
@@ -191,6 +197,7 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
 
     const goalRunJson = await runCli(["goal", "run", goal.id, "--max-steps", "0", "--config", configPath, "--json"], { status: 2 });
     assert.equal(goalRunJson.schema, "evopilot-cli-goal-run/v1");
+    assert.equal(goalRunJson.until, "terminal");
     assert.equal(goalRunJson.status.schema, "evopilot-goal-run-status/v1");
     assert.equal(goalRunJson.status.goal.id, goal.id);
     assert.ok(goalRunJson.status.chain.some((node) => node.id === "goal-target"));
@@ -210,12 +217,14 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
       "--project", "cli-agent",
       "--template", "alpha",
       "--objective", "CLI wrapper target run reaches alpha visibility",
+      "--until", "terminal",
       "--max-steps", "0",
       "--config", configPath,
       "--json"
     ], { status: 2 });
     assert.equal(targetRunJson.schema, "evopilot-cli-goal-run/v1");
     assert.equal(targetRunJson.command, "target run");
+    assert.equal(targetRunJson.until, "terminal");
     assert.equal(targetRunJson.status.goal.projectId, "cli-agent");
     assert.equal(targetRunJson.status.goal.releaseTargetId, "cli-agent-alpha");
 
@@ -243,8 +252,25 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     ]);
     assert.equal(loopRunJson.schema, "evopilot-cli-loop-run/v1");
     assert.equal(loopRunJson.command, "loop run");
+    assert.equal(loopRunJson.until, "terminal");
     assert.equal(loopRunJson.loop.projectId, "cli-agent");
     assert.equal(loopRunJson.loop.status, "SUCCEEDED");
+
+    const blockedLoopRunJson = await runCli([
+      "loop", "run",
+      "--project", "cli-agent",
+      "--target", "cli-agent-beta",
+      "--objective", "CLI wrapper loop run stops when blocked-or-complete is requested",
+      "--force-decision", "BLOCK",
+      "--until", "blocked-or-complete",
+      "--max-iterations", "5",
+      "--config", configPath,
+      "--json"
+    ], { status: 2 });
+    assert.equal(blockedLoopRunJson.schema, "evopilot-cli-loop-run/v1");
+    assert.equal(blockedLoopRunJson.until, "blocked-or-complete");
+    assert.equal(blockedLoopRunJson.loop.status, "BLOCKED");
+    assert.equal(blockedLoopRunJson.steps.filter((step) => step.type === "loop.start" || step.type === "loop.resume").length, 1);
 
     const sourceClosureFile = path.join(dataRoot, "source-closure.json");
     fs.writeFileSync(sourceClosureFile, JSON.stringify({

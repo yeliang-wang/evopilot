@@ -8,7 +8,7 @@ The CLI is an adapter over EvoPilot server APIs. It does not bypass RBAC, tenant
 
 MCP-style semantic orchestration is out of scope for this CLI. Agents can still orchestrate workflows by composing CLI commands, but each command remains a server-governed operation.
 
-For scenario-first usage, wrapper commands, and terminal workflow output, start with [CLI Manual](cli-manual.md). This file is the command reference.
+For AI-agent production operation, start with [AI Agent Runbook](ai-agent-runbook.md). For scenario-first usage, wrapper commands, and terminal workflow output, read [CLI Manual](cli-manual.md). This file is the command reference.
 
 ## Fast Path For AI Agents
 

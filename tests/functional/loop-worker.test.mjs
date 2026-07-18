@@ -34,6 +34,15 @@ test("Loop worker process advances durable loops and loop soak proves runtime co
     });
     assert.equal(worker.code, 0, worker.stderr);
     assert.match(worker.stdout, /loop-worker.iteration/);
+    const workerLogs = parseJsonLines(worker.stdout);
+    const iterationLog = workerLogs.find((record) => record.event === "loop-worker.iteration");
+    assert.equal(iterationLog.schema, "evopilot-log/v1");
+    assert.equal(iterationLog.service, "evopilot");
+    assert.equal(iterationLog.version, "1.0.0");
+    assert.equal(iterationLog.category, "worker");
+    assert.equal(iterationLog.severity, "INFO");
+    assert.equal(iterationLog.workerId, "test-worker");
+    assert.equal(iterationLog.correlation.loopId, "worker-driven-loop");
 
     const advanced = await get(baseUrl, "/api/v1/loops/worker-driven-loop");
     assert.equal(advanced.currentIteration, 1);
@@ -76,6 +85,8 @@ test("Loop worker process advances durable loops and loop soak proves runtime co
     });
     assert.equal(stalePreferredFallbackWorker.code, 0, stalePreferredFallbackWorker.stderr);
     assert.match(stalePreferredFallbackWorker.stdout, /loop-worker.preferred-unavailable/);
+    const fallbackLogs = parseJsonLines(stalePreferredFallbackWorker.stdout);
+    assert.equal(fallbackLogs.find((record) => record.event === "loop-worker.preferred-unavailable")?.severity, "WARN");
     const fallbackAdvanced = await get(baseUrl, "/api/v1/loops/non-preferred-worker-loop");
     assert.equal(fallbackAdvanced.currentIteration, 1);
 
@@ -164,4 +175,12 @@ function runNodeScript(script, args, env) {
       resolve({ code, stdout, stderr });
     });
   });
+}
+
+function parseJsonLines(output) {
+  return output
+    .trim()
+    .split(/\n+/)
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
 }

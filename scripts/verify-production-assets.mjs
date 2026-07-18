@@ -13,6 +13,7 @@ const requiredFiles = [
   "deploy/k8s/code-upgrader-service.yaml",
   "deploy/k8s/secret.example.yaml",
   "docs/openapi.json",
+  "docs/ai-agent-runbook.md",
   "docs/evidence-ingestion.md",
   "docs/user-guide.md",
   "docs/production-user-e2e.md",
@@ -82,6 +83,20 @@ assert.match(deploymentDoc, /http\.request\.completed/);
 assert.match(deploymentDoc, /code-upgrade\.status-changed/);
 assert.match(deploymentDoc, /EVOPILOT_LOG_LEVEL/);
 assert.match(deploymentDoc, /Bearer token 做脱敏/);
+assert.match(deploymentDoc, /correlation\.goalId/);
+assert.match(deploymentDoc, /releaseTargetId/);
+assert.match(deploymentDoc, /errorCode/);
+
+const aiAgentRunbook = fs.readFileSync("docs/ai-agent-runbook.md", "utf8");
+assert.match(aiAgentRunbook, /WorkBuddy/);
+assert.match(aiAgentRunbook, /evopilot target run/);
+assert.match(aiAgentRunbook, /evopilot loop run/);
+assert.match(aiAgentRunbook, /evopilot-log\/v1/);
+assert.match(aiAgentRunbook, /correlation\.loopId/);
+assert.match(aiAgentRunbook, /correlation\.goalId/);
+assert.match(aiAgentRunbook, /NO-GO/);
+assert.match(aiAgentRunbook, /--json/);
+assert.match(aiAgentRunbook, /Incident Pack/);
 
 const envExample = fs.readFileSync(".env.example", "utf8");
 assert.match(envExample, /EVOPILOT_LOG_LEVEL=info/);

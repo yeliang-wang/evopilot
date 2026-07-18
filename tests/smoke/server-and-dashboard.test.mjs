@@ -79,10 +79,30 @@ test("server emits production-grade structured logs with request ids and redacti
       headers: { "x-request-id": "req-summary-log", authorization: "Bearer secret-token" }
     });
     assert.equal(summary.status, 200);
+    const invalidLogin = await fetch(`${baseUrl}/api/v1/auth/login`, {
+      method: "POST",
+      headers: { "x-request-id": "req-invalid-login-log", "content-type": "application/json" },
+      body: JSON.stringify({ username: "tenant-admin", password: "wrong-password" })
+    });
+    assert.equal(invalidLogin.status, 401);
     const unauthorized = await fetch(`${baseUrl}/api/v1/summary`, {
       headers: { "x-request-id": "req-unauthorized-log", authorization: "Bearer wrong-secret" }
     });
     assert.equal(unauthorized.status, 401);
+    const loop = await fetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      headers: { "x-request-id": "req-loop-create-log", authorization: "Bearer secret-token", "content-type": "application/json" },
+      body: JSON.stringify({
+        id: "log-correlation-loop",
+        objective: "Prove path-derived loop correlation for AI troubleshooting.",
+        stopPolicy: { maxIterations: 1 }
+      })
+    });
+    assert.equal(loop.status, 201);
+    const trace = await fetch(`${baseUrl}/api/v1/loops/log-correlation-loop/trace-tree`, {
+      headers: { "x-request-id": "req-loop-trace-log", authorization: "Bearer secret-token" }
+    });
+    assert.equal(trace.status, 200);
   } finally {
     await new Promise((resolve) => server.close(resolve));
     console.log = previousLog;
@@ -108,9 +128,18 @@ test("server emits production-grade structured logs with request ids and redacti
   assert.equal(rejectedLog.outcome, "rejected");
   assert.equal(rejectedLog.diagnosis.humanActionRequired, true);
   assert.match(rejectedLog.diagnosis.recommendedAction, /Authorization: Bearer \[REDACTED\]/);
+  const invalidLoginCompletion = records.find((record) => record.event === "http.request.completed" && record.requestId === "req-invalid-login-log");
+  assert.equal(invalidLoginCompletion.statusCode, 401);
+  assert.equal(invalidLoginCompletion.errorCode, "INVALID_CREDENTIALS");
+  assert.equal(invalidLoginCompletion.diagnosis.likelyCause, "Username or password did not match an active EvoPilot user.");
+  assert.match(invalidLoginCompletion.diagnosis.recommendedAction, /same secret in an automated loop/);
   const unauthorizedCompletion = records.find((record) => record.event === "http.request.completed" && record.requestId === "req-unauthorized-log");
   assert.equal(unauthorizedCompletion.statusCode, 401);
+  assert.equal(unauthorizedCompletion.errorCode, "UNAUTHORIZED");
   assert.equal(unauthorizedCompletion.diagnosis.likelyCause, "Missing, expired, or invalid EvoPilot API token.");
+  const traceLog = records.find((record) => record.event === "http.request.completed" && record.requestId === "req-loop-trace-log");
+  assert.equal(traceLog.routeGroup, "loop-runtime");
+  assert.equal(traceLog.correlation.loopId, "log-correlation-loop");
   assert.equal(stderr.length, 0);
   const allLogs = stdout.join("\n");
   assert.doesNotMatch(allLogs, /secret-token/);

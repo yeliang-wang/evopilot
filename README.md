@@ -174,6 +174,7 @@ See [docs/api-reference.md](docs/api-reference.md) and [docs/openapi.json](docs/
 | OpenAPI schema | [docs/openapi.json](docs/openapi.json) |
 | CLI manual | [docs/cli-manual.md](docs/cli-manual.md) |
 | CLI reference | [docs/cli-reference.md](docs/cli-reference.md) |
+| AI agent runbook | [docs/ai-agent-runbook.md](docs/ai-agent-runbook.md) |
 | Dashboard integration | [docs/dashboard-integration.md](docs/dashboard-integration.md) |
 | Architecture | [docs/architecture.md](docs/architecture.md) |
 | Deployment | [docs/deployment.md](docs/deployment.md) |

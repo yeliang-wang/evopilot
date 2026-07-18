@@ -18,7 +18,7 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
   });
 }
 
-console.log(JSON.stringify({ event: "loop-worker.started", workerId, baseUrl, preferredLoopId: preferredLoopId || undefined, strictPreferredLoop, pollIntervalMs, leaseSeconds, once }));
+logInfo("loop-worker.started", { baseUrl, preferredLoopId: preferredLoopId || undefined, strictPreferredLoop, pollIntervalMs, leaseSeconds, once });
 
 let cycles = 0;
 while (!stopped && cycles < maxCycles) {
@@ -32,31 +32,29 @@ while (!stopped && cycles < maxCycles) {
       const updated = await post(`/api/v1/loops/${encodeURIComponent(candidate.loopId)}/${action}`, {
         evidence: [`worker=${workerId}`, `cycle=${cycles}`, `action=${action}`]
       });
-      console.log(JSON.stringify({
-        event: "loop-worker.iteration",
-        workerId,
+      logInfo("loop-worker.iteration", {
         loopId: updated.id,
         action,
         status: updated.status,
         currentIteration: updated.currentIteration
-      }));
+      });
     } else {
-      console.log(JSON.stringify({ event: "loop-worker.idle", workerId, cycle: cycles, preferredLoopId: preferredLoopId || undefined, strictPreferredLoop }));
+      logInfo("loop-worker.idle", { cycle: cycles, preferredLoopId: preferredLoopId || undefined, strictPreferredLoop });
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (!/LOOP_APPROVAL_REQUIRED/.test(message)) {
-      console.error(JSON.stringify({ event: "loop-worker.error", workerId, message }));
+      logError("loop-worker.error", { message, error: message });
       if (once) process.exitCode = 1;
     } else {
-      console.log(JSON.stringify({ event: "loop-worker.waiting-approval", workerId, message }));
+      logWarn("loop-worker.waiting-approval", { message });
     }
   }
   if (once || stopped || cycles >= maxCycles) break;
   await sleep(pollIntervalMs);
 }
 
-console.log(JSON.stringify({ event: "loop-worker.stopped", workerId, cycles }));
+logInfo("loop-worker.stopped", { cycles });
 
 async function claimCandidate() {
   if (preferredLoopId) {
@@ -71,13 +69,11 @@ async function claimCandidate() {
       return preferred;
     }
     if (strictPreferredLoop) return undefined;
-    console.log(JSON.stringify({
-      event: "loop-worker.preferred-unavailable",
-      workerId,
+    logWarn("loop-worker.preferred-unavailable", {
       preferredLoopId,
       preferredStatus: preferred.status,
       preferredClaimable: preferred.claimable
-    }));
+    });
     return claimNextAvailable();
   }
   return claimNextAvailable();
@@ -121,6 +117,60 @@ function unwrap(body) {
 function positiveInteger(value, fallback) {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? Math.floor(number) : fallback;
+}
+
+function logInfo(event, record = {}) {
+  writeWorkerLog("info", event, record);
+}
+
+function logWarn(event, record = {}) {
+  writeWorkerLog("warn", event, record);
+}
+
+function logError(event, record = {}) {
+  writeWorkerLog("error", event, record);
+}
+
+function writeWorkerLog(level, event, record) {
+  const redacted = redactLogValue(record);
+  const line = JSON.stringify(removeUndefined({
+    timestamp: new Date().toISOString(),
+    schema: "evopilot-log/v1",
+    service: "evopilot",
+    version: "1.0.0",
+    severity: logSeverity(level),
+    level,
+    category: "worker",
+    event,
+    workerId,
+    ...redacted,
+    correlation: redacted.loopId ? { loopId: redacted.loopId } : undefined
+  }));
+  if (level === "error") console.error(line);
+  else console.log(line);
+}
+
+function logSeverity(level) {
+  return level === "error" ? "ERROR" : level === "warn" ? "WARN" : level === "debug" ? "DEBUG" : "INFO";
+}
+
+function redactLogValue(value) {
+  if (Array.isArray(value)) return value.map(redactLogValue);
+  if (!value || typeof value !== "object") return typeof value === "string" ? redactSensitiveText(value) : value;
+  return Object.fromEntries(Object.entries(value).map(([key, entry]) => [
+    key,
+    /token|password|secret|authorization|apiKey|credential/i.test(key) ? "[REDACTED]" : redactLogValue(entry)
+  ]));
+}
+
+function redactSensitiveText(text) {
+  return text
+    .replace(/Bearer\s+[^,\s"}]+/gi, "Bearer [REDACTED]")
+    .replace(/(token|password|secret|authorization|apiKey|credential)=([^,\s"}]+)/gi, "$1=[REDACTED]");
+}
+
+function removeUndefined(value) {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined));
 }
 
 function sleep(ms) {
