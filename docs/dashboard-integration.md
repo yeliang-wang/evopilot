@@ -13,6 +13,19 @@ CLI / CI      ->  EvoPilot HTTP API  ->  EvoPilot domain state
 
 The Dashboard must not call the EvoPilot CLI, read the database directly, read JSON files under the data root, or use `.codex-evidence` as runtime state.
 
+## Source Of Truth
+
+Use these files when building or validating a Dashboard integration:
+
+| File | Purpose |
+|---|---|
+| `docs/openapi.json` | Machine-readable API contract. AI agents and generated API clients should read this first. |
+| `docs/api-reference.md` | Human-readable API behavior, governance rules, examples, and product semantics. |
+| `docs/dashboard-integration.md` | Dashboard boundary, required operating surface, deployment shape, and smoke checks. |
+| `../evopilot-dashboard/README.md` | Standalone Dashboard run/deploy instructions. |
+
+The standalone Dashboard repository is an API client. If a workflow label, tooltip, or generated client references an endpoint not present in `docs/openapi.json`, treat that as a documentation contract bug and fix the docs or the Dashboard label before release.
+
 ## Authentication
 
 Every protected API call must include:
@@ -30,17 +43,25 @@ The token and role determine which read and write actions are allowed. A Dashboa
 
 | Workflow | API |
 |---|---|
-| Login | `POST /api/v1/auth/login` |
+| Login | `GET /api/v1/auth/bootstrap`, `POST /api/v1/auth/login`, `POST /api/v1/auth/change-password` |
 | Overview | `GET /api/v1/summary` |
-| Projects | `GET /api/v1/projects`, `POST /api/v1/projects` |
+| SaaS control plane | `GET/POST /api/v1/tenants`, `GET/POST /api/v1/workspaces`, `GET /api/v1/workspaces/{workspaceId}/usage`, `GET/POST /api/v1/users`, `PATCH /api/v1/users/{userId}`, `POST /api/v1/users/{userId}/reset-password` |
+| Secrets and GitHub App | `GET/POST /api/v1/secrets`, `POST /api/v1/secrets/{secretId}/revoke`, `GET/POST /api/v1/github-app/installations` |
+| Projects | `GET /api/v1/projects`, `POST /api/v1/projects`, `POST /api/v1/projects/{projectId}/source-credentials`, `GET/POST /api/v1/projects/{projectId}/source-credentials/preflight` |
+| Deploy connectors | `GET/POST /api/v1/connectors/deploy` |
 | Release targets | `GET /api/v1/release/targets`, `POST /api/v1/release/targets` |
 | Global goals | `GET /api/v1/goals`, `POST /api/v1/goals` |
 | Goal workflow | `GET /api/v1/goals/{goalId}/run-status`, `snapshot`, `graph`, `timeline`, `evidence-matrix` |
 | Goal execution | `POST /api/v1/goals/{goalId}/plan`, `approve-plan`, `advance` |
-| Loop runtime | `GET /api/v1/loops`, `POST /api/v1/loops`, `POST /api/v1/loops/{loopId}/start` |
-| Source closure | `POST /api/v1/loops/{loopId}/source-closure/preflight`, `execute`, `review-decision` |
+| Loop runtime | `GET /api/v1/loops`, `POST /api/v1/loops`, `POST /api/v1/loops/{loopId}/start`, `resume`, `approve`, `GET /api/v1/loops/{loopId}/executor-graph`, `trace-tree`, `events` |
+| Loop orchestration | `GET /api/v1/loop-orchestration/presets`, `targets`, `POST /api/v1/loop-orchestration/instantiate`, `advance`, `autopilot` |
+| Loop target runtime | `GET /api/v1/loop-target-runtime/summary`, `POST /api/v1/loop-target-runtime/discovery/run`, `adversarial-evaluations`, `schedules`, `guardrails/{loopId}/evaluate` |
+| Worker queue | `GET /api/v1/loop-workers/queue`, `POST /api/v1/loop-workers/claim` |
+| Source closure | `GET/POST /api/v1/loops/{loopId}/source-closure/preflight`, `GET /api/v1/loops/{loopId}/source-closure/plan`, `POST /api/v1/loops/{loopId}/source-closure/execute`, `review-decision` |
+| Source release repair | `GET /api/v1/source-release-runs`, `GET /api/v1/source-release-runs/repair-candidates`, `POST /api/v1/source-release-runs/repair-candidates/repair`, `POST /api/v1/loops/{loopId}/source-release-runs/{sourceReleaseRunId}/repair` |
 | Release verdict | `GET /api/v1/release/decisions` |
-| Audit | `GET /api/v1/audit` |
+| Observability | `GET /api/v1/loop-store`, `GET /api/v1/loop-store/readiness`, `GET /api/v1/loop-observability`, `GET /api/v1/saas/observability`, `GET /api/v1/source-release-deploy-finalizers` |
+| Audit | `GET /api/v1/audit`, `GET /api/v1/history` |
 
 `GET /api/v1/release/decisions` is the authoritative release verdict. A Dashboard can show progress, but it must not claim GA, RC, `GO`, or `NO-GO` from UI-side heuristics.
 
@@ -109,14 +130,55 @@ When a host-level Nginx owns the public port, use `deploy/nginx/evopilot-dashboa
 
 ## Validation
 
-A custom Dashboard should pass:
+Validate the split locally before changing API docs or Dashboard call sites:
+
+```bash
+cd /Users/wangyejing/project/harness/EvoPilot
+npm run build
+EVOPILOT_RUN_MODE=debug \
+EVOPILOT_TOKENS='admin:local-admin-token:admin,operator:local-operator-token:operator,viewer:local-viewer-token:viewer' \
+npm run server
+```
+
+In another terminal:
+
+```bash
+cd /Users/wangyejing/project/harness/evopilot-dashboard
+EVOPILOT_API_BASE_URL=http://127.0.0.1:19876 npm run dev -- --port 5174
+```
+
+Smoke the Dashboard proxy path instead of only calling EvoPilot directly:
+
+```bash
+curl -fsS http://127.0.0.1:5174/health
+curl -fsS http://127.0.0.1:5174/ready
+curl -i http://127.0.0.1:5174/api/v1/summary
+curl -fsS \
+  -H "Authorization: Bearer local-admin-token" \
+  -H "X-EvoPilot-Tenant: tenant-production" \
+  -H "X-EvoPilot-Workspace: workspace-agent-products" \
+  http://127.0.0.1:5174/api/v1/summary
+```
+
+Expected result: `/health` and `/ready` return 200, unauthenticated `/api/v1/summary` returns 401, and the authenticated Dashboard proxy request returns 200.
+
+The EvoPilot repository should pass:
+
+```bash
+npm run build
+node --test tests/e2e/dashboard-responsive-contract.test.mjs
+```
+
+The Dashboard repository should pass:
 
 ```bash
 npm run build
 npm run check
 ```
 
-It should also run a smoke test against a real EvoPilot API server:
+`tests/e2e/dashboard-responsive-contract.test.mjs` verifies `docs/openapi.json` covers the Dashboard operating surface. When the sibling `../evopilot-dashboard` checkout exists, it also scans the Dashboard `assets/app.js` call sites and fails if any `/api/v1/*` path is missing from OpenAPI.
+
+A custom Dashboard should also run a smoke test against a real EvoPilot API server:
 
 ```bash
 curl -fsS "$EVOPILOT_SERVER/health"
