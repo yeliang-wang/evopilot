@@ -80,6 +80,22 @@ Recommended production shape:
 
 This keeps browser calls same-origin and avoids exposing extra CORS surface. If the Dashboard uses a different origin, the EvoPilot API must explicitly allow that origin and headers.
 
+The official standalone Dashboard repository provides this shape through its `compose.yaml`:
+
+```bash
+cd /opt/evopilot-dashboard
+EVOPILOT_API_BASE_URL=http://host.docker.internal:19876 \
+EVOPILOT_DASHBOARD_PORT=8080 \
+docker compose up -d --build
+```
+
+Use the Dashboard service health endpoint separately from EvoPilot readiness:
+
+```bash
+curl -fsS http://127.0.0.1:8080/health
+curl -fsS http://127.0.0.1:19876/ready
+```
+
 ## Forbidden Patterns
 
 - Do not store production secrets in the Dashboard repository.

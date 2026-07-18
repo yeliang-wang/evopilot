@@ -67,10 +67,18 @@ npm run build
 npm run server:debug
 ```
 
-Open the dashboard:
+Verify the API:
 
 ```text
-http://127.0.0.1:19876/
+http://127.0.0.1:19876/health
+http://127.0.0.1:19876/ready
+```
+
+Run the standalone Dashboard from the sibling repository:
+
+```bash
+cd ../evopilot-dashboard
+EVOPILOT_API_BASE_URL=http://127.0.0.1:19876 npm run dev
 ```
 
 Debug mode is for local development and UI validation. Production mode is the default for real operation and requires authentication, real runtime boundaries, and configured LLM/source/CI/CD credentials.
@@ -184,7 +192,7 @@ See [docs/api-reference.md](docs/api-reference.md) and [docs/openapi.json](docs/
 ```text
 apps/dashboard/                         Deprecated compatibility dashboard assets during repository split
 packages/core/                          lifecycle, evidence, planning, review, delivery, release models
-packages/server/                        control-plane API and dashboard static server
+packages/server/                        control-plane API and optional compatibility static host
 packages/llm/                           LLM gateway, routing, compression, metrics
 packages/adapter-github/                GitHub adapter
 packages/adapter-gitlab/                GitLab adapter

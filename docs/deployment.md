@@ -27,6 +27,31 @@ Dashboard 已拆分到独立仓库 `yeliang-wang/evopilot-dashboard`。生产部
 
 短期兼容模式下，可以显式设置 `EVOPILOT_DASHBOARD_ROOT=/path/to/dashboard/dist` 让 EvoPilot server 托管静态 Dashboard；默认生产镜像不再包含 Dashboard 资源。
 
+## 独立 Dashboard 服务
+
+Dashboard 仓库单独构建和部署：
+
+```bash
+git clone git@github.com:yeliang-wang/evopilot-dashboard.git
+cd evopilot-dashboard
+EVOPILOT_API_BASE_URL=http://host.docker.internal:19876 \
+EVOPILOT_DASHBOARD_PORT=8080 \
+docker compose up -d --build
+```
+
+这个 Compose 文件只启动 `evopilot-dashboard`。它通过 Nginx 暴露 `/` 和 `/health`，并把 `/api/*` 代理到 `EVOPILOT_API_BASE_URL`。在同一台 Linux 服务器上与 EvoPilot API 使用不同 Compose project 部署时，`host.docker.internal` 会映射到 Docker host，访问 EvoPilot 暴露的 `19876` 端口。
+
+验收：
+
+```bash
+curl -fsS http://127.0.0.1:19876/health
+curl -fsS http://127.0.0.1:19876/ready
+curl -fsS http://127.0.0.1:8080/health
+curl -fsS http://127.0.0.1:8080/
+```
+
+浏览器访问 `http://<host>:8080/`。Dashboard 登录、项目、Loop、GlobalGoal、发布证据和审计页面都必须通过 `/api/*` 访问 EvoPilot，不允许读取服务器文件或数据库。
+
 ## Docker
 
 ```bash
