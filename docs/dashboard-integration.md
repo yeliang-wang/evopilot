@@ -97,6 +97,8 @@ curl -fsS http://127.0.0.1:8080/health
 curl -fsS http://127.0.0.1:19876/ready
 ```
 
+When a host-level Nginx owns the public port, use `deploy/nginx/evopilot-dashboard.conf.example` from the Dashboard repository so public `/` serves the Dashboard while public `/api/*` stays bound to EvoPilot API.
+
 ## Forbidden Patterns
 
 - Do not store production secrets in the Dashboard repository.

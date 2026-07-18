@@ -53,6 +53,8 @@ curl -fsS http://127.0.0.1:8080/
 
 浏览器访问 `http://<host>:8080/`。Dashboard 登录、项目、Loop、GlobalGoal、发布证据和审计页面都必须通过 `/api/*` 访问 EvoPilot，不允许读取服务器文件或数据库。
 
+如果宿主机 Nginx 负责公网 80/443 入口，使用 Dashboard 仓库的 `deploy/nginx/evopilot-dashboard.conf.example` 作为路由模板：`/` 代理到 Dashboard，`/api/*`、`/health`、`/ready` 代理到 EvoPilot API。
+
 ## Docker
 
 ```bash
