@@ -34,12 +34,13 @@ Dashboard 仓库单独构建和部署：
 ```bash
 git clone git@github.com:yeliang-wang/evopilot-dashboard.git
 cd evopilot-dashboard
-EVOPILOT_API_BASE_URL=http://host.docker.internal:19876 \
+EVOPILOT_DOCKER_NETWORK=evopilot_default \
+EVOPILOT_API_BASE_URL=http://evopilot-server:19876 \
 EVOPILOT_DASHBOARD_PORT=8080 \
-docker compose up -d --build
+docker compose -f compose.production.yaml up -d --build
 ```
 
-这个 Compose 文件只启动 `evopilot-dashboard`。它通过 Nginx 暴露 `/` 和 `/health`，并把 `/api/*` 代理到 `EVOPILOT_API_BASE_URL`。在同一台 Linux 服务器上与 EvoPilot API 使用不同 Compose project 部署时，`host.docker.internal` 会映射到 Docker host，访问 EvoPilot 暴露的 `19876` 端口。
+这个 Compose 文件只启动 `evopilot-dashboard`。它通过 Nginx 暴露 `/` 和 `/health`，并把 `/api/*` 代理到 `EVOPILOT_API_BASE_URL`。在同一台 Linux 服务器上与 EvoPilot API 使用不同 Compose project 部署时，Dashboard 加入 `evopilot_default` 网络，并通过 `evopilot-server:19876` 访问 EvoPilot API。
 
 验收：
 

@@ -84,9 +84,10 @@ The official standalone Dashboard repository provides this shape through its `co
 
 ```bash
 cd /opt/evopilot-dashboard
-EVOPILOT_API_BASE_URL=http://host.docker.internal:19876 \
+EVOPILOT_DOCKER_NETWORK=evopilot_default \
+EVOPILOT_API_BASE_URL=http://evopilot-server:19876 \
 EVOPILOT_DASHBOARD_PORT=8080 \
-docker compose up -d --build
+docker compose -f compose.production.yaml up -d --build
 ```
 
 Use the Dashboard service health endpoint separately from EvoPilot readiness:
