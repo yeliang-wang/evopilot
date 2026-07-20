@@ -1,13 +1,40 @@
 {
   "name": "@evopilot/cli",
   "version": "0.1.0",
-  "private": true,
+  "description": "Command-line client for operating EvoPilot control-plane APIs from terminals, CI jobs, and AI agents.",
+  "license": "Apache-2.0",
   "type": "module",
   "bin": {
     "evopilot": "dist/index.js"
   },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "evopilot",
+    "cli",
+    "ai-agent",
+    "release-governance",
+    "loop-engineering"
+  ],
+  "homepage": "https://github.com/yeliang-wang/EvoPilot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/yeliang-wang/EvoPilot.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/yeliang-wang/EvoPilot/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "npm run build -w @evopilot/client && tsc -p tsconfig.json"
   },

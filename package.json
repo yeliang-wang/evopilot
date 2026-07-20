@@ -11,6 +11,9 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "cli": "node packages/cli/dist/index.js",
+    "cli:build": "npm run build -w @evopilot/cli",
+    "cli:test": "npm run build -w @evopilot/cli && node --test tests/functional/cli.test.mjs",
+    "cli:pack": "npm pack -w @evopilot/client --dry-run && npm pack -w @evopilot/cli --dry-run",
     "dashboard": "node -e \"console.log('Dashboard moved to ../evopilot-dashboard. Run npm run dev in that repository.')\"",
     "server": "node packages/server/dist/index.js",
     "server:debug": "EVOPILOT_RUN_MODE=debug node packages/server/dist/index.js",

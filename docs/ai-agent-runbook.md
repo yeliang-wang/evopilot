@@ -481,8 +481,10 @@ AI agents must not:
 
 ## References
 
-- [CLI Manual](cli-manual.md)
-- [CLI Reference](cli-reference.md)
+- [CLI](cli/README.md)
+- [CLI Workflows](cli/workflows.md)
+- [CLI Commands](cli/commands.md)
+- [CLI Automation](cli/automation.md)
 - [API Reference](api-reference.md)
 - [Deployment](deployment.md)
 - [Troubleshooting](troubleshooting.md)

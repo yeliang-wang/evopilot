@@ -52,7 +52,7 @@ npm run cli -- target run \
   --json
 ```
 
-See [CLI Manual](cli-manual.md) for guided workflows and [CLI Reference](cli-reference.md) for the full command list.
+See [CLI](cli/README.md) for setup, [CLI Workflows](cli/workflows.md) for guided scenarios, and [CLI Commands](cli/commands.md) for the full command list.
 
 ## Connect A Dashboard
 

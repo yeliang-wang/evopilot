@@ -14,6 +14,10 @@ const requiredFiles = [
   "deploy/k8s/code-upgrader-service.yaml",
   "deploy/k8s/secret.example.yaml",
   "docs/openapi.json",
+  "docs/cli/README.md",
+  "docs/cli/workflows.md",
+  "docs/cli/commands.md",
+  "docs/cli/automation.md",
   "docs/ai-agent-runbook.md",
   "docs/evidence-ingestion.md",
   "docs/user-guide.md",
@@ -93,12 +97,31 @@ const aiAgentRunbook = fs.readFileSync("docs/ai-agent-runbook.md", "utf8");
 assert.match(aiAgentRunbook, /WorkBuddy/);
 assert.match(aiAgentRunbook, /evopilot target run/);
 assert.match(aiAgentRunbook, /evopilot loop run/);
+assert.match(aiAgentRunbook, /cli\/automation\.md/);
 assert.match(aiAgentRunbook, /evopilot-log\/v1/);
 assert.match(aiAgentRunbook, /correlation\.loopId/);
 assert.match(aiAgentRunbook, /correlation\.goalId/);
 assert.match(aiAgentRunbook, /NO-GO/);
 assert.match(aiAgentRunbook, /--json/);
 assert.match(aiAgentRunbook, /Incident Pack/);
+
+const oldCliManualPath = ["docs/cli-", "manual.md"].join("");
+const oldCliReferencePath = ["docs/cli-", "reference.md"].join("");
+assert.ok(!fs.existsSync(oldCliManualPath), "old root CLI guide must be removed");
+assert.ok(!fs.existsSync(oldCliReferencePath), "old root CLI command doc must be removed");
+const cliReadme = fs.readFileSync("docs/cli/README.md", "utf8");
+const cliWorkflows = fs.readFileSync("docs/cli/workflows.md", "utf8");
+const cliCommands = fs.readFileSync("docs/cli/commands.md", "utf8");
+const cliAutomation = fs.readFileSync("docs/cli/automation.md", "utf8");
+assert.match(cliReadme, /The EvoPilot CLI is an HTTP client/);
+assert.match(cliReadme, /npm install -g @evopilot\/cli/);
+assert.match(cliWorkflows, /evopilot target run/);
+assert.match(cliWorkflows, /--require-devops-ready/);
+assert.match(cliCommands, /Project DevOps/);
+assert.match(cliCommands, /source-closure execute/);
+assert.match(cliAutomation, /WorkBuddy/);
+assert.match(cliAutomation, /Do not parse human-readable CLI output/);
+assert.match(cliAutomation, /Only EvoPilot release decisions/);
 
 const envExample = fs.readFileSync(".env.example", "utf8");
 assert.match(envExample, /EVOPILOT_LOG_LEVEL=info/);
@@ -146,15 +169,24 @@ const legacyCiWords = [
   ["connectors/", "jen", "kins"].join(""),
   ["Jen", "kins", "file"].join("")
 ];
+const oldCliDocWords = [
+  ["cli-", "manual"].join(""),
+  ["cli-", "reference"].join(""),
+  ["CLI ", "Manual"].join(""),
+  ["CLI ", "Reference"].join("")
+];
 const trackedFiles = execFileSync("git", ["ls-files"], { encoding: "utf8" }).split(/\r?\n/).filter(Boolean);
 const legacyCiMatches = [];
+const oldCliDocMatches = [];
 for (const file of trackedFiles) {
   if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) continue;
   const buffer = fs.readFileSync(file);
   if (buffer.includes(0)) continue;
   const content = buffer.toString("utf8");
   if (legacyCiWords.some((word) => content.includes(word))) legacyCiMatches.push(file);
+  if (oldCliDocWords.some((word) => content.includes(word))) oldCliDocMatches.push(file);
 }
 assert.deepEqual(legacyCiMatches, [], `legacy CI/CD references must be removed from tracked files: ${legacyCiMatches.join(", ")}`);
+assert.deepEqual(oldCliDocMatches, [], `old CLI doc references must be removed from tracked files: ${oldCliDocMatches.join(", ")}`);
 
 console.log("production assets verified");
