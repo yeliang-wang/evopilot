@@ -13,6 +13,7 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --idempotency-key <key>     Idempotency key for mutating commands
 --timeout <duration>        Wrapper stop boundary, for example 30s, 10m, or 2h
 --until <policy>            Wrapper stop policy: terminal or blocked-or-complete
+--require-source-ready      project onboard / target run fails fast unless source credentials are READY
 --require-devops-ready      target run fails fast unless project DevOps preflight is READY
 --json                      Print JSON response data
 --config <file>             Config path, defaults to ~/.evopilot/config.json
@@ -41,11 +42,13 @@ evopilot status --json
 ```
 
 Checks `/health`, `/ready`, and authenticated `/api/v1/summary` when a token is configured.
+It also reads `/api/v1/version` and returns `cli.version`, `api.serverVersion`, `api.apiContractVersion`, and `api.minimumCliVersion` when the server supports the version endpoint.
 
 ## Project
 
 ```bash
 evopilot project register --id <id> --provider <local-git|github|gitlab> [options]
+evopilot project onboard <github|gitlab|local-git> [options]
 evopilot project list
 evopilot project preflight <project-id>
 evopilot project credentials set <project-id> [options]
@@ -83,6 +86,33 @@ Credential options:
 --clear-token-ref
 ```
 
+`project onboard` is the wrapper for a new project. It registers the repository, runs source credential preflight, optionally configures repository-native DevOps, runs DevOps preflight, and can continue into `target run` when `--template` is supplied.
+
+By default, `project onboard` returns a white-box result and next action after registration and preflight. Add `--require-source-ready --require-devops-ready` for strict end-to-end automation that must stop before Goal/Loop execution when source writeback or repository-native DevOps is not ready.
+
+Common onboard options:
+
+```text
+--id <project-id>
+--repo <owner/repo>
+--owner <github-owner>
+--repo-name <github-repo>
+--base-url <gitlab-or-github-api-base-url>
+--project-id <gitlab-project-id>
+--branch <branch>
+--token-ref <server-side-secret-ref>
+--ci-workflow <workflow-file>
+--ci-required-check <check>
+--ci-required-stage <stage>
+--ci-required-job <job>
+--cd-workflow <workflow-file>
+--deploy-environment <environment>
+--health-url <url>
+--ready-url <url>
+--template <experimental|alpha|beta|rc|ga>
+--objective <text>
+```
+
 ## Project DevOps
 
 ```bash
@@ -112,6 +142,45 @@ Common options:
 --deploy-timeout-seconds <seconds>
 ```
 
+## Secrets
+
+```bash
+evopilot secret list
+evopilot secret set --id <secret-ref> --kind <kind> (--value <value>|--value-file <file>|--from-env <env>)
+evopilot secret revoke <secret-ref>
+```
+
+Secret values are sent to the EvoPilot server once and are not printed back. Source and DevOps `tokenRef` resolution first checks server environment variables, then EvoPilot's secret vault.
+Use `--value-file` or `--from-env` for private keys and other values that start with `-`.
+
+Common kinds:
+
+```text
+source-token
+deploy-token
+github-app-private-key
+github-webhook-secret
+llm-key
+generic
+```
+
+## GitHub App
+
+```bash
+evopilot github-app installation list
+evopilot github-app installation set --id <id> --installation-id <github-installation-id> --account <org-or-user> [options]
+evopilot github-app installation preflight <id>
+```
+
+Common options:
+
+```text
+--private-key-secret-ref <secret-ref>
+--webhook-secret-ref <secret-ref>
+--repository <owner/repo>
+--permission <name=value>
+```
+
 ## Evidence
 
 ```bash
@@ -131,6 +200,7 @@ evopilot target decision <target-id> [--project <project-id>]
 ```
 
 `target run` is the one-command wrapper for a project release target.
+Use `--require-source-ready --require-devops-ready` when the run must fail before Goal/Loop execution if PR/merge or repository-native DevOps is not ready.
 
 ## Goal
 

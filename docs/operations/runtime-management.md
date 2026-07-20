@@ -66,7 +66,7 @@ npm run verify:runtime-lock:strict
 - GitHub 项目：`provider=github-actions`，触发 workflow dispatch，读取 workflow runs 和 check runs。
 - GitLab 项目：`provider=gitlab-ci`，触发 pipeline，读取 pipeline jobs。
 
-项目 DevOps 使用项目 source credentials 或 `devops.tokenRef` 解析平台 token。token 必须由 EvoPilot 服务端运行环境或 secret manager 提供，不能依赖 WorkBuddy/Codex 本机环境变量。
+项目 DevOps 使用项目 source credentials 或 `devops.tokenRef` 解析平台 token。token 必须由 EvoPilot 服务端运行环境变量或同一 tenant/workspace 的 EvoPilot secret vault 提供，不能依赖 WorkBuddy/Codex 本机环境变量。
 
 ## OpenHands 运行时
 

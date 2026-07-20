@@ -17,7 +17,17 @@ Do not continue to source writeback, deploy, merge, or release actions unless `s
 
 ## 2. Register A GitHub Project
 
-Use a server-side `tokenRef` for real source writeback. The token value must be available to the EvoPilot server process or secret manager.
+Use a server-side `tokenRef` for real source writeback. The token value must be available to the EvoPilot server process environment or the same tenant/workspace EvoPilot secret vault.
+
+Store or rotate the token in EvoPilot's server-side secret vault when the operator wants to avoid editing server environment variables:
+
+```bash
+evopilot secret set \
+  --id GITHUB_TOKEN_MY_AGENT \
+  --kind source-token \
+  --from-env GITHUB_TOKEN_MY_AGENT \
+  --json
+```
 
 ```bash
 evopilot project register \
@@ -40,6 +50,16 @@ evopilot project preflight my-agent --json
 `READY` means source writeback can proceed. `READ_ONLY` or `BLOCKED` means the agent must stop and repair credentials before claiming PR, merge, or source-closure readiness.
 
 ## 3. Register A GitLab Project
+
+Store or rotate the token first:
+
+```bash
+evopilot secret set \
+  --id GITLAB_TOKEN_MY_AGENT \
+  --kind source-token \
+  --from-env GITLAB_TOKEN_MY_AGENT \
+  --json
+```
 
 ```bash
 evopilot project register \
@@ -109,6 +129,7 @@ evopilot target run \
   --objective "Promote my-agent to GA stable with source closure, native CI/CD, deployment evidence, release decision, and blocker review" \
   --until terminal \
   --max-steps 20 \
+  --require-source-ready \
   --require-devops-ready \
   --json
 ```
@@ -123,7 +144,59 @@ rc
 ga
 ```
 
-## 6. Run Or Resume A GlobalGoal
+## 6. One Command From New Project To Target
+
+Use `project onboard` when the project is not registered yet. This wrapper registers the project, verifies source credentials, configures repository-native DevOps when CI/CD flags are present, verifies DevOps readiness, then optionally runs the target template.
+
+GitHub:
+
+```bash
+evopilot project onboard github \
+  --repo <owner>/<repo> \
+  --id my-agent \
+  --branch main \
+  --token-ref GITHUB_TOKEN_MY_AGENT \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --ci-required-check test \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
+  --template ga \
+  --objective "Promote my-agent to GA stable with source closure, native CI/CD, deployment evidence, release decision, and blocker review" \
+  --until terminal \
+  --max-steps 20 \
+  --require-source-ready \
+  --require-devops-ready \
+  --json
+```
+
+GitLab:
+
+```bash
+evopilot project onboard gitlab \
+  --base-url https://gitlab.example.com \
+  --project-id group/my-agent \
+  --id my-agent \
+  --branch main \
+  --token-ref GITLAB_TOKEN_MY_AGENT \
+  --ci-required-stage test \
+  --ci-required-job build \
+  --cd-required-stage deploy \
+  --deploy-environment production \
+  --ready-url https://my-agent.example.com/ready \
+  --template rc \
+  --objective "Promote my-agent to RC with source closure, GitLab CI evidence, deployment evidence, and blocker review" \
+  --until terminal \
+  --max-steps 20 \
+  --require-source-ready \
+  --require-devops-ready \
+  --json
+```
+
+Without `--template`, `project onboard` stops after registration and preflight, returning `evopilot-cli-project-onboard/v1`.
+
+## 7. Run Or Resume A GlobalGoal
 
 Use `goal run` when the release target already exists or a previous GlobalGoal should continue.
 
@@ -149,7 +222,7 @@ evopilot goal graph <goal-id> --json
 evopilot goal evidence-matrix <goal-id> --json
 ```
 
-## 7. Run One LoopRun
+## 8. Run One LoopRun
 
 Use `loop run` for a narrower loop target.
 
@@ -163,7 +236,7 @@ evopilot loop run \
   --json
 ```
 
-## 8. Source Closure
+## 9. Source Closure
 
 Always preflight before source writeback:
 
@@ -191,7 +264,7 @@ evopilot source-closure auto-merge <loop-id> --json
 
 Only run merge actions when server-side review and release policy are satisfied.
 
-## 9. Release Decision
+## 10. Release Decision
 
 Read release decisions from EvoPilot. Do not infer GA from local tests or CI alone.
 
@@ -201,7 +274,7 @@ evopilot release decisions --project my-agent --target my-agent-ga --json
 evopilot target decision my-agent-ga --project my-agent --json
 ```
 
-## 10. Repair
+## 11. Repair
 
 Inspect release-run repair candidates:
 

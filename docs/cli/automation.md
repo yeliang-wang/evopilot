@@ -27,6 +27,7 @@ evopilot target run --project my-agent --template ga --objective "..." --json
 ```
 
 Do not parse human-readable CLI output. Human output may change to improve operator readability.
+When humans do read the console output, wrapper commands print the same core chain that Dashboard consumes: scope, project, release target, goal, workflow nodes, next action, evidence endpoints, recent steps, blockers, and `requestId` values for log lookup.
 
 ## Exit Codes
 
@@ -94,6 +95,12 @@ Preferred pattern:
 Example:
 
 ```bash
+evopilot secret set \
+  --id GITHUB_TOKEN_MY_AGENT \
+  --kind source-token \
+  --from-env GITHUB_TOKEN_MY_AGENT \
+  --json
+
 evopilot project credentials set my-agent \
   --token-ref GITHUB_TOKEN_MY_AGENT \
   --json
@@ -102,6 +109,22 @@ evopilot project preflight my-agent --json
 ```
 
 If the result is `READ_ONLY` or `BLOCKED`, stop and ask the operator to repair server-side credentials.
+
+For new projects, an agent can use the onboarding wrapper after the tokenRef exists:
+
+```bash
+evopilot project onboard github \
+  --repo owner/my-agent \
+  --id my-agent \
+  --token-ref GITHUB_TOKEN_MY_AGENT \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --template ga \
+  --objective "Promote my-agent to GA stable" \
+  --require-source-ready \
+  --require-devops-ready \
+  --json
+```
 
 ## Native DevOps Rules
 

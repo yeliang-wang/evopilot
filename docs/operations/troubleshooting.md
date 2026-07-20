@@ -16,6 +16,8 @@
 | Symptom | Meaning | Action |
 |---|---|---|
 | `target run` exits `2` | Goal did not reach terminal completion | Inspect JSON `result`, `steps`, `nextAction`, and `status.blockers`. |
+| `project onboard` stops at `configure-token-ref` | The project stores a tokenRef but the server cannot resolve it | Run `evopilot secret list --json`, repair the server environment or secret vault, then rerun `project preflight`. |
+| `status --json` has no `api` object | The CLI reached an older server without `/api/v1/version` | Verify the deployed EvoPilot version before running wrapper commands. |
 | `goal run` stops at `human-approval` | Server governance requires manual approval | Review evidence and rerun with approved recovery path. |
 | `loop run` stops at `policy-review` | Release/source policy blocked automation | Inspect source closure and release run policy blockers. |
 | `--timeout` reached | Wrapper stop boundary was reached | Rerun with a longer timeout or continue with atomic commands. |

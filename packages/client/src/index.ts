@@ -17,6 +17,7 @@ export interface EvoPilotResponse<T = unknown> {
   status: number;
   ok: boolean;
   headers: Headers;
+  requestId?: string;
   body: T;
   data: unknown;
 }
@@ -85,6 +86,7 @@ export class EvoPilotClient {
       status: response.status,
       ok: response.ok,
       headers: response.headers,
+      requestId: response.headers.get("x-request-id") ?? undefined,
       body: parsed as T,
       data: isRecord(parsed) && "data" in parsed ? parsed.data : undefined
     };

@@ -17,8 +17,11 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   assert.match(help, /evopilot config show/);
   assert.match(help, /evopilot auth token/);
   assert.match(help, /evopilot project list/);
+  assert.match(help, /evopilot project onboard/);
   assert.match(help, /evopilot project devops set/);
   assert.match(help, /evopilot project devops preflight/);
+  assert.match(help, /evopilot secret set/);
+  assert.match(help, /evopilot github-app installation set/);
   assert.match(help, /evopilot target list/);
   assert.match(help, /evopilot target decision/);
   assert.match(help, /evopilot goal create/);
@@ -69,24 +72,28 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--config", configPath,
       "--json"
     ]);
-    const project = await runCli([
-      "project", "register",
-      "--id", "github-cli-agent",
-      "--provider", "github",
-      "--base-url", github.baseUrl,
-      "--owner", "org",
-      "--repo-name", "repo",
-      "--branch", "main",
-      "--source-token", "github-token",
+    const sourceSecret = await runCli([
+      "secret", "set",
+      "--id", "GITHUB_TOKEN_CLI_AGENT",
+      "--kind", "source-token",
+      "--value", "github-token",
       "--config", configPath,
       "--json"
     ]);
-    assert.equal(project.id, "github-cli-agent");
-    assert.equal(project.repository.provider, "github");
+    assert.equal(sourceSecret.secretRef, "GITHUB_TOKEN_CLI_AGENT");
+    assert.equal(sourceSecret.valueConfigured, true);
+    assert.equal(Object.hasOwn(sourceSecret, "encryption"), false);
 
-    const configured = await runCli([
-      "project", "devops", "set", "github-cli-agent",
-      "--provider", "github-actions",
+    const secrets = await runCli(["secret", "list", "--config", configPath, "--json"]);
+    assert.ok(secrets.some((secret) => secret.secretRef === "GITHUB_TOKEN_CLI_AGENT"));
+
+    const project = await runCli([
+      "project", "onboard", "github",
+      "--id", "github-cli-agent",
+      "--base-url", github.baseUrl,
+      "--repo", "org/repo",
+      "--branch", "main",
+      "--token-ref", "GITHUB_TOKEN_CLI_AGENT",
       "--ci-workflow", "ci.yml",
       "--ci-required-check", "build",
       "--ci-required-check", "test",
@@ -96,8 +103,12 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--config", configPath,
       "--json"
     ]);
-    assert.equal(configured.devops.provider, "github-actions");
-    assert.equal(configured.readiness.status, "READY");
+    assert.equal(project.schema, "evopilot-cli-project-onboard/v1");
+    assert.equal(project.project.id, "github-cli-agent");
+    assert.equal(project.project.repository.provider, "github");
+    assert.equal(project.sourceCredentials.status, "READY");
+    assert.equal(project.devops.status, "READY");
+    assert.ok(project.steps.some((step) => step.type === "project.source-credentials.preflight" && step.requestId));
 
     const preflightText = await runCliText([
       "project", "devops", "preflight", "github-cli-agent",
@@ -109,6 +120,50 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
 
     const inspected = await runCli(["project", "devops", "inspect", "github-cli-agent", "--config", configPath, "--json"]);
     assert.equal(inspected.provider, "github-actions");
+
+    const privateKeyFile = path.join(dataRoot, "github-app-private-key.pem");
+    fs.writeFileSync(privateKeyFile, "-----BEGIN PRIVATE KEY-----\ncli-test\n-----END PRIVATE KEY-----\n");
+    const privateKey = await runCli([
+      "secret", "set",
+      "--id", "GH_APP_PRIVATE_KEY",
+      "--kind", "github-app-private-key",
+      "--value-file", privateKeyFile,
+      "--config", configPath,
+      "--json"
+    ]);
+    assert.equal(privateKey.kind, "github-app-private-key");
+    const webhookSecret = await runCli([
+      "secret", "set",
+      "--id", "GH_APP_WEBHOOK",
+      "--kind", "github-webhook-secret",
+      "--value", "webhook-secret",
+      "--config", configPath,
+      "--json"
+    ]);
+    assert.equal(webhookSecret.kind, "github-webhook-secret");
+
+    const installation = await runCli([
+      "github-app", "installation", "set",
+      "--id", "gh-app-cli",
+      "--installation-id", "12345",
+      "--account", "org",
+      "--repository", "org/repo",
+      "--private-key-secret-ref", "GH_APP_PRIVATE_KEY",
+      "--webhook-secret-ref", "GH_APP_WEBHOOK",
+      "--permission", "contents=write",
+      "--permission", "pull_requests=write",
+      "--config", configPath,
+      "--json"
+    ]);
+    assert.equal(installation.id, "gh-app-cli");
+    assert.equal(installation.status, "READY");
+
+    const appPreflight = await runCli(["github-app", "installation", "preflight", "gh-app-cli", "--config", configPath, "--json"]);
+    assert.equal(appPreflight.status, "READY");
+    assert.equal(appPreflight.nextAction, "use-installation");
+
+    const revoked = await runCli(["secret", "revoke", "GH_APP_WEBHOOK", "--config", configPath, "--json"]);
+    assert.equal(revoked.status, "REVOKED");
 
     const cleared = await runCli(["project", "devops", "clear", "github-cli-agent", "--config", configPath, "--json"]);
     assert.equal(cleared.cleared, true);
@@ -171,6 +226,10 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     assert.equal(Object.hasOwn(savedConfig, "token"), false);
 
     const status = await runCli(["status", "--config", configPath, "--json"]);
+    assert.equal(status.schema, "evopilot-cli-status/v1");
+    assert.equal(status.cli.name, "@evopilot/cli");
+    assert.equal(status.api.schema, "evopilot-version/v1");
+    assert.equal(status.api.apiContractVersion, "v1");
     assert.equal(status.health.status, "UP");
     assert.equal(status.ready.status, "READY");
     assert.ok(status.summary);
@@ -622,6 +681,13 @@ async function startFakeGitHubForCli() {
       response.end(JSON.stringify({ check_runs: [
         { name: "build", status: "completed", conclusion: "success" },
         { name: "test", status: "completed", conclusion: "success" }
+      ] }));
+      return;
+    }
+    if (request.url === "/repos/org/repo/actions/workflows/ci.yml/runs?per_page=20&branch=main") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ workflow_runs: [
+        { id: 101, name: "CI", status: "completed", conclusion: "success", head_branch: "main", html_url: "https://github.example/org/repo/actions/runs/101" }
       ] }));
       return;
     }

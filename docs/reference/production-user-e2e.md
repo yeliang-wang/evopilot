@@ -75,7 +75,7 @@ EVOPILOT_REAL_PROJECT_HEALTH_URL=https://my-agent.example.com/health
 EVOPILOT_REAL_PROJECT_READY_URL=https://my-agent.example.com/ready
 ```
 
-这些不是普通用户接入参数。代码升级运行时由系统管理员按 EvoPilot 产品套件服务发现地址覆盖；GitHub/GitLab token 由 EvoPilot 服务端 `tokenRef` 或 secret manager 解析。不能把 fake、mock、stub、simulator 或内部模拟进程作为产品生产级 E2E 的替代。
+这些不是普通用户接入参数。代码升级运行时由系统管理员按 EvoPilot 产品套件服务发现地址覆盖；GitHub/GitLab token 由 EvoPilot 服务端环境变量或同一 tenant/workspace 的 secret vault 通过 `tokenRef` 解析。不能把 fake、mock、stub、simulator 或内部模拟进程作为产品生产级 E2E 的替代。
 
 项目注册配置与 Dashboard 一致：
 

@@ -92,7 +92,7 @@ Content-Type: application/json
 Authorization: Bearer <token>
 ```
 
-`/health` 和控制台静态文件保持公开，用于健康探测和本地查看。
+`/health`、`/ready`、`/api/v1/version` 和控制台静态文件保持公开，用于健康探测、版本握手和本地查看。CLI、Dashboard 和 AI Agent 应使用 `/api/v1/version` 判断 `apiContractVersion`、`serverVersion` 和 `minimumCliVersion`，再决定是否继续执行自动化。
 
 也可以通过 `EVOPILOT_TOKENS` 配置多角色机器 Token：
 
@@ -145,6 +145,9 @@ POST /api/v1/secrets
 POST /api/v1/secrets/{secretId}/revoke
 GET /api/v1/github-app/installations
 POST /api/v1/github-app/installations
+GET /api/v1/github-app/installations/{installationId}
+GET /api/v1/github-app/installations/{installationId}/preflight
+POST /api/v1/github-app/installations/{installationId}/preflight
 GET /api/v1/loop-store/readiness
 GET /api/v1/saas/observability
 ```
@@ -153,7 +156,7 @@ GET /api/v1/saas/observability
 
 用户管理接口用于 Dashboard “用户与权限”页。`POST /api/v1/users` 由平台高级管理员或租户管理员调用；平台高级管理员可指定任意 tenant/workspace 并创建 `platformAdmin`，租户管理员只能创建本租户用户且不能授予 `platformAdmin`。`PATCH /api/v1/users/{userId}` 支持修改 displayName、role、tenantId、workspaceId、status、mustChangePassword；`POST /api/v1/users/{userId}/reset-password` 会写入新密码哈希并把 `mustChangePassword` 置为 `true`。所有响应都会隐藏 `passwordHash`。
 
-`POST /api/v1/secrets` 只返回 `secretRef` 和 `valueConfigured`，不会回显明文或加密 payload。GitHub App installation readiness 会验证 private key secret、webhook secret、repository selection 和 least-privilege permissions，并且 secret ref 必须属于同一 tenant/workspace 且类型正确。
+`POST /api/v1/secrets` 只返回 `secretRef` 和 `valueConfigured`，不会回显明文或加密 payload。GitHub/GitLab source credentials 和项目 DevOps 的 `tokenRef` 解析顺序是：先读 EvoPilot 服务进程环境变量，再读当前 tenant/workspace 下的 EvoPilot secret vault。GitHub App installation readiness 会验证 private key secret、webhook secret、repository selection 和 least-privilege permissions，并且 secret ref 必须属于同一 tenant/workspace 且类型正确。
 
 `GET /api/v1/loop-store/readiness` 返回 `evopilot-loop-store-readiness/v1`。SaaS GA 要求 Postgres-backed loop store；未配置 `EVOPILOT_LOOP_STORE_BACKEND=postgres` 和 DSN 时返回 `BLOCKED / POSTGRES_LOOP_STORE_NOT_CONFIGURED`。
 
@@ -223,7 +226,7 @@ POST /api/v1/projects
 - `username`
 - `password`
 - `token`
-- `tokenRef`，从 EvoPilot 服务环境变量读取真实 token
+- `tokenRef`，从 EvoPilot 服务环境变量或当前 workspace secret vault 读取真实 token
 
 读取项目列表时不会回显 `password` 或 `token`，只返回 `credentialsConfigured`、`credentialMode`、`tokenRef` 和 `tokenRefResolved` 等非 secret 状态。
 
@@ -235,7 +238,7 @@ GET /api/v1/projects/{projectId}/source-credentials/preflight
 POST /api/v1/projects/{projectId}/source-credentials/preflight
 ```
 
-`source-credentials` 只更新项目级 GitHub/GitLab 写回凭据元数据，例如 `tokenRef`、`token`、`password`、`username` 或 `defaultBranch`，响应不会回显 secret。`source-credentials/preflight` 不写仓库，只检查项目、provider、credential ref、token 解析、source branch 和写回策略。响应 schema 为 `evopilot-source-credential-readiness/v1`，状态为 `READY`、`READ_ONLY` 或 `BLOCKED`。公开 GitHub 无 token 时通常是 `READ_ONLY`，blocker 为 `token-resolution:SOURCE_CREDENTIAL_TOKEN_REQUIRED`；`tokenRef` 已配置但环境变量未解析时仍为 `READ_ONLY`；解析成功并能读取分支后为 `READY`。Dashboard 保存凭据后会立即调用同一 readiness contract，因此用户补齐凭据后可以回到 Target Loop Backlog 继续 autopilot。
+`source-credentials` 只更新项目级 GitHub/GitLab 写回凭据元数据，例如 `tokenRef`、`token`、`password`、`username` 或 `defaultBranch`，响应不会回显 secret。`source-credentials/preflight` 不写仓库，只检查项目、provider、credential ref、token 解析、source branch 和写回策略。响应 schema 为 `evopilot-source-credential-readiness/v1`，状态为 `READY`、`READ_ONLY` 或 `BLOCKED`。公开 GitHub 无 token 时通常是 `READ_ONLY`，blocker 为 `token-resolution:SOURCE_CREDENTIAL_TOKEN_REQUIRED`；`tokenRef` 已配置但环境变量和 secret vault 都未解析时仍为 `READ_ONLY`；解析成功并能读取分支后为 `READY`。Dashboard 保存凭据后会立即调用同一 readiness contract，因此用户补齐凭据后可以回到 Target Loop Backlog 继续 autopilot。
 
 项目 DevOps 绑定使用仓库原生 CI/CD。GitHub 项目绑定 GitHub Actions，GitLab 项目绑定 GitLab CI：
 

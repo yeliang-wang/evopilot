@@ -29,6 +29,23 @@ evopilot target run \
   --objective "Promote the project to GA with source closure, native DevOps evidence, deploy evidence, and release decision" \
   --until terminal \
   --max-steps 20 \
+  --require-source-ready \
+  --require-devops-ready \
+  --json
+```
+
+For a new GitHub project, use the onboarding wrapper after the writable tokenRef exists on the EvoPilot server:
+
+```bash
+evopilot project onboard github \
+  --repo <owner>/<repo> \
+  --id <project-id> \
+  --token-ref GITHUB_TOKEN_<PROJECT> \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --template ga \
+  --objective "Promote <project-id> to GA stable" \
+  --require-source-ready \
   --require-devops-ready \
   --json
 ```

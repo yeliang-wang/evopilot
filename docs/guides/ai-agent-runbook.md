@@ -41,6 +41,30 @@ evopilot target run \
   --objective "Promote my-agent to GA stable with source closure, deployment evidence, release decision, and blocker review" \
   --until terminal \
   --max-steps 20 \
+  --require-source-ready \
+  --require-devops-ready \
+  --json
+```
+
+For a new GitHub project, use the onboarding wrapper after the tokenRef is available to the EvoPilot server:
+
+```bash
+evopilot project onboard github \
+  --repo owner/my-agent \
+  --id my-agent \
+  --branch main \
+  --token-ref GITHUB_WRITE_TOKEN_MY_AGENT \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --ci-required-check test \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
+  --template ga \
+  --objective "Promote my-agent to GA stable with source closure, native DevOps evidence, deploy evidence, release decision, and blocker review" \
+  --until terminal \
+  --max-steps 20 \
+  --require-source-ready \
   --require-devops-ready \
   --json
 ```
@@ -77,7 +101,7 @@ Use this section when an AI agent needs to operate a GitHub project from onboard
 Register or repair project -> preflight source credentials -> run target -> stop on blockers -> inspect release decision
 ```
 
-The GitHub token is not passed in the daily `target run` command. A writable token must be available to the EvoPilot server process through a server-side environment variable or secret manager, and the project stores only a `tokenRef`.
+The GitHub token is not passed in the daily `target run` command. A writable token must be available to the EvoPilot server process through a server-side environment variable or the same tenant/workspace EvoPilot secret vault, and the project stores only a `tokenRef`.
 
 ### Scenario 1: Read-Only Public Repository
 
@@ -109,7 +133,7 @@ Agents may continue with read-only inspection, but must not claim that source wr
 
 Use this when EvoPilot must create branches, commits, and PRs. For open-source upstream repositories, register a fork or a repository where the configured token has write permission. EvoPilot cannot bypass GitHub permissions.
 
-First, the production operator configures a token in the EvoPilot server environment, not in the WorkBuddy command:
+First, the production operator configures a token in the EvoPilot server environment or writes it once to EvoPilot's secret vault. Do not pass the raw token in daily `target run` commands.
 
 ```bash
 # On the EvoPilot server runtime, for example ECS .env.production or a secret manager.
@@ -117,6 +141,16 @@ GITHUB_WRITE_TOKEN_MY_AGENT=<github-token-with-repo-write>
 ```
 
 Restart the EvoPilot server and workers after changing server-side environment variables. Then register the writable project from any machine that can reach the production control plane:
+
+If the operator uses the EvoPilot secret vault instead of environment variables, run this once from a trusted machine or CI secret context:
+
+```bash
+evopilot secret set \
+  --id GITHUB_WRITE_TOKEN_MY_AGENT \
+  --kind source-token \
+  --from-env GITHUB_WRITE_TOKEN_MY_AGENT \
+  --json
+```
 
 ```bash
 evopilot project register \
@@ -164,7 +198,7 @@ evopilot project credentials set my-agent \
 evopilot project preflight my-agent --json
 ```
 
-If the result is still `READ_ONLY`, the tokenRef is stored but the EvoPilot server process cannot resolve the environment variable. Stop and ask the operator to repair the server-side secret or restart the runtime. Do not retry source closure with the same blocker.
+If the result is still `READ_ONLY`, the tokenRef is stored but the EvoPilot server cannot resolve the environment variable or secret vault record. Stop and ask the operator to repair the server-side secret or restart the runtime. Do not retry source closure with the same blocker.
 
 ### Scenario 4: DevOps, CI, CD, And Release Closure
 

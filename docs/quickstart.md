@@ -49,8 +49,12 @@ npm run cli -- target run \
   --template ga \
   --objective "Promote my-agent to GA stable with source closure, deployment evidence, release decision, and blocker review" \
   --max-steps 20 \
+  --require-source-ready \
+  --require-devops-ready \
   --json
 ```
+
+For a new GitHub or GitLab project, use `project onboard` first or provide `--template` to continue directly into the target wrapper. See [CLI Workflows](cli/workflows.md).
 
 See [CLI](cli/README.md) for setup, [CLI Workflows](cli/workflows.md) for guided scenarios, and [CLI Commands](cli/commands.md) for the full command list.
 

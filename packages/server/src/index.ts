@@ -101,6 +101,10 @@ export interface AuthUser {
 
 const DEFAULT_TENANT_ID = "tenant-production";
 const DEFAULT_WORKSPACE_ID = "workspace-agent-products";
+const EVOPILOT_PRODUCT_VERSION = process.env.EVOPILOT_PRODUCT_VERSION ?? "1.0.0";
+const EVOPILOT_SERVER_VERSION = process.env.EVOPILOT_SERVER_VERSION ?? "0.1.0";
+const EVOPILOT_API_CONTRACT_VERSION = "v1";
+const EVOPILOT_MINIMUM_CLI_VERSION = "0.1.0";
 
 export interface DeliveryExecutorResult {
   ciStatus: "PASSED" | "FAILED";
@@ -2058,6 +2062,9 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         return writeJson(response, 200, {
           status: "UP",
           service: "evopilot",
+          productVersion: EVOPILOT_PRODUCT_VERSION,
+          serverVersion: EVOPILOT_SERVER_VERSION,
+          apiContractVersion: EVOPILOT_API_CONTRACT_VERSION,
           profile: profile.id,
           runtimeMode: runtime.mode,
           dataRoot: options.dataRoot,
@@ -2069,6 +2076,18 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           status: store.isReady() ? "READY" : "NOT_READY",
           schemaVersion: store.metadata().schemaVersion
         });
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/version") {
+        return writeJson(response, 200, envelope({
+          schema: "evopilot-version/v1",
+          service: "evopilot",
+          productVersion: EVOPILOT_PRODUCT_VERSION,
+          serverVersion: EVOPILOT_SERVER_VERSION,
+          apiContractVersion: EVOPILOT_API_CONTRACT_VERSION,
+          minimumCliVersion: EVOPILOT_MINIMUM_CLI_VERSION,
+          recommendedCliPackage: "@evopilot/cli",
+          dashboardMode: options.dashboardRoot ? "compat-static-host" : "standalone-api-client"
+        }));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/auth/bootstrap") {
         return writeJson(response, 200, envelope({
@@ -2661,6 +2680,42 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           repositories: installation.repositories.length
         }));
         return writeJson(response, installation.status === "READY" ? 201 : 409, envelope(maskGitHubAppInstallation(installation)));
+      }
+      const githubAppInstallationPreflightMatch = url.pathname.match(/^\/api\/v1\/github-app\/installations\/([^/]+)\/preflight$/);
+      if ((request.method === "GET" || request.method === "POST") && githubAppInstallationPreflightMatch) {
+        if (!hasRole(auth, request.method === "POST" ? "operator" : "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const installation = store.readGitHubAppInstallation(decodeURIComponent(githubAppInstallationPreflightMatch[1]));
+        if (!installation) return writeJson(response, 404, { error: "GITHUB_APP_INSTALLATION_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, installation.tenantId, installation.workspaceId)) return writeJson(response, 403, { error: "GITHUB_APP_INSTALLATION_FORBIDDEN" });
+        const checks = githubAppInstallationChecks(store, installation.tenantId, installation.workspaceId, installation);
+        const status = checks.every((check) => check.status === "PASS") ? "READY" : "BLOCKED";
+        const updated: GitHubAppInstallationRecord = {
+          ...installation,
+          status,
+          checks,
+          updatedAt: new Date().toISOString()
+        };
+        if (request.method === "POST") {
+          store.writeGitHubAppInstallation(updated);
+          store.appendAudit(audit(auth, "github-app.installation-preflight", updated.id, {
+            status,
+            installationId: updated.installationId,
+            repositories: updated.repositories.length
+          }));
+        }
+        return writeJson(response, status === "READY" ? 200 : 409, envelope({
+          ...maskGitHubAppInstallation(updated),
+          checkedAt: updated.updatedAt,
+          nextAction: status === "READY" ? "use-installation" : "repair-github-app-installation"
+        }));
+      }
+      const githubAppInstallationMatch = url.pathname.match(/^\/api\/v1\/github-app\/installations\/([^/]+)$/);
+      if (request.method === "GET" && githubAppInstallationMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const installation = store.readGitHubAppInstallation(decodeURIComponent(githubAppInstallationMatch[1]));
+        if (!installation) return writeJson(response, 404, { error: "GITHUB_APP_INSTALLATION_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, installation.tenantId, installation.workspaceId)) return writeJson(response, 403, { error: "GITHUB_APP_INSTALLATION_FORBIDDEN" });
+        return writeJson(response, 200, envelope(maskGitHubAppInstallation(installation)));
       }
       if (request.method === "POST" && url.pathname === "/api/v1/workspaces") {
         if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -3578,7 +3633,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const target = String(body.target ?? "端到端响应时间提升 5%，p95 小于 3 秒，RAG 命中率不下降").trim();
         const projectId = String(body.projectId ?? datasets[0]?.projectId ?? profile.id);
         const project = store.readProject(projectId);
-        const codeContext = await collectProjectCodeContext({ project, runtime, profile });
+        const codeContext = await collectProjectCodeContext({ store, project, runtime, profile });
         if (runtime.mode === "prod" && codeContext.status !== "AVAILABLE") {
           return writeJson(response, 409, { error: "PROJECT_CODE_CONTEXT_NOT_AVAILABLE", detail: codeContext.unavailableReason });
         }
@@ -3685,7 +3740,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
         return writeJson(response, 200, envelope(store.listProjects()
           .filter((project) => canAccessScopedResource(auth, project.tenantId, project.workspaceId))
-          .map(maskProject)));
+          .map((project) => maskProject(project, store))));
       }
       const projectOwnershipMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/ownership$/);
       if (request.method === "PATCH" && projectOwnershipMatch) {
@@ -3711,7 +3766,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           tenantId,
           workspaceId
         }));
-        return writeJson(response, 200, envelope(maskProject(updated)));
+        return writeJson(response, 200, envelope(maskProject(updated, store)));
       }
       const projectDiagnosticsMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/diagnostics$/);
       if (request.method === "GET" && projectDiagnosticsMatch) {
@@ -3730,10 +3785,10 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!project.repository) return writeJson(response, 409, { error: "PROJECT_REPOSITORY_NOT_CONFIGURED" });
         const body = await readJson(request, options.maxBodyBytes);
         const updated = updateProjectSourceCredentials(project, body);
-        updated.validation = await validateProjectRepository(updated.repository);
+        updated.validation = await validateProjectRepository(updated.repository, store, updated);
         updated.updatedAt = new Date().toISOString();
         store.writeProject(updated);
-        const readiness = await checkSourceCredentialReadiness(updated);
+        const readiness = await checkSourceCredentialReadiness(updated, store);
         store.appendAudit(audit(auth, "project.source-credentials.updated", updated.id, {
           provider: updated.repository?.provider,
           tokenRefConfigured: Boolean(updated.repository?.credentials?.tokenRef),
@@ -3741,7 +3796,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           readiness: readiness.status,
           blockers: readiness.blockers
         }));
-        return writeJson(response, readiness.status === "READY" ? 200 : 409, envelope({ project: maskProject(updated), readiness }));
+        return writeJson(response, readiness.status === "READY" ? 200 : 409, envelope({ project: maskProject(updated, store), readiness }));
       }
       const projectSourceCredentialPreflightMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/source-credentials\/preflight$/);
       if ((request.method === "GET" || request.method === "POST") && projectSourceCredentialPreflightMatch) {
@@ -3749,7 +3804,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const project = store.readProject(decodeURIComponent(projectSourceCredentialPreflightMatch[1]));
         if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
         if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
-        const readiness = await checkSourceCredentialReadiness(project);
+        const readiness = await checkSourceCredentialReadiness(project, store);
         if (request.method === "POST") {
           store.appendAudit(audit(auth, "project.source-credentials-preflight", project.id, {
             provider: project.repository?.provider,
@@ -3784,7 +3839,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           updatedAt: new Date().toISOString()
         };
         store.writeProject(updated);
-        const readiness = await checkProjectDevopsReadiness(updated);
+        const readiness = await checkProjectDevopsReadiness(updated, store);
         store.appendAudit(audit(auth, "project.devops.updated", updated.id, {
           provider: devops.provider,
           ciWorkflow: devops.ci.workflow,
@@ -3802,7 +3857,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
             blockers: readiness.blockers
           }
         });
-        return writeJson(response, readiness.status === "BLOCKED" ? 409 : 200, envelope({ project: maskProject(updated), devops, readiness }));
+        return writeJson(response, readiness.status === "BLOCKED" ? 409 : 200, envelope({ project: maskProject(updated, store), devops, readiness }));
       }
       if (request.method === "DELETE" && projectDevopsMatch) {
         if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -3813,7 +3868,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const updated: StoredProject = { ...rest, updatedAt: new Date().toISOString() };
         store.writeProject(updated);
         store.appendAudit(audit(auth, "project.devops.cleared", updated.id, { previousProvider: devops?.provider }));
-        return writeJson(response, 200, envelope({ project: maskProject(updated), cleared: Boolean(devops) }));
+        return writeJson(response, 200, envelope({ project: maskProject(updated, store), cleared: Boolean(devops) }));
       }
       const projectDevopsPreflightMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/devops\/preflight$/);
       if ((request.method === "GET" || request.method === "POST") && projectDevopsPreflightMatch) {
@@ -3821,7 +3876,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const project = store.readProject(decodeURIComponent(projectDevopsPreflightMatch[1]));
         if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
         if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
-        const readiness = await checkProjectDevopsReadiness(project);
+        const readiness = await checkProjectDevopsReadiness(project, store);
         if (request.method === "POST") {
           store.appendAudit(audit(auth, "project.devops-preflight", project.id, {
             provider: project.devops?.provider,
@@ -3864,7 +3919,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           return writeJson(response, 429, { error: "WORKSPACE_PROJECT_QUOTA_EXCEEDED", detail: usage });
         }
         const repository = normalizeProjectRepository(body);
-        const validation = await validateProjectRepository(repository);
+        const validation = await validateProjectRepository(repository, store, { tenantId, workspaceId });
         const projectRuntime = normalizeProjectRuntime(body);
         const projectDevops = normalizeProjectDevops(body, {
           id: projectId,
@@ -3896,7 +3951,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (project.validation.status !== "VERIFIED") return writeJson(response, 400, { error: "PROJECT_VALIDATION_FAILED", detail: project.validation.message });
         store.writeProject(project);
         store.appendAudit(audit(auth, "project.created", project.id, { provider: repository?.provider, validation: validation.status, devopsProvider: project.devops?.provider }));
-        return writeJson(response, 201, envelope(maskProject(project)));
+        return writeJson(response, 201, envelope(maskProject(project, store)));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/runs") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -4062,7 +4117,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           const codeUpgrade = store.findSuccessfulCodeUpgrade(delivery.id);
           if (!codeUpgrade) return writeJson(response, 409, { error: "CODE_UPGRADE_REQUIRED" });
           if (!project?.devops) return writeJson(response, 409, { error: "DEVOPS_NOT_CONFIGURED", detail: "项目未配置 GitHub Actions 或 GitLab CI DevOps。", projectId: delivery.projectId });
-          const readiness = await checkProjectDevopsReadiness(project);
+          const readiness = await checkProjectDevopsReadiness(project, store);
           if (readiness.status === "BLOCKED") return writeJson(response, 409, { error: "DEVOPS_NOT_READY", detail: readiness.blockers.join("; "), readiness });
           const pipeline = await triggerNativeDevopsDelivery({ store, auth, run, delivery, plan, body: { ...body, executor: nativeExecutor }, runtime });
           if (body.batchId) {
@@ -4158,7 +4213,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const executor = normalizeProjectDevopsProvider(body.executor ?? project.devops.provider);
         if (!executor) return writeJson(response, 400, { error: "PROJECT_DEVOPS_PROVIDER_REQUIRED", detail: "provider must be github-actions or gitlab-ci." });
         if (executor !== project.devops.provider) return writeJson(response, 409, { error: "DEVOPS_PROVIDER_PROJECT_MISMATCH", detail: `scheduled executor=${executor}, project devops=${project.devops.provider}.`, projectId: delivery.projectId });
-        const readiness = await checkProjectDevopsReadiness(project);
+        const readiness = await checkProjectDevopsReadiness(project, store);
         if (readiness.status === "BLOCKED") return writeJson(response, 409, { error: "DEVOPS_NOT_READY", detail: readiness.blockers.join("; "), readiness });
         const connectorId = `project:${project.id}`;
         const jobName = project.devops.provider === "gitlab-ci" ? (project.devops.ci.workflow ?? ".gitlab-ci.yml") : (project.devops.ci.workflow ?? ((project.devops.ci.requiredChecks ?? []).join(",") || "github-actions"));
@@ -7382,7 +7437,7 @@ class FileStore {
       connectedProjects: projects.map((project) => ({
         id: project.id,
         name: project.name,
-        repository: maskProject(project).repository,
+        repository: maskProject(project, this).repository,
         devops: project.devops,
         validation: project.validation,
         releaseReadiness: readiness.find((report) => report.projectId === project.id),
@@ -11426,7 +11481,7 @@ async function executeLoopSourceClosure(store: FileStore, loopId: string, actor:
   try {
     if (loop.sourceClosure.repositoryProvider === "github") {
       if (!project?.repository || project.repository.provider !== "github") throw httpError(409, "SOURCE_CLOSURE_PROJECT_NOT_GITHUB", "Loop source project is not a GitHub repository.");
-      const token = repositoryToken(project.repository);
+      const token = repositoryToken(store, project.repository, project);
       if (!token) throw httpError(409, "SOURCE_CLOSURE_TOKEN_REQUIRED", "GitHub source closure requires a project token or tokenRef.");
       if (!project.repository.owner || !project.repository.repo) throw httpError(409, "SOURCE_CLOSURE_GITHUB_COORDINATES_REQUIRED", "GitHub source closure requires owner and repo.");
       const adapter = new GitHubHttpAdapter({
@@ -11475,7 +11530,7 @@ async function executeLoopSourceClosure(store: FileStore, loopId: string, actor:
       }
     } else if (loop.sourceClosure.repositoryProvider === "gitlab") {
       if (!project?.repository || project.repository.provider !== "gitlab") throw httpError(409, "SOURCE_CLOSURE_PROJECT_NOT_GITLAB", "Loop source project is not a GitLab repository.");
-      const token = repositoryToken(project.repository);
+      const token = repositoryToken(store, project.repository, project);
       if (!token) throw httpError(409, "SOURCE_CLOSURE_TOKEN_REQUIRED", "GitLab source closure requires a project token or tokenRef.");
       if (!project.repository.baseUrl || !project.repository.projectId) throw httpError(409, "SOURCE_CLOSURE_GITLAB_COORDINATES_REQUIRED", "GitLab source closure requires baseUrl and projectId.");
       const adapter = new GitLabHttpAdapter({
@@ -11729,7 +11784,7 @@ async function applySourceClosureReviewDecision(store: FileStore, loopId: string
       store.writeSourceReleaseClosureRun(buildSourceReleaseClosureRun(blockedLoop, actor, latestRun?.id, latestRun?.createdAt));
       throw httpError(409, "SOURCE_CLOSURE_RELEASE_POLICY_BLOCKED", `Release policy blocked merge: ${policy.blockers.join("; ")}`);
     }
-    const merge = await mergeSourceClosureReview(project, loop, artifacts, actor, optionalTrimmedString(request.commitMessage));
+    const merge = await mergeSourceClosureReview(store, project, loop, artifacts, actor, optionalTrimmedString(request.commitMessage));
     artifacts.reviewStatus = "MERGED";
     artifacts.mergedAt = now;
     artifacts.mergedBy = actor;
@@ -11996,10 +12051,10 @@ function buildSkippedRepairCandidate(store: FileStore, runId: string): SourceRel
   };
 }
 
-async function mergeSourceClosureReview(project: StoredProject | undefined, loop: LoopRun, artifacts: LoopSourceClosure["artifacts"], actor: string, commitMessage?: string): Promise<{ mergeCommitSha?: string; evidence: string[] }> {
+async function mergeSourceClosureReview(store: FileStore, project: StoredProject | undefined, loop: LoopRun, artifacts: LoopSourceClosure["artifacts"], actor: string, commitMessage?: string): Promise<{ mergeCommitSha?: string; evidence: string[] }> {
   if (loop.sourceClosure.repositoryProvider === "github") {
     if (!project?.repository || project.repository.provider !== "github") throw httpError(409, "SOURCE_CLOSURE_PROJECT_NOT_GITHUB", "Loop source project is not a GitHub repository.");
-    const token = repositoryToken(project.repository);
+    const token = repositoryToken(store, project.repository, project);
     if (!token) throw httpError(409, "SOURCE_CLOSURE_TOKEN_REQUIRED", "GitHub merge requires a project token or tokenRef.");
     if (!project.repository.owner || !project.repository.repo) throw httpError(409, "SOURCE_CLOSURE_GITHUB_COORDINATES_REQUIRED", "GitHub merge requires owner and repo.");
     if (!artifacts.pullRequestNumber) throw httpError(409, "SOURCE_CLOSURE_PULL_REQUEST_NUMBER_REQUIRED", "GitHub merge requires pullRequestNumber.");
@@ -12024,7 +12079,7 @@ async function mergeSourceClosureReview(project: StoredProject | undefined, loop
   }
   if (loop.sourceClosure.repositoryProvider === "gitlab") {
     if (!project?.repository || project.repository.provider !== "gitlab") throw httpError(409, "SOURCE_CLOSURE_PROJECT_NOT_GITLAB", "Loop source project is not a GitLab repository.");
-    const token = repositoryToken(project.repository);
+    const token = repositoryToken(store, project.repository, project);
     if (!token) throw httpError(409, "SOURCE_CLOSURE_TOKEN_REQUIRED", "GitLab merge requires a project token or tokenRef.");
     if (!project.repository.baseUrl || !project.repository.projectId) throw httpError(409, "SOURCE_CLOSURE_GITLAB_COORDINATES_REQUIRED", "GitLab merge requires baseUrl and projectId.");
     if (!artifacts.mergeRequestIid) throw httpError(409, "SOURCE_CLOSURE_MERGE_REQUEST_IID_REQUIRED", "GitLab merge requires mergeRequestIid.");
@@ -12381,7 +12436,7 @@ async function preflightLoopSourceClosure(store: FileStore, loopId: string, opti
   });
 
   if (project?.repository?.provider === "github") {
-    const token = repositoryToken(project.repository);
+    const token = repositoryToken(store, project.repository, project);
     addCheck({
       id: "credentials",
       status: token ? "PASS" : "FAIL",
@@ -12408,7 +12463,7 @@ async function preflightLoopSourceClosure(store: FileStore, loopId: string, opti
       addCheck({ id: "source-branch", status: "SKIP", required: true, evidence: [`branch=${closure.sourceBranch}`, "credentials-or-coordinates-missing"] });
     }
   } else if (project?.repository?.provider === "gitlab") {
-    const token = repositoryToken(project.repository);
+    const token = repositoryToken(store, project.repository, project);
     addCheck({
       id: "credentials",
       status: token ? "PASS" : "FAIL",
@@ -12836,10 +12891,10 @@ function defaultClosureBranch(loop: LoopRun): string {
   return `evopilot/${safeFileName(loop.id)}${version}`;
 }
 
-function repositoryToken(repository: ProjectRepositoryRegistration): string | undefined {
+function repositoryToken(store: FileStore, repository: ProjectRepositoryRegistration, scope?: { tenantId?: string; workspaceId?: string }): string | undefined {
   if (repository.credentials?.token) return repository.credentials.token;
   if (repository.credentials?.password) return repository.credentials.password;
-  if (repository.credentials?.tokenRef) return process.env[repository.credentials.tokenRef];
+  if (repository.credentials?.tokenRef) return resolveTokenRef(store, repository.credentials.tokenRef, scope);
   return undefined;
 }
 
@@ -14502,7 +14557,7 @@ async function startOpenHandsCodeUpgrade(args: {
   const diagnostic = await diagnoseProjectRuntime({ store, project, runtime });
   const blockingDiagnostic = codeUpgradeBlockingDiagnostic(diagnostic);
   if (blockingDiagnostic) throw new Error(`PROJECT_RUNTIME_DIAGNOSTIC_FAILED: ${blockingDiagnostic.remediation ?? blockingDiagnostic.detail}`);
-  const codeContext = await collectProjectCodeContext({ project, runtime, profile, focusFiles: codeUpgradeFocusFiles(run) });
+  const codeContext = await collectProjectCodeContext({ store, project, runtime, profile, focusFiles: codeUpgradeFocusFiles(run) });
   if (runtime.mode === "prod" && codeContext.status !== "AVAILABLE") {
     throw new Error(`PROJECT_CODE_CONTEXT_UNAVAILABLE: ${codeContext.unavailableReason ?? codeContext.summary}`);
   }
@@ -14857,7 +14912,7 @@ async function refreshGitHubActionsPipeline(store: FileStore, pipeline: Pipeline
   if (pipeline.status === "SUCCEEDED" || pipeline.status === "FAILED" || pipeline.status === "CANCELED") return pipeline;
   const project = store.readProject(pipeline.projectId);
   if (!project?.devops || project.devops.provider !== "github-actions" || !project.repository || project.repository.provider !== "github") return pipeline;
-  const token = resolveProjectDevopsToken(project);
+  const token = resolveProjectDevopsToken(project, store);
   if (!token || !project.repository.owner || !project.repository.repo) return pipeline;
   const adapter = new GitHubHttpAdapter({ apiBaseUrl: project.repository.baseUrl, owner: project.repository.owner, repo: project.repository.repo, token });
   const ref = pipeline.parameters.DEVOPS_REF ?? project.devops.ci.ref ?? project.repository.defaultBranch ?? "main";
@@ -14893,7 +14948,7 @@ async function refreshGitLabCiPipeline(store: FileStore, pipeline: PipelineRun):
   if (pipeline.status === "SUCCEEDED" || pipeline.status === "FAILED" || pipeline.status === "CANCELED") return pipeline;
   const project = store.readProject(pipeline.projectId);
   if (!project?.devops || project.devops.provider !== "gitlab-ci" || !project.repository || project.repository.provider !== "gitlab") return pipeline;
-  const token = resolveProjectDevopsToken(project);
+  const token = resolveProjectDevopsToken(project, store);
   if (!token || !project.repository.baseUrl || !project.repository.projectId) return pipeline;
   const adapter = new GitLabHttpAdapter({ baseUrl: project.repository.baseUrl, projectId: project.repository.projectId, token });
   const ref = pipeline.parameters.DEVOPS_REF ?? project.devops.ci.ref ?? project.repository.defaultBranch ?? "main";
@@ -15421,6 +15476,7 @@ function fallbackOpportunityDraftMarkdown(args: { title: string; target: string;
 }
 
 async function collectProjectCodeContext(args: {
+  store: FileStore;
   project?: StoredProject;
   runtime: RuntimeConfig;
   profile: ProjectProfile;
@@ -15439,7 +15495,7 @@ async function collectProjectCodeContext(args: {
   if (!project.repository.gitUrl) return unavailableProjectCodeContext(project.id, "远程 Git 项目缺少 gitUrl，无法克隆当前代码基线。");
   const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), `evopilot-code-context-${safeFileName(project.id)}-`));
   const repoRoot = path.join(tempRoot, "repo");
-  const askpass = writeGitAskPass(project.repository);
+  const askpass = writeGitAskPass(args.store, project.repository, project);
   try {
     const branch = project.repository.defaultBranch ?? "main";
     const result = await runGitCommand(["clone", "--depth", "1", "--branch", branch, project.repository.gitUrl, repoRoot], {
@@ -15607,8 +15663,8 @@ function maskProjectCodeContext(context: ProjectCodeContext): Omit<ProjectCodeCo
   };
 }
 
-function writeGitAskPass(repository: ProjectRepositoryRegistration): string {
-  const password = repository.credentials?.password ?? resolveCredentialToken(repository) ?? "";
+function writeGitAskPass(store: FileStore, repository: ProjectRepositoryRegistration, scope?: { tenantId?: string; workspaceId?: string }): string {
+  const password = repository.credentials?.password ?? resolveCredentialToken(repository, store, scope) ?? "";
   const username = repository.credentials?.username ?? (password ? "oauth2" : "git");
   const askpass = path.join(os.tmpdir(), `evopilot-git-askpass-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.sh`);
   fs.writeFileSync(askpass, [
@@ -15652,7 +15708,7 @@ function isUnder(file: string, prefix: string): boolean {
   return normalizedFile === normalizedPrefix || normalizedFile.startsWith(`${normalizedPrefix}/`);
 }
 
-async function checkSourceCredentialReadiness(project: StoredProject): Promise<SourceCredentialReadiness> {
+async function checkSourceCredentialReadiness(project: StoredProject, store?: FileStore): Promise<SourceCredentialReadiness> {
   const checkedAt = new Date().toISOString();
   const repository = project.repository;
   const checks: SourceCredentialReadiness["checks"] = [];
@@ -15689,7 +15745,7 @@ async function checkSourceCredentialReadiness(project: StoredProject): Promise<S
     return sourceCredentialReadinessResult(project.id, repository.provider, checks, checkedAt);
   }
 
-  const token = resolveCredentialToken(repository);
+  const token = resolveCredentialToken(repository, store, project);
   const credentialMode = repository.credentials?.tokenRef ? "tokenRef" : repository.credentials?.token ? "inline-token" : repository.credentials?.password ? "password" : "none";
   addCheck({
     id: "credential-ref",
@@ -15706,7 +15762,7 @@ async function checkSourceCredentialReadiness(project: StoredProject): Promise<S
     required: true,
     evidence: [
       token ? "tokenResolved=true" : "SOURCE_CREDENTIAL_TOKEN_REQUIRED",
-      repository.credentials?.tokenRef ? `tokenRefResolved=${Boolean(process.env[repository.credentials.tokenRef])}` : "tokenRefResolved=false"
+      repository.credentials?.tokenRef ? `tokenRefResolved=${Boolean(resolveTokenRef(store, repository.credentials.tokenRef, project))}` : "tokenRefResolved=false"
     ]
   });
 
@@ -15846,7 +15902,7 @@ function devopsProviderMatchesRepository(project: StoredProject, devops: Project
   return { ok: true };
 }
 
-async function checkProjectDevopsReadiness(project: StoredProject): Promise<ProjectDevopsReadiness> {
+async function checkProjectDevopsReadiness(project: StoredProject, store?: FileStore): Promise<ProjectDevopsReadiness> {
   const checkedAt = new Date().toISOString();
   const checks: ProjectDevopsReadiness["checks"] = [];
   const addCheck = (check: ProjectDevopsReadiness["checks"][number]) => checks.push(check);
@@ -15875,7 +15931,7 @@ async function checkProjectDevopsReadiness(project: StoredProject): Promise<Proj
     required: true,
     evidence: [`devopsProvider=${devops.provider}`, providerCheck.detail ?? "providerMatchesRepository=true"]
   });
-  const token = resolveProjectDevopsToken(project);
+  const token = resolveProjectDevopsToken(project, store);
   addCheck({
     id: "token-resolution",
     status: token ? "PASS" : "FAIL",
@@ -16063,9 +16119,9 @@ function projectDevopsReadinessResult(projectId: string, provider: ProjectDevops
   };
 }
 
-function resolveProjectDevopsToken(project: StoredProject): string | undefined {
-  if (project.devops?.tokenRef) return process.env[project.devops.tokenRef];
-  return project.repository ? resolveCredentialToken(project.repository) : undefined;
+function resolveProjectDevopsToken(project: StoredProject, store?: FileStore): string | undefined {
+  if (project.devops?.tokenRef) return resolveTokenRef(store, project.devops.tokenRef, project);
+  return project.repository ? resolveCredentialToken(project.repository, store, project) : undefined;
 }
 
 function normalizeOptionalStringList(value: unknown): string[] | undefined {
@@ -16124,7 +16180,7 @@ function updateProjectSourceCredentials(project: StoredProject, body: any): Stor
   };
 }
 
-function maskProject(project: StoredProject): Omit<StoredProject, "repository"> & { repository?: Omit<ProjectRepositoryRegistration, "credentials"> & { credentialsConfigured: boolean; credentialMode: string; tokenRef?: string; tokenRefResolved?: boolean } } {
+function maskProject(project: StoredProject, store?: FileStore): Omit<StoredProject, "repository"> & { repository?: Omit<ProjectRepositoryRegistration, "credentials"> & { credentialsConfigured: boolean; credentialMode: string; tokenRef?: string; tokenRefResolved?: boolean } } {
   const { repository, ...safe } = project;
   const credentialMode = repository?.credentials?.tokenRef ? "tokenRef"
     : repository?.credentials?.token ? "inline-token"
@@ -16144,7 +16200,7 @@ function maskProject(project: StoredProject): Omit<StoredProject, "repository"> 
       credentialsConfigured: Boolean(repository.credentials?.token || repository.credentials?.password || repository.credentials?.tokenRef),
       credentialMode,
       tokenRef: repository.credentials?.tokenRef,
-      tokenRefResolved: repository.credentials?.tokenRef ? Boolean(process.env[repository.credentials.tokenRef]) : undefined
+      tokenRefResolved: repository.credentials?.tokenRef ? Boolean(resolveTokenRef(store, repository.credentials.tokenRef, project)) : undefined
     } : undefined
   };
 }
@@ -16237,7 +16293,7 @@ async function diagnoseProjectRuntime(args: { store: FileStore; project: StoredP
     detail: codeUpgradeConnector?.baseUrl ? `已配置：${codeUpgradeConnector.baseUrl}` : "未配置代码升级运行时连接器。",
     remediation: "配置 EvoPilot 托管代码升级运行时连接器。"
   });
-  const devopsReadiness = await checkProjectDevopsReadiness(project);
+  const devopsReadiness = await checkProjectDevopsReadiness(project, args.store);
   checks.push({
     name: "CI/CD 连接",
     status: devopsReadiness.status === "READY" ? "PASSED" : devopsReadiness.status === "OBSERVABLE" ? "WARN" : "FAILED",
@@ -16654,7 +16710,7 @@ function normalizeProjectRepository(body: any): ProjectRepositoryRegistration | 
   return repository;
 }
 
-async function validateProjectRepository(repository: ProjectRepositoryRegistration | undefined): Promise<ProjectValidation> {
+async function validateProjectRepository(repository: ProjectRepositoryRegistration | undefined, store?: FileStore, scope?: { tenantId?: string; workspaceId?: string }): Promise<ProjectValidation> {
   const checkedAt = new Date().toISOString();
   if (!repository) return { status: "FAILED", checkedAt, message: "必须提供 repository.provider，并且只能是 local-git、gitlab 或 github" };
   try {
@@ -16665,13 +16721,13 @@ async function validateProjectRepository(repository: ProjectRepositoryRegistrati
     }
     if (repository.provider === "gitlab") {
       if (!repository.baseUrl || !repository.projectId) return { status: "FAILED", checkedAt, message: "GitLab 接入必须提供 gitUrl 或 baseUrl + projectId" };
-      const token = resolveCredentialToken(repository);
+      const token = resolveCredentialToken(repository, store, scope);
       if (!token) return { status: "FAILED", checkedAt, message: "GitLab 接入必须提供 token、password 或 tokenRef 对应的环境变量" };
       try {
         const files = await new GitLabHttpAdapter({ baseUrl: repository.baseUrl, projectId: repository.projectId, token }).listFiles(repository.defaultBranch ?? "main");
         return { status: "VERIFIED", checkedAt, message: "GitLab API 项目验证通过", fileCount: files.length };
       } catch (error) {
-        const gitValidation = await validateGitRemoteAccess(repository);
+        const gitValidation = await validateGitRemoteAccess(repository, store, scope);
         if (gitValidation.status === "VERIFIED") return gitValidation;
         const apiMessage = error instanceof Error ? error.message : String(error);
         return { status: "FAILED", checkedAt, message: `GitLab API 验证失败：${apiMessage}；Git HTTPS 验证失败：${gitValidation.message}` };
@@ -16679,7 +16735,7 @@ async function validateProjectRepository(repository: ProjectRepositoryRegistrati
     }
     if (repository.provider === "github") {
       if (!repository.owner || !repository.repo) return { status: "FAILED", checkedAt, message: "GitHub 接入必须提供 gitUrl 或 owner + repo" };
-      const token = resolveCredentialToken(repository);
+      const token = resolveCredentialToken(repository, store, scope);
       try {
         const files = await new GitHubHttpAdapter({ apiBaseUrl: repository.baseUrl, owner: repository.owner, repo: repository.repo, token }).listFiles(repository.defaultBranch ?? "main");
         return { status: "VERIFIED", checkedAt, message: token ? "GitHub 项目验证通过" : "GitHub 公开项目验证通过", fileCount: files.length };
@@ -16697,17 +16753,32 @@ async function validateProjectRepository(repository: ProjectRepositoryRegistrati
   return { status: "FAILED", checkedAt, message: "不支持的项目接入方式" };
 }
 
-function resolveCredentialToken(repository: ProjectRepositoryRegistration): string | undefined {
+function resolveCredentialToken(repository: ProjectRepositoryRegistration, store?: FileStore, scope?: { tenantId?: string; workspaceId?: string }): string | undefined {
   if (repository.credentials?.token) return repository.credentials.token;
-  if (repository.credentials?.tokenRef) return process.env[repository.credentials.tokenRef];
+  if (repository.credentials?.tokenRef) return resolveTokenRef(store, repository.credentials.tokenRef, scope);
   if (repository.credentials?.password) return repository.credentials.password;
   return undefined;
 }
 
-async function validateGitRemoteAccess(repository: ProjectRepositoryRegistration): Promise<ProjectValidation> {
+function resolveTokenRef(store: FileStore | undefined, tokenRef: string, scope?: { tenantId?: string; workspaceId?: string }): string | undefined {
+  const fromEnv = process.env[tokenRef];
+  if (fromEnv) return fromEnv;
+  if (!store) return undefined;
+  const secret = store.readSecret(tokenRef);
+  if (!secret || secret.status !== "ACTIVE") return undefined;
+  if (scope?.tenantId && secret.tenantId !== scope.tenantId) return undefined;
+  if (scope?.workspaceId && secret.workspaceId !== scope.workspaceId) return undefined;
+  try {
+    return decryptSecretValue(secret);
+  } catch {
+    return undefined;
+  }
+}
+
+async function validateGitRemoteAccess(repository: ProjectRepositoryRegistration, store?: FileStore, scope?: { tenantId?: string; workspaceId?: string }): Promise<ProjectValidation> {
   const checkedAt = new Date().toISOString();
   if (!repository.gitUrl) return { status: "FAILED", checkedAt, message: "缺少 gitUrl，无法执行 Git HTTPS 验证" };
-  const password = repository.credentials?.password ?? resolveCredentialToken(repository);
+  const password = repository.credentials?.password ?? resolveCredentialToken(repository, store, scope);
   const username = repository.credentials?.username ?? (password ? "oauth2" : undefined);
   if (!username || !password) return { status: "FAILED", checkedAt, message: "缺少用户名和密码/token，无法执行 Git HTTPS 验证" };
   const askpass = path.join(os.tmpdir(), `evopilot-git-askpass-${process.pid}-${Date.now()}.sh`);
@@ -16789,7 +16860,7 @@ async function triggerNativeDevopsDelivery(args: {
   const repository = project.repository;
   if (!repository) throw httpError(409, "PROJECT_REPOSITORY_NOT_CONFIGURED", `项目 ${plan.projectId} 未配置源码仓库。`);
   const devops = project.devops;
-  const token = resolveProjectDevopsToken(project);
+  const token = resolveProjectDevopsToken(project, store);
   if (!token) throw httpError(409, "DEVOPS_TOKEN_REQUIRED", "GitHub/GitLab 原生 DevOps 需要项目 source token 或 devops tokenRef。");
   const codeUpgrade = store.findSuccessfulCodeUpgrade(delivery.id);
   const parameters = normalizeDeliveryParameters(delivery, plan, {

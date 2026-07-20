@@ -70,6 +70,8 @@ async function main(argv: string[]): Promise<number> {
         return await status(ctx);
       case "project:register":
         return await projectRegister(ctx);
+      case "project:onboard":
+        return await projectOnboard(ctx, maybeId);
       case "project:preflight":
         return await projectPreflight(ctx, maybeId);
       case "project:list":
@@ -83,6 +85,17 @@ async function main(argv: string[]): Promise<number> {
         if (maybeId === "preflight") return await projectDevopsPreflight(ctx, args.positionals[3]);
         if (maybeId === "clear") return await projectDevopsClear(ctx, args.positionals[3]);
         throw usage("Use: evopilot project devops <set|inspect|preflight|clear> <project-id> [options]");
+      case "secret:list":
+        return await secretList(ctx);
+      case "secret:set":
+        return await secretSet(ctx);
+      case "secret:revoke":
+        return await secretRevoke(ctx, maybeId);
+      case "github-app:installation":
+        if (maybeId === "list") return await githubAppInstallationList(ctx);
+        if (maybeId === "set") return await githubAppInstallationSet(ctx);
+        if (maybeId === "preflight") return await githubAppInstallationPreflight(ctx, args.positionals[3]);
+        throw usage("Use: evopilot github-app installation <list|set|preflight> [options]");
       case "evidence:push":
         return await evidencePush(ctx);
       case "target:templates":
@@ -246,15 +259,30 @@ function configShow(ctx: RuntimeContext): number {
 async function status(ctx: RuntimeContext): Promise<number> {
   const health = await ctx.client.get("/health");
   const ready = await ctx.client.get("/ready");
+  let version: EvoPilotResponse | undefined;
+  try {
+    version = await ctx.client.get("/api/v1/version");
+  } catch {
+    version = undefined;
+  }
   let summary: EvoPilotResponse | undefined;
   if (ctx.client.token) {
     summary = await ctx.client.get("/api/v1/summary");
   }
   const data = {
+    schema: "evopilot-cli-status/v1",
     server: ctx.client.serverUrl.replace(/\/$/, ""),
+    cli: { name: "@evopilot/cli", version: readCliVersion() },
+    api: version?.ok ? version.data ?? version.body : undefined,
     health: health.body,
     ready: ready.body,
-    summary: summary?.ok ? summary.data : undefined
+    summary: summary?.ok ? summary.data : undefined,
+    requestIds: {
+      health: health.requestId,
+      ready: ready.requestId,
+      version: version?.requestId,
+      summary: summary?.requestId
+    }
   };
   printOutput(ctx, data, `health=${field(data.health, "status") ?? health.status} ready=${field(data.ready, "status") ?? ready.status}`);
   return health.ok && ready.ok && (!summary || summary.ok) ? 0 : 2;
@@ -263,32 +291,287 @@ async function status(ctx: RuntimeContext): Promise<number> {
 async function projectRegister(ctx: RuntimeContext): Promise<number> {
   const id = requiredOption(ctx.args, "id");
   const provider = requiredOption(ctx.args, "provider");
-  const repo = stringOption(ctx.args, "repo");
-  const ownerRepo = repo?.includes("/") ? repo.split("/") : undefined;
-  const body = {
-    id,
-    name: stringOption(ctx.args, "name") ?? id,
-    profileId: stringOption(ctx.args, "profile-id"),
-    tenantId: stringOption(ctx.args, "tenant") ?? stringOption(ctx.args, "tenant-id"),
-    workspaceId: stringOption(ctx.args, "workspace") ?? stringOption(ctx.args, "workspace-id"),
-    repository: {
-      provider,
-      root: stringOption(ctx.args, "root"),
-      gitUrl: stringOption(ctx.args, "git-url") ?? stringOption(ctx.args, "url"),
-      baseUrl: stringOption(ctx.args, "base-url"),
-      projectId: stringOption(ctx.args, "project-id"),
-      owner: stringOption(ctx.args, "owner") ?? ownerRepo?.[0],
-      repo: stringOption(ctx.args, "repo-name") ?? ownerRepo?.slice(1).join("/") ?? (!ownerRepo ? repo : undefined),
-      defaultBranch: stringOption(ctx.args, "branch") ?? stringOption(ctx.args, "default-branch"),
-      username: stringOption(ctx.args, "username"),
-      password: stringOption(ctx.args, "password"),
-      token: stringOption(ctx.args, "source-token"),
-      tokenRef: stringOption(ctx.args, "token-ref")
-    }
-  };
+  const body = projectRegistrationBody(ctx.args, id, provider);
   const response = await ctx.client.expectOk(ctx.client.post("/api/v1/projects", body, requestOptions(ctx)));
   printOutput(ctx, response.data, `project=${field(response.data, "id")} validation=${nestedField(response.data, ["validation", "status"])}`);
   return 0;
+}
+
+async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promise<number> {
+  const provider = providerArg ?? stringOption(ctx.args, "provider");
+  if (!provider || !["local-git", "github", "gitlab"].includes(provider)) {
+    throw usage("Use: evopilot project onboard <github|gitlab|local-git> [options]");
+  }
+  const projectId = stringOption(ctx.args, "id") ?? deriveProjectId(ctx.args, provider);
+  const steps: Array<Record<string, unknown>> = [];
+  const register = await ctx.client.post("/api/v1/projects", projectRegistrationBody(ctx.args, projectId, provider), derivedRequestOptions(ctx, "project-onboard-register"));
+  const project = register.data ?? register.body;
+  steps.push({
+    type: "project.register",
+    projectId,
+    httpStatus: register.status,
+    requestId: register.requestId,
+    status: nestedField(project, ["validation", "status"]) ?? (register.ok ? "VERIFIED" : "FAILED")
+  });
+  if (!register.ok) {
+    return finishProjectOnboard(ctx, projectId, project, undefined, undefined, steps, 2);
+  }
+
+  const sourcePreflight = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/source-credentials/preflight`, {}, derivedRequestOptions(ctx, "project-onboard-source-preflight"));
+  const sourceReadiness = sourcePreflight.data ?? sourcePreflight.body;
+  steps.push({
+    type: "project.source-credentials.preflight",
+    projectId,
+    httpStatus: sourcePreflight.status,
+    requestId: sourcePreflight.requestId,
+    status: field(sourceReadiness, "status"),
+    nextAction: field(sourceReadiness, "nextAction"),
+    blockers: field(sourceReadiness, "blockers")
+  });
+  if (hasFlag(ctx.args, "require-source-ready") && field(sourceReadiness, "status") !== "READY") {
+    return finishProjectOnboard(ctx, projectId, project, sourceReadiness, undefined, steps, 2);
+  }
+
+  let devopsResult: unknown;
+  if (shouldConfigureProjectDevops(ctx.args, provider)) {
+    const devopsProvider = nativeDevopsProvider(provider);
+    if (!devopsProvider) throw usage("Project DevOps can only be configured automatically for github or gitlab projects.");
+    const devops = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/devops`, buildProjectDevopsBody(ctx.args, devopsProvider), derivedRequestOptions(ctx, "project-onboard-devops-set"));
+    devopsResult = devops.data ?? devops.body;
+    steps.push({
+      type: "project.devops.set",
+      projectId,
+      httpStatus: devops.status,
+      requestId: devops.requestId,
+      provider: nestedField(devopsResult, ["devops", "provider"]) ?? field(devopsResult, "provider"),
+      status: nestedField(devopsResult, ["readiness", "status"]) ?? field(devopsResult, "status"),
+      nextAction: nestedField(devopsResult, ["readiness", "nextAction"]) ?? field(devopsResult, "nextAction"),
+      blockers: nestedField(devopsResult, ["readiness", "blockers"]) ?? field(devopsResult, "blockers")
+    });
+    if (!devops.ok && hasFlag(ctx.args, "require-devops-ready")) {
+      return finishProjectOnboard(ctx, projectId, project, sourceReadiness, devopsResult, steps, 2);
+    }
+  }
+
+  const devopsPreflight = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/devops/preflight`, {}, derivedRequestOptions(ctx, "project-onboard-devops-preflight"));
+  const devopsReadiness = devopsPreflight.data ?? devopsPreflight.body;
+  steps.push({
+    type: "project.devops.preflight",
+    projectId,
+    httpStatus: devopsPreflight.status,
+    requestId: devopsPreflight.requestId,
+    provider: field(devopsReadiness, "provider"),
+    status: field(devopsReadiness, "status"),
+    nextAction: field(devopsReadiness, "nextAction"),
+    blockers: field(devopsReadiness, "blockers")
+  });
+  if (hasFlag(ctx.args, "require-devops-ready") && field(devopsReadiness, "status") !== "READY") {
+    return finishProjectOnboard(ctx, projectId, project, sourceReadiness, devopsReadiness, steps, 2);
+  }
+
+  const templateId = stringOption(ctx.args, "template");
+  if (templateId || hasFlag(ctx.args, "run-target")) {
+    if (!templateId) throw usage("project onboard target execution requires --template.");
+    const targetId = stringOption(ctx.args, "target") ?? `${projectId}-${templateId}`;
+    const existing = await readReleaseTarget(ctx, targetId);
+    if (existing) {
+      steps.push({ type: "target.resolved", targetId, status: field(existing, "scope") ?? "project" });
+    } else {
+      const created = await createProjectReleaseTarget(ctx, projectId, templateId, targetId);
+      steps.push({ type: "target.created", targetId: field(created, "id"), templateId });
+    }
+    const objective = stringOption(ctx.args, "objective") ?? `Promote ${projectId} to ${templateId} with source closure, native DevOps evidence, deploy evidence, release decision, and blocker review.`;
+    return await runGoalWrapper(ctx, {
+      command: "project onboard",
+      projectId,
+      targetId,
+      objective,
+      initialSteps: steps
+    });
+  }
+
+  return finishProjectOnboard(ctx, projectId, project, sourceReadiness, devopsReadiness, steps, 0);
+}
+
+function projectRegistrationBody(args: ParsedArgs, id: string, provider: string): Record<string, unknown> {
+  const repo = stringOption(args, "repo");
+  const ownerRepo = repo?.includes("/") ? repo.split("/") : undefined;
+  return {
+    id,
+    name: stringOption(args, "name") ?? id,
+    profileId: stringOption(args, "profile-id"),
+    tenantId: stringOption(args, "tenant") ?? stringOption(args, "tenant-id"),
+    workspaceId: stringOption(args, "workspace") ?? stringOption(args, "workspace-id"),
+    repository: {
+      provider,
+      root: stringOption(args, "root"),
+      gitUrl: stringOption(args, "git-url") ?? stringOption(args, "url"),
+      baseUrl: stringOption(args, "base-url"),
+      projectId: stringOption(args, "project-id"),
+      owner: stringOption(args, "owner") ?? ownerRepo?.[0],
+      repo: stringOption(args, "repo-name") ?? ownerRepo?.slice(1).join("/") ?? (!ownerRepo ? repo : undefined),
+      defaultBranch: stringOption(args, "branch") ?? stringOption(args, "default-branch"),
+      username: stringOption(args, "username"),
+      password: stringOption(args, "password"),
+      token: stringOption(args, "source-token"),
+      tokenRef: stringOption(args, "token-ref")
+    }
+  };
+}
+
+function deriveProjectId(args: ParsedArgs, provider: string): string {
+  if (provider === "github") {
+    const repo = stringOption(args, "repo");
+    const ownerRepo = repo?.includes("/") ? repo.split("/") : undefined;
+    const owner = stringOption(args, "owner") ?? ownerRepo?.[0];
+    const repoName = stringOption(args, "repo-name") ?? ownerRepo?.slice(1).join("-") ?? (!ownerRepo ? repo : undefined);
+    const id = safeCliId([owner, repoName].filter(Boolean).join("-"));
+    if (id) return id;
+  }
+  if (provider === "gitlab") {
+    const projectId = stringOption(args, "project-id") ?? stringOption(args, "repo") ?? stringOption(args, "git-url");
+    const id = safeCliId(projectId ?? "");
+    if (id) return id;
+  }
+  if (provider === "local-git") {
+    const root = stringOption(args, "root");
+    const id = root ? safeCliId(path.basename(path.resolve(root))) : undefined;
+    if (id) return id;
+  }
+  throw usage("project onboard requires --id or repository coordinates that can derive a stable project id.");
+}
+
+function safeCliId(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/\.git$/i, "")
+    .replace(/[^a-z0-9._-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function nativeDevopsProvider(sourceProvider: string): "github-actions" | "gitlab-ci" | undefined {
+  if (sourceProvider === "github") return "github-actions";
+  if (sourceProvider === "gitlab") return "gitlab-ci";
+  return undefined;
+}
+
+function shouldConfigureProjectDevops(args: ParsedArgs, sourceProvider: string): boolean {
+  return Boolean(
+    nativeDevopsProvider(sourceProvider) &&
+    (hasFlag(args, "with-devops") || hasFlag(args, "require-devops-ready") || hasAnyOption(args, [
+      "devops-provider",
+      "ci-workflow",
+      "workflow",
+      "ci-ref",
+      "ref",
+      "ci-required-check",
+      "required-check",
+      "ci-required-stage",
+      "required-stage",
+      "ci-required-job",
+      "required-job",
+      "ci-timeout-seconds",
+      "cd-workflow",
+      "deploy-workflow",
+      "deploy-environment",
+      "environment",
+      "cd-required-stage",
+      "cd-required-job",
+      "deploy-input",
+      "health-url",
+      "ready-url",
+      "cd-timeout-seconds",
+      "deploy-timeout-seconds",
+      "devops-token-ref"
+    ]))
+  );
+}
+
+function buildProjectDevopsBody(args: ParsedArgs, fallbackProvider?: "github-actions" | "gitlab-ci"): Record<string, unknown> {
+  const provider = stringOption(args, "devops-provider") ?? stringOption(args, "provider") ?? fallbackProvider;
+  if (!provider) throw usage("project devops set requires --provider <github-actions|gitlab-ci>.");
+  const cdConfigured = hasAnyOption(args, [
+    "cd-workflow",
+    "deploy-workflow",
+    "deploy-environment",
+    "environment",
+    "cd-required-stage",
+    "cd-required-job",
+    "deploy-input",
+    "health-url",
+    "ready-url",
+    "cd-timeout-seconds",
+    "deploy-timeout-seconds"
+  ]);
+  return {
+    provider,
+    tokenRef: stringOption(args, "devops-token-ref") ?? (fallbackProvider ? undefined : stringOption(args, "token-ref")),
+    ci: {
+      workflow: stringOption(args, "ci-workflow") ?? stringOption(args, "workflow"),
+      ref: stringOption(args, "ci-ref") ?? stringOption(args, "ref") ?? stringOption(args, "branch"),
+      requiredChecks: [
+        ...repeatedOption(args, "ci-required-check"),
+        ...repeatedOption(args, "required-check")
+      ],
+      requiredStages: [
+        ...repeatedOption(args, "ci-required-stage"),
+        ...repeatedOption(args, "required-stage")
+      ],
+      requiredJobs: [
+        ...repeatedOption(args, "ci-required-job"),
+        ...repeatedOption(args, "required-job")
+      ],
+      timeoutSeconds: numberOption(args, "ci-timeout-seconds")
+    },
+    cd: cdConfigured ? {
+      workflow: stringOption(args, "cd-workflow") ?? stringOption(args, "deploy-workflow"),
+      environment: stringOption(args, "deploy-environment") ?? stringOption(args, "environment"),
+      requiredStages: repeatedOption(args, "cd-required-stage"),
+      requiredJobs: repeatedOption(args, "cd-required-job"),
+      deployInputs: parseKeyValueOptions(repeatedOption(args, "deploy-input")),
+      healthUrl: stringOption(args, "health-url"),
+      readyUrl: stringOption(args, "ready-url"),
+      timeoutSeconds: numberOption(args, "cd-timeout-seconds") ?? numberOption(args, "deploy-timeout-seconds")
+    } : undefined
+  };
+}
+
+function finishProjectOnboard(ctx: RuntimeContext, projectId: string, project: unknown, sourceCredentials: unknown, devops: unknown, steps: Array<Record<string, unknown>>, exitCode: number): number {
+  const result = {
+    schema: "evopilot-cli-project-onboard/v1",
+    projectId,
+    project,
+    sourceCredentials,
+    devops,
+    steps,
+    result: {
+      exitCode,
+      sourceCredentialStatus: field(sourceCredentials, "status") ?? "UNKNOWN",
+      devopsStatus: field(devops, "status") ?? nestedField(devops, ["readiness", "status"]) ?? "UNKNOWN",
+      nextAction: field(devops, "nextAction") ?? field(sourceCredentials, "nextAction") ?? "target-run"
+    },
+    generatedAt: new Date().toISOString()
+  };
+  if (ctx.json) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return exitCode;
+  }
+  const lines = [
+    "EvoPilot Project Onboard",
+    `Project    ${projectId}`,
+    `Source     ${field(sourceCredentials, "status") ?? "UNKNOWN"}`,
+    `DevOps     ${field(devops, "status") ?? nestedField(devops, ["readiness", "status"]) ?? "UNKNOWN"}`,
+    "",
+    "Workflow",
+    ...formatSteps(steps),
+    "",
+    "Next Action",
+    String(result.result.nextAction),
+    ""
+  ];
+  process.stdout.write(`${lines.join("\n")}\n`);
+  return exitCode;
 }
 
 async function projectList(ctx: RuntimeContext): Promise<number> {
@@ -323,50 +606,7 @@ async function projectCredentialsSet(ctx: RuntimeContext, id?: string): Promise<
 
 async function projectDevopsSet(ctx: RuntimeContext, id?: string): Promise<number> {
   const projectId = id ?? requiredOption(ctx.args, "project");
-  const cdConfigured = hasAnyOption(ctx.args, [
-    "cd-workflow",
-    "deploy-workflow",
-    "deploy-environment",
-    "environment",
-    "cd-required-stage",
-    "cd-required-job",
-    "deploy-input",
-    "health-url",
-    "ready-url",
-    "cd-timeout-seconds",
-    "deploy-timeout-seconds"
-  ]);
-  const body: Record<string, unknown> = {
-    provider: requiredOption(ctx.args, "provider"),
-    tokenRef: stringOption(ctx.args, "token-ref") ?? stringOption(ctx.args, "devops-token-ref"),
-    ci: {
-      workflow: stringOption(ctx.args, "ci-workflow") ?? stringOption(ctx.args, "workflow"),
-      ref: stringOption(ctx.args, "ci-ref") ?? stringOption(ctx.args, "ref") ?? stringOption(ctx.args, "branch"),
-      requiredChecks: [
-        ...repeatedOption(ctx.args, "ci-required-check"),
-        ...repeatedOption(ctx.args, "required-check")
-      ],
-      requiredStages: [
-        ...repeatedOption(ctx.args, "ci-required-stage"),
-        ...repeatedOption(ctx.args, "required-stage")
-      ],
-      requiredJobs: [
-        ...repeatedOption(ctx.args, "ci-required-job"),
-        ...repeatedOption(ctx.args, "required-job")
-      ],
-      timeoutSeconds: numberOption(ctx.args, "ci-timeout-seconds")
-    },
-    cd: cdConfigured ? {
-      workflow: stringOption(ctx.args, "cd-workflow") ?? stringOption(ctx.args, "deploy-workflow"),
-      environment: stringOption(ctx.args, "deploy-environment") ?? stringOption(ctx.args, "environment"),
-      requiredStages: repeatedOption(ctx.args, "cd-required-stage"),
-      requiredJobs: repeatedOption(ctx.args, "cd-required-job"),
-      deployInputs: parseKeyValueOptions(repeatedOption(ctx.args, "deploy-input")),
-      healthUrl: stringOption(ctx.args, "health-url"),
-      readyUrl: stringOption(ctx.args, "ready-url"),
-      timeoutSeconds: numberOption(ctx.args, "cd-timeout-seconds") ?? numberOption(ctx.args, "deploy-timeout-seconds")
-    } : undefined
-  };
+  const body = buildProjectDevopsBody(ctx.args);
   const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/devops`, body, requestOptions(ctx));
   printProjectDevopsResult(ctx, "project devops set", projectId, response.data ?? response.body, response.status);
   return response.ok ? 0 : 2;
@@ -390,6 +630,69 @@ async function projectDevopsClear(ctx: RuntimeContext, id?: string): Promise<num
   const projectId = id ?? requiredOption(ctx.args, "project");
   const response = await ctx.client.request("DELETE", `/api/v1/projects/${encodeURIComponent(projectId)}/devops`, requestOptions(ctx));
   printProjectDevopsResult(ctx, "project devops clear", projectId, response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function secretList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/secrets"));
+  printOutput(ctx, response.data, listSummary(response.data, "id"));
+  return 0;
+}
+
+async function secretSet(ctx: RuntimeContext): Promise<number> {
+  const id = stringOption(ctx.args, "id") ?? stringOption(ctx.args, "secret-ref") ?? stringOption(ctx.args, "name");
+  if (!id) throw usage("secret set requires --id <secret-ref>.");
+  const value = secretValueFromArgs(ctx.args);
+  const body = {
+    id,
+    name: stringOption(ctx.args, "name") ?? id,
+    kind: stringOption(ctx.args, "kind") ?? "source-token",
+    value,
+    tenantId: stringOption(ctx.args, "tenant") ?? stringOption(ctx.args, "tenant-id"),
+    workspaceId: stringOption(ctx.args, "workspace") ?? stringOption(ctx.args, "workspace-id")
+  };
+  const response = await ctx.client.post("/api/v1/secrets", body, requestOptions(ctx));
+  printOutput(ctx, response.data ?? response.body, `secret=${field(response.data, "secretRef") ?? field(response.data, "id") ?? id} status=${field(response.data, "status") ?? response.status}`);
+  return response.ok ? 0 : 2;
+}
+
+async function secretRevoke(ctx: RuntimeContext, id?: string): Promise<number> {
+  const secretId = id ?? requiredOption(ctx.args, "id");
+  const response = await ctx.client.post(`/api/v1/secrets/${encodeURIComponent(secretId)}/revoke`, {}, requestOptions(ctx));
+  printOutput(ctx, response.data ?? response.body, `secret=${secretId} status=${field(response.data, "status") ?? response.status}`);
+  return response.ok ? 0 : 2;
+}
+
+async function githubAppInstallationList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/github-app/installations"));
+  printOutput(ctx, response.data, listSummary(response.data, "id"));
+  return 0;
+}
+
+async function githubAppInstallationSet(ctx: RuntimeContext): Promise<number> {
+  const body = {
+    id: stringOption(ctx.args, "id"),
+    installationId: requiredOption(ctx.args, "installation-id"),
+    account: requiredOption(ctx.args, "account"),
+    privateKeySecretRef: stringOption(ctx.args, "private-key-secret-ref"),
+    webhookSecretRef: stringOption(ctx.args, "webhook-secret-ref"),
+    repositories: [
+      ...repeatedOption(ctx.args, "repository"),
+      ...repeatedOption(ctx.args, "repo")
+    ],
+    permissions: parseKeyValuePairs(repeatedOption(ctx.args, "permission"), "--permission"),
+    tenantId: stringOption(ctx.args, "tenant") ?? stringOption(ctx.args, "tenant-id"),
+    workspaceId: stringOption(ctx.args, "workspace") ?? stringOption(ctx.args, "workspace-id")
+  };
+  const response = await ctx.client.post("/api/v1/github-app/installations", body, requestOptions(ctx));
+  printOutput(ctx, response.data ?? response.body, `githubApp=${field(response.data, "id") ?? body.id ?? body.installationId} status=${field(response.data, "status") ?? response.status}`);
+  return response.ok ? 0 : 2;
+}
+
+async function githubAppInstallationPreflight(ctx: RuntimeContext, id?: string): Promise<number> {
+  const installationId = id ?? requiredOption(ctx.args, "id");
+  const response = await ctx.client.post(`/api/v1/github-app/installations/${encodeURIComponent(installationId)}/preflight`, {}, requestOptions(ctx));
+  printOutput(ctx, response.data ?? response.body, `githubApp=${installationId} status=${field(response.data, "status") ?? response.status}`);
   return response.ok ? 0 : 2;
 }
 
@@ -472,6 +775,11 @@ async function targetRun(ctx: RuntimeContext): Promise<number> {
       const created = await createProjectReleaseTarget(ctx, projectId, templateId, targetId);
       steps.push({ type: "target.created", targetId: field(created, "id"), templateId });
     }
+  }
+  const sourcePreflight = await tryProjectSourceCredentialPreflight(ctx, projectId);
+  steps.push(sourcePreflight);
+  if (hasFlag(ctx.args, "require-source-ready") && sourcePreflight.status !== "READY") {
+    throw usage(`Project source credentials are not READY: ${sourcePreflight.status}`);
   }
   const devopsPreflight = await tryProjectDevopsPreflight(ctx, projectId);
   steps.push(devopsPreflight);
@@ -998,6 +1306,30 @@ async function releaseGate(ctx: RuntimeContext): Promise<number> {
   return 0;
 }
 
+async function tryProjectSourceCredentialPreflight(ctx: RuntimeContext, projectId: string): Promise<Record<string, unknown>> {
+  try {
+    const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/source-credentials/preflight`, {}, derivedRequestOptions(ctx, "target-run-source-preflight"));
+    const readiness = isRecord(response.data) ? response.data : undefined;
+    return {
+      type: "project.source-credentials.preflight",
+      projectId,
+      httpStatus: response.status,
+      requestId: response.requestId,
+      status: field(readiness, "status") ?? (response.ok ? "READY" : "BLOCKED"),
+      nextAction: field(readiness, "nextAction"),
+      provider: field(readiness, "provider"),
+      blockers: field(readiness, "blockers")
+    };
+  } catch (error) {
+    return {
+      type: "project.source-credentials.preflight",
+      projectId,
+      status: "UNAVAILABLE",
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
 async function tryProjectDevopsPreflight(ctx: RuntimeContext, projectId: string): Promise<Record<string, unknown>> {
   try {
     const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/devops/preflight`, {}, derivedRequestOptions(ctx, "target-run-devops-preflight"));
@@ -1006,6 +1338,7 @@ async function tryProjectDevopsPreflight(ctx: RuntimeContext, projectId: string)
       type: "project.devops.preflight",
       projectId,
       httpStatus: response.status,
+      requestId: response.requestId,
       status: field(readiness, "status") ?? (response.status === 404 ? "NOT_CONFIGURED" : response.ok ? "READY" : "BLOCKED"),
       nextAction: field(readiness, "nextAction"),
       provider: field(readiness, "provider"),
@@ -1022,7 +1355,7 @@ async function tryProjectDevopsPreflight(ctx: RuntimeContext, projectId: string)
 }
 
 async function runGoalWrapper(ctx: RuntimeContext, input: {
-  command: "goal run" | "target run";
+  command: "goal run" | "target run" | "project onboard";
   goalId?: string;
   projectId?: string;
   targetId?: string;
@@ -1062,7 +1395,7 @@ async function runGoalWrapper(ctx: RuntimeContext, input: {
       force: hasFlag(ctx.args, "force-plan")
     }, derivedRequestOptions(ctx, "goal-run-plan"));
     if (!planned.ok) throw apiErrorFromResponse(planned);
-    steps.push({ type: "goal.plan-generated", goalId, targetCount: nestedField(planned.data, ["plan", "targetCount"]) });
+    steps.push({ type: "goal.plan-generated", goalId, requestId: planned.requestId, targetCount: nestedField(planned.data, ["plan", "targetCount"]) });
     status = await readGoalRunStatus(ctx, goalId);
     printGoalRunStatus(ctx, input.command, status, steps, quiet);
   }
@@ -1079,7 +1412,7 @@ async function runGoalWrapper(ctx: RuntimeContext, input: {
     }
     const approved = await ctx.client.post(`/api/v1/goals/${encodeURIComponent(goalId)}/approve-plan`, {}, derivedRequestOptions(ctx, "goal-run-approve-plan"));
     if (!approved.ok) throw apiErrorFromResponse(approved);
-    steps.push({ type: "goal.plan-approved", goalId, targetCount: nestedField(approved.data, ["plan", "targetCount"]) });
+    steps.push({ type: "goal.plan-approved", goalId, requestId: approved.requestId, targetCount: nestedField(approved.data, ["plan", "targetCount"]) });
     status = await readGoalRunStatus(ctx, goalId);
     printGoalRunStatus(ctx, input.command, status, steps, quiet);
   }
@@ -1097,6 +1430,7 @@ async function runGoalWrapper(ctx: RuntimeContext, input: {
       type: "goal.advanced",
       goalId,
       httpStatus: response.status,
+      requestId: response.requestId,
       status: field(response.data, "status"),
       nextAction: field(response.data, "nextAction"),
       targetId: nestedField(response.data, ["target", "id"]),
@@ -1168,7 +1502,7 @@ async function createProjectReleaseTarget(ctx: RuntimeContext, projectId: string
 
 async function createGoalForRun(ctx: RuntimeContext, projectId: string, targetId: string, objective: string): Promise<unknown> {
   const response = await ctx.client.post("/api/v1/goals", {
-    id: stringOption(ctx.args, "goal-id") ?? stringOption(ctx.args, "id"),
+    id: stringOption(ctx.args, "goal-id"),
     projectId,
     releaseTargetId: targetId,
     objective
@@ -1422,7 +1756,7 @@ function formatChain(value: unknown): string[] {
 
 function formatSteps(steps: Array<Record<string, unknown>>): string[] {
   if (steps.length === 0) return ["- none"];
-  return steps.slice(-8).map((step) => `- ${step.type ?? "step"}${step.status ? ` status=${step.status}` : ""}${step.httpStatus ? ` http=${step.httpStatus}` : ""}${step.provider ? ` provider=${step.provider}` : ""}${step.nextAction ? ` next=${step.nextAction}` : ""}${step.projectId ? ` project=${step.projectId}` : ""}${step.targetId ? ` target=${step.targetId}` : ""}${step.goalId ? ` goal=${step.goalId}` : ""}${step.loopId ? ` loop=${step.loopId}` : ""}${Array.isArray(step.blockers) && step.blockers.length > 0 ? ` blockers=${step.blockers.length}` : ""}`);
+  return steps.slice(-8).map((step) => `- ${step.type ?? "step"}${step.status ? ` status=${step.status}` : ""}${step.httpStatus ? ` http=${step.httpStatus}` : ""}${step.provider ? ` provider=${step.provider}` : ""}${step.nextAction ? ` next=${step.nextAction}` : ""}${step.projectId ? ` project=${step.projectId}` : ""}${step.targetId ? ` target=${step.targetId}` : ""}${step.goalId ? ` goal=${step.goalId}` : ""}${step.loopId ? ` loop=${step.loopId}` : ""}${step.requestId ? ` request=${step.requestId}` : ""}${Array.isArray(step.blockers) && step.blockers.length > 0 ? ` blockers=${step.blockers.length}` : ""}`);
 }
 
 function loopNextAction(loop: unknown): string {
@@ -1567,13 +1901,31 @@ function parseScenario(value: string): { id: string; name: string; status: strin
 }
 
 function parseKeyValueOptions(values: string[]): Record<string, string> | undefined {
+  return parseKeyValuePairs(values, "--deploy-input");
+}
+
+function parseKeyValuePairs(values: string[], optionName: string): Record<string, string> | undefined {
   const result: Record<string, string> = {};
   for (const value of values) {
     const separator = value.indexOf("=");
-    if (separator <= 0) throw usage("--deploy-input must use <key>=<value>.");
+    if (separator <= 0) throw usage(`${optionName} must use <key>=<value>.`);
     result[value.slice(0, separator)] = value.slice(separator + 1);
   }
   return Object.keys(result).length > 0 ? result : undefined;
+}
+
+function secretValueFromArgs(args: ParsedArgs): string {
+  const inline = stringOption(args, "value");
+  if (inline !== undefined) return inline;
+  const file = stringOption(args, "value-file");
+  if (file) return fs.readFileSync(file, "utf8").trim();
+  const envName = stringOption(args, "from-env");
+  if (envName) {
+    const value = process.env[envName];
+    if (value) return value;
+    throw usage(`Environment variable ${envName} is not set.`);
+  }
+  throw usage("secret set requires --value, --value-file, or --from-env.");
 }
 
 function printOutput(ctx: RuntimeContext, data: unknown, text: string): void {
@@ -1664,6 +2016,7 @@ Usage:
   evopilot config show
   evopilot status [--json]
   evopilot project register --id <id> --provider <local-git|github|gitlab> [options]
+  evopilot project onboard <github|gitlab|local-git> [options]
   evopilot project list
   evopilot project preflight <project-id>
   evopilot project credentials set <project-id> [--token-ref <env>]
@@ -1671,6 +2024,12 @@ Usage:
   evopilot project devops inspect <project-id>
   evopilot project devops preflight <project-id>
   evopilot project devops clear <project-id>
+  evopilot secret list
+  evopilot secret set --id <secret-ref> --kind <source-token|deploy-token|github-app-private-key|github-webhook-secret> (--value <value>|--value-file <file>|--from-env <env>)
+  evopilot secret revoke <secret-ref>
+  evopilot github-app installation list
+  evopilot github-app installation set --installation-id <id> --account <org> [--repository <owner/repo>] [--permission <name=value>]
+  evopilot github-app installation preflight <id>
   evopilot evidence push --project <id> --file <events.json>
   evopilot target templates
   evopilot target list
@@ -1733,11 +2092,13 @@ Global options:
   --idempotency-key <key>     Idempotency key for mutating commands
   --timeout <duration>        Wrapper stop boundary, for example 30s, 10m, or 2h
   --until <policy>            Wrapper stop policy: terminal or blocked-or-complete
+  --require-source-ready      project onboard fails fast unless source credential preflight is READY
   --require-devops-ready      target run fails fast unless project DevOps preflight is READY
   --json                      Print JSON response data
   --config <file>             Config path, defaults to ~/.evopilot/config.json
 
 Project DevOps examples:
+  evopilot project onboard github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --ci-workflow ci.yml --ci-required-check build --template ga --objective "Promote my-agent to GA stable" --require-source-ready --require-devops-ready
   evopilot project devops set my-agent --provider github-actions --ci-workflow ci.yml --ci-required-check build --ci-required-check test --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health
   evopilot project devops set my-agent --provider gitlab-ci --ci-required-stage test --ci-required-job build --cd-required-stage deploy --deploy-environment production --ready-url https://app.example.com/ready
 `);
