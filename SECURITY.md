@@ -13,7 +13,7 @@ EvoPilot governs AI-agent product evolution, tenant/workspace access, credential
 
 Do not disclose vulnerabilities in public GitHub issues or discussions.
 
-Use GitHub private vulnerability reporting for `yeliang-wang/EvoPilot` if it is available. If private reporting is not available, contact the repository maintainers through an existing private channel and include:
+Use GitHub private vulnerability reporting for `yeliang-wang/evopilot` if it is available. If private reporting is not available, contact the repository maintainers through an existing private channel and include:
 
 - affected version or commit
 - reproduction steps

@@ -23,14 +23,14 @@
     "release-governance",
     "loop-engineering"
   ],
-  "homepage": "https://github.com/yeliang-wang/EvoPilot#readme",
+  "homepage": "https://github.com/yeliang-wang/evopilot#readme",
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/yeliang-wang/EvoPilot.git",
+    "url": "git+ssh://git@github.com/yeliang-wang/evopilot.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/yeliang-wang/EvoPilot/issues"
+    "url": "https://github.com/yeliang-wang/evopilot/issues"
   },
   "publishConfig": {
     "access": "public"

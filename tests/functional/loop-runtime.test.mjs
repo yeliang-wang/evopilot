@@ -1254,7 +1254,7 @@ test("production loop llm executor calls real llm client and records usage", asy
         sourceClosure: {
           sourceProjectId: "evopilot-github",
           repositoryProvider: "github",
-          sourceUrl: "https://github.com/yeliang-wang/EvoPilot.git",
+          sourceUrl: "https://github.com/yeliang-wang/evopilot.git",
           sourceBranch: "main",
           targetVersion: "saas-tenant-workspace",
           releaseStrategy: "github-push"

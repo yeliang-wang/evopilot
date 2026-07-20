@@ -260,7 +260,7 @@ test("registers public GitHub projects without repository credentials", async ()
       name: "EvoPilot GitHub",
       repository: {
         provider: "github",
-        gitUrl: "https://github.com/yeliang-wang/EvoPilot.git",
+        gitUrl: "https://github.com/yeliang-wang/evopilot.git",
         baseUrl: githubBaseUrl,
         defaultBranch: "main"
       }
@@ -1088,7 +1088,7 @@ function writeFakeJson(response, body) {
 
 function createFakeGitHubServer() {
   return http.createServer((request, response) => {
-    if (request.method === "GET" && request.url === "/repos/yeliang-wang/EvoPilot/git/trees/main?recursive=1") {
+    if (request.method === "GET" && request.url === "/repos/yeliang-wang/evopilot/git/trees/main?recursive=1") {
       return writeFakeJson(response, { tree: [{ type: "blob", path: "README.md" }, { type: "blob", path: "package.json" }] });
     }
     response.writeHead(404);

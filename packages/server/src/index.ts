@@ -10277,8 +10277,8 @@ function syntheticEvoPilotProject(): StoredProject {
     repository: {
       provider: "github",
       owner: "yeliang-wang",
-      repo: "EvoPilot",
-      gitUrl: "https://github.com/yeliang-wang/EvoPilot.git",
+      repo: "evopilot",
+      gitUrl: "https://github.com/yeliang-wang/evopilot.git",
       defaultBranch: "main"
     },
     validation: {

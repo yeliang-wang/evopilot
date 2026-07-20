@@ -55,7 +55,7 @@ For production-path changes, also run the relevant E2E or release evidence comma
 
 ## Security Issues
 
-Do not open a public issue for a vulnerability. Use GitHub's private vulnerability reporting for `yeliang-wang/EvoPilot` if available, or contact the maintainers through a private channel. See [SECURITY.md](SECURITY.md).
+Do not open a public issue for a vulnerability. Use GitHub's private vulnerability reporting for `yeliang-wang/evopilot` if available, or contact the maintainers through a private channel. See [SECURITY.md](SECURITY.md).
 
 ## License
 

@@ -73,7 +73,7 @@ test("self-loop script can register a production remote GitHub target", async ()
       env: {
         EVOPILOT_SELF_REPOSITORY_PROVIDER: "github",
         EVOPILOT_SELF_GITHUB_OWNER: "yeliang-wang",
-        EVOPILOT_SELF_GITHUB_REPO: "EvoPilot",
+        EVOPILOT_SELF_GITHUB_REPO: "evopilot",
         EVOPILOT_SELF_GITHUB_API_BASE_URL: github.baseUrl,
         EVOPILOT_SELF_GITHUB_TOKEN_REF: "EVOPILOT_SELF_TEST_GITHUB_TOKEN"
       }
@@ -88,7 +88,7 @@ test("self-loop script can register a production remote GitHub target", async ()
     const project = projects.find((item) => item.id === "evopilot-self");
     assert.equal(project.repository.provider, "github");
     assert.equal(project.repository.owner, "yeliang-wang");
-    assert.equal(project.repository.repo, "EvoPilot");
+    assert.equal(project.repository.repo, "evopilot");
     assert.equal(project.repository.credentialsConfigured, true);
   } finally {
     if (previousToken === undefined) delete process.env.EVOPILOT_SELF_TEST_GITHUB_TOKEN;
@@ -168,7 +168,7 @@ async function startFakeGitHub() {
   const requests = [];
   const server = http.createServer((request, response) => {
     requests.push({ url: request.url, authorization: request.headers.authorization });
-    if (request.method === "GET" && request.url === "/repos/yeliang-wang/EvoPilot/git/trees/main?recursive=1") {
+    if (request.method === "GET" && request.url === "/repos/yeliang-wang/evopilot/git/trees/main?recursive=1") {
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify({
         tree: [

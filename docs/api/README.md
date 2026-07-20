@@ -798,7 +798,7 @@ Dashboard 的 Streaming Trace Workbench 使用 `GET /api/v1/loops/{loopId}/trace
   "sourceClosure": {
     "sourceProjectId": "evopilot-github",
     "repositoryProvider": "github",
-    "sourceUrl": "https://github.com/yeliang-wang/EvoPilot.git",
+    "sourceUrl": "https://github.com/yeliang-wang/evopilot.git",
     "sourceBranch": "main",
     "targetVersion": "2.0.0",
     "releaseStrategy": "github-push",
