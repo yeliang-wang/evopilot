@@ -777,7 +777,7 @@ GET /api/v1/loop-target-runtime/guardrails
 
 Discovery runtime 会把仓库、trace、evaluation、production 和 manual signals 归一成 `evopilot-discovery-skill-candidate/v1`，并把 provenance 写入 `evopilot-loop-memory-inbox-item/v1`。Handoff API 为单个 finding 分配 workspace、target branch、allowed paths、validation commands 和 rollback ref。Adversarial evaluation 返回 `PASS`、`WARN` 或 `BLOCK`，其中 `BLOCK` 会使用 HTTP 409，表示缺少 source closure、release decision 或其他独立证据。Recurring schedule 记录 cadence、trigger rules、budget、next-run time 和 idempotency key。Guardrail evaluation 对 cost、tokens、duration、changed files、confidence 和 release judgment 给出 `ALLOW`、`HUMAN_REVIEW` 或 `BLOCK`。
 
-`POST /api/v1/loop-orchestration/autopilot` 是管理员级生产自动驾驶入口。请求体可包含 `targetId`、`projectId`、`targetVersion`、`deployConnectorId`、`controlPlaneUrl`、`files`、`maxSteps`、`approveHumanGate`、`autoMerge` 和 `postMergeDeploy`。返回 schema 为 `evopilot-loop-orchestration-autopilot/v1`，包含 `status`、`target`、`loop`、`releaseRun`、`stages`、`nextAction`、可选 `externalBlocker` 和 `evidence`。它会先调用 target advance，在有界步数内 start/resume loop；如果遇到 human gate 且未显式传入 `approveHumanGate=true`，会以 `BLOCKED / nextAction=human-approval` 停止。授权通过后，它会先运行 source closure preflight，再执行 source closure，默认生成 `docs/evopilot-source-closures/{loopId}.md` 作为可审计变更；随后执行 safe auto-merge 和 post-merge deploy。策略不通过时不会强行合并，而是返回 `BLOCKED / nextAction=policy-review` 并把 blocker 写回 release run。
+`POST /api/v1/loop-orchestration/autopilot` 是管理员级生产自动驾驶入口。请求体可包含 `targetId`、`projectId`、`targetVersion`、`deployConnectorId`、`controlPlaneUrl`、`files`、`maxSteps`、`approveHumanGate`、`autoMerge` 和 `postMergeDeploy`。返回 schema 为 `evopilot-loop-orchestration-autopilot/v1`，包含 `status`、`target`、`loop`、`releaseRun`、`stages`、`nextAction`、可选 `externalBlocker` 和 `evidence`。它会先调用 target advance，在有界步数内 start/resume loop；如果遇到 human gate 且未显式传入 `approveHumanGate=true`，会以 `BLOCKED / nextAction=human-approval` 停止。授权通过后，它会先运行 source closure preflight，再执行 source closure，默认生成 `.evopilot/source-closures/{loopId}.md` 作为可审计变更；随后执行 safe auto-merge 和 post-merge deploy。策略不通过时不会强行合并，而是返回 `BLOCKED / nextAction=policy-review` 并把 blocker 写回 release run。
 
 当 preflight 发现 GitHub/GitLab 写回 token 缺失或 `tokenRef` 未解析时，autopilot 不再把它归类为普通执行失败，而是返回 `BLOCKED / nextAction=configure-source-credentials`，并附带 `evopilot-external-blocker/v1`。该 blocker 包含 `type=source-credential`、`projectId`、`provider`、`blockers`、`recovery.route=project-source-credentials` 和 Dashboard 恢复动作；`GET /api/v1/loop-orchestration/targets` 会从持久化 preflight evidence 中恢复同一个 blocker。用户在 Dashboard “接入项目 -> 配置凭据”保存 `tokenRef` 或 inline token 并达到 `READY` 后，可重新点击 target autopilot 继续 source closure、PR/MR、merge 和部署闭环。
 
@@ -823,7 +823,7 @@ POST /api/v1/loops/{loopId}/source-closure/execute
   "branchName": "evopilot/workbuddy-2.0.0",
   "files": [
     {
-      "path": "docs/evopilot-source-closures/workbuddy.md",
+      "path": ".evopilot/source-closures/workbuddy.md",
       "content": "release evidence"
     }
   ],

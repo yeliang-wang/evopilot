@@ -69,8 +69,8 @@ test("field evidence docs keep product kit separate from per-run evidence output
     "examples/github-demo-projects/README.md",
     "examples/github-workflows/README.md",
     "examples/executor-adapters/README.md",
-    "docs/case-studies/source-to-ga-demo.md",
-    "docs/comparisons/mainstream-loop-harness-alignment.md",
+    "docs/guides/source-to-ga.md",
+    "docs/examples/comparisons/mainstream-loop-harness-alignment.md",
     "evidence/production-soak/README.md"
   ]) {
     const content = fs.readFileSync(path.join(root, file), "utf8");

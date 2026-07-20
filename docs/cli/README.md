@@ -100,4 +100,4 @@ This prints a server-governed chain covering project, release target, GlobalGoal
 - [Workflows](workflows.md) - one-command and end-to-end scenarios.
 - [Commands](commands.md) - command groups and syntax.
 - [Automation](automation.md) - WorkBuddy, Codex, Claude Code, and CI rules.
-- [AI Agent Runbook](../ai-agent-runbook.md) - production operating runbook for external agents.
+- [AI Agent Runbook](../guides/ai-agent-runbook.md) - production operating runbook for external agents.

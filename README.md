@@ -36,7 +36,7 @@ The authoritative release verdict is exposed by:
 GET /api/v1/release/decisions
 ```
 
-Detailed release evidence and deployment checklists live in [docs/saas-production-release-package.md](docs/saas-production-release-package.md) and [docs/production-user-e2e.md](docs/production-user-e2e.md).
+Detailed release evidence and deployment checklists live in [docs/reference/release-package.md](docs/reference/release-package.md) and [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md).
 
 ## Core Capabilities
 
@@ -93,7 +93,7 @@ The dashboard is the primary product surface for operators and tenant users, but
 | Tenant admin | Manage workspace users, bind projects, configure credentials, run target loops, approve source/release actions. |
 | Tenant user | Inspect projects, evidence, loop progress, approvals assigned to them, release decisions, and help manual steps. |
 
-The full role-based and scenario-based operating guide is in [docs/user-guide.md](docs/user-guide.md).
+The full role-based and scenario-based operating guide is in [docs/guides/user-guide.md](docs/guides/user-guide.md).
 
 ## Architecture
 
@@ -118,7 +118,7 @@ Architecture details:
 - [Continuous Evolution Control Plane](docs/architecture/continuous-evolution-control-plane.md)
 - [Loop Runtime Architecture](docs/architecture/loop-runtime.md)
 - [ProofOps Target Loop Mode](docs/architecture/proofops-target-loop-mode.md)
-- [Mainstream Loop Harness Alignment](docs/comparisons/mainstream-loop-harness-alignment.md)
+- [Mainstream Loop Harness Alignment](docs/examples/comparisons/mainstream-loop-harness-alignment.md)
 
 ## Runtime
 
@@ -146,7 +146,7 @@ docker build -t evopilot:1.0.0 .
 docker compose up --build
 ```
 
-Deployment details are in [docs/deployment.md](docs/deployment.md).
+Deployment details are in [docs/operations/deployment.md](docs/operations/deployment.md).
 
 ## API
 
@@ -164,32 +164,20 @@ Primary API surfaces include:
 | Release | `POST /api/v1/release/evidence`, `GET /api/v1/release/decisions` |
 | SaaS | `GET /api/v1/tenants`, `GET /api/v1/workspaces`, `GET /api/v1/saas/observability` |
 
-See [docs/api-reference.md](docs/api-reference.md) and [docs/openapi.json](docs/openapi.json) for the full API reference.
+See [docs/api/README.md](docs/api/README.md) and [docs/api/openapi.json](docs/api/openapi.json) for the full API reference.
 
 ## Documentation
 
-| Topic | Document |
+Start with the [documentation index](docs/README.md). The main entry points are:
+
+| Reader | Start here |
 |---|---|
-| Quick start | [docs/getting-started.md](docs/getting-started.md) |
-| API reference | [docs/api-reference.md](docs/api-reference.md) |
-| OpenAPI schema | [docs/openapi.json](docs/openapi.json) |
-| CLI | [docs/cli/README.md](docs/cli/README.md) |
-| CLI workflows | [docs/cli/workflows.md](docs/cli/workflows.md) |
-| CLI commands | [docs/cli/commands.md](docs/cli/commands.md) |
-| CLI automation | [docs/cli/automation.md](docs/cli/automation.md) |
-| AI agent runbook | [docs/ai-agent-runbook.md](docs/ai-agent-runbook.md) |
-| Dashboard integration | [docs/dashboard-integration.md](docs/dashboard-integration.md) |
-| Architecture | [docs/architecture.md](docs/architecture.md) |
-| Deployment | [docs/deployment.md](docs/deployment.md) |
-| Troubleshooting | [docs/troubleshooting.md](docs/troubleshooting.md) |
-| User and dashboard guide | [docs/user-guide.md](docs/user-guide.md) |
-| Testing | [docs/testing.md](docs/testing.md) |
-| Evidence ingestion | [docs/evidence-ingestion.md](docs/evidence-ingestion.md) |
-| Runtime management | [docs/runtime-management.md](docs/runtime-management.md) |
-| Product review | [docs/product-review.md](docs/product-review.md) |
-| SaaS production release package | [docs/saas-production-release-package.md](docs/saas-production-release-package.md) |
-| Production user E2E | [docs/production-user-e2e.md](docs/production-user-e2e.md) |
-| Lifecycle model | [docs/lifecycle.md](docs/lifecycle.md) |
+| New user | [Quick Start](docs/quickstart.md) |
+| AI agent or CLI automation | [CLI](docs/cli/README.md) and [AI Agent Runbook](docs/guides/ai-agent-runbook.md) |
+| Dashboard integrator | [Dashboard Integration](docs/guides/dashboard-integration.md) |
+| API integrator | [API Reference](docs/api/README.md) and [OpenAPI](docs/api/openapi.json) |
+| Production operator | [Operations](docs/operations/deployment.md) |
+| Architect | [Architecture](docs/architecture/README.md) |
 
 ## Repository Layout
 

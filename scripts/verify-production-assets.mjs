@@ -13,16 +13,26 @@ const requiredFiles = [
   "deploy/k8s/code-upgrader-deployment.yaml",
   "deploy/k8s/code-upgrader-service.yaml",
   "deploy/k8s/secret.example.yaml",
-  "docs/openapi.json",
+  "docs/README.md",
+  "docs/quickstart.md",
+  "docs/api/README.md",
+  "docs/api/openapi.json",
   "docs/cli/README.md",
   "docs/cli/workflows.md",
   "docs/cli/commands.md",
   "docs/cli/automation.md",
-  "docs/ai-agent-runbook.md",
-  "docs/evidence-ingestion.md",
-  "docs/user-guide.md",
-  "docs/production-user-e2e.md",
-  "docs/runtime-management.md",
+  "docs/guides/ai-agent-runbook.md",
+  "docs/guides/dashboard-integration.md",
+  "docs/guides/evidence-ingestion.md",
+  "docs/guides/source-to-ga.md",
+  "docs/guides/user-guide.md",
+  "docs/operations/deployment.md",
+  "docs/reference/production-user-e2e.md",
+  "docs/operations/runtime-management.md",
+  "docs/operations/testing.md",
+  "docs/operations/troubleshooting.md",
+  "docs/reference/product-readiness.md",
+  "docs/reference/release-package.md",
   "docs/architecture/loop-runtime.md",
   "scripts/loop-worker.mjs",
   "scripts/loop-soak.mjs",
@@ -34,7 +44,22 @@ for (const file of requiredFiles) {
   assert.ok(fs.existsSync(file), `${file} is required`);
 }
 
-const openapi = JSON.parse(fs.readFileSync("docs/openapi.json", "utf8"));
+const rootDocsFiles = fs.readdirSync("docs", { withFileTypes: true })
+  .filter((entry) => entry.isFile())
+  .map((entry) => `docs/${entry.name}`)
+  .sort();
+assert.deepEqual(rootDocsFiles, ["docs/README.md", "docs/quickstart.md"], "docs root must keep only the product index and quickstart");
+const oldDocsEntryDirs = [
+  ["docs/case-", "studies"].join(""),
+  ["docs/comp", "arisons"].join(""),
+  ["docs/evopilot-source-", "closures"].join("")
+];
+for (const oldDir of oldDocsEntryDirs) {
+  assert.ok(!fs.existsSync(oldDir), `${oldDir} must not remain as a docs entry point`);
+}
+assert.ok(fs.existsSync(".evopilot/source-closures"), "source closure examples must live outside the product docs tree");
+
+const openapi = JSON.parse(fs.readFileSync("docs/api/openapi.json", "utf8"));
 assert.equal(openapi.openapi, "3.1.0");
 assert.ok(!openapi.paths["/api/v1/connectors/jen" + "kins"], "legacy CI/CD connector path must not be published");
 assert.ok(openapi.paths["/api/v1/runs"]);
@@ -83,7 +108,7 @@ assert.match(deployment, /readinessProbe/);
 assert.match(deployment, /livenessProbe/);
 assert.match(deployment, /persistentVolumeClaim/);
 
-const deploymentDoc = fs.readFileSync("docs/deployment.md", "utf8");
+const deploymentDoc = fs.readFileSync("docs/operations/deployment.md", "utf8");
 assert.match(deploymentDoc, /生产日志/);
 assert.match(deploymentDoc, /http\.request\.completed/);
 assert.match(deploymentDoc, /code-upgrade\.status-changed/);
@@ -93,7 +118,7 @@ assert.match(deploymentDoc, /correlation\.goalId/);
 assert.match(deploymentDoc, /releaseTargetId/);
 assert.match(deploymentDoc, /errorCode/);
 
-const aiAgentRunbook = fs.readFileSync("docs/ai-agent-runbook.md", "utf8");
+const aiAgentRunbook = fs.readFileSync("docs/guides/ai-agent-runbook.md", "utf8");
 assert.match(aiAgentRunbook, /WorkBuddy/);
 assert.match(aiAgentRunbook, /evopilot target run/);
 assert.match(aiAgentRunbook, /evopilot loop run/);
@@ -127,15 +152,15 @@ const envExample = fs.readFileSync(".env.example", "utf8");
 assert.match(envExample, /EVOPILOT_LOG_LEVEL=info/);
 assert.match(envExample, /EVOPILOT_LOG_STACK=true/);
 
-const productionE2e = fs.readFileSync("docs/production-user-e2e.md", "utf8");
+const productionE2e = fs.readFileSync("docs/reference/production-user-e2e.md", "utf8");
 assert.match(productionE2e, /代码升级执行器必须调用真实 LLM/);
 assert.match(productionE2e, /只有代码升级成功后才能触发 CI\/CD/);
 
-const runtime = fs.readFileSync("docs/runtime-management.md", "utf8");
+const runtime = fs.readFileSync("docs/operations/runtime-management.md", "utf8");
 assert.match(runtime, /运行时锁定/);
 assert.match(runtime, /verify:runtime-lock:strict/);
 
-const apiDoc = fs.readFileSync("docs/api-reference.md", "utf8");
+const apiDoc = fs.readFileSync("docs/api/README.md", "utf8");
 assert.match(apiDoc, /Loop Runtime/);
 assert.match(apiDoc, /ExecutorGraph/);
 assert.match(apiDoc, /loop-workers\/heartbeat/);
@@ -151,7 +176,7 @@ assert.match(loopRuntimeDoc, /worker heartbeat leases/);
 assert.match(loopRuntimeDoc, /loop-workspaces/);
 assert.match(loopRuntimeDoc, /npm run loop-runtime:check/);
 
-const dashboardIntegration = fs.readFileSync("docs/dashboard-integration.md", "utf8");
+const dashboardIntegration = fs.readFileSync("docs/guides/dashboard-integration.md", "utf8");
 assert.match(dashboardIntegration, /Dashboard is a UI client/);
 assert.match(dashboardIntegration, /must not call the EvoPilot CLI/);
 assert.match(dashboardIntegration, /GET \/api\/v1\/release\/decisions/);

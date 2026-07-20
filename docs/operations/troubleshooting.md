@@ -33,6 +33,6 @@
 
 ```bash
 npm run check
-node -e 'JSON.parse(require("fs").readFileSync("docs/openapi.json", "utf8")); console.log("openapi ok")'
+node -e 'JSON.parse(require("fs").readFileSync("docs/api/openapi.json", "utf8")); console.log("openapi ok")'
 npm run cli -- status --json
 ```

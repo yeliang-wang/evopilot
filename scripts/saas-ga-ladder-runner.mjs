@@ -89,7 +89,7 @@ for (const spec of projectSpecs) {
     createReviewRequest: false,
     allowDirtyWorktree: true,
     files: [{
-      path: `docs/evopilot-source-closures/${loopId}.md`,
+      path: `.evopilot/source-closures/${loopId}.md`,
       content: [
         `# ${spec.name} Source-to-GA Evidence`,
         "",

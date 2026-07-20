@@ -2826,7 +2826,7 @@ function createFakeSourceClosureGitHubServer() {
     if (request.url === "/repos/org/repo/git/refs" && request.method === "POST") {
       return json(response, { ref: "refs/heads/evopilot/github-source-loop-2.0.0", object: { sha: "base-sha" } });
     }
-    if ((request.url === "/repos/org/repo/contents/docs/source-closure.md" || request.url?.startsWith("/repos/org/repo/contents/docs/evopilot-source-closures/")) && request.method === "PUT") {
+    if ((request.url === "/repos/org/repo/contents/docs/source-closure.md" || request.url?.startsWith("/repos/org/repo/contents/.evopilot/source-closures/")) && request.method === "PUT") {
       return json(response, { commit: { sha: "github-commit-sha" }, content: { html_url: "http://github/blob/docs/source-closure.md" } });
     }
     if (request.url === "/repos/org/repo/pulls" && request.method === "POST") {
@@ -2918,7 +2918,7 @@ function createFailingSourceClosureGitHubServer() {
     if (request.url === "/repos/org/repo/git/refs" && request.method === "POST") {
       return json(response, { ref: "refs/heads/evopilot/failing", object: { sha: "base-sha" } });
     }
-    if (request.url?.startsWith("/repos/org/repo/contents/docs/evopilot-source-closures/") && request.method === "PUT") {
+    if (request.url?.startsWith("/repos/org/repo/contents/.evopilot/source-closures/") && request.method === "PUT") {
       return json(response, { message: "GitHub write rejected by branch protection" }, 422);
     }
     response.writeHead(404);

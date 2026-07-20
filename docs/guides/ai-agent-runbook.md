@@ -481,11 +481,11 @@ AI agents must not:
 
 ## References
 
-- [CLI](cli/README.md)
-- [CLI Workflows](cli/workflows.md)
-- [CLI Commands](cli/commands.md)
-- [CLI Automation](cli/automation.md)
-- [API Reference](api-reference.md)
-- [Deployment](deployment.md)
-- [Troubleshooting](troubleshooting.md)
+- [CLI](../cli/README.md)
+- [CLI Workflows](../cli/workflows.md)
+- [CLI Commands](../cli/commands.md)
+- [CLI Automation](../cli/automation.md)
+- [API Reference](../api/README.md)
+- [Deployment](../operations/deployment.md)
+- [Troubleshooting](../operations/troubleshooting.md)
 - [Dashboard Integration](dashboard-integration.md)

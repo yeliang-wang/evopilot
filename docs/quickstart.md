@@ -58,4 +58,4 @@ See [CLI](cli/README.md) for setup, [CLI Workflows](cli/workflows.md) for guided
 
 Official Dashboard source lives in `yeliang-wang/evopilot-dashboard`. Any custom Dashboard can connect to EvoPilot when it follows the API, auth, and governance contract.
 
-Read [Dashboard Integration](dashboard-integration.md) before building a custom UI.
+Read [Dashboard Integration](guides/dashboard-integration.md) before building a custom UI.

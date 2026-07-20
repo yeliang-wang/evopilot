@@ -97,7 +97,7 @@ EVOPILOT_LOOP_STORE_DSN=postgres://evopilot:<password>@evopilot-postgres:5432/ev
 
 如果 `EVOPILOT_LLM_METRICS_PATH` 是相对路径，EvoPilot 会把它解析到 `EVOPILOT_DATA_ROOT` 下，便于 server、worker 和 code-upgrader 共享同一份 LLM metrics。
 
-文件态业务数据迁移、Postgres business store 备份和恢复见 [SaaS 生产发布包](./saas-production-release-package.md)。生产发布前至少执行：
+文件态业务数据迁移、Postgres business store 备份和恢复见 [SaaS 生产发布包](../reference/release-package.md)。生产发布前至少执行：
 
 ```bash
 npm run store:postgres:migrate -- --data-root data/evopilot --dry-run
@@ -205,7 +205,7 @@ npm run server:debug
 
 EvoPilot V1.0.0 的主服务、Loop worker 和 soak 脚本都输出 JSON Lines，适合直接被 `systemd journal`、Docker/Kubernetes stdout、Loki、ELK 或云日志采集。
 
-主服务和 Loop worker 共用 `schema: evopilot-log/v1`。这个 schema 面向人和值班 AI 共同排障：同一条日志同时保留 HTTP 结果、租户/工作区范围、关联标识、延迟分桶、错误分类和建议动作。WorkBuddy、Codex、Claude Code 等外部 Agent 的生产操作手册见 [AI Agent Runbook](./ai-agent-runbook.md)。
+主服务和 Loop worker 共用 `schema: evopilot-log/v1`。这个 schema 面向人和值班 AI 共同排障：同一条日志同时保留 HTTP 结果、租户/工作区范围、关联标识、延迟分桶、错误分类和建议动作。WorkBuddy、Codex、Claude Code 等外部 Agent 的生产操作手册见 [AI Agent Runbook](../guides/ai-agent-runbook.md)。
 
 核心字段：
 

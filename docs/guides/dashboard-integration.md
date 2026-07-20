@@ -19,12 +19,12 @@ Use these files when building or validating a Dashboard integration:
 
 | File | Purpose |
 |---|---|
-| `docs/openapi.json` | Machine-readable API contract. AI agents and generated API clients should read this first. |
-| `docs/api-reference.md` | Human-readable API behavior, governance rules, examples, and product semantics. |
-| `docs/dashboard-integration.md` | Dashboard boundary, required operating surface, deployment shape, and smoke checks. |
+| `docs/api/openapi.json` | Machine-readable API contract. AI agents and generated API clients should read this first. |
+| `docs/api/README.md` | Human-readable API behavior, governance rules, examples, and product semantics. |
+| `docs/guides/dashboard-integration.md` | Dashboard boundary, required operating surface, deployment shape, and smoke checks. |
 | `../evopilot-dashboard/README.md` | Standalone Dashboard run/deploy instructions. |
 
-The standalone Dashboard repository is an API client. If a workflow label, tooltip, or generated client references an endpoint not present in `docs/openapi.json`, treat that as a documentation contract bug and fix the docs or the Dashboard label before release.
+The standalone Dashboard repository is an API client. If a workflow label, tooltip, or generated client references an endpoint not present in `docs/api/openapi.json`, treat that as a documentation contract bug and fix the docs or the Dashboard label before release.
 
 ## Authentication
 
@@ -176,7 +176,7 @@ npm run build
 npm run check
 ```
 
-`tests/e2e/dashboard-responsive-contract.test.mjs` verifies `docs/openapi.json` covers the Dashboard operating surface. When the sibling `../evopilot-dashboard` checkout exists, it also scans the Dashboard `assets/app.js` call sites and fails if any `/api/v1/*` path is missing from OpenAPI.
+`tests/e2e/dashboard-responsive-contract.test.mjs` verifies `docs/api/openapi.json` covers the Dashboard operating surface. When the sibling `../evopilot-dashboard` checkout exists, it also scans the Dashboard `assets/app.js` call sites and fails if any `/api/v1/*` path is missing from OpenAPI.
 
 A custom Dashboard should also run a smoke test against a real EvoPilot API server:
 

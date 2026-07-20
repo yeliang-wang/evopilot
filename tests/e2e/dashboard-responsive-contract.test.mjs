@@ -96,8 +96,8 @@ function openApiHasOperation(openapi, method, targetPath) {
 }
 
 test("dashboard integration is documented as a standalone API client contract", () => {
-  const integration = fs.readFileSync("docs/dashboard-integration.md", "utf8");
-  const deployment = fs.readFileSync("docs/deployment.md", "utf8");
+  const integration = fs.readFileSync("docs/guides/dashboard-integration.md", "utf8");
+  const deployment = fs.readFileSync("docs/operations/deployment.md", "utf8");
   const readme = fs.readFileSync("README.md", "utf8");
 
   assert.match(integration, /Dashboard UI\s+->\s+EvoPilot HTTP API\s+->\s+EvoPilot domain state/);
@@ -114,7 +114,7 @@ test("dashboard integration is documented as a standalone API client contract", 
 });
 
 test("openapi covers the standalone dashboard operating surface", () => {
-  const openapi = JSON.parse(fs.readFileSync("docs/openapi.json", "utf8"));
+  const openapi = JSON.parse(fs.readFileSync("docs/api/openapi.json", "utf8"));
   const missing = dashboardOpenApiContract
     .filter(([method, endpoint]) => !openApiHasOperation(openapi, method, endpoint))
     .map(([method, endpoint]) => `${method.toUpperCase()} ${endpoint}`);
@@ -126,7 +126,7 @@ test("local standalone dashboard call sites are covered by openapi when availabl
   const dashboardApp = path.resolve("..", "evopilot-dashboard", "assets", "app.js");
   if (!fs.existsSync(dashboardApp)) return;
 
-  const openapi = JSON.parse(fs.readFileSync("docs/openapi.json", "utf8"));
+  const openapi = JSON.parse(fs.readFileSync("docs/api/openapi.json", "utf8"));
   const app = fs.readFileSync(dashboardApp, "utf8");
   const endpoints = new Set();
   const callPatterns = [

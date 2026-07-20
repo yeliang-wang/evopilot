@@ -35,6 +35,6 @@ The Dashboard can visualize and request actions, but only EvoPilot API state can
 
 Deep architecture notes remain in:
 
-- [Continuous Evolution Control Plane](architecture/continuous-evolution-control-plane.md)
-- [Loop Runtime](architecture/loop-runtime.md)
-- [ProofOps Target Loop Mode](architecture/proofops-target-loop-mode.md)
+- [Continuous Evolution Control Plane](continuous-evolution-control-plane.md)
+- [Loop Runtime](loop-runtime.md)
+- [ProofOps Target Loop Mode](proofops-target-loop-mode.md)

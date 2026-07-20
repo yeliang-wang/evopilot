@@ -23,7 +23,7 @@ const safetyBoundary = {
     "tests/functional",
     "docs/architecture",
     "README.md",
-    "docs/user-guide.md"
+    "docs/guides/user-guide.md"
   ],
   validationCommands: [
     "npm run loop-runtime:check",
