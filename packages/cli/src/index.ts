@@ -304,6 +304,7 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
   if (!provider || !["local-git", "github", "gitlab"].includes(provider)) {
     throw usage("Use: evopilot project onboard <github|gitlab|local-git> [options]");
   }
+  enforceProjectDevopsBoundaryOptions(ctx.args, provider, "project onboard");
   const projectId = stringOption(ctx.args, "id") ?? deriveProjectId(ctx.args, provider);
   const steps: Array<Record<string, unknown>> = [];
   const register = await ctx.client.post("/api/v1/projects", projectRegistrationBody(ctx.args, projectId, provider), derivedRequestOptions(ctx, "project-onboard-register"));
@@ -355,20 +356,37 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
     }
   }
 
-  const devopsPreflight = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/devops/preflight`, {}, derivedRequestOptions(ctx, "project-onboard-devops-preflight"));
-  const devopsReadiness = devopsPreflight.data ?? devopsPreflight.body;
-  steps.push({
-    type: "project.devops.preflight",
-    projectId,
-    httpStatus: devopsPreflight.status,
-    requestId: devopsPreflight.requestId,
-    provider: field(devopsReadiness, "provider"),
-    status: field(devopsReadiness, "status"),
-    nextAction: field(devopsReadiness, "nextAction"),
-    blockers: field(devopsReadiness, "blockers")
-  });
-  if (hasFlag(ctx.args, "require-devops-ready") && field(devopsReadiness, "status") !== "READY") {
-    return finishProjectOnboard(ctx, projectId, project, sourceReadiness, devopsReadiness, steps, 2);
+  let devopsReadiness: unknown;
+  if (stringOption(ctx.args, "execution-mode") === "read-only-public") {
+    devopsReadiness = {
+      status: "SKIP",
+      executionMode: "read-only-public",
+      claimBoundary: "read-only-analysis",
+      nextAction: "read-only-analysis"
+    };
+    steps.push({
+      type: "project.devops.preflight",
+      projectId,
+      status: "SKIP",
+      nextAction: "read-only-analysis",
+      blockers: ["read-only-public does not claim repository-native DevOps readiness"]
+    });
+  } else {
+    const devopsPreflight = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/devops/preflight`, {}, derivedRequestOptions(ctx, "project-onboard-devops-preflight"));
+    devopsReadiness = devopsPreflight.data ?? devopsPreflight.body;
+    steps.push({
+      type: "project.devops.preflight",
+      projectId,
+      httpStatus: devopsPreflight.status,
+      requestId: devopsPreflight.requestId,
+      provider: field(devopsReadiness, "provider"),
+      status: field(devopsReadiness, "status"),
+      nextAction: field(devopsReadiness, "nextAction"),
+      blockers: field(devopsReadiness, "blockers")
+    });
+    if (hasFlag(ctx.args, "require-devops-ready") && field(devopsReadiness, "status") !== "READY") {
+      return finishProjectOnboard(ctx, projectId, project, sourceReadiness, devopsReadiness, steps, 2);
+    }
   }
 
   const templateId = stringOption(ctx.args, "template");
@@ -400,6 +418,7 @@ async function projectOnboardPlan(ctx: RuntimeContext, providerArg?: string): Pr
   if (!provider || !["local-git", "github", "gitlab"].includes(provider)) {
     throw usage("Use: evopilot project onboard plan <github|gitlab|local-git> [options]");
   }
+  enforceProjectDevopsBoundaryOptions(ctx.args, provider, "project onboard plan");
   const body = projectOnboardingChecklistBody(ctx.args, provider);
   const response = await ctx.client.post("/api/v1/onboarding/project/checklist", body, requestOptions(ctx));
   const checklist = response.data ?? response.body;
@@ -455,16 +474,23 @@ function projectOnboardingChecklistBody(args: ParsedArgs, provider: string): Rec
 
 function projectRepositoryBody(args: ParsedArgs, provider: string): Record<string, unknown> {
   const repo = stringOption(args, "repo");
-  const ownerRepo = repo?.includes("/") ? repo.split("/") : undefined;
+  const workingRepo = stringOption(args, "working-repo");
+  const registrationRepo = provider === "github" ? workingRepo ?? repo : repo;
+  const ownerRepo = registrationRepo?.includes("/") ? registrationRepo.split("/") : undefined;
+  const upstreamRepo = stringOption(args, "upstream-repo") ?? (workingRepo ? repo : undefined);
   return {
     provider,
     root: stringOption(args, "root"),
     gitUrl: stringOption(args, "git-url") ?? stringOption(args, "url"),
     baseUrl: stringOption(args, "base-url"),
-    projectId: stringOption(args, "project-id"),
+    projectId: provider === "gitlab" ? workingRepo ?? stringOption(args, "project-id") ?? repo : stringOption(args, "project-id"),
     owner: stringOption(args, "owner") ?? ownerRepo?.[0],
-    repo: stringOption(args, "repo-name") ?? ownerRepo?.slice(1).join("/") ?? (!ownerRepo ? repo : undefined),
+    repo: stringOption(args, "repo-name") ?? ownerRepo?.slice(1).join("/") ?? (!ownerRepo ? registrationRepo : undefined),
     defaultBranch: stringOption(args, "branch") ?? stringOption(args, "default-branch"),
+    executionMode: stringOption(args, "execution-mode"),
+    upstreamRepo,
+    workingRepo,
+    claimBoundary: stringOption(args, "claim-boundary"),
     username: stringOption(args, "username"),
     password: stringOption(args, "password"),
     token: stringOption(args, "source-token"),
@@ -485,7 +511,7 @@ function optionalDerivedProjectId(args: ParsedArgs, provider: string): string | 
 
 function deriveProjectId(args: ParsedArgs, provider: string): string {
   if (provider === "github") {
-    const repo = stringOption(args, "repo");
+    const repo = stringOption(args, "working-repo") ?? stringOption(args, "repo");
     const ownerRepo = repo?.includes("/") ? repo.split("/") : undefined;
     const owner = stringOption(args, "owner") ?? ownerRepo?.[0];
     const repoName = stringOption(args, "repo-name") ?? ownerRepo?.slice(1).join("-") ?? (!ownerRepo ? repo : undefined);
@@ -493,7 +519,7 @@ function deriveProjectId(args: ParsedArgs, provider: string): string {
     if (id) return id;
   }
   if (provider === "gitlab") {
-    const projectId = stringOption(args, "project-id") ?? stringOption(args, "repo") ?? stringOption(args, "git-url");
+    const projectId = stringOption(args, "working-repo") ?? stringOption(args, "project-id") ?? stringOption(args, "repo") ?? stringOption(args, "git-url");
     const id = safeCliId(projectId ?? "");
     if (id) return id;
   }
@@ -547,9 +573,33 @@ function shouldConfigureProjectDevops(args: ParsedArgs, sourceProvider: string):
       "ready-url",
       "cd-timeout-seconds",
       "deploy-timeout-seconds",
-      "devops-token-ref"
+      "devops-token-ref",
+      "devops-owner",
+      "devops-namespace",
+      "workflow-repo",
+      "credential-principal"
     ]))
   );
+}
+
+function enforceProjectDevopsBoundaryOptions(args: ParsedArgs, sourceProvider: string | undefined, command: string): void {
+  const shouldConfigure = sourceProvider ? shouldConfigureProjectDevops(args, sourceProvider) : true;
+  if (!shouldConfigure) return;
+  const executionMode = stringOption(args, "execution-mode");
+  const devopsOwner = stringOption(args, "devops-owner") ?? stringOption(args, "devops-namespace");
+  if (!executionMode) {
+    throw usage(`${command} DevOps ownership is ambiguous. Add --execution-mode <owned-repository|fork-validated-pr|upstream-authorized|read-only-public> and --devops-owner <github-or-gitlab-account>.`);
+  }
+  if (!devopsOwner) {
+    throw usage(`${command} requires --devops-owner <github-or-gitlab-account> when configuring repository-native DevOps.`);
+  }
+  if (executionMode === "read-only-public") {
+    throw usage(`${command} cannot configure DevOps with --execution-mode read-only-public. Use fork-validated-pr with a working fork, or upstream-authorized with maintainer credentials.`);
+  }
+  if (executionMode === "fork-validated-pr") {
+    if (!stringOption(args, "upstream-repo")) throw usage(`${command} --execution-mode fork-validated-pr requires --upstream-repo <owner/repo-or-group/project>.`);
+    if (!stringOption(args, "working-repo")) throw usage(`${command} --execution-mode fork-validated-pr requires --working-repo <owner/repo-or-group/project>.`);
+  }
 }
 
 function buildProjectDevopsBody(args: ParsedArgs, fallbackProvider?: "github-actions" | "gitlab-ci"): Record<string, unknown> {
@@ -570,6 +620,14 @@ function buildProjectDevopsBody(args: ParsedArgs, fallbackProvider?: "github-act
   ]);
   return {
     provider,
+    executionMode: stringOption(args, "execution-mode"),
+    devopsOwner: stringOption(args, "devops-owner"),
+    devopsNamespace: stringOption(args, "devops-namespace"),
+    workingRepo: stringOption(args, "working-repo"),
+    upstreamRepo: stringOption(args, "upstream-repo"),
+    workflowRepo: stringOption(args, "workflow-repo"),
+    credentialPrincipal: stringOption(args, "credential-principal"),
+    claimBoundary: stringOption(args, "claim-boundary"),
     tokenRef: stringOption(args, "devops-token-ref") ?? (fallbackProvider ? undefined : stringOption(args, "token-ref")),
     ci: {
       workflow: stringOption(args, "ci-workflow") ?? stringOption(args, "workflow"),
@@ -627,6 +685,9 @@ function finishProjectOnboard(ctx: RuntimeContext, projectId: string, project: u
     `Source     ${field(sourceCredentials, "status") ?? "UNKNOWN"}`,
     `DevOps     ${field(devops, "status") ?? nestedField(devops, ["readiness", "status"]) ?? "UNKNOWN"}`,
     "",
+    "Execution Boundary",
+    ...formatExecutionBoundary(readinessLike(devops), project),
+    "",
     "Workflow",
     ...formatSteps(steps),
     "",
@@ -670,6 +731,7 @@ async function projectCredentialsSet(ctx: RuntimeContext, id?: string): Promise<
 
 async function projectDevopsSet(ctx: RuntimeContext, id?: string): Promise<number> {
   const projectId = id ?? requiredOption(ctx.args, "project");
+  enforceProjectDevopsBoundaryOptions(ctx.args, undefined, "project devops set");
   const body = buildProjectDevopsBody(ctx.args);
   const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/devops`, body, requestOptions(ctx));
   printProjectDevopsResult(ctx, "project devops set", projectId, response.data ?? response.body, response.status);
@@ -1406,6 +1468,11 @@ async function tryProjectDevopsPreflight(ctx: RuntimeContext, projectId: string)
       status: field(readiness, "status") ?? (response.status === 404 ? "NOT_CONFIGURED" : response.ok ? "READY" : "BLOCKED"),
       nextAction: field(readiness, "nextAction"),
       provider: field(readiness, "provider"),
+      executionMode: field(readiness, "executionMode"),
+      devopsOwner: field(readiness, "devopsOwner"),
+      workflowRepository: field(readiness, "workflowRepository"),
+      credentialRef: field(readiness, "credentialRef"),
+      claimBoundary: field(readiness, "claimBoundary"),
       blockers: field(readiness, "blockers")
     };
   } catch (error) {
@@ -1783,6 +1850,9 @@ function printProjectDevopsResult(ctx: RuntimeContext, command: string, projectI
     `Provider   ${field(readiness, "provider") ?? field(devops, "provider") ?? "-"}`,
     `Status     ${field(readiness, "status") ?? (httpStatus >= 200 && httpStatus < 300 ? "OK" : `HTTP_${httpStatus}`)}`,
     "",
+    "Execution Boundary",
+    ...formatExecutionBoundary(readiness, devops),
+    "",
     "Workflow",
     ...formatDevopsChecks(checks),
     "",
@@ -1811,6 +1881,8 @@ function printProjectOnboardingChecklist(ctx: RuntimeContext, command: string, d
   const missingInputs = Array.isArray(field(output, "missingInputs")) ? field(output, "missingInputs") as unknown[] : [];
   const blockers = Array.isArray(field(output, "blockers")) ? field(output, "blockers") as unknown[] : [];
   const commands = Array.isArray(field(output, "commands")) ? field(output, "commands") as unknown[] : [];
+  const repository = field(output, "repository");
+  const devops = field(output, "devops");
   const lines = [
     "EvoPilot Project Onboarding",
     `Command    ${command}`,
@@ -1820,6 +1892,9 @@ function printProjectOnboardingChecklist(ctx: RuntimeContext, command: string, d
     `Project    ${field(output, "projectId") ?? "-"}`,
     `Provider   ${field(output, "provider") ?? "-"}`,
     `Status     ${field(output, "status") ?? "UNKNOWN"}`,
+    "",
+    "Execution Boundary",
+    ...formatExecutionBoundary(devops, repository),
     "",
     "Workflow",
     ...formatOnboardingSteps(steps),
@@ -1845,6 +1920,45 @@ function onboardingChecklistExitCode(data: unknown, mode: "plan" | "verify", ok:
   if (!ok || status === "BLOCKED") return 2;
   if (mode === "verify" && status !== "READY_TO_RUN") return 2;
   return 0;
+}
+
+function readinessLike(value: unknown): unknown {
+  return isRecord(field(value, "readiness")) ? field(value, "readiness") : value;
+}
+
+function formatExecutionBoundary(primary: unknown, fallback?: unknown): string[] {
+  const repository = field(fallback, "repository") ?? fallback;
+  const topology = field(repository, "topology");
+  const boundary = field(primary, "boundary");
+  const working = field(topology, "working") ?? field(boundary, "workflowRepository");
+  const upstream = field(topology, "upstream");
+  const mode = field(primary, "executionMode") ?? field(boundary, "executionMode") ?? field(topology, "executionMode");
+  const claim = field(primary, "claimBoundary") ?? field(boundary, "claimBoundary") ?? field(topology, "claimBoundary");
+  const owner = field(primary, "devopsOwner") ?? field(boundary, "owner") ?? field(repository, "owner");
+  const workflow = field(primary, "workflowRepository") ?? field(boundary, "repository") ?? cliRepositoryName(working) ?? cliRepositoryName(repository);
+  const credentialRef = field(primary, "credentialRef") ?? field(boundary, "credentialRef") ?? field(primary, "tokenRef") ?? field(repository, "tokenRef");
+  const principal = field(primary, "credentialPrincipal") ?? field(boundary, "expectedPrincipal");
+  return [
+    `Mode       ${mode ?? "-"}`,
+    `Working    ${cliRepositoryName(working) ?? cliRepositoryName(repository) ?? "-"}`,
+    `Upstream   ${cliRepositoryName(upstream) ?? "-"}`,
+    `DevOps     owner=${owner ?? "-"} workflow=${workflow ?? "-"}`,
+    `Credential ${credentialRef ?? "-"}${principal ? ` principal=${principal}` : ""}`,
+    `Claim      ${claim ?? "-"}`
+  ];
+}
+
+function cliRepositoryName(value: unknown): string | undefined {
+  if (!isRecord(value)) return undefined;
+  const provider = field(value, "provider");
+  const owner = field(value, "owner");
+  const repo = field(value, "repo");
+  const projectId = field(value, "projectId");
+  if (provider === "github" && typeof owner === "string" && typeof repo === "string") return `${owner}/${repo}`;
+  if (provider === "gitlab" && typeof projectId === "string") return projectId;
+  if (typeof owner === "string" && typeof repo === "string") return `${owner}/${repo}`;
+  if (typeof projectId === "string") return projectId;
+  return undefined;
 }
 
 function formatDevopsChecks(checks: unknown[]): string[] {
@@ -1881,7 +1995,7 @@ function formatChain(value: unknown): string[] {
 
 function formatSteps(steps: Array<Record<string, unknown>>): string[] {
   if (steps.length === 0) return ["- none"];
-  return steps.slice(-8).map((step) => `- ${step.type ?? "step"}${step.status ? ` status=${step.status}` : ""}${step.httpStatus ? ` http=${step.httpStatus}` : ""}${step.provider ? ` provider=${step.provider}` : ""}${step.nextAction ? ` next=${step.nextAction}` : ""}${step.projectId ? ` project=${step.projectId}` : ""}${step.targetId ? ` target=${step.targetId}` : ""}${step.goalId ? ` goal=${step.goalId}` : ""}${step.loopId ? ` loop=${step.loopId}` : ""}${step.requestId ? ` request=${step.requestId}` : ""}${Array.isArray(step.blockers) && step.blockers.length > 0 ? ` blockers=${step.blockers.length}` : ""}`);
+  return steps.slice(-8).map((step) => `- ${step.type ?? "step"}${step.status ? ` status=${step.status}` : ""}${step.httpStatus ? ` http=${step.httpStatus}` : ""}${step.provider ? ` provider=${step.provider}` : ""}${step.executionMode ? ` mode=${step.executionMode}` : ""}${step.devopsOwner ? ` devopsOwner=${step.devopsOwner}` : ""}${step.workflowRepository ? ` workflowRepo=${step.workflowRepository}` : ""}${step.claimBoundary ? ` claim=${step.claimBoundary}` : ""}${step.nextAction ? ` next=${step.nextAction}` : ""}${step.projectId ? ` project=${step.projectId}` : ""}${step.targetId ? ` target=${step.targetId}` : ""}${step.goalId ? ` goal=${step.goalId}` : ""}${step.loopId ? ` loop=${step.loopId}` : ""}${step.requestId ? ` request=${step.requestId}` : ""}${Array.isArray(step.blockers) && step.blockers.length > 0 ? ` blockers=${step.blockers.length}` : ""}`);
 }
 
 function loopNextAction(loop: unknown): string {
@@ -2226,15 +2340,22 @@ Global options:
   --until <policy>            Wrapper stop policy: terminal or blocked-or-complete
   --require-source-ready      project onboard fails fast unless source credential preflight is READY
   --require-devops-ready      target run fails fast unless project DevOps preflight is READY
+  --execution-mode <mode>     DevOps boundary: owned-repository, fork-validated-pr, upstream-authorized, or read-only-public
+  --upstream-repo <repo>      Upstream GitHub/GitLab repository for public read-only or fork-validated PR mode
+  --working-repo <repo>       Writable GitHub/GitLab repository where EvoPilot runs source writeback and native CI/CD
+  --devops-owner <account>    GitHub owner or GitLab namespace whose CI/CD account executes the project DevOps
+  --devops-token-ref <ref>    Server-side secret ref for the CI/CD executor; falls back to source tokenRef when omitted
+  --credential-principal <id> Optional human-readable principal expected behind the DevOps tokenRef
   --json                      Print JSON response data
   --config <file>             Config path, defaults to ~/.evopilot/config.json
 
 Project DevOps examples:
-  evopilot project onboard plan github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --ci-workflow ci.yml --ci-required-check build --template ga --objective "Promote my-agent to GA stable" --json
+  evopilot project onboard plan github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --template ga --objective "Promote my-agent to GA stable" --json
   evopilot project onboard verify my-agent --template ga --json
-  evopilot project onboard github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --ci-workflow ci.yml --ci-required-check build --template ga --objective "Promote my-agent to GA stable" --require-source-ready --require-devops-ready
-  evopilot project devops set my-agent --provider github-actions --ci-workflow ci.yml --ci-required-check build --ci-required-check test --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health
-  evopilot project devops set my-agent --provider gitlab-ci --ci-required-stage test --ci-required-job build --cd-required-stage deploy --deploy-environment production --ready-url https://app.example.com/ready
+  evopilot project onboard github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --template ga --objective "Promote my-agent to GA stable" --require-source-ready --require-devops-ready
+  evopilot project onboard github --repo apache/skywalking --upstream-repo apache/skywalking --working-repo my-org/skywalking-fork --id skywalking-fork --token-ref GITHUB_TOKEN_SKYWALKING_FORK --execution-mode fork-validated-pr --devops-owner my-org --ci-workflow ci.yml --ci-required-check build --template rc --objective "Validate fork before upstream PR" --json
+  evopilot project devops set my-agent --provider github-actions --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --ci-required-check test --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health
+  evopilot project devops set my-agent --provider gitlab-ci --execution-mode owned-repository --devops-owner group --ci-required-stage test --ci-required-job build --cd-required-stage deploy --deploy-environment production --ready-url https://app.example.com/ready
 `);
 }
 

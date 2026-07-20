@@ -23,7 +23,7 @@ Automation must use `--json` and parse JSON fields:
 
 ```bash
 evopilot status --json
-evopilot project onboard plan github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --ci-workflow ci.yml --ci-required-check build --template ga --json
+evopilot project onboard plan github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --template ga --json
 evopilot target run --project my-agent --template ga --objective "..." --json
 ```
 
@@ -31,6 +31,20 @@ Do not parse human-readable CLI output. Human output may change to improve opera
 When humans do read the console output, wrapper commands print the same core chain that Dashboard consumes: scope, project, release target, goal, workflow nodes, next action, evidence endpoints, recent steps, blockers, and `requestId` values for log lookup.
 
 `project onboard plan` and `project onboard verify` are the onboarding control surface for automation. Both print `evopilot-project-onboarding-checklist/v1`; the checklist contains machine-readable `steps`, `missingInputs`, `blockers`, `commands`, and `nextAction`. `plan` does not mutate project state. `verify` reads persisted project state and should return `READY_TO_RUN` before an agent claims that source writeback and repository-native DevOps are ready.
+
+For any GitHub/GitLab DevOps flow, automation must parse and persist these fields from onboarding or `project devops preflight`:
+
+```text
+executionMode
+repositoryOwner
+devopsOwner
+workflowRepository
+credentialRef
+credentialPrincipal
+claimBoundary
+```
+
+Do not infer them from the repository URL. A public upstream such as `apache/skywalking` may have DevOps executed by `my-org/skywalking-fork`; the correct release claim is only what `claimBoundary` states.
 
 ## Exit Codes
 
@@ -122,6 +136,8 @@ evopilot project onboard plan github \
   --repo owner/my-agent \
   --id my-agent \
   --token-ref GITHUB_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --template ga \
@@ -135,6 +151,8 @@ evopilot project onboard github \
   --repo owner/my-agent \
   --id my-agent \
   --token-ref GITHUB_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --template ga \
@@ -148,6 +166,20 @@ evopilot project onboard github \
 
 GitHub projects use GitHub Actions. GitLab projects use GitLab CI.
 
+DevOps configuration commands must declare ownership:
+
+```bash
+evopilot project devops set my-agent \
+  --provider github-actions \
+  --execution-mode owned-repository \
+  --devops-owner owner \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --json
+```
+
+The CLI intentionally rejects ambiguous DevOps setup. If an agent sees a usage error that mentions DevOps ownership, regenerate the command with `--execution-mode` and `--devops-owner`; for public upstream work also include `--upstream-repo` and `--working-repo`.
+
 Before a release wrapper:
 
 ```bash
@@ -155,6 +187,15 @@ evopilot project devops preflight my-agent --json
 ```
 
 If the result is not `READY`, either repair the project DevOps configuration or run the wrapper without claiming end-to-end release readiness. Use `--require-devops-ready` when release readiness must be enforced.
+
+Claim rules by execution mode:
+
+| executionMode | Agent May Claim | Agent Must Not Claim |
+|---|---|---|
+| `owned-repository` | Source writeback and native CI/CD in the owned working repository after READY preflight. | Third-party upstream release authority. |
+| `read-only-public` | Repository inspection, analysis, blocker discovery. | PR, merge, CI/CD readiness, deployment, or release completion. |
+| `fork-validated-pr` | Fork CI plus upstream PR readiness. | Upstream merge or upstream release completion. |
+| `upstream-authorized` | Upstream writeback and release readiness after READY preflight. | Any action outside the token principal's permission scope. |
 
 ## Release Verdict Rules
 

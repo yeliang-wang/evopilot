@@ -42,12 +42,18 @@ test("project devops API configures GitHub Actions and exposes readiness evidenc
       }
     });
     assert.equal(configured.data.devops.provider, "github-actions");
+    assert.equal(configured.data.devops.boundary.executionMode, "owned-repository");
+    assert.equal(configured.data.devops.boundary.owner, "org");
     assert.equal(configured.data.readiness.status, "READY");
+    assert.equal(configured.data.readiness.devopsOwner, "org");
+    assert.equal(configured.data.readiness.workflowRepository, "org/repo");
+    assert.equal(configured.data.readiness.claimBoundary, "working-repo-ci");
     assert.equal(configured.data.readiness.nextAction, "run-devops");
 
     const preflight = await post(`${baseUrl}/api/v1/projects/github-agent/devops/preflight`, {});
     assert.equal(preflight.data.schema, "evopilot-project-devops-readiness/v1");
     assert.equal(preflight.data.status, "READY");
+    assert.equal(preflight.data.executionMode, "owned-repository");
     assert.ok(preflight.data.checks.some((check) => check.id === "ci-state" && check.status === "PASS"));
 
     await post(`${baseUrl}/api/v1/projects`, {
@@ -85,6 +91,97 @@ test("project devops API configures GitHub Actions and exposes readiness evidenc
     });
     assert.equal(evidence.data.connectedProjects[0].devops.provider, "github-actions");
     assert.ok(evidence.data.serviceInventory.some((item) => item.id === "github-agent-devops" && item.evidence.includes("github-actions")));
+  } finally {
+    await close(server);
+    await github.close();
+  }
+});
+
+test("project devops API exposes fork and read-only execution boundaries", async () => {
+  const github = await startFakeGitHub();
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-project-devops-boundary-"));
+  const server = createServer({ dataRoot, runtimeMode: "debug" });
+  await listen(server);
+  const baseUrl = serverUrl(server);
+
+  try {
+    const forkProject = await post(`${baseUrl}/api/v1/projects`, {
+      id: "skywalking-fork",
+      name: "SkyWalking Fork",
+      repository: {
+        provider: "github",
+        baseUrl: github.baseUrl,
+        owner: "apache",
+        repo: "skywalking",
+        workingRepo: "yeliang-wang/skywalking-fork",
+        upstreamRepo: "apache/skywalking",
+        executionMode: "fork-validated-pr",
+        defaultBranch: "main",
+        token: "github-token"
+      }
+    });
+    assert.equal(forkProject.data.repository.owner, "yeliang-wang");
+    assert.equal(forkProject.data.repository.repo, "skywalking-fork");
+    assert.equal(forkProject.data.repository.topology.executionMode, "fork-validated-pr");
+    assert.equal(forkProject.data.repository.topology.upstream.owner, "apache");
+
+    const forkReady = await post(`${baseUrl}/api/v1/projects/skywalking-fork/devops`, {
+      provider: "github-actions",
+      executionMode: "fork-validated-pr",
+      upstreamRepo: "apache/skywalking",
+      workingRepo: "yeliang-wang/skywalking-fork",
+      devopsOwner: "yeliang-wang",
+      ci: {
+        workflow: "ci.yml",
+        requiredChecks: ["build"]
+      }
+    });
+    assert.equal(forkReady.data.readiness.status, "READY");
+    assert.equal(forkReady.data.readiness.executionMode, "fork-validated-pr");
+    assert.equal(forkReady.data.readiness.devopsOwner, "yeliang-wang");
+    assert.equal(forkReady.data.readiness.workflowRepository, "yeliang-wang/skywalking-fork");
+    assert.equal(forkReady.data.readiness.claimBoundary, "fork-ci-pr");
+    assert.ok(forkReady.data.readiness.checks.some((check) => check.id === "devops-owner" && check.status === "PASS"));
+
+    const ownerMismatch = await postRaw(`${baseUrl}/api/v1/projects/skywalking-fork/devops`, {
+      provider: "github-actions",
+      executionMode: "fork-validated-pr",
+      upstreamRepo: "apache/skywalking",
+      workingRepo: "yeliang-wang/skywalking-fork",
+      devopsOwner: "apache",
+      ci: {
+        workflow: "ci.yml",
+        requiredChecks: ["build"]
+      }
+    });
+    assert.equal(ownerMismatch.status, 409);
+    assert.equal(ownerMismatch.body.data.readiness.status, "BLOCKED");
+    assert.ok(ownerMismatch.body.data.readiness.blockers.some((blocker) => blocker.startsWith("devops-owner:")));
+
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "skywalking-readonly",
+      name: "SkyWalking Read Only",
+      repository: {
+        provider: "github",
+        baseUrl: github.baseUrl,
+        owner: "apache",
+        repo: "skywalking",
+        executionMode: "read-only-public",
+        defaultBranch: "main"
+      }
+    });
+    const readOnlyDevops = await postRaw(`${baseUrl}/api/v1/projects/skywalking-readonly/devops`, {
+      provider: "github-actions",
+      executionMode: "read-only-public",
+      devopsOwner: "apache",
+      ci: {
+        workflow: "ci.yml"
+      }
+    });
+    assert.equal(readOnlyDevops.status, 409);
+    assert.equal(readOnlyDevops.body.data.readiness.executionMode, "read-only-public");
+    assert.equal(readOnlyDevops.body.data.readiness.claimBoundary, "read-only-analysis");
+    assert.ok(readOnlyDevops.body.data.readiness.blockers.some((blocker) => blocker.startsWith("execution-mode:")));
   } finally {
     await close(server);
     await github.close();
@@ -228,6 +325,16 @@ async function startFakeGitHub() {
   const server = http.createServer(async (request, response) => {
     if (request.url === "/repos/org/repo/git/trees/main?recursive=1") return json(response, { tree: [{ type: "blob", path: "README.md" }] });
     if (request.url === "/repos/org/observable/git/trees/main?recursive=1") return json(response, { tree: [{ type: "blob", path: "README.md" }] });
+    if (request.url === "/repos/apache/skywalking/git/trees/main?recursive=1") return json(response, { tree: [{ type: "blob", path: "README.md" }] });
+    if (request.url === "/repos/yeliang-wang/skywalking-fork/git/trees/main?recursive=1") return json(response, { tree: [{ type: "blob", path: "README.md" }] });
+    if (request.url?.startsWith("/repos/yeliang-wang/skywalking-fork/commits/") && request.url.endsWith("/check-runs")) {
+      return json(response, { check_runs: [
+        { name: "build", status: "completed", conclusion: "success" }
+      ] });
+    }
+    if (request.url?.startsWith("/repos/yeliang-wang/skywalking-fork/actions/workflows/ci.yml/runs?")) {
+      return json(response, { workflow_runs: [{ id: 103, name: "ci", status: "completed", conclusion: "success", html_url: "http://github/actions/103" }] });
+    }
     if (request.url === "/repos/org/observable/commits/main/check-runs") return json(response, { check_runs: [] });
     if (request.url?.startsWith("/repos/org/observable/actions/workflows/ci.yml/runs?")) {
       return json(response, { workflow_runs: [{ id: 102, name: "ci", status: "queued", conclusion: null, html_url: "http://github/actions/102" }] });

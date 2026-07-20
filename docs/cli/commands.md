@@ -15,6 +15,12 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --until <policy>            Wrapper stop policy: terminal or blocked-or-complete
 --require-source-ready      project onboard / target run fails fast unless source credentials are READY
 --require-devops-ready      target run fails fast unless project DevOps preflight is READY
+--execution-mode <mode>     owned-repository | read-only-public | fork-validated-pr | upstream-authorized
+--upstream-repo <repo>      Public upstream repository for read-only or fork-validated PR mode
+--working-repo <repo>       Writable repository where EvoPilot writes code and runs native DevOps
+--devops-owner <account>    GitHub owner or GitLab namespace whose account runs CI/CD
+--devops-token-ref <ref>    Optional server-side DevOps tokenRef, otherwise source tokenRef is used
+--credential-principal <id> Optional operator-readable principal expected behind the DevOps tokenRef
 --json                      Print JSON response data
 --config <file>             Config path, defaults to ~/.evopilot/config.json
 ```
@@ -69,6 +75,9 @@ Common register options:
 --repo <owner/repo>
 --repo-name <repo>
 --branch <branch>
+--execution-mode <owned-repository|read-only-public|fork-validated-pr|upstream-authorized>
+--upstream-repo <owner/repo-or-group/project>
+--working-repo <owner/repo-or-group/project>
 --username <username>
 --password <password>
 --source-token <token>
@@ -97,6 +106,8 @@ evopilot project onboard plan github \
   --repo owner/my-agent \
   --id my-agent \
   --token-ref GITHUB_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --template ga \
@@ -124,6 +135,12 @@ Common onboard options:
 --project-id <gitlab-project-id>
 --branch <branch>
 --token-ref <server-side-secret-ref>
+--execution-mode <owned-repository|read-only-public|fork-validated-pr|upstream-authorized>
+--upstream-repo <owner/repo-or-group/project>
+--working-repo <owner/repo-or-group/project>
+--devops-owner <github-owner-or-gitlab-namespace>
+--devops-token-ref <server-side-devops-secret-ref>
+--credential-principal <principal>
 --ci-workflow <workflow-file>
 --ci-required-check <check>
 --ci-required-stage <stage>
@@ -149,6 +166,14 @@ Common options:
 
 ```text
 --token-ref <server-side-token-ref>
+--execution-mode <owned-repository|fork-validated-pr|upstream-authorized>
+--upstream-repo <owner/repo-or-group/project>
+--working-repo <owner/repo-or-group/project>
+--devops-owner <github-owner-or-gitlab-namespace>
+--devops-namespace <gitlab-namespace>
+--workflow-repo <owner/repo-or-group/project>
+--devops-token-ref <server-side-devops-secret-ref>
+--credential-principal <principal>
 --ci-workflow <workflow-file>
 --ci-ref <ref>
 --ci-required-check <check>
@@ -164,6 +189,19 @@ Common options:
 --ready-url <url>
 --deploy-timeout-seconds <seconds>
 ```
+
+DevOps configuration requires an explicit execution boundary. The CLI blocks ambiguous commands such as `evopilot project onboard github --repo apache/skywalking --with-devops` because it cannot know whether DevOps should run in the public upstream, a fork, or a maintainer-owned namespace.
+
+Execution modes:
+
+| Mode | Use When | Claim Boundary |
+|---|---|---|
+| `owned-repository` | The same GitHub/GitLab owner controls source writeback and CI/CD. | `working-repo-ci` |
+| `read-only-public` | The repository is public and no writable token is available. | `read-only-analysis` |
+| `fork-validated-pr` | The upstream is public or third-party, and EvoPilot works in a writable fork. | `fork-ci-pr` |
+| `upstream-authorized` | A maintainer token can write to and run CI/CD in the upstream. | `upstream-release` |
+
+`project devops preflight` returns `executionMode`, `repositoryOwner`, `devopsOwner`, `workflowRepository`, `credentialRef`, `credentialPrincipal`, and `claimBoundary`. Automation must stop when `status` is not `READY`, and must not claim a stronger result than `claimBoundary`.
 
 ## Secrets
 

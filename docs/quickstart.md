@@ -63,6 +63,8 @@ npm run cli -- project onboard plan github \
   --repo owner/my-agent \
   --id my-agent \
   --token-ref GITHUB_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --template ga \

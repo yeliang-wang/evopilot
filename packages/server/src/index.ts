@@ -147,6 +147,25 @@ interface StoredProject {
 }
 
 type ProjectRepositoryProvider = "local-git" | "gitlab" | "github";
+type ProjectExecutionMode = "owned-repository" | "read-only-public" | "fork-validated-pr" | "upstream-authorized";
+type ProjectClaimBoundary = "read-only-analysis" | "working-repo-ci" | "fork-ci-pr" | "upstream-release";
+
+interface ProjectRepositoryRef {
+  provider: Exclude<ProjectRepositoryProvider, "local-git">;
+  gitUrl?: string;
+  baseUrl?: string;
+  projectId?: string;
+  owner?: string;
+  repo?: string;
+  defaultBranch?: string;
+}
+
+interface ProjectRepositoryTopology {
+  executionMode: ProjectExecutionMode;
+  upstream?: ProjectRepositoryRef;
+  working: ProjectRepositoryRef;
+  claimBoundary: ProjectClaimBoundary;
+}
 
 interface ProjectRepositoryRegistration {
   provider: ProjectRepositoryProvider;
@@ -157,6 +176,7 @@ interface ProjectRepositoryRegistration {
   owner?: string;
   repo?: string;
   defaultBranch?: string;
+  topology?: ProjectRepositoryTopology;
   credentials?: ProjectRepositoryCredentials;
 }
 
@@ -173,6 +193,16 @@ interface ProjectDevopsConfiguration {
   provider: ProjectDevopsProvider;
   mode: "scm-native";
   tokenRef?: string;
+  boundary?: {
+    executionMode: ProjectExecutionMode;
+    owner?: string;
+    namespace?: string;
+    repository?: string;
+    workflowRepository?: ProjectRepositoryRef;
+    credentialRef?: string;
+    expectedPrincipal?: string;
+    claimBoundary: ProjectClaimBoundary;
+  };
   ci: {
     workflow?: string;
     ref?: string;
@@ -269,9 +299,16 @@ interface ProjectDevopsReadiness {
   schema: "evopilot-project-devops-readiness/v1";
   projectId: string;
   provider: ProjectDevopsProvider | "unknown";
+  executionMode: ProjectExecutionMode;
+  repositoryOwner?: string;
+  devopsOwner?: string;
+  workflowRepository?: string;
+  credentialRef?: string;
+  credentialPrincipal?: string;
+  claimBoundary: ProjectClaimBoundary;
   status: "READY" | "OBSERVABLE" | "BLOCKED";
   checks: Array<{
-    id: "project" | "source-provider" | "devops-provider" | "token-resolution" | "ci-config" | "ci-state" | "cd-config" | "health-ready";
+    id: "project" | "source-provider" | "execution-mode" | "devops-provider" | "devops-owner" | "token-resolution" | "ci-config" | "ci-state" | "cd-config" | "health-ready";
     status: "PASS" | "FAIL" | "SKIP";
     evidence: string[];
     required: boolean;
@@ -3895,23 +3932,31 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         };
         store.writeProject(updated);
         const readiness = await checkProjectDevopsReadiness(updated, store);
-        store.appendAudit(audit(auth, "project.devops.updated", updated.id, {
-          provider: devops.provider,
-          ciWorkflow: devops.ci.workflow,
-          cdWorkflow: devops.cd?.workflow,
-          readiness: readiness.status,
-          blockers: readiness.blockers
+	        store.appendAudit(audit(auth, "project.devops.updated", updated.id, {
+	          provider: devops.provider,
+	          executionMode: readiness.executionMode,
+	          devopsOwner: readiness.devopsOwner,
+	          workflowRepository: readiness.workflowRepository,
+	          claimBoundary: readiness.claimBoundary,
+	          ciWorkflow: devops.ci.workflow,
+	          cdWorkflow: devops.cd?.workflow,
+	          readiness: readiness.status,
+	          blockers: readiness.blockers
         }));
         logInfo("project.devops.updated", {
           actor: auth.actor,
           target: updated.id,
           metadata: {
-            projectId: updated.id,
-            provider: devops.provider,
-            readiness: readiness.status,
-            blockers: readiness.blockers
-          }
-        });
+	            projectId: updated.id,
+	            provider: devops.provider,
+	            executionMode: readiness.executionMode,
+	            devopsOwner: readiness.devopsOwner,
+	            workflowRepository: readiness.workflowRepository,
+	            claimBoundary: readiness.claimBoundary,
+	            readiness: readiness.status,
+	            blockers: readiness.blockers
+	          }
+	        });
         return writeJson(response, readiness.status === "BLOCKED" ? 409 : 200, envelope({ project: maskProject(updated, store), devops, readiness }));
       }
       if (request.method === "DELETE" && projectDevopsMatch) {
@@ -3933,20 +3978,28 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
         const readiness = await checkProjectDevopsReadiness(project, store);
         if (request.method === "POST") {
-          store.appendAudit(audit(auth, "project.devops-preflight", project.id, {
-            provider: project.devops?.provider,
-            readiness: readiness.status,
-            blockers: readiness.blockers
-          }));
+	          store.appendAudit(audit(auth, "project.devops-preflight", project.id, {
+	            provider: project.devops?.provider,
+	            executionMode: readiness.executionMode,
+	            devopsOwner: readiness.devopsOwner,
+	            workflowRepository: readiness.workflowRepository,
+	            claimBoundary: readiness.claimBoundary,
+	            readiness: readiness.status,
+	            blockers: readiness.blockers
+	          }));
           logInfo("project.devops.preflight", {
             actor: auth.actor,
             target: project.id,
             metadata: {
-              projectId: project.id,
-              provider: project.devops?.provider,
-              readiness: readiness.status,
-              blockers: readiness.blockers
-            }
+	              projectId: project.id,
+	              provider: project.devops?.provider,
+	              executionMode: readiness.executionMode,
+	              devopsOwner: readiness.devopsOwner,
+	              workflowRepository: readiness.workflowRepository,
+	              claimBoundary: readiness.claimBoundary,
+	              readiness: readiness.status,
+	              blockers: readiness.blockers
+	            }
           });
         }
         return writeJson(response, readiness.status === "READY" ? 200 : 409, envelope(readiness));
@@ -4005,7 +4058,17 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!project.id || !project.name) return writeJson(response, 400, { error: "PROJECT_ID_AND_NAME_REQUIRED" });
         if (project.validation.status !== "VERIFIED") return writeJson(response, 400, { error: "PROJECT_VALIDATION_FAILED", detail: project.validation.message });
         store.writeProject(project);
-        store.appendAudit(audit(auth, "project.created", project.id, { provider: repository?.provider, validation: validation.status, devopsProvider: project.devops?.provider }));
+        store.appendAudit(audit(auth, "project.created", project.id, {
+          provider: repository?.provider,
+          executionMode: repository?.topology?.executionMode,
+          repositoryOwner: repositoryNamespaceFromRegistration(repository),
+          workingRepository: repositoryDisplayName(repository?.topology?.working),
+          upstreamRepository: repositoryDisplayName(repository?.topology?.upstream),
+          validation: validation.status,
+          devopsProvider: project.devops?.provider,
+          devopsOwner: project.devops?.boundary?.owner,
+          claimBoundary: project.devops?.boundary?.claimBoundary
+        }));
         return writeJson(response, 201, envelope(maskProject(project, store)));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/runs") {
@@ -10219,26 +10282,30 @@ async function buildProjectOnboardingChecklist(args: {
     nextAction: args.project ? "continue" : draftProject && validation.status === "VERIFIED" ? "register-project" : "repair-project"
   });
 
+  const executionMode = repository?.topology?.executionMode ?? "owned-repository";
+  const readOnlyPublicMode = executionMode === "read-only-public";
   const sourceCredentials = draftProject ? await checkSourceCredentialReadiness(draftProject, args.store) : undefined;
   addStep({
     id: "source-credentials",
     label: "Source writeback preflight",
-    status: sourceCredentials?.status === "READY" ? "PASS" : sourceCredentials?.status === "READ_ONLY" ? "FAIL" : sourceCredentials ? "FAIL" : "SKIP",
-    required: Boolean(draftProject),
+    status: sourceCredentials?.status === "READY" ? "PASS" : sourceCredentials?.status === "READ_ONLY" && readOnlyPublicMode ? "WARN" : sourceCredentials?.status === "READ_ONLY" ? "FAIL" : sourceCredentials ? "FAIL" : "SKIP",
+    required: Boolean(draftProject) && !readOnlyPublicMode,
     evidence: sourceCredentials ? [`status=${sourceCredentials.status}`, ...sourceCredentials.blockers] : ["project draft unavailable"],
     nextAction: sourceCredentials?.nextAction ?? "configure-source-credentials"
   });
 
   const draftDevops = args.project?.devops ?? (draftProject ? normalizeProjectDevops(args.body, draftProject) : undefined);
   const projectWithDevops: StoredProject | undefined = draftProject ? { ...draftProject, devops: draftDevops } : undefined;
-  const devops = projectWithDevops && remoteRepository ? await checkProjectDevopsReadiness(projectWithDevops, args.store) : undefined;
+  const devops = projectWithDevops && remoteRepository && !readOnlyPublicMode ? await checkProjectDevopsReadiness(projectWithDevops, args.store) : undefined;
   addStep({
     id: "devops",
     label: "Repository-native DevOps",
-    status: !remoteRepository ? "SKIP" : devops?.status === "READY" ? "PASS" : devops?.status === "OBSERVABLE" ? "WARN" : "FAIL",
-    required: remoteRepository,
-    evidence: !remoteRepository ? ["local-git project does not use GitHub Actions or GitLab CI"] : devops ? [`status=${devops.status}`, ...devops.blockers] : ["devops=missing"],
-    nextAction: !remoteRepository ? "continue" : devops?.nextAction ?? "configure-devops"
+    status: !remoteRepository || readOnlyPublicMode ? "SKIP" : devops?.status === "READY" ? "PASS" : devops?.status === "OBSERVABLE" ? "WARN" : "FAIL",
+    required: remoteRepository && !readOnlyPublicMode,
+    evidence: !remoteRepository ? ["local-git project does not use GitHub Actions or GitLab CI"]
+      : readOnlyPublicMode ? ["executionMode=read-only-public", "DevOps release readiness requires fork-validated-pr or upstream-authorized"]
+        : devops ? [`status=${devops.status}`, ...devops.blockers] : ["devops=missing"],
+    nextAction: !remoteRepository || readOnlyPublicMode ? "continue" : devops?.nextAction ?? "configure-devops"
   });
 
   addStep({
@@ -10349,10 +10416,11 @@ function onboardingMissingInputs(args: {
   template?: string;
 }): string[] {
   const missing: string[] = [];
+  const readOnlyPublicMode = args.repository?.topology?.executionMode === "read-only-public";
   if (!args.projectId) missing.push("project-id");
   if (!args.repository) missing.push("repository");
-  if (args.remoteRepository && !args.tokenRef && !args.repository?.credentials?.token && !args.repository?.credentials?.password) missing.push("server-side-token-ref");
-  if ((args.provider === "github" || args.provider === "gitlab") && !args.draftDevops) missing.push("repository-native-devops-contract");
+  if (args.remoteRepository && !readOnlyPublicMode && !args.tokenRef && !args.repository?.credentials?.token && !args.repository?.credentials?.password) missing.push("server-side-token-ref");
+  if ((args.provider === "github" || args.provider === "gitlab") && !readOnlyPublicMode && !args.draftDevops) missing.push("repository-native-devops-contract");
   if (!args.template) missing.push("target-template(optional-for-registration)");
   return missing;
 }
@@ -10416,10 +10484,11 @@ function buildProjectOnboardingCommands(args: {
     });
   }
   if (args.projectId && args.template) {
+    const strictReadinessFlags = args.repository?.topology?.executionMode === "read-only-public" ? "" : " --require-source-ready --require-devops-ready";
     commands.push({
       id: "target-run",
       title: "Run the Goal/Loop target strictly",
-      command: `evopilot target run --project ${cliArg(args.projectId)} --template ${cliArg(args.template)} --objective ${cliArg(args.objective ?? `Promote ${args.projectId} to ${args.template}`)} --until terminal --max-steps 20 --require-source-ready --require-devops-ready --json`,
+      command: `evopilot target run --project ${cliArg(args.projectId)} --template ${cliArg(args.template)} --objective ${cliArg(args.objective ?? `Promote ${args.projectId} to ${args.template}`)} --until terminal --max-steps 20${strictReadinessFlags} --json`,
       when: "Run after checklist status is READY_TO_RUN or immediately after a strict project onboard wrapper completes."
     });
   }
@@ -10463,6 +10532,7 @@ function buildProjectDevopsCliCommand(projectId: string, devops: ProjectDevopsCo
 
 function pushRepositoryCliOptions(parts: string[], repository: ProjectRepositoryRegistration | undefined): void {
   if (!repository) return;
+  pushCliOption(parts, "execution-mode", repository.topology?.executionMode);
   if (repository.provider === "github") {
     if (repository.owner && repository.repo) pushCliOption(parts, "repo", `${repository.owner}/${repository.repo}`);
     pushCliOption(parts, "base-url", repository.baseUrl);
@@ -10472,12 +10542,20 @@ function pushRepositoryCliOptions(parts: string[], repository: ProjectRepository
   } else if (repository.provider === "local-git") {
     pushCliOption(parts, "root", repository.root);
   }
+  pushCliOption(parts, "upstream-repo", repositoryDisplayName(repository.topology?.upstream));
+  const workingDisplay = repositoryDisplayName(repository.topology?.working);
+  if (workingDisplay && workingDisplay !== repositoryDisplayName(repositoryRefFromRegistration(repository))) pushCliOption(parts, "working-repo", workingDisplay);
   pushCliOption(parts, "git-url", repository.gitUrl);
   pushCliOption(parts, "branch", repository.defaultBranch);
 }
 
 function pushDevopsCliOptions(parts: string[], devops: ProjectDevopsConfiguration | undefined): void {
   if (!devops) return;
+  pushCliOption(parts, "execution-mode", devops.boundary?.executionMode);
+  pushCliOption(parts, "devops-owner", devops.boundary?.owner);
+  pushCliOption(parts, "workflow-repo", repositoryDisplayName(devops.boundary?.workflowRepository));
+  pushCliOption(parts, "devops-token-ref", devops.tokenRef);
+  pushCliOption(parts, "credential-principal", devops.boundary?.expectedPrincipal);
   pushCliOption(parts, "ci-workflow", devops.ci.workflow);
   pushCliOption(parts, "ci-ref", devops.ci.ref);
   for (const check of devops.ci.requiredChecks ?? []) pushCliOption(parts, "ci-required-check", check);
@@ -16321,6 +16399,7 @@ function normalizeProjectDevops(body: any, project: StoredProject): ProjectDevop
     provider,
     mode: "scm-native",
     tokenRef: optionalTrimmedString(source.tokenRef ?? source.devopsTokenRef) ?? existing?.tokenRef,
+    boundary: normalizeProjectDevopsBoundary(source, project, existing),
     ci,
     cd,
     createdAt: existing?.createdAt ?? now,
@@ -16346,6 +16425,162 @@ function devopsProviderMatchesRepository(project: StoredProject, devops: Project
   return { ok: true };
 }
 
+function normalizeProjectExecutionMode(value: unknown, fallback: ProjectExecutionMode = "owned-repository"): ProjectExecutionMode {
+  const text = String(value ?? "").trim().toLowerCase();
+  if (text === "owned-repository" || text === "owned") return "owned-repository";
+  if (text === "read-only-public" || text === "readonly-public" || text === "read-only" || text === "public-read-only") return "read-only-public";
+  if (text === "fork-validated-pr" || text === "fork-pr" || text === "fork") return "fork-validated-pr";
+  if (text === "upstream-authorized" || text === "upstream" || text === "maintainer") return "upstream-authorized";
+  return fallback;
+}
+
+function claimBoundaryForExecutionMode(mode: ProjectExecutionMode): ProjectClaimBoundary {
+  if (mode === "read-only-public") return "read-only-analysis";
+  if (mode === "fork-validated-pr") return "fork-ci-pr";
+  if (mode === "upstream-authorized") return "upstream-release";
+  return "working-repo-ci";
+}
+
+function normalizeProjectClaimBoundary(value: unknown, mode: ProjectExecutionMode): ProjectClaimBoundary {
+  const text = String(value ?? "").trim().toLowerCase();
+  if (text === "read-only-analysis") return "read-only-analysis";
+  if (text === "working-repo-ci") return "working-repo-ci";
+  if (text === "fork-ci-pr") return "fork-ci-pr";
+  if (text === "upstream-release") return "upstream-release";
+  return claimBoundaryForExecutionMode(mode);
+}
+
+function normalizeProjectDevopsBoundary(source: any, project: StoredProject, existing?: ProjectDevopsConfiguration): ProjectDevopsConfiguration["boundary"] {
+  const boundarySource = source.boundary && typeof source.boundary === "object" ? source.boundary : {};
+  const executionMode = normalizeProjectExecutionMode(
+    source.executionMode ?? source.devopsExecutionMode ?? boundarySource.executionMode ?? project.repository?.topology?.executionMode,
+    existing?.boundary?.executionMode ?? "owned-repository"
+  );
+  const workflowRepository = normalizeRepositoryRefInput(
+    project.repository?.provider,
+    source.workflowRepository ?? source.workflowRepo ?? source.workingRepository ?? source.workingRepo ?? boundarySource.workflowRepository,
+    project.repository?.topology?.working ?? repositoryRefFromRegistration(project.repository) ?? existing?.boundary?.workflowRepository
+  );
+  const claimBoundary = normalizeProjectClaimBoundary(source.claimBoundary ?? boundarySource.claimBoundary, executionMode);
+  const tokenRef = optionalTrimmedString(source.tokenRef ?? source.devopsTokenRef ?? boundarySource.credentialRef) ?? existing?.tokenRef;
+  const inferredOwner = repositoryNamespace(workflowRepository) ?? repositoryNamespace(project.repository?.topology?.working) ?? repositoryNamespaceFromRegistration(project.repository);
+  const owner = optionalTrimmedString(source.devopsOwner ?? source.devopsNamespace ?? boundarySource.owner ?? boundarySource.namespace)
+    ?? existing?.boundary?.owner
+    ?? inferredOwner;
+  const namespace = optionalTrimmedString(source.devopsNamespace ?? boundarySource.namespace)
+    ?? existing?.boundary?.namespace
+    ?? inferredOwner;
+  return {
+    executionMode,
+    owner,
+    namespace,
+    repository: optionalTrimmedString(source.devopsRepository ?? source.workflowRepo ?? boundarySource.repository)
+      ?? repositoryDisplayName(workflowRepository)
+      ?? existing?.boundary?.repository,
+    workflowRepository,
+    credentialRef: tokenRef,
+    expectedPrincipal: optionalTrimmedString(source.credentialPrincipal ?? source.devopsPrincipal ?? source.expectedPrincipal ?? boundarySource.expectedPrincipal)
+      ?? existing?.boundary?.expectedPrincipal,
+    claimBoundary
+  };
+}
+
+function repositoryRefFromRegistration(repository?: ProjectRepositoryRegistration): ProjectRepositoryRef | undefined {
+  if (!repository || repository.provider === "local-git") return undefined;
+  return {
+    provider: repository.provider,
+    gitUrl: repository.gitUrl,
+    baseUrl: repository.baseUrl,
+    projectId: repository.projectId,
+    owner: repository.owner,
+    repo: repository.repo,
+    defaultBranch: repository.defaultBranch
+  };
+}
+
+function normalizeRepositoryRefInput(provider: ProjectRepositoryProvider | undefined, value: unknown, fallback?: ProjectRepositoryRef): ProjectRepositoryRef | undefined {
+  if (!provider || provider === "local-git") return fallback;
+  const remoteProvider = provider as Exclude<ProjectRepositoryProvider, "local-git">;
+  if (value === undefined || value === null || value === "") return fallback;
+  if (typeof value === "string") {
+    const text = value.trim();
+    const parsed = text.includes("://") || text.startsWith("git@") ? parseGitUrl(text) : parseRepositoryName(remoteProvider, text);
+    return {
+      provider: remoteProvider,
+      gitUrl: text.includes("://") || text.startsWith("git@") ? text : parsed.gitUrl,
+      baseUrl: parsed.baseUrl ?? fallback?.baseUrl,
+      projectId: parsed.projectId ?? fallback?.projectId,
+      owner: parsed.owner ?? fallback?.owner,
+      repo: parsed.repo ?? fallback?.repo,
+      defaultBranch: parsed.defaultBranch ?? fallback?.defaultBranch
+    };
+  }
+  if (typeof value === "object") {
+    const source = value as Record<string, unknown>;
+    const gitUrl = optionalTrimmedString(source.gitUrl ?? source.url);
+    const parsed = gitUrl ? parseGitUrl(gitUrl) : {};
+    const explicitProvider = String(source.provider ?? parsed.provider ?? remoteProvider).trim() as ProjectRepositoryProvider;
+    if (explicitProvider !== "github" && explicitProvider !== "gitlab") return fallback;
+    return {
+      provider: explicitProvider,
+      gitUrl,
+      baseUrl: optionalTrimmedString(source.baseUrl) ?? parsed.baseUrl ?? fallback?.baseUrl,
+      projectId: optionalTrimmedString(source.projectId) ?? parsed.projectId ?? fallback?.projectId,
+      owner: optionalTrimmedString(source.owner) ?? parsed.owner ?? fallback?.owner,
+      repo: optionalTrimmedString(source.repo ?? source.repoName) ?? parsed.repo ?? fallback?.repo,
+      defaultBranch: optionalTrimmedString(source.defaultBranch ?? source.branch) ?? fallback?.defaultBranch
+    };
+  }
+  return fallback;
+}
+
+function parseRepositoryName(provider: Exclude<ProjectRepositoryProvider, "local-git">, value: string): Partial<ProjectRepositoryRef> {
+  const text = value.trim().replace(/\.git$/i, "");
+  if (!text) return {};
+  if (provider === "github") {
+    const parts = text.split("/").filter(Boolean);
+    if (parts.length >= 2) return { owner: parts[0], repo: parts.slice(1).join("/") };
+    return { repo: text };
+  }
+  return { projectId: text };
+}
+
+function repositoryNamespace(ref?: ProjectRepositoryRef): string | undefined {
+  if (!ref) return undefined;
+  if (ref.provider === "github") return ref.owner;
+  if (ref.projectId) {
+    const parts = ref.projectId.split("/").filter(Boolean);
+    if (parts.length > 1) return parts.slice(0, -1).join("/");
+  }
+  return ref.owner;
+}
+
+function repositoryNamespaceFromRegistration(repository?: ProjectRepositoryRegistration): string | undefined {
+  return repositoryNamespace(repositoryRefFromRegistration(repository));
+}
+
+function repositoryDisplayName(ref?: ProjectRepositoryRef): string | undefined {
+  if (!ref) return undefined;
+  if (ref.provider === "github" && ref.owner && ref.repo) return `${ref.owner}/${ref.repo}`;
+  if (ref.provider === "gitlab" && ref.projectId) return ref.projectId;
+  return undefined;
+}
+
+function devopsReadinessContext(project: StoredProject, devops?: ProjectDevopsConfiguration): Pick<ProjectDevopsReadiness, "executionMode" | "repositoryOwner" | "devopsOwner" | "workflowRepository" | "credentialRef" | "credentialPrincipal" | "claimBoundary"> {
+  const topology = project.repository?.topology;
+  const executionMode = devops?.boundary?.executionMode ?? topology?.executionMode ?? "owned-repository";
+  const workflowRef = devops?.boundary?.workflowRepository ?? topology?.working ?? repositoryRefFromRegistration(project.repository);
+  return {
+    executionMode,
+    repositoryOwner: repositoryNamespaceFromRegistration(project.repository),
+    devopsOwner: devops?.boundary?.owner ?? repositoryNamespace(workflowRef),
+    workflowRepository: repositoryDisplayName(workflowRef),
+    credentialRef: devops?.boundary?.credentialRef ?? devops?.tokenRef ?? project.repository?.credentials?.tokenRef,
+    credentialPrincipal: devops?.boundary?.expectedPrincipal,
+    claimBoundary: devops?.boundary?.claimBoundary ?? topology?.claimBoundary ?? claimBoundaryForExecutionMode(executionMode)
+  };
+}
+
 async function checkProjectDevopsReadiness(project: StoredProject, store?: FileStore): Promise<ProjectDevopsReadiness> {
   const checkedAt = new Date().toISOString();
   const checks: ProjectDevopsReadiness["checks"] = [];
@@ -16366,8 +16601,25 @@ async function checkProjectDevopsReadiness(project: StoredProject, store?: FileS
   });
   if (!devops) {
     addCheck({ id: "devops-provider", status: "FAIL", required: true, evidence: ["devops=missing"] });
-    return projectDevopsReadinessResult(project.id, "unknown", checks, checkedAt);
+    return projectDevopsReadinessResult(project, "unknown", checks, checkedAt);
   }
+  const context = devopsReadinessContext(project, devops);
+  const workflowOwner = repositoryNamespace(devops.boundary?.workflowRepository ?? repository?.topology?.working ?? repositoryRefFromRegistration(repository));
+  const hasForkUpstream = Boolean(repository?.topology?.upstream);
+  addCheck({
+    id: "execution-mode",
+    status: context.executionMode === "read-only-public" ? "FAIL"
+      : context.executionMode === "fork-validated-pr" && !hasForkUpstream ? "FAIL"
+        : "PASS",
+    required: true,
+    evidence: [
+      `executionMode=${context.executionMode}`,
+      `claimBoundary=${context.claimBoundary}`,
+      context.executionMode === "read-only-public" ? "read-only-public cannot run repository-native DevOps"
+        : context.executionMode === "fork-validated-pr" ? `upstream=${repositoryDisplayName(repository?.topology?.upstream) ?? "missing"}`
+          : "executionModeAccepted=true"
+    ]
+  });
   const providerCheck = devopsProviderMatchesRepository(project, devops);
   addCheck({
     id: "devops-provider",
@@ -16384,6 +16636,20 @@ async function checkProjectDevopsReadiness(project: StoredProject, store?: FileS
       token ? "tokenResolved=true" : "DEVOPS_TOKEN_REQUIRED",
       devops.tokenRef ? `devopsTokenRef=${devops.tokenRef}` : "devopsTokenRef=source-credentials",
       repository?.credentials?.tokenRef ? `sourceTokenRef=${repository.credentials.tokenRef}` : "sourceTokenRef=missing"
+    ]
+  });
+  addCheck({
+    id: "devops-owner",
+    status: context.executionMode === "read-only-public" ? "FAIL"
+      : !context.devopsOwner ? "FAIL"
+        : workflowOwner && context.devopsOwner !== workflowOwner ? "FAIL"
+          : "PASS",
+    required: true,
+    evidence: [
+      `devopsOwner=${context.devopsOwner ?? "missing"}`,
+      `workflowOwner=${workflowOwner ?? "missing"}`,
+      `workflowRepository=${context.workflowRepository ?? "missing"}`,
+      context.credentialPrincipal ? `credentialPrincipal=${context.credentialPrincipal}` : "credentialPrincipal=not-declared"
     ]
   });
   const ciConfigured = devops.provider === "github-actions"
@@ -16408,7 +16674,7 @@ async function checkProjectDevopsReadiness(project: StoredProject, store?: FileS
     addCheck({ id: "ci-state", status: "SKIP", required: true, evidence: ["credentials-or-coordinates-missing"] });
   }
   await appendProjectDevopsHealthCheck(devops, checks);
-  return projectDevopsReadinessResult(project.id, devops.provider, checks, checkedAt);
+  return projectDevopsReadinessResult(project, devops.provider, checks, checkedAt, devops);
 }
 
 async function appendGitHubDevopsReadinessChecks(args: {
@@ -16532,17 +16798,19 @@ async function appendProjectDevopsHealthCheck(devops: ProjectDevopsConfiguration
   }
 }
 
-function projectDevopsReadinessResult(projectId: string, provider: ProjectDevopsProvider | "unknown", checks: ProjectDevopsReadiness["checks"], checkedAt: string): ProjectDevopsReadiness {
+function projectDevopsReadinessResult(project: StoredProject, provider: ProjectDevopsProvider | "unknown", checks: ProjectDevopsReadiness["checks"], checkedAt: string, devops?: ProjectDevopsConfiguration): ProjectDevopsReadiness {
   const blockers = checks
     .filter((check) => check.required && check.status !== "PASS")
     .map((check) => check.evidence.some((item) => item === "DEVOPS_TOKEN_REQUIRED") ? `${check.id}:DEVOPS_TOKEN_REQUIRED` : `${check.id}:${check.status}`);
   const status: ProjectDevopsReadiness["status"] = blockers.length === 0 ? "READY"
     : blockers.every((blocker) => blocker.includes("ci-state")) ? "OBSERVABLE"
       : "BLOCKED";
+  const context = devopsReadinessContext(project, devops);
   return {
     schema: "evopilot-project-devops-readiness/v1",
-    projectId,
+    projectId: project.id,
     provider,
+    ...context,
     status,
     checks,
     blockers,
@@ -16551,12 +16819,14 @@ function projectDevopsReadinessResult(projectId: string, provider: ProjectDevops
       "github-check-run-readiness",
       "gitlab-ci-pipeline-trigger",
       "gitlab-pipeline-job-readiness",
+      "devops-owner-boundary-preflight",
+      "execution-mode-claim-boundary",
       "health-ready-probe",
       "dashboard-cli-readable-chain"
     ],
     nextAction: status === "READY" ? "run-devops"
       : blockers.some((blocker) => blocker.includes("token")) ? "configure-source-credentials"
-        : blockers.some((blocker) => blocker.includes("devops-provider") || blocker.includes("ci-config")) ? "configure-devops"
+        : blockers.some((blocker) => blocker.includes("devops-provider") || blocker.includes("devops-owner") || blocker.includes("execution-mode") || blocker.includes("ci-config")) ? "configure-devops"
           : blockers.some((blocker) => blocker.includes("project") || blocker.includes("source-provider")) ? "repair-project"
             : "inspect-ci",
     checkedAt
@@ -16641,6 +16911,7 @@ function maskProject(project: StoredProject, store?: FileStore): Omit<StoredProj
       owner: repository.owner,
       repo: repository.repo,
       defaultBranch: repository.defaultBranch,
+      topology: repository.topology,
       credentialsConfigured: Boolean(repository.credentials?.token || repository.credentials?.password || repository.credentials?.tokenRef),
       credentialMode,
       tokenRef: repository.credentials?.tokenRef,
@@ -17131,14 +17402,19 @@ function normalizeProjectRepository(body: any): ProjectRepositoryRegistration | 
   const provider = String(source.provider ?? parsed.provider ?? "").trim() as ProjectRepositoryProvider;
   const nestedCredentials = source.credentials && typeof source.credentials === "object" ? source.credentials : {};
   if (provider !== "local-git" && provider !== "gitlab" && provider !== "github") return undefined;
+  const workingRef = normalizeRepositoryRefInput(
+    provider,
+    source.workingRepository ?? source.workingRepo ?? body.workingRepository ?? body.workingRepo,
+    undefined
+  );
   const repository: ProjectRepositoryRegistration = {
     provider,
-    gitUrl: gitUrl ? String(gitUrl).trim() : undefined,
+    gitUrl: workingRef?.gitUrl ?? (gitUrl ? String(gitUrl).trim() : undefined),
     root: source.root ? String(source.root).trim() : undefined,
-    baseUrl: source.baseUrl ? String(source.baseUrl).trim() : parsed.baseUrl,
-    projectId: source.projectId ? String(source.projectId).trim() : parsed.projectId,
-    owner: source.owner ? String(source.owner).trim() : parsed.owner,
-    repo: source.repo ? String(source.repo).trim() : parsed.repo,
+    baseUrl: source.baseUrl ? String(source.baseUrl).trim() : workingRef?.baseUrl ?? parsed.baseUrl,
+    projectId: workingRef?.projectId ?? (source.projectId ? String(source.projectId).trim() : parsed.projectId),
+    owner: workingRef?.owner ?? (source.owner ? String(source.owner).trim() : parsed.owner),
+    repo: workingRef?.repo ?? (source.repo ? String(source.repo).trim() : parsed.repo),
     defaultBranch: String(source.defaultBranch ?? "main").trim(),
     credentials: {
       username: source.username ? String(source.username) : nestedCredentials.username ? String(nestedCredentials.username) : undefined,
@@ -17151,7 +17427,37 @@ function normalizeProjectRepository(body: any): ProjectRepositoryRegistration | 
   if (!repository.credentials?.password && body.password) repository.credentials!.password = String(body.password);
   if (!repository.credentials?.token && body.token) repository.credentials!.token = String(body.token);
   if (!repository.credentials?.tokenRef && body.tokenRef) repository.credentials!.tokenRef = String(body.tokenRef);
+  repository.topology = normalizeProjectRepositoryTopology(repository, source, body);
   return repository;
+}
+
+function normalizeProjectRepositoryTopology(repository: ProjectRepositoryRegistration, source: any, body: any): ProjectRepositoryTopology | undefined {
+  if (repository.provider === "local-git") return undefined;
+  const existing = repository.topology;
+  const executionMode = normalizeProjectExecutionMode(
+    source.executionMode ?? source.devopsExecutionMode ?? body.executionMode ?? body.devopsExecutionMode,
+    existing?.executionMode ?? "owned-repository"
+  );
+  const working = normalizeRepositoryRefInput(
+    repository.provider,
+    source.workingRepository ?? source.workingRepo ?? body.workingRepository ?? body.workingRepo,
+    repositoryRefFromRegistration(repository)
+  );
+  if (!working) return undefined;
+  const upstreamFallback = executionMode === "read-only-public" || executionMode === "upstream-authorized"
+    ? repositoryRefFromRegistration(repository)
+    : undefined;
+  const upstream = normalizeRepositoryRefInput(
+    repository.provider,
+    source.upstreamRepository ?? source.upstreamRepo ?? body.upstreamRepository ?? body.upstreamRepo,
+    upstreamFallback
+  );
+  return {
+    executionMode,
+    upstream,
+    working,
+    claimBoundary: normalizeProjectClaimBoundary(source.claimBoundary ?? body.claimBoundary, executionMode)
+  };
 }
 
 async function validateProjectRepository(repository: ProjectRepositoryRegistration | undefined, store?: FileStore, scope?: { tenantId?: string; workspaceId?: string }): Promise<ProjectValidation> {

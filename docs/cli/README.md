@@ -102,12 +102,23 @@ This prints a server-governed chain covering project, release target, GlobalGoal
 
 For a new project, start with a non-mutating onboarding checklist. This is the recommended entrypoint for WorkBuddy, Codex, Claude Code, and CI agents because it returns `schema`, `status`, `nextAction`, `missingInputs`, `blockers`, and suggested commands before anything is registered:
 
+Declare the DevOps execution boundary whenever the checklist or wrapper configures GitHub Actions or GitLab CI:
+
+- `--execution-mode owned-repository`: EvoPilot writes to and runs CI/CD in the same repository.
+- `--execution-mode read-only-public`: EvoPilot can inspect a public upstream, but it must not claim PR, merge, CI/CD, or release readiness.
+- `--execution-mode fork-validated-pr`: EvoPilot writes to a fork or working repository, runs CI/CD there, and can only claim fork CI plus an upstream PR.
+- `--execution-mode upstream-authorized`: EvoPilot uses maintainer credentials against the upstream repository and can claim upstream release readiness after preflight.
+
+`--devops-owner` is the GitHub owner or GitLab namespace whose account runs the project DevOps. For open-source upstream work, set `--upstream-repo` to the public project and `--working-repo` to the writable fork.
+
 ```bash
 evopilot project onboard plan github \
   --repo <owner>/<repo> \
   --id <project-id> \
   --branch main \
   --token-ref GITHUB_TOKEN_<PROJECT> \
+  --execution-mode owned-repository \
+  --devops-owner <owner> \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --ci-required-check test \
@@ -143,6 +154,8 @@ evopilot project onboard github \
   --id <project-id> \
   --branch main \
   --token-ref GITHUB_TOKEN_<PROJECT> \
+  --execution-mode owned-repository \
+  --devops-owner <owner> \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --ci-required-check test \
@@ -157,6 +170,29 @@ evopilot project onboard github \
   --require-devops-ready \
   --json
 ```
+
+For a public upstream with a writable fork:
+
+```bash
+evopilot project onboard github \
+  --repo apache/skywalking \
+  --upstream-repo apache/skywalking \
+  --working-repo my-org/skywalking-fork \
+  --id skywalking-fork \
+  --branch main \
+  --token-ref GITHUB_TOKEN_SKYWALKING_FORK \
+  --execution-mode fork-validated-pr \
+  --devops-owner my-org \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --template rc \
+  --objective "Validate the fork and open an upstream PR readiness path" \
+  --require-source-ready \
+  --require-devops-ready \
+  --json
+```
+
+The JSON and human-readable output include `executionMode`, `repositoryOwner`, `devopsOwner`, `workflowRepository`, `credentialRef`, and `claimBoundary`. Agents must not claim more than the returned `claimBoundary`.
 
 ## Documentation
 

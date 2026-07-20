@@ -33,6 +33,8 @@ evopilot project onboard plan github \
   --id my-agent \
   --branch main \
   --token-ref GITHUB_WRITE_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --ci-required-check test \
@@ -51,6 +53,19 @@ schema=evopilot-project-onboarding-checklist/v1
 status=READY_TO_ONBOARD | READY_TO_RUN | WAITING_INPUT | BLOCKED
 nextAction=store-secret | install-github-app | register-project | configure-source-credentials | configure-devops | run-target | repair
 ```
+
+For GitHub/GitLab DevOps, also read:
+
+```text
+executionMode=owned-repository | read-only-public | fork-validated-pr | upstream-authorized
+devopsOwner=<github-owner-or-gitlab-namespace>
+workflowRepository=<repository-that-runs-ci-cd>
+credentialRef=<server-side-secret-ref>
+credentialPrincipal=<optional-principal-label>
+claimBoundary=working-repo-ci | read-only-analysis | fork-ci-pr | upstream-release
+```
+
+The agent must not claim more than `claimBoundary`. In particular, `fork-ci-pr` is not an upstream release.
 
 If `nextAction=store-secret`, use the suggested `secret set` command from the checklist only from a trusted shell where the token environment variable is available. If `nextAction=register-project`, continue with `project onboard`. If `nextAction=run-target`, continue with `target run`. If `status=BLOCKED`, stop and report `blockers`.
 
@@ -84,6 +99,8 @@ evopilot project onboard github \
   --id my-agent \
   --branch main \
   --token-ref GITHUB_WRITE_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --ci-required-check test \
@@ -138,11 +155,18 @@ The GitHub token is not passed in the daily `target run` command. A writable tok
 Use this when the operator only wants repository analysis, target decomposition, evidence review, or blocker discovery. Public GitHub repositories can be registered without a token:
 
 ```bash
-evopilot project register \
-  --id public-agent \
-  --provider github \
+evopilot project onboard plan github \
   --repo owner/public-agent \
+  --id public-agent \
   --branch main \
+  --execution-mode read-only-public \
+  --json
+
+evopilot project onboard github \
+  --repo owner/public-agent \
+  --id public-agent \
+  --branch main \
+  --execution-mode read-only-public \
   --json
 
 evopilot project preflight public-agent --json
@@ -159,9 +183,9 @@ Expected result:
 
 Agents may continue with read-only inspection, but must not claim that source writeback, PR, merge, or deployment is ready. A later `target run` may stop at `configure-source-credentials`.
 
-### Scenario 2: Real PR To A Writable Fork Or Repository
+### Scenario 2: Real PR To A Writable Owned Repository
 
-Use this when EvoPilot must create branches, commits, and PRs. For open-source upstream repositories, register a fork or a repository where the configured token has write permission. EvoPilot cannot bypass GitHub permissions.
+Use this when EvoPilot must create branches, commits, PRs, and run CI/CD in a repository owned by the operator. EvoPilot cannot bypass GitHub/GitLab permissions.
 
 First, the production operator configures a token in the EvoPilot server environment or writes it once to EvoPilot's secret vault. Do not pass the raw token in daily `target run` commands.
 
@@ -190,6 +214,8 @@ evopilot project onboard plan github \
   --id my-agent \
   --branch main \
   --token-ref GITHUB_WRITE_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner yeliang-wang \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --template ga \
@@ -231,7 +257,85 @@ evopilot target run \
   --json
 ```
 
-### Scenario 3: Repair An Existing Registered Project
+### Scenario 3: Public Upstream With A Writable Fork
+
+Use this when the desired target is an open-source upstream or third-party repository, but the operator only has write permission to a fork. DevOps runs in the fork owner's GitHub/GitLab account.
+
+```bash
+evopilot project onboard plan github \
+  --repo apache/skywalking \
+  --upstream-repo apache/skywalking \
+  --working-repo my-org/skywalking-fork \
+  --id skywalking-fork \
+  --branch main \
+  --token-ref GITHUB_TOKEN_SKYWALKING_FORK \
+  --execution-mode fork-validated-pr \
+  --devops-owner my-org \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --template rc \
+  --objective "Validate fork CI and prepare upstream PR evidence" \
+  --json
+```
+
+If the checklist says `register-project`, run the same command with `project onboard`:
+
+```bash
+evopilot project onboard github \
+  --repo apache/skywalking \
+  --upstream-repo apache/skywalking \
+  --working-repo my-org/skywalking-fork \
+  --id skywalking-fork \
+  --branch main \
+  --token-ref GITHUB_TOKEN_SKYWALKING_FORK \
+  --execution-mode fork-validated-pr \
+  --devops-owner my-org \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --template rc \
+  --objective "Validate fork CI and prepare upstream PR evidence" \
+  --require-source-ready \
+  --require-devops-ready \
+  --json
+```
+
+Expected readiness boundary:
+
+```json
+{
+  "executionMode": "fork-validated-pr",
+  "devopsOwner": "my-org",
+  "workflowRepository": "my-org/skywalking-fork",
+  "claimBoundary": "fork-ci-pr"
+}
+```
+
+The agent may report fork CI and upstream PR readiness. It must not claim upstream merge, upstream deployment, or upstream release completion.
+
+### Scenario 4: Upstream Maintainer Authorized
+
+Use this only when the operator has a maintainer token for the upstream repository and wants EvoPilot to write and run CI/CD directly there:
+
+```bash
+evopilot project onboard github \
+  --repo apache/skywalking \
+  --id skywalking-upstream \
+  --branch main \
+  --token-ref GITHUB_TOKEN_APACHE_SKYWALKING_MAINTAINER \
+  --execution-mode upstream-authorized \
+  --devops-owner apache \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --template rc \
+  --objective "Run an upstream-authorized RC target with maintainer credentials" \
+  --require-source-ready \
+  --require-devops-ready \
+  --json
+```
+
+The agent may claim upstream release readiness only after source and DevOps preflight both return `READY`, and only within the maintainer token's scope.
+
+### Scenario 5: Repair An Existing Registered Project
 
 Use this when `project list` shows `credentialsConfigured=false`, or `project preflight` returns `READ_ONLY` / `configure-token-ref`.
 
@@ -245,7 +349,7 @@ evopilot project preflight my-agent --json
 
 If the result is still `READ_ONLY`, the tokenRef is stored but the EvoPilot server cannot resolve the environment variable or secret vault record. Stop and ask the operator to repair the server-side secret or restart the runtime. Do not retry source closure with the same blocker.
 
-### Scenario 4: DevOps, CI, CD, And Release Closure
+### Scenario 6: DevOps, CI, CD, And Release Closure
 
 A successful source-to-release loop needs more than a GitHub token. Agents should verify each boundary before claiming an end-to-end result. EvoPilot's production path is repository-native DevOps: GitHub projects use GitHub Actions; GitLab projects use GitLab CI.
 
@@ -263,6 +367,8 @@ Configure GitHub Actions:
 ```bash
 evopilot project devops set my-agent \
   --provider github-actions \
+  --execution-mode owned-repository \
+  --devops-owner yeliang-wang \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --ci-required-check test \
@@ -277,6 +383,8 @@ Configure GitLab CI:
 ```bash
 evopilot project devops set my-agent \
   --provider gitlab-ci \
+  --execution-mode owned-repository \
+  --devops-owner group \
   --ci-required-stage test \
   --ci-required-job build \
   --cd-required-stage deploy \

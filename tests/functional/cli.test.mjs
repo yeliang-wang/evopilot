@@ -22,6 +22,8 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   assert.match(help, /evopilot project onboard verify/);
   assert.match(help, /evopilot project devops set/);
   assert.match(help, /evopilot project devops preflight/);
+  assert.match(help, /--execution-mode/);
+  assert.match(help, /--devops-owner/);
   assert.match(help, /evopilot secret set/);
   assert.match(help, /evopilot github-app installation set/);
   assert.match(help, /evopilot target list/);
@@ -96,6 +98,8 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--repo", "org/repo",
       "--branch", "main",
       "--token-ref", "GITHUB_TOKEN_CLI_AGENT",
+      "--execution-mode", "owned-repository",
+      "--devops-owner", "org",
       "--ci-workflow", "ci.yml",
       "--ci-required-check", "build",
       "--ci-required-check", "test",
@@ -111,12 +115,54 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
     assert.equal(plan.mode, "plan");
     assert.equal(plan.status, "READY_TO_ONBOARD");
     assert.equal(plan.nextAction, "register-project");
+    assert.equal(plan.repository.topology.executionMode, "owned-repository");
+    assert.equal(plan.devops.executionMode, "owned-repository");
+    assert.equal(plan.devops.devopsOwner, "org");
+    assert.equal(plan.devops.workflowRepository, "org/repo");
+    assert.equal(plan.devops.claimBoundary, "working-repo-ci");
     assert.ok(plan.requestId);
     assert.ok(plan.steps.some((step) => step.id === "secret" && step.status === "PASS"));
     assert.ok(plan.steps.some((step) => step.id === "source-credentials" && step.status === "PASS"));
     assert.ok(plan.steps.some((step) => step.id === "devops" && step.status === "PASS"));
-    assert.ok(plan.commands.some((command) => command.id === "project-onboard" && command.command.includes("evopilot project onboard github")));
+    assert.ok(plan.commands.some((command) => command.id === "project-onboard" && command.command.includes("evopilot project onboard github") && command.command.includes("--devops-owner org")));
     assert.ok(plan.commands.some((command) => command.id === "target-run" && command.command.includes("evopilot target run")));
+
+    const forkPlan = await runCli([
+      "project", "onboard", "plan", "github",
+      "--id", "skywalking-fork",
+      "--base-url", github.baseUrl,
+      "--repo", "apache/skywalking",
+      "--upstream-repo", "apache/skywalking",
+      "--working-repo", "yeliang-wang/skywalking-fork",
+      "--branch", "main",
+      "--token-ref", "GITHUB_TOKEN_CLI_AGENT",
+      "--execution-mode", "fork-validated-pr",
+      "--devops-owner", "yeliang-wang",
+      "--ci-workflow", "ci.yml",
+      "--ci-required-check", "build",
+      "--template", "rc",
+      "--objective", "Validate SkyWalking fork before upstream PR",
+      "--config", configPath,
+      "--json"
+    ]);
+    assert.equal(forkPlan.repository.owner, "yeliang-wang");
+    assert.equal(forkPlan.repository.topology.executionMode, "fork-validated-pr");
+    assert.equal(forkPlan.repository.topology.upstream.owner, "apache");
+    assert.equal(forkPlan.devops.devopsOwner, "yeliang-wang");
+    assert.equal(forkPlan.devops.workflowRepository, "yeliang-wang/skywalking-fork");
+    assert.equal(forkPlan.devops.claimBoundary, "fork-ci-pr");
+
+    const ambiguous = await runCliErrorText([
+      "project", "onboard", "plan", "github",
+      "--id", "ambiguous-skywalking",
+      "--base-url", github.baseUrl,
+      "--repo", "apache/skywalking",
+      "--with-devops",
+      "--ci-workflow", "ci.yml",
+      "--config", configPath,
+      "--json"
+    ], 64);
+    assert.match(ambiguous, /DevOps ownership is ambiguous/);
 
     const planText = await runCliText([
       "project", "onboard", "plan", "github",
@@ -125,6 +171,8 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--repo", "org/repo",
       "--branch", "main",
       "--token-ref", "GITHUB_TOKEN_CLI_AGENT",
+      "--execution-mode", "owned-repository",
+      "--devops-owner", "org",
       "--ci-workflow", "ci.yml",
       "--ci-required-check", "build",
       "--ci-required-check", "test",
@@ -132,6 +180,9 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--config", configPath
     ]);
     assert.match(planText, /EvoPilot Project Onboarding/);
+    assert.match(planText, /Execution Boundary/);
+    assert.match(planText, /Mode\s+owned-repository/);
+    assert.match(planText, /owner=org/);
     assert.match(planText, /Workflow/);
     assert.match(planText, /Next Action/);
     assert.match(planText, /Suggested Commands/);
@@ -144,6 +195,8 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--repo", "org/repo",
       "--branch", "main",
       "--token-ref", "GITHUB_TOKEN_CLI_AGENT",
+      "--execution-mode", "owned-repository",
+      "--devops-owner", "org",
       "--ci-workflow", "ci.yml",
       "--ci-required-check", "build",
       "--ci-required-check", "test",
@@ -156,8 +209,11 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
     assert.equal(project.schema, "evopilot-cli-project-onboard/v1");
     assert.equal(project.project.id, "github-cli-agent");
     assert.equal(project.project.repository.provider, "github");
+    assert.equal(project.project.repository.topology.executionMode, "owned-repository");
     assert.equal(project.sourceCredentials.status, "READY");
     assert.equal(project.devops.status, "READY");
+    assert.equal(project.devops.devopsOwner, "org");
+    assert.equal(project.devops.claimBoundary, "working-repo-ci");
     assert.ok(project.steps.some((step) => step.type === "project.source-credentials.preflight" && step.requestId));
 
     const verify = await runCli([
@@ -180,10 +236,14 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
     ]);
     assert.match(preflightText, /EvoPilot Project DevOps/);
     assert.match(preflightText, /Provider   github-actions/);
+    assert.match(preflightText, /Execution Boundary/);
+    assert.match(preflightText, /owner=org/);
+    assert.match(preflightText, /Claim\s+working-repo-ci/);
     assert.match(preflightText, /\[PASS\] ci-state/);
 
     const inspected = await runCli(["project", "devops", "inspect", "github-cli-agent", "--config", configPath, "--json"]);
     assert.equal(inspected.provider, "github-actions");
+    assert.equal(inspected.boundary.owner, "org");
 
     const privateKeyFile = path.join(dataRoot, "github-app-private-key.pem");
     fs.writeFileSync(privateKeyFile, "-----BEGIN PRIVATE KEY-----\ncli-test\n-----END PRIVATE KEY-----\n");
@@ -318,6 +378,8 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     const devopsMismatch = await runCli([
       "project", "devops", "set", "cli-agent",
       "--provider", "github-actions",
+      "--execution-mode", "owned-repository",
+      "--devops-owner", "org",
       "--ci-workflow", "ci.yml",
       "--config", configPath,
       "--json"
@@ -722,6 +784,27 @@ function runCliText(args, options = {}) {
   });
 }
 
+function runCliErrorText(args, status) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [cliPath, ...args], {
+      env: { ...process.env },
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.on("data", (chunk) => { stdout += chunk; });
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.on("error", reject);
+    child.on("close", (code) => {
+      if (code !== status) {
+        reject(new Error(`CLI failed with unexpected status:\nargs=${args.join(" ")}\nexit=${code}\nstdout=${stdout}\nstderr=${stderr}`));
+        return;
+      }
+      resolve(`${stdout}${stderr}`);
+    });
+  });
+}
+
 function createGitRepository(repoRoot) {
   fs.mkdirSync(path.join(repoRoot, "docs"), { recursive: true });
   fs.writeFileSync(path.join(repoRoot, "README.md"), "# CLI Agent\n");
@@ -740,6 +823,16 @@ async function startFakeGitHubForCli() {
       response.end(JSON.stringify({ tree: [{ type: "blob", path: "README.md" }] }));
       return;
     }
+    if (request.url === "/repos/apache/skywalking/git/trees/main?recursive=1") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ tree: [{ type: "blob", path: "README.md" }] }));
+      return;
+    }
+    if (request.url === "/repos/yeliang-wang/skywalking-fork/git/trees/main?recursive=1") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ tree: [{ type: "blob", path: "README.md" }] }));
+      return;
+    }
     if (request.url === "/repos/org/repo/commits/main/check-runs") {
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify({ check_runs: [
@@ -752,6 +845,20 @@ async function startFakeGitHubForCli() {
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify({ workflow_runs: [
         { id: 101, name: "CI", status: "completed", conclusion: "success", head_branch: "main", html_url: "https://github.example/org/repo/actions/runs/101" }
+      ] }));
+      return;
+    }
+    if (request.url === "/repos/yeliang-wang/skywalking-fork/commits/main/check-runs") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ check_runs: [
+        { name: "build", status: "completed", conclusion: "success" }
+      ] }));
+      return;
+    }
+    if (request.url === "/repos/yeliang-wang/skywalking-fork/actions/workflows/ci.yml/runs?per_page=20&branch=main") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ workflow_runs: [
+        { id: 102, name: "CI", status: "completed", conclusion: "success", head_branch: "main", html_url: "https://github.example/yeliang-wang/skywalking-fork/actions/runs/102" }
       ] }));
       return;
     }

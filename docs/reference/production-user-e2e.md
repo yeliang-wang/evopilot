@@ -65,6 +65,12 @@ EVOPILOT_CODE_UPGRADER_BASE_URL=http://127.0.0.1:3000
 
 ```text
 EVOPILOT_REAL_PROJECT_DEVOPS_PROVIDER=github-actions|gitlab-ci
+EVOPILOT_REAL_PROJECT_EXECUTION_MODE=owned-repository|fork-validated-pr|upstream-authorized
+EVOPILOT_REAL_PROJECT_UPSTREAM_REPO=owner/upstream
+EVOPILOT_REAL_PROJECT_WORKING_REPO=owner-or-group/working-repo
+EVOPILOT_REAL_PROJECT_DEVOPS_OWNER=owner-or-group
+EVOPILOT_REAL_PROJECT_DEVOPS_TOKEN_REF=
+EVOPILOT_REAL_PROJECT_CREDENTIAL_PRINCIPAL=
 EVOPILOT_REAL_PROJECT_CI_WORKFLOW=ci.yml
 EVOPILOT_REAL_PROJECT_CI_REQUIRED_CHECKS=build,test
 EVOPILOT_REAL_PROJECT_CI_REQUIRED_STAGES=test
@@ -75,7 +81,7 @@ EVOPILOT_REAL_PROJECT_HEALTH_URL=https://my-agent.example.com/health
 EVOPILOT_REAL_PROJECT_READY_URL=https://my-agent.example.com/ready
 ```
 
-这些不是普通用户接入参数。代码升级运行时由系统管理员按 EvoPilot 产品套件服务发现地址覆盖；GitHub/GitLab token 由 EvoPilot 服务端环境变量或同一 tenant/workspace 的 secret vault 通过 `tokenRef` 解析。不能把 fake、mock、stub、simulator 或内部模拟进程作为产品生产级 E2E 的替代。
+这些不是普通用户接入参数。代码升级运行时由系统管理员按 EvoPilot 产品套件服务发现地址覆盖；GitHub/GitLab token 由 EvoPilot 服务端环境变量或同一 tenant/workspace 的 secret vault 通过 `tokenRef` 或 `devopsTokenRef` 解析。`EVOPILOT_REAL_PROJECT_DEVOPS_OWNER` 必须指向实际运行 GitHub Actions/GitLab CI 的 owner/namespace；如果目标是开源上游，生产 E2E 应使用 `fork-validated-pr` 并把 `WORKING_REPO` 指向可写 fork。不能把 fake、mock、stub、simulator 或内部模拟进程作为产品生产级 E2E 的替代。
 
 项目注册配置与 Dashboard 一致：
 
@@ -123,6 +129,7 @@ EVOPILOT_REAL_VALIDATION_COMMANDS=npm run check
 - 代码升级执行器必须拒绝修改受保护路径。
 - 生成进化方案前必须读取项目当前 Git 基线代码，方案必须包含代码事实和目标可行性判断。
 - GitHub Actions/GitLab CI 必须收到 `SOURCE_BRANCH`、`UPGRADE_BRANCH`、`COMMIT_SHA`、`MERGE_REQUEST_URL` 等 DevOps 参数。
+- 项目 DevOps preflight 必须返回正确的 `executionMode`、`devopsOwner`、`workflowRepository`、`credentialRef` 和 `claimBoundary`；开源 upstream + fork 场景只能声明 `fork-ci-pr`。
 - 只有代码升级成功后才能触发 CI/CD；代码升级失败时流程停止。
 - CI/CD 完成后才生成发布报告、历史记录和审计证据。
 

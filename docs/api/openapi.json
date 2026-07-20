@@ -4165,7 +4165,7 @@
       },
       "post": {
         "summary": "保存项目 GitHub/GitLab 原生 DevOps 配置",
-        "description": "provider 支持 github-actions 和 gitlab-ci。GitHub Actions 只能用于 GitHub 项目；GitLab CI 只能用于 GitLab 项目。",
+        "description": "provider 支持 github-actions 和 gitlab-ci。GitHub Actions 只能用于 GitHub 项目；GitLab CI 只能用于 GitLab 项目。请求应显式携带 executionMode、devopsOwner、可选 upstreamRepo/workingRepo/workflowRepo/devopsTokenRef/credentialPrincipal。read-only-public 不能配置 DevOps；fork-validated-pr 必须声明 upstreamRepo 和 workingRepo。",
         "security": [
           {
             "bearerAuth": []
@@ -4177,7 +4177,46 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": true
+                "additionalProperties": true,
+                "properties": {
+                  "provider": {
+                    "type": "string",
+                    "enum": [
+                      "github-actions",
+                      "gitlab-ci"
+                    ]
+                  },
+                  "executionMode": {
+                    "type": "string",
+                    "enum": [
+                      "owned-repository",
+                      "fork-validated-pr",
+                      "upstream-authorized"
+                    ]
+                  },
+                  "devopsOwner": {
+                    "type": "string",
+                    "description": "GitHub owner 或 GitLab namespace，必须匹配实际运行 CI/CD 的工作仓库 namespace。"
+                  },
+                  "upstreamRepo": {
+                    "type": "string"
+                  },
+                  "workingRepo": {
+                    "type": "string"
+                  },
+                  "workflowRepo": {
+                    "type": "string"
+                  },
+                  "tokenRef": {
+                    "type": "string"
+                  },
+                  "devopsTokenRef": {
+                    "type": "string"
+                  },
+                  "credentialPrincipal": {
+                    "type": "string"
+                  }
+                }
               }
             }
           }
@@ -4281,7 +4320,7 @@
     "/api/v1/projects/{projectId}/devops/preflight": {
       "get": {
         "summary": "读取项目 DevOps readiness",
-        "description": "返回 evopilot-project-devops-readiness/v1，状态为 READY、OBSERVABLE 或 BLOCKED。",
+        "description": "返回 evopilot-project-devops-readiness/v1，状态为 READY、OBSERVABLE 或 BLOCKED。响应包含 executionMode、repositoryOwner、devopsOwner、workflowRepository、credentialRef、credentialPrincipal、claimBoundary、checks、blockers 和 nextAction。claimBoundary 是 Agent/Dashboard 可声明能力的上限。",
         "security": [
           {
             "bearerAuth": []
@@ -4350,7 +4389,7 @@
     "/api/v1/onboarding/project/checklist": {
       "post": {
         "summary": "生成项目首次接入 checklist",
-        "description": "无副作用计划接口。用于 CLI、Dashboard 和 AI Agent 在项目注册前检查 workspace、repository、server-side tokenRef、GitHub App、source writeback、GitHub Actions/GitLab CI、目标模板和下一步命令。响应 schema 为 evopilot-project-onboarding-checklist/v1。",
+        "description": "无副作用计划接口。用于 CLI、Dashboard 和 AI Agent 在项目注册前检查 workspace、repository、server-side tokenRef、GitHub App、source writeback、GitHub Actions/GitLab CI、DevOps executionMode/devopsOwner/claimBoundary、目标模板和下一步命令。响应 schema 为 evopilot-project-onboarding-checklist/v1。open-source upstream 场景应传 upstreamRepo、workingRepo、executionMode=fork-validated-pr 和 devopsOwner。",
         "security": [
           {
             "bearerAuth": []
@@ -4386,7 +4425,7 @@
     "/api/v1/projects/{projectId}/onboarding-checklist": {
       "get": {
         "summary": "复核已注册项目 onboarding checklist",
-        "description": "基于持久化项目、source credentials 和项目 GitHub Actions/GitLab CI 配置生成 evopilot-project-onboarding-checklist/v1。READY_TO_RUN 表示真实源码写回和仓库原生 DevOps 前置条件已满足。",
+        "description": "基于持久化项目、source credentials、repository topology 和项目 GitHub Actions/GitLab CI 配置生成 evopilot-project-onboarding-checklist/v1。READY_TO_RUN 表示真实源码写回和仓库原生 DevOps 前置条件已满足。Agent 必须读取 executionMode、devopsOwner、workflowRepository 和 claimBoundary，不能从仓库 URL 自行推断 DevOps 权限。",
         "security": [
           {
             "bearerAuth": []

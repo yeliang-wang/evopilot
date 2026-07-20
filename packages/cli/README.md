@@ -41,6 +41,8 @@ evopilot project onboard plan github \
   --repo <owner>/<repo> \
   --id <project-id> \
   --token-ref GITHUB_TOKEN_<PROJECT> \
+  --execution-mode owned-repository \
+  --devops-owner <owner> \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --template ga \
@@ -54,6 +56,8 @@ evopilot project onboard github \
   --repo <owner>/<repo> \
   --id <project-id> \
   --token-ref GITHUB_TOKEN_<PROJECT> \
+  --execution-mode owned-repository \
+  --devops-owner <owner> \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --template ga \

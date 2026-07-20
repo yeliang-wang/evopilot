@@ -19,6 +19,17 @@ Do not continue to source writeback, deploy, merge, or release actions unless `s
 
 Use a server-side `tokenRef` for real source writeback. The token value must be available to the EvoPilot server process environment or the same tenant/workspace EvoPilot secret vault.
 
+When CI/CD is part of onboarding, declare who owns the DevOps boundary:
+
+```text
+--execution-mode owned-repository      same repository owns source and CI/CD
+--execution-mode read-only-public      public inspection only; no PR/merge/CI/CD release claim
+--execution-mode fork-validated-pr     write and run CI/CD in a fork, then prepare upstream PR evidence
+--execution-mode upstream-authorized   maintainer credentials write and run CI/CD in the upstream
+```
+
+`--devops-owner` must match the GitHub owner or GitLab namespace that runs GitHub Actions or GitLab CI.
+
 Start with a non-mutating checklist. Agents should parse `status`, `nextAction`, `missingInputs`, `blockers`, and `commands` before attempting registration:
 
 ```bash
@@ -27,6 +38,8 @@ evopilot project onboard plan github \
   --id my-agent \
   --branch main \
   --token-ref GITHUB_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner <owner> \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --ci-required-check test \
@@ -80,6 +93,8 @@ evopilot project onboard plan gitlab \
   --id my-agent \
   --branch main \
   --token-ref GITLAB_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner group \
   --ci-required-stage test \
   --ci-required-job build \
   --cd-required-stage deploy \
@@ -124,6 +139,8 @@ GitHub Actions:
 ```bash
 evopilot project devops set my-agent \
   --provider github-actions \
+  --execution-mode owned-repository \
+  --devops-owner <owner> \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --ci-required-check test \
@@ -138,6 +155,8 @@ GitLab CI:
 ```bash
 evopilot project devops set my-agent \
   --provider gitlab-ci \
+  --execution-mode owned-repository \
+  --devops-owner group \
   --ci-required-stage test \
   --ci-required-job build \
   --cd-required-stage deploy \
@@ -153,6 +172,20 @@ evopilot project devops preflight my-agent --json
 ```
 
 Use `--require-devops-ready` on wrapper commands when the run must fail fast before Goal/Loop execution.
+
+The preflight JSON includes:
+
+```text
+executionMode
+repositoryOwner
+devopsOwner
+workflowRepository
+credentialRef
+credentialPrincipal
+claimBoundary
+```
+
+For `fork-validated-pr`, `claimBoundary=fork-ci-pr`. This means the workflow can prove fork CI and upstream PR readiness, but not upstream release completion.
 
 ## 5. One Command To A Release Target
 
@@ -192,6 +225,8 @@ evopilot project onboard github \
   --id my-agent \
   --branch main \
   --token-ref GITHUB_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner <owner> \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --ci-required-check test \
@@ -216,6 +251,8 @@ evopilot project onboard gitlab \
   --id my-agent \
   --branch main \
   --token-ref GITLAB_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner group \
   --ci-required-stage test \
   --ci-required-job build \
   --cd-required-stage deploy \
@@ -232,7 +269,45 @@ evopilot project onboard gitlab \
 
 Without `--template`, `project onboard` stops after registration and preflight, returning `evopilot-cli-project-onboard/v1`.
 
-## 7. Run Or Resume A GlobalGoal
+## 7. Public Upstream With A Writable Fork
+
+Use this mode when the target project is an open-source upstream or any repository that the operator does not directly control. EvoPilot writes code and runs CI/CD in the fork. The upstream still owns merge and release authority.
+
+```bash
+evopilot project onboard github \
+  --repo apache/skywalking \
+  --upstream-repo apache/skywalking \
+  --working-repo my-org/skywalking-fork \
+  --id skywalking-fork \
+  --branch main \
+  --token-ref GITHUB_TOKEN_SKYWALKING_FORK \
+  --execution-mode fork-validated-pr \
+  --devops-owner my-org \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --template rc \
+  --objective "Validate the fork and prepare upstream PR evidence" \
+  --until terminal \
+  --max-steps 20 \
+  --require-source-ready \
+  --require-devops-ready \
+  --json
+```
+
+Expected DevOps readiness fields:
+
+```json
+{
+  "executionMode": "fork-validated-pr",
+  "devopsOwner": "my-org",
+  "workflowRepository": "my-org/skywalking-fork",
+  "claimBoundary": "fork-ci-pr"
+}
+```
+
+Do not describe this as an upstream release unless the upstream maintainer later authorizes and merges the PR.
+
+## 8. Run Or Resume A GlobalGoal
 
 Use `goal run` when the release target already exists or a previous GlobalGoal should continue.
 
@@ -258,7 +333,7 @@ evopilot goal graph <goal-id> --json
 evopilot goal evidence-matrix <goal-id> --json
 ```
 
-## 8. Run One LoopRun
+## 9. Run One LoopRun
 
 Use `loop run` for a narrower loop target.
 
@@ -272,7 +347,7 @@ evopilot loop run \
   --json
 ```
 
-## 9. Source Closure
+## 10. Source Closure
 
 Always preflight before source writeback:
 
@@ -300,7 +375,7 @@ evopilot source-closure auto-merge <loop-id> --json
 
 Only run merge actions when server-side review and release policy are satisfied.
 
-## 10. Release Decision
+## 11. Release Decision
 
 Read release decisions from EvoPilot. Do not infer GA from local tests or CI alone.
 
@@ -310,7 +385,7 @@ evopilot release decisions --project my-agent --target my-agent-ga --json
 evopilot target decision my-agent-ga --project my-agent --json
 ```
 
-## 11. Repair
+## 12. Repair
 
 Inspect release-run repair candidates:
 

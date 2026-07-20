@@ -234,6 +234,17 @@ POST /api/v1/projects
 
 公开 GitHub 仓库可以在无凭据时完成只读项目验证；但源码写回、PR/MR、merge 和一键自动驾驶 source-closure 必须配置可解析的 `token`、`password` 或 `tokenRef`。项目级源码写回凭据控制面用于区分 `READ_ONLY` 和 `READY`，Dashboard 的“配置凭据”表单可让用户绑定服务端 `tokenRef` 或填写 inline token，写回前还可调用 loop source-closure preflight，避免在真实写文件阶段才失败。
 
+远程 GitHub/GitLab 项目还可以声明 DevOps 执行拓扑：
+
+| 字段 | 用途 |
+|---|---|
+| `repository.executionMode` | `owned-repository`、`read-only-public`、`fork-validated-pr` 或 `upstream-authorized`。 |
+| `repository.upstreamRepo` / `repository.upstreamRepository` | 上游仓库，例如开源项目 `apache/skywalking`。 |
+| `repository.workingRepo` / `repository.workingRepository` | EvoPilot 实际写代码、推分支、运行 GitHub Actions/GitLab CI 的可写仓库。 |
+| `repository.topology.claimBoundary` | 服务端归一化后的声明边界：`working-repo-ci`、`read-only-analysis`、`fork-ci-pr` 或 `upstream-release`。 |
+
+当 `executionMode=fork-validated-pr` 时，项目的工作仓库是 `workingRepo`；上游只作为拓扑证据保存。Dashboard、CLI 和 AI Agent 必须以服务端返回的 `topology` 为准，而不是从仓库 URL 猜测 DevOps 归属。
+
 首次接入项目时，CLI、Dashboard 或企业 AI Agent 应先调用 onboarding checklist，而不是直接写入半成品项目：
 
 ```http
@@ -270,11 +281,26 @@ POST /api/v1/projects/{projectId}/devops/preflight
 - `OBSERVABLE`：配置和 token 可用，但当前 CI evidence 不是绿色；不能据此声明发布就绪。
 - `BLOCKED`：provider mismatch、token 缺失、CI 合同缺失或项目绑定错误。
 
+DevOps 请求可以显式携带执行边界：
+
+| 字段 | 用途 |
+|---|---|
+| `executionMode` | 与项目 repository topology 一致。配置 DevOps 时不能使用 `read-only-public`。 |
+| `devopsOwner` / `devopsNamespace` | GitHub owner 或 GitLab namespace，必须匹配实际运行 CI/CD 的工作仓库 namespace。 |
+| `workingRepo` / `workflowRepo` | CI/CD workflow 所在仓库。 |
+| `upstreamRepo` | fork 模式下的上游仓库。 |
+| `devopsTokenRef` / `tokenRef` | 可选 DevOps 专用服务端 secret ref；省略时使用项目 source credentials。 |
+| `credentialPrincipal` | 可选的 token principal 标签，便于审计和 Agent 排障。 |
+
+`devops/preflight` 响应会返回 `executionMode`、`repositoryOwner`、`devopsOwner`、`workflowRepository`、`credentialRef`、`credentialPrincipal` 和 `claimBoundary`。这些字段是 Dashboard 和 AI Agent 展示/判断端到端能力边界的权威来源。
+
 GitHub Actions 请求示例：
 
 ```json
 {
   "provider": "github-actions",
+  "executionMode": "owned-repository",
+  "devopsOwner": "owner",
   "ci": {
     "workflow": "ci.yml",
     "requiredChecks": ["build", "test"],
@@ -294,6 +320,8 @@ GitLab CI 请求示例：
 ```json
 {
   "provider": "gitlab-ci",
+  "executionMode": "owned-repository",
+  "devopsOwner": "group",
   "ci": {
     "requiredStages": ["test"],
     "requiredJobs": ["build"]
@@ -303,6 +331,38 @@ GitLab CI 请求示例：
     "requiredStages": ["deploy"],
     "readyUrl": "https://my-agent.example.com/ready"
   }
+}
+```
+
+开源上游 + fork 请求示例：
+
+```json
+{
+  "provider": "github-actions",
+  "executionMode": "fork-validated-pr",
+  "upstreamRepo": "apache/skywalking",
+  "workingRepo": "my-org/skywalking-fork",
+  "devopsOwner": "my-org",
+  "tokenRef": "GITHUB_TOKEN_SKYWALKING_FORK",
+  "ci": {
+    "workflow": "ci.yml",
+    "requiredChecks": ["build"]
+  }
+}
+```
+
+成功 preflight 的关键响应示例：
+
+```json
+{
+  "schema": "evopilot-project-devops-readiness/v1",
+  "status": "READY",
+  "executionMode": "fork-validated-pr",
+  "devopsOwner": "my-org",
+  "workflowRepository": "my-org/skywalking-fork",
+  "credentialRef": "GITHUB_TOKEN_SKYWALKING_FORK",
+  "claimBoundary": "fork-ci-pr",
+  "nextAction": "run-devops"
 }
 ```
 

@@ -68,6 +68,15 @@ npm run verify:runtime-lock:strict
 
 项目 DevOps 使用项目 source credentials 或 `devops.tokenRef` 解析平台 token。token 必须由 EvoPilot 服务端运行环境变量或同一 tenant/workspace 的 EvoPilot secret vault 提供，不能依赖 WorkBuddy/Codex 本机环境变量。
 
+每个远程项目必须有清晰的 DevOps 执行边界：
+
+- `owned-repository`：源码写回和 GitHub Actions/GitLab CI 都发生在同一个 owner/namespace 的工作仓库。
+- `read-only-public`：公开仓库只读分析，不能声明 PR、merge、CI/CD 或 release readiness。
+- `fork-validated-pr`：EvoPilot 写入 fork/working repo，并只声明 fork CI 与 upstream PR readiness。
+- `upstream-authorized`：EvoPilot 使用 maintainer token 写入 upstream，并在 preflight READY 后才可声明 upstream release readiness。
+
+`project.devops.updated` 和 `project.devops.preflight` 日志会输出 `executionMode`、`devopsOwner`、`workflowRepository`、`claimBoundary` 和 blockers。排障时优先用这些字段确认“哪个 GitHub/GitLab 账号运行了项目 DevOps”。
+
 ## OpenHands 运行时
 
 OpenHands 作为 EvoPilot 代码升级运行时，不以 jar 依赖进入 EvoPilot 主进程，但作为 EvoPilot 产品套件内的托管运行时部署。
