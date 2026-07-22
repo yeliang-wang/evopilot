@@ -52,7 +52,7 @@ The token and role determine which read and write actions are allowed. A Dashboa
 | Deploy connectors | `GET/POST /api/v1/connectors/deploy` |
 | Release targets | `GET /api/v1/release/targets`, `POST /api/v1/release/targets` |
 | Global goals | `GET /api/v1/goals`, `POST /api/v1/goals` |
-| Goal workflow | `GET /api/v1/goals/{goalId}/run-status`, `snapshot`, `graph`, `timeline`, `evidence-matrix` |
+| Goal workflow | `GET /api/v1/goals/{goalId}/run-status`, `snapshot`, `graph`, `timeline`, `evidence-matrix`, `llmUsage` |
 | Goal execution | `POST /api/v1/goals/{goalId}/plan`, `approve-plan`, `advance` |
 | Loop runtime | `GET /api/v1/loops`, `POST /api/v1/loops`, `POST /api/v1/loops/{loopId}/start`, `resume`, `approve`, `GET /api/v1/loops/{loopId}/executor-graph`, `trace-tree`, `events` |
 | Loop orchestration | `GET /api/v1/loop-orchestration/presets`, `targets`, `POST /api/v1/loop-orchestration/instantiate`, `advance`, `autopilot` |
@@ -90,6 +90,9 @@ Use the response fields as UI contract:
 | `evidenceMatrix` | Acceptance and evidence table |
 | `releaseDecision` | Release verdict summary |
 | `finalReport` | Terminal report state |
+| `llmUsage` | LLM provider/model, command-visible token totals, credits, and executor-step usage |
+
+Dashboards must display or expose server-projected LLM/token usage when it is present. Do not calculate token totals in browser code. If an LLM-backed workflow reaches a terminal claim but `llmUsage.summary.provider`, `llmUsage.summary.model`, or token totals are missing, treat the evidence as incomplete and route the user to logs or CLI/API diagnostics.
 
 ## Deployment Modes
 

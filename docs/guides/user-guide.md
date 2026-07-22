@@ -52,6 +52,7 @@ export EVOPILOT_SERVER=http://8.153.72.80
 export EVOPILOT_TENANT=tenant-production
 export EVOPILOT_WORKSPACE=workspace-agent-products
 export EVOPILOT_ACTOR=workbuddy
+export EVOPILOT_CLI_CLIENT=workbuddy
 export EVOPILOT_API_TOKEN="<evopilot-bearer-token>"
 
 evopilot --server "$EVOPILOT_SERVER" --token "$EVOPILOT_API_TOKEN" status --json
@@ -89,10 +90,11 @@ evopilot target run \
   --max-steps 20 \
   --require-source-ready \
   --require-devops-ready \
+  --client workbuddy \
   --json
 ```
 
-The command prints server-derived chain, blockers, next action, and release state. AI Agents must read JSON fields, not human-readable terminal text.
+The command prints server-derived chain, blockers, next action, release state, LLM provider/model, command-level token totals, step-level token usage, and `requestId` values that can be matched with production logs. AI Agents must read JSON fields, not human-readable terminal text.
 
 Workflow reference: [CLI Workflows](../cli/workflows.md).
 

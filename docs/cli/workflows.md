@@ -274,6 +274,7 @@ evopilot project onboard github \
   --max-steps 20 \
   --require-source-ready \
   --require-devops-ready \
+  --client workbuddy \
   --json
 ```
 
@@ -299,6 +300,7 @@ evopilot project onboard gitlab \
   --max-steps 20 \
   --require-source-ready \
   --require-devops-ready \
+  --client workbuddy \
   --json
 ```
 
@@ -326,6 +328,7 @@ evopilot project onboard github \
   --max-steps 20 \
   --require-source-ready \
   --require-devops-ready \
+  --client workbuddy \
   --json
 ```
 
@@ -353,6 +356,7 @@ evopilot goal run \
   --objective "Promote my-agent to GA stable" \
   --until terminal \
   --max-steps 20 \
+  --client workbuddy \
   --json
 ```
 
@@ -379,6 +383,7 @@ evopilot loop run \
   --objective "Fix RC release blockers and collect validation evidence" \
   --until blocked-or-complete \
   --max-iterations 10 \
+  --client workbuddy \
   --json
 ```
 

@@ -26,6 +26,25 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --config <file>             Config path, defaults to ~/.evopilot/config.json
 ```
 
+## Output Schemas
+
+Use `--json` for AI agents and CI. Human-readable output is for operators and can change.
+
+| Command | JSON Schema | Important Fields |
+|---|---|---|
+| `status --json` | `evopilot-cli-status/v1` | `health`, `ready`, `api`, `summary`, `client`, `llmUsage` |
+| `project onboard plan ... --json` | `evopilot-project-onboarding-checklist/v1` | `status`, `nextAction`, `missingInputs`, `blockers`, `commands`, `sourceCredentials`, `devops`, `requestId` |
+| `project onboard verify ... --json` | `evopilot-project-onboarding-checklist/v1` | Persisted project readiness, same fields as `plan` |
+| `project onboard ... --json` without `--template` | `evopilot-cli-project-onboard/v1` | `projectId`, `sourceCredentials`, `devops`, `steps`, `result`, `llmUsage` |
+| `project onboard ... --template ... --json` | `evopilot-cli-goal-run/v1` | `status`, `steps`, `result`, `llmUsage`; includes onboarding/preflight steps before Goal/Loop execution |
+| `target run ... --json` | `evopilot-cli-goal-run/v1` | `status`, `steps`, `result`, `llmUsage` |
+| `goal run ... --json` | `evopilot-cli-goal-run/v1` | `status`, `steps`, `result`, `llmUsage` |
+| `loop run ... --json` | `evopilot-cli-loop-run/v1` | `loop`, `steps`, `result`, `llmUsage` |
+
+Wrapper `result.exitCode=0` means the command reached its governed success boundary. `result.exitCode=2`, a non-zero process exit, or `nextAction` values such as `connect-github-account`, `connect-gitlab-account`, `human-approval`, `configure-source-credentials`, `configure-devops`, `policy-review`, `repair`, `BLOCKED`, `FAILED`, or `NO-GO` are stop conditions for automation.
+
+Every wrapper schema includes `llmUsage` with `summary`, `process.responses[]`, and server-side usage evidence when the API returns it. Agents must report provider, model, token totals, and request IDs for LLM-backed runs.
+
 ## Auth
 
 ```bash

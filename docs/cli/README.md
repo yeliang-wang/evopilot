@@ -83,6 +83,21 @@ Expected result:
 
 If `summary` is missing, the CLI reached public health endpoints but not an authenticated control-plane session.
 
+## AI Agent Contract
+
+WorkBuddy, Codex, Claude Code, CI jobs, and other agents should treat this file as the CLI entry point. The safe execution contract is:
+
+1. Configure `EVOPILOT_SERVER`, `EVOPILOT_API_TOKEN`, `EVOPILOT_TENANT`, `EVOPILOT_WORKSPACE`, `EVOPILOT_ACTOR`, and `EVOPILOT_CLI_CLIENT`.
+2. Run `evopilot status --json`.
+3. For a new project, run `evopilot project onboard plan ... --json` before mutating state.
+4. Store or repair server-side `tokenRef` values when the checklist asks for it.
+5. Verify with `project preflight`, `project devops preflight`, and `project onboard verify`.
+6. Run `target run`, `goal run`, `loop run`, or `project onboard ... --template ...` with `--json`.
+7. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
+8. Report the server-derived result, release verdict, IDs, LLM provider/model, token totals, and request IDs.
+
+An agent must not parse human-readable output when `--json` is available, must not pass raw GitHub/GitLab tokens in daily wrapper commands, and must not claim a stronger DevOps or release result than the server-returned `claimBoundary` and release decision.
+
 ## LLM And Token Visibility
 
 Every wrapper command must expose LLM usage to both humans and AI agents. Use `--client workbuddy` or `EVOPILOT_CLI_CLIENT=workbuddy` when the command is invoked from WorkBuddy; macOS terminal sessions are labeled `mac-terminal` automatically when TTY detection is available.
@@ -106,6 +121,56 @@ llmUsage.server.steps[]
 Human-readable `target run`, `goal run`, `loop run`, and `project onboard` output includes an `LLM Usage` section plus inline token counts in recent `Steps`. Server HTTP logs include the same client surface and request-level LLM token delta under `metadata.client` and `metadata.llmUsage`.
 
 Production metrics are enabled by default. When the API server has `EVOPILOT_DATA_ROOT`, LLM metrics are written to `EVOPILOT_DATA_ROOT/llm-metrics.jsonl` unless `EVOPILOT_LLM_METRICS_PATH` overrides it. Token counts are observability data and remain visible in logs; API tokens, GitHub/GitLab tokens, passwords, API keys, and credential refs remain redacted.
+
+## Wrapper JSON Contract
+
+Wrapper commands return a stable machine-readable envelope:
+
+| Command | Schema | Use |
+|---|---|---|
+| `target run` | `evopilot-cli-goal-run/v1` | One-command release target execution. |
+| `goal run` | `evopilot-cli-goal-run/v1` | Create, resume, or advance a GlobalGoal. |
+| `loop run` | `evopilot-cli-loop-run/v1` | Run or resume one LoopRun. |
+| `project onboard ...` without `--template` | `evopilot-cli-project-onboard/v1` | Register a new project, preflight it, and configure native DevOps without starting a target. |
+| `project onboard ... --template ...` | `evopilot-cli-goal-run/v1` | Register and preflight the project, then continue into the same Goal/Loop wrapper used by `target run`. |
+| `project onboard plan` / `verify` | `evopilot-project-onboarding-checklist/v1` | Non-mutating or persisted project readiness checklist. |
+
+Agents should read these paths before claiming success:
+
+```text
+schema
+command
+result.exitCode
+result.status
+result.nextAction
+status.status
+status.nextAction
+status.chain
+status.blockers
+status.releaseDecision
+steps[].requestId
+steps[].llmUsage
+llmUsage.summary.provider
+llmUsage.summary.model
+llmUsage.summary.inputTokens
+llmUsage.summary.outputTokens
+llmUsage.summary.totalTokens
+llmUsage.summary.creditsConsumed
+llmUsage.process.responses[].requestId
+llmUsage.process.cumulative
+llmUsage.server.steps[]
+```
+
+Use `requestId`, `goalId`, `loopId`, `releaseRunId`, and `releaseDecisionId` to line up CLI output with Dashboard state and production logs.
+
+## Command Layers
+
+| Layer | Commands | When To Use |
+|---|---|---|
+| Wrapper | `project onboard`, `target run`, `goal run`, `loop run` | WorkBuddy, CI, and operators need one command that advances until terminal, blocked, timeout, or max-step boundary. |
+| Atomic | `project preflight`, `project devops preflight`, `goal plan`, `goal approve-plan`, `goal advance`, `source-closure preflight`, `release decisions`, `audit list`, `trace tree` | A wrapper stopped, an agent needs white-box inspection, or a human must approve a governed action. |
+
+Wrappers compose atomic operations but remain server-governed. They do not approve human gates, bypass source credential preflight, bypass DevOps ownership, or fabricate release decisions.
 
 ## Fast Path
 

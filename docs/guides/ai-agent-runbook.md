@@ -135,6 +135,7 @@ evopilot project onboard github \
   --max-steps 20 \
   --require-source-ready \
   --require-devops-ready \
+  --client workbuddy \
   --json
 ```
 
@@ -147,6 +148,7 @@ evopilot target run \
   --objective "Move my-agent to RC with source-readiness, source closure, deploy evidence, and release blocker review" \
   --until terminal \
   --max-steps 20 \
+  --client workbuddy \
   --json
 ```
 
@@ -159,6 +161,7 @@ evopilot target run \
   --objective "Reach alpha readiness with a visible goal plan, loop evidence, and blockers listed" \
   --until terminal \
   --max-steps 10 \
+  --client workbuddy \
   --json
 ```
 
@@ -276,6 +279,7 @@ evopilot target run \
   --objective "Promote my-agent to GA stable with source closure, deployment evidence, release decision, and blocker review" \
   --until terminal \
   --max-steps 20 \
+  --client workbuddy \
   --json
 ```
 
@@ -320,6 +324,7 @@ evopilot project onboard github \
   --objective "Validate fork CI and prepare upstream PR evidence" \
   --require-source-ready \
   --require-devops-ready \
+  --client workbuddy \
   --json
 ```
 
@@ -354,6 +359,7 @@ evopilot project onboard github \
   --objective "Run an upstream-authorized RC target with maintainer credentials" \
   --require-source-ready \
   --require-devops-ready \
+  --client workbuddy \
   --json
 ```
 
@@ -430,6 +436,7 @@ evopilot target run \
   --until terminal \
   --max-steps 20 \
   --require-devops-ready \
+  --client workbuddy \
   --json
 ```
 
@@ -509,6 +516,14 @@ status.goal.releaseTargetId
 status.chain
 status.blockers
 steps
+llmUsage.summary.provider
+llmUsage.summary.model
+llmUsage.summary.inputTokens
+llmUsage.summary.outputTokens
+llmUsage.summary.totalTokens
+llmUsage.summary.creditsConsumed
+llmUsage.process.responses[].requestId
+llmUsage.server.steps[]
 ```
 
 Do not parse human-readable CLI text. Use `--json` and parse fields.
@@ -557,6 +572,7 @@ evopilot loop run \
   --objective "Fix RC blockers and collect release evidence" \
   --until blocked-or-complete \
   --max-iterations 10 \
+  --client workbuddy \
   --json
 ```
 
@@ -611,6 +627,13 @@ Evidence
 - graph: /api/v1/goals/<goal-id>/graph
 - evidence matrix: /api/v1/goals/<goal-id>/evidence-matrix
 - release decision: pending
+
+LLM Usage
+Provider   zhipu
+Model      glm-5.1
+Tokens     total=1500 input=1000 output=500 credits=1500 calls=1
+Step Usage
+- loop-my-agent-ga-source-closure iter=1 node=plan provider=zhipu model=glm-5.1 tokens=1500 input=1000 output=500 request=<llm-request-id>
 ```
 
 This output is for humans. Agents should use `--json`.
@@ -640,6 +663,8 @@ latencyBucket
 diagnosis.summary
 diagnosis.likelyCause
 diagnosis.recommendedAction
+metadata.client.surface
+metadata.llmUsage.request.totalTokens
 ```
 
 Log queries:

@@ -83,6 +83,33 @@ EVOPILOT_API_BASE_URL=http://127.0.0.1:19876 npm run dev
 
 Debug mode is for local development and UI validation. Production mode is the default for real operation and requires authentication, real runtime boundaries, and configured LLM/source/CI/CD credentials.
 
+## CLI For AI Agents
+
+The EvoPilot CLI is an HTTP client for remote EvoPilot API servers. WorkBuddy, Codex, Claude Code, CI jobs, and local terminals can install the CLI, point it at a production EvoPilot server, and drive governed Goal/Loop Target workflows without running EvoPilot on the same machine.
+
+```bash
+export EVOPILOT_SERVER="https://evopilot.example.com"
+export EVOPILOT_API_TOKEN="<operator-or-admin-token>"
+export EVOPILOT_TENANT="tenant-production"
+export EVOPILOT_WORKSPACE="workspace-agent-products"
+export EVOPILOT_ACTOR="workbuddy"
+export EVOPILOT_CLI_CLIENT="workbuddy"
+
+evopilot status --json
+evopilot target run \
+  --project <project-id> \
+  --template ga \
+  --objective "Promote the project to GA with source closure, native DevOps evidence, deploy evidence, release decision, and blocker review" \
+  --until terminal \
+  --max-steps 20 \
+  --require-source-ready \
+  --require-devops-ready \
+  --client workbuddy \
+  --json
+```
+
+Wrapper JSON output includes `llmUsage.summary.provider`, `llmUsage.summary.model`, input/output/total token counts, credits consumed, process `requestId` values, and server-side Loop executor usage. Start with [docs/cli/README.md](docs/cli/README.md) for CLI setup, [docs/cli/automation.md](docs/cli/automation.md) for WorkBuddy parsing rules, and [docs/guides/ai-agent-runbook.md](docs/guides/ai-agent-runbook.md) for the full production runbook.
+
 ## Dashboard
 
 The dashboard is the primary product surface for operators and tenant users, but it now lives in the standalone `yeliang-wang/evopilot-dashboard` repository. EvoPilot itself focuses on the API server, CLI, domain state, release governance, and execution control plane. The standalone Dashboard consumes EvoPilot APIs and includes the GlobalGoal Cockpit for RC/GA workflow visibility.
@@ -173,7 +200,7 @@ Start with the [documentation index](docs/README.md). The main entry points are:
 | Reader | Start here |
 |---|---|
 | New user | [Quick Start](docs/quickstart.md) |
-| AI agent or CLI automation | [CLI](docs/cli/README.md) and [AI Agent Runbook](docs/guides/ai-agent-runbook.md) |
+| AI agent or CLI automation | [CLI](docs/cli/README.md), [CLI Automation](docs/cli/automation.md), and [AI Agent Runbook](docs/guides/ai-agent-runbook.md) |
 | Dashboard integrator | [Dashboard Integration](docs/guides/dashboard-integration.md) |
 | API integrator | [API Reference](docs/api/README.md) and [OpenAPI](docs/api/openapi.json) |
 | Production operator | [Operations](docs/operations/deployment.md) |

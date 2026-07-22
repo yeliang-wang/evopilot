@@ -31,6 +31,21 @@ evopilot target run --project my-agent --template ga --objective "..." --client 
 Do not parse human-readable CLI output. Human output may change to improve operator readability.
 When humans do read the console output, wrapper commands print the same core chain that Dashboard consumes: scope, project, release target, goal, workflow nodes, next action, evidence endpoints, recent steps, blockers, and `requestId` values for log lookup.
 
+## Required Parse Order
+
+For every `--json` command, automation should parse in this order:
+
+1. `schema`
+2. `result.exitCode` or process exit code
+3. `status`, `result.status`, and `result.nextAction`
+4. `status.blockers`, `blockers`, and `missingInputs`
+5. IDs: `projectId`, `releaseTargetId`, `goalId`, `activeTargetId`, `loopId`, `releaseRunId`, `releaseDecisionId`, `requestId`
+6. Execution boundary: `executionMode`, `devopsOwner`, `workflowRepository`, `credentialRef`, `credentialPrincipal`, `claimBoundary`
+7. Release decision fields from EvoPilot release APIs, never local inference
+8. `llmUsage.summary`, `llmUsage.process.responses[]`, and `llmUsage.server.steps[]`
+
+Do not continue just because a command printed a workflow graph. Continue only when the JSON status and `nextAction` allow it.
+
 Automation must also parse LLM/token visibility from wrapper commands:
 
 ```text
@@ -48,6 +63,25 @@ llmUsage.server.steps[].totalTokens
 ```
 
 `llmUsage.summary` is the command-level total. `llmUsage.process.responses[]` is the CLI-observed HTTP chain. `llmUsage.server.steps[]` is the server-side Loop executor usage. If a cost-sensitive automation run cannot find `provider`, `model`, or token totals, it must treat the run as incomplete evidence and report the missing fields.
+
+Minimum success report for a wrapper command:
+
+```text
+schema=<wrapper-schema>
+exitCode=<0-or-nonzero>
+status=<server-status>
+nextAction=<server-next-action>
+projectId=<project-id>
+goalId=<goal-id-or-empty>
+loopId=<loop-id-or-empty>
+releaseDecisionId=<id-or-empty>
+claimBoundary=<server-claim-boundary-or-empty>
+llm=<provider/model>
+tokens=<input/output/total>
+requestIds=<comma-separated-request-ids>
+```
+
+If any LLM-backed run has `llm=not-visible` or `tokens=0/0/0` after it has executed an LLM step, report incomplete evidence.
 
 `project onboard plan` and `project onboard verify` are the onboarding control surface for automation. Both print `evopilot-project-onboarding-checklist/v1`; the checklist contains machine-readable `steps`, `missingInputs`, `blockers`, `commands`, and `nextAction`. `plan` does not mutate project state. `verify` reads persisted project state and should return `READY_TO_RUN` before an agent claims that source writeback and repository-native DevOps are ready.
 
@@ -276,3 +310,9 @@ When reporting a failed automation run, include:
 - the CLI client surface, for example `workbuddy`, `mac-terminal`, `ci`, or `agent-or-script`
 
 Do not include raw tokens, passwords, deploy secrets, or unredacted `Authorization` headers.
+
+## Log Correlation
+
+CLI wrapper output exposes `llmUsage.process.responses[].requestId` and recent `steps[].requestId`. EvoPilot structured logs expose the same request under `correlation.requestId`. When the CLI sends `--client workbuddy` or `EVOPILOT_CLI_CLIENT=workbuddy`, server logs also include caller metadata under `metadata.client` and request-level LLM token deltas under `metadata.llmUsage`.
+
+Use these fields to prove that terminal CLI output, Dashboard state, and production server logs describe the same run.
