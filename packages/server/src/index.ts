@@ -12215,7 +12215,7 @@ function buildProjectOnboardingCommands(args: {
       id: "target-run",
       title: "Run the Goal/Loop target strictly",
       command: `evopilot target run --project ${cliArg(args.projectId)} --objective ${cliArg(objective)} --until terminal --max-steps 20${args.llmProfileId ? ` --llm-profile ${cliArg(args.llmProfileId)}` : ""}${strictReadinessFlags}${args.llmRequired ? " --require-llm-ready" : ""} --json`,
-      when: "Run after the generated plan is approved. Use --auto-approve-plan only when the operator policy allows automatic plan approval."
+      when: "Run only after the generated phase plan has been shown to the user or project owner and explicitly approved."
     });
   }
   return commands;

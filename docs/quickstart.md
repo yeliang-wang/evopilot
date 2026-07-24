@@ -49,6 +49,7 @@ npm run cli -- target plan \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --json
 
+# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
 npm run cli -- target plan approve <goal-id> \
   --server http://127.0.0.1:19876 \
   --token change-me-admin-token \

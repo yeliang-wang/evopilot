@@ -29,6 +29,7 @@ evopilot project llm preflight my-agent --json
 evopilot target plan --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
+# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
 evopilot target plan approve <goal-id> --json
 evopilot target run --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --require-llm-ready --client workbuddy --json
 ```
@@ -36,7 +37,7 @@ evopilot target run --project my-agent --objective "Enable tenant onboarding and
 Do not parse human-readable CLI output. Human output may change to improve operator readability.
 When humans do read the console output, wrapper commands print the same core chain that Dashboard consumes: scope, project, release target, goal, workflow nodes, next action, evidence endpoints, recent steps, blockers, and `requestId` values for log lookup.
 
-When WorkBuddy is simulating a human operator, it must pause after `target plan`, show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan`, and wait for user confirmation before `target plan approve`. `--auto-approve-plan` is not part of the normal WorkBuddy path.
+When WorkBuddy is simulating a human operator, it must pause after `target plan`, show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan`, and wait for user confirmation before `target plan approve`.
 
 ## Required Parse Order
 
@@ -199,11 +200,12 @@ evopilot target plan --project my-agent --objective "Enable tenant onboarding an
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
+# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
 evopilot target plan approve <goal-id> --json
 evopilot target run --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --json
 ```
 
-`target run` stops with `result.exitCode=2` and `nextAction=approve-plan` when the plan is still pending. Agents should show the phase plan to the user, not retry blindly. `--auto-approve-plan` is allowed only when the user or organization policy explicitly authorizes unattended acceptance of the generated Alpha -> Beta -> RC -> GA plan. A WorkBuddy or digital-human test that uses `--auto-approve-plan` is testing unattended automation, not human-confirmed operation.
+`target run` stops with `result.exitCode=2` and `nextAction=approve-plan` when the plan is still pending. Agents should show the phase plan to the user, not retry blindly. No wrapper command may approve the generated Alpha -> Beta -> RC -> GA plan implicitly; approval must be an explicit `target plan approve` or `goal approve-plan` action after user or project-owner confirmation.
 
 The plan must preserve Alpha, Beta, RC, and GA. Users may add project-specific GoalTargets or strengthen phase criteria, evidence, and review requirements. Removing baseline criteria or skipping a phase is blocked by the server and must be reported as a plan validation failure.
 

@@ -242,7 +242,7 @@ run override --llm-profile -> project default LLM -> server global default LLM
 
 ## 6. One Command To A Release Target
 
-Use `target run` when the project does not already have a project-scoped release target. EvoPilot resolves or creates the target, creates or resumes a GlobalGoal, generates the server plan, then stops for plan approval unless `--auto-approve-plan` is explicitly supplied.
+Use `target run` when the project does not already have a project-scoped release target. EvoPilot resolves or creates the target, creates or resumes a GlobalGoal, generates the server plan, then stops for plan approval when the plan has not been confirmed.
 
 The CLI does not invent the phase list. `--objective` is the user's business intent, such as enabling a capability or improving a Dashboard lifecycle workflow. EvoPilot treats GA as the fixed terminal maturity and generates a progressive ladder: Alpha -> Beta -> RC -> GA.
 
@@ -256,12 +256,13 @@ evopilot target plan \
 
 Review and adjust the returned plan before execution:
 
-For WorkBuddy or any digital-human flow, this is a hard stop. Present `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user, then run the approval command only after the user confirms the plan. Do not replace this confirmation with `--auto-approve-plan` unless an unattended automation policy already authorizes it.
+For WorkBuddy or any digital-human flow, this is a hard stop. Present `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or project owner, then run the approval command only after confirmation.
 
 ```bash
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
+# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
 evopilot target plan approve <goal-id> --json
 evopilot goal phases <goal-id> --json
 evopilot goal phase-package <goal-id> --phase alpha --json
@@ -439,6 +440,7 @@ evopilot goal plan <goal-id> --json
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
+# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
 evopilot goal approve-plan <goal-id> --json
 evopilot goal phases <goal-id> --json
 evopilot goal phase-package <goal-id> --phase rc --json

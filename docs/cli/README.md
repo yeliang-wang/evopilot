@@ -99,7 +99,7 @@ WorkBuddy, Codex, Claude Code, CI jobs, and other agents should treat this file 
 10. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
 11. Report the server-derived result, release verdict, IDs, LLM provider/model, token totals, and request IDs.
 
-An agent must not parse human-readable output when `--json` is available, must not pass raw GitHub/GitLab tokens in daily wrapper commands, and must not claim a stronger DevOps or release result than the server-returned `claimBoundary` and release decision. WorkBuddy or any digital-human simulation must not use `--auto-approve-plan` as the normal path; that flag is only for unattended automation when a user or organization policy has already authorized automatic acceptance of the generated plan.
+An agent must not parse human-readable output when `--json` is available, must not pass raw GitHub/GitLab tokens in daily wrapper commands, must not approve a phase plan before showing it to the user or project owner, and must not claim a stronger DevOps or release result than the server-returned `claimBoundary` and release decision.
 
 `--until` is only a wrapper stop policy. It is not a phase confirmation switch. All wrapper commands default to `--until terminal`; use `--until blocked-or-complete` only when the caller intentionally wants a narrower stop boundary, most commonly to stop a low-level `loop run` as soon as the LoopRun becomes `BLOCKED`.
 
@@ -289,12 +289,13 @@ The plan command creates or reuses a project release target and GlobalGoal, then
 
 Review and approve the generated Alpha -> Beta -> RC -> GA plan:
 
-For WorkBuddy, Codex, Claude Code, or any digital-human workflow, pause here and present the generated phase plan to the user. Do not approve the plan, and do not use `--auto-approve-plan`, until the user confirms or an explicit unattended policy applies.
+For WorkBuddy, Codex, Claude Code, or any digital-human workflow, pause here and present the generated phase plan to the user or project owner. Do not approve the plan until the user confirms it.
 
 ```bash
 evopilot target plan export <goal-id> --format json > /tmp/evopilot-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/evopilot-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/evopilot-phase-plan.json --json
+# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
 evopilot target plan approve <goal-id> --json
 ```
 
@@ -314,7 +315,7 @@ evopilot target run \
   --json
 ```
 
-If the plan is not approved, `target run` stops at `PENDING_PLAN_APPROVAL` with `nextAction=approve-plan` and exit code `2`. Use `--auto-approve-plan` only for controlled automation where the generated plan may be accepted without a separate user review. The console prints a server-governed chain covering project, release target, GlobalGoal, Alpha/Beta/RC/GA phases, GoalTarget, LoopRun, source closure, deploy, release decision, evidence links, blockers, next action, LLM provider/model, command-level token totals, and step-level token usage.
+If the plan is not approved, `target run` stops at `PENDING_PLAN_APPROVAL` with `nextAction=approve-plan` and exit code `2`. The console prints a server-governed chain covering project, release target, GlobalGoal, Alpha/Beta/RC/GA phases, GoalTarget, LoopRun, source closure, deploy, release decision, evidence links, blockers, next action, LLM provider/model, command-level token totals, and step-level token usage.
 
 ## First Project Checklist
 

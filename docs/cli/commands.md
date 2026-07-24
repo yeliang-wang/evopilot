@@ -24,7 +24,6 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --credential-principal <id> Optional operator-readable principal expected behind the DevOps tokenRef
 --llm-profile <id>          LLM profile for project onboarding or this Goal/Loop run
 --require-llm-ready         project onboard / target run fails fast unless the selected LLM profile is READY
---auto-approve-plan         Unattended automation only; WorkBuddy or digital-human sessions should ask the user before plan approval
 --json                      Print JSON response data
 --config <file>             Config path, defaults to ~/.evopilot/config.json
 ```
@@ -384,7 +383,7 @@ evopilot target decision <target-id> [--project <project-id>]
 
 `target plan` creates or reuses the project release target and GlobalGoal, generates the server plan, and returns the Alpha -> Beta -> RC -> GA phase plan for user review. `target plan export` writes the same plan shape that `target plan apply` accepts, so a user or WorkBuddy can edit project-specific targets or strengthen phase criteria, run `diff`, apply the proposal, and then approve it.
 
-`target run` is the one-command wrapper for a project release target. It requires a business `--objective`; do not write the objective as "promote to GA" unless that is the actual business outcome. The terminal maturity is GA, and EvoPilot always expands the goal through Alpha, Beta, RC, and GA. If the plan is not approved, the wrapper stops at `PENDING_PLAN_APPROVAL` and returns `nextAction=approve-plan`; use `--auto-approve-plan` only when policy allows unattended plan acceptance. WorkBuddy and other digital-human callers should normally run `target plan`, show the phase plan to the user, wait for confirmation, approve, and only then run the wrapper.
+`target run` is the one-command wrapper for a project release target. It requires a business `--objective`; do not write the objective as "promote to GA" unless that is the actual business outcome. The terminal maturity is GA, and EvoPilot always expands the goal through Alpha, Beta, RC, and GA. If the plan is not approved, the wrapper stops at `PENDING_PLAN_APPROVAL` and returns `nextAction=approve-plan`. WorkBuddy and other digital-human callers must run `target plan`, show the phase plan to the user or project owner, wait for confirmation, approve, and only then run the wrapper.
 
 `--until` does not confirm or skip phases. It only controls wrapper stop behavior. `target run`, `goal run`, and `loop run` default to `--until terminal`; `--until blocked-or-complete` is mainly useful for low-level `loop run` when an agent should stop as soon as the LoopRun becomes `BLOCKED`.
 

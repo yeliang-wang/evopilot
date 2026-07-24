@@ -88,6 +88,11 @@ function rejectRemovedTargetTemplateOptions(args: ParsedArgs, command: string, e
   throw usage(`${command} does not accept ${used.map((option) => `--${option}`).join(", ")}. EvoPilot now plans every Goal/Loop target through the server-generated Alpha -> Beta -> RC -> GA ladder. Use --objective with target plan/run; GA is the fixed terminal maturity.`);
 }
 
+function rejectRemovedAutoApprovePlanOption(args: ParsedArgs): void {
+  if (args.options["auto-approve-plan"] === undefined) return;
+  throw usage("EvoPilot does not accept --auto-approve-plan. Phase plans must be shown to the user or project owner and explicitly approved with target plan approve or goal approve-plan before execution.");
+}
+
 async function main(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
   if (hasFlag(args, "version") || args.positionals[0] === "version") {
@@ -122,6 +127,7 @@ async function main(argv: string[]): Promise<number> {
 
   const [group, action, maybeId] = args.positionals;
   try {
+    rejectRemovedAutoApprovePlanOption(args);
     switch (`${group ?? ""}:${action ?? ""}`) {
       case "auth:login":
         return await authLogin(ctx);
@@ -1887,15 +1893,8 @@ async function runGoalWrapper(ctx: RuntimeContext, input: {
   }
 
   if (field(status, "nextAction") === "approve-plan" && shouldContinueGoalRun(status, until)) {
-    if (!hasFlag(ctx.args, "auto-approve-plan")) {
-      steps.push({ type: "goal.plan-approval-required", goalId, status: "PENDING_PLAN_APPROVAL", nextAction: "approve-plan" });
-      return finishGoalRun(ctx, input.command, status, steps, quiet, 2);
-    }
-    const approved = await ctx.client.post(`/api/v1/goals/${encodeURIComponent(goalId)}/approve-plan`, {}, derivedRequestOptions(ctx, "goal-run-approve-plan"));
-    if (!approved.ok) throw apiErrorFromResponse(approved);
-    steps.push(attachStepLlmUsage(ctx, { type: "goal.plan-approved", goalId, requestId: approved.requestId, targetCount: nestedField(approved.data, ["plan", "targetCount"]) }, "goal-run-approve-plan", approved));
-    status = await readGoalRunStatus(ctx, goalId);
-    printGoalRunStatus(ctx, input.command, status, steps, quiet);
+    steps.push({ type: "goal.plan-approval-required", goalId, status: "PENDING_PLAN_APPROVAL", nextAction: "approve-plan" });
+    return finishGoalRun(ctx, input.command, status, steps, quiet, 2);
   }
 
   let advanceCount = 0;
@@ -3042,7 +3041,7 @@ Usage:
   evopilot target plan apply <goal-id> --file <plan.json>
   evopilot target plan diff <goal-id> --file <plan.json>
   evopilot target plan approve <goal-id>
-  evopilot target run --project <id> --objective <business-goal> [--auto-approve-plan] [--llm-profile <id>] [--max-steps <n>] [--timeout <duration>]
+  evopilot target run --project <id> --objective <business-goal> [--llm-profile <id>] [--max-steps <n>] [--timeout <duration>]
   evopilot target decision <target-id> [--project <id>]
   evopilot goal create --project <id> --target <target-id> --objective <text>
   evopilot goal run [<goal-id>] [--project <id> --target <target-id> --objective <text>] [--llm-profile <id>] [--max-steps <n>] [--timeout <duration>]
@@ -3103,7 +3102,6 @@ Global options:
   --idempotency-key <key>     Idempotency key for mutating commands
   --timeout <duration>        Wrapper stop boundary, for example 30s, 10m, or 2h
   --until <policy>            Wrapper stop policy: terminal or blocked-or-complete; default is terminal for target/goal/loop run
-  --auto-approve-plan         Unattended automation only; WorkBuddy/digital-human sessions should ask the user before plan approval
   --require-source-ready      project onboard fails fast unless source credential preflight is READY
   --require-devops-ready      target run fails fast unless project DevOps preflight is READY
   --require-llm-ready         project onboard / target run fails fast unless LLM profile preflight is READY

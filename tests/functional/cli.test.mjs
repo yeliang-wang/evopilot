@@ -28,7 +28,7 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   assert.match(help, /evopilot target plan/);
   assert.match(help, /evopilot target plan approve/);
   assert.match(help, /--llm-profile/);
-  assert.match(help, /--auto-approve-plan/);
+  assert.doesNotMatch(help, /--auto-approve-plan/);
   assert.match(help, /--execution-mode/);
   assert.match(help, /--devops-owner/);
   assert.match(help, /evopilot secret set/);
@@ -43,6 +43,14 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   assert.match(help, /evopilot release decisions/);
   assert.doesNotMatch(help, /--template/);
   assert.doesNotMatch(help, /target templates/);
+
+  const removedAutoApprove = await runCliErrorText([
+    "target", "run",
+    "--project", "cli-agent",
+    "--objective", "Expose tenant workflow state",
+    "--auto-approve-plan"
+  ], 64);
+  assert.match(removedAutoApprove, /does not accept --auto-approve-plan/);
 
   const version = await runCliText(["--version"]);
   assert.equal(version.trim(), "0.1.0");
@@ -709,20 +717,6 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     assert.deepEqual(targetRunJson.status.goal.plan.phaseTargets.map((phase) => phase.phase), ["alpha", "beta", "rc", "ga"]);
     assert.ok(targetRunJson.steps.some((step) => step.type === "goal.plan-approval-required" && step.nextAction === "approve-plan"));
     assert.ok(targetRunJson.steps.some((step) => step.type === "llm.profile.preflight" && step.status === "READY"));
-
-    const targetRunAutoApproved = await runCli([
-      "target", "run",
-      "--project", "cli-agent",
-      "--objective", "Expose tenant workflow state, phase packages, blockers, next actions, and LLM token usage to operators",
-      "--llm-profile", "qwen-private",
-      "--require-llm-ready",
-      "--auto-approve-plan",
-      "--max-steps", "0",
-      "--config", configPath,
-      "--json"
-    ], { status: 2 });
-    assert.equal(targetRunAutoApproved.status.goal.plan.status, "APPROVED");
-    assert.ok(targetRunAutoApproved.steps.some((step) => step.type === "goal.plan-approved"));
 
     const loopTimeoutJson = await runCli([
       "loop", "run",

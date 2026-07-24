@@ -72,7 +72,7 @@ evopilot --server "$EVOPILOT_SERVER" --token "$EVOPILOT_API_TOKEN" status --json
 | Configure DevOps | `evopilot project devops set <project-id> ... --json` |
 | Preflight DevOps | `evopilot project devops preflight <project-id> --json` |
 | Review phase plan | `evopilot target plan --project <id> --objective <business-goal> --json` |
-| Approve phase plan | `evopilot target plan approve <goal-id> --json` |
+| Approve confirmed phase plan | `evopilot target plan approve <goal-id> --json` |
 | Run one target wrapper | `evopilot target run --project <id> ... --json` |
 | Inspect release decision | `evopilot release decisions --project <id> --json` |
 | Inspect audit | `evopilot audit list --limit 10 --json` |
@@ -93,6 +93,7 @@ evopilot target plan \
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
+# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
 evopilot target plan approve <goal-id> --json
 
 evopilot target run \

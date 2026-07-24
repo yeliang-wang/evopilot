@@ -148,6 +148,7 @@ EvoPilot returns `evopilot-cli-target-plan/v1` with `goalId`, `terminalMaturity=
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
+# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
 evopilot target plan approve <goal-id> --json
 ```
 
@@ -169,7 +170,7 @@ evopilot target run \
   --json
 ```
 
-If `target run` is called before approval, it returns `PENDING_PLAN_APPROVAL`, `nextAction=approve-plan`, and exit code `2`. Use `--auto-approve-plan` only when the operator has explicitly allowed unattended acceptance of the generated plan.
+If `target run` is called before approval, it returns `PENDING_PLAN_APPROVAL`, `nextAction=approve-plan`, and exit code `2`. Show the generated phase plan to the user or project owner and wait for explicit confirmation before running `target plan approve` or `goal approve-plan`.
 
 After every wrapper command, collect LLM usage before making a success claim:
 
@@ -605,6 +606,7 @@ evopilot goal plan <goal-id> --json
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
+# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
 evopilot goal approve-plan <goal-id> --json
 evopilot goal phases <goal-id> --json
 evopilot goal phase-package <goal-id> --phase alpha --json
