@@ -23,6 +23,15 @@ export EVOPILOT_TENANT="tenant-production"
 export EVOPILOT_WORKSPACE="workspace-agent-products"
 export EVOPILOT_ACTOR="workbuddy"
 
+evopilot target plan \
+  --project <project-id> \
+  --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for the project" \
+  --json
+
+evopilot target plan export <goal-id> --format json > /tmp/evopilot-phase-plan.json
+evopilot target plan diff <goal-id> --file /tmp/evopilot-phase-plan.json --json
+evopilot target plan approve <goal-id> --json
+
 evopilot target run \
   --project <project-id> \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for the project" \
@@ -32,6 +41,8 @@ evopilot target run \
   --require-devops-ready \
   --json
 ```
+
+WorkBuddy, Codex, Claude Code, and digital-human sessions must show the generated Alpha/Beta/RC/GA phase plan to the user before `target plan approve`. Use `--auto-approve-plan` only for unattended automation that has already been authorized by policy.
 
 For a new GitHub project, ask for a checklist before mutating state:
 

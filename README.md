@@ -126,7 +126,7 @@ evopilot target run \
 
 The raw LLM API key is stored once in the EvoPilot server-side secret vault. Daily `target run`, `goal run`, and `loop run` commands pass only the LLM profile id. If `--llm-profile` is omitted, EvoPilot uses the project default LLM binding, then the server's configured global default LLM.
 
-`--objective` is the user's business objective, not a maturity label. The terminal maturity is GA by default, and EvoPilot decomposes every governed goal through Alpha, Beta, RC, and GA. Wrapper commands stop at `PENDING_PLAN_APPROVAL` unless `--auto-approve-plan` is explicitly supplied, so WorkBuddy or a human operator can review, edit, diff, apply, and approve the generated phase plan before execution.
+`--objective` is the user's business objective, not a maturity label. The terminal maturity is GA by default, and EvoPilot decomposes every governed goal through Alpha, Beta, RC, and GA. Wrapper commands stop at `PENDING_PLAN_APPROVAL` unless `--auto-approve-plan` is explicitly supplied, so WorkBuddy or a human operator can review, edit, diff, apply, and approve the generated phase plan before execution. WorkBuddy or any digital-human simulation should treat phase-plan review as a required user confirmation step; `--auto-approve-plan` is reserved for already-authorized unattended automation.
 
 Wrapper JSON output includes `llmUsage.summary.provider`, `llmUsage.summary.model`, input/output/total token counts, credits consumed, process `requestId` values, and server-side Loop executor usage. Start with [docs/cli/README.md](docs/cli/README.md) for CLI setup, [docs/cli/automation.md](docs/cli/automation.md) for WorkBuddy parsing rules, and [docs/guides/ai-agent-runbook.md](docs/guides/ai-agent-runbook.md) for the full production runbook.
 

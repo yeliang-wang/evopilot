@@ -93,13 +93,15 @@ WorkBuddy, Codex, Claude Code, CI jobs, and other agents should treat this file 
 4. Store or repair server-side `tokenRef` values when the checklist asks for it.
 5. Verify with `project preflight`, `project devops preflight`, and `project onboard verify`.
 6. When the project needs a non-default model, store the LLM key server-side, create an LLM profile, bind it to the project, and run `project llm preflight`.
-7. Generate the Goal phase plan with `target plan` or the first `target run`.
-8. Export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan.
+7. Generate the Goal phase plan with `target plan`.
+8. Show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
 9. Run `target run`, `goal run`, or `loop run` with `--json`.
 10. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
 11. Report the server-derived result, release verdict, IDs, LLM provider/model, token totals, and request IDs.
 
-An agent must not parse human-readable output when `--json` is available, must not pass raw GitHub/GitLab tokens in daily wrapper commands, and must not claim a stronger DevOps or release result than the server-returned `claimBoundary` and release decision.
+An agent must not parse human-readable output when `--json` is available, must not pass raw GitHub/GitLab tokens in daily wrapper commands, and must not claim a stronger DevOps or release result than the server-returned `claimBoundary` and release decision. WorkBuddy or any digital-human simulation must not use `--auto-approve-plan` as the normal path; that flag is only for unattended automation when a user or organization policy has already authorized automatic acceptance of the generated plan.
+
+`--until` is only a wrapper stop policy. It is not a phase confirmation switch. All wrapper commands default to `--until terminal`; use `--until blocked-or-complete` only when the caller intentionally wants a narrower stop boundary, most commonly to stop a low-level `loop run` as soon as the LoopRun becomes `BLOCKED`.
 
 ## LLM And Token Visibility
 
@@ -286,6 +288,8 @@ evopilot target plan \
 The plan command creates or reuses a project release target and GlobalGoal, then returns `evopilot-cli-target-plan/v1` with `terminalMaturity=ga`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan`.
 
 Review and approve the generated Alpha -> Beta -> RC -> GA plan:
+
+For WorkBuddy, Codex, Claude Code, or any digital-human workflow, pause here and present the generated phase plan to the user. Do not approve the plan, and do not use `--auto-approve-plan`, until the user confirms or an explicit unattended policy applies.
 
 ```bash
 evopilot target plan export <goal-id> --format json > /tmp/evopilot-phase-plan.json

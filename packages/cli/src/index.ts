@@ -3102,8 +3102,8 @@ Global options:
   --client <surface>          Client surface for logs, for example mac-terminal or workbuddy
   --idempotency-key <key>     Idempotency key for mutating commands
   --timeout <duration>        Wrapper stop boundary, for example 30s, 10m, or 2h
-  --until <policy>            Wrapper stop policy: terminal or blocked-or-complete
-  --auto-approve-plan         Explicitly approve a generated Alpha/Beta/RC/GA plan before wrapper execution
+  --until <policy>            Wrapper stop policy: terminal or blocked-or-complete; default is terminal for target/goal/loop run
+  --auto-approve-plan         Unattended automation only; WorkBuddy/digital-human sessions should ask the user before plan approval
   --require-source-ready      project onboard fails fast unless source credential preflight is READY
   --require-devops-ready      target run fails fast unless project DevOps preflight is READY
   --require-llm-ready         project onboard / target run fails fast unless LLM profile preflight is READY
@@ -3122,6 +3122,7 @@ Project DevOps examples:
   evopilot project onboard verify my-agent --json
   evopilot target plan --project my-agent --objective "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility" --json
   evopilot target plan export <goal-id> --format json > plan.json
+  # Show plan.json / phasePlan to the user, edit if needed, then approve only after confirmation.
   evopilot target plan apply <goal-id> --file plan.json --json
   evopilot target plan approve <goal-id> --json
   evopilot project onboard github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --require-source-ready --require-devops-ready
@@ -3129,7 +3130,7 @@ Project DevOps examples:
   evopilot secret set --id LLM_API_KEY_QWEN_PRIVATE --kind llm-key --from-env LLM_API_KEY_QWEN_PRIVATE --json
   evopilot llm profile set qwen-private --provider openai-compatible --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_QWEN_PRIVATE --json
   evopilot project llm set my-agent --profile qwen-private --require-llm-ready --json
-  evopilot target run --project my-agent --objective "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility" --auto-approve-plan --llm-profile qwen-private --require-llm-ready --json
+  evopilot target run --project my-agent --objective "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility" --llm-profile qwen-private --require-llm-ready --json
   evopilot project devops set my-agent --provider github-actions --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --ci-required-check test --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health
   evopilot project devops set my-agent --provider gitlab-ci --execution-mode owned-repository --devops-owner group --ci-required-stage test --ci-required-job build --cd-required-stage deploy --deploy-environment production --ready-url https://app.example.com/ready
 `);

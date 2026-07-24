@@ -256,6 +256,8 @@ evopilot target plan \
 
 Review and adjust the returned plan before execution:
 
+For WorkBuddy or any digital-human flow, this is a hard stop. Present `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user, then run the approval command only after the user confirms the plan. Do not replace this confirmation with `--auto-approve-plan` unless an unattended automation policy already authorizes it.
+
 ```bash
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
@@ -414,7 +416,7 @@ Do not describe this as an upstream release unless the upstream maintainer later
 
 ## 9. Run Or Resume A GlobalGoal
 
-Use `goal run` when the release target already exists or a previous GlobalGoal should continue.
+Use `goal run` when the release target already exists or a previous GlobalGoal should continue. If the command creates a new GlobalGoal and the generated Alpha/Beta/RC/GA plan is not approved yet, it stops with `nextAction=approve-plan`; WorkBuddy must show the plan to the user before approval.
 
 ```bash
 evopilot goal run \
@@ -448,7 +450,7 @@ evopilot goal evidence-matrix <goal-id> --json
 
 ## 10. Run One LoopRun
 
-Use `loop run` for a narrower loop target.
+Use `loop run` for a narrower loop target. It is lower-level than the GlobalGoal flow and does not replace `target plan` phase confirmation for a release target. If no `<loop-id>` is supplied, `--project`, `--target`, and `--objective` are required.
 
 ```bash
 evopilot loop run \
@@ -462,6 +464,8 @@ evopilot loop run \
   --client workbuddy \
   --json
 ```
+
+All wrapper commands default to `--until terminal`. The `--until blocked-or-complete` value in this example is an explicit narrower policy for a single LoopRun: it stops when the LoopRun becomes `BLOCKED` instead of trying to resume it.
 
 ## 11. Source Closure
 

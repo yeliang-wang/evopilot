@@ -27,12 +27,16 @@ evopilot status --json
 evopilot project onboard plan github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --json
 evopilot project llm preflight my-agent --json
 evopilot target plan --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
+evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
+evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan approve <goal-id> --json
 evopilot target run --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --require-llm-ready --client workbuddy --json
 ```
 
 Do not parse human-readable CLI output. Human output may change to improve operator readability.
 When humans do read the console output, wrapper commands print the same core chain that Dashboard consumes: scope, project, release target, goal, workflow nodes, next action, evidence endpoints, recent steps, blockers, and `requestId` values for log lookup.
+
+When WorkBuddy is simulating a human operator, it must pause after `target plan`, show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan`, and wait for user confirmation before `target plan approve`. `--auto-approve-plan` is not part of the normal WorkBuddy path.
 
 ## Required Parse Order
 
@@ -114,7 +118,7 @@ evopilot project llm set my-agent \
   --json
 ```
 
-Daily wrapper commands should pass only the profile id:
+Daily wrapper commands should pass only the profile id, and should run only after the Alpha/Beta/RC/GA phase plan has been reviewed and approved:
 
 ```bash
 evopilot target run \
@@ -199,7 +203,7 @@ evopilot target plan approve <goal-id> --json
 evopilot target run --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --json
 ```
 
-`target run` stops with `result.exitCode=2` and `nextAction=approve-plan` when the plan is still pending. Agents should show the phase plan to the user, not retry blindly. `--auto-approve-plan` is allowed only when the user or organization policy explicitly authorizes unattended acceptance of the generated Alpha -> Beta -> RC -> GA plan.
+`target run` stops with `result.exitCode=2` and `nextAction=approve-plan` when the plan is still pending. Agents should show the phase plan to the user, not retry blindly. `--auto-approve-plan` is allowed only when the user or organization policy explicitly authorizes unattended acceptance of the generated Alpha -> Beta -> RC -> GA plan. A WorkBuddy or digital-human test that uses `--auto-approve-plan` is testing unattended automation, not human-confirmed operation.
 
 The plan must preserve Alpha, Beta, RC, and GA. Users may add project-specific GoalTargets or strengthen phase criteria, evidence, and review requirements. Removing baseline criteria or skipping a phase is blocked by the server and must be reported as a plan validation failure.
 

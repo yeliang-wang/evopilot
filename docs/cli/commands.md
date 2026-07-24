@@ -13,7 +13,7 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --client <surface>          Client surface for logs, for example mac-terminal or workbuddy
 --idempotency-key <key>     Idempotency key for mutating commands
 --timeout <duration>        Wrapper stop boundary, for example 30s, 10m, or 2h
---until <policy>            Wrapper stop policy: terminal or blocked-or-complete
+--until <policy>            Wrapper stop policy: terminal or blocked-or-complete; default is terminal for target run, goal run, and loop run
 --require-source-ready      project onboard / target run fails fast unless source credentials are READY
 --require-devops-ready      target run fails fast unless project DevOps preflight is READY
 --execution-mode <mode>     owned-repository | read-only-public | fork-validated-pr | upstream-authorized
@@ -24,7 +24,7 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --credential-principal <id> Optional operator-readable principal expected behind the DevOps tokenRef
 --llm-profile <id>          LLM profile for project onboarding or this Goal/Loop run
 --require-llm-ready         project onboard / target run fails fast unless the selected LLM profile is READY
---auto-approve-plan         Wrapper explicitly approves the generated Alpha/Beta/RC/GA plan before execution
+--auto-approve-plan         Unattended automation only; WorkBuddy or digital-human sessions should ask the user before plan approval
 --json                      Print JSON response data
 --config <file>             Config path, defaults to ~/.evopilot/config.json
 ```
@@ -384,7 +384,9 @@ evopilot target decision <target-id> [--project <project-id>]
 
 `target plan` creates or reuses the project release target and GlobalGoal, generates the server plan, and returns the Alpha -> Beta -> RC -> GA phase plan for user review. `target plan export` writes the same plan shape that `target plan apply` accepts, so a user or WorkBuddy can edit project-specific targets or strengthen phase criteria, run `diff`, apply the proposal, and then approve it.
 
-`target run` is the one-command wrapper for a project release target. It requires a business `--objective`; do not write the objective as "promote to GA" unless that is the actual business outcome. The terminal maturity is GA, and EvoPilot always expands the goal through Alpha, Beta, RC, and GA. If the plan is not approved, the wrapper stops at `PENDING_PLAN_APPROVAL` and returns `nextAction=approve-plan`; use `--auto-approve-plan` only when policy allows unattended plan acceptance.
+`target run` is the one-command wrapper for a project release target. It requires a business `--objective`; do not write the objective as "promote to GA" unless that is the actual business outcome. The terminal maturity is GA, and EvoPilot always expands the goal through Alpha, Beta, RC, and GA. If the plan is not approved, the wrapper stops at `PENDING_PLAN_APPROVAL` and returns `nextAction=approve-plan`; use `--auto-approve-plan` only when policy allows unattended plan acceptance. WorkBuddy and other digital-human callers should normally run `target plan`, show the phase plan to the user, wait for confirmation, approve, and only then run the wrapper.
+
+`--until` does not confirm or skip phases. It only controls wrapper stop behavior. `target run`, `goal run`, and `loop run` default to `--until terminal`; `--until blocked-or-complete` is mainly useful for low-level `loop run` when an agent should stop as soon as the LoopRun becomes `BLOCKED`.
 
 Use `--require-source-ready --require-devops-ready` when the run must fail before Goal/Loop execution if PR/merge or repository-native DevOps is not ready.
 Use `--llm-profile <id>` to override the project default LLM for this run, and `--require-llm-ready` to stop before Loop execution if the selected profile is blocked.
@@ -449,7 +451,7 @@ Common loop options:
 --executor-graph <graph-id>
 --force-decision <SUCCEED|BLOCK|FAIL>
 --max-iterations <n>
---until <terminal|blocked-or-complete>
+--until <terminal|blocked-or-complete>  # default: terminal
 --llm-profile <llm-profile-id>
 --require-llm-ready
 ```
