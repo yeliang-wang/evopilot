@@ -1229,9 +1229,10 @@ Codex、飞书、企业微信等入口应把用户对话转成 `POST /api/v1/con
 
 ```http
 GET /api/v1/audit
+GET /api/v1/audit?limit=50&order=desc
 GET /api/v1/history
 ```
 
-返回追加写入的审计记录，包括项目创建、运行创建、评审决策和交付执行。
+返回追加写入的审计记录，包括项目创建、运行创建、评审决策和交付执行。`limit` 是服务端读取限制，必须是正整数，超过 `1000` 会按 `1000` 处理；`order` 可为 `asc` 或 `desc`，默认 `asc`。CLI 的 `evopilot audit list --limit <n>` 会调用 `order=desc`，用于 WorkBuddy 在生产审计日志较大时只读取最新记录。
 
 `GET /api/v1/history` 是 Dashboard “审计/历史详情”的统一产品历史接口，会按当前登录用户的 tenant/workspace 权限聚合 completed run release、source release run、release decision、code upgrade run 和 audit 摘要。支持 `projectId`、`targetId` 和 `limit` 查询参数，用于发布后证据复盘。

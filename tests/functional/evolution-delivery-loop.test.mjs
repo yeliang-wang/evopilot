@@ -243,6 +243,39 @@ test("requires token, registers projects, exposes summary and audit", async () =
   }
 });
 
+test("audit endpoint applies server-side limit and descending order", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-audit-limit-"));
+  const server = createServer({ dataRoot, apiToken: "test-token", runtimeMode: "debug" });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  try {
+    for (const id of ["agent-a", "agent-b", "agent-c"]) {
+      await authedPost(`${baseUrl}/api/v1/projects`, {
+        id,
+        name: id,
+        repository: {
+          provider: "local-git",
+          gitUrl: `file:///${id}`,
+          root: createLocalProjectRepo(dataRoot, `${id}-repo`)
+        }
+      });
+    }
+
+    const audit = await authedGet(`${baseUrl}/api/v1/audit?limit=2&order=desc`);
+    assert.equal(audit.data.length, 2);
+    assert.deepEqual(audit.data.map((record) => record.target), ["agent-c", "agent-b"]);
+
+    const invalidLimit = await fetch(`${baseUrl}/api/v1/audit?limit=0`, {
+      headers: { authorization: "Bearer test-token", "x-evopilot-actor": "tester" }
+    });
+    assert.equal(invalidLimit.status, 400);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 test("registers public GitHub projects without repository credentials", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-public-github-"));
   const github = createFakeGitHubServer();

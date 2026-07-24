@@ -650,6 +650,8 @@ evopilot worker queue --json
 evopilot audit list --limit 50 --json
 ```
 
+`audit list --limit` is a server-side bounded read. The CLI sends `limit` and `order=desc` to `/api/v1/audit`, so production troubleshooting reads the newest audit records without downloading the full audit log.
+
 If source closure is involved:
 
 ```bash

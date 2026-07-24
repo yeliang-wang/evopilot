@@ -4884,7 +4884,10 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       }
       if (request.method === "GET" && url.pathname === "/api/v1/audit") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        return writeJson(response, 200, envelope(store.listAudit()));
+        return writeJson(response, 200, envelope(store.listAudit({
+          limit: optionalPositiveIntegerQuery(url.searchParams.get("limit"), "limit", 1000),
+          order: auditListOrder(url.searchParams.get("order"))
+        })));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/history") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -5999,12 +6002,37 @@ class FileStore {
     });
   }
 
-  listAudit(): AuditRecord[] {
+  listAudit(options: { limit?: number; order?: "asc" | "desc" } = {}): AuditRecord[] {
     if (!fs.existsSync(this.auditFile)) return [];
-    return fs.readFileSync(this.auditFile, "utf8")
+    const records = options.limit
+      ? this.readAuditTail(options.limit)
+      : fs.readFileSync(this.auditFile, "utf8")
       .split("\n")
       .filter(Boolean)
       .map((line) => this.hydrateAuditRecord(JSON.parse(line)));
+    return options.order === "desc" ? [...records].reverse() : records;
+  }
+
+  private readAuditTail(limit: number): AuditRecord[] {
+    const fd = fs.openSync(this.auditFile, "r");
+    try {
+      const stat = fs.fstatSync(fd);
+      const chunkSize = 64 * 1024;
+      let position = stat.size;
+      const chunks: Buffer[] = [];
+      let lines: string[] = [];
+      while (position > 0 && lines.length <= limit) {
+        const readSize = Math.min(chunkSize, position);
+        position -= readSize;
+        const buffer = Buffer.allocUnsafe(readSize);
+        fs.readSync(fd, buffer, 0, readSize, position);
+        chunks.unshift(buffer);
+        lines = Buffer.concat(chunks).toString("utf8").split("\n").filter(Boolean);
+      }
+      return lines.slice(-limit).map((line) => this.hydrateAuditRecord(JSON.parse(line)));
+    } finally {
+      fs.closeSync(fd);
+    }
   }
 
   private hydrateAuditRecord(record: any): AuditRecord {
@@ -19980,6 +20008,25 @@ class HttpError extends Error {
 
 function httpError(statusCode: number, code: string, detail?: string): HttpError {
   return new HttpError(statusCode, code, detail);
+}
+
+function optionalPositiveIntegerQuery(value: string | null, name: string, max: number): number | undefined {
+  if (value === null || value.trim() === "") return undefined;
+  if (!/^\d+$/.test(value.trim())) {
+    throw httpError(400, `${name.toUpperCase()}_INVALID`, `${name} must be a positive integer.`);
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+    throw httpError(400, `${name.toUpperCase()}_INVALID`, `${name} must be a positive integer.`);
+  }
+  return Math.min(parsed, max);
+}
+
+function auditListOrder(value: string | null): "asc" | "desc" {
+  if (value === null || value.trim() === "") return "asc";
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "asc" || normalized === "desc") return normalized;
+  throw httpError(400, "AUDIT_ORDER_INVALID", "order must be asc or desc.");
 }
 
 function isHttpError(error: unknown): error is HttpError {

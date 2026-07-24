@@ -365,10 +365,18 @@ function configShow(ctx: RuntimeContext): number {
 }
 
 async function status(ctx: RuntimeContext): Promise<number> {
-  const health = await ctx.client.get("/health");
-  recordResponseLlmUsage(ctx, "status.health", health);
-  const ready = await ctx.client.get("/ready");
-  recordResponseLlmUsage(ctx, "status.ready", ready);
+  let health: EvoPilotResponse;
+  let ready: EvoPilotResponse;
+  try {
+    health = await ctx.client.get("/health");
+    recordResponseLlmUsage(ctx, "status.health", health);
+    ready = await ctx.client.get("/ready");
+    recordResponseLlmUsage(ctx, "status.ready", ready);
+  } catch (error) {
+    const data = statusConnectionErrorOutput(ctx, error, "health-ready");
+    printOutput(ctx, data, `status=UNREACHABLE server=${field(data, "server")} error=${nestedField(data, ["error", "message"])} action=${nestedField(data, ["diagnosis", "recommendedAction"])}`);
+    return 2;
+  }
   let version: EvoPilotResponse | undefined;
   try {
     version = await ctx.client.get("/api/v1/version");
@@ -378,18 +386,29 @@ async function status(ctx: RuntimeContext): Promise<number> {
   }
   let summary: EvoPilotResponse | undefined;
   if (ctx.client.token) {
-    summary = await ctx.client.get("/api/v1/summary");
-    recordResponseLlmUsage(ctx, "status.summary", summary);
+    try {
+      summary = await ctx.client.get("/api/v1/summary");
+      recordResponseLlmUsage(ctx, "status.summary", summary);
+    } catch (error) {
+      const data = statusConnectionErrorOutput(ctx, error, "summary");
+      printOutput(ctx, data, `status=UNREACHABLE server=${field(data, "server")} error=${nestedField(data, ["error", "message"])} action=${nestedField(data, ["diagnosis", "recommendedAction"])}`);
+      return 2;
+    }
   }
+  const statusValue = health.ok && ready.ok && (!summary || summary.ok) ? "READY" : "DEGRADED";
   const data = {
     schema: "evopilot-cli-status/v1",
+    status: statusValue,
     server: ctx.client.serverUrl.replace(/\/$/, ""),
     cli: { name: "@evopilot/cli", version: readCliVersion() },
     client: ctx.cli,
+    config: statusConfigDiagnostics(ctx),
+    missingConfig: statusMissingConfig(ctx),
     api: version?.ok ? version.data ?? version.body : undefined,
     health: health.body,
     ready: ready.body,
     summary: summary?.ok ? summary.data : undefined,
+    diagnosis: statusDiagnosis(ctx, health, ready, summary),
     llmUsage: cliLlmUsageReport(ctx),
     requestIds: {
       health: health.requestId,
@@ -401,6 +420,109 @@ async function status(ctx: RuntimeContext): Promise<number> {
   const llmSummary = field(data.llmUsage, "summary");
   printOutput(ctx, data, `health=${field(data.health, "status") ?? health.status} ready=${field(data.ready, "status") ?? ready.status} llm=${field(llmSummary, "provider") ?? "-"}:${field(llmSummary, "model") ?? "-"} tokens=${field(llmSummary, "totalTokens") ?? 0}`);
   return health.ok && ready.ok && (!summary || summary.ok) ? 0 : 2;
+}
+
+function statusConnectionErrorOutput(ctx: RuntimeContext, error: unknown, stage: string): Record<string, unknown> {
+  return {
+    schema: "evopilot-cli-status/v1",
+    status: "UNREACHABLE",
+    stage,
+    server: ctx.client.serverUrl.replace(/\/$/, ""),
+    cli: { name: "@evopilot/cli", version: readCliVersion() },
+    client: ctx.cli,
+    config: statusConfigDiagnostics(ctx),
+    missingConfig: statusMissingConfig(ctx),
+    health: undefined,
+    ready: undefined,
+    summary: undefined,
+    diagnosis: {
+      code: "SERVER_UNREACHABLE",
+      likelyCause: "The EvoPilot API Server could not be reached from this CLI process.",
+      recommendedAction: "Verify EVOPILOT_SERVER or --server, network access, DNS/proxy settings, and that the EvoPilot API Server is running.",
+      retriable: true,
+      humanActionRequired: true
+    },
+    error: {
+      name: error instanceof Error ? error.name : "Error",
+      message: error instanceof Error ? error.message : String(error)
+    },
+    llmUsage: cliLlmUsageReport(ctx),
+    requestIds: {}
+  };
+}
+
+function statusConfigDiagnostics(ctx: RuntimeContext): Record<string, unknown> {
+  return {
+    path: ctx.configPath,
+    server: ctx.client.serverUrl.replace(/\/$/, ""),
+    tokenConfigured: Boolean(ctx.client.token),
+    tenantIdConfigured: Boolean(ctx.client.tenantId),
+    workspaceIdConfigured: Boolean(ctx.client.workspaceId),
+    actorConfigured: Boolean(ctx.client.actor)
+  };
+}
+
+function statusMissingConfig(ctx: RuntimeContext): string[] {
+  const missing: string[] = [];
+  if (!ctx.client.token) missing.push("EVOPILOT_API_TOKEN or auth.login token");
+  if (!ctx.client.tenantId) missing.push("EVOPILOT_TENANT or --tenant");
+  if (!ctx.client.workspaceId) missing.push("EVOPILOT_WORKSPACE or --workspace");
+  if (!ctx.client.actor) missing.push("EVOPILOT_ACTOR or --actor");
+  return missing;
+}
+
+function statusDiagnosis(ctx: RuntimeContext, health: EvoPilotResponse, ready: EvoPilotResponse, summary?: EvoPilotResponse): Record<string, unknown> {
+  if (!health.ok) {
+    return {
+      code: "HEALTH_NOT_OK",
+      likelyCause: "The EvoPilot API Server responded, but /health did not return a successful status.",
+      recommendedAction: "Inspect the API Server process and HTTP logs for the health request.",
+      retriable: true,
+      humanActionRequired: true
+    };
+  }
+  if (!ready.ok) {
+    return {
+      code: "READY_NOT_OK",
+      likelyCause: "The EvoPilot API Server is reachable, but storage or dependencies are not ready.",
+      recommendedAction: "Inspect /ready response details and server startup logs before running Goal/Loop commands.",
+      retriable: true,
+      humanActionRequired: true
+    };
+  }
+  if (summary && !summary.ok) {
+    return {
+      code: summary.status === 401 ? "AUTH_TOKEN_INVALID" : summary.status === 403 ? "TENANT_WORKSPACE_FORBIDDEN" : "SUMMARY_NOT_OK",
+      likelyCause: summary.status === 401
+        ? "The CLI token is missing or invalid for authenticated API calls."
+        : summary.status === 403
+          ? "The token, tenant, workspace, actor, or role does not match the requested scope."
+          : "The authenticated summary endpoint returned a non-success status.",
+      recommendedAction: summary.status === 401
+        ? "Run evopilot auth login or configure EVOPILOT_API_TOKEN, then rerun evopilot status --json."
+        : summary.status === 403
+          ? "Check EVOPILOT_TENANT, EVOPILOT_WORKSPACE, EVOPILOT_ACTOR, and token role before running project or target commands."
+          : "Inspect the response body and API Server logs by requestId.",
+      retriable: false,
+      humanActionRequired: true
+    };
+  }
+  if (!ctx.client.token) {
+    return {
+      code: "AUTH_NOT_CONFIGURED",
+      likelyCause: "The CLI can reach public health endpoints, but no API token is configured.",
+      recommendedAction: "Configure authentication before running project, target, goal, loop, audit, or release commands.",
+      retriable: false,
+      humanActionRequired: true
+    };
+  }
+  return {
+    code: "READY",
+    likelyCause: "The CLI reached the EvoPilot API Server and authenticated checks passed.",
+    recommendedAction: "Continue with the documented project onboarding or Goal/Loop commands.",
+    retriable: false,
+    humanActionRequired: false
+  };
 }
 
 async function projectRegister(ctx: RuntimeContext): Promise<number> {
@@ -1705,9 +1827,15 @@ async function traceEvents(ctx: RuntimeContext, id?: string): Promise<number> {
 }
 
 async function auditList(ctx: RuntimeContext): Promise<number> {
-  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/audit"));
   const limit = numberOption(ctx.args, "limit");
-  const data = Array.isArray(response.data) && limit ? response.data.slice(-limit).reverse() : response.data;
+  if (limit !== undefined && (!Number.isInteger(limit) || limit < 1)) throw usage("Option --limit must be a positive integer.");
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/audit", {
+    query: {
+      limit,
+      order: limit ? "desc" : undefined
+    }
+  }));
+  const data = response.data;
   printOutput(ctx, data, listSummary(data, "action"));
   return 0;
 }

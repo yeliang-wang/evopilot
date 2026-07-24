@@ -351,9 +351,39 @@
             "bearerAuth": []
           }
         ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit the number of audit records read and returned by the server. Values above 1000 are capped at 1000.",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "Return audit records in ascending or descending timestamp/file order. Default is asc.",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "asc"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "审计记录"
+          },
+          "400": {
+            "description": "limit 或 order 参数无效"
           }
         }
       }

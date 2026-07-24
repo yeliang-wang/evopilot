@@ -72,6 +72,7 @@ evopilot status --json
 
 Expected result:
 
+- `status` is `READY`.
 - `health.status` is `UP`.
 - `ready.status` is `READY`.
 - `api.schema` is `evopilot-version/v1`.
@@ -81,7 +82,7 @@ Expected result:
 - `llmUsage.summary.totalTokens`, `inputTokens`, `outputTokens`, and `creditsConsumed` show token usage.
 - Exit code is `0`.
 
-If `summary` is missing, the CLI reached public health endpoints but not an authenticated control-plane session.
+If `summary` is missing, the CLI reached public health endpoints but not an authenticated control-plane session. If the API Server cannot be reached, `status --json` still prints schema `evopilot-cli-status/v1` with `status=UNREACHABLE`, `stage`, `server`, `config`, `missingConfig`, `diagnosis.recommendedAction`, and `error.message`, then exits `2`. WorkBuddy should show that diagnostic to the operator and stop before project, target, source writeback, audit, or release commands.
 
 ## AI Agent Contract
 
@@ -97,7 +98,8 @@ WorkBuddy, Codex, Claude Code, CI jobs, and other agents should treat this file 
 8. Show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
 9. Run `target run`, `goal run`, or `loop run` with `--json`.
 10. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
-11. Report the server-derived result, release verdict, IDs, LLM provider/model, token totals, and request IDs.
+11. For troubleshooting, run `evopilot audit list --limit 50 --json`; the limit is applied by the server and returns newest records first.
+12. Report the server-derived result, release verdict, IDs, LLM provider/model, token totals, and request IDs.
 
 An agent must not parse human-readable output when `--json` is available, must not pass raw GitHub/GitLab tokens in daily wrapper commands, must not approve a phase plan before showing it to the user or project owner, and must not claim a stronger DevOps or release result than the server-returned `claimBoundary` and release decision.
 

@@ -38,6 +38,7 @@ evopilot target run --project my-agent --objective "Enable tenant onboarding and
 ```
 
 Do not parse human-readable CLI output. Human output may change to improve operator readability.
+If `evopilot status --json` returns `status=UNREACHABLE`, automation must report `diagnosis.recommendedAction`, `server`, `config.path`, `missingConfig`, and `error.message`, then stop. Do not continue to project registration, Goal/Loop execution, source writeback, audit, or release commands until the API Server connection is repaired.
 When humans do read the console output, wrapper commands print the same core chain that Dashboard consumes: scope, project, release target, goal, workflow nodes, next action, evidence endpoints, recent steps, blockers, and `requestId` values for log lookup.
 
 When WorkBuddy is simulating a human operator, it must pause after `target plan`, show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan`, and wait for user confirmation before `target plan approve`. The required `--confirmed-by` and `--confirmation` values must reflect the real confirmation; automation must not invent them.
@@ -49,13 +50,14 @@ For every `--json` command, automation should parse in this order:
 1. `schema`
 2. `result.exitCode` or process exit code
 3. `status`, `result.status`, and `result.nextAction`
-4. `status.blockers`, `blockers`, and `missingInputs`
-5. IDs: `projectId`, `releaseTargetId`, `goalId`, `activeTargetId`, `loopId`, `releaseRunId`, `releaseDecisionId`, `requestId`
-6. Execution boundary: `executionMode`, `devopsOwner`, `workflowRepository`, `credentialRef`, `credentialPrincipal`, `claimBoundary`
-7. LLM boundary: `llm.profileId`, `llm.source`, `llm.provider`, `llm.model`, project LLM readiness, and run override `--llm-profile`
-8. Goal phase plan: `phasePlan.phases[]`, `phasePlan.targets[]`, `editablePlan`, `status.nextAction`
-9. Release decision fields from EvoPilot release APIs, never local inference
-10. `llmUsage.summary`, `llmUsage.process.responses[]`, and `llmUsage.server.steps[]`
+4. `diagnosis.code`, `diagnosis.recommendedAction`, and `error.message`
+5. `status.blockers`, `blockers`, and `missingInputs`
+6. IDs: `projectId`, `releaseTargetId`, `goalId`, `activeTargetId`, `loopId`, `releaseRunId`, `releaseDecisionId`, `requestId`
+7. Execution boundary: `executionMode`, `devopsOwner`, `workflowRepository`, `credentialRef`, `credentialPrincipal`, `claimBoundary`
+8. LLM boundary: `llm.profileId`, `llm.source`, `llm.provider`, `llm.model`, project LLM readiness, and run override `--llm-profile`
+9. Goal phase plan: `phasePlan.phases[]`, `phasePlan.targets[]`, `editablePlan`, `status.nextAction`
+10. Release decision fields from EvoPilot release APIs, never local inference
+11. `llmUsage.summary`, `llmUsage.process.responses[]`, and `llmUsage.server.steps[]`
 
 Do not continue just because a command printed a workflow graph. Continue only when the JSON status and `nextAction` allow it.
 

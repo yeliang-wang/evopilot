@@ -73,7 +73,7 @@ evopilot status --json
 Checks `/health`, `/ready`, and authenticated `/api/v1/summary` when a token is configured.
 It also reads `/api/v1/version` and returns `cli.version`, `api.serverVersion`, `api.apiContractVersion`, and `api.minimumCliVersion` when the server supports the version endpoint.
 
-`status --json` also returns `client` and `llmUsage`. Automation should read `llmUsage.summary.provider`, `llmUsage.summary.model`, and token fields before starting a cost-sensitive run.
+`status --json` also returns `status`, `client`, `config`, `missingConfig`, `diagnosis`, and `llmUsage`. If the API Server cannot be reached, the CLI still prints schema `evopilot-cli-status/v1` to stdout with `status=UNREACHABLE`, `diagnosis.code=SERVER_UNREACHABLE`, the configured server URL, config path, token/tenant/workspace/actor configuration flags, and an actionable `recommendedAction`, then exits `2`. Automation should read `llmUsage.summary.provider`, `llmUsage.summary.model`, and token fields before starting a cost-sensitive run.
 
 ## Project
 
@@ -522,6 +522,8 @@ evopilot trace events <loop-id>
 ```bash
 evopilot audit list [--limit <n>]
 ```
+
+`--limit` is sent to `/api/v1/audit?limit=<n>&order=desc`, so the server reads and returns only the newest bounded audit records instead of streaming the entire audit log to the CLI. Use `--limit 50 --json` for WorkBuddy troubleshooting; omit `--limit` only when an operator intentionally needs the full audit history.
 
 ## Deploy Connectors
 

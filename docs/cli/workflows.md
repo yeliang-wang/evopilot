@@ -14,6 +14,7 @@ evopilot worker queue --json
 ```
 
 Do not continue to source writeback, deploy, merge, or release actions unless `status --json` confirms an authenticated session.
+If `status --json` exits `2` with `status=UNREACHABLE`, read `diagnosis.recommendedAction`, `server`, `config.path`, `missingConfig`, and `error.message`; do not try project onboarding or Goal/Loop commands until the API Server URL, network, and authentication configuration are repaired.
 
 ## 2. Register A GitHub Project
 
@@ -521,6 +522,8 @@ Inspect release-run repair candidates:
 evopilot release-run repair-candidates --json
 evopilot release-run repair <run-id> --execute --json
 evopilot release-run repair-all --execute --json
+evopilot audit list --limit 50 --json
 ```
 
 If a wrapper command returns `repair`, `repair-project`, `repair-deploy-target`, or `policy-review`, stop the automation and inspect the referenced IDs before retrying.
+`audit list --limit` is a server-side bounded read. The CLI sends `limit` and `order=desc` to `/api/v1/audit`, so WorkBuddy can inspect recent events without downloading the full production audit log.

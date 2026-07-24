@@ -62,6 +62,26 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   assert.equal(versionJson.version, "0.1.0");
 });
 
+test("EvoPilot CLI status returns structured diagnostics when the API server is unreachable", async () => {
+  assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
+
+  const configPath = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-cli-status-")), "config.json");
+  const status = await runCli([
+    "--server", "http://127.0.0.1:9",
+    "status",
+    "--config", configPath,
+    "--json"
+  ], { status: 2 });
+  assert.equal(status.schema, "evopilot-cli-status/v1");
+  assert.equal(status.status, "UNREACHABLE");
+  assert.equal(status.stage, "health-ready");
+  assert.equal(status.config.tokenConfigured, false);
+  assert.ok(status.missingConfig.includes("EVOPILOT_API_TOKEN or auth.login token"));
+  assert.equal(status.diagnosis.code, "SERVER_UNREACHABLE");
+  assert.equal(status.diagnosis.humanActionRequired, true);
+  assert.match(status.error.message, /fetch failed|ECONNREFUSED|bad port/i);
+});
+
 test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
   assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
 
@@ -978,7 +998,11 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     assert.ok(deployConnectors.some((connector) => connector.id === "cli-webhook"));
 
     const auditRecords = await runCli(["audit", "list", "--limit", "10", "--config", configPath, "--json"]);
+    assert.ok(auditRecords.length <= 10);
     assert.ok(auditRecords.some((record) => record.action === "deploy.connector.saved"));
+    for (let index = 1; index < auditRecords.length; index += 1) {
+      assert.ok(Date.parse(auditRecords[index - 1].timestamp) >= Date.parse(auditRecords[index].timestamp));
+    }
 
     const releaseGate = await runCli([
       "release", "gate",

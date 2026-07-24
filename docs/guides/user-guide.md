@@ -208,6 +208,8 @@ Run:
 evopilot audit list --limit 20 --json
 ```
 
+The audit limit is applied by the server and returns the newest records first, so WorkBuddy can inspect recent production activity without downloading the full audit log. If `evopilot status --json` returns `status=UNREACHABLE`, report `diagnosis.recommendedAction`, `server`, `config.path`, `missingConfig`, and `error.message` before attempting any mutating command.
+
 Operational troubleshooting: [Troubleshooting](../operations/troubleshooting.md).
 
 ## Do Not Do
