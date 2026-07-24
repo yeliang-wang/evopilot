@@ -627,9 +627,23 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     assert.ok(appliedPlan.plan.phaseTargets[0].acceptanceCriteria.includes("CLI-specific Alpha phase review evidence is documented."));
     assert.ok(appliedPlan.plan.targets[0].acceptanceCriteria.includes("CLI-specific operator visibility SLO is documented."));
 
-    const approvedGoal = await runCli(["goal", "approve-plan", goal.id, "--config", configPath, "--json"]);
+    const bareGoalApprove = await runCliErrorText(["goal", "approve-plan", goal.id, "--config", configPath, "--json"], 64);
+    assert.match(bareGoalApprove, /Phase-plan approval requires --confirmed-by/);
+
+    const bareTargetApprove = await runCliErrorText(["target", "plan", "approve", goal.id, "--config", configPath, "--json"], 64);
+    assert.match(bareTargetApprove, /Phase-plan approval requires --confirmed-by/);
+
+    const approvedGoal = await runCli([
+      "goal", "approve-plan", goal.id,
+      "--confirmed-by", "Project Owner",
+      "--confirmation", "Project Owner reviewed and approved the Alpha/Beta/RC/GA phase plan",
+      "--config", configPath,
+      "--json"
+    ]);
     assert.equal(approvedGoal.status, "APPROVED");
     assert.equal(approvedGoal.plan.status, "APPROVED");
+    assert.equal(approvedGoal.plan.confirmation.confirmedBy, "Project Owner");
+    assert.match(approvedGoal.plan.confirmation.confirmation, /reviewed and approved/);
 
     const goalTargets = await runCli(["goal", "targets", goal.id, "--config", configPath, "--json"]);
     assert.ok(goalTargets.some((item) => item.id.endsWith("source-readiness")));

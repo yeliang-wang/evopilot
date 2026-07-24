@@ -376,7 +376,7 @@ evopilot target plan --project <project-id> --objective <business-goal>
 evopilot target plan export <goal-id> [--format json|yaml]
 evopilot target plan diff <goal-id> --file <plan.json>
 evopilot target plan apply <goal-id> --file <plan.json>
-evopilot target plan approve <goal-id>
+evopilot target plan approve <goal-id> --confirmed-by <user-or-owner> --confirmation <text>
 evopilot target run --project <project-id> --objective <business-goal>
 evopilot target decision <target-id> [--project <project-id>]
 ```
@@ -384,6 +384,8 @@ evopilot target decision <target-id> [--project <project-id>]
 `target plan` creates or reuses the project release target and GlobalGoal, generates the server plan, and returns the Alpha -> Beta -> RC -> GA phase plan for user review. `target plan export` writes the same plan shape that `target plan apply` accepts, so a user or WorkBuddy can edit project-specific targets or strengthen phase criteria, run `diff`, apply the proposal, and then approve it.
 
 `target run` is the one-command wrapper for a project release target. It requires a business `--objective`; do not write the objective as "promote to GA" unless that is the actual business outcome. The terminal maturity is GA, and EvoPilot always expands the goal through Alpha, Beta, RC, and GA. If the plan is not approved, the wrapper stops at `PENDING_PLAN_APPROVAL` and returns `nextAction=approve-plan`. WorkBuddy and other digital-human callers must run `target plan`, show the phase plan to the user or project owner, wait for confirmation, approve, and only then run the wrapper.
+
+`target plan approve` and `goal approve-plan` require `--confirmed-by` and `--confirmation`. The CLI rejects the command before calling the server when either value is missing, and the API also rejects direct approval requests without the same confirmation payload. AI Agents must not fabricate these values.
 
 `--until` does not confirm or skip phases. It only controls wrapper stop behavior. `target run`, `goal run`, and `loop run` default to `--until terminal`; `--until blocked-or-complete` is mainly useful for low-level `loop run` when an agent should stop as soon as the LoopRun becomes `BLOCKED`.
 
@@ -416,7 +418,7 @@ evopilot goal create --project <id> --target <target-id> --objective <text>
 evopilot goal list [--project <id>] [--target <target-id>] [--status <status>]
 evopilot goal inspect <goal-id>
 evopilot goal plan <goal-id>
-evopilot goal approve-plan <goal-id>
+evopilot goal approve-plan <goal-id> --confirmed-by <user-or-owner> --confirmation <text>
 evopilot goal targets <goal-id>
 evopilot goal phases <goal-id>
 evopilot goal phase-package <goal-id> --phase <alpha|beta|rc|ga>

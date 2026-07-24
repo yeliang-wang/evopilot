@@ -140,15 +140,28 @@ test("GlobalGoal API creates a white-box goal shell with dashboard projections",
     assert.equal(plannedSnapshot.body.data.nextAction, "approve-plan");
     assert.deepEqual(plannedSnapshot.body.data.phases.map((phase) => phase.phase), ["alpha", "beta", "rc", "ga"]);
 
-    const approved = await jsonFetch(`${baseUrl}/api/v1/goals/${encodeURIComponent(created.body.data.id)}/approve-plan`, {
+    const rejectedApproval = await jsonFetch(`${baseUrl}/api/v1/goals/${encodeURIComponent(created.body.data.id)}/approve-plan`, {
       method: "POST",
       token: "operator-token",
       body: {}
+    });
+    assert.equal(rejectedApproval.status, 400);
+    assert.equal(rejectedApproval.body.error, "GOAL_PLAN_CONFIRMATION_REQUIRED");
+
+    const approved = await jsonFetch(`${baseUrl}/api/v1/goals/${encodeURIComponent(created.body.data.id)}/approve-plan`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        confirmedBy: "Project Owner",
+        confirmation: "Project Owner reviewed and approved the Alpha/Beta/RC/GA phase plan"
+      }
     });
     assert.equal(approved.status, 200);
     assert.equal(approved.body.data.status, "APPROVED");
     assert.equal(approved.body.data.plan.status, "APPROVED");
     assert.ok(approved.body.data.plan.approvedAt);
+    assert.equal(approved.body.data.plan.confirmation.confirmedBy, "Project Owner");
+    assert.match(approved.body.data.plan.confirmation.confirmation, /reviewed and approved/);
 
     const targets = await jsonFetch(`${baseUrl}/api/v1/goals/${encodeURIComponent(created.body.data.id)}/targets`, { token: "viewer-token" });
     assert.equal(targets.status, 200);

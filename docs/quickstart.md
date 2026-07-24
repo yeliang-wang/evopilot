@@ -53,6 +53,8 @@ npm run cli -- target plan \
 npm run cli -- target plan approve <goal-id> \
   --server http://127.0.0.1:19876 \
   --token change-me-admin-token \
+  --confirmed-by "project-owner" \
+  --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
   --json
 ```
 

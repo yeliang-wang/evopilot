@@ -149,7 +149,10 @@ evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.j
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
 # STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
-evopilot target plan approve <goal-id> --json
+evopilot target plan approve <goal-id> \
+  --confirmed-by "project-owner" \
+  --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
+  --json
 ```
 
 The plan must still keep Alpha, Beta, RC, and GA. Users can add GoalTargets or strengthen acceptance criteria, required evidence, and review requirements; they cannot skip a phase or remove baseline criteria and still claim standard GA.
@@ -170,7 +173,7 @@ evopilot target run \
   --json
 ```
 
-If `target run` is called before approval, it returns `PENDING_PLAN_APPROVAL`, `nextAction=approve-plan`, and exit code `2`. Show the generated phase plan to the user or project owner and wait for explicit confirmation before running `target plan approve` or `goal approve-plan`.
+If `target run` is called before approval, it returns `PENDING_PLAN_APPROVAL`, `nextAction=approve-plan`, and exit code `2`. Show the generated phase plan to the user or project owner and wait for explicit confirmation before running `target plan approve` or `goal approve-plan`. Approval commands require `--confirmed-by` and `--confirmation`; WorkBuddy must not invent either value.
 
 After every wrapper command, collect LLM usage before making a success claim:
 
@@ -607,7 +610,10 @@ evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.j
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
 # STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
-evopilot goal approve-plan <goal-id> --json
+evopilot goal approve-plan <goal-id> \
+  --confirmed-by "project-owner" \
+  --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
+  --json
 evopilot goal phases <goal-id> --json
 evopilot goal phase-package <goal-id> --phase alpha --json
 

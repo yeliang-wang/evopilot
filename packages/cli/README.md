@@ -31,7 +31,10 @@ evopilot target plan \
 evopilot target plan export <goal-id> --format json > /tmp/evopilot-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/evopilot-phase-plan.json --json
 # STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
-evopilot target plan approve <goal-id> --json
+evopilot target plan approve <goal-id> \
+  --confirmed-by "project-owner" \
+  --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
+  --json
 
 evopilot target run \
   --project <project-id> \
@@ -43,7 +46,7 @@ evopilot target run \
   --json
 ```
 
-WorkBuddy, Codex, Claude Code, and digital-human sessions must show the generated Alpha/Beta/RC/GA phase plan to the user or project owner before `target plan approve`.
+WorkBuddy, Codex, Claude Code, and digital-human sessions must show the generated Alpha/Beta/RC/GA phase plan to the user or project owner before `target plan approve`. Approval requires `--confirmed-by` and `--confirmation`; AI Agents must not fabricate those values.
 
 For a new GitHub project, ask for a checklist before mutating state:
 

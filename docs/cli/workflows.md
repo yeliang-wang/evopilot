@@ -263,7 +263,10 @@ evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.j
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
 # STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
-evopilot target plan approve <goal-id> --json
+evopilot target plan approve <goal-id> \
+  --confirmed-by "project-owner" \
+  --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
+  --json
 evopilot goal phases <goal-id> --json
 evopilot goal phase-package <goal-id> --phase alpha --json
 ```
@@ -441,7 +444,10 @@ evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.j
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
 # STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
-evopilot goal approve-plan <goal-id> --json
+evopilot goal approve-plan <goal-id> \
+  --confirmed-by "project-owner" \
+  --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
+  --json
 evopilot goal phases <goal-id> --json
 evopilot goal phase-package <goal-id> --phase rc --json
 evopilot goal advance <goal-id> --json

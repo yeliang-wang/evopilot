@@ -888,13 +888,22 @@ GET /api/v1/maturity/standards/{alpha|beta|rc|ga|standard-id}
 2. `POST /api/v1/goals/{goalId}/plan` 生成 Alpha/Beta/RC/GA phase plan，状态进入 `PLANNED / PENDING_APPROVAL`。
 3. `GET /api/v1/goals/{goalId}/phase-plan` 读取用户可审查计划；Dashboard/WorkBuddy 展示 `phases[]`、`targets[]` 和 `editablePlan`。
 4. 可选：`POST /api/v1/goals/{goalId}/plan/apply` 应用用户调整后的计划。允许新增项目专属 GoalTargets、强化标准、增加 review；不允许删除 Alpha/Beta/RC/GA、跳级或移除基线标准。
-5. `POST /api/v1/goals/{goalId}/approve-plan` 批准计划。
+5. `POST /api/v1/goals/{goalId}/approve-plan` 提交真实用户或项目负责人的计划确认并批准计划。请求体必须包含 `confirmedBy` 和 `confirmation`，否则返回 `400 / GOAL_PLAN_CONFIRMATION_REQUIRED`。
 6. `GET /api/v1/goals/{goalId}/phases` 和 `phase-packages/{phase}` 读取每个 phase 的状态、验收、证据、blocker 和 GO/NO-GO decision。
 7. `GET /api/v1/goals/{goalId}/snapshot`、`run-status`、`graph`、`timeline`、`evidence-matrix` 读取白盒状态。
 8. `POST /api/v1/goals/{goalId}/advance` 推进一个服务端治理步骤。
 9. 目标终态后读取 `GET /api/v1/goals/{goalId}/final-report`。
 
 `GET /api/v1/goals/{goalId}/run-status` 是 Dashboard 和 CLI wrapper 共享的白盒投影。它包含 `phasePackages`、workflow `chain`、`activeTarget`、`latestLoop`、`blockers`、`evidenceMatrix`、`releaseDecision`、`finalReport` 和 `llmUsage`。Dashboard 不应自己计算 phase 进度或 release verdict。
+
+批准请求示例：
+
+```json
+{
+  "confirmedBy": "project-owner",
+  "confirmation": "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan"
+}
+```
 
 `advance` 返回 schema `evopilot-goal-advance/v1`，其中 `nextAction` 是自动化和 Dashboard 的主要路由字段。常见值包括 `plan-goal`、`approve-plan`、`start-target`、`resume-loop`、`human-approval`、`configure-source-credentials`、`repair-project`、`repair-deploy-target`、`policy-review`、`release-decision`、`view-final-report`、`done` 和 `repair`。调用方遇到人工、凭据、部署、策略或 repair 类型动作时应停止自动推进并展示阻塞原因。
 

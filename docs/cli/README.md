@@ -296,8 +296,13 @@ evopilot target plan export <goal-id> --format json > /tmp/evopilot-phase-plan.j
 evopilot target plan diff <goal-id> --file /tmp/evopilot-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/evopilot-phase-plan.json --json
 # STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
-evopilot target plan approve <goal-id> --json
+evopilot target plan approve <goal-id> \
+  --confirmed-by "project-owner" \
+  --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
+  --json
 ```
+
+The `--confirmed-by` and `--confirmation` values must come from a real user or project-owner confirmation after reviewing the displayed phase plan. WorkBuddy or another AI Agent must not fabricate these values or run approval as an automatic script step.
 
 Then resume the wrapper:
 

@@ -103,7 +103,7 @@ For plan review screens, read `/api/v1/goals/{goalId}/phase-plan` and show the f
 Alpha -> Beta -> RC -> GA
 ```
 
-The Dashboard may let users add project-specific GoalTargets, strengthen acceptance criteria, add required evidence, or add architecture/security/testing/documentation/operations/release review requirements. It must not offer controls that delete Alpha/Beta/RC/GA, skip a phase, or remove baseline criteria while claiming standard GA. Save user changes with `POST /api/v1/goals/{goalId}/plan/apply`, then approve with `POST /api/v1/goals/{goalId}/approve-plan`.
+The Dashboard may let users add project-specific GoalTargets, strengthen acceptance criteria, add required evidence, or add architecture/security/testing/documentation/operations/release review requirements. It must not offer controls that delete Alpha/Beta/RC/GA, skip a phase, or remove baseline criteria while claiming standard GA. Save user changes with `POST /api/v1/goals/{goalId}/plan/apply`, then approve with `POST /api/v1/goals/{goalId}/approve-plan` only after the user or project owner confirms the displayed plan. The approval request body must include `confirmedBy` and `confirmation`; a dashboard must not auto-fill these values without a real confirmation action.
 
 ## Deployment Modes
 

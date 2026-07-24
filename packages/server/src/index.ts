@@ -1153,6 +1153,14 @@ interface GoalTarget {
   updatedAt: string;
 }
 
+interface GoalPlanApprovalConfirmation {
+  schema: "evopilot-goal-plan-approval-confirmation/v1";
+  confirmedBy: string;
+  confirmation: string;
+  confirmedAt: string;
+  actor: string;
+}
+
 interface GoalPlan {
   schema: "evopilot-goal-plan/v1";
   status: GoalPlanStatus;
@@ -1174,6 +1182,7 @@ interface GoalPlan {
   generatedAt?: string;
   approvedAt?: string;
   approvedBy?: string;
+  confirmation?: GoalPlanApprovalConfirmation;
 }
 
 interface GoalTimelineEvent {
@@ -2704,12 +2713,14 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       const goalApprovePlanMatch = url.pathname.match(/^\/api\/v1\/goals\/([^/]+)\/approve-plan$/);
       if (request.method === "POST" && goalApprovePlanMatch) {
         if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
         const goal = store.readGoal(decodeURIComponent(goalApprovePlanMatch[1]));
         if (!goal) return writeJson(response, 404, { error: "GOAL_NOT_FOUND" });
         if (!canAccessScopedResource(auth, goal.tenantId, goal.workspaceId)) return writeJson(response, 403, { error: "FORBIDDEN" });
-        const approved = store.approveGoalPlan(goal.id, auth.actor);
+        const confirmation = normalizeGoalPlanApprovalConfirmation(body, auth.actor);
+        const approved = store.approveGoalPlan(goal.id, auth.actor, confirmation);
         if (!approved) return writeJson(response, 404, { error: "GOAL_NOT_FOUND" });
-        store.appendAudit(audit(auth, "goal.plan-approved", approved.id, { targetCount: approved.plan.targets.length }));
+        store.appendAudit(audit(auth, "goal.plan-approved", approved.id, { targetCount: approved.plan.targets.length, confirmedBy: confirmation.confirmedBy, confirmation: confirmation.confirmation }));
         return writeJson(response, 200, envelope(approved));
       }
       const goalTargetsMatch = url.pathname.match(/^\/api\/v1\/goals\/([^/]+)\/targets$/);
@@ -6945,7 +6956,7 @@ class FileStore {
     });
   }
 
-  approveGoalPlan(goalId: string, actor: string): GlobalGoal | undefined {
+  approveGoalPlan(goalId: string, actor: string, confirmation: GoalPlanApprovalConfirmation): GlobalGoal | undefined {
     const goal = this.readGoal(goalId);
     if (!goal) return undefined;
     if (goal.plan.status === "MISSING" || goal.plan.targets.length === 0) {
@@ -6964,13 +6975,15 @@ class FileStore {
           nextAction: "start-target"
         },
         approvedAt: now,
-        approvedBy: actor
+        approvedBy: actor,
+        confirmation
       },
       timeline: [
         ...goal.timeline,
         goalTimelineEvent("PLAN_APPROVED", `Goal plan approved by ${actor}.`, {
           targetCount: goal.plan.targets.length,
-          requiredTargetCount: goal.plan.targets.filter((target) => target.required).length
+          requiredTargetCount: goal.plan.targets.filter((target) => target.required).length,
+          confirmedBy: confirmation.confirmedBy
         })
       ],
       updatedAt: now
@@ -9742,7 +9755,8 @@ function hydrateGoalPlan(value: unknown, goalId: string, projectId: string, rele
     editablePlan: hydrateEditableGoalPlan(value.editablePlan),
     generatedAt: optionalTrimmedString(value.generatedAt),
     approvedAt: optionalTrimmedString(value.approvedAt),
-    approvedBy: optionalTrimmedString(value.approvedBy)
+    approvedBy: optionalTrimmedString(value.approvedBy),
+    confirmation: hydrateGoalPlanApprovalConfirmation(value.confirmation)
   };
 }
 
@@ -10310,6 +10324,43 @@ function normalizeAppliedGoalPlan(input: unknown, goal: GlobalGoal, now: string)
     targets,
     editablePlan: editablePlanPolicy(),
     generatedAt: optionalTrimmedString(root.generatedAt) ?? now
+  };
+}
+
+function normalizeGoalPlanApprovalConfirmation(input: unknown, actor: string): GoalPlanApprovalConfirmation {
+  const body = isRecord(input) ? input : {};
+  const confirmedBy = optionalTrimmedString(body.confirmedBy);
+  const confirmation = optionalTrimmedString(body.confirmation);
+  if (!confirmedBy || !confirmation) {
+    throw httpError(400, "GOAL_PLAN_CONFIRMATION_REQUIRED", "approve-plan requires confirmedBy and confirmation after the Alpha/Beta/RC/GA phase plan has been shown to the user or project owner.");
+  }
+  const confirmedAtInput = optionalTrimmedString(body.confirmedAt);
+  const confirmedAt = confirmedAtInput ?? new Date().toISOString();
+  if (Number.isNaN(Date.parse(confirmedAt))) {
+    throw httpError(400, "GOAL_PLAN_CONFIRMED_AT_INVALID", "confirmedAt must be an ISO timestamp when provided.");
+  }
+  return {
+    schema: "evopilot-goal-plan-approval-confirmation/v1",
+    confirmedBy,
+    confirmation,
+    confirmedAt: new Date(confirmedAt).toISOString(),
+    actor
+  };
+}
+
+function hydrateGoalPlanApprovalConfirmation(input: unknown): GoalPlanApprovalConfirmation | undefined {
+  if (!isRecord(input)) return undefined;
+  const confirmedBy = optionalTrimmedString(input.confirmedBy);
+  const confirmation = optionalTrimmedString(input.confirmation);
+  const confirmedAt = optionalTrimmedString(input.confirmedAt);
+  const actor = optionalTrimmedString(input.actor);
+  if (!confirmedBy || !confirmation || !confirmedAt || !actor) return undefined;
+  return {
+    schema: "evopilot-goal-plan-approval-confirmation/v1",
+    confirmedBy,
+    confirmation,
+    confirmedAt,
+    actor
   };
 }
 

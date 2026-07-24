@@ -1055,6 +1055,7 @@
     "/api/v1/goals/{goalId}/approve-plan": {
       "post": {
         "summary": "批准 GlobalGoal 计划",
+        "description": "必须在向用户或项目负责人展示 Alpha/Beta/RC/GA phase plan 后提交真实确认记录。缺少 confirmedBy 或 confirmation 时返回 GOAL_PLAN_CONFIRMATION_REQUIRED。",
         "security": [
           {
             "bearerAuth": []
@@ -1070,9 +1071,42 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "confirmedBy",
+                  "confirmation"
+                ],
+                "properties": {
+                  "confirmedBy": {
+                    "type": "string",
+                    "description": "真实确认计划的用户或项目负责人"
+                  },
+                  "confirmation": {
+                    "type": "string",
+                    "description": "确认说明，必须来自 phase plan review 后的真实确认"
+                  },
+                  "confirmedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "description": "可选确认时间；未提供时由服务端写入"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "计划已批准"
+          },
+          "400": {
+            "description": "缺少 confirmedBy 或 confirmation"
           },
           "403": {
             "description": "需要操作员或更高角色"

@@ -155,6 +155,8 @@ assert.match(aiAgentRunbook, /evopilot project llm set/);
 assert.match(aiAgentRunbook, /evopilot target plan/);
 assert.match(aiAgentRunbook, /evopilot target plan export/);
 assert.match(aiAgentRunbook, /evopilot target plan approve/);
+assert.match(aiAgentRunbook, /--confirmed-by/);
+assert.match(aiAgentRunbook, /WorkBuddy must not invent/);
 assert.match(aiAgentRunbook, /Alpha -> Beta -> RC -> GA/);
 assert.match(aiAgentRunbook, /--require-llm-ready/);
 assert.match(aiAgentRunbook, /evopilot loop run/);
@@ -185,6 +187,8 @@ assert.match(cliReadme, /evopilot project llm set/);
 assert.match(cliReadme, /Maturity Ladder/);
 assert.match(cliReadme, /evopilot target plan export/);
 assert.match(cliReadme, /PENDING_PLAN_APPROVAL/);
+assert.match(cliReadme, /--confirmed-by/);
+assert.match(cliReadme, /must not fabricate/);
 assert.match(cliWorkflows, /evopilot target run/);
 assert.match(cliWorkflows, /evopilot project onboard plan github/);
 assert.match(cliWorkflows, /evopilot project onboard plan gitlab/);
@@ -212,6 +216,8 @@ assert.match(cliAutomation, /project onboard plan/);
 assert.match(cliAutomation, /LLM Profile Rules/);
 assert.match(cliAutomation, /Goal Plan Approval Rules/);
 assert.match(cliAutomation, /approve-plan/);
+assert.match(cliAutomation, /--confirmed-by/);
+assert.match(cliAutomation, /automation must not invent/);
 assert.match(cliAutomation, /llmUsage\.summary\.provider/);
 assert.match(cliAutomation, /Do not parse human-readable CLI output/);
 assert.match(cliAutomation, /Only EvoPilot release decisions/);
@@ -236,6 +242,13 @@ for (const file of agentFacingDocFiles) {
   assert.doesNotMatch(content, /--target-level/, `${file} must not document removed target level CLI options`);
   assert.doesNotMatch(content, /--auto-approve-plan/, `${file} must not document removed auto phase approval options`);
   assert.doesNotMatch(content, /target templates/, `${file} must not document removed target template listing`);
+  if (file === "docs/api/README.md") {
+    assert.match(content, /GOAL_PLAN_CONFIRMATION_REQUIRED/, "API docs must document mandatory phase-plan confirmation");
+  }
+  if (file === "docs/api/openapi.json") {
+    assert.match(content, /confirmedBy/, "OpenAPI must define approve-plan confirmedBy");
+    assert.match(content, /confirmation/, "OpenAPI must define approve-plan confirmation");
+  }
 }
 
 const cliSource = fs.readFileSync("packages/cli/src/index.ts", "utf8");
@@ -246,6 +259,8 @@ const cliHelp = execFileSync(process.execPath, ["packages/cli/dist/index.js", "-
 assert.doesNotMatch(cliHelp, /--template/, "CLI help must not expose removed target template options");
 assert.doesNotMatch(cliHelp, /--target-level/, "CLI help must not expose removed target level options");
 assert.doesNotMatch(cliHelp, /--auto-approve-plan/, "CLI help must not expose removed auto phase approval options");
+assert.match(cliHelp, /target plan approve <goal-id> --confirmed-by <user-or-owner> --confirmation <text>/, "CLI help must require target plan approval confirmation flags");
+assert.match(cliHelp, /goal approve-plan <goal-id> --confirmed-by <user-or-owner> --confirmation <text>/, "CLI help must require goal approval confirmation flags");
 assert.match(cliHelp, /github-app installation set \[--id <id>\]/, "CLI help must document optional GitHub App installation id");
 assert.match(cliHelp, /project onboard \/ target run \/ goal run \/ loop run fails fast unless LLM profile preflight is READY/, "CLI help must describe the LLM readiness scope");
 
@@ -268,6 +283,13 @@ assert.deepEqual(missingCommandDocs, [], `CLI help commands missing from CLI doc
 
 for (const file of cliDocCommandFiles) {
   const content = fs.readFileSync(file, "utf8");
+  const approvalMatches = [...content.matchAll(/(?:evopilot|npm run cli --)\s+(?:target\s+plan\s+approve|goal\s+approve-plan)\b/g)];
+  for (const match of approvalMatches) {
+    const windowEnd = Math.min(content.length, match.index + 420);
+    const context = content.slice(match.index, windowEnd);
+    assert.match(context, /--confirmed-by/, `${file} approval example must include --confirmed-by`);
+    assert.match(context, /--confirmation/, `${file} approval example must include --confirmation`);
+  }
   const matches = [...content.matchAll(/(?:evopilot|npm run cli --)\s+target\s+run\b/g)];
   for (const match of matches) {
     const windowStart = Math.max(0, match.index - 700);

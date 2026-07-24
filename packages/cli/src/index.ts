@@ -93,6 +93,20 @@ function rejectRemovedAutoApprovePlanOption(args: ParsedArgs): void {
   throw usage("EvoPilot does not accept --auto-approve-plan. Phase plans must be shown to the user or project owner and explicitly approved with target plan approve or goal approve-plan before execution.");
 }
 
+function phasePlanApprovalConfirmation(args: ParsedArgs): Record<string, string> {
+  const confirmedBy = stringOption(args, "confirmed-by");
+  const confirmation = stringOption(args, "confirmation");
+  if (!confirmedBy || !confirmation) {
+    throw usage("Phase-plan approval requires --confirmed-by <user-or-project-owner> and --confirmation <review-confirmation>. Show the Alpha/Beta/RC/GA phase plan to the user or project owner before running target plan approve or goal approve-plan.");
+  }
+  const confirmedAt = stringOption(args, "confirmed-at");
+  return {
+    confirmedBy,
+    confirmation,
+    ...(confirmedAt ? { confirmedAt } : {})
+  };
+}
+
 async function main(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
   if (hasFlag(args, "version") || args.positionals[0] === "version") {
@@ -1290,7 +1304,8 @@ async function goalPlan(ctx: RuntimeContext, id?: string): Promise<number> {
 
 async function goalApprovePlan(ctx: RuntimeContext, id?: string): Promise<number> {
   const goalId = id ?? requiredOption(ctx.args, "goal");
-  const response = await ctx.client.expectOk(ctx.client.post(`/api/v1/goals/${encodeURIComponent(goalId)}/approve-plan`, {}, requestOptions(ctx)));
+  const body = phasePlanApprovalConfirmation(ctx.args);
+  const response = await ctx.client.expectOk(ctx.client.post(`/api/v1/goals/${encodeURIComponent(goalId)}/approve-plan`, body, requestOptions(ctx)));
   printOutput(ctx, response.data, `goal=${field(response.data, "id")} plan=${nestedField(response.data, ["plan", "status"])} status=${field(response.data, "status")}`);
   return 0;
 }
@@ -3065,7 +3080,7 @@ Usage:
   evopilot target plan export <goal-id> [--format <json|yaml>]
   evopilot target plan apply <goal-id> --file <plan.json>
   evopilot target plan diff <goal-id> --file <plan.json>
-  evopilot target plan approve <goal-id>
+  evopilot target plan approve <goal-id> --confirmed-by <user-or-owner> --confirmation <text>
   evopilot target run --project <id> --objective <business-goal> [--llm-profile <id>] [--max-steps <n>] [--timeout <duration>]
   evopilot target decision <target-id> [--project <id>]
   evopilot goal create --project <id> --target <target-id> --objective <text>
@@ -3073,7 +3088,7 @@ Usage:
   evopilot goal list [--project <id>] [--target <target-id>] [--status <status>]
   evopilot goal inspect <goal-id>
   evopilot goal plan <goal-id>
-  evopilot goal approve-plan <goal-id>
+  evopilot goal approve-plan <goal-id> --confirmed-by <user-or-owner> --confirmation <text>
   evopilot goal targets <goal-id>
   evopilot goal advance <goal-id> [--no-auto-start] [--approve-human-gate]
   evopilot goal snapshot <goal-id>
@@ -3147,7 +3162,7 @@ Project DevOps examples:
   evopilot target plan export <goal-id> --format json > plan.json
   # Show plan.json / phasePlan to the user, edit if needed, then approve only after confirmation.
   evopilot target plan apply <goal-id> --file plan.json --json
-  evopilot target plan approve <goal-id> --json
+  evopilot target plan approve <goal-id> --confirmed-by project-owner --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" --json
   evopilot project onboard github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --require-source-ready --require-devops-ready
   evopilot project onboard github --repo apache/skywalking --upstream-repo apache/skywalking --working-repo my-org/skywalking-fork --id skywalking-fork --token-ref GITHUB_TOKEN_SKYWALKING_FORK --execution-mode fork-validated-pr --devops-owner my-org --ci-workflow ci.yml --ci-required-check build --json
   evopilot secret set --id LLM_API_KEY_QWEN_PRIVATE --kind llm-key --from-env LLM_API_KEY_QWEN_PRIVATE --json
