@@ -67,8 +67,6 @@ npm run cli -- target run \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --max-steps 20 \
-  --require-source-ready \
-  --require-devops-ready \
   --json
 ```
 
@@ -85,15 +83,19 @@ npm run cli -- project onboard plan github \
   --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
+  --llm-profile my-agent-llm \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --json
 ```
 
-Then run `project onboard` after the server can resolve the tokenRef, verify with `project onboard verify`, and start Goal/Loop execution with `target plan` followed by `target run`. See [CLI Workflows](cli/workflows.md).
+Then run `project onboard` after the server can resolve the source tokenRef and LLM profile, verify with `project onboard verify`, and start Goal/Loop execution with `target plan` followed by `target run` after phase-plan confirmation. See [CLI Workflows](cli/workflows.md).
 
 ## Configure A Project LLM
 
-Use the server global LLM for quick local validation. For a real project, register an explicit LLM profile before running the target:
+Use the server global LLM only for quick local/debug validation. For a GitHub/GitLab enterprise real loop, register an explicit LLM profile before onboarding or running the target:
 
 ```bash
 export LLM_API_KEY_MY_AGENT="<real-llm-api-key>"
@@ -132,7 +134,6 @@ npm run cli -- target run \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --llm-profile my-agent-llm \
-  --require-llm-ready \
   --json
 ```
 

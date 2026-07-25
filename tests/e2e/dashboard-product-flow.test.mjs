@@ -55,6 +55,11 @@ test("API product flow covers connected projects, rules, opportunities, confirma
         ci: {
           workflow: "ci.yml",
           requiredChecks: ["build"]
+        },
+        cd: {
+          workflow: "deploy-prod.yml",
+          environment: "production",
+          healthUrl: `${github.baseUrl}/health`
         }
       }
     }, "admin-token");

@@ -361,7 +361,7 @@ interface ProjectOnboardingChecklist {
     when: string;
     requiresHuman?: boolean;
   }>;
-  nextAction: "store-secret" | "store-llm-secret" | "connect-github-account" | "connect-gitlab-account" | "install-github-app" | "register-project" | "configure-source-credentials" | "configure-devops" | "configure-llm" | "run-target" | "repair";
+  nextAction: "store-secret" | "store-llm-secret" | "connect-github-account" | "connect-gitlab-account" | "install-github-app" | "register-project" | "configure-source-credentials" | "configure-devops" | "configure-llm" | "configure-llm-profile" | "repair-llm-provider" | "plan-target" | "repair";
   generatedAt: string;
 }
 
@@ -1074,6 +1074,14 @@ type GoalNextAction =
   | "resume-loop"
   | "human-approval"
   | "configure-source-credentials"
+  | "connect-github-account"
+  | "connect-gitlab-account"
+  | "configure-token-ref"
+  | "configure-devops"
+  | "configure-llm"
+  | "store-llm-secret"
+  | "configure-llm-profile"
+  | "repair-llm-provider"
   | "repair-project"
   | "repair-deploy-target"
   | "policy-review"
@@ -1339,7 +1347,7 @@ interface GoalAdvanceResult {
   loop?: LoopRun;
   finalReport?: GoalCompletionReport;
   stages: Array<{
-    id: "plan-check" | "target-select" | "loop-bind" | "loop-iterate" | "human-gate" | "final-report";
+    id: "plan-check" | "enterprise-source-preflight" | "enterprise-devops-preflight" | "enterprise-llm-preflight" | "target-select" | "loop-bind" | "loop-iterate" | "human-gate" | "final-report";
     status: "SUCCEEDED" | "SKIPPED" | "BLOCKED" | "FAILED";
     detail: string;
     evidence: string[];
@@ -4534,7 +4542,15 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const projectLlm = normalizeProjectLlmBinding(body, auth.actor);
         if (projectLlm) {
           const llmProfile = store.readLlmProfile(projectLlm.profileId);
-          if (!llmProfile) return writeJson(response, 404, { error: "LLM_PROFILE_NOT_FOUND", profileId: projectLlm.profileId });
+          if (!llmProfile) {
+            const readiness = resolveLoopLlmSelection(store, {
+              tenantId,
+              workspaceId,
+              requestedProfileId: projectLlm.profileId,
+              requireLlm: true
+            }).readiness;
+            return writeJson(response, 409, { error: "LLM_PROFILE_NOT_READY", profileId: projectLlm.profileId, readiness });
+          }
           if (llmProfile.tenantId !== tenantId || llmProfile.workspaceId !== workspaceId) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN", profileId: projectLlm.profileId });
         }
         const projectDevops = normalizeProjectDevops(body, {
@@ -7068,6 +7084,90 @@ class FileStore {
       detail: "Goal plan is approved.",
       evidence: [`targets=${goal.plan.targets.length}`]
     });
+
+    const project = this.readProject(goal.projectId);
+    const sourceReadiness = project ? await checkSourceCredentialReadiness(project, this) : undefined;
+    pushStage({
+      id: "enterprise-source-preflight",
+      status: sourceReadiness?.status === "READY" ? "SUCCEEDED" : "BLOCKED",
+      detail: "Enterprise real loop source writeback preflight.",
+      evidence: sourceReadiness ? [`status=${sourceReadiness.status}`, ...sourceReadiness.blockers] : [`project=${goal.projectId}`, "project=missing"]
+    });
+    if (!project || sourceReadiness?.status !== "READY") {
+      const snapshot = buildGoalSnapshot(this, goal);
+      return finalizeGoalAdvance({
+        status: "BLOCKED",
+        goal: snapshot.goal,
+        snapshot,
+        stages,
+        evidence,
+        nextAction: sourceReadinessGoalNextAction(project ? sourceReadiness?.nextAction : "repair-project")
+      });
+    }
+
+    if (project.repository?.provider === "github" || project.repository?.provider === "gitlab") {
+      const devopsReadiness = await checkProjectDevopsReadiness(project, this);
+      pushStage({
+        id: "enterprise-devops-preflight",
+        status: devopsReadiness.status === "READY" ? "SUCCEEDED" : "BLOCKED",
+        detail: "Enterprise real loop repository-native DevOps preflight.",
+        evidence: [`status=${devopsReadiness.status}`, `executionMode=${devopsReadiness.executionMode}`, `devopsOwner=${devopsReadiness.devopsOwner ?? "missing"}`, `claimBoundary=${devopsReadiness.claimBoundary}`, ...devopsReadiness.blockers]
+      });
+      if (devopsReadiness.status !== "READY") {
+        const snapshot = buildGoalSnapshot(this, goal);
+        return finalizeGoalAdvance({
+          status: "BLOCKED",
+          goal: snapshot.goal,
+          snapshot,
+          stages,
+          evidence,
+          nextAction: devopsReadinessGoalNextAction(devopsReadiness.nextAction)
+        });
+      }
+    } else {
+      pushStage({
+        id: "enterprise-devops-preflight",
+        status: "SKIPPED",
+        detail: "Local Git project does not use repository-native GitHub/GitLab DevOps.",
+        evidence: [`provider=${project.repository?.provider ?? "missing"}`]
+      });
+    }
+
+    const llmResolution = resolveLoopLlmSelection(this, {
+      project,
+      tenantId: goal.tenantId,
+      workspaceId: goal.workspaceId,
+      requestedProfileId: goal.llm?.profileId,
+      requireLlm: true
+    });
+    const llmReadiness = llmResolution.readiness;
+    const explicitLlmProfileRequired = project.repository?.provider === "github" || project.repository?.provider === "gitlab";
+    const explicitLlmProfileMissing = explicitLlmProfileRequired && !llmResolution.selection.profileId;
+    pushStage({
+      id: "enterprise-llm-preflight",
+      status: llmReadiness.status === "READY" && !explicitLlmProfileMissing ? "SUCCEEDED" : "BLOCKED",
+      detail: "Enterprise real loop LLM profile preflight.",
+      evidence: [
+        `status=${llmReadiness.status}`,
+        `source=${llmResolution.selection.source}`,
+        `profileId=${llmResolution.selection.profileId ?? "missing"}`,
+        `provider=${llmReadiness.provider ?? "missing"}`,
+        `model=${llmReadiness.model ?? "missing"}`,
+        ...(explicitLlmProfileMissing ? ["llm-profile=missing", "remote-enterprise-loop-requires-explicit-project-or-run-llm-profile"] : []),
+        ...llmReadiness.blockers
+      ]
+    });
+    if (llmReadiness.status !== "READY" || explicitLlmProfileMissing) {
+      const snapshot = buildGoalSnapshot(this, goal);
+      return finalizeGoalAdvance({
+        status: "BLOCKED",
+        goal: snapshot.goal,
+        snapshot,
+        stages,
+        evidence,
+        nextAction: explicitLlmProfileMissing ? "configure-llm-profile" : llmReadinessGoalNextAction(llmReadiness.nextAction)
+      });
+    }
 
     let snapshot = buildGoalSnapshot(this, goal);
     if (snapshot.status === "COMPLETED") {
@@ -10958,6 +11058,23 @@ function buildGoalCompletionReport(snapshot: GoalSnapshot, actor: string): GoalC
   };
 }
 
+function sourceReadinessGoalNextAction(value: SourceCredentialReadiness["nextAction"] | "repair-project" | undefined): GoalNextAction {
+  if (value === "connect-github-account" || value === "connect-gitlab-account" || value === "configure-token-ref" || value === "repair-project") return value;
+  if (value === "use-local-git") return "repair-project";
+  return "configure-source-credentials";
+}
+
+function devopsReadinessGoalNextAction(value: ProjectDevopsReadiness["nextAction"] | undefined): GoalNextAction {
+  if (value === "connect-github-account" || value === "connect-gitlab-account" || value === "configure-source-credentials" || value === "repair-project") return value;
+  if (value === "inspect-ci" || value === "configure-devops") return "configure-devops";
+  return "configure-devops";
+}
+
+function llmReadinessGoalNextAction(value: LlmProfileReadiness["nextAction"] | undefined): GoalNextAction {
+  if (value === "store-llm-secret" || value === "configure-llm-profile" || value === "repair-llm-provider") return value;
+  return "configure-llm";
+}
+
 function finalizeGoalAdvance(input: {
   status: GlobalGoalStatus;
   goal: GlobalGoal;
@@ -12023,21 +12140,25 @@ async function buildProjectOnboardingChecklist(args: {
     requestedProfileId: requestedLlmProfileId,
     requireLlm: true
   }) : undefined;
-  const llmRequired = Boolean(args.body.requireLlmReady || requestedLlmProfileId || draftProject?.llm?.required);
+  const explicitLlmProfileRequired = remoteRepository && !readOnlyPublicMode;
+  const explicitLlmProfileMissing = explicitLlmProfileRequired && !llmResolution?.selection.profileId;
+  const llmRequired = Boolean(explicitLlmProfileRequired || args.body.requireLlmReady || requestedLlmProfileId || draftProject?.llm?.required);
   addStep({
     id: "llm",
     label: "Loop LLM profile",
-    status: llmResolution?.readiness.status === "READY" ? "PASS" : llmRequired ? "FAIL" : "WARN",
+    status: llmResolution?.readiness.status === "READY" && !explicitLlmProfileMissing ? "PASS" : llmRequired ? "FAIL" : "WARN",
     required: llmRequired,
     evidence: llmResolution ? [
       `source=${llmResolution.selection.source}`,
-      `profile=${llmResolution.selection.profileId ?? "global-default"}`,
+      `profile=${llmResolution.selection.profileId ?? "missing"}`,
+      `explicitProfileRequired=${explicitLlmProfileRequired}`,
       `provider=${llmResolution.selection.provider ?? llmResolution.readiness.provider ?? "missing"}`,
       `model=${llmResolution.selection.model ?? llmResolution.readiness.model ?? "missing"}`,
       `readiness=${llmResolution.readiness.status}`,
+      ...(explicitLlmProfileMissing ? ["remote-enterprise-loop-requires-explicit-project-or-run-llm-profile"] : []),
       ...llmResolution.readiness.blockers.slice(0, 4)
     ] : ["project draft unavailable"],
-    nextAction: llmResolution?.readiness.status === "READY" ? "run-loop" : llmRequired ? llmResolution?.readiness.nextAction ?? "configure-llm-profile" : "configure-llm"
+    nextAction: llmResolution?.readiness.status === "READY" && !explicitLlmProfileMissing ? "run-loop" : explicitLlmProfileMissing ? "configure-llm-profile" : llmRequired ? llmResolution?.readiness.nextAction ?? "configure-llm-profile" : "configure-llm"
   });
 
   addStep({
@@ -12050,7 +12171,7 @@ async function buildProjectOnboardingChecklist(args: {
       "phaseLadder=Alpha -> Beta -> RC -> GA",
       objective ? `objective=${objective}` : "objective=provided-by-target-plan-or-run"
     ],
-    nextAction: args.project ? "run-target" : "register-project"
+    nextAction: args.project ? "plan-target" : "register-project"
   });
 
   const missingInputs = onboardingMissingInputs({ projectId, repository, provider, tokenRef, remoteRepository, draftDevops, llmRequired, llmReadiness: llmResolution?.readiness, llmProfileId: requestedLlmProfileId ?? draftProject?.llm?.profileId });
@@ -12187,7 +12308,7 @@ function onboardingMissingInputs(args: {
     missing.push("server-side-token-ref");
   }
   if ((args.provider === "github" || args.provider === "gitlab") && !readOnlyPublicMode && !args.draftDevops) missing.push("repository-native-devops-contract");
-  if (args.llmRequired && !args.llmProfileId && args.llmReadiness?.source !== "global-default") missing.push("llm-profile");
+  if (args.llmRequired && !args.llmProfileId) missing.push("llm-profile");
   if (args.llmRequired && args.llmReadiness?.nextAction === "store-llm-secret") missing.push("server-side-llm-api-key-ref");
   return missing;
 }
@@ -12229,7 +12350,7 @@ function buildProjectOnboardingCommands(args: {
       requiresHuman: true
     });
   }
-  if (args.llmRequired && args.llm?.status !== "READY") {
+  if (args.llmRequired && (!args.llmProfileId || args.llm?.status !== "READY")) {
     const profileId = args.llmProfileId ?? "<LLM_PROFILE_ID>";
     const secretRef = args.llm?.apiKeyRef ?? defaultOnboardingLlmSecretRef(profileId);
     if (args.llm?.nextAction === "store-llm-secret") {
@@ -12253,7 +12374,10 @@ function buildProjectOnboardingCommands(args: {
     commands.push({
       id: "project-onboard",
       title: "Register and preflight the project",
-      command: buildProjectOnboardCliCommand(args),
+      command: buildProjectOnboardCliCommand({
+        ...args,
+        llmProfileId: args.llmRequired ? args.llmProfileId ?? "<LLM_PROFILE_ID>" : args.llmProfileId
+      }),
       when: "Run after repository coordinates and tokenRef are ready."
     });
   }
@@ -12273,7 +12397,7 @@ function buildProjectOnboardingCommands(args: {
       when: "Run when GitHub Actions or GitLab CI contract is missing or blocked."
     });
   }
-  if (args.project && args.llmRequired && args.llm?.status !== "READY") {
+  if (args.project && args.llmRequired && (!args.llmProfileId || args.llm?.status !== "READY")) {
     commands.push({
       id: "repair-project-llm",
       title: "Bind the project to the LLM profile",
@@ -12281,20 +12405,20 @@ function buildProjectOnboardingCommands(args: {
       when: "Run when project LLM preflight is blocked."
     });
   }
-  if (args.project && args.projectId) {
+  const targetReady = Boolean(
+    args.project
+    && args.projectId
+    && args.sourceCredentials?.status === "READY"
+    && (!remoteRepository || (!readOnlyPublicMode && args.devops?.status === "READY"))
+    && (!args.llmRequired || (args.llm?.status === "READY" && args.llmProfileId))
+  );
+  if (targetReady && args.projectId) {
     const objective = args.objective ?? "<business-goal>";
-    const strictReadinessFlags = args.repository?.topology?.executionMode === "read-only-public" ? "" : " --require-source-ready --require-devops-ready";
     commands.push({
       id: "target-plan",
       title: "Generate the Alpha/Beta/RC/GA Goal/Loop plan",
       command: `evopilot target plan --project ${cliArg(args.projectId)} --objective ${cliArg(objective)}${args.llmProfileId ? ` --llm-profile ${cliArg(args.llmProfileId)}` : ""} --json`,
       when: "Run after checklist status is READY_TO_RUN. Review, export, diff, apply, and approve the generated plan before execution."
-    });
-    commands.push({
-      id: "target-run",
-      title: "Run the Goal/Loop target strictly",
-      command: `evopilot target run --project ${cliArg(args.projectId)} --objective ${cliArg(objective)} --until terminal --max-steps 20${args.llmProfileId ? ` --llm-profile ${cliArg(args.llmProfileId)}` : ""}${strictReadinessFlags}${args.llmRequired ? " --require-llm-ready" : ""} --json`,
-      when: "Run only after the generated phase plan has been shown to the user or project owner and explicitly approved."
     });
   }
   return commands;
@@ -12337,7 +12461,6 @@ function buildProjectOnboardCliCommand(args: {
   if (!readOnlyPublicMode) pushCliOption(parts, "token-ref", args.tokenRef ?? defaultOnboardingTokenRef(args.provider, args.projectId));
   pushDevopsCliOptions(parts, args.draftDevops);
   pushCliOption(parts, "llm-profile", args.llmProfileId);
-  if (!readOnlyPublicMode) parts.push("--require-source-ready", "--require-devops-ready");
   parts.push("--json");
   return parts.join(" ");
 }
@@ -12399,7 +12522,7 @@ function cliArg(value: string): string {
 }
 
 function onboardingNextAction(status: ProjectOnboardingChecklist["status"], steps: ProjectOnboardingChecklist["steps"]): ProjectOnboardingChecklist["nextAction"] {
-  if (status === "READY_TO_RUN") return "run-target";
+  if (status === "READY_TO_RUN") return "plan-target";
   const failed = steps.find((step) => step.required && step.status === "FAIL");
   if (failed?.id === "secret" || failed?.id === "source-credentials") {
     if (failed.nextAction === "connect-github-account" || failed.nextAction === "connect-gitlab-account") return failed.nextAction;
@@ -12410,7 +12533,9 @@ function onboardingNextAction(status: ProjectOnboardingChecklist["status"], step
   if (failed?.id === "devops") return "configure-devops";
   if (failed?.id === "llm") {
     if (failed.nextAction === "store-llm-secret") return "store-llm-secret";
-    return "configure-llm";
+    if (failed.nextAction === "repair-llm-provider") return "repair-llm-provider";
+    if (failed.nextAction === "configure-llm-profile") return "configure-llm-profile";
+    return "configure-llm-profile";
   }
   const projectStep = steps.find((step) => step.id === "project");
   if (projectStep?.nextAction === "register-project") return "register-project";
@@ -18634,7 +18759,7 @@ async function checkProjectDevopsReadiness(project: StoredProject, store?: FileS
   } else {
     addCheck({ id: "ci-state", status: "SKIP", required: true, evidence: ["credentials-or-coordinates-missing"] });
   }
-  await appendProjectDevopsHealthCheck(devops, checks);
+  await appendProjectDevopsHealthCheck(devops, checks, context.executionMode);
   return projectDevopsReadinessResult(project, devops.provider, checks, checkedAt, devops);
 }
 
@@ -18730,14 +18855,47 @@ async function appendGitLabDevopsReadinessChecks(args: {
   }
 }
 
-async function appendProjectDevopsHealthCheck(devops: ProjectDevopsConfiguration, checks: ProjectDevopsReadiness["checks"]): Promise<void> {
+async function appendProjectDevopsHealthCheck(devops: ProjectDevopsConfiguration, checks: ProjectDevopsReadiness["checks"], executionMode: ProjectExecutionMode): Promise<void> {
+  const cdRequired = executionMode === "owned-repository" || executionMode === "upstream-authorized";
+  const cdConfigured = Boolean(
+    devops.cd?.workflow ||
+    devops.cd?.environment ||
+    devops.cd?.healthUrl ||
+    devops.cd?.readyUrl ||
+    devops.cd?.requiredStages?.length ||
+    devops.cd?.requiredJobs?.length ||
+    (devops.cd?.deployInputs && Object.keys(devops.cd.deployInputs).length > 0)
+  );
   const healthUrl = devops.cd?.readyUrl ?? devops.cd?.healthUrl;
-  if (!healthUrl) {
+  if (!cdConfigured) {
+    checks.push({
+      id: "cd-config",
+      status: cdRequired ? "FAIL" : "SKIP",
+      required: cdRequired,
+      evidence: [
+        "cd=missing",
+        `executionMode=${executionMode}`,
+        cdRequired ? "enterprise-real-loop-cd-boundary=required" : "fork/read-only mode does not claim production CD"
+      ]
+    });
     checks.push({ id: "health-ready", status: "SKIP", required: false, evidence: ["healthUrl=missing"] });
-    checks.push({ id: "cd-config", status: devops.cd ? "PASS" : "SKIP", required: false, evidence: [`environment=${devops.cd?.environment ?? "missing"}`, `workflow=${devops.cd?.workflow ?? "missing"}`] });
     return;
   }
-  checks.push({ id: "cd-config", status: "PASS", required: false, evidence: [`environment=${devops.cd?.environment ?? "missing"}`, `healthUrl=${healthUrl}`] });
+  if (!healthUrl) {
+    checks.push({ id: "health-ready", status: "SKIP", required: false, evidence: ["healthUrl=missing"] });
+    checks.push({
+      id: "cd-config",
+      status: "PASS",
+      required: cdRequired,
+      evidence: [
+        `environment=${devops.cd?.environment ?? "missing"}`,
+        `workflow=${devops.cd?.workflow ?? "missing"}`,
+        `executionMode=${executionMode}`
+      ]
+    });
+    return;
+  }
+  checks.push({ id: "cd-config", status: "PASS", required: cdRequired, evidence: [`environment=${devops.cd?.environment ?? "missing"}`, `healthUrl=${healthUrl}`, `executionMode=${executionMode}`] });
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), Math.min(10_000, Math.max(1_000, (devops.cd?.timeoutSeconds ?? 10) * 1000)));

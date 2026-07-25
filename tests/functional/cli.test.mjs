@@ -29,7 +29,7 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   assert.match(help, /evopilot target plan approve/);
   assert.match(help, /--llm-profile/);
   assert.match(help, /github-app installation set \[--id <id>\]/);
-  assert.match(help, /project onboard \/ target run \/ goal run \/ loop run fails fast unless LLM profile preflight is READY/);
+  assert.match(help, /target\/goal\/loop run preflights selected LLM by default/);
   assert.doesNotMatch(help, /--auto-approve-plan/);
   assert.match(help, /--execution-mode/);
   assert.match(help, /--devops-owner/);
@@ -86,6 +86,7 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
   assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
 
   const github = await startFakeGitHubForCli();
+  const llm = await startFakeOpenAiLlmForCli();
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-cli-devops-"));
   const configPath = path.join(dataRoot, "cli-config.json");
   const server = createServer({
@@ -148,11 +149,11 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--objective", "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility",
       "--config", configPath,
       "--json"
-    ]);
+    ], { status: 2 });
     assert.equal(plan.schema, "evopilot-project-onboarding-checklist/v1");
     assert.equal(plan.mode, "plan");
-    assert.equal(plan.status, "READY_TO_ONBOARD");
-    assert.equal(plan.nextAction, "register-project");
+    assert.equal(plan.status, "BLOCKED");
+    assert.equal(plan.nextAction, "configure-llm-profile");
     assert.equal(plan.repository.topology.executionMode, "owned-repository");
     assert.equal(plan.devops.executionMode, "owned-repository");
     assert.equal(plan.devops.devopsOwner, "org");
@@ -162,8 +163,13 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
     assert.ok(plan.steps.some((step) => step.id === "secret" && step.status === "PASS"));
     assert.ok(plan.steps.some((step) => step.id === "source-credentials" && step.status === "PASS"));
     assert.ok(plan.steps.some((step) => step.id === "devops" && step.status === "PASS"));
-    assert.ok(plan.commands.some((command) => command.id === "project-onboard" && command.command.includes("evopilot project onboard github") && command.command.includes("--devops-owner org")));
+    assert.ok(plan.steps.some((step) => step.id === "llm" && step.status === "FAIL" && step.nextAction === "configure-llm-profile"));
+    assert.ok(plan.missingInputs.includes("llm-profile"));
+    assert.ok(plan.commands.some((command) => command.id === "configure-llm-profile"));
+    assert.ok(plan.commands.some((command) => command.id === "project-onboard" && command.command.includes("evopilot project onboard github") && command.command.includes("--devops-owner org") && command.command.includes("--llm-profile '<LLM_PROFILE_ID>'")));
     assert.equal(plan.commands.some((command) => command.command.includes("--template")), false);
+    assert.equal(plan.commands.some((command) => command.command.includes("--require-source-ready")), false);
+    assert.equal(plan.commands.some((command) => command.command.includes("--require-devops-ready")), false);
     assert.equal(plan.commands.some((command) => command.id === "target-run"), false);
 
     const forkPlan = await runCli([
@@ -182,7 +188,9 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--objective", "Provide fork-validated upstream PR readiness with native CI evidence and blocker reporting",
       "--config", configPath,
       "--json"
-    ]);
+    ], { status: 2 });
+    assert.equal(forkPlan.status, "BLOCKED");
+    assert.equal(forkPlan.nextAction, "configure-llm-profile");
     assert.equal(forkPlan.repository.owner, "yeliang-wang");
     assert.equal(forkPlan.repository.topology.executionMode, "fork-validated-pr");
     assert.equal(forkPlan.repository.topology.upstream.owner, "apache");
@@ -190,7 +198,7 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
     assert.equal(forkPlan.devops.workflowRepository, "yeliang-wang/skywalking-fork");
     assert.equal(forkPlan.devops.claimBoundary, "fork-ci-pr");
 
-    const forkWithoutPrincipal = await runCli([
+    const forkWithoutPrincipal = await runCliErrorText([
       "project", "onboard", "plan", "github",
       "--id", "skywalking-no-principal",
       "--base-url", github.baseUrl,
@@ -205,12 +213,9 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--objective", "Provide fork-validated upstream PR readiness with native CI evidence and blocker reporting",
       "--config", configPath,
       "--json"
-    ], { status: 2 });
-    assert.equal(forkWithoutPrincipal.status, "BLOCKED");
-    assert.equal(forkWithoutPrincipal.nextAction, "connect-github-account");
-    assert.ok(forkWithoutPrincipal.missingInputs.includes("github-account-or-org-principal"));
-    assert.ok(forkWithoutPrincipal.missingInputs.includes("server-side-token-ref"));
-    assert.ok(forkWithoutPrincipal.commands.some((command) => command.id === "connect-github-account" && command.command.includes("evopilot secret set")));
+    ], 64);
+    assert.match(forkWithoutPrincipal, /project onboard plan enterprise real loop requires --token-ref/);
+    assert.match(forkWithoutPrincipal, /Store the GitHub\/GitLab token on the EvoPilot server/);
 
     const readOnlyPlan = await runCli([
       "project", "onboard", "plan", "github",
@@ -242,7 +247,8 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--config", configPath,
       "--json"
     ], 64);
-    assert.match(ambiguous, /DevOps ownership is ambiguous/);
+    assert.match(ambiguous, /project onboard plan enterprise real loop onboarding requires --execution-mode/);
+    assert.match(ambiguous, /read-only-public only for analysis-only inspection/);
 
     const planText = await runCliText([
       "project", "onboard", "plan", "github",
@@ -256,8 +262,11 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--ci-workflow", "ci.yml",
       "--ci-required-check", "build",
       "--ci-required-check", "test",
+      "--cd-workflow", "deploy-prod.yml",
+      "--deploy-environment", "production",
+      "--health-url", `${github.baseUrl}/health`,
       "--config", configPath
-    ]);
+    ], { status: 2 });
     assert.match(planText, /EvoPilot Project Onboarding/);
     assert.match(planText, /Execution Boundary/);
     assert.match(planText, /Mode\s+owned-repository/);
@@ -284,8 +293,10 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--health-url", `${github.baseUrl}/health`,
       "--config", configPath,
       "--json"
-    ]);
+    ], { status: 2 });
     assert.equal(project.schema, "evopilot-cli-project-onboard/v1");
+    assert.equal(project.result.exitCode, 2);
+    assert.equal(project.result.nextAction, "configure-llm-profile");
     assert.equal(project.project.id, "github-cli-agent");
     assert.equal(project.project.repository.provider, "github");
     assert.equal(project.project.repository.topology.executionMode, "owned-repository");
@@ -293,22 +304,80 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
     assert.equal(project.devops.status, "READY");
     assert.equal(project.devops.devopsOwner, "org");
     assert.equal(project.devops.claimBoundary, "working-repo-ci");
+    assert.equal(project.llm.status, "BLOCKED");
     assert.ok(project.steps.some((step) => step.type === "project.source-credentials.preflight" && step.requestId));
+    assert.ok(project.steps.some((step) => step.type === "project.llm.preflight" && step.nextAction === "configure-llm-profile"));
+
+    const missingExplicitLlm = await runCli([
+      "target", "run",
+      "--project", "github-cli-agent",
+      "--objective", "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility",
+      "--max-steps", "0",
+      "--config", configPath,
+      "--json"
+    ], { status: 2 });
+    assert.equal(missingExplicitLlm.schema, "evopilot-cli-goal-run/v1");
+    assert.equal(missingExplicitLlm.result.nextAction, "configure-llm-profile");
+    assert.equal(missingExplicitLlm.status.enterprisePrerequisite.kind, "llm");
+    assert.ok(missingExplicitLlm.status.enterprisePrerequisite.blockers.some((blocker) => blocker.includes("server global default is not sufficient")));
+    assert.ok(missingExplicitLlm.steps.some((step) => step.type === "project.llm.preflight" && !step.profileId));
 
     const verify = await runCli([
       "project", "onboard", "verify", "github-cli-agent",
       "--objective", "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility",
       "--config", configPath,
       "--json"
-    ]);
+    ], { status: 2 });
     assert.equal(verify.schema, "evopilot-project-onboarding-checklist/v1");
     assert.equal(verify.mode, "inspect");
-    assert.equal(verify.status, "READY_TO_RUN");
-    assert.equal(verify.nextAction, "run-target");
+    assert.equal(verify.status, "BLOCKED");
+    assert.equal(verify.nextAction, "configure-llm-profile");
     assert.ok(verify.steps.some((step) => step.id === "project" && step.status === "PASS"));
-    assert.ok(verify.commands.some((command) => command.id === "target-plan" && command.command.includes("evopilot target plan")));
-    assert.ok(verify.commands.some((command) => command.id === "target-run" && command.command.includes("--require-source-ready")));
+    assert.ok(verify.steps.some((step) => step.id === "llm" && step.status === "FAIL"));
+    assert.ok(verify.commands.some((command) => command.id === "configure-llm-profile"));
+    assert.ok(verify.commands.some((command) => command.id === "repair-project-llm"));
+    assert.equal(verify.commands.some((command) => command.id === "target-plan"), false);
+    assert.equal(verify.commands.some((command) => command.id === "target-run"), false);
+    assert.equal(verify.commands.some((command) => command.id === "target-run" && command.command.includes("--require-source-ready")), false);
     assert.equal(verify.commands.some((command) => command.command.includes("--template")), false);
+
+    await runCli([
+      "secret", "set",
+      "--id", "LLM_API_KEY_REMOTE_CLI",
+      "--kind", "llm-key",
+      "--value", "fake-remote-llm-token",
+      "--config", configPath,
+      "--json"
+    ]);
+    await runCli([
+      "llm", "profile", "set", "remote-cli-llm",
+      "--provider", "openai-compatible",
+      "--base-url", llm.baseUrl,
+      "--model", "remote-cli-model",
+      "--api-key-ref", "LLM_API_KEY_REMOTE_CLI",
+      "--config", configPath,
+      "--json"
+    ]);
+    const readyProjectLlm = await runCli([
+      "project", "llm", "set", "github-cli-agent",
+      "--profile", "remote-cli-llm",
+      "--require-llm-ready",
+      "--config", configPath,
+      "--json"
+    ]);
+    assert.equal(readyProjectLlm.readiness.status, "READY");
+
+    const readyVerify = await runCli([
+      "project", "onboard", "verify", "github-cli-agent",
+      "--objective", "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility",
+      "--config", configPath,
+      "--json"
+    ]);
+    assert.equal(readyVerify.status, "READY_TO_RUN");
+    assert.equal(readyVerify.nextAction, "plan-target");
+    assert.ok(readyVerify.commands.some((command) => command.id === "target-plan"));
+    assert.equal(readyVerify.commands.some((command) => command.id === "target-run"), false);
+    assert.ok(readyVerify.commands.find((command) => command.id === "target-plan").command.includes("--llm-profile remote-cli-llm"));
 
     const preflightText = await runCliText([
       "project", "devops", "preflight", "github-cli-agent",
@@ -374,6 +443,7 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
   } finally {
     await new Promise((resolve) => server.close(resolve));
     await github.close();
+    await llm.close();
   }
 });
 
@@ -474,6 +544,20 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     const sourceCredentials = await runCli(["project", "preflight", "cli-agent", "--config", configPath, "--json"]);
     assert.equal(sourceCredentials.status, "READY");
     assert.equal(sourceCredentials.provider, "local-git");
+
+    const missingLlmOnboard = await runCli([
+      "project", "onboard", "local-git",
+      "--id", "cli-missing-llm-agent",
+      "--root", repoRoot,
+      "--llm-profile", "missing-llm-profile",
+      "--config", configPath,
+      "--json"
+    ], { status: 2 });
+    assert.equal(missingLlmOnboard.schema, "evopilot-cli-project-onboard/v1");
+    assert.equal(missingLlmOnboard.result.exitCode, 2);
+    assert.notEqual(missingLlmOnboard.result.llmStatus, "READY");
+    assert.equal(missingLlmOnboard.result.nextAction, "configure-llm-profile");
+    assert.ok(missingLlmOnboard.steps.some((step) => step.type === "project.llm.preflight" && step.profileId === "missing-llm-profile"));
 
     const llmSecret = await runCli([
       "secret", "set",

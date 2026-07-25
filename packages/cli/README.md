@@ -26,6 +26,7 @@ export EVOPILOT_ACTOR="workbuddy"
 evopilot target plan \
   --project <project-id> \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for the project" \
+  --llm-profile <llm-profile-id> \
   --json
 
 evopilot target plan export <goal-id> --format json > /tmp/evopilot-phase-plan.json
@@ -39,14 +40,13 @@ evopilot target plan approve <goal-id> \
 evopilot target run \
   --project <project-id> \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for the project" \
-  --until terminal \
   --max-steps 20 \
-  --require-source-ready \
-  --require-devops-ready \
+  --llm-profile <llm-profile-id> \
   --json
 ```
 
 WorkBuddy, Codex, Claude Code, and digital-human sessions must show the generated Alpha/Beta/RC/GA phase plan to the user or project owner before `target plan approve`. Approval requires `--confirmed-by` and `--confirmation`; AI Agents must not fabricate those values.
+Before Goal/Loop execution, wrapper commands preflight source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness by default. GitHub/GitLab enterprise real loops require an explicit READY project LLM profile or run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
 
 For a new GitHub project, ask for a checklist before mutating state:
 
@@ -59,6 +59,10 @@ evopilot project onboard plan github \
   --devops-owner <owner> \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://<app>/health \
+  --llm-profile <llm-profile-id> \
   --json
 ```
 
@@ -73,8 +77,10 @@ evopilot project onboard github \
   --devops-owner <owner> \
   --ci-workflow ci.yml \
   --ci-required-check build \
-  --require-source-ready \
-  --require-devops-ready \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://<app>/health \
+  --llm-profile <llm-profile-id> \
   --json
 ```
 
@@ -82,7 +88,7 @@ After registration, verify persisted readiness:
 
 ```bash
 evopilot project onboard verify <project-id> --json
-evopilot target plan --project <project-id> --objective "Enable the requested business capability and lifecycle evidence" --json
+evopilot target plan --project <project-id> --objective "Enable the requested business capability and lifecycle evidence" --llm-profile <llm-profile-id> --json
 ```
 
 ## Documentation

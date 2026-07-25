@@ -5070,7 +5070,7 @@
     "/api/v1/onboarding/project/checklist": {
       "post": {
         "summary": "生成项目首次接入 checklist",
-        "description": "无副作用计划接口。用于 CLI、Dashboard 和 AI Agent 在项目注册前检查 workspace、repository、server-side tokenRef、GitHub App、source writeback、GitHub Actions/GitLab CI、DevOps executionMode/devopsOwner/claimBoundary、GA 终态 Goal/Loop 交接和下一步命令。响应 schema 为 evopilot-project-onboarding-checklist/v1。open-source upstream 场景应传 upstreamRepo、workingRepo、executionMode=fork-validated-pr 和 devopsOwner，并由用户/组织自己的 GitHub/GitLab principal 执行 fork DevOps；如果缺少 principal，nextAction 为 connect-github-account 或 connect-gitlab-account；无账号场景只能使用 read-only-public。",
+        "description": "无副作用计划接口。用于 CLI、Dashboard 和 AI Agent 在项目注册前检查 workspace、repository、server-side tokenRef、GitHub App、source writeback、GitHub Actions/GitLab CI、DevOps executionMode/devopsOwner/claimBoundary、显式项目 LLM profile、GA 终态 Goal/Loop 交接和下一步命令。响应 schema 为 evopilot-project-onboarding-checklist/v1。open-source upstream 场景应传 upstreamRepo、workingRepo、executionMode=fork-validated-pr 和 devopsOwner，并由用户/组织自己的 GitHub/GitLab principal 执行 fork DevOps；如果缺少 principal，nextAction 为 connect-github-account 或 connect-gitlab-account；无账号场景只能使用 read-only-public。GitHub/GitLab 企业真实 loop 的 READY_TO_RUN 只允许 nextAction=plan-target，AI Agent 必须展示并确认 Alpha/Beta/RC/GA phase plan 后才能调用 target run。",
         "security": [
           {
             "bearerAuth": []
@@ -5106,7 +5106,7 @@
     "/api/v1/projects/{projectId}/onboarding-checklist": {
       "get": {
         "summary": "复核已注册项目 onboarding checklist",
-        "description": "基于持久化项目、source credentials、repository topology 和项目 GitHub Actions/GitLab CI 配置生成 evopilot-project-onboarding-checklist/v1。READY_TO_RUN 表示真实源码写回和仓库原生 DevOps 前置条件已满足。Agent 必须读取 executionMode、devopsOwner、workflowRepository 和 claimBoundary，不能从仓库 URL 自行推断 DevOps 权限。",
+        "description": "基于持久化项目、source credentials、repository topology、项目 GitHub Actions/GitLab CI 配置和项目 LLM 绑定生成 evopilot-project-onboarding-checklist/v1。READY_TO_RUN 表示真实源码写回、仓库原生 DevOps 和显式 LLM profile 前置条件已满足，但 nextAction 仍为 plan-target。Agent 必须读取 executionMode、devopsOwner、workflowRepository、claimBoundary 和 llm.profileId，不能从仓库 URL 自行推断 DevOps 权限，也不能跳过 phase plan 用户确认。",
         "security": [
           {
             "bearerAuth": []
@@ -5126,7 +5126,7 @@
             "name": "objective",
             "in": "query",
             "required": false,
-            "description": "可选业务目标描述，用于 suggested target plan/run command",
+            "description": "可选业务目标描述，用于 suggested target plan command；target run 必须在 phase plan 显示、确认、approve 后另行调用",
             "schema": {
               "type": "string"
             }

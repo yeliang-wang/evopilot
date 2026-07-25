@@ -49,6 +49,7 @@ evopilot project onboard plan github \
   --cd-workflow deploy-prod.yml \
   --deploy-environment production \
   --health-url https://my-agent.example.com/health \
+  --llm-profile my-agent-llm \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --json
 ```
@@ -104,6 +105,7 @@ evopilot project onboard plan gitlab \
   --cd-required-stage deploy \
   --deploy-environment production \
   --ready-url https://my-agent.example.com/ready \
+  --llm-profile my-agent-llm \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --json
 ```
@@ -175,7 +177,7 @@ Verify:
 evopilot project devops preflight my-agent --json
 ```
 
-Use `--require-devops-ready` on wrapper commands when the run must fail fast before Goal/Loop execution.
+Wrapper run commands check repository-native DevOps readiness by default for GitHub/GitLab projects. `--require-devops-ready` can still be used in onboarding scripts as an explicit assertion, but a real Goal/Loop run stops before execution whenever DevOps readiness is not `READY`.
 
 The preflight JSON includes:
 
@@ -193,7 +195,9 @@ For `fork-validated-pr`, `claimBoundary=fork-ci-pr`. This means the workflow can
 
 ## 5. Configure A Project LLM
 
-Use this when a project should run its loop target with a specific public model, private model, or enterprise OpenAI-compatible endpoint instead of the server global default LLM.
+Use this before any GitHub/GitLab enterprise real loop, or when a local project should run with a specific public model, private model, or enterprise OpenAI-compatible endpoint.
+
+For GitHub/GitLab enterprise real loops, the project must have an explicit READY project default LLM profile or the run must pass `--llm-profile`. The server global default LLM is not sufficient for a real remote project because the run must be attributable to the user, tenant, workspace, and project.
 
 Store the API key once in the EvoPilot server-side secret vault:
 
@@ -241,6 +245,8 @@ Resolution order for wrappers is:
 run override --llm-profile -> project default LLM -> server global default LLM
 ```
 
+The final fallback is only acceptable for local/debug validation or explicitly non-enterprise runs.
+
 ## 6. One Command To A Release Target
 
 Use `target run` when the project does not already have a project-scoped release target. EvoPilot resolves or creates the target, creates or resumes a GlobalGoal, generates the server plan, then stops for plan approval when the plan has not been confirmed.
@@ -251,6 +257,7 @@ The CLI does not invent the phase list. `--objective` is the user's business int
 evopilot target plan \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
+  --llm-profile my-agent-llm \
   --client workbuddy \
   --json
 ```
@@ -278,12 +285,8 @@ Then resume execution:
 evopilot target run \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --until terminal \
   --max-steps 20 \
-  --require-source-ready \
-  --require-devops-ready \
   --llm-profile my-agent-llm \
-  --require-llm-ready \
   --client workbuddy \
   --json
 ```
@@ -349,9 +352,6 @@ evopilot project onboard github \
   --deploy-environment production \
   --health-url https://my-agent.example.com/health \
   --llm-profile my-agent-llm \
-  --require-source-ready \
-  --require-devops-ready \
-  --require-llm-ready \
   --client workbuddy \
   --json
 ```
@@ -373,14 +373,11 @@ evopilot project onboard gitlab \
   --deploy-environment production \
   --ready-url https://my-agent.example.com/ready \
   --llm-profile my-agent-llm \
-  --require-source-ready \
-  --require-devops-ready \
-  --require-llm-ready \
   --client workbuddy \
   --json
 ```
 
-After onboarding, run `project onboard verify my-agent --json`. When the checklist returns `READY_TO_RUN`, use the `target plan` and `target run` flow from section 6 with the user's business objective.
+After onboarding, run `project onboard verify my-agent --json`. When the checklist returns `READY_TO_RUN`, it also returns `nextAction=plan-target`; use the `target plan` flow from section 6 first, approve the phase plan after user confirmation, and only then run `target run` with the user's business objective.
 
 ## 8. Public Upstream With A Writable Fork
 
@@ -399,9 +396,6 @@ evopilot project onboard github \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --llm-profile my-agent-llm \
-  --require-source-ready \
-  --require-devops-ready \
-  --require-llm-ready \
   --client workbuddy \
   --json
 ```
@@ -429,8 +423,6 @@ evopilot goal run \
   --target my-agent-ga \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --llm-profile my-agent-llm \
-  --require-llm-ready \
-  --until terminal \
   --max-steps 20 \
   --client workbuddy \
   --json
@@ -467,7 +459,6 @@ evopilot loop run \
   --target my-agent-rc \
   --objective "Fix RC release blockers and collect validation evidence" \
   --llm-profile my-agent-llm \
-  --require-llm-ready \
   --until blocked-or-complete \
   --max-iterations 10 \
   --client workbuddy \

@@ -55,6 +55,30 @@ test("project devops API configures GitHub Actions and exposes readiness evidenc
     assert.equal(preflight.data.status, "READY");
     assert.equal(preflight.data.executionMode, "owned-repository");
     assert.ok(preflight.data.checks.some((check) => check.id === "ci-state" && check.status === "PASS"));
+    assert.ok(preflight.data.checks.some((check) => check.id === "cd-config" && check.status === "PASS" && check.required === true));
+
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "github-missing-cd-agent",
+      name: "GitHub Missing CD Agent",
+      repository: {
+        provider: "github",
+        baseUrl: github.baseUrl,
+        owner: "org",
+        repo: "repo",
+        defaultBranch: "main",
+        token: "github-token"
+      }
+    });
+    const missingCd = await postRaw(`${baseUrl}/api/v1/projects/github-missing-cd-agent/devops`, {
+      provider: "github-actions",
+      ci: {
+        workflow: "ci.yml",
+        requiredChecks: ["build"]
+      }
+    });
+    assert.equal(missingCd.status, 409);
+    assert.equal(missingCd.body.data.readiness.status, "BLOCKED");
+    assert.ok(missingCd.body.data.readiness.blockers.some((blocker) => blocker.startsWith("cd-config:")));
 
     await post(`${baseUrl}/api/v1/projects`, {
       id: "github-observable-agent",
@@ -70,7 +94,12 @@ test("project devops API configures GitHub Actions and exposes readiness evidenc
     });
     const observable = await postRaw(`${baseUrl}/api/v1/projects/github-observable-agent/devops`, {
       provider: "github-actions",
-      ci: { workflow: "ci.yml" }
+      ci: { workflow: "ci.yml" },
+      cd: {
+        workflow: "deploy-prod.yml",
+        environment: "production",
+        healthUrl: `${github.baseUrl}/health`
+      }
     });
     assert.equal(observable.status, 200);
     assert.equal(observable.body.data.readiness.status, "OBSERVABLE");
@@ -269,6 +298,11 @@ test("delivery execution uses configured GitHub Actions DevOps by default", asyn
         ci: {
           workflow: "ci.yml",
           requiredChecks: ["build"]
+        },
+        cd: {
+          workflow: "deploy-prod.yml",
+          environment: "production",
+          healthUrl: `${github.baseUrl}/health`
         }
       }
     });

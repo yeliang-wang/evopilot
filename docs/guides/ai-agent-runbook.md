@@ -60,6 +60,7 @@ evopilot project onboard plan github \
   --cd-workflow deploy-prod.yml \
   --deploy-environment production \
   --health-url https://my-agent.example.com/health \
+  --llm-profile my-agent-llm \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --json
 ```
@@ -69,7 +70,7 @@ Read the checklist contract:
 ```text
 schema=evopilot-project-onboarding-checklist/v1
 status=READY_TO_ONBOARD | READY_TO_RUN | WAITING_INPUT | BLOCKED
-nextAction=store-secret | connect-github-account | connect-gitlab-account | install-github-app | register-project | configure-source-credentials | configure-devops | run-target | repair
+nextAction=store-secret | connect-github-account | connect-gitlab-account | install-github-app | register-project | configure-source-credentials | configure-devops | configure-llm-profile | plan-target | repair
 ```
 
 For GitHub/GitLab DevOps, also read:
@@ -87,7 +88,7 @@ The agent must not claim more than `claimBoundary`. In particular, `fork-ci-pr` 
 
 Writable GitHub/GitLab modes require an execution principal owned by the operator, user, or organization. For third-party open-source upstreams, use an operator-owned fork with `fork-validated-pr`, or use `upstream-authorized` only with maintainer credentials. If no GitHub/GitLab account or group exists, use `read-only-public` and do not claim PR, CI/CD, merge, deploy, or release readiness.
 
-If `nextAction=store-secret`, use the suggested `secret set` command from the checklist only from a trusted shell where the token environment variable is available. If `nextAction=connect-github-account` or `nextAction=connect-gitlab-account`, stop until the operator connects or creates the matching SCM account/group/principal and stores the server-side tokenRef. If `nextAction=register-project`, continue with `project onboard`. If `nextAction=run-target`, generate or inspect the phase plan with `target plan`, approve it when the user accepts it, then continue with `target run`. If `status=BLOCKED`, stop and report `blockers`.
+If `nextAction=store-secret`, use the suggested `secret set` command from the checklist only from a trusted shell where the token environment variable is available. If `nextAction=connect-github-account` or `nextAction=connect-gitlab-account`, stop until the operator connects or creates the matching SCM account/group/principal and stores the server-side tokenRef. If `nextAction=configure-llm-profile`, create or repair the project LLM profile before continuing. If `nextAction=register-project`, continue with `project onboard`. If `nextAction=plan-target`, generate or inspect the phase plan with `target plan`, approve it only after user confirmation, then continue with `target run`. If `status=BLOCKED`, stop and report `blockers`.
 
 For an already registered project, verify source credentials and native DevOps before invoking a one-command target:
 
@@ -130,6 +131,8 @@ Daily WorkBuddy commands should pass only the LLM profile id, never the raw API 
 run override --llm-profile -> project default LLM -> server global default LLM
 ```
 
+For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
+
 Generate the project phase plan before execution:
 
 ```bash
@@ -137,7 +140,6 @@ evopilot target plan \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --llm-profile my-agent-llm \
-  --require-llm-ready \
   --client workbuddy \
   --json
 ```
@@ -163,12 +165,8 @@ Run the approved project goal:
 evopilot target run \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --until terminal \
   --max-steps 20 \
-  --require-source-ready \
-  --require-devops-ready \
   --llm-profile my-agent-llm \
-  --require-llm-ready \
   --client workbuddy \
   --json
 ```
@@ -210,12 +208,7 @@ evopilot project onboard github \
   --deploy-environment production \
   --health-url https://my-agent.example.com/health \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --until terminal \
-  --max-steps 20 \
-  --require-source-ready \
-  --require-devops-ready \
   --llm-profile my-agent-llm \
-  --require-llm-ready \
   --client workbuddy \
   --json
 ```
@@ -261,7 +254,7 @@ Expected result:
 }
 ```
 
-Agents may continue with read-only inspection, but must not claim that source writeback, PR, merge, or deployment is ready. A later `target run` may stop at `configure-source-credentials`.
+Agents may continue with read-only inspection, but must not claim that source writeback, PR, merge, CI/CD, deployment, or release readiness is available. A later enterprise real `target run` stops at source credential preflight until a writable GitHub/GitLab execution principal and server-side tokenRef are configured.
 
 ### Scenario 2: Real PR To A Writable Owned Repository
 
@@ -298,24 +291,38 @@ evopilot project onboard plan github \
   --devops-owner yeliang-wang \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
+  --llm-profile my-agent-llm \
   --json
 ```
 
+When the checklist says `register-project`, run the mutating onboarding wrapper with the same execution boundary:
+
 ```bash
-evopilot project register \
-  --id my-agent \
-  --provider github \
+evopilot project onboard github \
   --repo yeliang-wang/my-agent-fork \
+  --id my-agent \
   --branch main \
   --token-ref GITHUB_WRITE_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner yeliang-wang \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
+  --llm-profile my-agent-llm \
   --idempotency-key project-my-agent \
   --json
 
 evopilot project preflight my-agent --json
+evopilot project devops preflight my-agent --json
 evopilot project onboard verify my-agent --json
 ```
 
-Expected result before a real PR run:
+Expected source credential result before a real PR run:
 
 ```json
 {
@@ -324,14 +331,23 @@ Expected result before a real PR run:
 }
 ```
 
-Only after `READY` and after the phase plan has been reviewed and approved, run the one-command target. If no approved plan exists, go back to the Fast Path and run `target plan` first:
+Expected onboarding checklist result before Goal/Loop execution:
+
+```json
+{
+  "status": "READY_TO_RUN",
+  "nextAction": "plan-target"
+}
+```
+
+Only after source and DevOps preflight return `READY`, `project onboard verify` returns `READY_TO_RUN`, and the phase plan has been reviewed and approved, run the one-command target. If no approved plan exists, go back to the Fast Path and run `target plan` first:
 
 ```bash
 evopilot target run \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --until terminal \
   --max-steps 20 \
+  --llm-profile my-agent-llm \
   --client workbuddy \
   --json
 ```
@@ -354,6 +370,7 @@ evopilot project onboard plan github \
   --devops-owner my-org \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --llm-profile my-agent-llm \
   --objective "Add the requested upstream-compatible capability and produce fork CI plus PR readiness evidence" \
   --json
 ```
@@ -372,9 +389,8 @@ evopilot project onboard github \
   --devops-owner my-org \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --llm-profile my-agent-llm \
   --objective "Add the requested upstream-compatible capability and produce fork CI plus PR readiness evidence" \
-  --require-source-ready \
-  --require-devops-ready \
   --client workbuddy \
   --json
 ```
@@ -406,9 +422,11 @@ evopilot project onboard github \
   --devops-owner apache \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://skywalking.example.com/health \
+  --llm-profile my-agent-llm \
   --objective "Add the requested upstream capability and collect maintainer-authorized source and CI evidence" \
-  --require-source-ready \
-  --require-devops-ready \
   --client workbuddy \
   --json
 ```
@@ -484,10 +502,8 @@ evopilot connector deploy list --json
 evopilot target run \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --until terminal \
   --max-steps 20 \
-  --require-devops-ready \
-  --require-llm-ready \
+  --llm-profile my-agent-llm \
   --client workbuddy \
   --json
 ```

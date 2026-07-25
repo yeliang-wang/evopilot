@@ -151,6 +151,7 @@ assert.match(aiAgentRunbook, /evopilot target run/);
 assert.match(aiAgentRunbook, /evopilot project onboard plan github/);
 assert.match(aiAgentRunbook, /evopilot project onboard verify/);
 assert.match(aiAgentRunbook, /evopilot-project-onboarding-checklist\/v1/);
+assert.match(aiAgentRunbook, /nextAction=plan-target/);
 assert.match(aiAgentRunbook, /evopilot project onboard github/);
 assert.match(aiAgentRunbook, /evopilot secret set/);
 assert.match(aiAgentRunbook, /evopilot llm profile set/);
@@ -192,6 +193,8 @@ assert.match(cliReadme, /evopilot project llm set/);
 assert.match(cliReadme, /Maturity Ladder/);
 assert.match(cliReadme, /evopilot target plan export/);
 assert.match(cliReadme, /PENDING_PLAN_APPROVAL/);
+assert.match(cliReadme, /nextAction=plan-target/);
+assert.match(cliReadme, /server global default LLM is allowed for local\/debug validation/);
 assert.match(cliReadme, /--confirmed-by/);
 assert.match(cliReadme, /must not fabricate/);
 assert.match(cliReadme, /status=UNREACHABLE/);
@@ -205,6 +208,8 @@ assert.match(cliWorkflows, /evopilot target plan apply/);
 assert.match(cliWorkflows, /--require-devops-ready/);
 assert.match(cliWorkflows, /Configure A Project LLM/);
 assert.match(cliWorkflows, /--require-llm-ready/);
+assert.match(cliWorkflows, /nextAction=plan-target/);
+assert.match(cliWorkflows, /server global default LLM is not sufficient/);
 assert.match(cliWorkflows, /status=UNREACHABLE/);
 assert.match(cliWorkflows, /server-side bounded read/);
 assert.match(cliCommands, /project onboard plan/);
@@ -221,6 +226,8 @@ assert.match(cliCommands, /goal phase-package/);
 assert.match(cliCommands, /source-closure execute/);
 assert.match(cliCommands, /SERVER_UNREACHABLE/);
 assert.match(cliCommands, /\/api\/v1\/audit\?limit=<n>&order=desc/);
+assert.match(cliCommands, /plan-target/);
+assert.match(cliCommands, /server global default LLM is not sufficient/);
 assert.match(cliAutomation, /WorkBuddy/);
 assert.match(cliAutomation, /requestId/);
 assert.match(cliAutomation, /project onboard plan/);
@@ -234,6 +241,8 @@ assert.match(cliAutomation, /diagnosis\.recommendedAction/);
 assert.match(cliAutomation, /llmUsage\.summary\.provider/);
 assert.match(cliAutomation, /Do not parse human-readable CLI output/);
 assert.match(cliAutomation, /Only EvoPilot release decisions/);
+assert.match(cliAutomation, /nextAction=plan-target/);
+assert.match(cliAutomation, /target plan --project[\s\S]{0,240}--llm-profile/, "Automation guide must show enterprise target plan with an explicit LLM profile");
 
 const agentFacingDocFiles = [
   "README.md",
@@ -268,6 +277,11 @@ const cliSource = fs.readFileSync("packages/cli/src/index.ts", "utf8");
 assert.doesNotMatch(cliSource, /evopilot target (?:plan|run)[^\n]*--template/, "CLI help must not expose target plan/run --template");
 assert.doesNotMatch(cliSource, /evopilot project onboard[^\n]*--template/, "CLI help must not expose project onboard --template");
 
+const serverSource = fs.readFileSync("packages/server/src/index.ts", "utf8");
+assert.doesNotMatch(serverSource, /id:\s*"target-run"/, "Project onboarding checklist must not suggest target run before phase-plan confirmation");
+assert.doesNotMatch(serverSource, /READY_TO_RUN"\)\s*return\s*"run-target"/, "READY_TO_RUN must not point automation directly to target run");
+assert.match(serverSource, /READY_TO_RUN"\)\s*return\s*"plan-target"/, "READY_TO_RUN must send automation to target plan first");
+
 const cliHelp = execFileSync(process.execPath, ["packages/cli/dist/index.js", "--help"], { encoding: "utf8" });
 assert.doesNotMatch(cliHelp, /--template/, "CLI help must not expose removed target template options");
 assert.doesNotMatch(cliHelp, /--target-level/, "CLI help must not expose removed target level options");
@@ -275,7 +289,21 @@ assert.doesNotMatch(cliHelp, /--auto-approve-plan/, "CLI help must not expose re
 assert.match(cliHelp, /target plan approve <goal-id> --confirmed-by <user-or-owner> --confirmation <text>/, "CLI help must require target plan approval confirmation flags");
 assert.match(cliHelp, /goal approve-plan <goal-id> --confirmed-by <user-or-owner> --confirmation <text>/, "CLI help must require goal approval confirmation flags");
 assert.match(cliHelp, /github-app installation set \[--id <id>\]/, "CLI help must document optional GitHub App installation id");
-assert.match(cliHelp, /project onboard \/ target run \/ goal run \/ loop run fails fast unless LLM profile preflight is READY/, "CLI help must describe the LLM readiness scope");
+assert.match(cliHelp, /target\/goal\/loop run preflights selected LLM by default/, "CLI help must describe default enterprise LLM preflight behavior");
+assert.match(cliHelp, /target plan --project <id> --objective <business-goal> \[--llm-profile <id>\]/, "CLI help must document target plan LLM profile binding");
+
+const enterpriseCliDocFiles = [
+  "README.md",
+  "packages/cli/README.md",
+  "docs/cli/README.md",
+  "docs/cli/workflows.md",
+  "docs/cli/automation.md",
+  "docs/guides/ai-agent-runbook.md"
+];
+for (const file of enterpriseCliDocFiles) {
+  const content = fs.readFileSync(file, "utf8");
+  assert.match(content, /target plan[\s\S]{0,360}--llm-profile/, `${file} must show enterprise phase planning with --llm-profile`);
+}
 
 const cliDocCommandFiles = [
   "README.md",
@@ -425,6 +453,12 @@ assert.match(apiDoc, /maturity\/standards/);
 assert.match(apiDoc, /plan\/apply/);
 assert.match(apiDoc, /phase-packages/);
 assert.match(apiDoc, /Alpha -> Beta -> RC -> GA/);
+assert.match(apiDoc, /nextAction.*plan-target/);
+assert.match(apiDoc, /显式 READY 的项目 LLM profile/);
+
+const openApiText = fs.readFileSync("docs/api/openapi.json", "utf8");
+assert.match(openApiText, /nextAction=plan-target/);
+assert.match(openApiText, /显式项目 LLM profile/);
 
 const loopRuntimeDoc = fs.readFileSync("docs/architecture/loop-runtime.md", "utf8");
 assert.match(loopRuntimeDoc, /Loop Engineering/);

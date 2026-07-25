@@ -76,6 +76,7 @@ interface LlmUsageMeta {
 
 const DEFAULT_SERVER = "http://127.0.0.1:19876";
 const TERMINAL_MATURITY_ID = "ga";
+const ENTERPRISE_LOOP_PREREQUISITE_REQUIRED = "ENTERPRISE_LOOP_PREREQUISITE_REQUIRED";
 
 function defaultProjectReleaseTargetId(projectId: string): string {
   return `${projectId}-${TERMINAL_MATURITY_ID}`;
@@ -539,8 +540,10 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
   if (!provider || !["local-git", "github", "gitlab"].includes(provider)) {
     throw usage("Use: evopilot project onboard <github|gitlab|local-git> [options]");
   }
-  enforceProjectDevopsBoundaryOptions(ctx.args, provider, "project onboard");
   rejectRemovedTargetTemplateOptions(ctx.args, "project onboard", ["run-target"]);
+  enforceEnterpriseProjectOnboardingOptions(ctx.args, provider, "project onboard");
+  enforceProjectDevopsBoundaryOptions(ctx.args, provider, "project onboard");
+  const enterpriseProject = isEnterpriseRemoteProjectOnboarding(ctx.args, provider);
   const projectId = stringOption(ctx.args, "id") ?? deriveProjectId(ctx.args, provider);
   const steps: Array<Record<string, unknown>> = [];
   const register = await ctx.client.post("/api/v1/projects", projectRegistrationBody(ctx.args, projectId, provider), derivedRequestOptions(ctx, "project-onboard-register"));
@@ -553,7 +556,22 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
     status: nestedField(project, ["validation", "status"]) ?? (register.ok ? "VERIFIED" : "FAILED")
   }, "project-onboard-register", register));
   if (!register.ok) {
-    return finishProjectOnboard(ctx, projectId, project, undefined, undefined, undefined, steps, 2);
+    const llmReadiness = projectOnboardRegisterLlmReadiness(project, ctx.args);
+    if (llmReadiness) {
+      steps.push({
+        type: "project.llm.preflight",
+        projectId,
+        httpStatus: register.status,
+        requestId: register.requestId,
+        profileId: field(llmReadiness, "profileId") ?? stringOption(ctx.args, "llm-profile") ?? stringOption(ctx.args, "llm-profile-id"),
+        llmProvider: field(llmReadiness, "provider"),
+        llmModel: field(llmReadiness, "model"),
+        status: field(llmReadiness, "status"),
+        nextAction: field(llmReadiness, "nextAction") ?? "configure-llm-profile",
+        blockers: field(llmReadiness, "blockers")
+      });
+    }
+    return finishProjectOnboard(ctx, projectId, project, undefined, undefined, llmReadiness, steps, 2);
   }
 
   const sourcePreflight = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/source-credentials/preflight`, {}, derivedRequestOptions(ctx, "project-onboard-source-preflight"));
@@ -567,7 +585,7 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
     nextAction: field(sourceReadiness, "nextAction"),
     blockers: field(sourceReadiness, "blockers")
   }, "project-onboard-source-preflight", sourcePreflight));
-  if (hasFlag(ctx.args, "require-source-ready") && field(sourceReadiness, "status") !== "READY") {
+  if ((enterpriseProject || hasFlag(ctx.args, "require-source-ready")) && field(sourceReadiness, "status") !== "READY") {
     return finishProjectOnboard(ctx, projectId, project, sourceReadiness, undefined, undefined, steps, 2);
   }
 
@@ -587,7 +605,7 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
       nextAction: nestedField(devopsResult, ["readiness", "nextAction"]) ?? field(devopsResult, "nextAction"),
       blockers: nestedField(devopsResult, ["readiness", "blockers"]) ?? field(devopsResult, "blockers")
     }, "project-onboard-devops-set", devops));
-    if (!devops.ok && hasFlag(ctx.args, "require-devops-ready")) {
+    if (!devops.ok && (enterpriseProject || hasFlag(ctx.args, "require-devops-ready"))) {
       return finishProjectOnboard(ctx, projectId, project, sourceReadiness, devopsResult, undefined, steps, 2);
     }
   }
@@ -620,15 +638,16 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
       nextAction: field(devopsReadiness, "nextAction"),
       blockers: field(devopsReadiness, "blockers")
     }, "project-onboard-devops-preflight", devopsPreflight));
-    if (hasFlag(ctx.args, "require-devops-ready") && field(devopsReadiness, "status") !== "READY") {
+    if ((enterpriseProject || hasFlag(ctx.args, "require-devops-ready")) && field(devopsReadiness, "status") !== "READY") {
       return finishProjectOnboard(ctx, projectId, project, sourceReadiness, devopsReadiness, undefined, steps, 2);
     }
   }
 
   let llmReadiness: unknown;
-  if (stringOption(ctx.args, "llm-profile") || stringOption(ctx.args, "llm-profile-id") || hasFlag(ctx.args, "require-llm-ready")) {
+  const requestedProjectLlmProfile = Boolean(stringOption(ctx.args, "llm-profile") || stringOption(ctx.args, "llm-profile-id"));
+  if (enterpriseProject || requestedProjectLlmProfile || hasFlag(ctx.args, "require-llm-ready")) {
     const llmPreflight = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/llm/preflight`, {}, derivedRequestOptions(ctx, "project-onboard-llm-preflight"));
-    llmReadiness = llmPreflight.data ?? llmPreflight.body;
+    llmReadiness = explicitProjectLlmReadiness(llmPreflight.data ?? llmPreflight.body, enterpriseProject);
     steps.push(attachStepLlmUsage(ctx, {
       type: "project.llm.preflight",
       projectId,
@@ -641,7 +660,7 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
       nextAction: field(llmReadiness, "nextAction"),
       blockers: field(llmReadiness, "blockers")
     }, "project-onboard-llm-preflight", llmPreflight));
-    if (hasFlag(ctx.args, "require-llm-ready") && field(llmReadiness, "status") !== "READY") {
+    if ((enterpriseProject || requestedProjectLlmProfile || hasFlag(ctx.args, "require-llm-ready")) && field(llmReadiness, "status") !== "READY") {
       return finishProjectOnboard(ctx, projectId, project, sourceReadiness, devopsReadiness, llmReadiness, steps, 2);
     }
   }
@@ -649,13 +668,49 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
   return finishProjectOnboard(ctx, projectId, project, sourceReadiness, devopsReadiness, llmReadiness, steps, 0);
 }
 
+function projectOnboardRegisterLlmReadiness(projectRegistrationResult: unknown, args: ParsedArgs): unknown {
+  const readiness = field(projectRegistrationResult, "readiness");
+  if (isRecord(readiness) && field(readiness, "schema") === "evopilot-llm-profile-readiness/v1") return readiness;
+  const error = field(projectRegistrationResult, "error");
+  const requestedProfileId = stringOption(args, "llm-profile") ?? stringOption(args, "llm-profile-id") ?? stringField(projectRegistrationResult, "profileId");
+  if ((error === "LLM_PROFILE_NOT_FOUND" || error === "LLM_PROFILE_NOT_READY") && requestedProfileId) {
+    return {
+      schema: "evopilot-llm-profile-readiness/v1",
+      profileId: requestedProfileId,
+      source: "missing",
+      status: "BLOCKED",
+      checks: [{ id: "profile", status: "FAIL", required: true, evidence: [`profile=${requestedProfileId}`, "profile=missing-or-inaccessible"] }],
+      blockers: [`profile:profile=${requestedProfileId}`, "profile:profile=missing-or-inaccessible"],
+      nextAction: "configure-llm-profile",
+      checkedAt: new Date().toISOString()
+    };
+  }
+  return undefined;
+}
+
+function explicitProjectLlmReadiness(readiness: unknown, enterpriseProject: boolean): unknown {
+  if (!enterpriseProject || !isRecord(readiness) || field(readiness, "profileId")) return readiness;
+  const existingBlockers = Array.isArray(field(readiness, "blockers")) ? field(readiness, "blockers") as unknown[] : [];
+  return {
+    ...readiness,
+    status: "BLOCKED",
+    nextAction: "configure-llm-profile",
+    blockers: [
+      ...existingBlockers.map(String),
+      "llm-profile=missing",
+      "Enterprise real loop for GitHub/GitLab projects requires an explicit project default or run --llm-profile; server global default is not sufficient for user/project attribution."
+    ]
+  };
+}
+
 async function projectOnboardPlan(ctx: RuntimeContext, providerArg?: string): Promise<number> {
   const provider = providerArg ?? stringOption(ctx.args, "provider");
   if (!provider || !["local-git", "github", "gitlab"].includes(provider)) {
     throw usage("Use: evopilot project onboard plan <github|gitlab|local-git> [options]");
   }
-  enforceProjectDevopsBoundaryOptions(ctx.args, provider, "project onboard plan");
   rejectRemovedTargetTemplateOptions(ctx.args, "project onboard plan");
+  enforceEnterpriseProjectOnboardingOptions(ctx.args, provider, "project onboard plan");
+  enforceProjectDevopsBoundaryOptions(ctx.args, provider, "project onboard plan");
   const body = projectOnboardingChecklistBody(ctx.args, provider);
   const response = await ctx.client.post("/api/v1/onboarding/project/checklist", body, requestOptions(ctx));
   const checklist = response.data ?? response.body;
@@ -820,6 +875,74 @@ function shouldConfigureProjectDevops(args: ParsedArgs, sourceProvider: string):
   );
 }
 
+function enforceEnterpriseProjectOnboardingOptions(args: ParsedArgs, sourceProvider: string | undefined, command: string): void {
+  if (!sourceProvider || !isRemoteScmProvider(sourceProvider)) return;
+  const executionMode = stringOption(args, "execution-mode");
+  if (!executionMode) {
+    throw usage(`${command} enterprise real loop onboarding requires --execution-mode <owned-repository|fork-validated-pr|upstream-authorized>. Use --execution-mode read-only-public only for analysis-only inspection, not real Goal/Loop execution.`);
+  }
+  if (executionMode === "read-only-public") {
+    if (hasFlag(args, "require-source-ready") || hasFlag(args, "require-devops-ready")) {
+      throw usage(`${command} --execution-mode read-only-public is analysis-only and cannot be combined with --require-source-ready or --require-devops-ready.`);
+    }
+    return;
+  }
+  if (!["owned-repository", "fork-validated-pr", "upstream-authorized"].includes(executionMode)) {
+    throw usage(`${command} enterprise real loop requires --execution-mode owned-repository, fork-validated-pr, or upstream-authorized.`);
+  }
+  if (!stringOption(args, "token-ref")) {
+    throw usage(`${command} enterprise real loop requires --token-ref <server-side-token-ref>. Store the GitHub/GitLab token on the EvoPilot server or tenant/workspace secret vault before running real Goal/Loop execution.`);
+  }
+  if (!stringOption(args, "devops-owner") && !stringOption(args, "devops-namespace")) {
+    throw usage(`${command} enterprise real loop requires --devops-owner <github-owner-or-gitlab-namespace> to declare which account runs repository-native DevOps.`);
+  }
+  if (executionMode === "fork-validated-pr") {
+    if (!stringOption(args, "upstream-repo")) throw usage(`${command} --execution-mode fork-validated-pr requires --upstream-repo <owner/repo-or-group/project>.`);
+    if (!stringOption(args, "working-repo")) throw usage(`${command} --execution-mode fork-validated-pr requires --working-repo <owner/repo-or-group/project>.`);
+  }
+  if (!hasCiBoundaryOption(args, sourceProvider)) {
+    const hint = sourceProvider === "github"
+      ? "--ci-workflow <workflow.yml> and/or --ci-required-check <check>"
+      : "--ci-required-stage <stage> and/or --ci-required-job <job>";
+    throw usage(`${command} enterprise real loop requires repository-native CI configuration: ${hint}.`);
+  }
+  if (executionMode !== "fork-validated-pr" && !hasCdBoundaryOption(args)) {
+    throw usage(`${command} enterprise real loop requires CD or production health boundary: --cd-workflow, --deploy-environment, --health-url, --ready-url, --cd-required-stage, or --cd-required-job.`);
+  }
+}
+
+function isEnterpriseRemoteProjectOnboarding(args: ParsedArgs, sourceProvider: string): boolean {
+  return isRemoteScmProvider(sourceProvider) && stringOption(args, "execution-mode") !== "read-only-public";
+}
+
+function isRemoteScmProvider(provider: unknown): provider is "github" | "gitlab" {
+  return provider === "github" || provider === "gitlab";
+}
+
+function hasCiBoundaryOption(args: ParsedArgs, sourceProvider: string): boolean {
+  if (sourceProvider === "github") {
+    return hasAnyOption(args, ["ci-workflow", "workflow", "ci-required-check", "required-check"]);
+  }
+  if (sourceProvider === "gitlab") {
+    return hasAnyOption(args, ["ci-required-stage", "required-stage", "ci-required-job", "required-job"]);
+  }
+  return false;
+}
+
+function hasCdBoundaryOption(args: ParsedArgs): boolean {
+  return hasAnyOption(args, [
+    "cd-workflow",
+    "deploy-workflow",
+    "deploy-environment",
+    "environment",
+    "health-url",
+    "ready-url",
+    "cd-required-stage",
+    "cd-required-job",
+    "deploy-input"
+  ]);
+}
+
 function enforceProjectDevopsBoundaryOptions(args: ParsedArgs, sourceProvider: string | undefined, command: string): void {
   const shouldConfigure = sourceProvider ? shouldConfigureProjectDevops(args, sourceProvider) : true;
   if (!shouldConfigure) return;
@@ -932,7 +1055,7 @@ function finishProjectOnboard(ctx: RuntimeContext, projectId: string, project: u
       sourceCredentialStatus: field(sourceCredentials, "status") ?? "UNKNOWN",
       devopsStatus: field(devops, "status") ?? nestedField(devops, ["readiness", "status"]) ?? "UNKNOWN",
       llmStatus: field(llm, "status") ?? "UNKNOWN",
-      nextAction: field(llm, "nextAction") ?? field(devops, "nextAction") ?? field(sourceCredentials, "nextAction") ?? "target-run"
+      nextAction: field(llm, "nextAction") ?? field(devops, "nextAction") ?? field(sourceCredentials, "nextAction") ?? "plan-target"
     },
     llmUsage: cliLlmUsageReport(ctx),
     generatedAt: new Date().toISOString()
@@ -1330,6 +1453,28 @@ async function targetRun(ctx: RuntimeContext): Promise<number> {
   const projectId = requiredOption(ctx.args, "project");
   let targetId = stringOption(ctx.args, "target");
   const steps: Array<Record<string, unknown>> = [];
+  const sourcePreflight = await tryProjectSourceCredentialPreflight(ctx, projectId);
+  steps.push(sourcePreflight);
+  const sourceBlock = enterpriseSourceReadinessBlock(sourcePreflight);
+  if (sourceBlock) {
+    return finishEnterpriseBlockedGoalRun(ctx, "target run", projectId, targetId ?? defaultProjectReleaseTargetId(projectId), steps, sourceBlock);
+  }
+  if (enterpriseDevopsRequiredForSource(sourcePreflight)) {
+    const devopsPreflight = await tryProjectDevopsPreflight(ctx, projectId);
+    steps.push(devopsPreflight);
+    const devopsBlock = enterpriseDevopsReadinessBlock(devopsPreflight);
+    if (devopsBlock) {
+      return finishEnterpriseBlockedGoalRun(ctx, "target run", projectId, targetId ?? defaultProjectReleaseTargetId(projectId), steps, devopsBlock);
+    }
+  } else {
+    steps.push({ type: "project.devops.preflight", projectId, status: "SKIPPED", nextAction: "use-local-git", blockers: ["local-git project does not use repository-native GitHub/GitLab DevOps"] });
+  }
+  const llmPreflight = await tryLlmReadinessPreflight(ctx, projectId);
+  steps.push(llmPreflight);
+  const llmBlock = enterpriseLlmReadinessBlock(llmPreflight, { requireExplicitProfile: enterpriseDevopsRequiredForSource(sourcePreflight) });
+  if (llmBlock) {
+    return finishEnterpriseBlockedGoalRun(ctx, "target run", projectId, targetId ?? defaultProjectReleaseTargetId(projectId), steps, llmBlock);
+  }
   if (!targetId) {
     targetId = defaultProjectReleaseTargetId(projectId);
     const existing = await readReleaseTarget(ctx, targetId);
@@ -1339,21 +1484,6 @@ async function targetRun(ctx: RuntimeContext): Promise<number> {
       const created = await createProjectReleaseTarget(ctx, projectId, TERMINAL_MATURITY_ID, targetId);
       steps.push({ type: "target.created", targetId: field(created, "id"), terminalMaturity: TERMINAL_MATURITY_ID });
     }
-  }
-  const sourcePreflight = await tryProjectSourceCredentialPreflight(ctx, projectId);
-  steps.push(sourcePreflight);
-  if (hasFlag(ctx.args, "require-source-ready") && sourcePreflight.status !== "READY") {
-    throw usage(`Project source credentials are not READY: ${sourcePreflight.status}`);
-  }
-  const devopsPreflight = await tryProjectDevopsPreflight(ctx, projectId);
-  steps.push(devopsPreflight);
-  if (hasFlag(ctx.args, "require-devops-ready") && devopsPreflight.status !== "READY") {
-    throw usage(`Project DevOps is not READY: ${devopsPreflight.status}`);
-  }
-  const llmPreflight = await tryLlmReadinessPreflight(ctx, projectId);
-  steps.push(llmPreflight);
-  if (hasFlag(ctx.args, "require-llm-ready") && llmPreflight.status !== "READY") {
-    throw usage(`Project LLM is not READY: ${llmPreflight.status}`);
   }
   const objective = requiredOption(ctx.args, "objective");
   return await runGoalWrapper(ctx, {
@@ -1568,12 +1698,9 @@ async function loopRun(ctx: RuntimeContext, id?: string): Promise<number> {
     const sourceClosureFile = stringOption(ctx.args, "source-closure");
     const targetId = requiredOption(ctx.args, "target");
     const projectId = requiredOption(ctx.args, "project");
-    if (shouldPreflightRunLlm(ctx.args)) {
-      const llmPreflight = await tryLlmReadinessPreflight(ctx, projectId, "loop-run");
-      steps.push(llmPreflight);
-      if (hasFlag(ctx.args, "require-llm-ready") && llmPreflight.status !== "READY") {
-        throw usage(`Project LLM is not READY: ${llmPreflight.status}`);
-      }
+    const preflightBlock = await appendEnterpriseLoopRunPreflights(ctx, steps, projectId, "loop-run");
+    if (preflightBlock) {
+      return finishEnterpriseBlockedLoopRun(ctx, undefined, steps, preflightBlock, until);
     }
     const createResponse = await ctx.client.post("/api/v1/loops", {
       id: stringOption(ctx.args, "id"),
@@ -1596,6 +1723,21 @@ async function loopRun(ctx: RuntimeContext, id?: string): Promise<number> {
   const maxIterations = numberOption(ctx.args, "max-iterations") ?? numberOption(ctx.args, "max-steps") ?? 10;
   const quiet = hasFlag(ctx.args, "quiet");
   let loop: unknown = await readLoop(ctx, loopId);
+  const existingLoopProjectId = String(field(loop, "projectId") ?? "");
+  const missingProjectBlock: EnterprisePrerequisiteBlock = {
+      kind: "project",
+      status: "BLOCKED",
+      nextAction: "repair-project",
+      blockers: ["projectId=missing"],
+      detail: "LoopRun does not reference a project id.",
+      errorCode: ENTERPRISE_LOOP_PREREQUISITE_REQUIRED
+    };
+  const existingLoopPreflightBlock = existingLoopProjectId
+    ? await appendEnterpriseLoopRunPreflights(ctx, steps, existingLoopProjectId, "loop-run")
+    : missingProjectBlock;
+  if (existingLoopPreflightBlock) {
+    return finishEnterpriseBlockedLoopRun(ctx, loop, steps, existingLoopPreflightBlock, until);
+  }
   printLoopRunStatus(ctx, "loop run", loop, steps, quiet);
   let runIterations = 0;
   for (let index = 0; index < maxIterations && !hasTimedOut(startedAt, timeoutMs) && shouldContinueLoopRun(loop, ctx.args, until); index += 1) {
@@ -1983,6 +2125,7 @@ async function tryLlmReadinessPreflight(ctx: RuntimeContext, projectId: string, 
       httpStatus: response.status,
       requestId: response.requestId,
       status: field(readiness, "status") ?? (response.ok ? "READY" : "BLOCKED"),
+      source: field(readiness, "source"),
       nextAction: field(readiness, "nextAction"),
       llmProvider: field(readiness, "provider"),
       llmModel: field(readiness, "model"),
@@ -1997,6 +2140,211 @@ async function tryLlmReadinessPreflight(ctx: RuntimeContext, projectId: string, 
       error: error instanceof Error ? error.message : String(error)
     };
   }
+}
+
+interface EnterprisePrerequisiteBlock {
+  kind: "project" | "source" | "devops" | "llm";
+  status: string;
+  nextAction: string;
+  blockers: string[];
+  detail: string;
+  errorCode: string;
+}
+
+async function appendEnterpriseGoalRunPreflights(ctx: RuntimeContext, steps: Array<Record<string, unknown>>, projectId: string, labelPrefix: string): Promise<EnterprisePrerequisiteBlock | undefined> {
+  if (!steps.some((step) => step.type === "project.source-credentials.preflight")) {
+    const sourcePreflight = await tryProjectSourceCredentialPreflight(ctx, projectId);
+    steps.push(sourcePreflight);
+  }
+  const sourcePreflight = steps.find((step) => step.type === "project.source-credentials.preflight");
+  const sourceBlock = enterpriseSourceReadinessBlock(sourcePreflight);
+  if (sourceBlock) return sourceBlock;
+
+  if (enterpriseDevopsRequiredForSource(sourcePreflight)) {
+    if (!steps.some((step) => step.type === "project.devops.preflight")) {
+      const devopsPreflight = await tryProjectDevopsPreflight(ctx, projectId);
+      steps.push(devopsPreflight);
+    }
+    const devopsBlock = enterpriseDevopsReadinessBlock(steps.find((step) => step.type === "project.devops.preflight"));
+    if (devopsBlock) return devopsBlock;
+  } else if (!steps.some((step) => step.type === "project.devops.preflight")) {
+    steps.push({ type: "project.devops.preflight", projectId, status: "SKIPPED", nextAction: "use-local-git", blockers: ["local-git project does not use repository-native GitHub/GitLab DevOps"] });
+  }
+
+  if (!steps.some((step) => step.type === "llm.profile.preflight" || step.type === "project.llm.preflight")) {
+    const llmPreflight = await tryLlmReadinessPreflight(ctx, projectId, labelPrefix);
+    steps.push(llmPreflight);
+  }
+  return enterpriseLlmReadinessBlock(steps.find((step) => step.type === "llm.profile.preflight" || step.type === "project.llm.preflight"), {
+    requireExplicitProfile: enterpriseDevopsRequiredForSource(sourcePreflight)
+  });
+}
+
+async function appendEnterpriseLoopRunPreflights(ctx: RuntimeContext, steps: Array<Record<string, unknown>>, projectId: string, labelPrefix: string): Promise<EnterprisePrerequisiteBlock | undefined> {
+  return appendEnterpriseGoalRunPreflights(ctx, steps, projectId, labelPrefix);
+}
+
+function enterpriseSourceReadinessBlock(step: unknown): EnterprisePrerequisiteBlock | undefined {
+  const status = String(field(step, "status") ?? "UNAVAILABLE");
+  if (status === "READY") return undefined;
+  const nextAction = String(field(step, "nextAction") ?? (status === "READ_ONLY" ? "connect-github-account" : "repair-project"));
+  return {
+    kind: "source",
+    status,
+    nextAction,
+    blockers: enterpriseBlockers(step, [`sourceCredentials=${status}`]),
+    detail: "Enterprise real loop requires source writeback readiness before Goal/Loop execution.",
+    errorCode: ENTERPRISE_LOOP_PREREQUISITE_REQUIRED
+  };
+}
+
+function enterpriseDevopsReadinessBlock(step: unknown): EnterprisePrerequisiteBlock | undefined {
+  const status = String(field(step, "status") ?? "UNAVAILABLE");
+  if (status === "READY") return undefined;
+  return {
+    kind: "devops",
+    status,
+    nextAction: String(field(step, "nextAction") ?? "configure-devops"),
+    blockers: enterpriseBlockers(step, [`devops=${status}`]),
+    detail: "Enterprise real loop requires repository-native GitHub Actions or GitLab CI readiness before Goal/Loop execution.",
+    errorCode: ENTERPRISE_LOOP_PREREQUISITE_REQUIRED
+  };
+}
+
+function enterpriseLlmReadinessBlock(step: unknown, options: { requireExplicitProfile?: boolean } = {}): EnterprisePrerequisiteBlock | undefined {
+  const status = String(field(step, "status") ?? "UNAVAILABLE");
+  const explicitProfileMissing = options.requireExplicitProfile === true && !field(step, "profileId");
+  if (status === "READY" && !explicitProfileMissing) return undefined;
+  if (explicitProfileMissing) {
+    return {
+      kind: "llm",
+      status: "BLOCKED",
+      nextAction: "configure-llm-profile",
+      blockers: ["llm-profile=missing", "Enterprise real loop for GitHub/GitLab projects requires an explicit project default or run --llm-profile; server global default is not sufficient for user/project attribution."],
+      detail: "Enterprise real loop requires an explicit READY project or run LLM profile before Goal/Loop execution.",
+      errorCode: ENTERPRISE_LOOP_PREREQUISITE_REQUIRED
+    };
+  }
+  return {
+    kind: "llm",
+    status,
+    nextAction: String(field(step, "nextAction") ?? "configure-llm"),
+    blockers: enterpriseBlockers(step, [`llm=${status}`]),
+    detail: "Enterprise real loop requires a READY project or run LLM profile before Goal/Loop execution.",
+    errorCode: ENTERPRISE_LOOP_PREREQUISITE_REQUIRED
+  };
+}
+
+function enterpriseDevopsRequiredForSource(step: unknown): boolean {
+  return isRemoteScmProvider(String(field(step, "provider") ?? ""));
+}
+
+function enterpriseBlockers(step: unknown, fallback: string[]): string[] {
+  const blockers = field(step, "blockers");
+  if (Array.isArray(blockers) && blockers.length > 0) return blockers.map(String);
+  const error = field(step, "error");
+  if (error) return [String(error)];
+  return fallback;
+}
+
+function withEnterprisePrerequisiteBlock(status: unknown, block: EnterprisePrerequisiteBlock): unknown {
+  const existingBlockers = Array.isArray(field(status, "blockers")) ? field(status, "blockers") as unknown[] : [];
+  return {
+    ...(isRecord(status) ? status : {}),
+    status: "BLOCKED",
+    nextAction: block.nextAction,
+    enterprisePrerequisite: block,
+    blockers: [...existingBlockers.map(String), ...block.blockers]
+  };
+}
+
+async function finishEnterpriseBlockedGoalRun(ctx: RuntimeContext, command: "goal run" | "target run", projectId: string, targetId: string, steps: Array<Record<string, unknown>>, block: EnterprisePrerequisiteBlock): Promise<number> {
+  const status = withEnterprisePrerequisiteBlock({
+    schema: "evopilot-goal-run-status/v1",
+    scope: {
+      tenantId: stringOption(ctx.args, "tenant") ?? stringOption(ctx.args, "tenant-id") ?? ctx.config.tenantId,
+      workspaceId: stringOption(ctx.args, "workspace") ?? stringOption(ctx.args, "workspace-id") ?? ctx.config.workspaceId
+    },
+    goal: {
+      projectId,
+      releaseTargetId: targetId,
+      plan: { status: "MISSING", phaseTargets: [], targets: [] }
+    },
+    snapshot: {
+      progress: { totalTargets: 0, requiredTargets: 0, completedTargets: 0, blockedTargets: 0, failedTargets: 0, percent: 0 }
+    },
+    chain: enterprisePreflightChain(projectId, targetId, block),
+    llmUsage: cliLlmUsageReport(ctx)
+  }, block);
+  const result = {
+    schema: "evopilot-cli-goal-run/v1",
+    command,
+    until: wrapperUntil(ctx.args, "terminal"),
+    status,
+    steps,
+    result: {
+      ...goalRunResult(status, 2),
+      errorCode: block.errorCode,
+      blockers: block.blockers
+    },
+    llmUsage: cliLlmUsageReport(ctx),
+    generatedAt: new Date().toISOString()
+  };
+  if (ctx.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else process.stdout.write(formatGoalRunStatus(command, status, steps, ctx.cli));
+  return 2;
+}
+
+function finishEnterpriseBlockedLoopRun(ctx: RuntimeContext, loop: unknown, steps: Array<Record<string, unknown>>, block: EnterprisePrerequisiteBlock, until: WrapperUntil): number {
+  const blockedLoop = {
+    ...(isRecord(loop) ? loop : {}),
+    status: "BLOCKED",
+    nextAction: block.nextAction,
+    enterprisePrerequisite: block,
+    blockers: block.blockers
+  };
+  const result = {
+    schema: "evopilot-cli-loop-run/v1",
+    command: "loop run",
+    until,
+    loop: blockedLoop,
+    steps,
+    result: {
+      exitCode: 2,
+      status: "BLOCKED",
+      nextAction: block.nextAction,
+      errorCode: block.errorCode,
+      blockers: block.blockers
+    },
+    llmUsage: cliLlmUsageReport(ctx, nestedField(loop, ["trace", "llmUsage"])),
+    generatedAt: new Date().toISOString()
+  };
+  if (ctx.json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else process.stdout.write(formatLoopRunStatus("loop run", blockedLoop, steps, ctx.cli));
+  return 2;
+}
+
+function enterprisePreflightChain(projectId: string, targetId: string, block: EnterprisePrerequisiteBlock): Array<Record<string, unknown>> {
+  return [
+    {
+      id: "project",
+      label: "Project",
+      status: "BLOCKED",
+      detail: projectId
+    },
+    {
+      id: "target",
+      label: "Release Target",
+      status: "PENDING",
+      detail: targetId
+    },
+    {
+      id: `enterprise-${block.kind}-preflight`,
+      label: `Enterprise ${block.kind} preflight`,
+      status: "BLOCKED",
+      detail: block.detail
+    }
+  ];
 }
 
 async function runGoalWrapper(ctx: RuntimeContext, input: {
@@ -2028,14 +2376,12 @@ async function runGoalWrapper(ctx: RuntimeContext, input: {
   }
 
   let status = await readGoalRunStatus(ctx, goalId);
-  if (shouldPreflightRunLlm(ctx.args) && !steps.some((step) => step.type === "llm.profile.preflight" || step.type === "project.llm.preflight")) {
-    const projectId = String(input.projectId ?? nestedField(status, ["goal", "projectId"]) ?? "");
-    if (projectId) {
-      const llmPreflight = await tryLlmReadinessPreflight(ctx, projectId, input.command.replace(/\s+/g, "-"));
-      steps.push(llmPreflight);
-      if (hasFlag(ctx.args, "require-llm-ready") && llmPreflight.status !== "READY") {
-        return finishGoalRun(ctx, input.command, status, steps, quiet, 2);
-      }
+  const projectIdForPreflight = String(input.projectId ?? nestedField(status, ["goal", "projectId"]) ?? "");
+  if (projectIdForPreflight) {
+    const preflightBlock = await appendEnterpriseGoalRunPreflights(ctx, steps, projectIdForPreflight, input.command.replace(/\s+/g, "-"));
+    if (preflightBlock) {
+      status = withEnterprisePrerequisiteBlock(status, preflightBlock);
+      return finishGoalRun(ctx, input.command, status, steps, quiet, 2);
     }
   }
   printGoalRunStatus(ctx, input.command, status, steps, quiet);
@@ -2244,6 +2590,14 @@ function shouldContinueGoalRun(status: unknown, until: WrapperUntil): boolean {
   return !new Set([
     "human-approval",
     "configure-source-credentials",
+    "connect-github-account",
+    "connect-gitlab-account",
+    "configure-token-ref",
+    "configure-devops",
+    "configure-llm",
+    "store-llm-secret",
+    "configure-llm-profile",
+    "repair-llm-provider",
     "repair-project",
     "repair-deploy-target",
     "policy-review",
@@ -3204,7 +3558,7 @@ Usage:
   evopilot evidence push --project <id> --file <events.json>
   evopilot target list
   evopilot target create --project <id> [--id <target-id>] [--criteria <target.json>]
-  evopilot target plan --project <id> --objective <business-goal>
+  evopilot target plan --project <id> --objective <business-goal> [--llm-profile <id>]
   evopilot target plan export <goal-id> [--format <json|yaml>]
   evopilot target plan apply <goal-id> --file <plan.json>
   evopilot target plan diff <goal-id> --file <plan.json>
@@ -3270,9 +3624,9 @@ Global options:
   --idempotency-key <key>     Idempotency key for mutating commands
   --timeout <duration>        Wrapper stop boundary, for example 30s, 10m, or 2h
   --until <policy>            Wrapper stop policy: terminal or blocked-or-complete; default is terminal for target/goal/loop run
-  --require-source-ready      project onboard / target run fails fast unless source credential preflight is READY
-  --require-devops-ready      target run fails fast unless project DevOps preflight is READY
-  --require-llm-ready         project onboard / target run / goal run / loop run fails fast unless LLM profile preflight is READY
+  --require-source-ready      Explicit source readiness assertion for project onboarding; target/goal/loop run preflights source writeback by default
+  --require-devops-ready      Explicit DevOps readiness assertion for project onboarding; remote target/goal/loop run preflights native DevOps by default
+  --require-llm-ready         Explicit LLM readiness assertion for onboarding/profile setup; target/goal/loop run preflights selected LLM by default
   --llm-profile <id>          LLM profile for this project onboarding or new Goal/Loop run
   --execution-mode <mode>     DevOps boundary: owned-repository, fork-validated-pr, upstream-authorized, or read-only-public
   --upstream-repo <repo>      Upstream GitHub/GitLab repository for public read-only or fork-validated PR mode
@@ -3284,19 +3638,19 @@ Global options:
   --config <file>             Config path, defaults to ~/.evopilot/config.json
 
 Project DevOps examples:
-  evopilot project onboard plan github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --json
+  evopilot project onboard plan github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health --llm-profile qwen-private --json
   evopilot project onboard verify my-agent --json
-  evopilot target plan --project my-agent --objective "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility" --json
+  evopilot target plan --project my-agent --objective "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility" --llm-profile qwen-private --json
   evopilot target plan export <goal-id> --format json > plan.json
   # Show plan.json / phasePlan to the user, edit if needed, then approve only after confirmation.
   evopilot target plan apply <goal-id> --file plan.json --json
   evopilot target plan approve <goal-id> --confirmed-by project-owner --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" --json
-  evopilot project onboard github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --require-source-ready --require-devops-ready
-  evopilot project onboard github --repo apache/skywalking --upstream-repo apache/skywalking --working-repo my-org/skywalking-fork --id skywalking-fork --token-ref GITHUB_TOKEN_SKYWALKING_FORK --execution-mode fork-validated-pr --devops-owner my-org --ci-workflow ci.yml --ci-required-check build --json
+  evopilot project onboard github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health --llm-profile qwen-private --json
+  evopilot project onboard github --repo apache/skywalking --upstream-repo apache/skywalking --working-repo my-org/skywalking-fork --id skywalking-fork --token-ref GITHUB_TOKEN_SKYWALKING_FORK --execution-mode fork-validated-pr --devops-owner my-org --ci-workflow ci.yml --ci-required-check build --llm-profile qwen-private --json
   evopilot secret set --id LLM_API_KEY_QWEN_PRIVATE --kind llm-key --from-env LLM_API_KEY_QWEN_PRIVATE --json
   evopilot llm profile set qwen-private --provider openai-compatible --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_QWEN_PRIVATE --json
   evopilot project llm set my-agent --profile qwen-private --require-llm-ready --json
-  evopilot target run --project my-agent --objective "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility" --llm-profile qwen-private --require-llm-ready --json
+  evopilot target run --project my-agent --objective "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility" --llm-profile qwen-private --json
   evopilot project devops set my-agent --provider github-actions --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --ci-required-check test --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health
   evopilot project devops set my-agent --provider gitlab-ci --execution-mode owned-repository --devops-owner group --ci-required-stage test --ci-required-job build --cd-required-stage deploy --deploy-environment production --ready-url https://app.example.com/ready
 `);

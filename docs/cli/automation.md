@@ -24,7 +24,9 @@ Automation must use `--json` and parse JSON fields:
 
 ```bash
 evopilot status --json
-evopilot project onboard plan github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --json
+evopilot llm profile preflight my-agent-llm --json
+evopilot project onboard plan github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://my-agent.example.com/health --llm-profile my-agent-llm --json
+evopilot project onboard github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://my-agent.example.com/health --llm-profile my-agent-llm --client workbuddy --json
 evopilot project llm preflight my-agent --json
 evopilot target plan --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
@@ -34,7 +36,7 @@ evopilot target plan approve <goal-id> \
   --confirmed-by "project-owner" \
   --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
   --json
-evopilot target run --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --require-llm-ready --client workbuddy --json
+evopilot target run --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
 ```
 
 Do not parse human-readable CLI output. Human output may change to improve operator readability.
@@ -131,7 +133,6 @@ evopilot target run \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --llm-profile my-agent-llm \
-  --require-llm-ready \
   --client workbuddy \
   --json
 ```
@@ -141,6 +142,8 @@ Resolution order:
 ```text
 run override --llm-profile -> project default LLM -> server global default LLM
 ```
+
+For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
 
 If `llm profile preflight`, `project llm preflight`, or a wrapper LLM preflight returns `BLOCKED`, stop and report `nextAction`. Typical stop actions are:
 
@@ -152,7 +155,7 @@ repair-llm-provider
 
 Automation must not pass raw LLM API keys in `target run`, `goal run`, `loop run`, or daily `project onboard` commands. It must report the selected profile id when available and must include `llmUsage.summary.provider`, `llmUsage.summary.model`, and token totals in the final run report.
 
-`project onboard plan` and `project onboard verify` are the onboarding control surface for automation. Both print `evopilot-project-onboarding-checklist/v1`; the checklist contains machine-readable `steps`, `missingInputs`, `blockers`, `commands`, and `nextAction`. `plan` does not mutate project state. `verify` reads persisted project state and should return `READY_TO_RUN` before an agent claims that source writeback and repository-native DevOps are ready.
+`project onboard plan` and `project onboard verify` are the onboarding control surface for automation. Both print `evopilot-project-onboarding-checklist/v1`; the checklist contains machine-readable `steps`, `missingInputs`, `blockers`, `commands`, and `nextAction`. `plan` does not mutate project state. `verify` reads persisted project state and should return `READY_TO_RUN` with `nextAction=plan-target` before an agent claims that source writeback, repository-native DevOps, and project LLM readiness are ready for phase planning.
 
 For any GitHub/GitLab DevOps flow, automation must parse and persist these fields from onboarding or `project devops preflight`:
 
@@ -201,7 +204,7 @@ Mutating wrapper commands should use stable job or task identifiers when availab
 Automation must treat the generated phase plan as a governed artifact. The normal path is:
 
 ```bash
-evopilot target plan --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --json
+evopilot target plan --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
@@ -210,7 +213,7 @@ evopilot target plan approve <goal-id> \
   --confirmed-by "project-owner" \
   --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
   --json
-evopilot target run --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --json
+evopilot target run --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --json
 ```
 
 `target run` stops with `result.exitCode=2` and `nextAction=approve-plan` when the plan is still pending. Agents should show the phase plan to the user, not retry blindly. No wrapper command may approve the generated Alpha -> Beta -> RC -> GA plan implicitly; approval must be an explicit `target plan approve` or `goal approve-plan` action with real `--confirmed-by` and `--confirmation` values after user or project-owner confirmation.
@@ -223,6 +226,7 @@ If a command returns any of these `nextAction` values, the agent must stop and r
 
 ```text
 approve-plan
+plan-target
 connect-github-account
 connect-gitlab-account
 human-approval
@@ -293,6 +297,10 @@ evopilot project onboard plan github \
   --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
+  --llm-profile my-agent-llm \
   --json
 ```
 
@@ -307,12 +315,14 @@ evopilot project onboard github \
   --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
-  --require-source-ready \
-  --require-devops-ready \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
+  --llm-profile my-agent-llm \
   --json
 ```
 
-After `project onboard verify my-agent --json` returns `READY_TO_RUN`, generate the phase plan with `target plan`, approve it after user review, and continue with `target run`.
+After `project onboard verify my-agent --json` returns `READY_TO_RUN` and `nextAction=plan-target`, generate the phase plan with `target plan`, approve it after user review, and continue with `target run`.
 
 ## Native DevOps Rules
 
@@ -329,6 +339,9 @@ evopilot project devops set my-agent \
   --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
   --json
 ```
 
@@ -340,7 +353,7 @@ Before a release wrapper:
 evopilot project devops preflight my-agent --json
 ```
 
-If the result is not `READY`, either repair the project DevOps configuration or run the wrapper without claiming end-to-end release readiness. Use `--require-devops-ready` when release readiness must be enforced.
+If the result is not `READY`, repair the project DevOps configuration before any enterprise real Goal/Loop run. Wrapper commands stop before execution when source writeback, native DevOps, or LLM readiness is blocked; do not run a release wrapper in a weaker mode and then claim end-to-end release readiness.
 
 Claim rules by execution mode:
 

@@ -71,7 +71,7 @@ evopilot --server "$EVOPILOT_SERVER" --token "$EVOPILOT_API_TOKEN" status --json
 | Verify onboarding | `evopilot project onboard verify <project-id> --json` |
 | Configure DevOps | `evopilot project devops set <project-id> ... --json` |
 | Preflight DevOps | `evopilot project devops preflight <project-id> --json` |
-| Review phase plan | `evopilot target plan --project <id> --objective <business-goal> --json` |
+| Review phase plan | `evopilot target plan --project <id> --objective <business-goal> --llm-profile <llm-profile-id> --json` |
 | Approve confirmed phase plan | `evopilot target plan approve <goal-id> --confirmed-by <user-or-owner> --confirmation <text> --json` |
 | Run one target wrapper | `evopilot target run --project <id> ... --json` |
 | Inspect release decision | `evopilot release decisions --project <id> --json` |
@@ -87,6 +87,7 @@ Use wrapper commands when WorkBuddy or CI should drive a project toward a target
 evopilot target plan \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
+  --llm-profile my-agent-llm \
   --client workbuddy \
   --json
 
@@ -102,10 +103,8 @@ evopilot target plan approve <goal-id> \
 evopilot target run \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --until terminal \
   --max-steps 20 \
-  --require-source-ready \
-  --require-devops-ready \
+  --llm-profile my-agent-llm \
   --client workbuddy \
   --json
 ```
@@ -127,6 +126,10 @@ evopilot project onboard plan github \
   --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
+  --llm-profile my-agent-llm \
   --json
 ```
 
@@ -143,6 +146,7 @@ evopilot project onboard plan github \
   --devops-owner my-org \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --llm-profile my-agent-llm \
   --objective "Add the requested upstream-compatible capability and produce fork CI plus PR readiness evidence" \
   --json
 ```
@@ -165,6 +169,8 @@ Do not infer DevOps ownership from repository URL. Use the server-returned `devo
 Automation must stop and report when JSON output contains:
 
 - `status=BLOCKED`
+- `nextAction=plan-target`
+- `nextAction=approve-plan`
 - `nextAction=connect-github-account`
 - `nextAction=connect-gitlab-account`
 - `nextAction=configure-source-credentials`

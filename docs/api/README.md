@@ -130,7 +130,7 @@ Goal/Loop 创建接口和 `POST /api/v1/loop-orchestration/instantiate` 都接�
 request.llmProfileId -> project.llm.profileId -> global default LLM from environment
 ```
 
-如果请求显式传入 `llmProfileId` 但 profile preflight 不可用，服务端返回 `409 LLM_PROFILE_NOT_READY`。如果项目绑定了 `required=true` 且 profile 不可用，Loop 创建和一键 target wrapper 会在执行前停止。Loop、executor output、evidence、trace 和 CLI wrapper `llmUsage` 会记录 `llmProfileId`、`llmSource`、provider、model、token 与 credit 使用量。
+如果请求显式传入 `llmProfileId` 但 profile preflight 不可用，服务端返回 `409 LLM_PROFILE_NOT_READY`。如果项目绑定了 `required=true` 且 profile 不可用，Loop 创建和一键 target wrapper 会在执行前停止。对 GitHub/GitLab 企业真实 loop，必须使用显式 READY 的项目 LLM profile 或请求级 `llmProfileId`；全局默认 LLM 只适合本地/debug 或明确非企业真实运行，不能作为远程项目的用户/项目归因依据。Loop、executor output、evidence、trace 和 CLI wrapper `llmUsage` 会记录 `llmProfileId`、`llmSource`、provider、model、token 与 credit 使用量。
 
 ## 健康检查
 
@@ -349,11 +349,11 @@ POST /api/v1/onboarding/project/checklist
 GET /api/v1/projects/{projectId}/onboarding-checklist
 ```
 
-`POST /api/v1/onboarding/project/checklist` 是无副作用计划接口，接收与项目注册相同的 `repository`、`tokenRef`、可选 `devops`、`llmProfileId` 和业务 `objective` 字段，返回 `evopilot-project-onboarding-checklist/v1`。响应包含 `status`、`steps`、`sourceCredentials`、`devops`、`missingInputs`、`blockers`、`commands` 和 `nextAction`，用于告诉 WorkBuddy/Codex/Claude Code 下一条 CLI 命令应该是 `secret set`、`project onboard`、`project devops set`、`project onboard verify`、`target plan` 还是 `target run`。
+`POST /api/v1/onboarding/project/checklist` 是无副作用计划接口，接收与项目注册相同的 `repository`、`tokenRef`、`devops`、`llmProfileId` 和业务 `objective` 字段，返回 `evopilot-project-onboarding-checklist/v1`。对 GitHub/GitLab 企业真实 loop，除 `read-only-public` 分析模式外，CLI 入口要求 `executionMode`、可解析的服务端 `tokenRef`、`devopsOwner` 或 namespace、仓库原生 CI 配置、CD 或生产健康边界，以及显式 READY 的项目 LLM profile 或请求级 `llmProfileId`；缺失时会在 CLI 入参层或 checklist 阶段停止。响应包含 `status`、`steps`、`sourceCredentials`、`devops`、`missingInputs`、`blockers`、`commands` 和 `nextAction`，用于告诉 WorkBuddy/Codex/Claude Code 下一条 CLI 命令应该是 `secret set`、`llm profile set`、`project onboard`、`project devops set`、`project onboard verify` 还是 `target plan`。`READY_TO_RUN` 的 `nextAction` 是 `plan-target`，不是直接执行；AI Agent 必须展示并确认 Alpha/Beta/RC/GA phase plan 后才能调用 `target run`。
 
 对于 GitHub/GitLab 写回和仓库原生 DevOps，`nextAction=connect-github-account` 或 `connect-gitlab-account` 表示缺少可解析的用户/组织/服务账号执行主体。第三方开源上游必须由用户或组织自己的账号 fork 到 `workingRepo` 并使用 `fork-validated-pr`，或由维护者凭据使用 `upstream-authorized`。如果没有 GitHub/GitLab 账号或 group，只能使用 `read-only-public`，不能声明 PR、CI/CD、merge、deploy 或 release readiness。EvoPilot 不提供共享官方账号或内置通用 CI/CD runner 作为替代。
 
-`GET /api/v1/projects/{projectId}/onboarding-checklist` 复核已注册项目，会基于持久化项目、source credentials 和 GitHub Actions/GitLab CI 配置生成同一 schema。只有 `READY_TO_RUN` 才表示项目已经具备真实源代码写回和仓库原生 DevOps 的前置条件；`BLOCKED` 或 `WAITING_INPUT` 不能被解释为 GA/RC/alpha 可执行完成。
+`GET /api/v1/projects/{projectId}/onboarding-checklist` 复核已注册项目，会基于持久化项目、source credentials、GitHub Actions/GitLab CI 配置和项目 LLM 绑定生成同一 schema。只有 `READY_TO_RUN` 才表示项目已经具备真实源代码写回、仓库原生 DevOps 和 LLM profile 的前置条件；此时仍必须先进入 `plan-target`，由用户或项目负责人确认 phase plan。`BLOCKED` 或 `WAITING_INPUT` 不能被解释为 GA/RC/alpha 可执行完成。
 
 ```http
 POST /api/v1/projects/{projectId}/source-credentials

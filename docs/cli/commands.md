@@ -14,8 +14,8 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --idempotency-key <key>     Idempotency key for mutating commands
 --timeout <duration>        Wrapper stop boundary, for example 30s, 10m, or 2h
 --until <policy>            Wrapper stop policy: terminal or blocked-or-complete; default is terminal for target run, goal run, and loop run
---require-source-ready      project onboard / target run fails fast unless source credentials are READY
---require-devops-ready      target run fails fast unless project DevOps preflight is READY
+--require-source-ready      Explicit source readiness assertion for onboarding; target/goal/loop run preflights source writeback by default
+--require-devops-ready      Explicit DevOps readiness assertion for onboarding; remote target/goal/loop run preflights native DevOps by default
 --execution-mode <mode>     owned-repository | read-only-public | fork-validated-pr | upstream-authorized
 --upstream-repo <repo>      Public upstream repository for read-only or fork-validated PR mode
 --working-repo <repo>       Writable repository where EvoPilot writes code and runs native DevOps
@@ -23,7 +23,7 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --devops-token-ref <ref>    Optional server-side DevOps tokenRef, otherwise source tokenRef is used
 --credential-principal <id> Optional operator-readable principal expected behind the DevOps tokenRef
 --llm-profile <id>          LLM profile for project onboarding or this Goal/Loop run
---require-llm-ready         project onboard / target run / goal run / loop run fails fast unless the selected LLM profile is READY
+--require-llm-ready         Explicit LLM readiness assertion for onboarding/profile setup; target/goal/loop run preflights the selected LLM by default
 --json                      Print JSON response data
 --config <file>             Config path, defaults to ~/.evopilot/config.json
 ```
@@ -44,7 +44,7 @@ Use `--json` for AI agents and CI. Human-readable output is for operators and ca
 | `goal run ... --json` | `evopilot-cli-goal-run/v1` | `status`, `steps`, `result`, `llmUsage` |
 | `loop run ... --json` | `evopilot-cli-loop-run/v1` | `loop`, `steps`, `result`, `llmUsage` |
 
-Wrapper `result.exitCode=0` means the command reached its governed success boundary. `result.exitCode=2`, a non-zero process exit, or `nextAction` values such as `approve-plan`, `connect-github-account`, `connect-gitlab-account`, `human-approval`, `configure-source-credentials`, `configure-devops`, `policy-review`, `repair`, `BLOCKED`, `FAILED`, or `NO-GO` are stop conditions for automation.
+Wrapper `result.exitCode=0` means the command reached its governed success boundary. `result.exitCode=2`, a non-zero process exit, or `nextAction` values such as `plan-target`, `approve-plan`, `connect-github-account`, `connect-gitlab-account`, `human-approval`, `configure-source-credentials`, `configure-devops`, `configure-llm-profile`, `policy-review`, `repair`, `BLOCKED`, `FAILED`, or `NO-GO` are stop conditions for automation.
 
 Every wrapper schema includes `llmUsage` with `summary`, `process.responses[]`, and server-side usage evidence when the API returns it. Agents must report provider, model, token totals, and request IDs for LLM-backed runs.
 
@@ -139,6 +139,10 @@ evopilot project onboard plan github \
   --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
+  --llm-profile my-agent-llm \
   --json
 ```
 
@@ -148,9 +152,11 @@ evopilot project onboard plan github \
 evopilot project onboard verify my-agent --json
 ```
 
-`project onboard` is the mutating wrapper for a new project. It registers the repository, runs source credential preflight, optionally configures repository-native DevOps, and runs DevOps preflight. It does not start Goal/Loop execution; use `target plan` and `target run` after the project checklist is `READY_TO_RUN`.
+`project onboard` is the mutating wrapper for a new project. It registers the repository, runs source credential preflight, optionally configures repository-native DevOps, and runs DevOps preflight. It does not start Goal/Loop execution. After the project checklist is `READY_TO_RUN`, the next action is `plan-target`: run `target plan`, show and approve the phase plan, then run `target run`.
 
-By default, `project onboard` returns a white-box result and next action after registration and preflight. Add `--require-source-ready --require-devops-ready` for strict end-to-end automation that must stop before Goal/Loop execution when source writeback or repository-native DevOps is not ready.
+For GitHub/GitLab enterprise real loop onboarding, `--execution-mode`, `--token-ref`, `--devops-owner` or `--devops-namespace`, repository-native CI, a CD or production health boundary, and an explicit READY project LLM profile or `--llm-profile` are required unless the mode is explicitly `read-only-public`. `read-only-public` is analysis-only and cannot be used for real Goal/Loop execution.
+
+`project onboard` returns a white-box result and next action after registration and preflight. For writable GitHub/GitLab modes it stops before Goal/Loop execution unless source writeback and repository-native DevOps are ready. `--require-source-ready` and `--require-devops-ready` are accepted as explicit assertions for onboarding scripts, but enterprise wrapper runs enforce the same readiness by default.
 
 Common onboard options:
 
@@ -177,6 +183,8 @@ Common onboard options:
 --deploy-environment <environment>
 --health-url <url>
 --ready-url <url>
+--llm-profile <llm-profile-id>
+--require-llm-ready
 ```
 
 ## Project DevOps
@@ -316,7 +324,7 @@ evopilot project llm preflight <project-id>
 evopilot project llm clear <project-id>
 ```
 
-`project llm set` binds a project default LLM profile. Add `--require-llm-ready` to fail fast if the profile cannot resolve its key or provider probe:
+`project llm set` binds a project default LLM profile. Add `--require-llm-ready` during setup to assert the profile can resolve its key and pass provider preflight:
 
 ```bash
 evopilot project llm set my-agent \
@@ -328,10 +336,10 @@ evopilot project llm set my-agent \
 Goal and Loop creation resolve the LLM in this order:
 
 ```text
---llm-profile override -> project default profile -> global server default LLM
+--llm-profile override -> project default profile -> server global default LLM
 ```
 
-Use `project llm clear` only when the project should fall back to the global server default LLM.
+For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution. Use `project llm clear` only for local/debug projects or explicitly non-enterprise runs that are allowed to fall back to the global default.
 
 ## GitHub App
 
@@ -372,12 +380,12 @@ evopilot maturity standards inspect <alpha|beta|rc|ga|standard-id>
 ```bash
 evopilot target list [--project <project-id>]
 evopilot target create --project <project-id> [--id <target-id>] [--criteria <target.json>]
-evopilot target plan --project <project-id> --objective <business-goal>
+evopilot target plan --project <project-id> --objective <business-goal> [--llm-profile <id>]
 evopilot target plan export <goal-id> [--format json|yaml]
 evopilot target plan diff <goal-id> --file <plan.json>
 evopilot target plan apply <goal-id> --file <plan.json>
 evopilot target plan approve <goal-id> --confirmed-by <user-or-owner> --confirmation <text>
-evopilot target run --project <project-id> --objective <business-goal>
+evopilot target run --project <project-id> --objective <business-goal> [--llm-profile <id>]
 evopilot target decision <target-id> [--project <project-id>]
 ```
 
@@ -389,8 +397,8 @@ evopilot target decision <target-id> [--project <project-id>]
 
 `--until` does not confirm or skip phases. It only controls wrapper stop behavior. `target run`, `goal run`, and `loop run` default to `--until terminal`; `--until blocked-or-complete` is mainly useful for low-level `loop run` when an agent should stop as soon as the LoopRun becomes `BLOCKED`.
 
-Use `--require-source-ready --require-devops-ready` when the run must fail before Goal/Loop execution if PR/merge or repository-native DevOps is not ready.
-Use `--llm-profile <id>` to override the project default LLM for this run, and `--require-llm-ready` to stop before Loop execution if the selected profile is blocked.
+Before Goal/Loop execution, `target run` always checks source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness. Use `--require-source-ready`, `--require-devops-ready`, or `--require-llm-ready` only as explicit assertions for scripts that want the command line to state the contract.
+Use `--llm-profile <id>` to override the project default LLM for this run. If the selected profile is blocked, the wrapper stops before Loop execution and returns `nextAction=store-llm-secret`, `configure-llm-profile`, or `repair-llm-provider`.
 
 The CLI does not accept maturity-template parameters for `target plan`, `target run`, or `project onboard`. GA is the fixed terminal maturity. The server generates the Alpha -> Beta -> RC -> GA phase plan from the business `--objective`, the active maturity standard set, and project release evidence.
 

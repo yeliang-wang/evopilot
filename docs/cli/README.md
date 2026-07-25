@@ -93,7 +93,7 @@ WorkBuddy, Codex, Claude Code, CI jobs, and other agents should treat this file 
 3. For a new project, run `evopilot project onboard plan ... --json` before mutating state.
 4. Store or repair server-side `tokenRef` values when the checklist asks for it.
 5. Verify with `project preflight`, `project devops preflight`, and `project onboard verify`.
-6. When the project needs a non-default model, store the LLM key server-side, create an LLM profile, bind it to the project, and run `project llm preflight`.
+6. For GitHub/GitLab enterprise real loops, or whenever the project needs a non-default model, store the LLM key server-side, create an LLM profile, bind it to the project, and run `project llm preflight`.
 7. Generate the Goal phase plan with `target plan`.
 8. Show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
 9. Run `target run`, `goal run`, or `loop run` with `--json`.
@@ -132,6 +132,8 @@ Production metrics are enabled by default. When the API server has `EVOPILOT_DAT
 ## Custom LLM Profiles
 
 EvoPilot no longer assumes every project must use the server's global default LLM. A tenant/workspace can register public or private OpenAI-compatible models as server-side LLM profiles, bind one profile as a project default, and optionally override it for a single Goal/Loop run.
+
+For GitHub/GitLab enterprise real loops, an explicit READY project default LLM profile or per-run `--llm-profile` is required. The server global default LLM is allowed for local/debug validation, but the server global default LLM is not sufficient for a real remote project because the run must be attributable to the user, tenant, workspace, and project.
 
 The raw LLM API key must be stored on the EvoPilot server or in the tenant/workspace secret vault. Daily wrapper commands pass only `--llm-profile <id>`.
 
@@ -174,9 +176,7 @@ After the Alpha/Beta/RC/GA phase plan has been reviewed and approved, run with t
 evopilot target run \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and repair guidance for My Agent" \
-  --until terminal \
   --max-steps 20 \
-  --require-llm-ready \
   --json
 ```
 
@@ -187,7 +187,6 @@ evopilot target run \
   --project my-agent \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and repair guidance with a private model" \
   --llm-profile my-agent-llm \
-  --require-llm-ready \
   --json
 ```
 
@@ -197,7 +196,7 @@ Resolution order is:
 run override --llm-profile -> project default LLM binding -> server global default LLM
 ```
 
-If `--require-llm-ready` is present and the profile secret cannot be resolved or the provider probe fails, the CLI stops before Loop execution and reports `nextAction=store-llm-secret`, `configure-llm-profile`, or `repair-llm-provider`.
+`target run`, `goal run`, and `loop run` preflight the selected LLM by default. If the profile secret cannot be resolved or the provider probe fails, the CLI stops before Loop execution and reports `nextAction=store-llm-secret`, `configure-llm-profile`, or `repair-llm-provider`. `--require-llm-ready` remains useful in setup commands to make the readiness assertion explicit.
 
 ## Wrapper JSON Contract
 
@@ -283,6 +282,7 @@ For an already registered project, generate the server-owned Alpha/Beta/RC/GA pl
 evopilot target plan \
   --project <project-id> \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for this project" \
+  --llm-profile <llm-profile-id> \
   --client workbuddy \
   --json
 ```
@@ -312,17 +312,13 @@ Then resume the wrapper:
 evopilot target run \
   --project <project-id> \
   --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for this project" \
-  --until terminal \
   --max-steps 20 \
-  --require-source-ready \
-  --require-devops-ready \
   --llm-profile <llm-profile-id> \
-  --require-llm-ready \
   --client workbuddy \
   --json
 ```
 
-If the plan is not approved, `target run` stops at `PENDING_PLAN_APPROVAL` with `nextAction=approve-plan` and exit code `2`. The console prints a server-governed chain covering project, release target, GlobalGoal, Alpha/Beta/RC/GA phases, GoalTarget, LoopRun, source closure, deploy, release decision, evidence links, blockers, next action, LLM provider/model, command-level token totals, and step-level token usage.
+Before Goal/Loop execution, `target run`, `goal run`, and `loop run` check source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness by default. If the plan is not approved, `target run` stops at `PENDING_PLAN_APPROVAL` with `nextAction=approve-plan` and exit code `2`. The console prints a server-governed chain covering project, release target, GlobalGoal, Alpha/Beta/RC/GA phases, GoalTarget, LoopRun, source closure, deploy, release decision, evidence links, blockers, next action, LLM provider/model, command-level token totals, and step-level token usage.
 
 ## First Project Checklist
 
@@ -392,13 +388,10 @@ evopilot project onboard github \
   --deploy-environment production \
   --health-url https://<app>/health \
   --llm-profile <llm-profile-id> \
-  --require-source-ready \
-  --require-devops-ready \
-  --require-llm-ready \
   --json
 ```
 
-After `project onboard verify` returns `READY_TO_RUN`, use the `target plan` and `target run` flow above with the user's business objective.
+After `project onboard verify` returns `READY_TO_RUN`, the checklist returns `nextAction=plan-target`. Use `target plan` first, show the Alpha/Beta/RC/GA plan to the user or project owner, approve only after explicit confirmation, and then run `target run`.
 
 For a public upstream with a writable fork:
 
@@ -416,8 +409,7 @@ evopilot project onboard github \
   --devops-owner my-org \
   --ci-workflow ci.yml \
   --ci-required-check build \
-  --require-source-ready \
-  --require-devops-ready \
+  --llm-profile <llm-profile-id> \
   --json
 ```
 

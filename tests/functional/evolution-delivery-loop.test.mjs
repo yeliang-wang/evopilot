@@ -517,6 +517,11 @@ test("triggers repository-native DevOps after review gate and closes delivery fr
         ci: {
           workflow: "ci.yml",
           requiredChecks: ["build"]
+        },
+        cd: {
+          workflow: "deploy-prod.yml",
+          environment: "production",
+          healthUrl: `${github.baseUrl}/health`
         }
       }
     }, "admin-token");
@@ -650,6 +655,11 @@ test("cost over budget freezes standard evolution but allows cost optimization d
         ci: {
           workflow: "ci.yml",
           requiredChecks: ["build"]
+        },
+        cd: {
+          workflow: "deploy-prod.yml",
+          environment: "production",
+          healthUrl: `${github.baseUrl}/health`
         }
       }
     }, "admin-token");
@@ -778,6 +788,11 @@ test("OTLP trace evidence enters the full evolution delivery loop", async () => 
         ci: {
           workflow: "ci.yml",
           requiredChecks: ["build"]
+        },
+        cd: {
+          workflow: "deploy-prod.yml",
+          environment: "production",
+          healthUrl: `${github.baseUrl}/health`
         }
       }
     }, "admin-token");

@@ -34,6 +34,25 @@ test("GlobalGoal API creates a white-box goal shell with dashboard projections",
     assert.ok(gaStandard.body.data.requiredEvidence.includes("architecture-signoff"));
     assert.equal(gaStandard.body.data.overridePolicy.canRemoveBaselineCriteria, false);
 
+    const projectRoot = path.join(dataRoot, "workbuddy-repo");
+    fs.mkdirSync(projectRoot, { recursive: true });
+    fs.writeFileSync(path.join(projectRoot, "README.md"), "# WorkBuddy\n");
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "workbuddy",
+        name: "WorkBuddy",
+        repository: {
+          provider: "local-git",
+          root: projectRoot,
+          defaultBranch: "main"
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+    assert.equal(project.body.data.id, "workbuddy");
+
     const created = await jsonFetch(`${baseUrl}/api/v1/goals`, {
       method: "POST",
       token: "operator-token",
