@@ -184,6 +184,34 @@ test("Loop worker retries transient API failures with structured diagnostics", a
   }
 });
 
+test("Loop worker falls back to alternate API base URL when primary is unavailable", async () => {
+  const server = createIdleWorkerApiServer();
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const fallbackBaseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const worker = await runNodeScript("scripts/loop-worker.mjs", ["--once"], {
+      EVOPILOT_BASE_URL: "http://127.0.0.1:9",
+      EVOPILOT_BASE_URL_FALLBACKS: fallbackBaseUrl,
+      EVOPILOT_API_TOKEN: "operator-token",
+      EVOPILOT_ACTOR: "operator",
+      EVOPILOT_LOOP_WORKER_ID: "fallback-url-test-worker",
+      EVOPILOT_LOOP_WORKER_ONCE: "1",
+      EVOPILOT_LOOP_WORKER_REQUEST_ATTEMPTS: "1",
+      EVOPILOT_LOOP_WORKER_RETRY_BACKOFF_MS: "1"
+    });
+    assert.equal(worker.code, 0, worker.stderr);
+    const workerLogs = parseJsonLines(worker.stdout);
+    const retryLog = workerLogs.find((record) => record.event === "loop-worker.request-retry");
+    assert.equal(retryLog.baseUrl, "http://127.0.0.1:9");
+    assert.equal(retryLog.nextBaseUrl, fallbackBaseUrl);
+    assert.equal(retryLog.nextAttempt, 1);
+    assert.ok(workerLogs.some((record) => record.event === "loop-worker.idle"));
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 async function get(baseUrl, pathname) {
   const response = await fetch(`${baseUrl}${pathname}`, { headers: authHeaders() });
   const text = await response.text();
@@ -212,6 +240,28 @@ function authHeaders() {
 function writeJson(response, status, body) {
   response.writeHead(status, { "content-type": "application/json" });
   response.end(JSON.stringify(body));
+}
+
+function createIdleWorkerApiServer() {
+  return createHttpServer(async (request, response) => {
+    for await (const _ of request) {
+      // Drain the request body before responding.
+    }
+    if (request.method === "POST" && request.url === "/api/v1/loops/watchdog") {
+      return writeJson(response, 200, { data: { released: 0, blocked: 0 } });
+    }
+    if (request.method === "POST" && request.url === "/api/v1/loop-workers/claim") {
+      return writeJson(response, 200, {
+        data: {
+          schema: "evopilot-loop-worker-claim/v1",
+          workerId: "fallback-url-test-worker",
+          claimed: null,
+          diagnostics: ["claimable=0"]
+        }
+      });
+    }
+    return writeJson(response, 404, { error: "NOT_FOUND" });
+  });
 }
 
 function runNodeScript(script, args, env) {

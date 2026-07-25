@@ -27,6 +27,7 @@ services:
       - evopilot-server
     environment:
       EVOPILOT_BASE_URL: "http://evopilot-server:19876"
+      EVOPILOT_BASE_URL_FALLBACKS: "http://host.containers.internal:19876"
       EVOPILOT_RUN_MODE: "prod"
       EVOPILOT_DATA_ROOT: "/var/lib/evopilot"
       EVOPILOT_LOOP_STORE_BACKEND: "postgres"

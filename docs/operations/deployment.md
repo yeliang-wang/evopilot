@@ -137,6 +137,7 @@ EVOPILOT_LOOP_STORE_DSN=postgres://evopilot:<password>@127.0.0.1:5432/evopilot \
 
 ```text
 EVOPILOT_BASE_URL=http://evopilot-server:19876
+EVOPILOT_BASE_URL_FALLBACKS=http://host.containers.internal:19876
 EVOPILOT_API_TOKEN=<operator-or-admin-token>
 EVOPILOT_LOOP_WORKER_ID=evopilot-prod-worker
 EVOPILOT_LOOP_WORKER_POLL_MS=5000
@@ -146,7 +147,7 @@ EVOPILOT_LOOP_WORKER_REQUEST_ATTEMPTS=3
 EVOPILOT_LOOP_WORKER_RETRY_BACKOFF_MS=250
 ```
 
-worker 调用 API Server 时会对网络错误、超时、HTTP 408、429 和 5xx 做有限重试，并打印结构化 `loop-worker.request-retry` 日志；最终失败会输出 `method`、`pathname`、`attempts`、`status`、`causeCode` 等字段，便于从 ECS 日志定位 API Server、网络或上游服务问题。
+worker 调用 API Server 时会对网络错误、超时、HTTP 408、429 和 5xx 做有限重试，并打印结构化 `loop-worker.request-retry` 日志；最终失败会输出 `method`、`pathname`、`baseUrl`、`attempts`、`status`、`causeCode` 等字段，便于从 ECS 日志定位 API Server、网络或上游服务问题。`EVOPILOT_BASE_URL_FALLBACKS` 是逗号分隔的备用 API Server 地址；在 Podman/Docker DNS 偶发解析失败的生产环境中，可把宿主机转发地址作为 fallback。
 
 如需让 worker 只推进某个主 loop，可设置：
 

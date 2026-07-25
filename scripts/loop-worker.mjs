@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
-const baseUrl = (process.env.EVOPILOT_BASE_URL ?? "http://127.0.0.1:19876").replace(/\/+$/, "");
+const baseUrls = normalizeBaseUrls(process.env.EVOPILOT_BASE_URL ?? "http://127.0.0.1:19876", process.env.EVOPILOT_BASE_URL_FALLBACKS);
+const baseUrl = baseUrls[0];
 const token = process.env.EVOPILOT_API_TOKEN ?? process.env.EVOPILOT_ADMIN_TOKEN ?? "";
 const workerId = process.env.EVOPILOT_LOOP_WORKER_ID ?? `loop-worker-${crypto.randomUUID().slice(0, 8)}`;
 const actor = process.env.EVOPILOT_ACTOR ?? workerId;
@@ -23,6 +24,7 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
 
 logInfo("loop-worker.started", {
   baseUrl,
+  fallbackBaseUrls: baseUrls.slice(1).length ? baseUrls.slice(1) : undefined,
   preferredLoopId: preferredLoopId || undefined,
   strictPreferredLoop,
   pollIntervalMs,
@@ -107,43 +109,56 @@ async function post(pathname, body) {
 }
 
 async function requestJson(method, pathname, body) {
-  const url = `${baseUrl}${pathname}`;
+  attemptsLoop:
   for (let attempt = 1; attempt <= requestAttempts; attempt += 1) {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
-    try {
-      const response = await fetch(url, {
-        method,
-        headers: { ...headers(), ...(body === undefined ? {} : { "content-type": "application/json" }) },
-        body: body === undefined ? undefined : JSON.stringify(body),
-        signal: controller.signal
-      });
-      const text = await response.text();
-      if (!response.ok) {
-        const error = Object.assign(new Error(`${method} ${pathname} returned ${response.status}: ${truncate(text)}`), {
-          name: "WorkerHttpError",
+    for (let index = 0; index < baseUrls.length; index += 1) {
+      const currentBaseUrl = baseUrls[index];
+      const url = `${currentBaseUrl}${pathname}`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
+      try {
+        const response = await fetch(url, {
           method,
-          pathname,
-          status: response.status,
-          attempts: attempt,
-          response: truncate(text)
+          headers: { ...headers(), ...(body === undefined ? {} : { "content-type": "application/json" }) },
+          body: body === undefined ? undefined : JSON.stringify(body),
+          signal: controller.signal
         });
-        if (attempt < requestAttempts && isRetriableStatus(response.status)) {
-          await retryAfter(error, attempt);
+        const text = await response.text();
+        if (!response.ok) {
+          const error = Object.assign(new Error(`${method} ${pathname} returned ${response.status}: ${truncate(text)}`), {
+            name: "WorkerHttpError",
+            method,
+            pathname,
+            baseUrl: currentBaseUrl,
+            status: response.status,
+            attempts: attempt,
+            response: truncate(text)
+          });
+          if (index < baseUrls.length - 1 && isRetriableStatus(response.status)) {
+            await retryAfter(error, attempt, baseUrls[index + 1], 0);
+            continue;
+          }
+          if (attempt < requestAttempts && isRetriableStatus(response.status)) {
+            await retryAfter(error, attempt, baseUrls[0]);
+            continue attemptsLoop;
+          }
+          throw error;
+        }
+        return unwrap(text ? JSON.parse(text) : {});
+      } catch (error) {
+        const enriched = enrichRequestError(error, method, pathname, attempt, currentBaseUrl);
+        if (index < baseUrls.length - 1 && isRetriableRequestError(enriched)) {
+          await retryAfter(enriched, attempt, baseUrls[index + 1], 0);
           continue;
         }
-        throw error;
+        if (attempt < requestAttempts && isRetriableRequestError(enriched)) {
+          await retryAfter(enriched, attempt, baseUrls[0]);
+          continue attemptsLoop;
+        }
+        throw enriched;
+      } finally {
+        clearTimeout(timeout);
       }
-      return unwrap(text ? JSON.parse(text) : {});
-    } catch (error) {
-      const enriched = enrichRequestError(error, method, pathname, attempt);
-      if (attempt < requestAttempts && isRetriableRequestError(enriched)) {
-        await retryAfter(enriched, attempt);
-        continue;
-      }
-      throw enriched;
-    } finally {
-      clearTimeout(timeout);
     }
   }
   throw Object.assign(new Error(`${method} ${pathname} failed without a response`), {
@@ -154,16 +169,16 @@ async function requestJson(method, pathname, body) {
   });
 }
 
-async function retryAfter(error, attempt) {
-  const backoffMs = requestRetryBackoffMs * 2 ** Math.max(0, attempt - 1);
+async function retryAfter(error, attempt, nextBaseUrl, backoffMs = requestRetryBackoffMs * 2 ** Math.max(0, attempt - 1)) {
   logWarn("loop-worker.request-retry", {
     ...describeError(error),
     attempt,
-    nextAttempt: attempt + 1,
+    nextAttempt: backoffMs > 0 ? attempt + 1 : attempt,
+    nextBaseUrl,
     maxAttempts: requestAttempts,
     backoffMs
   });
-  await sleep(backoffMs);
+  if (backoffMs > 0) await sleep(backoffMs);
 }
 
 function headers() {
@@ -182,10 +197,18 @@ function positiveInteger(value, fallback) {
   return Number.isFinite(number) && number > 0 ? Math.floor(number) : fallback;
 }
 
-function enrichRequestError(error, method, pathname, attempts) {
+function normalizeBaseUrls(primary, fallbacks) {
+  const values = [primary, ...String(fallbacks ?? "").split(",")]
+    .map((value) => value.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
+  return [...new Set(values)].length ? [...new Set(values)] : ["http://127.0.0.1:19876"];
+}
+
+function enrichRequestError(error, method, pathname, attempts, baseUrl) {
   if (error && typeof error === "object") {
     error.method ??= method;
     error.pathname ??= pathname;
+    error.baseUrl ??= baseUrl;
     error.attempts ??= attempts;
     return error;
   }
@@ -193,6 +216,7 @@ function enrichRequestError(error, method, pathname, attempts) {
     name: "WorkerRequestError",
     method,
     pathname,
+    baseUrl,
     attempts
   });
 }
@@ -219,6 +243,7 @@ function describeError(error) {
     message: source.message ?? String(error),
     method: source.method,
     pathname: source.pathname,
+    baseUrl: source.baseUrl,
     status: source.status,
     attempts: source.attempts,
     code: source.code,
