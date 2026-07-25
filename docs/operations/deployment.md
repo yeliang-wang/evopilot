@@ -141,7 +141,12 @@ EVOPILOT_API_TOKEN=<operator-or-admin-token>
 EVOPILOT_LOOP_WORKER_ID=evopilot-prod-worker
 EVOPILOT_LOOP_WORKER_POLL_MS=5000
 EVOPILOT_LOOP_WORKER_LEASE_SECONDS=120
+EVOPILOT_LOOP_WORKER_REQUEST_TIMEOUT_MS=10000
+EVOPILOT_LOOP_WORKER_REQUEST_ATTEMPTS=3
+EVOPILOT_LOOP_WORKER_RETRY_BACKOFF_MS=250
 ```
+
+worker 调用 API Server 时会对网络错误、超时、HTTP 408、429 和 5xx 做有限重试，并打印结构化 `loop-worker.request-retry` 日志；最终失败会输出 `method`、`pathname`、`attempts`、`status`、`causeCode` 等字段，便于从 ECS 日志定位 API Server、网络或上游服务问题。
 
 如需让 worker 只推进某个主 loop，可设置：
 

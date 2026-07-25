@@ -762,6 +762,8 @@ journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .outco
 journalctl -u evopilot-worker -o cat | jq 'select(.schema=="evopilot-log/v1" and (.event|startswith("loop-worker.")))'
 ```
 
+For worker API failures, inspect `loop-worker.request-retry` and `loop-worker.error`; they include `method`, `pathname`, `attempts`, `status`, `causeCode`, and timeout or network cause fields.
+
 If EvoPilot runs in Docker Compose, replace `journalctl` with:
 
 ```bash

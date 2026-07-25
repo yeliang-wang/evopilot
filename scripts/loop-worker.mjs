@@ -8,6 +8,9 @@ const preferredLoopId = process.env.EVOPILOT_LOOP_WORKER_LOOP_ID ?? "";
 const strictPreferredLoop = process.env.EVOPILOT_LOOP_WORKER_STRICT_LOOP_ID === "1" || process.env.EVOPILOT_LOOP_WORKER_STRICT_LOOP_ID === "true";
 const pollIntervalMs = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_POLL_MS, 2000);
 const leaseSeconds = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_LEASE_SECONDS, 30);
+const requestTimeoutMs = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_REQUEST_TIMEOUT_MS, 10000);
+const requestAttempts = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_REQUEST_ATTEMPTS, 3);
+const requestRetryBackoffMs = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_RETRY_BACKOFF_MS, 250);
 const once = process.env.EVOPILOT_LOOP_WORKER_ONCE === "1" || process.argv.includes("--once");
 const maxCycles = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_MAX_CYCLES, once ? 1 : Number.MAX_SAFE_INTEGER);
 
@@ -18,7 +21,17 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
   });
 }
 
-logInfo("loop-worker.started", { baseUrl, preferredLoopId: preferredLoopId || undefined, strictPreferredLoop, pollIntervalMs, leaseSeconds, once });
+logInfo("loop-worker.started", {
+  baseUrl,
+  preferredLoopId: preferredLoopId || undefined,
+  strictPreferredLoop,
+  pollIntervalMs,
+  leaseSeconds,
+  requestTimeoutMs,
+  requestAttempts,
+  requestRetryBackoffMs,
+  once
+});
 
 let cycles = 0;
 while (!stopped && cycles < maxCycles) {
@@ -42,12 +55,13 @@ while (!stopped && cycles < maxCycles) {
       logInfo("loop-worker.idle", { cycle: cycles, preferredLoopId: preferredLoopId || undefined, strictPreferredLoop });
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    const detail = describeError(error);
+    const message = detail.message;
     if (!/LOOP_APPROVAL_REQUIRED/.test(message)) {
-      logError("loop-worker.error", { message, error: message });
+      logError("loop-worker.error", detail);
       if (once) process.exitCode = 1;
     } else {
-      logWarn("loop-worker.waiting-approval", { message });
+      logWarn("loop-worker.waiting-approval", detail);
     }
   }
   if (once || stopped || cycles >= maxCycles) break;
@@ -85,22 +99,71 @@ async function claimNextAvailable() {
 }
 
 async function get(pathname) {
-  const response = await fetch(`${baseUrl}${pathname}`, { headers: headers() });
-  const text = await response.text();
-  if (!response.ok) throw new Error(`${pathname} returned ${response.status}: ${text}`);
-  const body = text ? JSON.parse(text) : {};
-  return unwrap(body);
+  return requestJson("GET", pathname);
 }
 
 async function post(pathname, body) {
-  const response = await fetch(`${baseUrl}${pathname}`, {
-    method: "POST",
-    headers: { ...headers(), "content-type": "application/json" },
-    body: JSON.stringify(body)
+  return requestJson("POST", pathname, body);
+}
+
+async function requestJson(method, pathname, body) {
+  const url = `${baseUrl}${pathname}`;
+  for (let attempt = 1; attempt <= requestAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), requestTimeoutMs);
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { ...headers(), ...(body === undefined ? {} : { "content-type": "application/json" }) },
+        body: body === undefined ? undefined : JSON.stringify(body),
+        signal: controller.signal
+      });
+      const text = await response.text();
+      if (!response.ok) {
+        const error = Object.assign(new Error(`${method} ${pathname} returned ${response.status}: ${truncate(text)}`), {
+          name: "WorkerHttpError",
+          method,
+          pathname,
+          status: response.status,
+          attempts: attempt,
+          response: truncate(text)
+        });
+        if (attempt < requestAttempts && isRetriableStatus(response.status)) {
+          await retryAfter(error, attempt);
+          continue;
+        }
+        throw error;
+      }
+      return unwrap(text ? JSON.parse(text) : {});
+    } catch (error) {
+      const enriched = enrichRequestError(error, method, pathname, attempt);
+      if (attempt < requestAttempts && isRetriableRequestError(enriched)) {
+        await retryAfter(enriched, attempt);
+        continue;
+      }
+      throw enriched;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+  throw Object.assign(new Error(`${method} ${pathname} failed without a response`), {
+    name: "WorkerRequestError",
+    method,
+    pathname,
+    attempts: requestAttempts
   });
-  const text = await response.text();
-  if (!response.ok) throw new Error(`${pathname} returned ${response.status}: ${text}`);
-  return unwrap(text ? JSON.parse(text) : {});
+}
+
+async function retryAfter(error, attempt) {
+  const backoffMs = requestRetryBackoffMs * 2 ** Math.max(0, attempt - 1);
+  logWarn("loop-worker.request-retry", {
+    ...describeError(error),
+    attempt,
+    nextAttempt: attempt + 1,
+    maxAttempts: requestAttempts,
+    backoffMs
+  });
+  await sleep(backoffMs);
 }
 
 function headers() {
@@ -117,6 +180,61 @@ function unwrap(body) {
 function positiveInteger(value, fallback) {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? Math.floor(number) : fallback;
+}
+
+function enrichRequestError(error, method, pathname, attempts) {
+  if (error && typeof error === "object") {
+    error.method ??= method;
+    error.pathname ??= pathname;
+    error.attempts ??= attempts;
+    return error;
+  }
+  return Object.assign(new Error(String(error)), {
+    name: "WorkerRequestError",
+    method,
+    pathname,
+    attempts
+  });
+}
+
+function isRetriableStatus(status) {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function isRetriableRequestError(error) {
+  if (typeof error.status === "number") return isRetriableStatus(error.status);
+  const code = error.code ?? error.cause?.code;
+  const name = error.name ?? error.cause?.name;
+  const message = error.message ?? "";
+  return /AbortError|TimeoutError/i.test(String(name))
+    || /fetch failed|network|terminated|socket|timeout|ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|UND_ERR/i.test(String(message))
+    || /ECONNRESET|ECONNREFUSED|ETIMEDOUT|EAI_AGAIN|UND_ERR/i.test(String(code));
+}
+
+function describeError(error) {
+  const source = error && typeof error === "object" ? error : {};
+  const cause = source.cause && typeof source.cause === "object" ? source.cause : {};
+  return removeUndefined({
+    name: source.name ?? typeof error,
+    message: source.message ?? String(error),
+    method: source.method,
+    pathname: source.pathname,
+    status: source.status,
+    attempts: source.attempts,
+    code: source.code,
+    causeName: cause.name,
+    causeMessage: cause.message,
+    causeCode: cause.code,
+    causeErrno: cause.errno,
+    causeSyscall: cause.syscall,
+    causeAddress: cause.address,
+    causePort: cause.port,
+    stack: process.env.EVOPILOT_LOOP_WORKER_LOG_STACK === "1" ? source.stack : undefined
+  });
+}
+
+function truncate(text, maxLength = 2000) {
+  return String(text ?? "").length > maxLength ? `${String(text).slice(0, maxLength)}...` : String(text ?? "");
 }
 
 function logInfo(event, record = {}) {

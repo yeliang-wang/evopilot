@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createServer as createHttpServer } from "node:http";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -131,6 +132,58 @@ test("Loop worker process advances durable loops and loop soak proves runtime co
   }
 });
 
+test("Loop worker retries transient API failures with structured diagnostics", async () => {
+  let watchdogCalls = 0;
+  const server = createHttpServer(async (request, response) => {
+    let body = "";
+    for await (const chunk of request) body += chunk;
+    if (request.method === "POST" && request.url === "/api/v1/loops/watchdog") {
+      watchdogCalls += 1;
+      if (watchdogCalls === 1) {
+        return writeJson(response, 503, { error: "TRANSIENT_UPSTREAM_UNAVAILABLE" });
+      }
+      return writeJson(response, 200, { data: { released: 0, blocked: 0 } });
+    }
+    if (request.method === "POST" && request.url === "/api/v1/loop-workers/claim") {
+      return writeJson(response, 200, {
+        data: {
+          schema: "evopilot-loop-worker-claim/v1",
+          workerId: "retry-test-worker",
+          claimed: null,
+          diagnostics: ["claimable=0"]
+        }
+      });
+    }
+    return writeJson(response, 404, { error: "NOT_FOUND" });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+  try {
+    const worker = await runNodeScript("scripts/loop-worker.mjs", ["--once"], {
+      EVOPILOT_BASE_URL: baseUrl,
+      EVOPILOT_API_TOKEN: "operator-token",
+      EVOPILOT_ACTOR: "operator",
+      EVOPILOT_LOOP_WORKER_ID: "retry-test-worker",
+      EVOPILOT_LOOP_WORKER_ONCE: "1",
+      EVOPILOT_LOOP_WORKER_REQUEST_ATTEMPTS: "2",
+      EVOPILOT_LOOP_WORKER_RETRY_BACKOFF_MS: "1"
+    });
+    assert.equal(worker.code, 0, worker.stderr);
+    assert.equal(watchdogCalls, 2);
+    const workerLogs = parseJsonLines(worker.stdout);
+    const retryLog = workerLogs.find((record) => record.event === "loop-worker.request-retry");
+    assert.equal(retryLog.severity, "WARN");
+    assert.equal(retryLog.method, "POST");
+    assert.equal(retryLog.pathname, "/api/v1/loops/watchdog");
+    assert.equal(retryLog.status, 503);
+    assert.equal(retryLog.nextAttempt, 2);
+    assert.ok(workerLogs.some((record) => record.event === "loop-worker.idle"));
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
 async function get(baseUrl, pathname) {
   const response = await fetch(`${baseUrl}${pathname}`, { headers: authHeaders() });
   const text = await response.text();
@@ -154,6 +207,11 @@ function authHeaders() {
     authorization: "Bearer operator-token",
     "x-evopilot-actor": "operator"
   };
+}
+
+function writeJson(response, status, body) {
+  response.writeHead(status, { "content-type": "application/json" });
+  response.end(JSON.stringify(body));
 }
 
 function runNodeScript(script, args, env) {
