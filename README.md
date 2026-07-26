@@ -131,7 +131,7 @@ The raw LLM API key is stored once in the EvoPilot server-side secret vault. Dai
 
 `--objective` is the user's business objective, not a maturity label. The terminal maturity is GA by default, and EvoPilot decomposes every governed goal through Alpha, Beta, RC, and GA. Wrapper commands stop at `PENDING_PLAN_APPROVAL` until WorkBuddy, a human operator, or a project owner reviews, edits if needed, and explicitly approves the generated phase plan. Phase-plan confirmation is mandatory; approval commands require `--confirmed-by` and `--confirmation`, and automation may continue execution only after those values come from a real confirmation.
 
-Wrapper JSON output includes `llmUsage.summary.provider`, `llmUsage.summary.model`, input/output/total token counts, credits consumed, process `requestId` values, and server-side Loop executor usage. Start with [docs/cli/README.md](docs/cli/README.md) for CLI setup, [docs/cli/automation.md](docs/cli/automation.md) for WorkBuddy parsing rules, and [docs/guides/ai-agent-runbook.md](docs/guides/ai-agent-runbook.md) for the full production runbook.
+Wrapper JSON output includes `llmUsage.summary.provider`, `llmUsage.summary.model`, input/output/total token counts, credits consumed, process `requestId` values, and server-side Loop executor usage. AI agents should start with [AGENTS.md](AGENTS.md) and [docs/cli/AGENTS.md](docs/cli/AGENTS.md), then use [docs/cli/quickstart.md](docs/cli/quickstart.md) for the shortest safe WorkBuddy flow. Use [docs/cli/automation.md](docs/cli/automation.md) for parsing rules and [docs/guides/ai-agent-runbook.md](docs/guides/ai-agent-runbook.md) for the full production runbook.
 
 ## Dashboard
 

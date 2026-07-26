@@ -9,6 +9,9 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 
 ## AI Agents And CLI Automation
 
+- [Repository Agent Instructions](../AGENTS.md) - root instructions for AI agents reading this repository.
+- [CLI Agent Instructions](cli/AGENTS.md) - shortest WorkBuddy-safe reading path and non-negotiable CLI rules.
+- [CLI Quickstart For AI Agents](cli/quickstart.md) - minimal production-safe command sequence.
 - [CLI](cli/README.md) - install and connect the EvoPilot CLI to a remote control-plane server.
 - [CLI Workflows](cli/workflows.md) - one-command Goal/Loop scenarios with plan approval, Alpha/Beta/RC/GA phase packages, project DevOps, and project LLM profile selection.
 - [CLI Commands](cli/commands.md) - atomic command reference.

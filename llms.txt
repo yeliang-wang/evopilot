@@ -1,0 +1,30 @@
+# EvoPilot
+
+> EvoPilot is an evidence-driven self-evolution control plane for AI-agent products. It exposes a server-governed API and CLI for project onboarding, GlobalGoal planning, Alpha/Beta/RC/GA GoalTargets, LoopRun execution, LLM usage visibility, source closure, DevOps preflight, and auditable release decisions.
+
+## Agent Entry Points
+
+- [Repository agent instructions](https://github.com/yeliang-wang/evopilot/blob/main/AGENTS.md)
+- [CLI agent instructions](https://github.com/yeliang-wang/evopilot/blob/main/docs/cli/AGENTS.md)
+- [CLI quickstart](https://github.com/yeliang-wang/evopilot/blob/main/docs/cli/quickstart.md)
+- [CLI automation contract](https://github.com/yeliang-wang/evopilot/blob/main/docs/cli/automation.md)
+- [AI agent production runbook](https://github.com/yeliang-wang/evopilot/blob/main/docs/guides/ai-agent-runbook.md)
+
+## Human Documentation
+
+- [README](https://github.com/yeliang-wang/evopilot/blob/main/README.md)
+- [Documentation index](https://github.com/yeliang-wang/evopilot/blob/main/docs/README.md)
+- [CLI guide](https://github.com/yeliang-wang/evopilot/blob/main/docs/cli/README.md)
+- [CLI workflows](https://github.com/yeliang-wang/evopilot/blob/main/docs/cli/workflows.md)
+- [CLI command reference](https://github.com/yeliang-wang/evopilot/blob/main/docs/cli/commands.md)
+- [API reference](https://github.com/yeliang-wang/evopilot/blob/main/docs/api/README.md)
+- [OpenAPI contract](https://github.com/yeliang-wang/evopilot/blob/main/docs/api/openapi.json)
+
+## Stable Agent Rules
+
+- Use `evopilot ... --json` for automation.
+- Treat `nextAction`, `blockers`, `TargetEvidencePackage.status`, `PhasePackage.decision.status`, and release decisions as authoritative.
+- The Goal maturity ladder is fixed: Alpha -> Beta -> RC -> GA.
+- Phase plan confirmation is mandatory before execution.
+- Do not pass raw GitHub/GitLab/LLM secrets in daily loop commands; use server-side secret references and LLM profile ids.
+- Report `llmUsage.summary.provider`, `llmUsage.summary.model`, token totals, and request IDs.

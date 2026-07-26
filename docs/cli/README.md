@@ -6,6 +6,18 @@ The EvoPilot CLI is an HTTP client. It can run on macOS, Windows, Linux, WorkBud
 
 The CLI does not start EvoPilot locally and does not bypass server governance. RBAC, tenant/workspace scope, approvals, source-closure preflight, project DevOps, deployment gates, audit records, and release decisions are enforced by the EvoPilot server.
 
+## AI Agent Entry
+
+If you are WorkBuddy, Codex, Claude Code, CI, or another AI agent, read these first:
+
+1. [AGENTS.md](AGENTS.md) - non-negotiable rules and stop conditions.
+2. [quickstart.md](quickstart.md) - shortest safe command flow.
+3. [automation.md](automation.md) - JSON fields, parse order, and report format.
+4. [workflows.md](workflows.md) - scenario workflows.
+5. [commands.md](commands.md) - full command reference.
+
+For production incident handling and full end-to-end operating steps, read [AI Agent Runbook](../guides/ai-agent-runbook.md).
+
 ## Install
 
 Production installation uses the published CLI package:
@@ -86,7 +98,7 @@ If `summary` is missing, the CLI reached public health endpoints but not an auth
 
 ## AI Agent Contract
 
-WorkBuddy, Codex, Claude Code, CI jobs, and other agents should treat this file as the CLI entry point. The safe execution contract is:
+WorkBuddy, Codex, Claude Code, CI jobs, and other agents should start with [AGENTS.md](AGENTS.md) and [quickstart.md](quickstart.md), then use this file as the complete CLI guide. The safe execution contract is:
 
 1. Configure `EVOPILOT_SERVER`, `EVOPILOT_API_TOKEN`, `EVOPILOT_TENANT`, `EVOPILOT_WORKSPACE`, `EVOPILOT_ACTOR`, and `EVOPILOT_CLI_CLIENT`.
 2. Run `evopilot status --json`.
@@ -430,6 +442,8 @@ The JSON and human-readable output include `executionMode`, `repositoryOwner`, `
 
 ## Documentation
 
+- [Agent Instructions](AGENTS.md) - WorkBuddy and AI-agent entry point.
+- [Quickstart](quickstart.md) - shortest safe command flow.
 - [Workflows](workflows.md) - one-command and end-to-end scenarios.
 - [Commands](commands.md) - command groups and syntax.
 - [Automation](automation.md) - WorkBuddy, Codex, Claude Code, and CI rules.
