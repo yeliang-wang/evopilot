@@ -210,6 +210,21 @@ test("GlobalGoal API creates a white-box goal shell with dashboard projections",
     assert.equal(bound.body.data.loop.context.goalTargetId, bound.body.data.target.id);
     assert.equal(bound.body.data.loop.context.maturityPhase, "alpha");
 
+    const targetPackagesAfterBind = await jsonFetch(`${baseUrl}/api/v1/goals/${encodeURIComponent(created.body.data.id)}/target-packages`, { token: "viewer-token" });
+    assert.equal(targetPackagesAfterBind.status, 200);
+    assert.equal(targetPackagesAfterBind.body.data.length, bound.body.data.goal.plan.targets.length);
+    const boundTargetPackage = targetPackagesAfterBind.body.data.find((item) => item.targetId === bound.body.data.target.id);
+    assert.equal(boundTargetPackage.schema, "evopilot-target-evidence-package/v1");
+    assert.equal(boundTargetPackage.targetId, bound.body.data.target.id);
+    assert.equal(boundTargetPackage.status, "NO-GO");
+    assert.ok(boundTargetPackage.blockers.some((blocker) => blocker.includes("loopStatus=PENDING")));
+    assert.ok(targetPackagesAfterBind.body.data.some((item) => item.status === "PENDING" && item.blockers.length === 0));
+
+    const firstTargetPackage = await jsonFetch(`${baseUrl}/api/v1/goals/${encodeURIComponent(created.body.data.id)}/target-packages/${encodeURIComponent(bound.body.data.target.id)}`, { token: "viewer-token" });
+    assert.equal(firstTargetPackage.status, 200);
+    assert.equal(firstTargetPackage.body.data.schema, "evopilot-target-evidence-package/v1");
+    assert.equal(firstTargetPackage.body.data.decision.status, "NO-GO");
+
     const advanced = await jsonFetch(`${baseUrl}/api/v1/goals/${encodeURIComponent(created.body.data.id)}/advance`, {
       method: "POST",
       token: "operator-token",
@@ -227,6 +242,104 @@ test("GlobalGoal API creates a white-box goal shell with dashboard projections",
     assert.equal(graphAfterAdvance.status, 200);
     assert.ok(graphAfterAdvance.body.data.nodes.some((node) => node.loopId === bound.body.data.loop.id));
     assert.ok(graphAfterAdvance.body.data.edges.some((edge) => edge.type === "depends-on"));
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test("GlobalGoal planner uses LLM output under Alpha/Beta/RC/GA standard guardrails", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-global-goal-llm-planner-"));
+  const llmCalls = [];
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    requireLlm: true,
+    llmClient: {
+      async generate(request) {
+        llmCalls.push(request);
+        return {
+          requestId: "llm-goal-plan-1",
+          success: true,
+          text: JSON.stringify({
+            summary: "LLM constrained plan for tenant onboarding visibility.",
+            targets: [
+              target("alpha-source-context", "alpha", "Alpha source context for tenant onboarding", "planning", ["Repository source and ownership boundary are explicit."]),
+              target("alpha-bootstrap-risk", "alpha", "Alpha bootstrap and architecture risk map", "harness", ["Bootstrap path and architecture risks are documented."]),
+              target("beta-core-e2e", "beta", "Beta core tenant onboarding E2E", "harness", ["Tenant onboarding E2E passes on the real project boundary."]),
+              target("beta-doc-risk", "beta", "Beta docs and limited trial risk closure", "context", ["Operator docs and high-risk closure are complete."]),
+              target("rc-source-closure", "rc", "RC source closure and scope freeze", "loop", ["Scope is frozen and source closure can produce PR/MR evidence."]),
+              target("rc-deploy-security", "rc", "RC deploy health and security review", "release", ["Deploy health, rollback, security, and architecture review pass."]),
+              target("ga-soak-observability", "ga", "GA soak observability and runbook", "release", ["Soak, observability, alerting, and runbook evidence are complete."]),
+              target("ga-architecture-signoff", "ga", "GA architecture signoff and release governance", "release", ["Architecture signoff and release governance are complete."])
+            ]
+          }),
+          provider: "planner-llm",
+          model: "planner-model",
+          durationMs: 13,
+          usage: { inputTokens: 31, outputTokens: 47, totalTokens: 78, creditsConsumed: 78, creditUnit: "token" },
+          resolvedIntent: request.intent,
+          resolvedProfile: "global-goal-planner"
+        };
+      }
+    },
+    tokens: [
+      { name: "viewer", token: "viewer-token", role: "viewer" },
+      { name: "operator", token: "operator-token", role: "operator" },
+      { name: "admin", token: "admin-token", role: "admin" }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  try {
+    const projectRoot = path.join(dataRoot, "planner-repo");
+    fs.mkdirSync(projectRoot, { recursive: true });
+    fs.writeFileSync(path.join(projectRoot, "README.md"), "# Planner Repo\n");
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "planner-agent",
+        name: "Planner Agent",
+        repository: {
+          provider: "local-git",
+          root: projectRoot,
+          defaultBranch: "main"
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+
+    const created = await jsonFetch(`${baseUrl}/api/v1/goals`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "planner-agent-goal",
+        projectId: "planner-agent",
+        releaseTargetId: "ga",
+        objective: "Provide tenant onboarding lifecycle visibility and operator repair guidance."
+      }
+    });
+    assert.equal(created.status, 201);
+
+    const planned = await jsonFetch(`${baseUrl}/api/v1/goals/${encodeURIComponent(created.body.data.id)}/plan`, {
+      method: "POST",
+      token: "operator-token",
+      body: {}
+    });
+    assert.equal(planned.status, 201);
+    assert.equal(planned.body.data.plan.planner.mode, "llm-constrained");
+    assert.equal(planned.body.data.plan.planner.provider, "planner-llm");
+    assert.equal(planned.body.data.plan.planner.model, "planner-model");
+    assert.equal(planned.body.data.plan.planner.totalTokens, 78);
+    assert.deepEqual(planned.body.data.plan.phaseTargets.map((phase) => phase.phase), ["alpha", "beta", "rc", "ga"]);
+    assert.ok(planned.body.data.plan.targets.some((item) => item.title === "Alpha source context for tenant onboarding"));
+    assert.ok(planned.body.data.plan.targets.every((item) => item.evidence.includes("targetEvidencePackageRequired=true")));
+    assert.ok(planned.body.data.plan.targets.some((item) => item.id.endsWith("ga-phase-package-final-decision")));
+    assert.equal(llmCalls.length, 1);
+    assert.equal(llmCalls[0].caller, "evopilot-global-goal-planner");
+    assert.match(llmCalls[0].prompt, /Alpha -> Beta -> RC -> GA/);
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }
@@ -411,4 +524,20 @@ async function jsonFetch(url, { method = "GET", token = "viewer-token", body } =
 
 function targetBySuffix(targets, suffix) {
   return targets.find((target) => target.id.endsWith(suffix));
+}
+
+function target(id, phase, title, layer, acceptanceCriteria) {
+  return {
+    id,
+    phase,
+    title,
+    description: `${title} for the requested business objective.`,
+    layer,
+    required: true,
+    dependencyIds: [],
+    acceptanceCriteria,
+    requiredEvidence: [`${id}-evidence`],
+    reviewCapabilities: phase === "alpha" || phase === "rc" || phase === "ga" ? ["architecture"] : ["testing"],
+    packageOutputs: [`${id}-target-evidence-package`]
+  };
 }

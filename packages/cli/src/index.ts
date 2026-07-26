@@ -235,6 +235,8 @@ async function main(argv: string[]): Promise<number> {
         return await goalPhases(ctx, maybeId);
       case "goal:phase-package":
         return await goalPhasePackage(ctx, maybeId);
+      case "goal:target-package":
+        return await goalTargetPackage(ctx, maybeId);
       case "goal:graph":
         return await goalGraph(ctx, maybeId);
       case "goal:timeline":
@@ -1620,6 +1622,14 @@ async function goalPhasePackage(ctx: RuntimeContext, id?: string): Promise<numbe
   return 0;
 }
 
+async function goalTargetPackage(ctx: RuntimeContext, id?: string): Promise<number> {
+  const goalId = id ?? requiredOption(ctx.args, "goal");
+  const targetId = requiredOption(ctx.args, "target");
+  const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/goals/${encodeURIComponent(goalId)}/target-packages/${encodeURIComponent(targetId)}`));
+  printOutput(ctx, response.data, `goal=${field(response.data, "goalId")} target=${field(response.data, "targetId")} status=${field(response.data, "status")}`);
+  return 0;
+}
+
 async function goalGraph(ctx: RuntimeContext, id?: string): Promise<number> {
   const goalId = id ?? requiredOption(ctx.args, "goal");
   const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/goals/${encodeURIComponent(goalId)}/graph`));
@@ -2802,6 +2812,9 @@ function formatGoalRunStatus(command: string, status: unknown, steps: Array<Reco
     "Workflow",
     ...formatChain(field(status, "chain")),
     "",
+    "Packages",
+    ...formatGoalPackages(status),
+    "",
     "LLM Usage",
     ...formatLlmUsage(field(status, "llmUsage"), steps),
     "",
@@ -2812,6 +2825,8 @@ function formatGoalRunStatus(command: string, status: unknown, steps: Array<Reco
     `- snapshot: /api/v1/goals/${nestedField(status, ["goal", "id"]) ?? "<goal-id>"}/snapshot`,
     `- graph: /api/v1/goals/${nestedField(status, ["goal", "id"]) ?? "<goal-id>"}/graph`,
     `- evidence matrix: /api/v1/goals/${nestedField(status, ["goal", "id"]) ?? "<goal-id>"}/evidence-matrix`,
+    `- target packages: /api/v1/goals/${nestedField(status, ["goal", "id"]) ?? "<goal-id>"}/target-packages`,
+    `- phase packages: /api/v1/goals/${nestedField(status, ["goal", "id"]) ?? "<goal-id>"}/phase-packages`,
     `- release decision: ${nestedField(status, ["releaseDecision", "id"]) ?? "pending"}`,
     "",
     "Steps",
@@ -2822,6 +2837,18 @@ function formatGoalRunStatus(command: string, status: unknown, steps: Array<Reco
     ""
   ];
   return `${lines.join("\n")}\n`;
+}
+
+function formatGoalPackages(status: unknown): string[] {
+  const activeTargetId = nestedField(status, ["activeTarget", "id"]);
+  const targetPackages = Array.isArray(field(status, "targetPackages")) ? field(status, "targetPackages") as unknown[] : [];
+  const phasePackages = Array.isArray(field(status, "phasePackages")) ? field(status, "phasePackages") as unknown[] : [];
+  const activePackage = targetPackages.find((item) => field(item, "targetId") === activeTargetId) ?? targetPackages.at(-1);
+  const targetLine = activePackage
+    ? `- target: ${field(activePackage, "targetId")} status=${field(activePackage, "status")} blockers=${arrayLength(field(activePackage, "blockers"))}`
+    : "- target: pending TargetEvidencePackage";
+  const phaseLines = phasePackages.map((item) => `- phase ${field(item, "phase")}: status=${field(item, "status")} decision=${nestedField(item, ["decision", "status"])} targetPackages=${arrayLength(field(item, "targetPackages"))}`);
+  return [targetLine, ...phaseLines];
 }
 
 function formatLoopRunStatus(command: string, loop: unknown, steps: Array<Record<string, unknown>>, cli?: CliRuntimeInfo): string {
@@ -3576,6 +3603,7 @@ Usage:
   evopilot goal snapshot <goal-id>
   evopilot goal phases <goal-id>
   evopilot goal phase-package <goal-id> --phase <alpha|beta|rc|ga>
+  evopilot goal target-package <goal-id> --target <target-id>
   evopilot goal graph <goal-id>
   evopilot goal timeline <goal-id>
   evopilot goal evidence-matrix <goal-id>

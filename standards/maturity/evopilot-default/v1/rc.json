@@ -48,6 +48,33 @@
     "GO only if Beta is PASSED and every required RC GoalTarget is DONE.",
     "NO-GO if scope is still changing, review evidence is missing, or any P0/P1 blocker remains open."
   ],
+  "plannerInstructions": [
+    "Generate project-specific RC GoalTargets for scope freeze, source closure, repeated native CI/CD, deployment health, rollback or repair, security, compatibility, architecture review, and RC package.",
+    "RC targets must depend on passed Beta package evidence.",
+    "Every RC GoalTarget must produce a TargetEvidencePackage before it can be marked DONE."
+  ],
+  "targetSchema": {
+    "requiredFields": [
+      "id",
+      "phase",
+      "title",
+      "description",
+      "layer",
+      "required",
+      "dependencyIds",
+      "acceptanceCriteria",
+      "requiredEvidence",
+      "reviewCapabilities",
+      "packageOutputs"
+    ],
+    "minRequiredTargets": 3,
+    "mustProduceTargetEvidencePackage": true
+  },
+  "packageContract": {
+    "targetEvidencePackageRequired": true,
+    "phasePackageRequired": true,
+    "nextTargetRequiresPreviousPackageGo": true
+  },
   "overridePolicy": {
     "canAddGoalTargets": true,
     "canStrengthenCriteria": true,

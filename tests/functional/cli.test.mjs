@@ -38,6 +38,7 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   assert.match(help, /evopilot target list/);
   assert.match(help, /evopilot target decision/);
   assert.match(help, /evopilot goal create/);
+  assert.match(help, /evopilot goal target-package/);
   assert.match(help, /evopilot target run/);
   assert.match(help, /evopilot goal run/);
   assert.match(help, /evopilot loop list/);
@@ -750,7 +751,8 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     assert.match(approvedGoal.plan.confirmation.confirmation, /reviewed and approved/);
 
     const goalTargets = await runCli(["goal", "targets", goal.id, "--config", configPath, "--json"]);
-    assert.ok(goalTargets.some((item) => item.id.endsWith("source-readiness")));
+    assert.ok(goalTargets.some((item) => item.phase === "alpha"));
+    assert.ok(goalTargets.some((item) => item.id.endsWith("alpha-source-context")));
     assert.equal(goalTargets[0].status, "READY");
 
     const goalGraph = await runCli(["goal", "graph", goal.id, "--config", configPath, "--json"]);
@@ -773,6 +775,20 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     assert.equal(goalAdvance.loop.status, "PENDING");
     assert.equal(goalAdvance.loop.context.globalGoalId, goal.id);
 
+    const targetPackage = await runCli([
+      "goal", "target-package", goal.id,
+      "--target", goalAdvance.loop.context.goalTargetId,
+      "--config", configPath,
+      "--json"
+    ]);
+    assert.equal(targetPackage.schema, "evopilot-target-evidence-package/v1");
+    assert.equal(targetPackage.goalId, goal.id);
+    assert.equal(targetPackage.targetId, goalAdvance.loop.context.goalTargetId);
+    assert.equal(targetPackage.loop.id, goalAdvance.loop.id);
+    assert.equal(targetPackage.status, "NO-GO");
+    assert.equal(targetPackage.decision.status, "NO-GO");
+    assert.ok(targetPackage.blockers.some((blocker) => blocker.includes("loopStatus=PENDING")));
+
     const goalRunStatusResponse = await fetch(`${baseUrl}/api/v1/goals/${encodeURIComponent(goal.id)}/run-status`, {
       headers: { authorization: `Bearer ${login.token}` }
     });
@@ -781,6 +797,7 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     assert.equal(goalRunStatus.data.schema, "evopilot-goal-run-status/v1");
     assert.equal(goalRunStatus.data.goal.id, goal.id);
     assert.ok(goalRunStatus.data.chain.some((node) => node.id === "loop-run"));
+    assert.ok(goalRunStatus.data.targetPackages.some((item) => item.targetId === goalAdvance.loop.context.goalTargetId));
 
     const goalRunJson = await runCli(["goal", "run", goal.id, "--max-steps", "0", "--config", configPath, "--json"], { status: 2 });
     assert.equal(goalRunJson.schema, "evopilot-cli-goal-run/v1");
@@ -788,6 +805,7 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     assert.equal(goalRunJson.status.schema, "evopilot-goal-run-status/v1");
     assert.equal(goalRunJson.status.goal.id, goal.id);
     assert.ok(goalRunJson.status.chain.some((node) => node.id === "goal-target"));
+    assert.ok(goalRunJson.status.targetPackages.some((item) => item.targetId === goalAdvance.loop.context.goalTargetId && item.status === "NO-GO"));
     assert.equal(goalRunJson.llmUsage.client.surface, "agent-or-script");
     assert.equal(goalRunJson.llmUsage.summary.totalTokens, 0);
 
@@ -809,6 +827,8 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     const goalRunText = await runCliText(["goal", "run", goal.id, "--max-steps", "0", "--config", configPath], { status: 2 });
     assert.match(goalRunText, /EvoPilot Goal Run/);
     assert.match(goalRunText, /Workflow/);
+    assert.match(goalRunText, /Packages/);
+    assert.match(goalRunText, /TargetEvidencePackage|target:/);
     assert.match(goalRunText, /LLM Usage/);
     assert.match(goalRunText, /Next Action/);
     assert.match(goalRunText, /Evidence/);
@@ -1260,6 +1280,22 @@ async function startFakeOpenAiLlmForCli() {
       let body = "";
       for await (const chunk of request) body += chunk;
       const parsed = body ? JSON.parse(body) : {};
+      const isJsonObject = parsed.response_format?.type === "json_object";
+      const content = isJsonObject
+        ? JSON.stringify({
+          summary: "CLI constrained Goal plan for tenant lifecycle visibility.",
+          targets: [
+            cliPlannerTarget("alpha-source-context", "alpha", "Alpha source and ownership context", "planning", ["Source repository, branch, ownership, and onboarding boundary are explicit."]),
+            cliPlannerTarget("alpha-bootstrap-smoke", "alpha", "Alpha bootstrap and smoke proof", "harness", ["Build or bootstrap path and minimal smoke evidence are available."]),
+            cliPlannerTarget("beta-core-e2e", "beta", "Beta core lifecycle E2E", "harness", ["Core lifecycle workflow passes through repository-native CI evidence."]),
+            cliPlannerTarget("beta-operator-docs", "beta", "Beta operator docs and trial risks", "context", ["Operator documentation and high-risk closure evidence are complete."]),
+            cliPlannerTarget("rc-source-closure", "rc", "RC source closure and PR/MR readiness", "loop", ["Source closure, PR/MR review, and scope freeze evidence are available."]),
+            cliPlannerTarget("rc-deploy-security", "rc", "RC deploy health and security review", "release", ["Deployment health, rollback or repair, security, and architecture reviews pass."]),
+            cliPlannerTarget("ga-soak-observability", "ga", "GA soak observability and runbook", "release", ["Soak, observability, alerting, troubleshooting, and runbook evidence are complete."]),
+            cliPlannerTarget("ga-release-governance", "ga", "GA release governance and final decision", "release", ["Architecture signoff, user docs, and final release decision are complete."])
+          ]
+        })
+        : "# Qwen private plan\n\nProfile-selected loop execution is visible.";
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify({
         id: `fake-llm-${state.calls}`,
@@ -1269,7 +1305,7 @@ async function startFakeOpenAiLlmForCli() {
           index: 0,
           message: {
             role: "assistant",
-            content: "# Qwen private plan\n\nProfile-selected loop execution is visible."
+            content
           },
           finish_reason: "stop"
         }],
@@ -1292,5 +1328,21 @@ async function startFakeOpenAiLlmForCli() {
       return state.calls;
     },
     close: () => new Promise((resolve) => server.close(resolve))
+  };
+}
+
+function cliPlannerTarget(id, phase, title, layer, acceptanceCriteria) {
+  return {
+    id,
+    phase,
+    title,
+    description: `${title} for CLI enterprise real-loop testing.`,
+    layer,
+    required: true,
+    dependencyIds: [],
+    acceptanceCriteria,
+    requiredEvidence: [`${id}-evidence`],
+    reviewCapabilities: phase === "alpha" || phase === "rc" || phase === "ga" ? ["architecture"] : ["testing"],
+    packageOutputs: [`${id}-target-evidence-package`]
   };
 }

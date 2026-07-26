@@ -223,6 +223,8 @@ status.nextAction
 status.chain
 status.blockers
 status.releaseDecision
+status.targetPackages[]
+status.phasePackages[]
 steps[].requestId
 steps[].llmUsage
 llmUsage.summary.provider
@@ -243,7 +245,7 @@ Use `requestId`, `goalId`, `loopId`, `releaseRunId`, and `releaseDecisionId` to 
 | Layer | Commands | When To Use |
 |---|---|---|
 | Wrapper | `project onboard`, `target run`, `goal run`, `loop run` | WorkBuddy, CI, and operators need one command that advances until terminal, blocked, timeout, or max-step boundary. |
-| Planning | `maturity standards list`, `maturity standards inspect`, `target plan`, `target plan export`, `target plan diff`, `target plan apply`, `target plan approve`, `goal phases`, `goal phase-package` | A user or AI agent needs to review or adjust the generated Alpha/Beta/RC/GA plan before execution. |
+| Planning | `maturity standards list`, `maturity standards inspect`, `target plan`, `target plan export`, `target plan diff`, `target plan apply`, `target plan approve`, `goal phases`, `goal phase-package`, `goal target-package` | A user or AI agent needs to review or adjust the generated Alpha/Beta/RC/GA plan before execution and inspect target/phase package evidence. |
 | Atomic | `project preflight`, `project devops preflight`, `goal plan`, `goal approve-plan`, `goal advance`, `source-closure preflight`, `release decisions`, `audit list`, `trace tree` | A wrapper stopped, an agent needs white-box inspection, or a human must approve a governed action. |
 
 Wrappers compose atomic operations but remain server-governed. They do not approve human gates, bypass source credential preflight, bypass DevOps ownership, or fabricate release decisions.
@@ -273,6 +275,8 @@ Inspect the active standards:
 evopilot maturity standards list --json
 evopilot maturity standards inspect ga --json
 ```
+
+Each generated GoalTarget is constrained by the active standard's `plannerInstructions`, `targetSchema`, and `packageContract`. A GoalTarget is not `DONE` just because its LoopRun is `SUCCEEDED`; EvoPilot requires a `TargetEvidencePackage` with `status=GO`, and each phase requires a `PhasePackage` with a GO decision before the next phase can be considered passed.
 
 ## Fast Path
 
@@ -319,6 +323,15 @@ evopilot target run \
 ```
 
 Before Goal/Loop execution, `target run`, `goal run`, and `loop run` check source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness by default. If the plan is not approved, `target run` stops at `PENDING_PLAN_APPROVAL` with `nextAction=approve-plan` and exit code `2`. The console prints a server-governed chain covering project, release target, GlobalGoal, Alpha/Beta/RC/GA phases, GoalTarget, LoopRun, source closure, deploy, release decision, evidence links, blockers, next action, LLM provider/model, command-level token totals, and step-level token usage.
+
+Inspect package gates while the wrapper runs:
+
+```bash
+evopilot goal target-package <goal-id> --target <target-id> --json
+evopilot goal phase-package <goal-id> --phase alpha --json
+```
+
+WorkBuddy should report `TargetEvidencePackage.status`, `PhasePackage.decision.status`, `blockers`, `loop.status`, source closure gate evidence, and `llmUsage` before saying a target or phase passed.
 
 ## First Project Checklist
 

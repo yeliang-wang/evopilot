@@ -847,6 +847,8 @@ POST /api/v1/goals/{goalId}/approve-plan
 GET /api/v1/goals/{goalId}/targets
 GET /api/v1/goals/{goalId}/phase-plan
 GET /api/v1/goals/{goalId}/phases
+GET /api/v1/goals/{goalId}/target-packages
+GET /api/v1/goals/{goalId}/target-packages/{targetId}
 GET /api/v1/goals/{goalId}/phase-packages
 GET /api/v1/goals/{goalId}/phase-packages/{phase}
 POST /api/v1/goals/{goalId}/advance
@@ -869,7 +871,7 @@ GET /api/v1/maturity/standards
 GET /api/v1/maturity/standards/{alpha|beta|rc|ga|standard-id}
 ```
 
-默认标准集为 `evopilot-default/v1`，对应文件在 `standards/maturity/evopilot-default/v1/`。标准文件是服务端版本化资产，包含 baseline rules、acceptance criteria、required evidence、review capabilities、package outputs、GO/NO-GO rules 和 override policy。后续可以通过新增版本演进标准，但 CLI/Dashboard 仍以 API 返回的标准集为准。
+默认标准集为 `evopilot-default/v1`，对应文件在 `standards/maturity/evopilot-default/v1/`。标准文件是服务端版本化资产，包含 baseline rules、acceptance criteria、required evidence、review capabilities、package outputs、GO/NO-GO rules、planner instructions、target schema、package contract 和 override policy。后续可以通过新增版本演进标准，但 CLI/Dashboard 仍以 API 返回的标准集为准。
 
 创建目标示例：
 
@@ -889,12 +891,15 @@ GET /api/v1/maturity/standards/{alpha|beta|rc|ga|standard-id}
 3. `GET /api/v1/goals/{goalId}/phase-plan` 读取用户可审查计划；Dashboard/WorkBuddy 展示 `phases[]`、`targets[]` 和 `editablePlan`。
 4. 可选：`POST /api/v1/goals/{goalId}/plan/apply` 应用用户调整后的计划。允许新增项目专属 GoalTargets、强化标准、增加 review；不允许删除 Alpha/Beta/RC/GA、跳级或移除基线标准。
 5. `POST /api/v1/goals/{goalId}/approve-plan` 提交真实用户或项目负责人的计划确认并批准计划。请求体必须包含 `confirmedBy` 和 `confirmation`，否则返回 `400 / GOAL_PLAN_CONFIRMATION_REQUIRED`。
-6. `GET /api/v1/goals/{goalId}/phases` 和 `phase-packages/{phase}` 读取每个 phase 的状态、验收、证据、blocker 和 GO/NO-GO decision。
-7. `GET /api/v1/goals/{goalId}/snapshot`、`run-status`、`graph`、`timeline`、`evidence-matrix` 读取白盒状态。
-8. `POST /api/v1/goals/{goalId}/advance` 推进一个服务端治理步骤。
-9. 目标终态后读取 `GET /api/v1/goals/{goalId}/final-report`。
+6. `GET /api/v1/goals/{goalId}/target-packages/{targetId}` 读取单个 GoalTarget 的 TargetEvidencePackage；只有 `status=GO` 才能视为该 target 通过。
+7. `GET /api/v1/goals/{goalId}/phases` 和 `phase-packages/{phase}` 读取每个 phase 的状态、验收、证据、blocker、target package 列表和 GO/NO-GO decision。
+8. `GET /api/v1/goals/{goalId}/snapshot`、`run-status`、`graph`、`timeline`、`evidence-matrix` 读取白盒状态。
+9. `POST /api/v1/goals/{goalId}/advance` 推进一个服务端治理步骤。
+10. 目标终态后读取 `GET /api/v1/goals/{goalId}/final-report`。
 
-`GET /api/v1/goals/{goalId}/run-status` 是 Dashboard 和 CLI wrapper 共享的白盒投影。它包含 `phasePackages`、workflow `chain`、`activeTarget`、`latestLoop`、`blockers`、`evidenceMatrix`、`releaseDecision`、`finalReport` 和 `llmUsage`。Dashboard 不应自己计算 phase 进度或 release verdict。
+`GET /api/v1/goals/{goalId}/run-status` 是 Dashboard 和 CLI wrapper 共享的白盒投影。它包含 `targetPackages`、`phasePackages`、workflow `chain`、`activeTarget`、`latestLoop`、`blockers`、`evidenceMatrix`、`releaseDecision`、`finalReport` 和 `llmUsage`。Dashboard 不应自己计算 phase 进度或 release verdict。
+
+`TargetEvidencePackage` 返回 schema `evopilot-target-evidence-package/v1`，包含 `targetId`、`phase`、`status`、`acceptanceCriteria`、`requiredEvidence`、`reviewCapabilities`、`packageOutputs`、`loop`、`evidence`、`blockers`、`llmUsage` 和 `decision`。`LoopRun.status=SUCCEEDED` 只是证据之一；如果 source closure、DevOps、部署健康或其他必需 gate 未通过，TargetEvidencePackage 仍为 `NO-GO`，GoalTarget 不会变成 `DONE`。
 
 批准请求示例：
 
@@ -914,9 +919,10 @@ Dashboard 的 GlobalGoal Cockpit 直接消费这些投影接口，而不是从�
 | 接口 | Dashboard 用途 |
 |---|---|
 | `snapshot` | 状态、进度、active GoalTarget、下一步动作、blockers 和 release decision 摘要。 |
-| `run-status` | CLI / Dashboard 共用的聚合运行视图，包含链路、最新 Loop、阻塞项和 release decision。 |
+| `run-status` | CLI / Dashboard 共用的聚合运行视图，包含链路、最新 Loop、targetPackages、phasePackages、阻塞项、LLM/token usage 和 release decision。 |
 | `phase-plan` | 执行前用户可审查和可调整的 Alpha/Beta/RC/GA plan。 |
-| `phases` / `phase-packages` | 每个成熟度阶段的验收标准、证据、blockers、package outputs 和 GO/NO-GO decision。 |
+| `target-packages` | 每个 GoalTarget 的独立 evidence package、LoopRun/source gate/LLM usage、blockers 和 GO/NO-GO decision。 |
+| `phases` / `phase-packages` | 每个成熟度阶段的验收标准、证据、blockers、package outputs、target package 汇总和 GO/NO-GO decision。 |
 | `graph` | GoalTarget 依赖图和绑定的 LoopRun。 |
 | `timeline` | 目标创建、计划、批准、绑定、推进和完成事件。 |
 | `evidence-matrix` | 每个 GoalTarget 的 acceptance criteria、evidence、blocker 和 loopId。 |

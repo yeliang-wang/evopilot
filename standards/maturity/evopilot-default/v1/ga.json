@@ -52,6 +52,33 @@
     "GO only if RC is PASSED, every required GA GoalTarget is DONE, and final ReleaseDecision is GO.",
     "NO-GO if stability, observability, security governance, architecture signoff, or final release decision is missing."
   ],
+  "plannerInstructions": [
+    "Generate project-specific GA GoalTargets for stability or soak, observability, runbook, release notes, user docs, security governance, architecture signoff, final GA package, and ReleaseDecision=GO.",
+    "GA targets must depend on passed RC package evidence.",
+    "Every GA GoalTarget must produce a TargetEvidencePackage before it can be marked DONE."
+  ],
+  "targetSchema": {
+    "requiredFields": [
+      "id",
+      "phase",
+      "title",
+      "description",
+      "layer",
+      "required",
+      "dependencyIds",
+      "acceptanceCriteria",
+      "requiredEvidence",
+      "reviewCapabilities",
+      "packageOutputs"
+    ],
+    "minRequiredTargets": 3,
+    "mustProduceTargetEvidencePackage": true
+  },
+  "packageContract": {
+    "targetEvidencePackageRequired": true,
+    "phasePackageRequired": true,
+    "nextTargetRequiresPreviousPackageGo": true
+  },
   "overridePolicy": {
     "canAddGoalTargets": true,
     "canStrengthenCriteria": true,

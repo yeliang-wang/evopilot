@@ -276,6 +276,7 @@ evopilot target plan approve <goal-id> \
   --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
   --json
 evopilot goal phases <goal-id> --json
+evopilot goal target-package <goal-id> --target <target-id> --json
 evopilot goal phase-package <goal-id> --phase alpha --json
 ```
 
@@ -442,12 +443,15 @@ evopilot goal approve-plan <goal-id> \
   --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
   --json
 evopilot goal phases <goal-id> --json
+evopilot goal target-package <goal-id> --target <target-id> --json
 evopilot goal phase-package <goal-id> --phase rc --json
 evopilot goal advance <goal-id> --json
 evopilot goal snapshot <goal-id> --json
 evopilot goal graph <goal-id> --json
 evopilot goal evidence-matrix <goal-id> --json
 ```
+
+Use `<target-id>` from `goal targets`, `goal snapshot.activeTarget.id`, or `target run` / `goal run` `status.activeTarget.id`. A target or phase is not passed until the server returns `TargetEvidencePackage.status=GO` and the enclosing `PhasePackage.decision.status=GO`.
 
 ## 10. Run One LoopRun
 

@@ -1105,6 +1105,17 @@ interface MaturityStandardTemplate {
   reviewCapabilities: ReviewCapability[];
   packageOutputs: string[];
   goNoGoRules: string[];
+  plannerInstructions: string[];
+  targetSchema: {
+    requiredFields: string[];
+    minRequiredTargets: number;
+    mustProduceTargetEvidencePackage: boolean;
+  };
+  packageContract: {
+    targetEvidencePackageRequired: boolean;
+    phasePackageRequired: boolean;
+    nextTargetRequiresPreviousPackageGo: boolean;
+  };
   overridePolicy: {
     canAddGoalTargets: boolean;
     canStrengthenCriteria: boolean;
@@ -1169,6 +1180,24 @@ interface GoalPlanApprovalConfirmation {
   actor: string;
 }
 
+interface GoalPlanPlannerTrace {
+  schema: "evopilot-goal-plan-planner-trace/v1";
+  mode: "llm-constrained" | "debug-deterministic-no-provider";
+  generatedBy: "llm" | "deterministic-debug";
+  provider?: string;
+  model?: string;
+  llmProfileId?: string;
+  requestId?: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  creditsConsumed: number;
+  creditUnit: "token";
+  guardrails: string[];
+  evidence: string[];
+  generatedAt: string;
+}
+
 interface GoalPlan {
   schema: "evopilot-goal-plan/v1";
   status: GoalPlanStatus;
@@ -1176,6 +1205,7 @@ interface GoalPlan {
   terminalMaturity?: "ga";
   maturityStandardSetId?: string;
   standardVersion?: string;
+  planner?: GoalPlanPlannerTrace;
   summary: string;
   targetCount: number;
   requiredTargetCount: number;
@@ -1216,6 +1246,41 @@ interface GoalEvidenceMatrixRow {
   loopId?: string;
 }
 
+interface TargetEvidencePackage {
+  schema: "evopilot-target-evidence-package/v1";
+  goalId: string;
+  projectId: string;
+  releaseTargetId: string;
+  targetId: string;
+  phase?: MaturityPhase;
+  status: PhaseDecisionStatus;
+  generatedAt: string;
+  target: {
+    title: string;
+    status: GoalTargetStatus;
+    required: boolean;
+    layer: GoalTargetLayer;
+  };
+  acceptanceCriteria: string[];
+  requiredEvidence: string[];
+  reviewCapabilities: ReviewCapability[];
+  packageOutputs: string[];
+  loop?: {
+    id: string;
+    status: LoopRunStatus;
+    iteration: number;
+    sourceClosureState: LoopSourceClosureState;
+  };
+  evidence: string[];
+  blockers: string[];
+  llmUsage: LlmUsageSummary;
+  decision: {
+    status: PhaseDecisionStatus;
+    rationale: string;
+    evidence: string[];
+  };
+}
+
 interface PhasePackage {
   schema: "evopilot-phase-package/v1";
   goalId: string;
@@ -1235,6 +1300,7 @@ interface PhasePackage {
   requiredEvidence: string[];
   reviewCapabilities: ReviewCapability[];
   evidenceMatrix: GoalEvidenceMatrixRow[];
+  targetPackages: TargetEvidencePackage[];
   blockers: string[];
   decision: PhaseTarget["decision"];
   packageOutputs: string[];
@@ -1327,6 +1393,7 @@ interface GoalRunStatus {
   releaseDecision?: ReleaseDecision;
   finalReport?: GoalCompletionReport;
   phasePackages: PhasePackage[];
+  targetPackages: TargetEvidencePackage[];
   llmUsage: LlmUsageSummary;
   chain: Array<{
     id: string;
@@ -2701,7 +2768,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const goal = store.readGoal(decodeURIComponent(goalPlanMatch[1]));
         if (!goal) return writeJson(response, 404, { error: "GOAL_NOT_FOUND" });
         if (!canAccessScopedResource(auth, goal.tenantId, goal.workspaceId)) return writeJson(response, 403, { error: "FORBIDDEN" });
-        const planned = store.generateGoalPlan(goal.id, auth.actor, { force: Boolean(body.force) });
+        const planned = await store.generateGoalPlan(goal.id, auth.actor, { force: Boolean(body.force) });
         if (!planned) return writeJson(response, 404, { error: "GOAL_NOT_FOUND" });
         store.appendAudit(audit(auth, "goal.plan-generated", planned.id, { targetCount: planned.plan.targets.length, releaseTargetId: planned.releaseTargetId }));
         return writeJson(response, 201, envelope(planned));
@@ -2827,12 +2894,27 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const snapshot = store.goalSnapshot(decodeURIComponent(goalPhasePackagesMatch[1]));
         if (!snapshot) return writeJson(response, 404, { error: "GOAL_NOT_FOUND" });
         if (!canAccessScopedResource(auth, snapshot.goal.tenantId, snapshot.goal.workspaceId)) return writeJson(response, 403, { error: "FORBIDDEN" });
-        const packages = buildPhasePackages(snapshot.goal);
+        const packages = buildPhasePackages(snapshot.goal, (id) => store.readLoop(id));
         const phase = normalizeOptionalMaturityPhase(goalPhasePackagesMatch[2]);
         if (goalPhasePackagesMatch[2] && !phase) return writeJson(response, 400, { error: "MATURITY_PHASE_INVALID" });
         const selected = phase ? packages.find((item) => item.phase === phase) : undefined;
         if (phase && !selected) return writeJson(response, 404, { error: "PHASE_PACKAGE_NOT_FOUND" });
         return writeJson(response, 200, envelope(selected ?? packages));
+      }
+      const goalTargetPackagesMatch = url.pathname.match(/^\/api\/v1\/goals\/([^/]+)\/target-packages(?:\/([^/]+))?$/);
+      if (request.method === "GET" && goalTargetPackagesMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const snapshot = store.goalSnapshot(decodeURIComponent(goalTargetPackagesMatch[1]));
+        if (!snapshot) return writeJson(response, 404, { error: "GOAL_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, snapshot.goal.tenantId, snapshot.goal.workspaceId)) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const packages = buildTargetEvidencePackages(snapshot.goal, (id) => store.readLoop(id));
+        const targetId = goalTargetPackagesMatch[2] ? safeFileName(decodeURIComponent(goalTargetPackagesMatch[2])) : undefined;
+        if (targetId) {
+          const selected = packages.find((item) => item.targetId === targetId);
+          if (!selected) return writeJson(response, 404, { error: "TARGET_EVIDENCE_PACKAGE_NOT_FOUND" });
+          return writeJson(response, 200, envelope(selected));
+        }
+        return writeJson(response, 200, envelope(packages));
       }
       const goalReportMatch = url.pathname.match(/^\/api\/v1\/goals\/([^/]+)\/final-report$/);
       if (request.method === "GET" && goalReportMatch) {
@@ -5892,6 +5974,16 @@ class FileStore {
     return this.executionRuntime.llmClient;
   }
 
+  resolveGoalPlanLlmClient(selection?: LoopLlmSelection): LlmTaskClient | undefined {
+    if (selection?.profileId) {
+      const profile = this.readLlmProfile(selection.profileId);
+      if (!profile || profile.status !== "ACTIVE") return undefined;
+      const apiKey = resolveLlmProfileApiKey(this, profile);
+      return apiKey ? createLlmClientFromProfile(profile, apiKey) : undefined;
+    }
+    return this.executionRuntime.llmClient;
+  }
+
   private hydrateLlmProfile(profile: any): LlmProfileRecord {
     const now = new Date().toISOString();
     return {
@@ -6958,7 +7050,7 @@ class FileStore {
     });
   }
 
-  generateGoalPlan(goalId: string, actor: string, options: { force?: boolean } = {}): GlobalGoal | undefined {
+  async generateGoalPlan(goalId: string, actor: string, options: { force?: boolean } = {}): Promise<GlobalGoal | undefined> {
     const goal = this.readGoal(goalId);
     if (!goal) return undefined;
     if (goal.plan.status === "APPROVED" && !options.force) {
@@ -6966,7 +7058,8 @@ class FileStore {
     }
     const now = new Date().toISOString();
     const releaseTarget = this.readReleaseTarget(goal.releaseTargetId) ?? defaultGAReleaseTarget();
-    const targets = goalTargetsFromReleaseTarget(goal, releaseTarget, now);
+    const planned = await generateGoalPlanTargets(this, goal, releaseTarget, actor, now);
+    const targets = planned.targets;
     const phaseTargets = phaseTargetsFromGoalTargets(goal.id, targets, now);
     return this.writeGoal({
       ...goal,
@@ -6978,6 +7071,7 @@ class FileStore {
         terminalMaturity: "ga",
         maturityStandardSetId: DEFAULT_MATURITY_STANDARD_SET_ID,
         standardVersion: DEFAULT_MATURITY_STANDARD_VERSION,
+        planner: planned.planner,
         summary: `${goal.objective} decomposed into Alpha -> Beta -> RC -> GA maturity phases with ${targets.length} white-box GoalTargets for ${releaseTarget.name}.`,
         targetCount: targets.length,
         requiredTargetCount: targets.filter((target) => target.required).length,
@@ -6993,7 +7087,11 @@ class FileStore {
           phases: MATURITY_PHASES,
           terminalMaturity: "ga",
           releaseTargetId: goal.releaseTargetId,
-          strategy: "ga-maturity-ladder"
+          strategy: "ga-maturity-ladder",
+          plannerMode: planned.planner.mode,
+          llmProvider: planned.planner.provider,
+          llmModel: planned.planner.model,
+          llmTokens: planned.planner.totalTokens
         })
       ],
       updatedAt: now
@@ -7448,7 +7546,8 @@ class FileStore {
       latestLoop,
       releaseDecision: snapshot.releaseDecision,
       finalReport: snapshot.goal.finalReport,
-      phasePackages: buildPhasePackages(snapshot.goal),
+      phasePackages: buildPhasePackages(snapshot.goal, (id) => this.readLoop(id)),
+      targetPackages: buildTargetEvidencePackages(snapshot.goal, (id) => this.readLoop(id)),
       llmUsage: buildGoalLlmUsageSummary(snapshot.goal, goalLoops),
       chain: buildGoalRunStatusChain(this, snapshot, latestLoop),
       blockers: snapshot.blockers,
@@ -9875,6 +9974,7 @@ function hydrateGoalPlan(value: unknown, goalId: string, projectId: string, rele
     terminalMaturity: value.terminalMaturity === "ga" || targets.some((target) => target.phase) ? "ga" : undefined,
     maturityStandardSetId: optionalTrimmedString(value.maturityStandardSetId),
     standardVersion: optionalTrimmedString(value.standardVersion),
+    planner: hydrateGoalPlanPlannerTrace(value.planner),
     summary: String(value.summary ?? (targets.length > 0 ? `Goal plan has ${targets.length} targets.` : "Goal plan has not been generated.")),
     targetCount: targets.length,
     requiredTargetCount: targets.filter((target) => target.required).length,
@@ -9961,6 +10061,29 @@ function hydrateEditableGoalPlan(value: unknown): GoalPlan["editablePlan"] {
   };
 }
 
+function hydrateGoalPlanPlannerTrace(value: unknown): GoalPlanPlannerTrace | undefined {
+  if (!isRecord(value)) return undefined;
+  const mode = String(value.mode ?? "debug-deterministic-no-provider");
+  const generatedBy = String(value.generatedBy ?? "deterministic-debug");
+  return {
+    schema: "evopilot-goal-plan-planner-trace/v1",
+    mode: mode === "llm-constrained" ? "llm-constrained" : "debug-deterministic-no-provider",
+    generatedBy: generatedBy === "llm" ? "llm" : "deterministic-debug",
+    provider: optionalTrimmedString(value.provider),
+    model: optionalTrimmedString(value.model),
+    llmProfileId: optionalTrimmedString(value.llmProfileId),
+    requestId: optionalTrimmedString(value.requestId),
+    inputTokens: usageNumber(value.inputTokens),
+    outputTokens: usageNumber(value.outputTokens),
+    totalTokens: usageNumber(value.totalTokens),
+    creditsConsumed: usageNumber(value.creditsConsumed),
+    creditUnit: "token",
+    guardrails: Array.isArray(value.guardrails) ? uniqueStrings(value.guardrails.map(String)) : goalPlanGuardrails(),
+    evidence: Array.isArray(value.evidence) ? uniqueStrings(value.evidence.map(String)) : [],
+    generatedAt: String(value.generatedAt ?? new Date().toISOString())
+  };
+}
+
 function normalizeStoredGoalTargetEvidence(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   const seen = new Set<string>();
@@ -10016,6 +10139,8 @@ function normalizeMaturityStandardTemplate(input: unknown, expectedPhase: Maturi
   const phase = normalizeMaturityPhase(input.phase, expectedPhase);
   if (phase !== expectedPhase) throw new Error(`Maturity standard ${expectedPhase} has mismatched phase=${phase}.`);
   const overridePolicy = isRecord(input.overridePolicy) ? input.overridePolicy : {};
+  const targetSchema = isRecord(input.targetSchema) ? input.targetSchema : {};
+  const packageContract = isRecord(input.packageContract) ? input.packageContract : {};
   const weakerPlanVerdict = String(overridePolicy.weakerPlanVerdict ?? fallback.overridePolicy.weakerPlanVerdict);
   return {
     schema: "evopilot-maturity-standard-template/v1",
@@ -10031,6 +10156,17 @@ function normalizeMaturityStandardTemplate(input: unknown, expectedPhase: Maturi
     reviewCapabilities: normalizeReviewCapabilities(stringArrayOrDefault(input.reviewCapabilities, fallback.reviewCapabilities)),
     packageOutputs: stringArrayOrDefault(input.packageOutputs, fallback.packageOutputs),
     goNoGoRules: stringArrayOrDefault(input.goNoGoRules, fallback.goNoGoRules),
+    plannerInstructions: stringArrayOrDefault(input.plannerInstructions, fallback.plannerInstructions),
+    targetSchema: {
+      requiredFields: stringArrayOrDefault(targetSchema.requiredFields, fallback.targetSchema.requiredFields),
+      minRequiredTargets: clampPositiveInteger(targetSchema.minRequiredTargets, fallback.targetSchema.minRequiredTargets),
+      mustProduceTargetEvidencePackage: targetSchema.mustProduceTargetEvidencePackage === undefined ? fallback.targetSchema.mustProduceTargetEvidencePackage : targetSchema.mustProduceTargetEvidencePackage !== false
+    },
+    packageContract: {
+      targetEvidencePackageRequired: packageContract.targetEvidencePackageRequired === undefined ? fallback.packageContract.targetEvidencePackageRequired : packageContract.targetEvidencePackageRequired !== false,
+      phasePackageRequired: packageContract.phasePackageRequired === undefined ? fallback.packageContract.phasePackageRequired : packageContract.phasePackageRequired !== false,
+      nextTargetRequiresPreviousPackageGo: packageContract.nextTargetRequiresPreviousPackageGo === undefined ? fallback.packageContract.nextTargetRequiresPreviousPackageGo : packageContract.nextTargetRequiresPreviousPackageGo !== false
+    },
     overridePolicy: {
       canAddGoalTargets: overridePolicy.canAddGoalTargets !== false,
       canStrengthenCriteria: overridePolicy.canStrengthenCriteria !== false,
@@ -10084,6 +10220,13 @@ function builtInMaturityStandardTemplates(): MaturityStandardTemplate[] {
         "GO only if every required Alpha GoalTarget is DONE.",
         "NO-GO if source access, bootstrap, or smoke evidence is unavailable and no explicit blocker package exists."
       ],
+      plannerInstructions: [
+        "Generate project-specific Alpha GoalTargets for source ownership, bootstrap, minimal smoke, architecture map, risk register, and Alpha package.",
+        "Do not claim release readiness in Alpha.",
+        "Every Alpha GoalTarget must produce a TargetEvidencePackage before it can be marked DONE."
+      ],
+      targetSchema: maturityTargetSchema(3),
+      packageContract: maturityPackageContract(),
       overridePolicy: maturityOverridePolicy()
     },
     {
@@ -10126,6 +10269,13 @@ function builtInMaturityStandardTemplates(): MaturityStandardTemplate[] {
         "GO only if Alpha is PASSED and every required Beta GoalTarget is DONE.",
         "NO-GO if core E2E, native CI, or high-risk closure is missing."
       ],
+      plannerInstructions: [
+        "Generate project-specific Beta GoalTargets for core E2E, repository-native CI, critical tests, basic docs, risk closure, and Beta package.",
+        "Beta targets must depend on passed Alpha package evidence.",
+        "Every Beta GoalTarget must produce a TargetEvidencePackage before it can be marked DONE."
+      ],
+      targetSchema: maturityTargetSchema(3),
+      packageContract: maturityPackageContract(),
       overridePolicy: maturityOverridePolicy()
     },
     {
@@ -10173,6 +10323,13 @@ function builtInMaturityStandardTemplates(): MaturityStandardTemplate[] {
         "GO only if Beta is PASSED and every required RC GoalTarget is DONE.",
         "NO-GO if scope is still changing, review evidence is missing, or any P0/P1 blocker remains open."
       ],
+      plannerInstructions: [
+        "Generate project-specific RC GoalTargets for scope freeze, source closure, repeated native CI/CD, deployment health, rollback or repair, security, compatibility, architecture review, and RC package.",
+        "RC targets must depend on passed Beta package evidence.",
+        "Every RC GoalTarget must produce a TargetEvidencePackage before it can be marked DONE."
+      ],
+      targetSchema: maturityTargetSchema(3),
+      packageContract: maturityPackageContract(),
       overridePolicy: maturityOverridePolicy()
     },
     {
@@ -10223,9 +10380,44 @@ function builtInMaturityStandardTemplates(): MaturityStandardTemplate[] {
         "GO only if RC is PASSED, every required GA GoalTarget is DONE, and final ReleaseDecision is GO.",
         "NO-GO if stability, observability, security governance, architecture signoff, or final release decision is missing."
       ],
+      plannerInstructions: [
+        "Generate project-specific GA GoalTargets for stability or soak, observability, runbook, release notes, user docs, security governance, architecture signoff, final GA package, and ReleaseDecision=GO.",
+        "GA targets must depend on passed RC package evidence.",
+        "Every GA GoalTarget must produce a TargetEvidencePackage before it can be marked DONE."
+      ],
+      targetSchema: maturityTargetSchema(3),
+      packageContract: maturityPackageContract(),
       overridePolicy: maturityOverridePolicy()
     }
   ];
+}
+
+function maturityTargetSchema(minRequiredTargets = 1): MaturityStandardTemplate["targetSchema"] {
+  return {
+    requiredFields: [
+      "id",
+      "phase",
+      "title",
+      "description",
+      "layer",
+      "required",
+      "dependencyIds",
+      "acceptanceCriteria",
+      "requiredEvidence",
+      "reviewCapabilities",
+      "packageOutputs"
+    ],
+    minRequiredTargets,
+    mustProduceTargetEvidencePackage: true
+  };
+}
+
+function maturityPackageContract(): MaturityStandardTemplate["packageContract"] {
+  return {
+    targetEvidencePackageRequired: true,
+    phasePackageRequired: true,
+    nextTargetRequiresPreviousPackageGo: true
+  };
 }
 
 function maturityOverridePolicy(): MaturityStandardTemplate["overridePolicy"] {
@@ -10353,11 +10545,15 @@ function derivePhaseTargets(goal: GlobalGoal, targets: GoalTarget[]): PhaseTarge
   });
 }
 
-function buildPhasePackages(goal: GlobalGoal): PhasePackage[] {
+function buildPhasePackages(goal: GlobalGoal, loopReader?: (id: string) => LoopRun | undefined): PhasePackage[] {
   const matrix = buildGoalEvidenceMatrix(goal);
   return goal.plan.phaseTargets.map((phaseTarget) => {
     const rows = matrix.filter((row) => row.phase === phaseTarget.phase);
     const required = rows.filter((row) => row.required);
+    const targetPackages = goal.plan.targets
+      .filter((target) => target.phase === phaseTarget.phase)
+      .map((target) => buildTargetEvidencePackage(goal, target, target.loopId && loopReader ? loopReader(target.loopId) : undefined))
+      .filter((item): item is TargetEvidencePackage => Boolean(item));
     return {
       schema: "evopilot-phase-package/v1",
       goalId: goal.id,
@@ -10377,11 +10573,106 @@ function buildPhasePackages(goal: GlobalGoal): PhasePackage[] {
       requiredEvidence: phaseTarget.requiredEvidence,
       reviewCapabilities: phaseTarget.reviewCapabilities,
       evidenceMatrix: rows,
-      blockers: rows.flatMap((row) => row.blocker ? [`${row.targetId}: ${row.blocker}`] : []),
+      targetPackages,
+      blockers: uniqueStrings([
+        ...rows.flatMap((row) => row.blocker ? [`${row.targetId}: ${row.blocker}`] : []),
+        ...targetPackages.flatMap((item) => item.blockers.map((blocker) => `${item.targetId}: ${blocker}`)),
+        ...(phaseTarget.packageOutputs.length > 0 && targetPackages.length === 0 ? [`${phaseTarget.phase}:TARGET_EVIDENCE_PACKAGE_REQUIRED`] : [])
+      ]),
       decision: phaseTarget.decision,
       packageOutputs: phaseTarget.packageOutputs
     };
   });
+}
+
+function buildTargetEvidencePackages(goal: GlobalGoal, loopReader?: (id: string) => LoopRun | undefined): TargetEvidencePackage[] {
+  return goal.plan.targets
+    .map((target) => buildTargetEvidencePackage(goal, target, target.loopId && loopReader ? loopReader(target.loopId) : undefined))
+    .filter((item): item is TargetEvidencePackage => Boolean(item));
+}
+
+function buildTargetEvidencePackage(goal: GlobalGoal, target: GoalTarget, loop?: LoopRun): TargetEvidencePackage | undefined {
+  const generatedAt = new Date().toISOString();
+  const standard = target.phase ? maturityStandardTemplate(target.phase) : undefined;
+  const requiredEvidence = uniqueStrings([...(target.requiredEvidence ?? []), ...(standard?.requiredEvidence ?? [])]);
+  const reviewCapabilities = normalizeReviewCapabilities([...(target.reviewCapabilities ?? []), ...(standard?.reviewCapabilities ?? [])]);
+  const packageOutputs = uniqueStrings([
+    ...(standard?.packageOutputs ?? []),
+    `${target.phase ?? "target"}-target-evidence-package`
+  ]);
+  const loopUsage = loop ? buildLoopLlmUsageSummary(loop) : emptyLlmUsageSummary(`target:${target.id}`, generatedAt);
+  const blockers: string[] = [];
+  if (!loop) {
+    if (target.status === "BLOCKED" || target.status === "FAILED") blockers.push("LOOP_RUN_REQUIRED");
+  } else {
+    if (loop.status !== "SUCCEEDED") blockers.push(`loopStatus=${loop.status}`);
+    if (!requiredSourceClosureGatesPassed(loop.sourceClosure.requiredGates, loop.sourceClosure.gateEvidence)) {
+      blockers.push(`sourceClosure=${loop.sourceClosure.closureState}`);
+      blockers.push(...loop.sourceClosure.requiredGates
+        .filter((gate) => loop.sourceClosure.gateEvidence[gate]?.status !== "PASSED" && loop.sourceClosure.gateEvidence[gate]?.status !== "SKIPPED")
+        .map((gate) => `sourceClosure.gate.${gate}=${loop.sourceClosure.gateEvidence[gate]?.status ?? "PENDING"}`));
+    }
+    const externalBlocker = inferLoopExternalBlocker({ id: target.id }, loop);
+    if (externalBlocker) blockers.push(...externalBlocker.blockers);
+  }
+  const go = blockers.length === 0 && (loop ? loop.status === "SUCCEEDED" : target.status === "DONE");
+  const status: PhaseDecisionStatus = go
+    ? "GO"
+    : !loop && target.status !== "DONE" && target.status !== "BLOCKED" && target.status !== "FAILED"
+      ? "PENDING"
+      : blockers.length > 0 ? "NO-GO" : "PENDING";
+  const evidence = uniqueStrings([
+    `goal=${goal.id}`,
+    `target=${target.id}`,
+    `phase=${target.phase ?? "none"}`,
+    `standard=${target.standardId ?? standard?.id ?? "none"}`,
+    `criteria=${target.acceptanceCriteria.length}`,
+    `requiredEvidence=${requiredEvidence.length}`,
+    `reviewCapabilities=${reviewCapabilities.join(",") || "none"}`,
+    loop ? `loop=${loop.id}` : "loop=missing",
+    loop ? `loopStatus=${loop.status}` : `targetStatus=${target.status}`,
+    loop ? `sourceClosure=${loop.sourceClosure.closureState}` : "sourceClosure=missing",
+    loop ? `llmTokens=${loopUsage.totalTokens}` : "llmTokens=0",
+    ...target.evidence
+  ]);
+  return {
+    schema: "evopilot-target-evidence-package/v1",
+    goalId: goal.id,
+    projectId: goal.projectId,
+    releaseTargetId: goal.releaseTargetId,
+    targetId: target.id,
+    phase: target.phase,
+    status,
+    generatedAt,
+    target: {
+      title: target.title,
+      status: target.status,
+      required: target.required,
+      layer: target.layer
+    },
+    acceptanceCriteria: target.acceptanceCriteria,
+    requiredEvidence,
+    reviewCapabilities,
+    packageOutputs,
+    loop: loop ? {
+      id: loop.id,
+      status: loop.status,
+      iteration: loop.currentIteration,
+      sourceClosureState: loop.sourceClosure.closureState
+    } : undefined,
+    evidence,
+    blockers,
+    llmUsage: loopUsage,
+    decision: {
+      status,
+      rationale: status === "GO"
+        ? "TargetEvidencePackage is GO because the LoopRun succeeded and required source/DevOps gates passed."
+        : status === "NO-GO"
+          ? `TargetEvidencePackage is NO-GO until blockers are repaired: ${blockers.join("; ")}.`
+          : "TargetEvidencePackage is pending execution evidence.",
+      evidence
+    }
+  };
 }
 
 function normalizeAppliedGoalPlan(input: unknown, goal: GlobalGoal, now: string): GoalPlan {
@@ -10603,7 +10894,8 @@ function deriveGoalTarget(store: FileStore, goal: GlobalGoal, target: GoalTarget
     };
   }
   const externalBlocker = inferLoopExternalBlocker({ id: target.id }, loop);
-  const status = goalTargetStatusFromLoop(loop, externalBlocker);
+  const targetPackage = buildTargetEvidencePackage(goal, target, loop);
+  const status = goalTargetStatusFromLoop(loop, externalBlocker, targetPackage);
   return {
     ...target,
     status,
@@ -10618,22 +10910,24 @@ function deriveGoalTarget(store: FileStore, goal: GlobalGoal, target: GoalTarget
       `loopStatus=${loop.status}`,
       `iteration=${loop.currentIteration}/${loop.stopPolicy.maxIterations}`,
       `sourceClosure=${loop.sourceClosure.closureState}`,
+      `targetEvidencePackage=${targetPackage?.status ?? "PENDING"}`,
       `sandboxEnforcement=${loop.sandboxEnforcement.status}`,
       `executorSteps=${loop.trace.executorStepCount}`,
       externalBlocker ? `externalBlocker=${externalBlocker.type}` : "externalBlocker=none",
+      ...(targetPackage?.blockers.map((blocker) => `targetPackage.blocker=${blocker}`) ?? []),
       ...target.evidence
     ],
     updatedAt: now
   };
 }
 
-function goalTargetStatusFromLoop(loop: LoopRun, externalBlocker?: LoopExternalBlocker): GoalTargetStatus {
+function goalTargetStatusFromLoop(loop: LoopRun, externalBlocker?: LoopExternalBlocker, targetPackage?: TargetEvidencePackage): GoalTargetStatus {
   if (externalBlocker) return "BLOCKED";
   if (loop.status === "WAITING_APPROVAL") return "WAITING_HUMAN";
   if (loop.status === "FAILED" || loop.status === "CANCELLED") return "FAILED";
   if (loop.status === "BLOCKED") return "BLOCKED";
-  if (loop.status === "SUCCEEDED" && loop.sourceClosure.closureState === "PROMOTED") return "DONE";
-  if (loop.status === "SUCCEEDED") return "DONE";
+  if (loop.status === "SUCCEEDED" && targetPackage?.status === "GO") return "DONE";
+  if (loop.status === "SUCCEEDED") return "BLOCKED";
   return "RUNNING";
 }
 
@@ -10765,7 +11059,350 @@ function buildGoalRunStatusChain(store: FileStore, snapshot: GoalSnapshot, lates
   ];
 }
 
-function goalTargetsFromReleaseTarget(goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, now: string): GoalTarget[] {
+async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, actor: string, now: string): Promise<{ targets: GoalTarget[]; planner: GoalPlanPlannerTrace }> {
+  const project = store.readProject(goal.projectId);
+  const llmResolution = resolveLoopLlmSelection(store, {
+    project,
+    tenantId: goal.tenantId,
+    workspaceId: goal.workspaceId,
+    requestedProfileId: goal.llm?.profileId,
+    requireLlm: store.requireLlm()
+  });
+  const client = store.resolveGoalPlanLlmClient(llmResolution.selection);
+  if (!client) {
+    if (store.requireLlm()) {
+      throw httpError(409, "GOAL_PLAN_LLM_REQUIRED", "GlobalGoal phase planning requires a READY LLM profile or production LLM provider.");
+    }
+    return {
+      targets: goalTargetsFromReleaseTarget(goal, releaseTarget, now, {
+        plannerMode: "debug-deterministic-no-provider",
+        plannerEvidence: [
+          "planner=debug-deterministic-no-provider",
+          "llmPlanner=false",
+          "reason=LLM provider is not configured in debug mode"
+        ]
+      }),
+      planner: debugDeterministicGoalPlanTrace(goal, llmResolution.selection, now)
+    };
+  }
+  const startedAt = new Date().toISOString();
+  const response = await client.generate({
+    caller: "evopilot-global-goal-planner",
+    intent: "plan.generation",
+    outputContract: "json_object",
+    jsonObject: true,
+    latencyClass: "batch",
+    complexity: "high",
+    outputSize: "large",
+    metadata: {
+      productFlow: "global-goal-maturity-planning",
+      goalId: goal.id,
+      projectId: goal.projectId,
+      releaseTargetId: goal.releaseTargetId,
+      terminalMaturity: "ga",
+      actor,
+      llmProfileId: llmResolution.selection.profileId ?? "global-default"
+    },
+    prompt: goalPlanPlannerPrompt(goal, releaseTarget, project, maturityStandardTemplates())
+  });
+  if (!response.success) {
+    throw httpError(409, "GOAL_PLAN_LLM_FAILED", response.errorMessage ?? response.errorCode ?? "LLM planner failed.");
+  }
+  let targets: GoalTarget[];
+  try {
+    targets = normalizeLlmGoalPlanTargets(JSON.parse(extractJsonObject(response.text)), goal, releaseTarget, now);
+  } catch (error) {
+    throw httpError(422, "GOAL_PLAN_LLM_OUTPUT_INVALID", error instanceof Error ? error.message : String(error));
+  }
+  return {
+    targets,
+    planner: llmGoalPlanTrace(response, llmResolution.selection, startedAt)
+  };
+}
+
+function debugDeterministicGoalPlanTrace(goal: GlobalGoal, selection: LoopLlmSelection, now: string): GoalPlanPlannerTrace {
+  return {
+    schema: "evopilot-goal-plan-planner-trace/v1",
+    mode: "debug-deterministic-no-provider",
+    generatedBy: "deterministic-debug",
+    provider: selection.provider,
+    model: selection.model,
+    llmProfileId: selection.profileId,
+    inputTokens: 0,
+    outputTokens: 0,
+    totalTokens: 0,
+    creditsConsumed: 0,
+    creditUnit: "token",
+    guardrails: goalPlanGuardrails(),
+    evidence: [
+      `goal=${goal.id}`,
+      "planner=debug-deterministic-no-provider",
+      "llmPlanner=false",
+      "debugOnly=true"
+    ],
+    generatedAt: now
+  };
+}
+
+function llmGoalPlanTrace(response: LlmGenerateResponse, selection: LoopLlmSelection, startedAt: string): GoalPlanPlannerTrace {
+  const totalTokens = response.usage?.totalTokens ?? 0;
+  return {
+    schema: "evopilot-goal-plan-planner-trace/v1",
+    mode: "llm-constrained",
+    generatedBy: "llm",
+    provider: response.provider ?? selection.provider,
+    model: response.model ?? selection.model,
+    llmProfileId: selection.profileId,
+    requestId: response.requestId,
+    inputTokens: response.usage?.inputTokens ?? 0,
+    outputTokens: response.usage?.outputTokens ?? 0,
+    totalTokens,
+    creditsConsumed: response.usage?.creditsConsumed ?? totalTokens,
+    creditUnit: response.usage?.creditUnit ?? "token",
+    guardrails: goalPlanGuardrails(),
+    evidence: [
+      `requestId=${response.requestId}`,
+      `provider=${response.provider ?? selection.provider ?? "unknown"}`,
+      `model=${response.model ?? selection.model ?? "unknown"}`,
+      `startedAt=${startedAt}`,
+      `durationMs=${response.durationMs}`,
+      `totalTokens=${totalTokens}`,
+      "planner=llm-constrained",
+      "guardrail=server-normalized"
+    ],
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function goalPlanGuardrails(): string[] {
+  return [
+    "Alpha/Beta/RC/GA phases are fixed and cannot be deleted or skipped.",
+    "GA is the fixed terminal maturity.",
+    "Each phase must keep at least one required GoalTarget.",
+    "Every GoalTarget must produce a TargetEvidencePackage before DONE.",
+    "Every phase must produce a PhasePackage before the next phase can pass.",
+    "Built-in baseline criteria and required evidence cannot be removed.",
+    "Architecture/security/testing/docs/ops/release review capabilities are enforced by phase standards."
+  ];
+}
+
+function goalPlanPlannerPrompt(goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, project: StoredProject | undefined, standards: MaturityStandardTemplate[]): string {
+  return [
+    "You are EvoPilot's constrained GlobalGoal planner and software architect.",
+    "Return only one JSON object. Do not include Markdown.",
+    "The user objective is a business outcome, not a maturity label.",
+    "Generate concrete project-specific GoalTargets under the fixed Alpha -> Beta -> RC -> GA ladder.",
+    "Do not remove, rename, reorder, or skip the phases. GA is always the terminal maturity.",
+    "Each phase must include at least one required target and one package/GO-NO-GO target.",
+    "Every target must be independently verifiable through a TargetEvidencePackage.",
+    "Use the built-in standards as mandatory baselines; you may add or strengthen, never weaken.",
+    "",
+    "Output JSON schema:",
+    "{",
+    "  \"summary\": \"string\",",
+    "  \"targets\": [",
+    "    {",
+    "      \"id\": \"kebab-case unique id without goal prefix\",",
+    "      \"phase\": \"alpha|beta|rc|ga\",",
+    "      \"title\": \"short operator-visible title\",",
+    "      \"description\": \"what this target proves\",",
+    "      \"layer\": \"planning|sandbox|context|harness|loop|release\",",
+    "      \"required\": true,",
+    "      \"dependencyIds\": [\"optional prior target ids from this same output\"],",
+    "      \"acceptanceCriteria\": [\"criteria\"],",
+    "      \"requiredEvidence\": [\"evidence ids\"],",
+    "      \"reviewCapabilities\": [\"architecture|security|testing|documentation|operations|release\"],",
+    "      \"packageOutputs\": [\"target package outputs\"]",
+    "    }",
+    "  ]",
+    "}",
+    "",
+    `Goal id: ${goal.id}`,
+    `Project id: ${goal.projectId}`,
+    `Project name: ${project?.name ?? "unknown"}`,
+    `Repository provider: ${project?.repository?.provider ?? "unknown"}`,
+    `Repository claim boundary: ${project?.repository?.owner ?? project?.repository?.root ?? project?.repository?.projectId ?? "unknown"}`,
+    `Business objective: ${goal.objective}`,
+    `Release target id: ${releaseTarget.id}`,
+    `Release target name: ${releaseTarget.name}`,
+    `Required scenarios: ${releaseTarget.requiredScenarioIds.join(", ") || "source-to-release,runtime-validation,release-decision"}`,
+    `Minimum successful runs: ${releaseTarget.minSuccessfulRuns}`,
+    `Minimum successful pipelines: ${releaseTarget.minSuccessfulPipelines}`,
+    `Active soak required: ${releaseTarget.requireActiveSoak === true}`,
+    "",
+    "Mandatory maturity standards:",
+    JSON.stringify(standards.map((standard) => ({
+      phase: standard.phase,
+      name: standard.name,
+      purpose: standard.purpose,
+      baselineRules: standard.baselineRules,
+      acceptanceCriteria: standard.acceptanceCriteria,
+      requiredEvidence: standard.requiredEvidence,
+      reviewCapabilities: standard.reviewCapabilities,
+      packageOutputs: standard.packageOutputs,
+      goNoGoRules: standard.goNoGoRules,
+      plannerInstructions: standard.plannerInstructions,
+      targetSchema: standard.targetSchema,
+      packageContract: standard.packageContract
+    })), null, 2)
+  ].join("\n");
+}
+
+function normalizeLlmGoalPlanTargets(input: unknown, goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, now: string): GoalTarget[] {
+  const root = isRecord(input) && isRecord(input.plan) ? input.plan : input;
+  if (!isRecord(root)) throw new Error("Planner output must be a JSON object.");
+  const rawTargets = Array.isArray(root.targets) ? root.targets : [];
+  if (rawTargets.length === 0) throw new Error("Planner output must include targets[].");
+  const targets = rawTargets.map((target, index) => hydratePlannerGoalTarget(target, index, goal, now));
+  const normalized = normalizeGoalTargetDependencyChain(ensureMandatoryPhasePackageTargets(targets, goal, releaseTarget, now));
+  for (const phase of MATURITY_PHASES) {
+    const phaseTargets = normalized.filter((target) => target.phase === phase);
+    const standard = maturityStandardTemplate(phase);
+    if (phaseTargets.length < standard.targetSchema.minRequiredTargets) {
+      throw new Error(`Planner output for ${phase.toUpperCase()} must include at least ${standard.targetSchema.minRequiredTargets} targets.`);
+    }
+    if (!phaseTargets.some((target) => target.required)) {
+      throw new Error(`Planner output for ${phase.toUpperCase()} must include at least one required target.`);
+    }
+  }
+  return normalized;
+}
+
+function hydratePlannerGoalTarget(value: unknown, index: number, goal: GlobalGoal, now: string): GoalTarget {
+  const record = isRecord(value) ? value : {};
+  const phase = normalizeOptionalMaturityPhase(record.phase);
+  if (!phase) throw new Error(`Planner target at index ${index} requires phase=alpha|beta|rc|ga.`);
+  const standard = maturityStandardTemplate(phase);
+  const idPart = safeFileName(String(record.id ?? `${phase}-target-${index + 1}`));
+  const id = idPart.startsWith(`${goal.id}-`) ? idPart : `${goal.id}-${idPart}`;
+  const packageOutputs = uniqueStrings([
+    ...(Array.isArray(record.packageOutputs) ? record.packageOutputs.map(String) : []),
+    ...standard.packageOutputs,
+    `${phase}-target-evidence-package`
+  ]);
+  return {
+    schema: "evopilot-goal-target/v1",
+    id,
+    goalId: goal.id,
+    projectId: goal.projectId,
+    releaseTargetId: goal.releaseTargetId,
+    phase,
+    standardId: standard.id,
+    title: String(record.title ?? `${phase.toUpperCase()} target ${index + 1}`),
+    description: String(record.description ?? ""),
+    layer: normalizeGoalTargetLayer(record.layer),
+    required: record.required !== false,
+    dependencyIds: Array.isArray(record.dependencyIds) ? record.dependencyIds.map((item) => {
+      const dependencyId = safeFileName(String(item));
+      return dependencyId.startsWith(`${goal.id}-`) ? dependencyId : `${goal.id}-${dependencyId}`;
+    }) : [],
+    acceptanceCriteria: uniqueStrings([
+      ...(Array.isArray(record.acceptanceCriteria) ? record.acceptanceCriteria.map(String) : []),
+      ...standard.acceptanceCriteria
+    ]),
+    requiredEvidence: uniqueStrings([
+      ...(Array.isArray(record.requiredEvidence) ? record.requiredEvidence.map(String) : []),
+      ...standard.requiredEvidence,
+      "target-evidence-package"
+    ]),
+    reviewCapabilities: normalizeReviewCapabilities([
+      ...(Array.isArray(record.reviewCapabilities) ? record.reviewCapabilities : []),
+      ...standard.reviewCapabilities
+    ]),
+    status: "PENDING",
+    nextAction: "start-target",
+    targetVersion: `${goal.releaseTargetId}-${phase}-${idPart}`,
+    evidence: [
+      "planner=llm-constrained",
+      "terminalMaturity=ga",
+      `phase=${phase}`,
+      `standard=${standard.id}`,
+      `maturityStandardSet=${DEFAULT_MATURITY_STANDARD_SET_ID}`,
+      `businessObjective=${goal.objective}`,
+      "targetEvidencePackageRequired=true",
+      `packageOutputs=${packageOutputs.join(",")}`
+    ],
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+function ensureMandatoryPhasePackageTargets(targets: GoalTarget[], goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, now: string): GoalTarget[] {
+  const result = [...targets];
+  for (const phase of MATURITY_PHASES) {
+    const phaseTargets = result.filter((target) => target.phase === phase);
+    if (phaseTargets.some((target) => target.id.includes(`${phase}-phase-package`) || target.title.toLowerCase().includes("package"))) continue;
+    const standard = maturityStandardTemplate(phase);
+    const id = `${goal.id}-${phase}-${phase === "ga" ? "phase-package-final-decision" : "phase-package"}`;
+    result.push({
+      schema: "evopilot-goal-target/v1",
+      id,
+      goalId: goal.id,
+      projectId: goal.projectId,
+      releaseTargetId: goal.releaseTargetId,
+      phase,
+      standardId: standard.id,
+      title: phase === "ga" ? "GA package and final release decision" : `${phase.toUpperCase()} package and GO/NO-GO decision`,
+      description: phase === "ga"
+        ? "Produce the final GA release package, GoalCompletionReport, and product-native ReleaseDecision=GO."
+        : `Produce the ${phase.toUpperCase()} phase package and lock the decision before the next phase starts.`,
+      layer: "release",
+      required: true,
+      dependencyIds: phaseTargets.at(-1)?.id ? [phaseTargets.at(-1)!.id] : [],
+      acceptanceCriteria: uniqueStrings([
+        `${phase.toUpperCase()} package links every ${phase.toUpperCase()} GoalTarget to TargetEvidencePackage evidence or blockers.`,
+        `${phase.toUpperCase()} decision is GO only when every required ${phase.toUpperCase()} GoalTarget is DONE.`,
+        ...(phase === "ga" ? ["Final ReleaseDecision is GO."] : []),
+        ...standard.acceptanceCriteria
+      ]),
+      requiredEvidence: uniqueStrings([
+        `${phase}-phase-package`,
+        `${phase}-phase-decision`,
+        "target-evidence-package-index",
+        ...(phase === "ga" ? ["ga-release-package", "final-release-decision", "goal-completion-report"] : []),
+        ...standard.requiredEvidence
+      ]),
+      reviewCapabilities: normalizeReviewCapabilities(["architecture", "release", ...standard.reviewCapabilities]),
+      status: "PENDING",
+      nextAction: "start-target",
+      targetVersion: `${releaseTarget.id}-${phase}-phase-package`,
+      evidence: [
+        "planner=server-mandatory-phase-package-target",
+        "terminalMaturity=ga",
+        `phase=${phase}`,
+        `standard=${standard.id}`,
+        "targetEvidencePackageRequired=true"
+      ],
+      createdAt: now,
+      updatedAt: now
+    });
+  }
+  return result;
+}
+
+function normalizeGoalTargetDependencyChain(targets: GoalTarget[]): GoalTarget[] {
+  const ordered = [...targets].sort((left, right) => MATURITY_PHASES.indexOf(left.phase ?? "alpha") - MATURITY_PHASES.indexOf(right.phase ?? "alpha"));
+  const seen = new Set<string>();
+  let previousId: string | undefined;
+  return ordered.map((target, index) => {
+    let id = target.id;
+    if (seen.has(id)) id = `${id}-${index + 1}`;
+    seen.add(id);
+    const dependencyIds = uniqueStrings([
+      ...target.dependencyIds.filter((dependencyId) => seen.has(dependencyId)),
+      ...(previousId ? [previousId] : [])
+    ]);
+    const normalized = {
+      ...target,
+      id,
+      dependencyIds
+    };
+    previousId = id;
+    return normalized;
+  });
+}
+
+function goalTargetsFromReleaseTarget(goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, now: string, options: { plannerMode?: GoalPlanPlannerTrace["mode"]; plannerEvidence?: string[] } = {}): GoalTarget[] {
   const requiredScenarios = releaseTarget.requiredScenarioIds.length > 0
     ? releaseTarget.requiredScenarioIds
     : ["source-to-release", "runtime-validation", "release-decision"];
@@ -10991,12 +11628,14 @@ function goalTargetsFromReleaseTarget(goal: GlobalGoal, releaseTarget: ReleaseTa
       nextAction: "start-target",
       targetVersion: `${goal.releaseTargetId}-${spec.phase}-${spec.slug}`,
       evidence: [
-        "planner=ga-maturity-ladder",
+        `planner=${options.plannerMode ?? "ga-maturity-ladder"}`,
         "terminalMaturity=ga",
         `phase=${spec.phase}`,
         `standard=${standard.id}`,
         `maturityStandardSet=${DEFAULT_MATURITY_STANDARD_SET_ID}`,
-        `businessObjective=${goal.objective}`
+        `businessObjective=${goal.objective}`,
+        "targetEvidencePackageRequired=true",
+        ...(options.plannerEvidence ?? [])
       ],
       createdAt: now,
       updatedAt: now
@@ -11179,8 +11818,16 @@ function normalizeGoalNextAction(value: unknown): GoalNextAction {
     "resume-loop",
     "human-approval",
     "configure-source-credentials",
+    "connect-github-account",
+    "connect-gitlab-account",
+    "configure-token-ref",
     "repair-project",
     "repair-deploy-target",
+    "configure-devops",
+    "configure-llm",
+    "store-llm-secret",
+    "configure-llm-profile",
+    "repair-llm-provider",
     "policy-review",
     "release-decision",
     "view-final-report",

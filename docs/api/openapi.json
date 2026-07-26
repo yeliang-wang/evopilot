@@ -1296,6 +1296,69 @@
         }
       }
     },
+    "/api/v1/goals/{goalId}/target-packages": {
+      "get": {
+        "summary": "读取全部 target evidence package",
+        "description": "返回 GlobalGoal 下所有 GoalTarget 的 TargetEvidencePackage 投影。未执行 target 为 PENDING，证据不足为 NO-GO；GoalTarget 只有在对应 package 为 GO 时才能视为 DONE。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "goalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Target evidence package 列表"
+          }
+        }
+      }
+    },
+    "/api/v1/goals/{goalId}/target-packages/{targetId}": {
+      "get": {
+        "summary": "读取单个 target evidence package",
+        "description": "返回单个 GoalTarget 的验收标准、证据、LoopRun、source closure gates、LLM usage、blockers 和 GO/NO-GO decision。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "goalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Target evidence package"
+          },
+          "404": {
+            "description": "Target evidence package 不存在"
+          }
+        }
+      }
+    },
     "/api/v1/goals/{goalId}/advance": {
       "post": {
         "summary": "推进 GlobalGoal 一个原子步骤",
@@ -1354,7 +1417,7 @@
     "/api/v1/goals/{goalId}/run-status": {
       "get": {
         "summary": "读取 GlobalGoal 运行聚合状态",
-        "description": "返回 CLI wrapper commands 和 Dashboard 共用的白盒运行投影，包含 scope、goal、snapshot、phasePackages、graph、timeline、evidenceMatrix、activeTarget、latestLoop、releaseDecision、finalReport、chain、blockers、nextAction 和 llmUsage。",
+        "description": "返回 CLI wrapper commands 和 Dashboard 共用的白盒运行投影，包含 scope、goal、snapshot、targetPackages、phasePackages、graph、timeline、evidenceMatrix、activeTarget、latestLoop、releaseDecision、finalReport、chain、blockers、nextAction 和 llmUsage。",
         "security": [
           {
             "bearerAuth": []

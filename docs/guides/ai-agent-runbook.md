@@ -189,6 +189,15 @@ llmUsage.server.steps[].nodeId
 llmUsage.server.steps[].totalTokens
 ```
 
+After a target is bound or advanced, collect package gates before saying the phase progressed:
+
+```bash
+evopilot goal target-package <goal-id> --target <target-id> --json
+evopilot goal phase-package <goal-id> --phase <alpha|beta|rc|ga> --json
+```
+
+`LoopRun.status=SUCCEEDED` is not enough for completion. EvoPilot marks a GoalTarget `DONE` only when `TargetEvidencePackage.status=GO`, and a phase passes only when the corresponding `PhasePackage.decision.status=GO`.
+
 `llmUsage.summary` is the command-level total. `llmUsage.server.steps[]` is the Loop executor-level evidence. If a run used an LLM but the agent cannot identify provider, model, or token totals, report the run as incomplete evidence instead of claiming completion.
 
 For a new GitHub project, use the onboarding wrapper after the tokenRef is available to the EvoPilot server:
@@ -526,7 +535,7 @@ EvoPilot CLI has two layers:
 | Layer | Use It For | Examples |
 |---|---|---|
 | Wrapper commands | One-command project/goal/loop execution for agents and operators. | `target run`, `goal run`, `loop run` |
-| Atomic commands | Step-level inspection, recovery, and explicit governance actions. | `goal plan`, `goal approve-plan`, `goal advance`, `source-closure preflight`, `release decisions` |
+| Atomic commands | Step-level inspection, recovery, and explicit governance actions. | `goal plan`, `goal approve-plan`, `goal advance`, `goal target-package`, `goal phase-package`, `source-closure preflight`, `release decisions` |
 
 Wrapper commands compose atomic commands but still stop at server guardrails.
 
@@ -631,6 +640,7 @@ evopilot goal approve-plan <goal-id> \
   --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
   --json
 evopilot goal phases <goal-id> --json
+evopilot goal target-package <goal-id> --target <target-id> --json
 evopilot goal phase-package <goal-id> --phase alpha --json
 
 evopilot goal snapshot <goal-id> --json

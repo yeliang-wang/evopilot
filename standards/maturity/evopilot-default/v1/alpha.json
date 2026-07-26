@@ -38,6 +38,33 @@
     "GO only if every required Alpha GoalTarget is DONE.",
     "NO-GO if source access, bootstrap, or smoke evidence is unavailable and no explicit blocker package exists."
   ],
+  "plannerInstructions": [
+    "Generate project-specific Alpha GoalTargets for source ownership, bootstrap, minimal smoke, architecture map, risk register, and Alpha package.",
+    "Do not claim release readiness in Alpha.",
+    "Every Alpha GoalTarget must produce a TargetEvidencePackage before it can be marked DONE."
+  ],
+  "targetSchema": {
+    "requiredFields": [
+      "id",
+      "phase",
+      "title",
+      "description",
+      "layer",
+      "required",
+      "dependencyIds",
+      "acceptanceCriteria",
+      "requiredEvidence",
+      "reviewCapabilities",
+      "packageOutputs"
+    ],
+    "minRequiredTargets": 3,
+    "mustProduceTargetEvidencePackage": true
+  },
+  "packageContract": {
+    "targetEvidencePackageRequired": true,
+    "phasePackageRequired": true,
+    "nextTargetRequiresPreviousPackageGo": true
+  },
   "overridePolicy": {
     "canAddGoalTargets": true,
     "canStrengthenCriteria": true,

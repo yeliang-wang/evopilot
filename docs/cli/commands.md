@@ -430,6 +430,7 @@ evopilot goal approve-plan <goal-id> --confirmed-by <user-or-owner> --confirmati
 evopilot goal targets <goal-id>
 evopilot goal phases <goal-id>
 evopilot goal phase-package <goal-id> --phase <alpha|beta|rc|ga>
+evopilot goal target-package <goal-id> --target <target-id>
 evopilot goal advance <goal-id> [--no-auto-start] [--approve-human-gate]
 evopilot goal run [<goal-id>] [--project <id> --target <target-id> --objective <text>]
 evopilot goal snapshot <goal-id>
@@ -439,7 +440,8 @@ evopilot goal evidence-matrix <goal-id>
 evopilot goal final-report <goal-id>
 ```
 
-`goal phases` returns the current Alpha/Beta/RC/GA phase projection. `goal phase-package` returns the phase package with target summary, acceptance criteria, required evidence, blockers, review capabilities, package outputs, and GO/NO-GO decision.
+`goal phases` returns the current Alpha/Beta/RC/GA phase projection. `goal target-package` returns one GoalTarget's package with acceptance criteria, required evidence, LoopRun status, source closure gate evidence, blockers, LLM usage, and GO/NO-GO decision. `goal phase-package` returns the phase package with target summary, acceptance criteria, required evidence, blockers, review capabilities, package outputs, target package list, and GO/NO-GO decision.
+GoalTargets are `DONE` only when their `TargetEvidencePackage.status` is `GO`; a `LoopRun.status=SUCCEEDED` without required package/source/DevOps evidence leaves the target blocked.
 `goal advance` advances one server-governed step. It is atomic even when a wrapper command calls it repeatedly.
 `goal create` and `goal run` accept `--llm-profile <id>` for run-level LLM selection.
 

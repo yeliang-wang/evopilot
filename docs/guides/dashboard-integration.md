@@ -84,6 +84,7 @@ Use the response fields as UI contract:
 | Field | UI Use |
 |---|---|
 | `chain` | Workflow graph nodes |
+| `targetPackages` | Current and completed GoalTarget evidence packages, including LoopRun/source gate/LLM usage, blockers, and GO/NO-GO status |
 | `phasePackages` | Alpha/Beta/RC/GA package status, acceptance criteria, required evidence, blockers, package outputs, and GO/NO-GO decision |
 | `phasePlan` through `/phase-plan` | User-reviewable and editable plan before execution |
 | `nextAction` | Primary call to action |

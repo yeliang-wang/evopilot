@@ -37,6 +37,8 @@ evopilot target plan approve <goal-id> \
   --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
   --json
 evopilot target run --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
+evopilot goal target-package <goal-id> --target <target-id> --json
+evopilot goal phase-package <goal-id> --phase alpha --json
 ```
 
 Do not parse human-readable CLI output. Human output may change to improve operator readability.
@@ -58,8 +60,9 @@ For every `--json` command, automation should parse in this order:
 7. Execution boundary: `executionMode`, `devopsOwner`, `workflowRepository`, `credentialRef`, `credentialPrincipal`, `claimBoundary`
 8. LLM boundary: `llm.profileId`, `llm.source`, `llm.provider`, `llm.model`, project LLM readiness, and run override `--llm-profile`
 9. Goal phase plan: `phasePlan.phases[]`, `phasePlan.targets[]`, `editablePlan`, `status.nextAction`
-10. Release decision fields from EvoPilot release APIs, never local inference
-11. `llmUsage.summary`, `llmUsage.process.responses[]`, and `llmUsage.server.steps[]`
+10. Package gates: `status.targetPackages[]`, `status.phasePackages[]`, `TargetEvidencePackage.status`, `PhasePackage.decision.status`, `blockers`, and `llmUsage`
+11. Release decision fields from EvoPilot release APIs, never local inference
+12. `llmUsage.summary`, `llmUsage.process.responses[]`, and `llmUsage.server.steps[]`
 
 Do not continue just because a command printed a workflow graph. Continue only when the JSON status and `nextAction` allow it.
 
@@ -219,6 +222,15 @@ evopilot target run --project my-agent --objective "Enable tenant onboarding and
 `target run` stops with `result.exitCode=2` and `nextAction=approve-plan` when the plan is still pending. Agents should show the phase plan to the user, not retry blindly. No wrapper command may approve the generated Alpha -> Beta -> RC -> GA plan implicitly; approval must be an explicit `target plan approve` or `goal approve-plan` action with real `--confirmed-by` and `--confirmation` values after user or project-owner confirmation.
 
 The plan must preserve Alpha, Beta, RC, and GA. Users may add project-specific GoalTargets or strengthen phase criteria, evidence, and review requirements. Removing baseline criteria or skipping a phase is blocked by the server and must be reported as a plan validation failure.
+
+After a target is bound or advanced, inspect package gates before claiming progress:
+
+```bash
+evopilot goal target-package <goal-id> --target <target-id> --json
+evopilot goal phase-package <goal-id> --phase <alpha|beta|rc|ga> --json
+```
+
+Automation must not treat `LoopRun.status=SUCCEEDED` as target completion by itself. A target passes only when `TargetEvidencePackage.status=GO`; a phase passes only when its `PhasePackage.decision.status=GO`.
 
 ## Stop Conditions
 
