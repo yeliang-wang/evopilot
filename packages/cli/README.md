@@ -88,8 +88,17 @@ After registration, verify persisted readiness:
 
 ```bash
 evopilot project onboard verify <project-id> --json
+evopilot harness profile generate \
+  --project <project-id> \
+  --from-template python-enterprise-harness \
+  --goal-loop-target "Define the Python enterprise harness for this project" \
+  --llm-profile <llm-profile-id> \
+  --json
+evopilot harness profile activate default --project <project-id> --version 1 --json
 evopilot target plan --project <project-id> --objective "Enable the requested business capability and lifecycle evidence" --llm-profile <llm-profile-id> --json
 ```
+
+`ProjectHarnessProfile` is a project-level control-plane definition. It is generated or imported as YAML/JSON, validated by the server, activated explicitly, and then bound into `GoalPlan.projectHarness` by version and digest.
 
 ## Documentation
 

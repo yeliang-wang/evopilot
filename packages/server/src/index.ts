@@ -6,6 +6,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from "node:crypto";
+import { parse as parseYaml } from "yaml";
 import { GitHubHttpAdapter, type GitHubPullRequestDraft } from "@evopilot/adapter-github";
 import { GitLabHttpAdapter } from "@evopilot/adapter-gitlab";
 import { listRepositoryFiles } from "@evopilot/adapter-local-git";
@@ -261,6 +262,189 @@ interface ProjectRuntimeDiagnostic {
   }>;
   recommendedAction: string;
   checkedAt: string;
+}
+
+type ProjectHarnessProfileStatus = "DRAFT" | "VALIDATED" | "ACTIVE" | "SUPERSEDED" | "REJECTED";
+type ProjectHarnessProfileSourceFormat = "object" | "json" | "yaml" | "llm-generated";
+
+interface HarnessTemplateRef {
+  templateId: string;
+  version: string;
+  digest: string;
+}
+
+interface HarnessCapabilityDefinition {
+  id: string;
+  name: string;
+  boundary: string;
+  requiredEvidence: string[];
+}
+
+interface HarnessTemplateProfile {
+  schema: "evopilot-harness-template/v1";
+  id: string;
+  version: string;
+  digest: string;
+  name: string;
+  description: string;
+  scope: "platform" | "tenant";
+  languageFamily: "python" | "node" | "java" | "go" | "generic";
+  capabilities: HarnessCapabilityDefinition[];
+  runtimePatterns: Record<string, unknown>;
+  validationBaseline: Record<string, unknown>;
+  evidenceContract: Record<string, unknown>;
+  failureTaxonomy: Record<string, unknown>;
+  diagnosticsBaseline: Record<string, unknown>;
+  observabilityBaseline: Record<string, unknown>;
+  governanceRules: Record<string, unknown>;
+  phaseMapping: Record<MaturityPhase, string[]>;
+  llmDraftPolicy: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ProjectHarnessProfileSource {
+  schema: "evopilot-project-harness-profile/v1";
+  profileId: string;
+  projectId: string;
+  tenantId?: string;
+  workspaceId?: string;
+  name: string;
+  description?: string;
+  template?: Partial<HarnessTemplateRef> & { id?: string };
+  capabilities?: HarnessCapabilityDefinition[];
+  runtime?: Record<string, unknown>;
+  validation?: Record<string, unknown>;
+  evidence?: Record<string, unknown>;
+  rules?: Record<string, unknown>;
+  failureHandling?: Record<string, unknown>;
+  diagnostics?: Record<string, unknown>;
+  observability?: Record<string, unknown>;
+  governance?: Record<string, unknown>;
+  phaseMapping?: Partial<Record<MaturityPhase, string[]>>;
+  llmDraftPolicy?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
+interface CompiledProjectHarnessProfile {
+  schema: "evopilot-project-harness-compiled-profile/v1";
+  tenantId: string;
+  workspaceId: string;
+  projectId: string;
+  profileId: string;
+  name: string;
+  templateRef: HarnessTemplateRef;
+  capabilities: HarnessCapabilityDefinition[];
+  runtime: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  evidence: Record<string, unknown>;
+  rules: Record<string, unknown>;
+  failureHandling: Record<string, unknown>;
+  diagnostics: Record<string, unknown>;
+  observability: Record<string, unknown>;
+  governance: Record<string, unknown>;
+  phaseMapping: Record<MaturityPhase, string[]>;
+  llmDraftPolicy: Record<string, unknown>;
+  inheritedSections: string[];
+  overrideSections: string[];
+  compiledAt: string;
+}
+
+interface ProjectHarnessProfileValidationResult {
+  schema: "evopilot-project-harness-profile-validation/v1";
+  tenantId: string;
+  workspaceId: string;
+  projectId: string;
+  profileId: string;
+  templateRef?: HarnessTemplateRef;
+  status: "VALIDATED" | "FAILED";
+  checks: Array<{
+    id: string;
+    status: "PASS" | "FAIL" | "WARN";
+    required: boolean;
+    evidence: string[];
+  }>;
+  blockers: string[];
+  warnings: string[];
+  sourceDigest?: string;
+  compiledDigest?: string;
+  evaluatedAt: string;
+}
+
+interface ProjectHarnessProfileDiff {
+  schema: "evopilot-project-harness-profile-diff/v1";
+  tenantId: string;
+  workspaceId: string;
+  projectId: string;
+  profileId: string;
+  baseVersion?: number;
+  candidateVersion?: number;
+  status: "UNCHANGED" | "CHANGED";
+  changedSections: string[];
+  breakingChanges: string[];
+  warnings: string[];
+  generatedAt: string;
+}
+
+interface ProjectHarnessProfileVersion {
+  schema: "evopilot-project-harness-profile-version/v1";
+  tenantId: string;
+  workspaceId: string;
+  projectId: string;
+  profileId: string;
+  version: number;
+  status: ProjectHarnessProfileStatus;
+  sourceFormat: ProjectHarnessProfileSourceFormat;
+  sourceContent: ProjectHarnessProfileSource;
+  sourceDigest: string;
+  compiledContent: CompiledProjectHarnessProfile;
+  compiledDigest: string;
+  templateRef: HarnessTemplateRef;
+  validation: ProjectHarnessProfileValidationResult;
+  diffFromActive?: ProjectHarnessProfileDiff;
+  generatedBy: {
+    mode: "user" | "llm" | "deterministic-template";
+    actor?: string;
+    llmProfileId?: string;
+    provider?: string;
+    model?: string;
+    requestId?: string;
+    evidence: string[];
+  };
+  approvedAt?: string;
+  approvedBy?: string;
+  activatedAt?: string;
+  activatedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ProjectHarnessProfileSummary {
+  schema: "evopilot-project-harness-profile-summary/v1";
+  tenantId: string;
+  workspaceId: string;
+  projectId: string;
+  profileId: string;
+  status: ProjectHarnessProfileStatus | "MISSING";
+  activeVersion?: number;
+  latestVersion?: number;
+  sourceDigest?: string;
+  compiledDigest?: string;
+  templateRef?: HarnessTemplateRef;
+  storage: {
+    authority: "evopilot-control-plane";
+    format: "json";
+    path: string;
+  };
+  versions: Array<{
+    version: number;
+    status: ProjectHarnessProfileStatus;
+    sourceDigest: string;
+    compiledDigest: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  updatedAt?: string;
 }
 
 interface ProjectCodeContext {
@@ -1198,6 +1382,21 @@ interface GoalPlanPlannerTrace {
   generatedAt: string;
 }
 
+interface GoalPlanProjectHarnessBinding {
+  schema: "evopilot-goal-plan-project-harness-binding/v1";
+  profileId: string;
+  version: number;
+  status: "ACTIVE";
+  templateRef: HarnessTemplateRef;
+  sourceDigest: string;
+  compiledDigest: string;
+  capabilities: string[];
+  inheritedSections: string[];
+  overrideSections: string[];
+  evidence: string[];
+  boundAt: string;
+}
+
 interface GoalPlan {
   schema: "evopilot-goal-plan/v1";
   status: GoalPlanStatus;
@@ -1206,6 +1405,7 @@ interface GoalPlan {
   maturityStandardSetId?: string;
   standardVersion?: string;
   planner?: GoalPlanPlannerTrace;
+  projectHarness?: GoalPlanProjectHarnessBinding;
   summary: string;
   targetCount: number;
   requiredTargetCount: number;
@@ -2700,6 +2900,20 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const id = decodeURIComponent(maturityStandardMatch[1]);
         const template = maturityStandardTemplates().find((item) => item.id === id || item.phase === id);
         if (!template) return writeJson(response, 404, { error: "MATURITY_STANDARD_NOT_FOUND" });
+        return writeJson(response, 200, envelope(template));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/harness/templates") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope({
+          schema: "evopilot-harness-template-set/v1",
+          templates: store.listHarnessTemplates()
+        }));
+      }
+      const harnessTemplateMatch = url.pathname.match(/^\/api\/v1\/harness\/templates\/([^/]+)$/);
+      if (request.method === "GET" && harnessTemplateMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const template = store.readHarnessTemplate(decodeURIComponent(harnessTemplateMatch[1]), url.searchParams.get("version") ?? undefined);
+        if (!template) return writeJson(response, 404, { error: "HARNESS_TEMPLATE_NOT_FOUND" });
         return writeJson(response, 200, envelope(template));
       }
       if (request.method === "POST" && url.pathname === "/api/v1/release/targets") {
@@ -4347,6 +4561,238 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
         return writeJson(response, 200, envelope(await diagnoseProjectRuntime({ store, project, runtime })));
       }
+      const projectHarnessProfilesMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/harness-profiles$/);
+      if (request.method === "GET" && projectHarnessProfilesMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const project = store.readProject(decodeURIComponent(projectHarnessProfilesMatch[1]));
+        if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
+        return writeJson(response, 200, envelope({
+          schema: "evopilot-project-harness-profile-list/v1",
+          projectId: project.id,
+          profiles: store.listProjectHarnessProfileSummaries(project.id)
+        }));
+      }
+      if (request.method === "POST" && projectHarnessProfilesMatch) {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const project = store.readProject(decodeURIComponent(projectHarnessProfilesMatch[1]));
+        if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const parsed = parseProjectHarnessProfilePayload(body);
+        const candidate = createProjectHarnessProfileVersion(store, project, {
+          source: parsed.source,
+          sourceFormat: parsed.sourceFormat,
+          actor: auth.actor,
+          status: "VALIDATED"
+        });
+        if (candidate.validation.status !== "VALIDATED") {
+          return writeJson(response, 409, envelope({
+            schema: "evopilot-project-harness-profile-apply-result/v1",
+            status: "FAILED",
+            validation: candidate.validation,
+            candidate
+          }));
+        }
+        const saved = store.writeProjectHarnessProfileVersion(candidate);
+        store.appendAudit(audit(auth, "project-harness-profile.applied", `${project.id}/${saved.profileId}/v${saved.version}`, {
+          projectId: project.id,
+          profileId: saved.profileId,
+          version: saved.version,
+          sourceDigest: saved.sourceDigest,
+          compiledDigest: saved.compiledDigest,
+          templateId: saved.templateRef.templateId,
+          templateVersion: saved.templateRef.version
+        }));
+        return writeJson(response, 201, envelope({
+          schema: "evopilot-project-harness-profile-apply-result/v1",
+          status: "VALIDATED",
+          profile: saved,
+          summary: store.projectHarnessProfileSummary(project.id, saved.profileId)
+        }));
+      }
+      const projectHarnessGenerateMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/harness-profiles\/generate$/);
+      if (request.method === "POST" && projectHarnessGenerateMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const project = store.readProject(decodeURIComponent(projectHarnessGenerateMatch[1]));
+        if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes) as Record<string, unknown>;
+        const draft = await generateProjectHarnessProfileDraft(store, project, body, auth.actor);
+        const saved = store.writeProjectHarnessProfileVersion(draft);
+        store.appendAudit(audit(auth, "project-harness-profile.generated", `${project.id}/${saved.profileId}/v${saved.version}`, {
+          projectId: project.id,
+          profileId: saved.profileId,
+          version: saved.version,
+          mode: saved.generatedBy.mode,
+          sourceDigest: saved.sourceDigest,
+          compiledDigest: saved.compiledDigest,
+          templateId: saved.templateRef.templateId,
+          templateVersion: saved.templateRef.version,
+          validation: saved.validation.status
+        }));
+        return writeJson(response, 201, envelope({
+          schema: "evopilot-project-harness-profile-generate-result/v1",
+          status: "DRAFT",
+          profile: saved,
+          summary: store.projectHarnessProfileSummary(project.id, saved.profileId),
+          instruction: "Generated ProjectHarnessProfile is DRAFT. Review, validate, then activate explicitly before it controls GoalTarget planning."
+        }));
+      }
+      const projectHarnessValidateMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/harness-profiles\/validate$/);
+      if (request.method === "POST" && projectHarnessValidateMatch) {
+        if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const project = store.readProject(decodeURIComponent(projectHarnessValidateMatch[1]));
+        if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const parsed = parseProjectHarnessProfilePayload(body);
+        const candidate = createProjectHarnessProfileVersion(store, project, {
+          source: parsed.source,
+          sourceFormat: parsed.sourceFormat,
+          actor: auth.actor,
+          status: "DRAFT"
+        });
+        return writeJson(response, candidate.validation.status === "VALIDATED" ? 200 : 409, envelope({
+          schema: "evopilot-project-harness-profile-validate-result/v1",
+          status: candidate.validation.status,
+          validation: candidate.validation,
+          diffFromActive: candidate.diffFromActive,
+          sourceDigest: candidate.sourceDigest,
+          compiledDigest: candidate.compiledDigest,
+          compiledContent: candidate.compiledContent
+        }));
+      }
+      const projectHarnessProfileVersionMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/harness-profiles\/([^/]+)\/versions\/(\d+)$/);
+      if (request.method === "GET" && projectHarnessProfileVersionMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const project = store.readProject(decodeURIComponent(projectHarnessProfileVersionMatch[1]));
+        if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
+        const profileId = decodeURIComponent(projectHarnessProfileVersionMatch[2]);
+        const version = store.readProjectHarnessProfileVersion(project.id, profileId, Number(projectHarnessProfileVersionMatch[3]));
+        if (!version) return writeJson(response, 404, { error: "PROJECT_HARNESS_PROFILE_VERSION_NOT_FOUND" });
+        return writeJson(response, 200, envelope(version));
+      }
+      const projectHarnessProfileActionMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/harness-profiles\/([^/]+)\/(diff|activate|explain|upgrade)$/);
+      if (projectHarnessProfileActionMatch) {
+        const project = store.readProject(decodeURIComponent(projectHarnessProfileActionMatch[1]));
+        if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
+        const profileId = safeFileName(decodeURIComponent(projectHarnessProfileActionMatch[2]));
+        const action = projectHarnessProfileActionMatch[3];
+        if (request.method === "POST" && action === "diff") {
+          if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+          const body = await readJson(request, options.maxBodyBytes) as Record<string, unknown>;
+          const active = store.readActiveProjectHarnessProfile(project.id, profileId);
+          const candidateVersion = body.version ? store.readProjectHarnessProfileVersion(project.id, profileId, Number(body.version)) : undefined;
+          const candidate = candidateVersion ?? createProjectHarnessProfileVersion(store, project, {
+            source: parseProjectHarnessProfilePayload(body).source,
+            sourceFormat: parseProjectHarnessProfilePayload(body).sourceFormat,
+            actor: auth.actor,
+            status: "DRAFT"
+          });
+          const diff = active
+            ? diffProjectHarnessProfiles(project, profileId, active, candidate.compiledContent, candidate.version, new Date().toISOString())
+            : projectHarnessProfileDiffWithoutBase(project, profileId, candidate.version);
+          return writeJson(response, 200, envelope({ schema: "evopilot-project-harness-profile-diff-result/v1", diff, candidate }));
+        }
+        if (request.method === "POST" && action === "activate") {
+          if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+          const body = await readJson(request, options.maxBodyBytes) as Record<string, unknown>;
+          const versions = store.listProjectHarnessProfileVersions(project.id, profileId);
+          const selectedVersion = Number(body.version ?? versions[versions.length - 1]?.version ?? 0);
+          if (!selectedVersion) return writeJson(response, 404, { error: "PROJECT_HARNESS_PROFILE_VERSION_NOT_FOUND" });
+          const activated = store.activateProjectHarnessProfileVersion(project.id, profileId, selectedVersion, auth.actor);
+          if (!activated) return writeJson(response, 404, { error: "PROJECT_HARNESS_PROFILE_VERSION_NOT_FOUND" });
+          store.appendAudit(audit(auth, "project-harness-profile.activated", `${project.id}/${profileId}/v${activated.version}`, {
+            projectId: project.id,
+            profileId,
+            version: activated.version,
+            sourceDigest: activated.sourceDigest,
+            compiledDigest: activated.compiledDigest,
+            templateId: activated.templateRef.templateId,
+            templateVersion: activated.templateRef.version
+          }));
+          return writeJson(response, 200, envelope({
+            schema: "evopilot-project-harness-profile-activate-result/v1",
+            status: "ACTIVE",
+            profile: activated,
+            summary: store.projectHarnessProfileSummary(project.id, profileId)
+          }));
+        }
+        if (request.method === "GET" && action === "explain") {
+          if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+          const selectedVersion = url.searchParams.get("version") ? Number(url.searchParams.get("version")) : undefined;
+          const version = selectedVersion
+            ? store.readProjectHarnessProfileVersion(project.id, profileId, selectedVersion)
+            : store.readActiveProjectHarnessProfile(project.id, profileId) ?? store.listProjectHarnessProfileVersions(project.id, profileId).at(-1);
+          if (!version) return writeJson(response, 404, { error: "PROJECT_HARNESS_PROFILE_NOT_FOUND" });
+          return writeJson(response, 200, envelope(explainProjectHarnessProfile(project, version)));
+        }
+        if (request.method === "POST" && action === "upgrade") {
+          if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+          const body = await readJson(request, options.maxBodyBytes) as Record<string, unknown>;
+          const active = store.readActiveProjectHarnessProfile(project.id, profileId);
+          if (!active) return writeJson(response, 404, { error: "PROJECT_HARNESS_PROFILE_ACTIVE_NOT_FOUND" });
+          const templateId = safeFileName(String(body.templateId ?? active.templateRef.templateId));
+          const templateVersion = optionalTrimmedString(body.templateVersion ?? body.version) ?? active.templateRef.version;
+          const template = store.readHarnessTemplate(templateId, templateVersion);
+          if (!template) return writeJson(response, 404, { error: "HARNESS_TEMPLATE_NOT_FOUND" });
+          const source: ProjectHarnessProfileSource = {
+            ...active.sourceContent,
+            template: harnessTemplateRef(template),
+            metadata: {
+              ...(active.sourceContent.metadata ?? {}),
+              upgradeFromVersion: active.version,
+              upgradeReason: optionalTrimmedString(body.reason) ?? "Template upgrade requested by administrator."
+            }
+          };
+          const draft = createProjectHarnessProfileVersion(store, project, {
+            source,
+            sourceFormat: "object",
+            actor: auth.actor,
+            status: "DRAFT",
+            generatedBy: {
+              mode: "deterministic-template",
+              actor: auth.actor,
+              evidence: [`upgradeFrom=${active.version}`, `template=${template.id}@${template.version}`, `templateDigest=${template.digest}`]
+            }
+          });
+          const saved = store.writeProjectHarnessProfileVersion(draft);
+          store.appendAudit(audit(auth, "project-harness-profile.upgrade-drafted", `${project.id}/${profileId}/v${saved.version}`, {
+            projectId: project.id,
+            profileId,
+            version: saved.version,
+            fromVersion: active.version,
+            templateId: template.id,
+            templateVersion: template.version,
+            validation: saved.validation.status
+          }));
+          return writeJson(response, 201, envelope({
+            schema: "evopilot-project-harness-profile-upgrade-result/v1",
+            status: "DRAFT",
+            profile: saved,
+            summary: store.projectHarnessProfileSummary(project.id, profileId)
+          }));
+        }
+      }
+      const projectHarnessProfileMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/harness-profiles\/([^/]+)$/);
+      if (request.method === "GET" && projectHarnessProfileMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const project = store.readProject(decodeURIComponent(projectHarnessProfileMatch[1]));
+        if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+        if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
+        const profileId = safeFileName(decodeURIComponent(projectHarnessProfileMatch[2]));
+        const versions = store.listProjectHarnessProfileVersions(project.id, profileId);
+        if (versions.length === 0) return writeJson(response, 404, { error: "PROJECT_HARNESS_PROFILE_NOT_FOUND" });
+        return writeJson(response, 200, envelope({
+          schema: "evopilot-project-harness-profile-inspect/v1",
+          summary: store.projectHarnessProfileSummary(project.id, profileId),
+          active: versions.find((version) => version.status === "ACTIVE"),
+          latest: versions[versions.length - 1]
+        }));
+      }
       const projectSourceCredentialMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/source-credentials$/);
       if (request.method === "POST" && projectSourceCredentialMatch) {
         if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -5047,6 +5493,8 @@ class FileStore {
     fs.mkdirSync(this.githubAppInstallationsDir, { recursive: true });
     fs.mkdirSync(this.runsDir, { recursive: true });
     fs.mkdirSync(this.projectsDir, { recursive: true });
+    fs.mkdirSync(this.harnessTemplatesDir, { recursive: true });
+    fs.mkdirSync(this.projectHarnessProfilesDir, { recursive: true });
     fs.mkdirSync(path.dirname(this.auditFile), { recursive: true });
     fs.mkdirSync(this.idempotencyDir, { recursive: true });
     fs.mkdirSync(this.rulesDir, { recursive: true });
@@ -5111,6 +5559,14 @@ class FileStore {
 
   get projectsDir(): string {
     return path.join(this.dataRoot, "projects");
+  }
+
+  get harnessTemplatesDir(): string {
+    return path.join(this.dataRoot, "harness-templates");
+  }
+
+  get projectHarnessProfilesDir(): string {
+    return path.join(this.dataRoot, "project-harness-profiles");
   }
 
   get auditFile(): string {
@@ -6090,6 +6546,157 @@ class FileStore {
       },
       updatedAt: project.updatedAt ?? project.createdAt ?? new Date().toISOString()
     } as StoredProject;
+  }
+
+  listHarnessTemplates(): HarnessTemplateProfile[] {
+    const persisted = fs.readdirSync(this.harnessTemplatesDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => hydrateHarnessTemplate(JSON.parse(fs.readFileSync(path.join(this.harnessTemplatesDir, file), "utf8"))));
+    const builtIns = defaultHarnessTemplates();
+    const persistedRefs = new Set(persisted.map((template) => `${template.id}@${template.version}`));
+    return [...builtIns.filter((template) => !persistedRefs.has(`${template.id}@${template.version}`)), ...persisted];
+  }
+
+  readHarnessTemplate(templateId: string, version?: string): HarnessTemplateProfile | undefined {
+    const id = safeFileName(templateId);
+    const requestedVersion = optionalTrimmedString(version);
+    const persisted = fs.readdirSync(this.harnessTemplatesDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => hydrateHarnessTemplate(JSON.parse(fs.readFileSync(path.join(this.harnessTemplatesDir, file), "utf8"))))
+      .filter((template) => template.id === id && (!requestedVersion || template.version === requestedVersion));
+    if (persisted.length > 0) return persisted[persisted.length - 1];
+    const builtIns = defaultHarnessTemplates().filter((template) => template.id === id && (!requestedVersion || template.version === requestedVersion));
+    return builtIns[builtIns.length - 1];
+  }
+
+  writeHarnessTemplate(template: HarnessTemplateProfile): HarnessTemplateProfile {
+    const hydrated = hydrateHarnessTemplate(template);
+    atomicWriteJson(path.join(this.harnessTemplatesDir, `${safeFileName(hydrated.id)}-${safeFileName(hydrated.version)}.json`), hydrated);
+    return hydrated;
+  }
+
+  listProjectHarnessProfileSummaries(projectId: string): ProjectHarnessProfileSummary[] {
+    const project = this.readProject(projectId);
+    if (!project) return [];
+    const root = this.projectHarnessProjectDir(project);
+    if (!fs.existsSync(root)) return [];
+    return fs.readdirSync(root)
+      .filter((file) => fs.statSync(path.join(root, file)).isDirectory())
+      .sort()
+      .map((profileId) => this.projectHarnessProfileSummary(project.id, profileId))
+      .filter((summary): summary is ProjectHarnessProfileSummary => Boolean(summary));
+  }
+
+  listProjectHarnessProfileVersions(projectId: string, profileId = "default"): ProjectHarnessProfileVersion[] {
+    const project = this.readProject(projectId);
+    if (!project) return [];
+    const versionsDir = this.projectHarnessProfileVersionsDir(project, profileId);
+    if (!fs.existsSync(versionsDir)) return [];
+    return fs.readdirSync(versionsDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort((left, right) => versionNumberFromFile(left) - versionNumberFromFile(right))
+      .map((file) => hydrateProjectHarnessProfileVersion(JSON.parse(fs.readFileSync(path.join(versionsDir, file), "utf8"))));
+  }
+
+  readProjectHarnessProfileVersion(projectId: string, profileId: string, version: number): ProjectHarnessProfileVersion | undefined {
+    const project = this.readProject(projectId);
+    if (!project) return undefined;
+    const file = path.join(this.projectHarnessProfileVersionsDir(project, profileId), `v${version}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return hydrateProjectHarnessProfileVersion(JSON.parse(fs.readFileSync(file, "utf8")));
+  }
+
+  readActiveProjectHarnessProfile(projectId: string, profileId = "default"): ProjectHarnessProfileVersion | undefined {
+    return this.listProjectHarnessProfileVersions(projectId, profileId).find((version) => version.status === "ACTIVE");
+  }
+
+  writeProjectHarnessProfileVersion(version: ProjectHarnessProfileVersion): ProjectHarnessProfileVersion {
+    const project = this.readProject(version.projectId);
+    if (!project) throw httpError(404, "PROJECT_NOT_FOUND", `Project ${version.projectId} is not registered.`);
+    const hydrated = hydrateProjectHarnessProfileVersion(version);
+    const versionsDir = this.projectHarnessProfileVersionsDir(project, hydrated.profileId);
+    fs.mkdirSync(versionsDir, { recursive: true });
+    atomicWriteJson(path.join(versionsDir, `v${hydrated.version}.json`), hydrated);
+    return hydrated;
+  }
+
+  activateProjectHarnessProfileVersion(projectId: string, profileId: string, version: number, actor: string): ProjectHarnessProfileVersion | undefined {
+    const project = this.readProject(projectId);
+    if (!project) return undefined;
+    const versions = this.listProjectHarnessProfileVersions(project.id, profileId);
+    const selected = versions.find((item) => item.version === version);
+    if (!selected) return undefined;
+    if (selected.validation.status !== "VALIDATED") {
+      throw httpError(409, "PROJECT_HARNESS_PROFILE_NOT_VALIDATED", "Only validated ProjectHarnessProfile versions can be activated.");
+    }
+    const now = new Date().toISOString();
+    for (const item of versions) {
+      const next = item.version === selected.version
+        ? {
+            ...item,
+            status: "ACTIVE" as ProjectHarnessProfileStatus,
+            approvedAt: item.approvedAt ?? now,
+            approvedBy: item.approvedBy ?? actor,
+            activatedAt: now,
+            activatedBy: actor,
+            updatedAt: now
+          }
+        : item.status === "ACTIVE"
+          ? { ...item, status: "SUPERSEDED" as ProjectHarnessProfileStatus, updatedAt: now }
+          : item;
+      this.writeProjectHarnessProfileVersion(next);
+    }
+    return this.readProjectHarnessProfileVersion(project.id, profileId, selected.version);
+  }
+
+  projectHarnessProfileSummary(projectId: string, profileId = "default"): ProjectHarnessProfileSummary | undefined {
+    const project = this.readProject(projectId);
+    if (!project) return undefined;
+    const safeProfileId = safeFileName(profileId);
+    const versions = this.listProjectHarnessProfileVersions(project.id, safeProfileId);
+    const active = versions.find((version) => version.status === "ACTIVE");
+    const latest = versions[versions.length - 1];
+    return {
+      schema: "evopilot-project-harness-profile-summary/v1",
+      tenantId: project.tenantId,
+      workspaceId: project.workspaceId,
+      projectId: project.id,
+      profileId: safeProfileId,
+      status: active?.status ?? latest?.status ?? "MISSING",
+      activeVersion: active?.version,
+      latestVersion: latest?.version,
+      sourceDigest: active?.sourceDigest ?? latest?.sourceDigest,
+      compiledDigest: active?.compiledDigest ?? latest?.compiledDigest,
+      templateRef: active?.templateRef ?? latest?.templateRef,
+      storage: {
+        authority: "evopilot-control-plane",
+        format: "json",
+        path: this.projectHarnessProfileRoot(project, safeProfileId)
+      },
+      versions: versions.map((item) => ({
+        version: item.version,
+        status: item.status,
+        sourceDigest: item.sourceDigest,
+        compiledDigest: item.compiledDigest,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      })),
+      updatedAt: latest?.updatedAt
+    };
+  }
+
+  private projectHarnessProjectDir(project: StoredProject): string {
+    return path.join(this.projectHarnessProfilesDir, safeFileName(project.tenantId), safeFileName(project.workspaceId), safeFileName(project.id));
+  }
+
+  private projectHarnessProfileRoot(project: StoredProject, profileId: string): string {
+    return path.join(this.projectHarnessProjectDir(project), safeFileName(profileId));
+  }
+
+  private projectHarnessProfileVersionsDir(project: StoredProject, profileId: string): string {
+    return path.join(this.projectHarnessProfileRoot(project, profileId), "versions");
   }
 
   findRunByReviewId(reviewId: string): StoredRun | undefined {
@@ -7072,6 +7679,7 @@ class FileStore {
         maturityStandardSetId: DEFAULT_MATURITY_STANDARD_SET_ID,
         standardVersion: DEFAULT_MATURITY_STANDARD_VERSION,
         planner: planned.planner,
+        projectHarness: planned.projectHarness,
         summary: `${goal.objective} decomposed into Alpha -> Beta -> RC -> GA maturity phases with ${targets.length} white-box GoalTargets for ${releaseTarget.name}.`,
         targetCount: targets.length,
         requiredTargetCount: targets.filter((target) => target.required).length,
@@ -7089,6 +7697,9 @@ class FileStore {
           releaseTargetId: goal.releaseTargetId,
           strategy: "ga-maturity-ladder",
           plannerMode: planned.planner.mode,
+          projectHarnessProfileId: planned.projectHarness?.profileId,
+          projectHarnessVersion: planned.projectHarness?.version,
+          projectHarnessDigest: planned.projectHarness?.compiledDigest,
           llmProvider: planned.planner.provider,
           llmModel: planned.planner.model,
           llmTokens: planned.planner.totalTokens
@@ -9946,6 +10557,1038 @@ function targetEvidence(target: Pick<LoopOrchestrationTarget, "id" | "layer" | "
   ];
 }
 
+function defaultHarnessTemplates(): HarnessTemplateProfile[] {
+  return [hydrateHarnessTemplate({
+    schema: "evopilot-harness-template/v1",
+    id: "python-enterprise-harness",
+    version: "1.0.0",
+    digest: "",
+    name: "Python Enterprise Harness",
+    description: "Platform baseline for enterprise Python projects: capability boundaries, validation, evidence, diagnostics, observability, failure handling, and release governance.",
+    scope: "platform",
+    languageFamily: "python",
+    capabilities: [
+      {
+        id: "source-boundary",
+        name: "Source and workspace boundary",
+        boundary: "Project source, credentials, tenant, workspace, branch, writeback, and read-only mode are explicit before execution.",
+        requiredEvidence: ["project-registration", "source-readiness-preflight", "credential-or-read-only-boundary"]
+      },
+      {
+        id: "python-runtime",
+        name: "Python runtime harness",
+        boundary: "Install, lint, type, unit, smoke, package, and service readiness commands are declared by the project profile.",
+        requiredEvidence: ["install-output", "lint-output", "typecheck-output", "unit-output", "smoke-output"]
+      },
+      {
+        id: "test-and-quality",
+        name: "Test and quality gates",
+        boundary: "GoalTargets must prove tests, coverage expectations, interface contracts, and regression scope through command evidence.",
+        requiredEvidence: ["test-report", "coverage-or-risk-acceptance", "contract-check"]
+      },
+      {
+        id: "failure-diagnostics",
+        name: "Failure diagnostics",
+        boundary: "Failures are classified with command, stack trace, logs, suspected root cause, owner, next action, and verification plan.",
+        requiredEvidence: ["failure-classification", "root-cause-note", "repair-verification"]
+      },
+      {
+        id: "observability",
+        name: "Observability",
+        boundary: "Runtime health, readiness, logs, metrics, traces, and alert signals are bound before Beta/RC/GA claims.",
+        requiredEvidence: ["health-check", "runtime-log", "metric-or-trace-proof", "alert-route"]
+      },
+      {
+        id: "release-governance",
+        name: "Release governance",
+        boundary: "TargetEvidencePackage, PhasePackage, source closure, release evidence, and product-native ReleaseDecision are required before GA.",
+        requiredEvidence: ["target-evidence-package", "phase-package", "source-closure", "release-decision"]
+      }
+    ],
+    runtimePatterns: {
+      language: "python",
+      packageManagers: ["uv", "pip", "poetry"],
+      defaultCommands: {
+        install: ["uv sync", "pip install -e ."],
+        lint: ["ruff check ."],
+        typecheck: ["mypy ."],
+        unit: ["pytest"],
+        smoke: ["pytest -q tests"]
+      },
+      service: {
+        healthPath: "/health",
+        readinessTimeoutSeconds: 60
+      }
+    },
+    validationBaseline: {
+      requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke"],
+      commandEvidenceRequired: true,
+      realBoundaryEvidenceRequired: true,
+      noMockEvidenceForReleaseClaims: true
+    },
+    evidenceContract: {
+      format: "json",
+      requiredArtifacts: ["target-evidence-package", "phase-package", "goal-completion-report"],
+      requiredEvidence: ["command", "exit-code", "stdout-or-log", "changed-files", "ci-status-or-local-proof"],
+      retention: "control-plane"
+    },
+    failureTaxonomy: {
+      categories: ["dependency", "environment", "syntax", "type", "test", "contract", "security", "performance", "deploy", "observability", "governance", "unknown"],
+      requiresOwner: true,
+      requiresNextAction: true,
+      requiresReproduction: true
+    },
+    diagnosticsBaseline: {
+      requiredSignals: ["failing-command", "exit-code", "stack-trace-or-log", "changed-files", "runtime-env", "dependency-lock"],
+      rootCauseFields: ["symptom", "hypothesis", "evidence", "fix", "verification"]
+    },
+    observabilityBaseline: {
+      requiredSignals: ["health", "readiness", "logs", "metrics", "traces", "alerts"],
+      productionHealthRequired: true,
+      gaRequiresLiveHealthEvidence: true
+    },
+    governanceRules: {
+      tenantWorkspaceScopeRequired: true,
+      targetPlanRequiresApproval: true,
+      profileActivationRequiresApproval: true,
+      promotionRequiresReleaseDecision: true,
+      sourceClosureRequired: true,
+      noSilentProfileMutation: true,
+      mandatoryGates: ["project-harness-profile-active", "target-plan-user-confirmed", "target-evidence-package", "phase-package", "source-closure", "release-decision"],
+      cannotWeaken: ["tenantWorkspaceScopeRequired", "targetPlanRequiresApproval", "profileActivationRequiresApproval", "promotionRequiresReleaseDecision", "sourceClosureRequired", "noSilentProfileMutation"]
+    },
+    phaseMapping: {
+      alpha: ["source-boundary", "python-runtime", "failure-diagnostics"],
+      beta: ["test-and-quality", "observability", "failure-diagnostics"],
+      rc: ["observability", "release-governance", "test-and-quality"],
+      ga: ["release-governance", "observability", "source-boundary"]
+    },
+    llmDraftPolicy: {
+      enabled: true,
+      generatedStatus: "DRAFT",
+      requireUserReview: true,
+      activationRequiresAdmin: true,
+      reonboardingUsesPreviousActiveProfile: true,
+      allowedToSuggestProfileRevision: true,
+      allowedToSilentlyModifyActiveProfile: false
+    },
+    createdAt: "2026-07-31T00:00:00.000Z",
+    updatedAt: "2026-07-31T00:00:00.000Z"
+  })];
+}
+
+function hydrateHarnessTemplate(input: unknown): HarnessTemplateProfile {
+  const record = isRecord(input) ? input : {};
+  const now = new Date().toISOString();
+  const phaseMapping = hydrateHarnessPhaseMapping(record.phaseMapping);
+  const template: Omit<HarnessTemplateProfile, "digest"> & { digest?: string } = {
+    schema: "evopilot-harness-template/v1",
+    id: safeFileName(String(record.id ?? "python-enterprise-harness")),
+    version: String(record.version ?? "1.0.0"),
+    name: String(record.name ?? record.id ?? "Harness Template"),
+    description: String(record.description ?? ""),
+    scope: record.scope === "tenant" ? "tenant" : "platform",
+    languageFamily: normalizeHarnessLanguageFamily(record.languageFamily),
+    capabilities: hydrateHarnessCapabilities(record.capabilities),
+    runtimePatterns: recordObject(record.runtimePatterns),
+    validationBaseline: recordObject(record.validationBaseline),
+    evidenceContract: recordObject(record.evidenceContract),
+    failureTaxonomy: recordObject(record.failureTaxonomy),
+    diagnosticsBaseline: recordObject(record.diagnosticsBaseline),
+    observabilityBaseline: recordObject(record.observabilityBaseline),
+    governanceRules: recordObject(record.governanceRules),
+    phaseMapping,
+    llmDraftPolicy: recordObject(record.llmDraftPolicy),
+    createdAt: String(record.createdAt ?? now),
+    updatedAt: String(record.updatedAt ?? record.createdAt ?? now)
+  };
+  return {
+    ...template,
+    digest: digestObject({ ...template, digest: undefined })
+  };
+}
+
+function hydrateHarnessCapabilities(value: unknown): HarnessCapabilityDefinition[] {
+  const fallback: HarnessCapabilityDefinition[] = [{
+    id: "baseline",
+    name: "Baseline harness capability",
+    boundary: "Project capability boundary is declared by the harness profile.",
+    requiredEvidence: ["target-evidence-package"]
+  }];
+  const raw = Array.isArray(value) ? value : fallback;
+  return raw.map((item, index) => {
+    const record = isRecord(item) ? item : {};
+    const id = safeFileName(String(record.id ?? `capability-${index + 1}`));
+    return {
+      id,
+      name: String(record.name ?? id),
+      boundary: String(record.boundary ?? "Capability boundary must be declared before execution."),
+      requiredEvidence: Array.isArray(record.requiredEvidence) ? uniqueStrings(record.requiredEvidence.map(String)) : ["target-evidence-package"]
+    };
+  });
+}
+
+function hydrateHarnessPhaseMapping(value: unknown): Record<MaturityPhase, string[]> {
+  const record = isRecord(value) ? value : {};
+  return {
+    alpha: normalizeStringList(record.alpha, ["source-boundary", "python-runtime"]),
+    beta: normalizeStringList(record.beta, ["test-and-quality"]),
+    rc: normalizeStringList(record.rc, ["observability", "release-governance"]),
+    ga: normalizeStringList(record.ga, ["release-governance"])
+  };
+}
+
+function normalizeHarnessLanguageFamily(value: unknown): HarnessTemplateProfile["languageFamily"] {
+  const language = String(value ?? "python").trim().toLowerCase();
+  if (language === "python" || language === "node" || language === "java" || language === "go" || language === "generic") return language;
+  return "python";
+}
+
+function recordObject(value: unknown): Record<string, unknown> {
+  return isRecord(value) ? value : {};
+}
+
+function parseProjectHarnessProfilePayload(input: unknown): { source: ProjectHarnessProfileSource; sourceFormat: ProjectHarnessProfileSourceFormat } {
+  const body = isRecord(input) ? input : {};
+  const format = normalizeProjectHarnessProfileSourceFormat(body.sourceFormat ?? body.format);
+  const sourceText = optionalTrimmedString(body.sourceText);
+  if (sourceText) {
+    const parsed = format === "json" ? JSON.parse(sourceText) : parseYaml(sourceText);
+    return { source: normalizeRawProjectHarnessProfileSource(parsed), sourceFormat: format === "object" ? "yaml" : format };
+  }
+  const sourceContent = isRecord(body.sourceContent)
+    ? body.sourceContent
+    : isRecord(body.profile)
+      ? body.profile
+      : body;
+  return { source: normalizeRawProjectHarnessProfileSource(sourceContent), sourceFormat: format };
+}
+
+function normalizeProjectHarnessProfileSourceFormat(value: unknown): ProjectHarnessProfileSourceFormat {
+  const format = String(value ?? "object").trim().toLowerCase();
+  if (format === "json" || format === "yaml" || format === "llm-generated") return format as ProjectHarnessProfileSourceFormat;
+  return "object";
+}
+
+function normalizeRawProjectHarnessProfileSource(input: unknown): ProjectHarnessProfileSource {
+  const record = isRecord(input) ? input : {};
+  const profileId = safeFileName(String(record.profileId ?? record.id ?? "default"));
+  return {
+    schema: "evopilot-project-harness-profile/v1",
+    profileId,
+    projectId: safeFileName(String(record.projectId ?? "")),
+    tenantId: optionalTrimmedString(record.tenantId),
+    workspaceId: optionalTrimmedString(record.workspaceId),
+    name: String(record.name ?? profileId),
+    description: optionalTrimmedString(record.description),
+    template: isRecord(record.template) ? record.template as ProjectHarnessProfileSource["template"] : undefined,
+    capabilities: Array.isArray(record.capabilities) ? hydrateHarnessCapabilities(record.capabilities) : undefined,
+    runtime: isRecord(record.runtime) ? record.runtime : undefined,
+    validation: isRecord(record.validation) ? record.validation : undefined,
+    evidence: isRecord(record.evidence) ? record.evidence : undefined,
+    rules: isRecord(record.rules) ? record.rules : undefined,
+    failureHandling: isRecord(record.failureHandling) ? record.failureHandling : undefined,
+    diagnostics: isRecord(record.diagnostics) ? record.diagnostics : undefined,
+    observability: isRecord(record.observability) ? record.observability : undefined,
+    governance: isRecord(record.governance) ? record.governance : undefined,
+    phaseMapping: isRecord(record.phaseMapping) ? record.phaseMapping as ProjectHarnessProfileSource["phaseMapping"] : undefined,
+    llmDraftPolicy: isRecord(record.llmDraftPolicy) ? record.llmDraftPolicy : undefined,
+    metadata: isRecord(record.metadata) ? record.metadata : undefined
+  };
+}
+
+function createProjectHarnessProfileVersion(store: FileStore, project: StoredProject, input: {
+  source: ProjectHarnessProfileSource;
+  sourceFormat: ProjectHarnessProfileSourceFormat;
+  actor: string;
+  status?: ProjectHarnessProfileStatus;
+  generatedBy?: ProjectHarnessProfileVersion["generatedBy"];
+}): ProjectHarnessProfileVersion {
+  const now = new Date().toISOString();
+  const source = normalizeProjectHarnessProfileSourceForProject(input.source, project);
+  const template = resolveHarnessTemplateForSource(store, source);
+  const compiled = compileProjectHarnessProfile(project, template, source, now);
+  const sourceDigest = digestObject(source);
+  const compiledDigest = digestObject(compiled);
+  const validation = validateCompiledProjectHarnessProfile(project, template, source, compiled, sourceDigest, compiledDigest, now);
+  const previousActive = store.readActiveProjectHarnessProfile(project.id, source.profileId);
+  const versions = store.listProjectHarnessProfileVersions(project.id, source.profileId);
+  const version = versions.reduce((max, item) => Math.max(max, item.version), 0) + 1;
+  const templateRef = harnessTemplateRef(template);
+  return {
+    schema: "evopilot-project-harness-profile-version/v1",
+    tenantId: project.tenantId,
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    profileId: source.profileId,
+    version,
+    status: input.status ?? (validation.status === "VALIDATED" ? "VALIDATED" : "DRAFT"),
+    sourceFormat: input.sourceFormat,
+    sourceContent: source,
+    sourceDigest,
+    compiledContent: compiled,
+    compiledDigest,
+    templateRef,
+    validation,
+    diffFromActive: previousActive ? diffProjectHarnessProfiles(project, source.profileId, previousActive, compiled, undefined, now) : undefined,
+    generatedBy: input.generatedBy ?? {
+      mode: "user",
+      actor: input.actor,
+      evidence: [`actor=${input.actor}`, `sourceFormat=${input.sourceFormat}`]
+    },
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+async function generateProjectHarnessProfileDraft(store: FileStore, project: StoredProject, body: Record<string, unknown>, actor: string): Promise<ProjectHarnessProfileVersion> {
+  const requestedTemplateId = safeFileName(String(body.templateId ?? body.fromTemplate ?? "python-enterprise-harness"));
+  const requestedTemplateVersion = optionalTrimmedString(body.templateVersion);
+  const template = store.readHarnessTemplate(requestedTemplateId, requestedTemplateVersion);
+  if (!template) throw httpError(404, "HARNESS_TEMPLATE_NOT_FOUND", `Harness template ${requestedTemplateId}${requestedTemplateVersion ? `@${requestedTemplateVersion}` : ""} was not found.`);
+  const previousActive = store.readActiveProjectHarnessProfile(project.id, safeFileName(String(body.profileId ?? "default")));
+  const requestedProfileId = optionalTrimmedString(body.llmProfileId ?? body.llmProfile);
+  const llmResolution = resolveLoopLlmSelection(store, {
+    project,
+    tenantId: project.tenantId,
+    workspaceId: project.workspaceId,
+    requestedProfileId,
+    requireLlm: store.requireLlm() || body.requireLlm === true
+  });
+  const client = store.resolveGoalPlanLlmClient(llmResolution.selection);
+  if (!client) {
+    if (store.requireLlm() || body.requireLlm === true) {
+      throw httpError(409, "PROJECT_HARNESS_PROFILE_LLM_REQUIRED", "ProjectHarnessProfile generation requires a READY LLM profile or production LLM provider.");
+    }
+    return createProjectHarnessProfileVersion(store, project, {
+      source: deterministicProjectHarnessProfileSource(project, template, body, previousActive),
+      sourceFormat: "llm-generated",
+      actor,
+      status: "DRAFT",
+      generatedBy: {
+        mode: "deterministic-template",
+        actor,
+        evidence: [
+          "llmGenerator=false",
+          "reason=LLM provider is not configured in debug mode",
+          previousActive ? `previousActiveVersion=${previousActive.version}` : "previousActiveVersion=none",
+          `template=${template.id}@${template.version}`,
+          `templateDigest=${template.digest}`
+        ]
+      }
+    });
+  }
+  const startedAt = new Date().toISOString();
+  const response = await client.generate({
+    caller: "evopilot-project-harness-profile-generator",
+    intent: "structured.extraction",
+    outputContract: "json_object",
+    jsonObject: true,
+    latencyClass: "batch",
+    complexity: "high",
+    outputSize: "large",
+    metadata: {
+      productFlow: "project-harness-profile-generation",
+      projectId: project.id,
+      tenantId: project.tenantId,
+      workspaceId: project.workspaceId,
+      templateId: template.id,
+      templateVersion: template.version,
+      actor,
+      llmProfileId: llmResolution.selection.profileId ?? "global-default"
+    },
+    prompt: projectHarnessProfileGeneratorPrompt(project, template, body, previousActive)
+  });
+  if (!response.success || !response.text.trim()) {
+    throw httpError(409, "PROJECT_HARNESS_PROFILE_LLM_FAILED", response.errorMessage ?? response.errorCode ?? "LLM harness profile generation failed.");
+  }
+  let source: ProjectHarnessProfileSource;
+  try {
+    const parsed = JSON.parse(extractJsonObject(response.text));
+    source = normalizeRawProjectHarnessProfileSource(isRecord(parsed) && isRecord(parsed.profile) ? parsed.profile : parsed);
+  } catch (error) {
+    throw httpError(422, "PROJECT_HARNESS_PROFILE_LLM_OUTPUT_INVALID", error instanceof Error ? error.message : String(error));
+  }
+  return createProjectHarnessProfileVersion(store, project, {
+    source: {
+      ...source,
+      schema: "evopilot-project-harness-profile/v1",
+      profileId: safeFileName(String(source.profileId ?? body.profileId ?? "default")),
+      projectId: project.id,
+      tenantId: project.tenantId,
+      workspaceId: project.workspaceId,
+      template: harnessTemplateRef(template),
+      metadata: {
+        ...(source.metadata ?? {}),
+        generatedFromGoalLoopTarget: optionalTrimmedString(body.goalLoopTarget ?? body.objective),
+        previousActiveProfileVersion: previousActive?.version
+      }
+    },
+    sourceFormat: "llm-generated",
+    actor,
+    status: "DRAFT",
+    generatedBy: {
+      mode: "llm",
+      actor,
+      llmProfileId: llmResolution.selection.profileId,
+      provider: response.provider ?? llmResolution.selection.provider,
+      model: response.model ?? llmResolution.selection.model,
+      requestId: response.requestId,
+      evidence: [
+        `requestId=${response.requestId}`,
+        `provider=${response.provider ?? llmResolution.selection.provider ?? "unknown"}`,
+        `model=${response.model ?? llmResolution.selection.model ?? "unknown"}`,
+        `startedAt=${startedAt}`,
+        `durationMs=${response.durationMs}`,
+        previousActive ? `previousActiveVersion=${previousActive.version}` : "previousActiveVersion=none",
+        `template=${template.id}@${template.version}`,
+        `templateDigest=${template.digest}`
+      ]
+    }
+  });
+}
+
+function deterministicProjectHarnessProfileSource(project: StoredProject, template: HarnessTemplateProfile, body: Record<string, unknown>, previousActive?: ProjectHarnessProfileVersion): ProjectHarnessProfileSource {
+  const profileId = safeFileName(String(body.profileId ?? "default"));
+  const goalLoopTarget = optionalTrimmedString(body.goalLoopTarget ?? body.objective ?? body.target ?? body.prompt);
+  const projectRuntime = project.runtime;
+  return {
+    schema: "evopilot-project-harness-profile/v1",
+    profileId,
+    projectId: project.id,
+    tenantId: project.tenantId,
+    workspaceId: project.workspaceId,
+    name: String(body.name ?? `${project.name} Python Harness Profile`),
+    description: goalLoopTarget
+      ? `Project-level harness profile generated for goal loop target: ${goalLoopTarget}`
+      : "Project-level harness profile generated from the platform Python enterprise template.",
+    template: harnessTemplateRef(template),
+    capabilities: template.capabilities,
+    runtime: {
+      language: projectRuntime?.language ?? "python",
+      installCommands: projectRuntime?.installCommands ?? ["uv sync", "pip install -e ."],
+      lintCommands: ["ruff check ."],
+      typecheckCommands: ["mypy ."],
+      unitCommands: projectRuntime?.unitCommands ?? ["pytest"],
+      smokeCommands: projectRuntime?.smokeCommands ?? ["pytest -q tests"],
+      functionalCommands: projectRuntime?.functionalCommands ?? [],
+      service: projectRuntime?.service,
+      repositoryProvider: project.repository?.provider ?? "unknown",
+      devopsProvider: project.devops?.provider ?? "unknown"
+    },
+    validation: {
+      requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke"],
+      commands: ["installCommands", "lintCommands", "typecheckCommands", "unitCommands", "smokeCommands"],
+      requireExitCode: true,
+      requireCommandOutput: true,
+      requireTargetEvidencePackage: true
+    },
+    evidence: {
+      format: "json",
+      requiredArtifacts: ["target-evidence-package", "phase-package", "goal-completion-report"],
+      requiredEvidence: ["command-output", "exit-code", "runtime-log", "ci-status-or-local-proof", "release-decision"]
+    },
+    rules: {
+      capabilityBoundaryRequired: true,
+      profileRevisionSuggestionWhenGapFound: true,
+      noSilentActiveProfileMutation: true
+    },
+    failureHandling: {
+      categories: ["dependency", "environment", "syntax", "type", "test", "contract", "security", "performance", "deploy", "observability", "governance", "unknown"],
+      requiredFields: ["failingCommand", "exitCode", "symptom", "rootCauseHypothesis", "owner", "nextAction", "verificationCommand"]
+    },
+    diagnostics: {
+      requiredSignals: ["failing-command", "exit-code", "stack-trace-or-log", "changed-files", "runtime-env", "dependency-lock"],
+      commands: ["python --version", "pip --version", "pytest --version"]
+    },
+    observability: {
+      requiredSignals: ["health", "readiness", "logs", "metrics", "traces", "alerts"],
+      healthCheck: projectRuntime?.service?.healthPath ?? "/health",
+      gaRequiresLiveHealthEvidence: true
+    },
+    governance: {
+      tenantWorkspaceScopeRequired: true,
+      targetPlanRequiresApproval: true,
+      profileActivationRequiresApproval: true,
+      promotionRequiresReleaseDecision: true,
+      sourceClosureRequired: true,
+      noSilentProfileMutation: true
+    },
+    phaseMapping: template.phaseMapping,
+    llmDraftPolicy: {
+      enabled: true,
+      generatedStatus: "DRAFT",
+      requireUserReview: true,
+      activationRequiresAdmin: true,
+      reonboardingUsesPreviousActiveProfile: true,
+      allowedToSuggestProfileRevision: true,
+      allowedToSilentlyModifyActiveProfile: false
+    },
+    metadata: {
+      goalLoopTarget,
+      previousActiveProfileVersion: previousActive?.version,
+      previousActiveCompiledDigest: previousActive?.compiledDigest,
+      generatedBy: "deterministic-template"
+    }
+  };
+}
+
+function projectHarnessProfileGeneratorPrompt(project: StoredProject, template: HarnessTemplateProfile, body: Record<string, unknown>, previousActive?: ProjectHarnessProfileVersion): string {
+  return [
+    "You are EvoPilot's ProjectHarnessProfile generator for enterprise Python projects.",
+    "Return only one JSON object. Do not include Markdown.",
+    "The generated profile is a DRAFT control-plane definition. It must be reviewable by a user and must not silently activate itself.",
+    "Generate a project-level ProjectHarnessProfile from the goal loop target, the platform HarnessTemplate, project onboarding/runtime/devops/observability context, and any previous active profile.",
+    "The project profile may bind concrete commands and strengthen criteria. It must not weaken mandatory governance gates from the template.",
+    "",
+    "Output JSON schema:",
+    "{",
+    "  \"schema\": \"evopilot-project-harness-profile/v1\",",
+    "  \"profileId\": \"default\",",
+    "  \"projectId\": \"project id\",",
+    "  \"tenantId\": \"tenant id\",",
+    "  \"workspaceId\": \"workspace id\",",
+    "  \"name\": \"profile name\",",
+    "  \"description\": \"what this profile controls\",",
+    "  \"template\": { \"templateId\": \"id\", \"version\": \"version\", \"digest\": \"sha256:...\" },",
+    "  \"capabilities\": [{ \"id\": \"kebab-case\", \"name\": \"name\", \"boundary\": \"boundary\", \"requiredEvidence\": [\"evidence\"] }],",
+    "  \"runtime\": { \"language\": \"python\", \"installCommands\": [], \"lintCommands\": [], \"typecheckCommands\": [], \"unitCommands\": [], \"smokeCommands\": [], \"functionalCommands\": [] },",
+    "  \"validation\": { \"requiredCommandGroups\": [], \"commands\": [], \"requireExitCode\": true, \"requireCommandOutput\": true },",
+    "  \"evidence\": { \"format\": \"json\", \"requiredArtifacts\": [], \"requiredEvidence\": [] },",
+    "  \"rules\": { \"noSilentActiveProfileMutation\": true },",
+    "  \"failureHandling\": { \"categories\": [], \"requiredFields\": [] },",
+    "  \"diagnostics\": { \"requiredSignals\": [], \"commands\": [] },",
+    "  \"observability\": { \"requiredSignals\": [], \"healthCheck\": \"/health\" },",
+    "  \"governance\": { \"tenantWorkspaceScopeRequired\": true, \"targetPlanRequiresApproval\": true, \"profileActivationRequiresApproval\": true, \"promotionRequiresReleaseDecision\": true, \"sourceClosureRequired\": true, \"noSilentProfileMutation\": true },",
+    "  \"phaseMapping\": { \"alpha\": [], \"beta\": [], \"rc\": [], \"ga\": [] },",
+    "  \"llmDraftPolicy\": { \"requireUserReview\": true, \"allowedToSilentlyModifyActiveProfile\": false }",
+    "}",
+    "",
+    "Project:",
+    JSON.stringify(maskProject(project), null, 2),
+    "",
+    "HarnessTemplate:",
+    JSON.stringify(template, null, 2),
+    "",
+    "Goal loop target and control-plane requirements:",
+    JSON.stringify({
+      goalLoopTarget: body.goalLoopTarget ?? body.objective ?? body.target ?? "",
+      controlPlaneRequirements: body.controlPlaneRequirements,
+      runtimeNotes: body.runtimeNotes,
+      observabilityNotes: body.observabilityNotes,
+      failureHandlingNotes: body.failureHandlingNotes,
+      governanceNotes: body.governanceNotes
+    }, null, 2),
+    "",
+    "Previous active ProjectHarnessProfile:",
+    previousActive ? JSON.stringify({
+      version: previousActive.version,
+      sourceDigest: previousActive.sourceDigest,
+      compiledDigest: previousActive.compiledDigest,
+      templateRef: previousActive.templateRef,
+      sourceContent: previousActive.sourceContent,
+      compiledContent: previousActive.compiledContent
+    }, null, 2) : "none"
+  ].join("\n");
+}
+
+function projectHarnessProfileDiffWithoutBase(project: StoredProject, profileId: string, candidateVersion?: number): ProjectHarnessProfileDiff {
+  return {
+    schema: "evopilot-project-harness-profile-diff/v1",
+    tenantId: project.tenantId,
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    profileId,
+    candidateVersion,
+    status: "CHANGED",
+    changedSections: ["profile"],
+    breakingChanges: [],
+    warnings: ["No active ProjectHarnessProfile exists; candidate will become the first active control-plane definition after activation."],
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function explainProjectHarnessProfile(project: StoredProject, version: ProjectHarnessProfileVersion): Record<string, unknown> {
+  const compiled = version.compiledContent;
+  return {
+    schema: "evopilot-project-harness-profile-explain/v1",
+    tenantId: project.tenantId,
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    profileId: version.profileId,
+    version: version.version,
+    status: version.status,
+    sourceDigest: version.sourceDigest,
+    compiledDigest: version.compiledDigest,
+    templateRef: version.templateRef,
+    storage: {
+      authority: "evopilot-control-plane",
+      format: "json",
+      scope: "tenant/workspace/project/profile/version"
+    },
+    moduleMapping: [
+      {
+        module: "Project onboarding",
+        profileSections: ["tenantId", "workspaceId", "projectId", "templateRef"],
+        controls: ["tenant/workspace isolation", "project identity", "template version/digest lock"]
+      },
+      {
+        module: "Goal target planner",
+        profileSections: ["capabilities", "validation", "phaseMapping", "governance"],
+        controls: ["GoalTarget capability boundaries", "Alpha/Beta/RC/GA target requirements", "plan approval rules"]
+      },
+      {
+        module: "Executor and runtime",
+        profileSections: ["runtime", "rules"],
+        controls: ["install/lint/type/unit/smoke command groups", "service readiness", "allowed evidence boundary"]
+      },
+      {
+        module: "Evidence contract",
+        profileSections: ["evidence", "validation"],
+        controls: ["TargetEvidencePackage", "PhasePackage", "GoalCompletionReport", "command output and exit-code evidence"]
+      },
+      {
+        module: "Failure handling and diagnostics",
+        profileSections: ["failureHandling", "diagnostics"],
+        controls: ["failure taxonomy", "root-cause fields", "repair verification contract"]
+      },
+      {
+        module: "Observability",
+        profileSections: ["observability"],
+        controls: ["health/readiness/log/metric/trace/alert evidence", "GA live-health proof"]
+      },
+      {
+        module: "Release governance",
+        profileSections: ["governance", "phaseMapping", "llmDraftPolicy"],
+        controls: ["source closure", "release decision", "no silent profile mutation", "admin activation"]
+      }
+    ],
+    effectiveControls: {
+      capabilities: compiled.capabilities.map((capability) => ({
+        id: capability.id,
+        boundary: capability.boundary,
+        requiredEvidence: capability.requiredEvidence
+      })),
+      runtime: compiled.runtime,
+      validation: compiled.validation,
+      evidence: compiled.evidence,
+      failureHandling: compiled.failureHandling,
+      diagnostics: compiled.diagnostics,
+      observability: compiled.observability,
+      governance: compiled.governance,
+      phaseMapping: compiled.phaseMapping,
+      llmDraftPolicy: compiled.llmDraftPolicy
+    },
+    inheritance: {
+      inheritedSections: compiled.inheritedSections,
+      overrideSections: compiled.overrideSections
+    },
+    generatedAt: new Date().toISOString()
+  };
+}
+
+function normalizeProjectHarnessProfileSourceForProject(source: ProjectHarnessProfileSource, project: StoredProject): ProjectHarnessProfileSource {
+  const profileId = safeFileName(String(source.profileId ?? "default"));
+  return {
+    ...source,
+    schema: "evopilot-project-harness-profile/v1",
+    profileId,
+    projectId: source.projectId ? safeFileName(source.projectId) : project.id,
+    tenantId: source.tenantId ? safeFileName(source.tenantId) : project.tenantId,
+    workspaceId: source.workspaceId ? safeFileName(source.workspaceId) : project.workspaceId,
+    name: source.name || `${project.name} Harness Profile`
+  };
+}
+
+function resolveHarnessTemplateForSource(store: FileStore, source: ProjectHarnessProfileSource): HarnessTemplateProfile {
+  const templateRecord = isRecord(source.template) ? source.template : {};
+  const templateId = safeFileName(String(templateRecord.templateId ?? templateRecord.id ?? "python-enterprise-harness"));
+  const version = optionalTrimmedString(templateRecord.version);
+  const template = store.readHarnessTemplate(templateId, version);
+  if (!template) throw httpError(404, "HARNESS_TEMPLATE_NOT_FOUND", `Harness template ${templateId}${version ? `@${version}` : ""} was not found.`);
+  return template;
+}
+
+function compileProjectHarnessProfile(project: StoredProject, template: HarnessTemplateProfile, source: ProjectHarnessProfileSource, now: string): CompiledProjectHarnessProfile {
+  const sourceCapabilityIds = new Set((source.capabilities ?? []).map((capability) => capability.id));
+  const capabilities = mergeHarnessCapabilities(template.capabilities, source.capabilities ?? []);
+  const inheritedSections = ["capabilities", "runtime", "validation", "evidence", "failureHandling", "diagnostics", "observability", "governance", "phaseMapping", "llmDraftPolicy"];
+  const overrideSections = [
+    source.capabilities ? "capabilities" : "",
+    source.runtime ? "runtime" : "",
+    source.validation ? "validation" : "",
+    source.evidence ? "evidence" : "",
+    source.rules ? "rules" : "",
+    source.failureHandling ? "failureHandling" : "",
+    source.diagnostics ? "diagnostics" : "",
+    source.observability ? "observability" : "",
+    source.governance ? "governance" : "",
+    source.phaseMapping ? "phaseMapping" : "",
+    source.llmDraftPolicy ? "llmDraftPolicy" : ""
+  ].filter(Boolean);
+  return {
+    schema: "evopilot-project-harness-compiled-profile/v1",
+    tenantId: project.tenantId,
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    profileId: source.profileId,
+    name: source.name,
+    templateRef: harnessTemplateRef(template),
+    capabilities,
+    runtime: mergeRecord(template.runtimePatterns, {
+      projectRuntime: project.runtime,
+      repositoryProvider: project.repository?.provider,
+      devopsProvider: project.devops?.provider,
+      ...(source.runtime ?? {})
+    }),
+    validation: mergeRecord(template.validationBaseline, source.validation ?? {}),
+    evidence: mergeRecord(template.evidenceContract, source.evidence ?? {}),
+    rules: mergeRecord({ capabilityBoundaries: capabilities.map((capability) => capability.id) }, source.rules ?? {}),
+    failureHandling: mergeRecord(template.failureTaxonomy, source.failureHandling ?? {}),
+    diagnostics: mergeRecord(template.diagnosticsBaseline, source.diagnostics ?? {}),
+    observability: mergeRecord(template.observabilityBaseline, source.observability ?? {}),
+    governance: mergeRecord(template.governanceRules, source.governance ?? {}),
+    phaseMapping: mergeHarnessPhaseMapping(template.phaseMapping, source.phaseMapping),
+    llmDraftPolicy: mergeRecord(template.llmDraftPolicy, source.llmDraftPolicy ?? {}),
+    inheritedSections: inheritedSections.filter((section) => !overrideSections.includes(section) || section === "capabilities" && sourceCapabilityIds.size < capabilities.length),
+    overrideSections,
+    compiledAt: now
+  };
+}
+
+function mergeHarnessCapabilities(templateCapabilities: HarnessCapabilityDefinition[], projectCapabilities: HarnessCapabilityDefinition[]): HarnessCapabilityDefinition[] {
+  const byId = new Map<string, HarnessCapabilityDefinition>();
+  for (const capability of templateCapabilities) byId.set(capability.id, capability);
+  for (const capability of projectCapabilities) {
+    byId.set(capability.id, {
+      ...byId.get(capability.id),
+      ...capability,
+      requiredEvidence: uniqueStrings([...(byId.get(capability.id)?.requiredEvidence ?? []), ...capability.requiredEvidence])
+    });
+  }
+  return [...byId.values()];
+}
+
+function mergeRecord(base: Record<string, unknown>, override: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const current = result[key];
+    result[key] = isRecord(current) && isRecord(value) ? mergeRecord(current, value) : value;
+  }
+  return result;
+}
+
+function mergeHarnessPhaseMapping(base: Record<MaturityPhase, string[]>, override?: Partial<Record<MaturityPhase, string[]>>): Record<MaturityPhase, string[]> {
+  return {
+    alpha: uniqueStrings([...(base.alpha ?? []), ...(override?.alpha ?? [])]),
+    beta: uniqueStrings([...(base.beta ?? []), ...(override?.beta ?? [])]),
+    rc: uniqueStrings([...(base.rc ?? []), ...(override?.rc ?? [])]),
+    ga: uniqueStrings([...(base.ga ?? []), ...(override?.ga ?? [])])
+  };
+}
+
+function validateCompiledProjectHarnessProfile(project: StoredProject, template: HarnessTemplateProfile, source: ProjectHarnessProfileSource, compiled: CompiledProjectHarnessProfile, sourceDigest: string, compiledDigest: string, now: string): ProjectHarnessProfileValidationResult {
+  const checks: ProjectHarnessProfileValidationResult["checks"] = [];
+  const add = (id: string, status: "PASS" | "FAIL" | "WARN", required: boolean, evidence: string[]) => checks.push({ id, status, required, evidence });
+  add("project-scope", source.projectId === project.id && source.tenantId === project.tenantId && source.workspaceId === project.workspaceId ? "PASS" : "FAIL", true, [
+    `sourceProject=${source.projectId}`,
+    `project=${project.id}`,
+    `sourceTenant=${source.tenantId}`,
+    `tenant=${project.tenantId}`,
+    `sourceWorkspace=${source.workspaceId}`,
+    `workspace=${project.workspaceId}`
+  ]);
+  add("template-binding", compiled.templateRef.digest === template.digest ? "PASS" : "FAIL", true, [
+    `template=${template.id}`,
+    `templateVersion=${template.version}`,
+    `templateDigest=${template.digest}`
+  ]);
+  add("capability-boundaries", compiled.capabilities.length > 0 && compiled.capabilities.every((capability) => capability.boundary && capability.requiredEvidence.length > 0) ? "PASS" : "FAIL", true, [
+    `capabilities=${compiled.capabilities.map((capability) => capability.id).join(",") || "none"}`
+  ]);
+  add("runtime-validation", hasHarnessCommandEvidence(compiled.runtime, compiled.validation) ? "PASS" : "FAIL", true, [
+    `runtimeKeys=${Object.keys(compiled.runtime).join(",") || "none"}`,
+    `validationKeys=${Object.keys(compiled.validation).join(",") || "none"}`
+  ]);
+  add("evidence-contract", Array.isArray(compiled.evidence.requiredArtifacts) && compiled.evidence.requiredArtifacts.length > 0 ? "PASS" : "FAIL", true, [
+    `format=${String(compiled.evidence.format ?? "unspecified")}`,
+    `requiredArtifacts=${Array.isArray(compiled.evidence.requiredArtifacts) ? compiled.evidence.requiredArtifacts.join(",") : "none"}`
+  ]);
+  const governanceWeakening = detectHarnessGovernanceWeakening(template, compiled);
+  add("mandatory-governance", governanceWeakening.length === 0 ? "PASS" : "FAIL", true, governanceWeakening.length === 0 ? [
+    "targetPlanRequiresApproval=true",
+    "profileActivationRequiresApproval=true",
+    "promotionRequiresReleaseDecision=true",
+    "sourceClosureRequired=true",
+    "noSilentProfileMutation=true"
+  ] : governanceWeakening);
+  add("failure-diagnostics", Object.keys(compiled.failureHandling).length > 0 && Object.keys(compiled.diagnostics).length > 0 ? "PASS" : "FAIL", true, [
+    `failureKeys=${Object.keys(compiled.failureHandling).join(",") || "none"}`,
+    `diagnosticKeys=${Object.keys(compiled.diagnostics).join(",") || "none"}`
+  ]);
+  add("observability", Object.keys(compiled.observability).length > 0 ? "PASS" : "FAIL", true, [
+    `observabilityKeys=${Object.keys(compiled.observability).join(",") || "none"}`
+  ]);
+  add("phase-mapping", MATURITY_PHASES.every((phase) => compiled.phaseMapping[phase].length > 0) ? "PASS" : "FAIL", true, [
+    ...MATURITY_PHASES.map((phase) => `${phase}=${compiled.phaseMapping[phase].join(",")}`)
+  ]);
+  add("llm-draft-policy", compiled.llmDraftPolicy.allowedToSilentlyModifyActiveProfile !== true && compiled.llmDraftPolicy.requireUserReview !== false ? "PASS" : "FAIL", true, [
+    `requireUserReview=${String(compiled.llmDraftPolicy.requireUserReview)}`,
+    `allowedToSilentlyModifyActiveProfile=${String(compiled.llmDraftPolicy.allowedToSilentlyModifyActiveProfile)}`
+  ]);
+  const blockers = checks
+    .filter((check) => check.required && check.status === "FAIL")
+    .map((check) => `${check.id}:${check.evidence.join(";")}`);
+  const warnings = checks
+    .filter((check) => check.status === "WARN")
+    .map((check) => `${check.id}:${check.evidence.join(";")}`);
+  return {
+    schema: "evopilot-project-harness-profile-validation/v1",
+    tenantId: project.tenantId,
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    profileId: source.profileId,
+    templateRef: compiled.templateRef,
+    status: blockers.length === 0 ? "VALIDATED" : "FAILED",
+    checks,
+    blockers,
+    warnings,
+    sourceDigest,
+    compiledDigest,
+    evaluatedAt: now
+  };
+}
+
+function hasHarnessCommandEvidence(runtime: Record<string, unknown>, validation: Record<string, unknown>): boolean {
+  const commandKeys = ["installCommands", "unitCommands", "smokeCommands", "functionalCommands", "commands", "defaultCommands", "requiredCommandGroups"];
+  return commandKeys.some((key) => {
+    const runtimeValue = runtime[key];
+    const validationValue = validation[key];
+    return Array.isArray(runtimeValue) && runtimeValue.length > 0
+      || Array.isArray(validationValue) && validationValue.length > 0
+      || isRecord(runtimeValue) && Object.keys(runtimeValue).length > 0
+      || isRecord(validationValue) && Object.keys(validationValue).length > 0;
+  });
+}
+
+function detectHarnessGovernanceWeakening(template: HarnessTemplateProfile, compiled: CompiledProjectHarnessProfile): string[] {
+  const cannotWeaken = Array.isArray(template.governanceRules.cannotWeaken) ? template.governanceRules.cannotWeaken.map(String) : [];
+  return cannotWeaken
+    .filter((key) => template.governanceRules[key] === true && compiled.governance[key] === false)
+    .map((key) => `${key}=false weakens template governance`);
+}
+
+function diffProjectHarnessProfiles(project: StoredProject, profileId: string, base: ProjectHarnessProfileVersion, candidate: CompiledProjectHarnessProfile, candidateVersion: number | undefined, now: string): ProjectHarnessProfileDiff {
+  const sections = ["capabilities", "runtime", "validation", "evidence", "rules", "failureHandling", "diagnostics", "observability", "governance", "phaseMapping", "llmDraftPolicy"];
+  const changedSections = sections.filter((section) => canonicalJson((base.compiledContent as any)[section]) !== canonicalJson((candidate as any)[section]));
+  const breakingSections = new Set(["runtime", "validation", "evidence", "failureHandling", "diagnostics", "observability", "governance"]);
+  return {
+    schema: "evopilot-project-harness-profile-diff/v1",
+    tenantId: project.tenantId,
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    profileId,
+    baseVersion: base.version,
+    candidateVersion,
+    status: changedSections.length > 0 ? "CHANGED" : "UNCHANGED",
+    changedSections,
+    breakingChanges: changedSections.filter((section) => breakingSections.has(section)).map((section) => `${section} changed; review affected executor/evidence contracts before activation.`),
+    warnings: changedSections.includes("governance") ? ["Governance changed; mandatory template gates cannot be weakened."] : [],
+    generatedAt: now
+  };
+}
+
+function projectHarnessPlanBinding(version: ProjectHarnessProfileVersion | undefined, now: string): GoalPlanProjectHarnessBinding | undefined {
+  if (!version || version.status !== "ACTIVE") return undefined;
+  return {
+    schema: "evopilot-goal-plan-project-harness-binding/v1",
+    profileId: version.profileId,
+    version: version.version,
+    status: "ACTIVE",
+    templateRef: version.templateRef,
+    sourceDigest: version.sourceDigest,
+    compiledDigest: version.compiledDigest,
+    capabilities: version.compiledContent.capabilities.map((capability) => capability.id),
+    inheritedSections: version.compiledContent.inheritedSections,
+    overrideSections: version.compiledContent.overrideSections,
+    evidence: [
+      `profile=${version.profileId}`,
+      `version=${version.version}`,
+      `compiledDigest=${version.compiledDigest}`,
+      `template=${version.templateRef.templateId}@${version.templateRef.version}`,
+      `templateDigest=${version.templateRef.digest}`
+    ],
+    boundAt: now
+  };
+}
+
+function hydrateGoalPlanProjectHarnessBinding(value: unknown): GoalPlanProjectHarnessBinding | undefined {
+  if (!isRecord(value)) return undefined;
+  const templateRef = isRecord(value.templateRef) ? value.templateRef : {};
+  return {
+    schema: "evopilot-goal-plan-project-harness-binding/v1",
+    profileId: safeFileName(String(value.profileId ?? "default")),
+    version: clampPositiveInteger(value.version, 1),
+    status: "ACTIVE",
+    templateRef: {
+      templateId: safeFileName(String(templateRef.templateId ?? templateRef.id ?? "python-enterprise-harness")),
+      version: String(templateRef.version ?? "1.0.0"),
+      digest: String(templateRef.digest ?? "")
+    },
+    sourceDigest: String(value.sourceDigest ?? ""),
+    compiledDigest: String(value.compiledDigest ?? ""),
+    capabilities: normalizeStringList(value.capabilities, []),
+    inheritedSections: normalizeStringList(value.inheritedSections, []),
+    overrideSections: normalizeStringList(value.overrideSections, []),
+    evidence: normalizeStringList(value.evidence, []),
+    boundAt: String(value.boundAt ?? new Date().toISOString())
+  };
+}
+
+function hydrateProjectHarnessProfileVersion(input: unknown): ProjectHarnessProfileVersion {
+  const record = isRecord(input) ? input : {};
+  const source = normalizeRawProjectHarnessProfileSource(record.sourceContent);
+  const compiled = hydrateCompiledProjectHarnessProfile(record.compiledContent, source);
+  const templateRef = hydrateHarnessTemplateRef(record.templateRef ?? compiled.templateRef);
+  const now = new Date().toISOString();
+  const validation = hydrateProjectHarnessProfileValidation(record.validation, source, templateRef, record.sourceDigest, record.compiledDigest);
+  const generatedBy = isRecord(record.generatedBy) ? record.generatedBy : {};
+  return {
+    schema: "evopilot-project-harness-profile-version/v1",
+    tenantId: safeFileName(String(record.tenantId ?? source.tenantId ?? DEFAULT_TENANT_ID)),
+    workspaceId: safeFileName(String(record.workspaceId ?? source.workspaceId ?? DEFAULT_WORKSPACE_ID)),
+    projectId: safeFileName(String(record.projectId ?? source.projectId)),
+    profileId: safeFileName(String(record.profileId ?? source.profileId ?? "default")),
+    version: clampPositiveInteger(record.version, 1),
+    status: normalizeProjectHarnessProfileStatus(record.status),
+    sourceFormat: normalizeProjectHarnessProfileSourceFormat(record.sourceFormat),
+    sourceContent: source,
+    sourceDigest: String(record.sourceDigest ?? digestObject(source)),
+    compiledContent: compiled,
+    compiledDigest: String(record.compiledDigest ?? digestObject(compiled)),
+    templateRef,
+    validation,
+    diffFromActive: isRecord(record.diffFromActive) ? record.diffFromActive as unknown as ProjectHarnessProfileDiff : undefined,
+    generatedBy: {
+      mode: generatedBy.mode === "llm" || generatedBy.mode === "deterministic-template" ? generatedBy.mode : "user",
+      actor: optionalTrimmedString(generatedBy.actor),
+      llmProfileId: optionalTrimmedString(generatedBy.llmProfileId),
+      provider: optionalTrimmedString(generatedBy.provider),
+      model: optionalTrimmedString(generatedBy.model),
+      requestId: optionalTrimmedString(generatedBy.requestId),
+      evidence: normalizeStringList(generatedBy.evidence, [])
+    },
+    approvedAt: optionalTrimmedString(record.approvedAt),
+    approvedBy: optionalTrimmedString(record.approvedBy),
+    activatedAt: optionalTrimmedString(record.activatedAt),
+    activatedBy: optionalTrimmedString(record.activatedBy),
+    createdAt: String(record.createdAt ?? now),
+    updatedAt: String(record.updatedAt ?? record.createdAt ?? now)
+  };
+}
+
+function hydrateCompiledProjectHarnessProfile(value: unknown, source: ProjectHarnessProfileSource): CompiledProjectHarnessProfile {
+  const record = isRecord(value) ? value : {};
+  return {
+    schema: "evopilot-project-harness-compiled-profile/v1",
+    tenantId: safeFileName(String(record.tenantId ?? source.tenantId ?? DEFAULT_TENANT_ID)),
+    workspaceId: safeFileName(String(record.workspaceId ?? source.workspaceId ?? DEFAULT_WORKSPACE_ID)),
+    projectId: safeFileName(String(record.projectId ?? source.projectId)),
+    profileId: safeFileName(String(record.profileId ?? source.profileId ?? "default")),
+    name: String(record.name ?? source.name ?? "Project Harness Profile"),
+    templateRef: hydrateHarnessTemplateRef(record.templateRef),
+    capabilities: hydrateHarnessCapabilities(record.capabilities),
+    runtime: recordObject(record.runtime),
+    validation: recordObject(record.validation),
+    evidence: recordObject(record.evidence),
+    rules: recordObject(record.rules),
+    failureHandling: recordObject(record.failureHandling),
+    diagnostics: recordObject(record.diagnostics),
+    observability: recordObject(record.observability),
+    governance: recordObject(record.governance),
+    phaseMapping: hydrateHarnessPhaseMapping(record.phaseMapping),
+    llmDraftPolicy: recordObject(record.llmDraftPolicy),
+    inheritedSections: normalizeStringList(record.inheritedSections, []),
+    overrideSections: normalizeStringList(record.overrideSections, []),
+    compiledAt: String(record.compiledAt ?? new Date().toISOString())
+  };
+}
+
+function hydrateProjectHarnessProfileValidation(value: unknown, source: ProjectHarnessProfileSource, templateRef: HarnessTemplateRef, sourceDigest: unknown, compiledDigest: unknown): ProjectHarnessProfileValidationResult {
+  const record = isRecord(value) ? value : {};
+  const checks: ProjectHarnessProfileValidationResult["checks"] = Array.isArray(record.checks) ? record.checks.map((check) => {
+    const item = isRecord(check) ? check : {};
+    const status = String(item.status ?? "FAIL");
+    const normalizedStatus: "PASS" | "FAIL" | "WARN" = status === "PASS" || status === "WARN" ? status : "FAIL";
+    return {
+      id: String(item.id ?? "unknown"),
+      status: normalizedStatus,
+      required: item.required !== false,
+      evidence: normalizeStringList(item.evidence, [])
+    };
+  }) : [];
+  const blockers = normalizeStringList(record.blockers, []);
+  return {
+    schema: "evopilot-project-harness-profile-validation/v1",
+    tenantId: safeFileName(String(record.tenantId ?? source.tenantId ?? DEFAULT_TENANT_ID)),
+    workspaceId: safeFileName(String(record.workspaceId ?? source.workspaceId ?? DEFAULT_WORKSPACE_ID)),
+    projectId: safeFileName(String(record.projectId ?? source.projectId)),
+    profileId: safeFileName(String(record.profileId ?? source.profileId ?? "default")),
+    templateRef,
+    status: record.status === "VALIDATED" && blockers.length === 0 ? "VALIDATED" : "FAILED",
+    checks,
+    blockers,
+    warnings: normalizeStringList(record.warnings, []),
+    sourceDigest: optionalTrimmedString(record.sourceDigest) ?? optionalTrimmedString(sourceDigest),
+    compiledDigest: optionalTrimmedString(record.compiledDigest) ?? optionalTrimmedString(compiledDigest),
+    evaluatedAt: String(record.evaluatedAt ?? new Date().toISOString())
+  };
+}
+
+function hydrateHarnessTemplateRef(value: unknown): HarnessTemplateRef {
+  const record = isRecord(value) ? value : {};
+  return {
+    templateId: safeFileName(String(record.templateId ?? record.id ?? "python-enterprise-harness")),
+    version: String(record.version ?? "1.0.0"),
+    digest: String(record.digest ?? "")
+  };
+}
+
+function harnessTemplateRef(template: HarnessTemplateProfile): HarnessTemplateRef {
+  return {
+    templateId: template.id,
+    version: template.version,
+    digest: template.digest
+  };
+}
+
+function normalizeProjectHarnessProfileStatus(value: unknown): ProjectHarnessProfileStatus {
+  const status = String(value ?? "DRAFT");
+  if (status === "VALIDATED" || status === "ACTIVE" || status === "SUPERSEDED" || status === "REJECTED") return status;
+  return "DRAFT";
+}
+
+function versionNumberFromFile(file: string): number {
+  const match = file.match(/^v(\d+)\.json$/);
+  return match ? Number(match[1]) : 0;
+}
+
+function digestObject(value: unknown): string {
+  return `sha256:${createHash("sha256").update(canonicalJson(value)).digest("hex")}`;
+}
+
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (isRecord(value)) {
+    return `{${Object.keys(value)
+      .filter((key) => value[key] !== undefined)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+
 function emptyGoalPlan(): GoalPlan {
   return {
     schema: "evopilot-goal-plan/v1",
@@ -9975,6 +11618,7 @@ function hydrateGoalPlan(value: unknown, goalId: string, projectId: string, rele
     maturityStandardSetId: optionalTrimmedString(value.maturityStandardSetId),
     standardVersion: optionalTrimmedString(value.standardVersion),
     planner: hydrateGoalPlanPlannerTrace(value.planner),
+    projectHarness: hydrateGoalPlanProjectHarnessBinding(value.projectHarness),
     summary: String(value.summary ?? (targets.length > 0 ? `Goal plan has ${targets.length} targets.` : "Goal plan has not been generated.")),
     targetCount: targets.length,
     requiredTargetCount: targets.filter((target) => target.required).length,
@@ -10736,6 +12380,7 @@ function normalizeAppliedGoalPlan(input: unknown, goal: GlobalGoal, now: string)
     terminalMaturity: "ga",
     maturityStandardSetId: DEFAULT_MATURITY_STANDARD_SET_ID,
     standardVersion: DEFAULT_MATURITY_STANDARD_VERSION,
+    projectHarness: hydrateGoalPlanProjectHarnessBinding(root.projectHarness),
     summary: String(root.summary ?? `${goal.objective} adjusted by user and normalized against the Alpha -> Beta -> RC -> GA baseline.`),
     targetCount: targets.length,
     requiredTargetCount: targets.filter((target) => target.required).length,
@@ -10844,6 +12489,9 @@ function buildGoalSnapshot(store: FileStore, goal: GlobalGoal): GoalSnapshot {
     `targets=${derivedTargets.length}`,
     `phases=${derivedPlan.phaseTargets.map((phase) => `${phase.phase}:${phase.status}`).join(",")}`,
     `completedTargets=${completedTargets}/${requiredTargets.length}`,
+    goal.plan.projectHarness ? `projectHarnessProfile=${goal.plan.projectHarness.profileId}` : "projectHarnessProfile=missing",
+    goal.plan.projectHarness ? `projectHarnessVersion=${goal.plan.projectHarness.version}` : "projectHarnessVersion=missing",
+    goal.plan.projectHarness ? `projectHarnessDigest=${goal.plan.projectHarness.compiledDigest}` : "projectHarnessDigest=missing",
     releaseDecision ? `releaseDecision=${releaseDecision.status}` : "releaseDecision=not-generated"
   ];
   return {
@@ -11059,8 +12707,10 @@ function buildGoalRunStatusChain(store: FileStore, snapshot: GoalSnapshot, lates
   ];
 }
 
-async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, actor: string, now: string): Promise<{ targets: GoalTarget[]; planner: GoalPlanPlannerTrace }> {
+async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, actor: string, now: string): Promise<{ targets: GoalTarget[]; planner: GoalPlanPlannerTrace; projectHarness?: GoalPlanProjectHarnessBinding }> {
   const project = store.readProject(goal.projectId);
+  const projectHarnessProfile = store.readActiveProjectHarnessProfile(goal.projectId);
+  const projectHarness = projectHarnessPlanBinding(projectHarnessProfile, now);
   const llmResolution = resolveLoopLlmSelection(store, {
     project,
     tenantId: goal.tenantId,
@@ -11079,10 +12729,14 @@ async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, relea
         plannerEvidence: [
           "planner=debug-deterministic-no-provider",
           "llmPlanner=false",
-          "reason=LLM provider is not configured in debug mode"
+          "reason=LLM provider is not configured in debug mode",
+          projectHarness ? `projectHarnessProfile=${projectHarness.profileId}` : "projectHarnessProfile=missing",
+          projectHarness ? `projectHarnessVersion=${projectHarness.version}` : "projectHarnessVersion=missing",
+          projectHarness ? `projectHarnessDigest=${projectHarness.compiledDigest}` : "projectHarnessDigest=missing"
         ]
       }),
-      planner: debugDeterministicGoalPlanTrace(goal, llmResolution.selection, now)
+      planner: debugDeterministicGoalPlanTrace(goal, llmResolution.selection, now, projectHarness),
+      projectHarness
     };
   }
   const startedAt = new Date().toISOString();
@@ -11103,7 +12757,7 @@ async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, relea
       actor,
       llmProfileId: llmResolution.selection.profileId ?? "global-default"
     },
-    prompt: goalPlanPlannerPrompt(goal, releaseTarget, project, maturityStandardTemplates())
+    prompt: goalPlanPlannerPrompt(goal, releaseTarget, project, maturityStandardTemplates(), projectHarnessProfile)
   });
   if (!response.success) {
     throw httpError(409, "GOAL_PLAN_LLM_FAILED", response.errorMessage ?? response.errorCode ?? "LLM planner failed.");
@@ -11116,11 +12770,12 @@ async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, relea
   }
   return {
     targets,
-    planner: llmGoalPlanTrace(response, llmResolution.selection, startedAt)
+    planner: llmGoalPlanTrace(response, llmResolution.selection, startedAt, projectHarness),
+    projectHarness
   };
 }
 
-function debugDeterministicGoalPlanTrace(goal: GlobalGoal, selection: LoopLlmSelection, now: string): GoalPlanPlannerTrace {
+function debugDeterministicGoalPlanTrace(goal: GlobalGoal, selection: LoopLlmSelection, now: string, projectHarness?: GoalPlanProjectHarnessBinding): GoalPlanPlannerTrace {
   return {
     schema: "evopilot-goal-plan-planner-trace/v1",
     mode: "debug-deterministic-no-provider",
@@ -11138,13 +12793,16 @@ function debugDeterministicGoalPlanTrace(goal: GlobalGoal, selection: LoopLlmSel
       `goal=${goal.id}`,
       "planner=debug-deterministic-no-provider",
       "llmPlanner=false",
-      "debugOnly=true"
+      "debugOnly=true",
+      projectHarness ? `projectHarnessProfile=${projectHarness.profileId}` : "projectHarnessProfile=missing",
+      projectHarness ? `projectHarnessVersion=${projectHarness.version}` : "projectHarnessVersion=missing",
+      projectHarness ? `projectHarnessDigest=${projectHarness.compiledDigest}` : "projectHarnessDigest=missing"
     ],
     generatedAt: now
   };
 }
 
-function llmGoalPlanTrace(response: LlmGenerateResponse, selection: LoopLlmSelection, startedAt: string): GoalPlanPlannerTrace {
+function llmGoalPlanTrace(response: LlmGenerateResponse, selection: LoopLlmSelection, startedAt: string, projectHarness?: GoalPlanProjectHarnessBinding): GoalPlanPlannerTrace {
   const totalTokens = response.usage?.totalTokens ?? 0;
   return {
     schema: "evopilot-goal-plan-planner-trace/v1",
@@ -11168,7 +12826,10 @@ function llmGoalPlanTrace(response: LlmGenerateResponse, selection: LoopLlmSelec
       `durationMs=${response.durationMs}`,
       `totalTokens=${totalTokens}`,
       "planner=llm-constrained",
-      "guardrail=server-normalized"
+      "guardrail=server-normalized",
+      projectHarness ? `projectHarnessProfile=${projectHarness.profileId}` : "projectHarnessProfile=missing",
+      projectHarness ? `projectHarnessVersion=${projectHarness.version}` : "projectHarnessVersion=missing",
+      projectHarness ? `projectHarnessDigest=${projectHarness.compiledDigest}` : "projectHarnessDigest=missing"
     ],
     generatedAt: new Date().toISOString()
   };
@@ -11182,11 +12843,14 @@ function goalPlanGuardrails(): string[] {
     "Every GoalTarget must produce a TargetEvidencePackage before DONE.",
     "Every phase must produce a PhasePackage before the next phase can pass.",
     "Built-in baseline criteria and required evidence cannot be removed.",
-    "Architecture/security/testing/docs/ops/release review capabilities are enforced by phase standards."
+    "Architecture/security/testing/docs/ops/release review capabilities are enforced by phase standards.",
+    "An active ProjectHarnessProfile may strengthen target capabilities and evidence contracts, but it cannot weaken mandatory governance gates.",
+    "Goal planning must bind the active ProjectHarnessProfile version and digest when one exists."
   ];
 }
 
-function goalPlanPlannerPrompt(goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, project: StoredProject | undefined, standards: MaturityStandardTemplate[]): string {
+function goalPlanPlannerPrompt(goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, project: StoredProject | undefined, standards: MaturityStandardTemplate[], projectHarnessProfile?: ProjectHarnessProfileVersion): string {
+  const compiledHarness = projectHarnessProfile?.compiledContent;
   return [
     "You are EvoPilot's constrained GlobalGoal planner and software architect.",
     "Return only one JSON object. Do not include Markdown.",
@@ -11196,6 +12860,8 @@ function goalPlanPlannerPrompt(goal: GlobalGoal, releaseTarget: ReleaseTargetPro
     "Each phase must include at least one required target and one package/GO-NO-GO target.",
     "Every target must be independently verifiable through a TargetEvidencePackage.",
     "Use the built-in standards as mandatory baselines; you may add or strengthen, never weaken.",
+    "If an active ProjectHarnessProfile is present, bind targets to its capability boundaries, validation commands, failure handling, diagnostics, observability, and governance rules.",
+    "If the goal exposes missing harness rules, add a target that requests a profile revision suggestion; do not silently mutate the active ProjectHarnessProfile.",
     "",
     "Output JSON schema:",
     "{",
@@ -11229,6 +12895,28 @@ function goalPlanPlannerPrompt(goal: GlobalGoal, releaseTarget: ReleaseTargetPro
     `Minimum successful runs: ${releaseTarget.minSuccessfulRuns}`,
     `Minimum successful pipelines: ${releaseTarget.minSuccessfulPipelines}`,
     `Active soak required: ${releaseTarget.requireActiveSoak === true}`,
+    "",
+    "Active ProjectHarnessProfile:",
+    projectHarnessProfile ? JSON.stringify({
+      profileId: projectHarnessProfile.profileId,
+      version: projectHarnessProfile.version,
+      sourceDigest: projectHarnessProfile.sourceDigest,
+      compiledDigest: projectHarnessProfile.compiledDigest,
+      templateRef: projectHarnessProfile.templateRef,
+      capabilities: compiledHarness?.capabilities.map((capability) => ({
+        id: capability.id,
+        boundary: capability.boundary,
+        requiredEvidence: capability.requiredEvidence
+      })),
+      runtime: compiledHarness?.runtime,
+      validation: compiledHarness?.validation,
+      evidence: compiledHarness?.evidence,
+      failureHandling: compiledHarness?.failureHandling,
+      diagnostics: compiledHarness?.diagnostics,
+      observability: compiledHarness?.observability,
+      governance: compiledHarness?.governance,
+      phaseMapping: compiledHarness?.phaseMapping
+    }, null, 2) : "none",
     "",
     "Mandatory maturity standards:",
     JSON.stringify(standards.map((standard) => ({

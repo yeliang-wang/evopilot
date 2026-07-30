@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { parse as parseYaml } from "yaml";
 import { apiErrorFromResponse, EvoPilotApiError, EvoPilotClient, type EvoPilotRequestOptions, type EvoPilotResponse } from "@evopilot/client";
 
 interface CliConfig {
@@ -190,6 +191,21 @@ async function main(argv: string[]): Promise<number> {
         if (maybeId === "list" || maybeId === undefined) return await maturityStandardsList(ctx);
         if (maybeId === "inspect") return await maturityStandardsInspect(ctx, args.positionals[3]);
         throw usage("Use: evopilot maturity standards <list|inspect> [phase-or-standard-id]");
+      case "harness:template":
+        if (maybeId === "list" || maybeId === undefined) return await harnessTemplateList(ctx);
+        if (maybeId === "inspect") return await harnessTemplateInspect(ctx, args.positionals[3]);
+        throw usage("Use: evopilot harness template <list|inspect> [template-id] [--version <version>]");
+      case "harness:profile":
+        if (maybeId === "list") return await harnessProfileList(ctx);
+        if (maybeId === "generate") return await harnessProfileGenerate(ctx);
+        if (maybeId === "validate") return await harnessProfileValidate(ctx);
+        if (maybeId === "apply") return await harnessProfileApply(ctx);
+        if (maybeId === "diff") return await harnessProfileDiff(ctx);
+        if (maybeId === "inspect") return await harnessProfileInspect(ctx, args.positionals[3]);
+        if (maybeId === "explain") return await harnessProfileExplain(ctx, args.positionals[3]);
+        if (maybeId === "activate") return await harnessProfileActivate(ctx, args.positionals[3]);
+        if (maybeId === "upgrade") return await harnessProfileUpgrade(ctx, args.positionals[3]);
+        throw usage("Use: evopilot harness profile <list|generate|validate|apply|diff|inspect|explain|activate|upgrade> [profile-id] --project <id> [options]");
       case "secret:list":
         return await secretList(ctx);
       case "secret:set":
@@ -1309,6 +1325,124 @@ async function maturityStandardsInspect(ctx: RuntimeContext, id?: string): Promi
   const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/maturity/standards/${encodeURIComponent(standardId)}`));
   printOutput(ctx, response.data, `standard=${field(response.data, "id")} phase=${field(response.data, "phase")}`);
   return 0;
+}
+
+async function harnessTemplateList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/harness/templates"));
+  const templates = field(response.data, "templates");
+  printOutput(ctx, response.data, Array.isArray(templates)
+    ? templates.map((template) => isRecord(template) ? `${template.id}@${template.version} ${template.digest}` : String(template)).join("\n")
+    : "templates=0");
+  return 0;
+}
+
+async function harnessTemplateInspect(ctx: RuntimeContext, id?: string): Promise<number> {
+  const templateId = id ?? requiredOption(ctx.args, "template");
+  const version = stringOption(ctx.args, "version");
+  const query = version ? `?version=${encodeURIComponent(version)}` : "";
+  const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/harness/templates/${encodeURIComponent(templateId)}${query}`));
+  printOutput(ctx, response.data, `template=${field(response.data, "id")} version=${field(response.data, "version")} digest=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function harnessProfileList(ctx: RuntimeContext): Promise<number> {
+  const projectId = requiredOption(ctx.args, "project");
+  const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/projects/${encodeURIComponent(projectId)}/harness-profiles`));
+  const profiles = field(response.data, "profiles");
+  printOutput(ctx, response.data, Array.isArray(profiles)
+    ? profiles.map(formatHarnessProfileSummary).join("\n") || "No ProjectHarnessProfiles."
+    : "profiles=0");
+  return 0;
+}
+
+async function harnessProfileGenerate(ctx: RuntimeContext): Promise<number> {
+  const projectId = requiredOption(ctx.args, "project");
+  const body = {
+    profileId: stringOption(ctx.args, "profile") ?? stringOption(ctx.args, "profile-id") ?? "default",
+    templateId: stringOption(ctx.args, "template") ?? stringOption(ctx.args, "from-template"),
+    templateVersion: stringOption(ctx.args, "from-template-version") ?? stringOption(ctx.args, "template-version"),
+    llmProfileId: stringOption(ctx.args, "llm-profile"),
+    requireLlm: hasFlag(ctx.args, "require-llm"),
+    goalLoopTarget: stringOption(ctx.args, "goal-loop-target") ?? stringOption(ctx.args, "objective") ?? stringOption(ctx.args, "target"),
+    controlPlaneRequirements: repeatedOption(ctx.args, "requirement"),
+    runtimeNotes: stringOption(ctx.args, "runtime-notes"),
+    observabilityNotes: stringOption(ctx.args, "observability-notes"),
+    failureHandlingNotes: stringOption(ctx.args, "failure-handling-notes"),
+    governanceNotes: stringOption(ctx.args, "governance-notes")
+  };
+  const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/harness-profiles/generate`, body, requestOptions(ctx));
+  printHarnessProfileResult(ctx, "harness profile generate", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessProfileValidate(ctx: RuntimeContext): Promise<number> {
+  const projectId = requiredOption(ctx.args, "project");
+  const payload = harnessProfileFilePayload(ctx.args);
+  const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/harness-profiles/validate`, payload, requestOptions(ctx));
+  printHarnessProfileResult(ctx, "harness profile validate", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessProfileApply(ctx: RuntimeContext): Promise<number> {
+  const projectId = requiredOption(ctx.args, "project");
+  const payload = harnessProfileFilePayload(ctx.args);
+  const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/harness-profiles`, payload, requestOptions(ctx));
+  printHarnessProfileResult(ctx, "harness profile apply", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessProfileDiff(ctx: RuntimeContext): Promise<number> {
+  const projectId = requiredOption(ctx.args, "project");
+  const profileId = stringOption(ctx.args, "profile") ?? stringOption(ctx.args, "profile-id") ?? "default";
+  const version = numberOption(ctx.args, "version");
+  const payload = version ? { version } : harnessProfileFilePayload(ctx.args);
+  const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/harness-profiles/${encodeURIComponent(profileId)}/diff`, payload, requestOptions(ctx));
+  printHarnessProfileResult(ctx, "harness profile diff", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessProfileInspect(ctx: RuntimeContext, id?: string): Promise<number> {
+  const projectId = requiredOption(ctx.args, "project");
+  const profileId = id ?? stringOption(ctx.args, "profile") ?? stringOption(ctx.args, "profile-id") ?? "default";
+  const version = numberOption(ctx.args, "version");
+  const path = version
+    ? `/api/v1/projects/${encodeURIComponent(projectId)}/harness-profiles/${encodeURIComponent(profileId)}/versions/${version}`
+    : `/api/v1/projects/${encodeURIComponent(projectId)}/harness-profiles/${encodeURIComponent(profileId)}`;
+  const response = await ctx.client.get(path);
+  printHarnessProfileResult(ctx, "harness profile inspect", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessProfileExplain(ctx: RuntimeContext, id?: string): Promise<number> {
+  const projectId = requiredOption(ctx.args, "project");
+  const profileId = id ?? stringOption(ctx.args, "profile") ?? stringOption(ctx.args, "profile-id") ?? "default";
+  const version = numberOption(ctx.args, "version");
+  const query = version ? `?version=${version}` : "";
+  const response = await ctx.client.get(`/api/v1/projects/${encodeURIComponent(projectId)}/harness-profiles/${encodeURIComponent(profileId)}/explain${query}`);
+  printHarnessProfileResult(ctx, "harness profile explain", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessProfileActivate(ctx: RuntimeContext, id?: string): Promise<number> {
+  const projectId = requiredOption(ctx.args, "project");
+  const profileId = id ?? stringOption(ctx.args, "profile") ?? stringOption(ctx.args, "profile-id") ?? "default";
+  const version = numberOption(ctx.args, "version");
+  const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/harness-profiles/${encodeURIComponent(profileId)}/activate`, version ? { version } : {}, requestOptions(ctx));
+  printHarnessProfileResult(ctx, "harness profile activate", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessProfileUpgrade(ctx: RuntimeContext, id?: string): Promise<number> {
+  const projectId = requiredOption(ctx.args, "project");
+  const profileId = id ?? stringOption(ctx.args, "profile") ?? stringOption(ctx.args, "profile-id") ?? "default";
+  const body = {
+    templateId: stringOption(ctx.args, "template") ?? stringOption(ctx.args, "from-template"),
+    templateVersion: stringOption(ctx.args, "from-template-version") ?? stringOption(ctx.args, "template-version"),
+    reason: stringOption(ctx.args, "reason")
+  };
+  const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/harness-profiles/${encodeURIComponent(profileId)}/upgrade`, body, requestOptions(ctx));
+  printHarnessProfileResult(ctx, "harness profile upgrade", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
 }
 
 async function targetPlanCommand(ctx: RuntimeContext, action?: string): Promise<number> {
@@ -3317,6 +3451,33 @@ function readJson(file: string): unknown {
   return JSON.parse(content);
 }
 
+function readStructuredFile(file: string): unknown {
+  const content = file === "-" ? fs.readFileSync(0, "utf8") : fs.readFileSync(file, "utf8");
+  const extension = file === "-" ? "" : path.extname(file).toLowerCase();
+  if (extension === ".yaml" || extension === ".yml") return parseYaml(content);
+  try {
+    return JSON.parse(content);
+  } catch {
+    return parseYaml(content);
+  }
+}
+
+function harnessProfileFilePayload(args: ParsedArgs): Record<string, unknown> {
+  const file = requiredOption(args, "file");
+  return {
+    sourceFormat: harnessProfileSourceFormat(file),
+    sourceContent: readStructuredFile(file)
+  };
+}
+
+function harnessProfileSourceFormat(file: string): "json" | "yaml" | "object" {
+  if (file === "-") return "object";
+  const extension = path.extname(file).toLowerCase();
+  if (extension === ".yaml" || extension === ".yml") return "yaml";
+  if (extension === ".json") return "json";
+  return "object";
+}
+
 function parseWriteFile(value: string): { path: string; content: string } {
   const separator = value.indexOf(":");
   if (separator <= 0) throw usage("--write-file must use <repo-path>:<local-content-file>.");
@@ -3471,6 +3632,39 @@ function printOutput(ctx: RuntimeContext, data: unknown, text: string): void {
   }
 }
 
+function printHarnessProfileResult(ctx: RuntimeContext, command: string, data: unknown, statusCode: number): void {
+  const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
+  if (ctx.json) {
+    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    return;
+  }
+  const summary = field(payload, "summary");
+  const profile = field(payload, "profile") ?? field(payload, "active") ?? field(payload, "latest") ?? payload;
+  const validation = field(payload, "validation") ?? field(profile, "validation");
+  const diff = field(payload, "diff") ?? field(profile, "diffFromActive");
+  const lines = [
+    `${command}: http=${statusCode}`,
+    isRecord(summary) ? `summary ${formatHarnessProfileSummary(summary)}` : undefined,
+    isRecord(profile) ? `profile=${field(profile, "profileId") ?? nestedField(profile, ["summary", "profileId"]) ?? "default"} version=${field(profile, "version") ?? nestedField(summary, ["latestVersion"]) ?? "n/a"} status=${field(profile, "status") ?? field(payload, "status") ?? "n/a"}` : undefined,
+    isRecord(profile) && field(profile, "compiledDigest") ? `compiledDigest=${field(profile, "compiledDigest")}` : undefined,
+    isRecord(validation) ? `validation=${field(validation, "status")} blockers=${arrayLength(field(validation, "blockers"))}` : undefined,
+    isRecord(diff) ? `diff=${field(diff, "status")} changed=${Array.isArray(field(diff, "changedSections")) ? (field(diff, "changedSections") as unknown[]).join(",") : "n/a"}` : undefined,
+    isRecord(payload) && field(payload, "instruction") ? `instruction=${field(payload, "instruction")}` : undefined
+  ].filter(Boolean);
+  process.stdout.write(`${lines.join("\n")}\n`);
+}
+
+function formatHarnessProfileSummary(value: unknown): string {
+  if (!isRecord(value)) return String(value);
+  return [
+    `profile=${value.profileId ?? "default"}`,
+    `status=${value.status ?? "MISSING"}`,
+    `active=${value.activeVersion ?? "none"}`,
+    `latest=${value.latestVersion ?? "none"}`,
+    value.compiledDigest ? `compiledDigest=${value.compiledDigest}` : ""
+  ].filter(Boolean).join(" ");
+}
+
 function attachRequestId(data: unknown, requestId?: string): unknown {
   if (!requestId || !isRecord(data) || data.requestId) return data;
   return { ...data, requestId };
@@ -3579,6 +3773,17 @@ Usage:
   evopilot llm profile preflight <profile-id>
   evopilot maturity standards list
   evopilot maturity standards inspect <alpha|beta|rc|ga|standard-id>
+  evopilot harness template list
+  evopilot harness template inspect <template-id> [--version <version>]
+  evopilot harness profile list --project <project-id>
+  evopilot harness profile generate --project <project-id> [--profile <id>] [--from-template <template-id>] [--goal-loop-target <text>] [--llm-profile <id>]
+  evopilot harness profile validate --project <project-id> --file <profile.yaml>
+  evopilot harness profile apply --project <project-id> --file <profile.yaml>
+  evopilot harness profile diff --project <project-id> [--profile <id>] (--file <profile.yaml>|--version <n>)
+  evopilot harness profile inspect [profile-id] --project <project-id> [--version <n>]
+  evopilot harness profile explain [profile-id] --project <project-id> [--version <n>]
+  evopilot harness profile activate [profile-id] --project <project-id> --version <n>
+  evopilot harness profile upgrade [profile-id] --project <project-id> --from-template <template-id> [--from-template-version <version>]
   evopilot github-app installation list
   evopilot github-app installation set [--id <id>] --installation-id <id> --account <org> [--repository <owner/repo>] [--permission <name=value>]
   evopilot github-app installation preflight <id>
@@ -3656,6 +3861,9 @@ Global options:
   --require-devops-ready      Explicit DevOps readiness assertion for project onboarding; remote target/goal/loop run preflights native DevOps by default
   --require-llm-ready         Explicit LLM readiness assertion for onboarding/profile setup; target/goal/loop run preflights selected LLM by default
   --llm-profile <id>          LLM profile for this project onboarding or new Goal/Loop run
+  --from-template <id>        Harness template id for ProjectHarnessProfile generation or upgrade
+  --from-template-version <v> Harness template version for profile generation or upgrade
+  --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
   --execution-mode <mode>     DevOps boundary: owned-repository, fork-validated-pr, upstream-authorized, or read-only-public
   --upstream-repo <repo>      Upstream GitHub/GitLab repository for public read-only or fork-validated PR mode
   --working-repo <repo>       Writable GitHub/GitLab repository where EvoPilot runs source writeback and native CI/CD
@@ -3668,6 +3876,8 @@ Global options:
 Project DevOps examples:
   evopilot project onboard plan github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health --llm-profile qwen-private --json
   evopilot project onboard verify my-agent --json
+  evopilot harness profile generate --project my-agent --from-template python-enterprise-harness --goal-loop-target "Define the Python enterprise harness for this project" --llm-profile qwen-private --json
+  evopilot harness profile activate default --project my-agent --version 1 --json
   evopilot target plan --project my-agent --objective "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility" --llm-profile qwen-private --json
   evopilot target plan export <goal-id> --format json > plan.json
   # Show plan.json / phasePlan to the user, edit if needed, then approve only after confirmation.

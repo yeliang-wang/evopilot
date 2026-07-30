@@ -24,6 +24,9 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --credential-principal <id> Optional operator-readable principal expected behind the DevOps tokenRef
 --llm-profile <id>          LLM profile for project onboarding or this Goal/Loop run
 --require-llm-ready         Explicit LLM readiness assertion for onboarding/profile setup; target/goal/loop run preflights the selected LLM by default
+--from-template <id>        Harness template id for ProjectHarnessProfile generation or upgrade
+--from-template-version <v> Harness template version for ProjectHarnessProfile generation or upgrade
+--goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
 --json                      Print JSON response data
 --config <file>             Config path, defaults to ~/.evopilot/config.json
 ```
@@ -38,6 +41,8 @@ Use `--json` for AI agents and CI. Human-readable output is for operators and ca
 | `project onboard plan ... --json` | `evopilot-project-onboarding-checklist/v1` | `status`, `nextAction`, `missingInputs`, `blockers`, `commands`, `sourceCredentials`, `devops`, `llm`, `requestId` |
 | `project onboard verify ... --json` | `evopilot-project-onboarding-checklist/v1` | Persisted project readiness, same fields as `plan`, including project LLM readiness |
 | `project onboard ... --json` | `evopilot-cli-project-onboard/v1` | `projectId`, `sourceCredentials`, `devops`, `steps`, `result`, `llmUsage`; onboarding does not start Goal/Loop execution |
+| `harness profile generate ... --json` | `evopilot-project-harness-profile-generate-result/v1` | `profile`, `summary`, `validation`, `generatedBy`, `instruction`; generated profiles are DRAFT until activated |
+| `harness profile validate/apply/activate ... --json` | `evopilot-project-harness-profile-*-result/v1` | `profile`, `summary`, `validation`, `diffFromActive`, `compiledDigest`, `templateRef` |
 | `target plan ... --json` | `evopilot-cli-target-plan/v1` | `projectId`, `targetId`, `goalId`, `terminalMaturity`, `phasePlan.phases`, `phasePlan.targets`, `editablePlan`, `llmUsage` |
 | `target plan diff ... --json` | `evopilot-cli-target-plan-diff/v1` | `addedTargets`, `removedTargets`, `changedTargets`, `changedPhases`, `baselineGuard` |
 | `target run ... --json` | `evopilot-cli-goal-run/v1` | `status`, `steps`, `result`, `llmUsage` |
@@ -340,6 +345,70 @@ Goal and Loop creation resolve the LLM in this order:
 ```
 
 For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution. Use `project llm clear` only for local/debug projects or explicitly non-enterprise runs that are allowed to fall back to the global default.
+
+## Project Harness Profiles
+
+```bash
+evopilot harness template list
+evopilot harness template inspect python-enterprise-harness
+evopilot harness profile list --project <project-id>
+evopilot harness profile generate --project <project-id> --from-template python-enterprise-harness --goal-loop-target <text> [--llm-profile <id>]
+evopilot harness profile validate --project <project-id> --file <profile.yaml>
+evopilot harness profile apply --project <project-id> --file <profile.yaml>
+evopilot harness profile diff --project <project-id> --file <profile.yaml>
+evopilot harness profile inspect default --project <project-id>
+evopilot harness profile explain default --project <project-id>
+evopilot harness profile activate default --project <project-id> --version <n>
+evopilot harness profile upgrade default --project <project-id> --from-template python-enterprise-harness --from-template-version <version>
+```
+
+`ProjectHarnessProfile` is a project-level control-plane profile, not a per-goal plan and not a target maturity template. It defines the project's capability boundaries, runtime commands, validation rules, evidence contract, failure handling, diagnostics, observability, release governance, LLM draft policy, and the template version/digest it inherits.
+
+Generated profiles are stored as `DRAFT` versions. A user or administrator must review the profile, run `validate` or `apply`, and then call `activate` before goal planning binds it. When an active profile exists, `target plan` and `goal plan` include `plan.projectHarness.profileId`, `version`, `templateRef`, `sourceDigest`, and `compiledDigest`; those fields make the plan reproducible and auditable.
+
+Profile files can be YAML or JSON. The server is the source of truth; the file is only an import source:
+
+```yaml
+schema: evopilot-project-harness-profile/v1
+profileId: default
+projectId: my-agent
+name: My Agent Python Harness
+template:
+  templateId: python-enterprise-harness
+runtime:
+  language: python
+  installCommands:
+    - pip install -e .
+  lintCommands:
+    - ruff check .
+  typecheckCommands:
+    - mypy .
+  unitCommands:
+    - pytest
+  smokeCommands:
+    - pytest -q tests
+validation:
+  commands:
+    - installCommands
+    - lintCommands
+    - typecheckCommands
+    - unitCommands
+    - smokeCommands
+evidence:
+  requiredArtifacts:
+    - target-evidence-package
+    - phase-package
+    - goal-completion-report
+governance:
+  tenantWorkspaceScopeRequired: true
+  targetPlanRequiresApproval: true
+  profileActivationRequiresApproval: true
+  promotionRequiresReleaseDecision: true
+  sourceClosureRequired: true
+  noSilentProfileMutation: true
+```
+
+Use `explain` when an administrator wants to see how one profile maps to EvoPilot modules. It returns the mapping from profile sections to project onboarding, goal target planning, executor/runtime, evidence, failure diagnostics, observability, and release governance.
 
 ## GitHub App
 

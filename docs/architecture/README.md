@@ -21,6 +21,7 @@ EvoPilot owns the domain model and execution state. The Dashboard is a replaceab
 | Context | Responsibility |
 |---|---|
 | Project | Registered products, source credentials, workspace ownership |
+| Project Harness | ProjectHarnessProfile versions, template inheritance, validation, evidence contracts, diagnostics, observability, and governance |
 | Evidence | Runtime signals, trace/log/eval ingestion, evidence bundles |
 | GlobalGoal | Goal decomposition into GoalTargets, progress, graph, timeline, final report |
 | Loop Runtime | LoopRun execution, worker leases, sandbox proof, trace, events, replay |
@@ -36,5 +37,6 @@ The Dashboard can visualize and request actions, but only EvoPilot API state can
 Deep architecture notes remain in:
 
 - [Continuous Evolution Control Plane](continuous-evolution-control-plane.md)
+- [Project Harness Profile](project-harness-profile.md)
 - [Loop Runtime](loop-runtime.md)
 - [ProofOps Target Loop Mode](proofops-target-loop-mode.md)

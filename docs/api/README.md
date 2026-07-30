@@ -355,6 +355,57 @@ GET /api/v1/projects/{projectId}/onboarding-checklist
 
 `GET /api/v1/projects/{projectId}/onboarding-checklist` 复核已注册项目，会基于持久化项目、source credentials、GitHub Actions/GitLab CI 配置和项目 LLM 绑定生成同一 schema。只有 `READY_TO_RUN` 才表示项目已经具备真实源代码写回、仓库原生 DevOps 和 LLM profile 的前置条件；此时仍必须先进入 `plan-target`，由用户或项目负责人确认 phase plan。`BLOCKED` 或 `WAITING_INPUT` 不能被解释为 GA/RC/alpha 可执行完成。
 
+### ProjectHarnessProfile
+
+```http
+GET /api/v1/harness/templates
+GET /api/v1/harness/templates/{templateId}
+GET /api/v1/projects/{projectId}/harness-profiles
+POST /api/v1/projects/{projectId}/harness-profiles/generate
+POST /api/v1/projects/{projectId}/harness-profiles/validate
+POST /api/v1/projects/{projectId}/harness-profiles
+GET /api/v1/projects/{projectId}/harness-profiles/{profileId}
+GET /api/v1/projects/{projectId}/harness-profiles/{profileId}/versions/{version}
+GET /api/v1/projects/{projectId}/harness-profiles/{profileId}/explain
+POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/diff
+POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/activate
+POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/upgrade
+```
+
+`ProjectHarnessProfile` 是项目级长期控制面定义。它不是独立仓库文件的系统记录，也不是 `target plan` 的 maturity template。生产权威记录在 EvoPilot 控制面内，按 `tenant -> workspace -> project -> profile -> version` 隔离。当前文件存储实现的路径形态为：
+
+```text
+<dataRoot>/project-harness-profiles/<tenantId>/<workspaceId>/<projectId>/<profileId>/versions/v<version>.json
+```
+
+项目仓库里的 `.evopilot/project.harness.yaml` 或 CLI `--file profile.yaml` 只是 import source。服务端会把 source profile 与 `HarnessTemplate` 合并成 compiled profile，并计算 `sourceDigest` 与 `compiledDigest`。`activate` 只允许激活校验通过的版本，并把同一 profile 的旧 `ACTIVE` 版本标记为 `SUPERSEDED`。
+
+内置 `python-enterprise-harness` 模板提供默认能力边界、Python runtime command groups、validation baseline、evidence contract、failure taxonomy、diagnostics、observability、release governance、Alpha/Beta/RC/GA phase mapping 和 LLM draft policy。项目 profile 可以绑定真实命令并增强规则，但不能关闭模板强制治理门禁，例如 `targetPlanRequiresApproval`、`profileActivationRequiresApproval`、`promotionRequiresReleaseDecision`、`sourceClosureRequired` 和 `noSilentProfileMutation`。
+
+`generate` 会根据项目接入信息、可选 `goalLoopTarget`、模板、当前项目 runtime/devops/observability 以及已有 active profile 生成新版本。若配置了可用 LLM，则使用 LLM 生成结构化 JSON；若 debug 模式没有 LLM，则返回 deterministic-template DRAFT；若生产 `requireLlm=true` 且没有 READY LLM，则返回阻断。生成结果永远是 `DRAFT`，用户或管理员必须显式 review/validate/apply/activate。
+
+`validate` 不写入控制面，只返回 `evopilot-project-harness-profile-validation/v1`、compiled digest 和 `diffFromActive`。`POST /harness-profiles` 会写入新的 `VALIDATED` 版本；`activate` 才让它参与后续 goal planning。
+
+当 `GlobalGoal` 生成 phase plan 时，如果项目存在 active profile，`plan.projectHarness` 会包含：
+
+```json
+{
+  "schema": "evopilot-goal-plan-project-harness-binding/v1",
+  "profileId": "default",
+  "version": 1,
+  "templateRef": {
+    "templateId": "python-enterprise-harness",
+    "version": "1.0.0",
+    "digest": "sha256:..."
+  },
+  "sourceDigest": "sha256:...",
+  "compiledDigest": "sha256:...",
+  "capabilities": ["source-boundary", "python-runtime", "release-governance"]
+}
+```
+
+这使一次 `GoalTargetPlanSnapshot` 能追溯当时使用的项目 harness 定义。若执行过程中发现 harness gap，EvoPilot 应生成 profile revision suggestion 或新 DRAFT 版本，而不是静默修改 active profile。
+
 ```http
 POST /api/v1/projects/{projectId}/source-credentials
 GET /api/v1/projects/{projectId}/source-credentials/preflight
@@ -784,7 +835,7 @@ GET /api/v1/release/decisions?targetId=github-owner-repo-ga&projectId=github-own
 | Release Candidate | `rc` | 候选发布，要求源码闭环、部署健康、回滚或修复证据。 |
 | GA Release | `ga` | 正式稳定发布，要求完整 Source-to-GA 证据、稳定性和主流 Loop Harness 对齐。 |
 
-这些 profiles 只用于服务端发布证据阈值和 API 级 target 创建。Agent-facing CLI 不暴露成熟度模板参数或模板列表命令；应使用 `maturity standards list/inspect` 查看 Alpha/Beta/RC/GA 标准，并用 `target plan` / `target run` 处理业务目标。
+这些 profiles 只用于服务端发布证据阈值和 API 级 target 创建。Agent-facing CLI 不暴露成熟度 target template 参数；应使用 `maturity standards list/inspect` 查看 Alpha/Beta/RC/GA 标准，并用 `target plan` / `target run` 处理业务目标。`harness template` 是另一类控制面资源，用于生成项目级 `ProjectHarnessProfile`，不能解释为跳过或选择 Alpha/Beta/RC/GA 阶段。
 
 默认内置 `ga` 目标：
 

@@ -44,6 +44,7 @@ Detailed release evidence and deployment checklists live in [docs/reference/rele
 |---|---|
 | Loop Engineering | Durable loop state, executor graphs, checkpoints, replay, watchdog recovery, worker leases, sandbox proof, and timeline audit. |
 | GlobalGoal planning | A white-box goal layer above LoopRun that takes a business objective, decomposes it through Alpha -> Beta -> RC -> GA GoalTargets, waits for plan approval, binds each target to governed loops, and exposes progress, blockers, timeline, graph, evidence matrix, phase packages, and final report. |
+| Project harness profiles | Tenant/workspace/project-scoped `ProjectHarnessProfile` versions that define capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, governance, template inheritance, and active profile digests for goal planning. |
 | Evidence ingestion | Runtime events, traces, logs, evaluations, release signals, APM-derived data, and user feedback. |
 | Human approval | Reviewable proposals before high-risk evolution, source writeback, merge, or release actions. |
 | Code upgrades | Bounded code-upgrader execution with allowed paths, validation commands, branch/commit evidence, and source closure. |
@@ -100,6 +101,13 @@ evopilot status --json
 evopilot secret set --id LLM_API_KEY_MY_AGENT --kind llm-key --from-env LLM_API_KEY_MY_AGENT --json
 evopilot llm profile set my-agent-llm --provider openai-compatible --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_MY_AGENT --json
 evopilot project llm set <project-id> --profile my-agent-llm --require-llm-ready --json
+evopilot harness profile generate \
+  --project <project-id> \
+  --from-template python-enterprise-harness \
+  --goal-loop-target "Define the Python enterprise harness for this project" \
+  --llm-profile my-agent-llm \
+  --json
+evopilot harness profile activate default --project <project-id> --version 1 --json
 evopilot target plan \
   --project <project-id> \
   --objective "Enable tenant-level onboarding, full lifecycle Dashboard visibility, and operator repair guidance for the project" \
@@ -150,10 +158,10 @@ The full browser operation guide lives in the standalone Dashboard repository un
 EvoPilot applies Loop Engineering to product evolution. For larger business objectives, the GlobalGoal layer sits above LoopRun and turns one global objective into Alpha -> Beta -> RC -> GA phase GoalTargets before each target is executed through the governed loop runtime:
 
 ```text
-GlobalGoal -> GoalTarget -> LoopRun -> Release Decision
-                  |
-                  v
-Sandbox -> Context -> Harness -> Loop
+ProjectHarnessProfile + GlobalGoal -> GoalTarget -> LoopRun -> Release Decision
+                                      |
+                                      v
+                         Sandbox -> Context -> Harness -> Loop
 ```
 
 | Layer | EvoPilot responsibility |
@@ -208,6 +216,7 @@ Primary API surfaces include:
 | Auth and users | `POST /api/v1/auth/login`, `GET /api/v1/users`, `POST /api/v1/users` |
 | Projects and evidence | `GET /api/v1/projects`, `POST /api/v1/evidence/events` |
 | Project DevOps | `POST /api/v1/projects/{projectId}/devops`, `POST /api/v1/projects/{projectId}/devops/preflight` |
+| Project harness profiles | `GET /api/v1/harness/templates`, `POST /api/v1/projects/{projectId}/harness-profiles/generate`, `POST /api/v1/projects/{projectId}/harness-profiles`, `POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/activate` |
 | LLM profiles | `POST /api/v1/llm-profiles`, `POST /api/v1/llm-profiles/{profileId}/preflight`, `POST /api/v1/projects/{projectId}/llm` |
 | Global goals | `GET /api/v1/goals`, `POST /api/v1/goals`, `POST /api/v1/goals/{goalId}/plan`, `POST /api/v1/goals/{goalId}/plan/apply`, `POST /api/v1/goals/{goalId}/approve-plan`, `POST /api/v1/goals/{goalId}/advance`, `GET /api/v1/goals/{goalId}/phase-plan`, `GET /api/v1/goals/{goalId}/phases`, `GET /api/v1/goals/{goalId}/target-packages`, `GET /api/v1/goals/{goalId}/phase-packages`, `GET /api/v1/goals/{goalId}/snapshot` |
 | Loops | `POST /api/v1/loops`, `POST /api/v1/loops/{loopId}/start`, `GET /api/v1/loops/{loopId}/timeline` |

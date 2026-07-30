@@ -55,6 +55,7 @@ GlobalGoal adds one product layer above LoopRun for business objectives that sho
 
 ```mermaid
 flowchart TD
+  HarnessProfile["ProjectHarnessProfile\ncapabilities / runtime / evidence / governance"] --> GlobalGoal
   ReleaseTarget["ReleaseTarget\nstandard profile / thresholds"] --> GlobalGoal["GlobalGoal\nbusiness objective / phase plan / timeline / report"]
   Standards["MaturityStandardSet\nevopilot-default/v1"] --> GlobalGoal
   GlobalGoal --> Alpha["Alpha phase\nsource / bootstrap / architecture"]
@@ -76,11 +77,15 @@ From a DDD perspective:
 | `GoalTarget` entity | Represents one observable sub-target with phase, dependencies, acceptance criteria, required evidence, review capabilities, status, next action, evidence, blocker, and optional `loopId`. |
 | `PhaseTarget` entity | Represents one maturity phase with baseline standards, project-specific additions, package outputs, and GO/NO-GO decision. |
 | `LoopRun` aggregate | Remains the execution substrate. It owns executor graph progress, iterations, sandbox proof, worker lease, approvals, source closure, artifacts, trace, and loop evidence. |
+| `ProjectHarnessProfile` aggregate | Owns the project-level harness definition: capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, template ref, version, and digest. It is stored under tenant/workspace/project scope and is activated explicitly. |
+| `HarnessTemplate` profile | Platform or tenant baseline inherited by project profiles. Template upgrades create DRAFT profile revisions; they do not silently rewrite active project profiles. |
 | `MaturityStandardTemplate` | Versioned standard asset for Alpha, Beta, RC, or GA. The default set is `evopilot-default/v1`; standards can evolve by version without changing CLI semantics. |
 | `ReleaseTarget` profile | Defines project/release thresholds and scenario context. It is not itself a running goal, a phase skip instruction, or a release verdict. |
 | `ReleaseDecision` aggregate | Remains the authoritative `GO` / `CONDITIONAL-GO` / `NO-GO` verdict, exposed through `/api/v1/release/decisions`. |
 
 For project-scoped targets, `ReleaseTarget.templateId` is release profile metadata and a threshold source. A target id such as `my-agent-ga` is only an identity and routing key. The planner always emits the Alpha -> Beta -> RC -> GA ladder for governed GlobalGoals; profile metadata must not be interpreted by CLI or Dashboard as "skip to that level."
+
+For project harnesses, `ProjectHarnessProfile` supplies the concrete control surface for how a project should be built, validated, diagnosed, observed, and governed. Goal planning binds the active profile version and digest into `GoalPlan.projectHarness`. If a goal exposes a missing harness rule, EvoPilot should propose a new profile revision; it must not mutate the active profile without review and activation.
 
 The key design tradeoff is an extra control-plane layer instead of overloading LoopRun. This makes the dashboard and CLI white-box for multi-step goals without turning CLI commands into semantic orchestration. The CLI remains an adapter over atomic use cases such as create goal, plan goal, export/diff/apply/approve plan, read phases, read phase package, advance one step, read snapshot, read graph, read evidence matrix, and read final report.
 
@@ -106,6 +111,7 @@ The product loop maps to current EvoPilot runtime surfaces:
 | Evidence collection | `POST /api/v1/evidence/events`, OTLP trace/log endpoints, SkyWalking, evaluations, feedback |
 | Opportunity and risk decisions | evidence clustering, dynamic baselines, scorecards, governance policy evaluations, release readiness |
 | Global goal planning | `GlobalGoal` plan generation, GoalTarget dependency graph, snapshot, timeline, evidence matrix, and final report |
+| Project harness control | `HarnessTemplate`, `ProjectHarnessProfile` versions, validation, diff, activation, explain mapping, and goal-plan profile digest binding |
 | Plan review | Markdown opportunity drafts and user-edited evolution plans |
 | Long-running execution | `LoopRun`, executor graphs, loop worker, heartbeat leases, watchdog recovery |
 | Code and delivery actions | code-upgrader runtime, branch/commit evidence, GitHub Actions/GitLab CI project DevOps boundaries |

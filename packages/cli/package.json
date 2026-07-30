@@ -39,7 +39,8 @@
     "build": "npm run build -w @evopilot/client && tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@evopilot/client": "0.1.0"
+    "@evopilot/client": "0.1.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
