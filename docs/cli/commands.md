@@ -385,20 +385,20 @@ evopilot harness profile upgrade default --project <project-id> --from-template 
 `HarnessTemplate` is an administrator-managed control-plane resource. Fresh installs include multiple built-in template types:
 
 ```text
-python-enterprise-harness@1.0.0
-java-ddd-service-harness@1.0.0
-node-saas-control-plane-harness@1.0.0
-go-middleware-harness@1.0.0
-observability-apm-harness@1.0.0
-generic-management-software-harness@1.0.0
+python-enterprise-harness@1.1.0
+java-ddd-service-harness@1.1.0
+node-saas-control-plane-harness@1.1.0
+go-middleware-harness@1.1.0
+observability-apm-harness@1.1.0
+generic-management-software-harness@1.1.0
 ```
 
-Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. Inspect `sourceReferences[]` to see that initialization basis. Project onboarding automatically matches a published template from project runtime/repository context and the goal loop target. `--from-template` is an explicit administrator or advanced override, not the normal first-onboarding path. Administrators can publish additional template ids or newer versions for other language, architecture, or software-type harnesses through the independent template maintenance channel:
+Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. The `@1.1.0` baselines include structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. Inspect `sourceReferences[]` to see that initialization basis. Project onboarding automatically matches a published template from project runtime/repository context and the goal loop target. `--from-template` is an explicit administrator or advanced override, not the normal first-onboarding path. Administrators can publish additional template ids or newer versions for other language, architecture, or software-type harnesses through the independent template maintenance channel:
 
 ```bash
 evopilot harness template upgrade \
-  --file python-enterprise-harness-1.1.0.yaml \
-  --changelog "Add stricter runtime and observability defaults." \
+  --file python-enterprise-harness-1.2.0.yaml \
+  --changelog "Add organization-specific runtime and observability defaults." \
   --json
 ```
 

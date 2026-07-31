@@ -874,7 +874,7 @@
     "/api/v1/harness/templates": {
       "get": {
         "summary": "列出 HarnessTemplate",
-        "description": "返回平台或租户级 harness 模板。fresh install 内置 python-enterprise-harness、java-ddd-service-harness、node-saas-control-plane-harness、go-middleware-harness、observability-apm-harness 和 generic-management-software-harness。模板用于生成 ProjectHarnessProfile，不用于选择或跳过 Alpha/Beta/RC/GA 成熟度阶段。",
+        "description": "返回平台或租户级 harness 模板。fresh install 内置 python-enterprise-harness、java-ddd-service-harness、node-saas-control-plane-harness、go-middleware-harness、observability-apm-harness 和 generic-management-software-harness；当前内置版本为 @1.1.0 企业级 baseline，包含结构化日志、异常追踪、trace 关联、SLO 监控、告警路由、operational runbook、语言专项诊断和 release evidence 规则。模板用于生成 ProjectHarnessProfile，不用于选择或跳过 Alpha/Beta/RC/GA 成熟度阶段。",
         "security": [
           {
             "bearerAuth": []

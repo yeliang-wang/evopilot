@@ -28,7 +28,7 @@ flowchart LR
   Gap --> Revision["New DRAFT revision suggestion"]
 ```
 
-Fresh installs include multiple built-in `HarnessTemplate` baselines for Python enterprise projects, Java DDD services, Node SaaS control planes, Go middleware, observability/APM systems, and generic management software. Project onboarding automatically matches a published template from runtime/repository context and the goal loop target; an explicit template id is an administrator or advanced override. Administrators can publish more template ids and versions for language, architecture, or software-type baselines through an independent template maintenance channel. Template files are YAML/JSON control-plane inputs with `id`, `version`, template sections, `sourceReferences[]`, and a current-version changelog. Reusing the same `id@version` requires explicit force; normal changes should publish a new version.
+Fresh installs include multiple built-in `HarnessTemplate` baselines for Python enterprise projects, Java DDD services, Node SaaS control planes, Go middleware, observability/APM systems, and generic management software. Current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. Project onboarding automatically matches a published template from runtime/repository context and the goal loop target; an explicit template id is an administrator or advanced override. Administrators can publish more template ids and versions for language, architecture, or software-type baselines through an independent template maintenance channel. Template files are YAML/JSON control-plane inputs with `id`, `version`, template sections, `sourceReferences[]`, and a current-version changelog. Reusing the same `id@version` requires explicit force; normal changes should publish a new version.
 
 Generated profiles are `DRAFT`. EvoPilot can use an LLM to draft them when a READY LLM profile exists; in debug mode without LLM it can create a deterministic template draft. Production `requireLlm=true` blocks generation if no READY LLM is configured.
 
@@ -89,7 +89,7 @@ When a profile is active, `POST /api/v1/goals/{goalId}/plan` binds it into the g
     "version": 1,
     "templateRef": {
       "templateId": "python-enterprise-harness",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "digest": "sha256:..."
     },
     "sourceDigest": "sha256:...",

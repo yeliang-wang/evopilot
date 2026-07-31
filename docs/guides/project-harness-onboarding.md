@@ -21,14 +21,14 @@ observability-apm-harness
 generic-management-software-harness
 ```
 
-Each built-in template defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, and `sourceReferences[]`. The built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as versioned template data. EvoPilot does not dynamically fetch GitHub at runtime.
+Each built-in template defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, and `sourceReferences[]`. The built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as versioned template data. Current built-ins ship as `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. EvoPilot does not dynamically fetch GitHub at runtime.
 
 Administrators can publish additional template ids or versions for other languages, architecture styles, or software types through a separate administrator CLI/API channel. Template updates are YAML/JSON control-plane changes with changelog management:
 
 ```bash
 evopilot harness template upgrade \
-  --file python-enterprise-harness-1.1.0.yaml \
-  --changelog "Add stricter runtime and observability defaults." \
+  --file python-enterprise-harness-1.2.0.yaml \
+  --changelog "Add organization-specific runtime and observability defaults." \
   --json
 ```
 
@@ -138,7 +138,7 @@ evopilot harness profile generate \
 evopilot harness profile upgrade default \
   --project my-agent \
   --from-template python-enterprise-harness \
-  --from-template-version 1.0.0 \
+  --from-template-version 1.1.0 \
   --json
 ```
 

@@ -19,7 +19,7 @@ test("HarnessTemplate API and CLI upgrade versioned templates with changelog", a
   fs.writeFileSync(templateFile, [
     "schema: evopilot-harness-template/v1",
     "id: python-enterprise-harness",
-    "version: 1.1.0",
+    "version: 1.2.0",
     "name: Python Enterprise Harness",
     "description: Python enterprise harness with explicit admin-managed template versioning.",
     "scope: platform",
@@ -93,13 +93,13 @@ test("HarnessTemplate API and CLI upgrade versioned templates with changelog", a
       "--server", baseUrl,
       "harness", "template", "upgrade",
       "--file", templateFile,
-      "--changelog", "Add admin-managed Python enterprise harness template version 1.1.0.",
+      "--changelog", "Add admin-managed Python enterprise harness template version 1.2.0.",
       "--json"
     ]);
     assert.equal(applied.action, "CREATED_VERSION");
     assert.equal(applied.template.id, "python-enterprise-harness");
-    assert.equal(applied.template.version, "1.1.0");
-    assert.ok(applied.template.changelog.some((entry) => entry.version === "1.1.0"));
+    assert.equal(applied.template.version, "1.2.0");
+    assert.ok(applied.template.changelog.some((entry) => entry.version === "1.2.0"));
 
     const duplicate = await postExpectStatus(`${baseUrl}/api/v1/harness/templates`, {
       templateContent: parseYaml(fs.readFileSync(templateFile, "utf8")),
@@ -122,10 +122,10 @@ test("HarnessTemplate API and CLI upgrade versioned templates with changelog", a
     const generated = await post(`${baseUrl}/api/v1/projects/template-python-agent/harness-profiles/generate`, {
       profileId: "default",
       templateId: "python-enterprise-harness",
-      templateVersion: "1.1.0",
+      templateVersion: "1.2.0",
       goalLoopTarget: "Use the admin-managed Python enterprise harness template version"
     });
-    assert.equal(generated.data.profile.templateRef.version, "1.1.0");
+    assert.equal(generated.data.profile.templateRef.version, "1.2.0");
     assert.equal(generated.data.profile.templateRef.digest, applied.template.digest);
   } finally {
     await close(server);
@@ -189,7 +189,17 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
 
     const javaTemplate = templates.data.templates.find((template) => template.id === "java-ddd-service-harness");
     assert.equal(javaTemplate.languageFamily, "java");
+    assert.equal(javaTemplate.version, "1.1.0");
     assert.ok(javaTemplate.capabilities.some((capability) => capability.id === "ddd-boundaries"));
+    assert.ok(javaTemplate.capabilities.some((capability) => capability.id === "exception-tracking"));
+    assert.ok(javaTemplate.capabilities.some((capability) => capability.id === "slo-monitoring"));
+    assert.ok(javaTemplate.capabilities.some((capability) => capability.id === "operational-runbooks"));
+    assert.ok(javaTemplate.sourceReferences.some((reference) => reference.name === "Micrometer"));
+    assert.ok(javaTemplate.changelog.some((entry) => entry.version === "1.1.0"));
+    assert.ok(javaTemplate.failureTaxonomy.exceptionTracking.requiredAttributes.includes("exception.type"));
+    assert.ok(javaTemplate.diagnosticsBaseline.runbookRequirements.criticalAlertsRequireRunbook);
+    assert.ok(javaTemplate.observabilityBaseline.structuredLogs.requiredFields.includes("traceId"));
+    assert.ok(javaTemplate.observabilityBaseline.alerts.required.includes("latency_slo_breach"));
 
     await post(`${baseUrl}/api/v1/projects`, {
       id: "java-ddd-agent",
@@ -212,6 +222,11 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
     assert.equal(generated.data.profile.sourceContent.runtime.language, "java");
     assert.ok(generated.data.profile.sourceContent.capabilities.some((capability) => capability.id === "ddd-boundaries"));
     assert.ok(generated.data.profile.sourceContent.runtime.installCommands.some((command) => command.includes("mvnw") || command.includes("gradlew")));
+    assert.equal(generated.data.profile.templateRef.version, "1.1.0");
+    assert.ok(generated.data.profile.compiledContent.failureHandling.exceptionTracking.requiredAttributes.includes("traceId"));
+    assert.ok(generated.data.profile.compiledContent.observability.structuredLogs.requiredFields.includes("errorCode"));
+    assert.ok(generated.data.profile.compiledContent.observability.slo.errorBudgetStatusRequiredForRcAndGa);
+    assert.ok(generated.data.profile.compiledContent.phaseMapping.rc.includes("operational-runbooks"));
     assert.equal(generated.data.profile.validation.status, "VALIDATED");
 
     const activated = await post(`${baseUrl}/api/v1/projects/java-ddd-agent/harness-profiles/default/activate`, { version: 1 });

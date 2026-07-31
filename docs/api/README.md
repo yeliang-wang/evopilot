@@ -410,15 +410,15 @@ POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/upgrade
 Fresh install 默认带多套内置 `HarnessTemplate`，覆盖不同语言、架构范式和软件类型：
 
 ```text
-python-enterprise-harness@1.0.0
-java-ddd-service-harness@1.0.0
-node-saas-control-plane-harness@1.0.0
-go-middleware-harness@1.0.0
-observability-apm-harness@1.0.0
-generic-management-software-harness@1.0.0
+python-enterprise-harness@1.1.0
+java-ddd-service-harness@1.1.0
+node-saas-control-plane-harness@1.1.0
+go-middleware-harness@1.1.0
+observability-apm-harness@1.1.0
+generic-management-software-harness@1.1.0
 ```
 
-这些内置模板不是运行时动态从 GitHub 拉取。EvoPilot 将精选开源项目、官方规范和工程实践固化为本地版本化模板，并在 `sourceReferences[]` 中暴露初始化来源，例如 FastAPI、Spring Boot、Microsoft tactical DDD、Kubernetes、Prometheus、OpenTelemetry Specification 和 Apache SkyWalking。模板提供默认能力边界、runtime command groups、validation baseline、evidence contract、failure taxonomy、diagnostics、observability、release governance、Alpha/Beta/RC/GA phase mapping 和 LLM draft policy。
+这些内置模板不是运行时动态从 GitHub 拉取。EvoPilot 将精选开源项目、官方规范和工程实践固化为本地版本化模板，并在 `sourceReferences[]` 中暴露初始化来源，例如 FastAPI、Spring Boot、Micrometer、Kubernetes、Prometheus、OpenTelemetry、Sentry、Apache SkyWalking、ERPNext/Frappe 和 Odoo。`@1.1.0` 模板提供默认能力边界、runtime command groups、validation baseline、evidence contract、failure taxonomy、diagnostics、observability、release governance、Alpha/Beta/RC/GA phase mapping 和 LLM draft policy，并细化结构化日志、异常追踪、trace 关联、SLO 监控、告警路由、operational runbook、语言/软件类型专项诊断与 release evidence 规则。
 
 管理员也可以通过 `POST /api/v1/harness/templates` 或独立管理员 CLI `evopilot harness template upgrade` 发布新的 template id 或版本，用于表达更多语言、架构范式或软件类型的 harness。模板写入要求 `id`、`version` 和当前版本 changelog；建议同时包含 `sourceReferences[]`。服务端计算 `digest` 并按 `<dataRoot>/harness-templates/<templateId>-<version>.json` 持久化。重复写入同一个 `id@version` 默认返回 `HARNESS_TEMPLATE_VERSION_EXISTS`，只有显式 `force=true` 才会替换该版本。已有 active `ProjectHarnessProfile` 不会因为模板更新被静默改写，必须通过 `generate` 或 `upgrade` 生成新的 profile revision 后再 review/activate。
 
@@ -437,7 +437,7 @@ generic-management-software-harness@1.0.0
   "version": 1,
   "templateRef": {
     "templateId": "python-enterprise-harness",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "digest": "sha256:..."
   },
   "sourceDigest": "sha256:...",

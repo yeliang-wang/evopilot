@@ -116,7 +116,7 @@ Continue only when source credentials, DevOps, and LLM readiness are `READY`.
 
 ## Admin: Maintain Template Harness
 
-Project onboarding consumes an already published template, but normal onboarding does not require the operator to choose one manually. Fresh installs include `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. EvoPilot automatically matches a template from project runtime/repository context and the goal loop target; `--from-template` is only an explicit administrator or advanced override. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`.
+Project onboarding consumes an already published template, but normal onboarding does not require the operator to choose one manually. Fresh installs include `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. EvoPilot automatically matches a template from project runtime/repository context and the goal loop target; `--from-template` is only an explicit administrator or advanced override. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`. Current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules.
 
 Administrators can publish additional template ids or versions for different languages, architecture styles, or software types:
 
@@ -124,8 +124,8 @@ Administrators can publish additional template ids or versions for different lan
 evopilot harness template list --json
 evopilot harness template inspect python-enterprise-harness --json
 evopilot harness template upgrade \
-  --file ./python-enterprise-harness-1.1.0.yaml \
-  --changelog "Add FastAPI service defaults and pytest coverage gates." \
+  --file ./python-enterprise-harness-1.2.0.yaml \
+  --changelog "Add organization-specific FastAPI service defaults and pytest coverage gates." \
   --json
 ```
 

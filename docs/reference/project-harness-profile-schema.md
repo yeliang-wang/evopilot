@@ -21,6 +21,14 @@ sourceReferences:
     url: https://github.com/fastapi/fastapi
     category: github
     rationale: Python API service conventions and OpenAPI ergonomics.
+  - name: OpenTelemetry FastAPI instrumentation
+    url: https://github.com/open-telemetry/opentelemetry-python-contrib/tree/main/instrumentation/opentelemetry-instrumentation-fastapi
+    category: github
+    rationale: FastAPI HTTP request instrumentation for traces, metrics, and log correlation.
+  - name: Sentry
+    url: https://github.com/getsentry/sentry
+    category: github
+    rationale: Error tracking, issue grouping, stack traces, breadcrumbs, release health, and performance diagnostics.
   - name: Enterprise Python service practice
     category: engineering-practice
     rationale: Typed runtime commands, dependency locks, command evidence, and health/readiness controls.
@@ -40,16 +48,55 @@ validationBaseline:
 evidenceContract:
   requiredArtifacts:
     - target-evidence-package
+    - incident-or-failure-report
+  correlationFields:
+    - requestId
+    - traceId
+    - spanId
+    - tenantId
+    - workspaceId
 failureTaxonomy:
   categories:
     - dependency
     - test
+  exceptionTracking:
+    requiredAttributes:
+      - exception.type
+      - exception.message
+      - exception.stacktrace
+      - errorCode
+      - requestId
+      - traceId
+    mustLinkToTrace: true
 diagnosticsBaseline:
   requiredSignals:
     - failing-command
+    - trace-id
+  runbookRequirements:
+    criticalAlertsRequireRunbook: true
 observabilityBaseline:
   requiredSignals:
     - health
+    - logs
+    - metrics
+    - traces
+    - alerts
+    - slo
+  structuredLogs:
+    requiredFields:
+      - timestamp
+      - level
+      - service
+      - requestId
+      - traceId
+      - spanId
+      - errorCode
+  alerts:
+    required:
+      - high_error_rate
+      - latency_slo_breach
+  slo:
+    errorBudgetStatusRequiredForRcAndGa: true
 governanceRules:
   tenantWorkspaceScopeRequired: true
   profileActivationRequiresApproval: true
@@ -71,9 +118,9 @@ llmDraftPolicy:
   requireUserReview: true
 changelog:
   - version: 1.1.0
-    summary: Add stricter runtime and observability defaults.
+    summary: Add enterprise observability, exception tracking, SLO, and runbook defaults.
     changes:
-      - Add stricter runtime and observability defaults.
+      - Add structured log fields, exception attributes, trace correlation, alert rules, SLO rules, and operational runbook requirements.
 ```
 
 `id` and `version` are required. The server computes `digest`; callers should not hand-edit it. A changelog entry for the current version is required, either in the file or through CLI `--changelog`. Reusing the same `id@version` requires `--force`; normal updates should publish a new version.
@@ -90,7 +137,7 @@ name: My Agent Python Harness
 description: Project-level harness control-plane profile.
 template:
   templateId: python-enterprise-harness
-  version: 1.0.0
+  version: 1.1.0
 capabilities:
   - id: python-runtime
     name: Python runtime harness
@@ -217,10 +264,10 @@ The server stores each version as `evopilot-project-harness-profile-version/v1`:
   "compiledContent": {},
   "compiledDigest": "sha256:...",
   "templateRef": {
-    "templateId": "python-enterprise-harness",
-    "version": "1.0.0",
-    "digest": "sha256:..."
-  },
+      "templateId": "python-enterprise-harness",
+      "version": "1.1.0",
+      "digest": "sha256:..."
+    },
   "validation": {},
   "generatedBy": {
     "mode": "user",
