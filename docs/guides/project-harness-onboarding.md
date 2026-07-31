@@ -7,11 +7,23 @@ Use this flow after a project is registered and before governed goal execution.
 ```bash
 evopilot harness template list --json
 evopilot harness template inspect python-enterprise-harness --json
+evopilot harness template inspect java-ddd-service-harness --json
 ```
 
-`python-enterprise-harness` is the built-in platform baseline for enterprise Python projects. It defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, and LLM draft policy.
+Fresh installs include multiple built-in platform baselines:
 
-Administrators can publish additional template ids or versions for other languages, architecture styles, or software types. Template updates are versioned control-plane changes with changelog management:
+```text
+python-enterprise-harness
+java-ddd-service-harness
+node-saas-control-plane-harness
+go-middleware-harness
+observability-apm-harness
+generic-management-software-harness
+```
+
+Each built-in template defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, and `sourceReferences[]`. The built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as versioned template data. EvoPilot does not dynamically fetch GitHub at runtime.
+
+Administrators can publish additional template ids or versions for other languages, architecture styles, or software types. Template updates are YAML/JSON control-plane changes with changelog management:
 
 ```bash
 evopilot harness template apply \
@@ -34,6 +46,8 @@ evopilot harness profile generate \
 ```
 
 The generated version is `DRAFT`. It is not active and does not control goal planning yet.
+
+Choose `--from-template` according to the project shape. For example, Java DDD services should use `java-ddd-service-harness`; Go infrastructure or middleware should use `go-middleware-harness`; observability/APM systems should use `observability-apm-harness`; enterprise workflow/admin systems can start from `generic-management-software-harness`.
 
 For second onboarding or project evolution, EvoPilot reads the previous active profile and produces a diff-aware draft instead of creating an unrelated profile.
 

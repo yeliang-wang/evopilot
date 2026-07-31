@@ -101,6 +101,7 @@ evopilot status --json
 evopilot secret set --id LLM_API_KEY_MY_AGENT --kind llm-key --from-env LLM_API_KEY_MY_AGENT --json
 evopilot llm profile set my-agent-llm --provider openai-compatible --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_MY_AGENT --json
 evopilot project llm set <project-id> --profile my-agent-llm --require-llm-ready --json
+evopilot harness template list --json
 evopilot harness profile generate \
   --project <project-id> \
   --from-template python-enterprise-harness \
@@ -134,6 +135,8 @@ evopilot target run \
 ```
 
 `status --json` always returns machine-readable diagnostics. If the configured API Server is unreachable, it prints `schema=evopilot-cli-status/v1`, `status=UNREACHABLE`, `diagnosis.recommendedAction`, `config`, and `missingConfig`, then exits `2`.
+
+Fresh installs include multiple built-in template harnesses: `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. The built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured YAML/JSON-compatible template data with version, changelog, digest, and `sourceReferences[]`. Administrators can publish additional template ids or versions through `evopilot harness template apply`.
 
 The raw LLM API key is stored once in the EvoPilot server-side secret vault. Daily `target run`, `goal run`, and `loop run` commands pass only the LLM profile id. For GitHub/GitLab enterprise real loops, the project must have an explicit READY project LLM profile or the run must pass `--llm-profile`; the server global default LLM is not sufficient for user/project attribution. Before Goal/Loop execution, wrapper commands preflight source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness by default.
 

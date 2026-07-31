@@ -165,6 +165,58 @@ test("EvoPilot CLI manages server logging settings", async () => {
   }
 });
 
+test("Fresh install exposes multiple built-in HarnessTemplate types and generates non-Python profiles", async () => {
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-builtin-harness-library-"));
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-java-harness-repo-"));
+  fs.writeFileSync(path.join(repoRoot, "pom.xml"), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>agent</artifactId><version>0.1.0</version></project>\n");
+
+  const server = createServer({ dataRoot, runtimeMode: "debug" });
+  await listen(server);
+  const baseUrl = serverUrl(server);
+
+  try {
+    const templates = await get(`${baseUrl}/api/v1/harness/templates`);
+    const ids = templates.data.templates.map((template) => template.id);
+    assert.deepEqual(new Set(ids), new Set([
+      "python-enterprise-harness",
+      "java-ddd-service-harness",
+      "node-saas-control-plane-harness",
+      "go-middleware-harness",
+      "observability-apm-harness",
+      "generic-management-software-harness"
+    ]));
+    assert.ok(templates.data.templates.every((template) => Array.isArray(template.sourceReferences) && template.sourceReferences.length > 0));
+
+    const javaTemplate = templates.data.templates.find((template) => template.id === "java-ddd-service-harness");
+    assert.equal(javaTemplate.languageFamily, "java");
+    assert.ok(javaTemplate.capabilities.some((capability) => capability.id === "ddd-boundaries"));
+
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "java-ddd-agent",
+      name: "Java DDD Agent",
+      repository: { provider: "local-git", root: repoRoot },
+      runtime: {
+        language: "java",
+        unitCommands: ["./mvnw test"],
+        smokeCommands: ["./mvnw verify"]
+      }
+    });
+
+    const generated = await post(`${baseUrl}/api/v1/projects/java-ddd-agent/harness-profiles/generate`, {
+      profileId: "default",
+      templateId: "java-ddd-service-harness",
+      goalLoopTarget: "Add customer lifecycle aggregate and release evidence"
+    });
+    assert.equal(generated.data.profile.templateRef.templateId, "java-ddd-service-harness");
+    assert.equal(generated.data.profile.sourceContent.runtime.language, "java");
+    assert.ok(generated.data.profile.sourceContent.capabilities.some((capability) => capability.id === "ddd-boundaries"));
+    assert.ok(generated.data.profile.sourceContent.runtime.installCommands.some((command) => command.includes("mvnw") || command.includes("gradlew")));
+    assert.equal(generated.data.profile.validation.status, "VALIDATED");
+  } finally {
+    await close(server);
+  }
+});
+
 test("ProjectHarnessProfile API creates, validates, activates, explains, and binds profiles to goal plans", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-profile-api-"));
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-repo-"));

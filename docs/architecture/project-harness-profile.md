@@ -28,7 +28,7 @@ flowchart LR
   Gap --> Revision["New DRAFT revision suggestion"]
 ```
 
-Administrators can publish multiple template ids and versions for language, architecture, or software-type baselines. Template files are YAML/JSON control-plane inputs with `id`, `version`, template sections, and a current-version changelog. Reusing the same `id@version` requires explicit force; normal changes should publish a new version.
+Fresh installs include multiple built-in `HarnessTemplate` baselines for Python enterprise projects, Java DDD services, Node SaaS control planes, Go middleware, observability/APM systems, and generic management software. Administrators can publish more template ids and versions for language, architecture, or software-type baselines. Template files are YAML/JSON control-plane inputs with `id`, `version`, template sections, `sourceReferences[]`, and a current-version changelog. Reusing the same `id@version` requires explicit force; normal changes should publish a new version.
 
 Generated profiles are `DRAFT`. EvoPilot can use an LLM to draft them when a READY LLM profile exists; in debug mode without LLM it can create a deterministic template draft. Production `requireLlm=true` blocks generation if no READY LLM is configured.
 

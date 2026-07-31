@@ -365,6 +365,7 @@ Agents should use `requestId`, `correlation.*`, `event`, `errorCode`, `diagnosis
 ```bash
 evopilot harness template list
 evopilot harness template inspect python-enterprise-harness
+evopilot harness template inspect java-ddd-service-harness
 evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
 evopilot harness template update --file <template.yaml> --changelog <text> [--force]
 evopilot harness profile list --project <project-id>
@@ -380,7 +381,18 @@ evopilot harness profile upgrade default --project <project-id> --from-template 
 
 `ProjectHarnessProfile` is a project-level control-plane profile, not a per-goal plan and not a target maturity template. It defines the project's capability boundaries, runtime commands, validation rules, evidence contract, failure handling, diagnostics, observability, release governance, LLM draft policy, and the template version/digest it inherits.
 
-`HarnessTemplate` is an administrator-managed control-plane resource. The built-in `python-enterprise-harness@1.0.0` remains available, and administrators can publish additional template ids or newer versions for other language, architecture, or software-type harnesses:
+`HarnessTemplate` is an administrator-managed control-plane resource. Fresh installs include multiple built-in template types:
+
+```text
+python-enterprise-harness@1.0.0
+java-ddd-service-harness@1.0.0
+node-saas-control-plane-harness@1.0.0
+go-middleware-harness@1.0.0
+observability-apm-harness@1.0.0
+generic-management-software-harness@1.0.0
+```
+
+Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. Inspect `sourceReferences[]` to see that initialization basis. Administrators can publish additional template ids or newer versions for other language, architecture, or software-type harnesses:
 
 ```bash
 evopilot harness template apply \
@@ -389,7 +401,7 @@ evopilot harness template apply \
   --json
 ```
 
-`apply` and `update` are aliases. The file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. The server computes `digest`, stores the version under the control plane, and requires a changelog entry for that version. Reusing an existing `id@version` is rejected unless `--force` is supplied; prefer publishing a new version for normal changes. Existing active `ProjectHarnessProfile` versions keep their old `templateRef` until an administrator generates or upgrades a new profile revision.
+`apply` and `update` are aliases. The file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown is documentation only. The server computes `digest`, stores the version under the control plane, and requires a changelog entry for that version. Include `sourceReferences[]` when the template is derived from public projects, official docs, or internal engineering practice. Reusing an existing `id@version` is rejected unless `--force` is supplied; prefer publishing a new version for normal changes. Existing active `ProjectHarnessProfile` versions keep their old `templateRef` until an administrator generates or upgrades a new profile revision.
 
 Generated profiles are stored as `DRAFT` versions. A user or administrator must review the profile, run `validate` or `apply`, and then call `activate` before goal planning binds it. When an active profile exists, `target plan` and `goal plan` include `plan.projectHarness.profileId`, `version`, `templateRef`, `sourceDigest`, and `compiledDigest`; those fields make the plan reproducible and auditable.
 

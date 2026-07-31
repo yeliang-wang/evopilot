@@ -874,7 +874,7 @@
     "/api/v1/harness/templates": {
       "get": {
         "summary": "列出 HarnessTemplate",
-        "description": "返回平台或租户级 harness 模板。模板用于生成 ProjectHarnessProfile，不用于选择或跳过 Alpha/Beta/RC/GA 成熟度阶段。",
+        "description": "返回平台或租户级 harness 模板。fresh install 内置 python-enterprise-harness、java-ddd-service-harness、node-saas-control-plane-harness、go-middleware-harness、observability-apm-harness 和 generic-management-software-harness。模板用于生成 ProjectHarnessProfile，不用于选择或跳过 Alpha/Beta/RC/GA 成熟度阶段。",
         "security": [
           {
             "bearerAuth": []
@@ -891,7 +891,7 @@
       },
       "post": {
         "summary": "发布或更新 HarnessTemplate",
-        "description": "管理员写入一个版本化 HarnessTemplate。请求体包含 templateContent 或 template，以及当前版本 changelog；重复 id@version 默认拒绝，force=true 时替换。",
+        "description": "管理员写入一个版本化 HarnessTemplate。请求体包含 templateContent 或 template，以及当前版本 changelog；模板对象可包含 sourceReferences[] 说明初始化来源；重复 id@version 默认拒绝，force=true 时替换。",
         "security": [
           {
             "bearerAuth": []
@@ -909,7 +909,7 @@
                 "properties": {
                   "templateContent": {
                     "type": "object",
-                    "description": "evopilot-harness-template/v1 模板对象，必须包含 id 和 version。"
+                    "description": "evopilot-harness-template/v1 模板对象，必须包含 id 和 version；建议包含 sourceReferences[]。"
                   },
                   "changelog": {
                     "type": "array",
@@ -949,7 +949,7 @@
     "/api/v1/harness/templates/{templateId}": {
       "get": {
         "summary": "获取 HarnessTemplate",
-        "description": "按 templateId 和可选 version 查询模板定义与 digest。",
+        "description": "按 templateId 和可选 version 查询模板定义、sourceReferences、changelog 与 digest。",
         "security": [
           {
             "bearerAuth": []

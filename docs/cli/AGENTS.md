@@ -50,10 +50,13 @@ evopilot project onboard verify my-agent --json
 evopilot project preflight my-agent --json
 evopilot project devops preflight my-agent --json
 evopilot project llm preflight my-agent --json
+evopilot harness template list --json
 evopilot harness profile generate --project my-agent --from-template python-enterprise-harness --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --json
 evopilot harness profile inspect default --project my-agent --version <harness-version> --json
 evopilot harness profile diff default --project my-agent --version <harness-version> --json
 ```
+
+Choose `--from-template` from the built-in template library or an administrator-published template. Fresh installs include Python enterprise, Java DDD service, Node SaaS control-plane, Go middleware, observability/APM, and generic management-software baselines; `harness template inspect <id> --json` exposes their `sourceReferences[]`.
 
 After `harness profile generate`, stop. Show `profile.sourceContent`, `compiledContent`, `validation`, `diffFromActive`, `generatedBy`, `sourceDigest`, and `compiledDigest` to the user or project owner. If the user edits the harness, write the edited YAML/JSON to a file and run `harness profile validate`, `harness profile diff`, and `harness profile apply`; then use the `profile.version` returned by `apply` as `<harness-version>`. Activate only the reviewed version.
 

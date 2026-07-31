@@ -138,7 +138,9 @@ run override --llm-profile -> project default LLM -> server global default LLM
 
 For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
 
-Administrator template maintenance is separate from daily project execution. Agents should normally consume an existing template through `harness profile generate --from-template ...`. Administrators can list, inspect, and publish template versions:
+Administrator template maintenance is separate from daily project execution. Agents should normally consume an existing template through `harness profile generate --from-template ...`. Fresh installs include multiple built-in template types: `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`.
+
+Administrators can list, inspect, and publish template versions:
 
 ```bash
 evopilot harness template list --json
@@ -149,7 +151,7 @@ evopilot harness template apply \
   --json
 ```
 
-Template files use `schema: evopilot-harness-template/v1` and include `id`, `version`, capabilities, runtime patterns, validation baseline, evidence contract, failure taxonomy, diagnostics, observability, governance, phase mapping, LLM draft policy, and changelog. EvoPilot computes the digest and stores the version in the control plane. Reusing an existing `id@version` returns `HARNESS_TEMPLATE_VERSION_EXISTS` unless the admin passes `--force`. Template updates never rewrite an active `ProjectHarnessProfile`; they become effective for a project only after a generated or upgraded profile revision is reviewed and activated.
+Template files use `schema: evopilot-harness-template/v1` and include `id`, `version`, capabilities, runtime patterns, validation baseline, evidence contract, failure taxonomy, diagnostics, observability, governance, phase mapping, LLM draft policy, source references, and changelog. YAML or JSON is authoritative; Markdown is documentation only. EvoPilot computes the digest and stores the version in the control plane. Reusing an existing `id@version` returns `HARNESS_TEMPLATE_VERSION_EXISTS` unless the admin passes `--force`. Template updates never rewrite an active `ProjectHarnessProfile`; they become effective for a project only after a generated or upgraded profile revision is reviewed and activated.
 
 Generate and confirm the project harness profile before phase planning:
 

@@ -88,6 +88,7 @@ After registration, verify persisted readiness:
 
 ```bash
 evopilot project onboard verify <project-id> --json
+evopilot harness template list --json
 evopilot harness profile generate \
   --project <project-id> \
   --from-template python-enterprise-harness \
@@ -99,6 +100,8 @@ evopilot target plan --project <project-id> --objective "Enable the requested bu
 ```
 
 `ProjectHarnessProfile` is a project-level control-plane definition. It is generated or imported as YAML/JSON, validated by the server, activated explicitly, and then bound into `GoalPlan.projectHarness` by version and digest.
+
+Fresh installs include multiple built-in template harnesses: `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. Inspect `sourceReferences[]` to see the public projects, official specifications, or engineering-practice sources used to initialize a template. The authoritative template format is YAML or JSON; Markdown is documentation only.
 
 Administrators can publish or replace template harness versions through the server-governed CLI:
 

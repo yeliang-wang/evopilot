@@ -288,6 +288,13 @@ interface HarnessTemplateChangelogEntry {
   changes: string[];
 }
 
+interface HarnessTemplateSourceReference {
+  name: string;
+  url?: string;
+  category: "github" | "official-doc" | "engineering-practice";
+  rationale: string;
+}
+
 interface HarnessTemplateProfile {
   schema: "evopilot-harness-template/v1";
   id: string;
@@ -307,6 +314,7 @@ interface HarnessTemplateProfile {
   governanceRules: Record<string, unknown>;
   phaseMapping: Record<MaturityPhase, string[]>;
   llmDraftPolicy: Record<string, unknown>;
+  sourceReferences: HarnessTemplateSourceReference[];
   changelog: HarnessTemplateChangelogEntry[];
   createdAt: string;
   updatedAt: string;
@@ -10789,130 +10797,497 @@ function targetEvidence(target: Pick<LoopOrchestrationTarget, "id" | "layer" | "
 }
 
 function defaultHarnessTemplates(): HarnessTemplateProfile[] {
-  return [hydrateHarnessTemplate({
-    schema: "evopilot-harness-template/v1",
-    id: "python-enterprise-harness",
-    version: "1.0.0",
-    digest: "",
-    name: "Python Enterprise Harness",
-    description: "Platform baseline for enterprise Python projects: capability boundaries, validation, evidence, diagnostics, observability, failure handling, and release governance.",
-    scope: "platform",
-    languageFamily: "python",
-    capabilities: [
-      {
-        id: "source-boundary",
-        name: "Source and workspace boundary",
-        boundary: "Project source, credentials, tenant, workspace, branch, writeback, and read-only mode are explicit before execution.",
-        requiredEvidence: ["project-registration", "source-readiness-preflight", "credential-or-read-only-boundary"]
-      },
-      {
+  return builtInHarnessTemplateInputs().map(hydrateHarnessTemplate);
+}
+
+function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "digest"> & { digest?: string }> {
+  const createdAt = "2026-07-31T00:00:00.000Z";
+  return [
+    builtInHarnessTemplate({
+      id: "python-enterprise-harness",
+      name: "Python Enterprise Harness",
+      description: "Platform baseline for enterprise Python projects: capability boundaries, validation, evidence, diagnostics, observability, failure handling, and release governance.",
+      languageFamily: "python",
+      runtimeCapability: {
         id: "python-runtime",
         name: "Python runtime harness",
         boundary: "Install, lint, type, unit, smoke, package, and service readiness commands are declared by the project profile.",
         requiredEvidence: ["install-output", "lint-output", "typecheck-output", "unit-output", "smoke-output"]
       },
-      {
-        id: "test-and-quality",
-        name: "Test and quality gates",
-        boundary: "GoalTargets must prove tests, coverage expectations, interface contracts, and regression scope through command evidence.",
-        requiredEvidence: ["test-report", "coverage-or-risk-acceptance", "contract-check"]
+      runtimePatterns: {
+        language: "python",
+        packageManagers: ["uv", "pip", "poetry"],
+        architectureStyles: ["ddd-application-service", "api-service", "async-worker"],
+        defaultCommands: {
+          install: ["uv sync", "pip install -e ."],
+          lint: ["ruff check ."],
+          typecheck: ["mypy ."],
+          unit: ["pytest"],
+          smoke: ["pytest -q tests"]
+        },
+        service: {
+          healthPath: "/health",
+          readinessTimeoutSeconds: 60
+        }
       },
-      {
-        id: "failure-diagnostics",
-        name: "Failure diagnostics",
-        boundary: "Failures are classified with command, stack trace, logs, suspected root cause, owner, next action, and verification plan.",
-        requiredEvidence: ["failure-classification", "root-cause-note", "repair-verification"]
+      validationBaseline: {
+        requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke"],
+        contractChecks: ["openapi-or-interface-contract", "repository-boundary", "dependency-lock"],
+        coverageExpectation: "project-profile-defined",
+        commandEvidenceRequired: true,
+        realBoundaryEvidenceRequired: true,
+        noMockEvidenceForReleaseClaims: true
       },
-      {
-        id: "observability",
-        name: "Observability",
-        boundary: "Runtime health, readiness, logs, metrics, traces, and alert signals are bound before Beta/RC/GA claims.",
-        requiredEvidence: ["health-check", "runtime-log", "metric-or-trace-proof", "alert-route"]
+      phaseMapping: {
+        alpha: ["source-boundary", "python-runtime", "failure-diagnostics"],
+        beta: ["test-and-quality", "observability", "failure-diagnostics"],
+        rc: ["observability", "release-governance", "test-and-quality"],
+        ga: ["release-governance", "observability", "source-boundary"]
       },
-      {
-        id: "release-governance",
-        name: "Release governance",
-        boundary: "TargetEvidencePackage, PhasePackage, source closure, release evidence, and product-native ReleaseDecision are required before GA.",
-        requiredEvidence: ["target-evidence-package", "phase-package", "source-closure", "release-decision"]
-      }
-    ],
-    runtimePatterns: {
-      language: "python",
-      packageManagers: ["uv", "pip", "poetry"],
-      defaultCommands: {
-        install: ["uv sync", "pip install -e ."],
-        lint: ["ruff check ."],
-        typecheck: ["mypy ."],
-        unit: ["pytest"],
-        smoke: ["pytest -q tests"]
+      sourceReferences: [
+        referenceSource("FastAPI", "https://github.com/fastapi/fastapi", "github", "Python API service conventions, OpenAPI ergonomics, dependency injection, validation, and testable service boundaries."),
+        referenceSource("FastAPI Full Stack Template", "https://github.com/fastapi/full-stack-fastapi-template", "github", "Python web application project layout, test/runtime defaults, and operational service assumptions."),
+        referenceSource("Enterprise Python service practice", undefined, "engineering-practice", "Typed runtime commands, dependency locks, command evidence, error classification, and health/readiness controls.")
+      ],
+      changelogSummary: "Initial Python enterprise harness template.",
+      createdAt
+    }),
+    builtInHarnessTemplate({
+      id: "java-ddd-service-harness",
+      name: "Java DDD Service Harness",
+      description: "Platform baseline for Java services that need tactical DDD, layered modules, API contracts, integration tests, diagnostics, and release governance.",
+      languageFamily: "java",
+      runtimeCapability: {
+        id: "java-runtime",
+        name: "Java runtime harness",
+        boundary: "Build, static analysis, unit, integration, contract, package, and JVM service readiness commands are explicit.",
+        requiredEvidence: ["build-output", "unit-output", "integration-output", "contract-output", "jvm-runtime-log"]
       },
-      service: {
-        healthPath: "/health",
-        readinessTimeoutSeconds: 60
-      }
+      extraCapabilities: [
+        {
+          id: "ddd-boundaries",
+          name: "DDD module boundaries",
+          boundary: "Domain, application, infrastructure, and interface adapters remain explicit; aggregate and repository contracts are reviewable.",
+          requiredEvidence: ["module-boundary-report", "aggregate-contract", "repository-contract"]
+        }
+      ],
+      runtimePatterns: {
+        language: "java",
+        buildTools: ["maven", "gradle"],
+        architectureStyles: ["tactical-ddd", "hexagonal", "spring-boot-service"],
+        defaultCommands: {
+          install: ["./mvnw -q -DskipTests package", "./gradlew assemble"],
+          lint: ["./mvnw -q checkstyle:check", "./gradlew check"],
+          typecheck: ["./mvnw -q -DskipTests compile", "./gradlew classes"],
+          unit: ["./mvnw test", "./gradlew test"],
+          smoke: ["./mvnw verify", "./gradlew integrationTest"]
+        },
+        service: {
+          healthPath: "/actuator/health",
+          readinessTimeoutSeconds: 90
+        }
+      },
+      validationBaseline: {
+        requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke"],
+        requiredBoundaries: ["domain", "application", "infrastructure", "interfaces"],
+        contractChecks: ["openapi", "repository-contract", "aggregate-invariant"],
+        commandEvidenceRequired: true,
+        realBoundaryEvidenceRequired: true,
+        noMockEvidenceForReleaseClaims: true
+      },
+      phaseMapping: {
+        alpha: ["source-boundary", "java-runtime", "ddd-boundaries", "failure-diagnostics"],
+        beta: ["test-and-quality", "ddd-boundaries", "observability"],
+        rc: ["observability", "release-governance", "test-and-quality"],
+        ga: ["release-governance", "observability", "source-boundary"]
+      },
+      sourceReferences: [
+        referenceSource("Spring Boot", "https://github.com/spring-projects/spring-boot", "github", "Java service runtime conventions, actuator-style health/readiness, build/test lifecycle, and application packaging."),
+        referenceSource("Microsoft tactical DDD guidance", "https://learn.microsoft.com/en-us/azure/architecture/microservices/model/tactical-domain-driven-design", "official-doc", "Aggregate, entity, value object, repository, and domain service concepts for tactical service design."),
+        referenceSource("Enterprise Java service practice", undefined, "engineering-practice", "Layered boundaries, contract tests, integration tests, dependency governance, JVM diagnostics, and release gates.")
+      ],
+      changelogSummary: "Initial Java DDD service harness template.",
+      createdAt
+    }),
+    builtInHarnessTemplate({
+      id: "node-saas-control-plane-harness",
+      name: "Node SaaS Control Plane Harness",
+      description: "Platform baseline for Node.js SaaS control planes: tenancy, workspace scope, RBAC, API contracts, queues, audit, observability, and release governance.",
+      languageFamily: "node",
+      runtimeCapability: {
+        id: "node-runtime",
+        name: "Node runtime harness",
+        boundary: "Install, lint, type, unit, API, worker, build, and service readiness commands are declared before execution.",
+        requiredEvidence: ["install-output", "lint-output", "typecheck-output", "unit-output", "api-contract-output", "worker-output"]
+      },
+      extraCapabilities: [
+        {
+          id: "saas-control-plane",
+          name: "SaaS control-plane boundaries",
+          boundary: "Tenant, workspace, RBAC, quota, audit, API, queue, and background worker contracts are explicit and evidence-backed.",
+          requiredEvidence: ["tenant-scope-test", "rbac-test", "audit-event", "queue-worker-proof"]
+        }
+      ],
+      runtimePatterns: {
+        language: "node",
+        packageManagers: ["npm", "pnpm", "yarn"],
+        architectureStyles: ["saas-control-plane", "api-worker", "evented-backend"],
+        defaultCommands: {
+          install: ["npm ci"],
+          lint: ["npm run lint --if-present"],
+          typecheck: ["npm run typecheck --if-present", "npm run build"],
+          unit: ["npm test"],
+          smoke: ["npm run smoke --if-present"],
+          functional: ["npm run test:functional --if-present"]
+        },
+        service: {
+          healthPath: "/health",
+          readinessTimeoutSeconds: 60
+        }
+      },
+      validationBaseline: {
+        requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke"],
+        requiredBoundaries: ["tenant", "workspace", "rbac", "audit", "api", "worker"],
+        contractChecks: ["openapi", "rbac-matrix", "tenant-isolation", "idempotency"],
+        commandEvidenceRequired: true,
+        realBoundaryEvidenceRequired: true,
+        noMockEvidenceForReleaseClaims: true
+      },
+      phaseMapping: {
+        alpha: ["source-boundary", "node-runtime", "saas-control-plane", "failure-diagnostics"],
+        beta: ["test-and-quality", "observability", "saas-control-plane"],
+        rc: ["observability", "release-governance", "test-and-quality"],
+        ga: ["release-governance", "observability", "source-boundary"]
+      },
+      sourceReferences: [
+        referenceSource("EvoPilot SaaS control-plane practice", undefined, "engineering-practice", "Tenant/workspace/RBAC/audit/queue/release-governance controls already used by EvoPilot production flows."),
+        referenceSource("Node.js service ecosystem practice", undefined, "engineering-practice", "Scriptable build/test/lint/typecheck lifecycle, API contracts, and worker runtime diagnostics."),
+        referenceSource("OpenTelemetry Specification", "https://github.com/open-telemetry/opentelemetry-specification", "github", "Telemetry signal model for traces, metrics, logs, baggage, and context propagation.")
+      ],
+      changelogSummary: "Initial Node SaaS control-plane harness template.",
+      createdAt
+    }),
+    builtInHarnessTemplate({
+      id: "go-middleware-harness",
+      name: "Go Middleware Harness",
+      description: "Platform baseline for Go middleware and infrastructure services: explicit APIs, concurrency, reliability, metrics, health, performance, and release governance.",
+      languageFamily: "go",
+      runtimeCapability: {
+        id: "go-runtime",
+        name: "Go runtime harness",
+        boundary: "Module download, fmt, vet, unit, race, integration, benchmark, build, and service readiness commands are explicit.",
+        requiredEvidence: ["mod-download-output", "fmt-output", "vet-output", "unit-output", "race-output", "build-output"]
+      },
+      extraCapabilities: [
+        {
+          id: "middleware-reliability",
+          name: "Middleware reliability boundary",
+          boundary: "Concurrency, idempotency, backpressure, config reload, storage/network dependency, and SLO behaviors are observable.",
+          requiredEvidence: ["race-test", "load-or-benchmark-proof", "slo-metric", "dependency-failure-proof"]
+        }
+      ],
+      runtimePatterns: {
+        language: "go",
+        packageManagers: ["go modules"],
+        architectureStyles: ["middleware", "control-loop", "infrastructure-service"],
+        defaultCommands: {
+          install: ["go mod download"],
+          lint: ["gofmt -w .", "go vet ./..."],
+          typecheck: ["go test ./... -run TestNonExistent"],
+          unit: ["go test ./..."],
+          smoke: ["go test ./... -race"],
+          functional: ["go test ./... -run Integration"]
+        },
+        service: {
+          healthPath: "/healthz",
+          readinessTimeoutSeconds: 60
+        }
+      },
+      validationBaseline: {
+        requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke"],
+        requiredBoundaries: ["api", "concurrency", "storage", "network", "config", "observability"],
+        contractChecks: ["api-compatibility", "race-safety", "metric-contract", "dependency-failure-mode"],
+        commandEvidenceRequired: true,
+        realBoundaryEvidenceRequired: true,
+        noMockEvidenceForReleaseClaims: true
+      },
+      phaseMapping: {
+        alpha: ["source-boundary", "go-runtime", "middleware-reliability", "failure-diagnostics"],
+        beta: ["test-and-quality", "middleware-reliability", "observability"],
+        rc: ["observability", "release-governance", "test-and-quality"],
+        ga: ["release-governance", "observability", "source-boundary"]
+      },
+      sourceReferences: [
+        referenceSource("Kubernetes", "https://github.com/kubernetes/kubernetes", "github", "Go control-loop, API, health, config, controller, and reliability patterns for infrastructure software."),
+        referenceSource("Prometheus", "https://github.com/prometheus/prometheus", "github", "Go monitoring/middleware service practices, metrics, reliability, storage, and operational evidence."),
+        referenceSource("Infrastructure middleware practice", undefined, "engineering-practice", "Concurrency, race detection, config reload, backpressure, and SLO-oriented release gates.")
+      ],
+      changelogSummary: "Initial Go middleware harness template.",
+      createdAt
+    }),
+    builtInHarnessTemplate({
+      id: "observability-apm-harness",
+      name: "Observability APM Harness",
+      description: "Platform baseline for observability and APM systems: telemetry signal contracts, instrumentation, ingestion, query, storage, alerting, and production diagnostics.",
+      languageFamily: "generic",
+      runtimeCapability: {
+        id: "telemetry-runtime",
+        name: "Telemetry runtime harness",
+        boundary: "Telemetry ingestion, storage, query, UI/API, alert, and collector/agent commands are declared by the project profile.",
+        requiredEvidence: ["collector-output", "ingestion-proof", "query-proof", "alert-proof", "storage-proof"]
+      },
+      extraCapabilities: [
+        {
+          id: "telemetry-signal-contract",
+          name: "Telemetry signal contract",
+          boundary: "Trace, metric, log, context, resource, sampling, cardinality, and retention behaviors are explicit.",
+          requiredEvidence: ["trace-sample", "metric-sample", "log-sample", "cardinality-review", "retention-policy"]
+        }
+      ],
+      runtimePatterns: {
+        language: "generic",
+        architectureStyles: ["apm", "observability-platform", "collector-pipeline"],
+        defaultCommands: {
+          install: ["make deps", "npm ci", "go mod download"],
+          lint: ["make lint"],
+          typecheck: ["make build"],
+          unit: ["make test"],
+          smoke: ["make smoke"],
+          functional: ["make e2e"]
+        },
+        service: {
+          healthPath: "/health",
+          readinessTimeoutSeconds: 120
+        }
+      },
+      validationBaseline: {
+        requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke"],
+        requiredBoundaries: ["collector", "ingestion", "storage", "query", "alerting", "ui-api"],
+        contractChecks: ["trace-contract", "metric-contract", "log-contract", "apm-query-contract", "retention"],
+        commandEvidenceRequired: true,
+        realBoundaryEvidenceRequired: true,
+        noMockEvidenceForReleaseClaims: true
+      },
+      phaseMapping: {
+        alpha: ["source-boundary", "telemetry-runtime", "telemetry-signal-contract", "failure-diagnostics"],
+        beta: ["test-and-quality", "observability", "telemetry-signal-contract"],
+        rc: ["observability", "release-governance", "test-and-quality"],
+        ga: ["release-governance", "observability", "source-boundary"]
+      },
+      sourceReferences: [
+        referenceSource("OpenTelemetry Specification", "https://github.com/open-telemetry/opentelemetry-specification", "github", "Telemetry signal definitions for traces, metrics, logs, baggage, resources, and context propagation."),
+        referenceSource("Apache SkyWalking", "https://github.com/apache/skywalking", "github", "APM-oriented service topology, trace/metric/log analysis, storage, query, and UI operating concerns."),
+        referenceSource("Prometheus", "https://github.com/prometheus/prometheus", "github", "Metrics, alerting, query, scrape, and time-series operational model.")
+      ],
+      changelogSummary: "Initial observability and APM harness template.",
+      createdAt
+    }),
+    builtInHarnessTemplate({
+      id: "generic-management-software-harness",
+      name: "Generic Management Software Harness",
+      description: "Platform baseline for enterprise management software: users, roles, workflow, audit, reporting, integrations, imports/exports, operations, and release governance.",
+      languageFamily: "generic",
+      runtimeCapability: {
+        id: "management-runtime",
+        name: "Management software runtime harness",
+        boundary: "API/UI/backend job/runtime commands are declared, with user workflow, audit, import/export, and report evidence.",
+        requiredEvidence: ["api-output", "workflow-proof", "audit-proof", "report-proof", "integration-proof"]
+      },
+      extraCapabilities: [
+        {
+          id: "business-workflow-boundary",
+          name: "Business workflow boundary",
+          boundary: "Core business workflows, RBAC, approval, data import/export, reports, and external integrations are explicit.",
+          requiredEvidence: ["workflow-case", "rbac-case", "approval-case", "import-export-case", "integration-case"]
+        }
+      ],
+      runtimePatterns: {
+        language: "generic",
+        architectureStyles: ["management-software", "workflow-system", "enterprise-admin"],
+        defaultCommands: {
+          install: ["make install", "npm ci", "uv sync"],
+          lint: ["make lint"],
+          typecheck: ["make build"],
+          unit: ["make test"],
+          smoke: ["make smoke"],
+          functional: ["make test:functional"]
+        },
+        service: {
+          healthPath: "/health",
+          readinessTimeoutSeconds: 90
+        }
+      },
+      validationBaseline: {
+        requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke"],
+        requiredBoundaries: ["rbac", "workflow", "audit", "reporting", "integration", "data-import-export"],
+        contractChecks: ["api-contract", "rbac-matrix", "workflow-state-machine", "audit-trail", "report-reconciliation"],
+        commandEvidenceRequired: true,
+        realBoundaryEvidenceRequired: true,
+        noMockEvidenceForReleaseClaims: true
+      },
+      phaseMapping: {
+        alpha: ["source-boundary", "management-runtime", "business-workflow-boundary", "failure-diagnostics"],
+        beta: ["test-and-quality", "business-workflow-boundary", "observability"],
+        rc: ["observability", "release-governance", "test-and-quality"],
+        ga: ["release-governance", "observability", "source-boundary"]
+      },
+      sourceReferences: [
+        referenceSource("Enterprise management software practice", undefined, "engineering-practice", "RBAC, approval, workflow, audit, reporting, import/export, integration, and operator diagnostics."),
+        referenceSource("Microsoft tactical DDD guidance", "https://learn.microsoft.com/en-us/azure/architecture/microservices/model/tactical-domain-driven-design", "official-doc", "Domain modeling, aggregate boundaries, repositories, and business invariant framing."),
+        referenceSource("OpenTelemetry Specification", "https://github.com/open-telemetry/opentelemetry-specification", "github", "Logs, metrics, traces, and context fields for operator troubleshooting.")
+      ],
+      changelogSummary: "Initial generic management software harness template.",
+      createdAt
+    })
+  ];
+}
+
+function builtInHarnessTemplate(input: {
+  id: string;
+  name: string;
+  description: string;
+  languageFamily: HarnessTemplateProfile["languageFamily"];
+  runtimeCapability: HarnessCapabilityDefinition;
+  extraCapabilities?: HarnessCapabilityDefinition[];
+  runtimePatterns: Record<string, unknown>;
+  validationBaseline: Record<string, unknown>;
+  phaseMapping: Record<MaturityPhase, string[]>;
+  sourceReferences: HarnessTemplateSourceReference[];
+  changelogSummary: string;
+  createdAt: string;
+}): Omit<HarnessTemplateProfile, "digest"> & { digest?: string } {
+  const capabilities: HarnessCapabilityDefinition[] = [
+    {
+      id: "source-boundary",
+      name: "Source and workspace boundary",
+      boundary: "Project source, credentials, tenant, workspace, branch, writeback, and read-only mode are explicit before execution.",
+      requiredEvidence: ["project-registration", "source-readiness-preflight", "credential-or-read-only-boundary"]
     },
-    validationBaseline: {
-      requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke"],
-      commandEvidenceRequired: true,
-      realBoundaryEvidenceRequired: true,
-      noMockEvidenceForReleaseClaims: true
+    input.runtimeCapability,
+    ...(input.extraCapabilities ?? []),
+    {
+      id: "test-and-quality",
+      name: "Test and quality gates",
+      boundary: "GoalTargets must prove tests, coverage expectations, interface contracts, and regression scope through command evidence.",
+      requiredEvidence: ["test-report", "coverage-or-risk-acceptance", "contract-check"]
     },
-    evidenceContract: {
-      format: "json",
-      requiredArtifacts: ["target-evidence-package", "phase-package", "goal-completion-report"],
-      requiredEvidence: ["command", "exit-code", "stdout-or-log", "changed-files", "ci-status-or-local-proof"],
-      retention: "control-plane"
+    {
+      id: "failure-diagnostics",
+      name: "Failure diagnostics",
+      boundary: "Failures are classified with command, stack trace, logs, suspected root cause, owner, next action, and verification plan.",
+      requiredEvidence: ["failure-classification", "root-cause-note", "repair-verification"]
     },
-    failureTaxonomy: {
-      categories: ["dependency", "environment", "syntax", "type", "test", "contract", "security", "performance", "deploy", "observability", "governance", "unknown"],
-      requiresOwner: true,
-      requiresNextAction: true,
-      requiresReproduction: true
+    {
+      id: "observability",
+      name: "Observability",
+      boundary: "Runtime health, readiness, logs, metrics, traces, APM signals, and alert routes are bound before Beta/RC/GA claims.",
+      requiredEvidence: ["health-check", "runtime-log", "metric-or-trace-proof", "alert-route"]
     },
-    diagnosticsBaseline: {
-      requiredSignals: ["failing-command", "exit-code", "stack-trace-or-log", "changed-files", "runtime-env", "dependency-lock"],
-      rootCauseFields: ["symptom", "hypothesis", "evidence", "fix", "verification"]
-    },
-    observabilityBaseline: {
-      requiredSignals: ["health", "readiness", "logs", "metrics", "traces", "alerts"],
-      productionHealthRequired: true,
-      gaRequiresLiveHealthEvidence: true
-    },
-    governanceRules: {
-      tenantWorkspaceScopeRequired: true,
-      targetPlanRequiresApproval: true,
-      profileActivationRequiresApproval: true,
-      promotionRequiresReleaseDecision: true,
-      sourceClosureRequired: true,
-      noSilentProfileMutation: true,
-      mandatoryGates: ["project-harness-profile-active", "target-plan-user-confirmed", "target-evidence-package", "phase-package", "source-closure", "release-decision"],
-      cannotWeaken: ["tenantWorkspaceScopeRequired", "targetPlanRequiresApproval", "profileActivationRequiresApproval", "promotionRequiresReleaseDecision", "sourceClosureRequired", "noSilentProfileMutation"]
-    },
-    phaseMapping: {
-      alpha: ["source-boundary", "python-runtime", "failure-diagnostics"],
-      beta: ["test-and-quality", "observability", "failure-diagnostics"],
-      rc: ["observability", "release-governance", "test-and-quality"],
-      ga: ["release-governance", "observability", "source-boundary"]
-    },
-    llmDraftPolicy: {
-      enabled: true,
-      generatedStatus: "DRAFT",
-      requireUserReview: true,
-      activationRequiresAdmin: true,
-      reonboardingUsesPreviousActiveProfile: true,
-      allowedToSuggestProfileRevision: true,
-      allowedToSilentlyModifyActiveProfile: false
-    },
+    {
+      id: "release-governance",
+      name: "Release governance",
+      boundary: "TargetEvidencePackage, PhasePackage, source closure, release evidence, and product-native ReleaseDecision are required before GA.",
+      requiredEvidence: ["target-evidence-package", "phase-package", "source-closure", "release-decision"]
+    }
+  ];
+  return {
+    schema: "evopilot-harness-template/v1",
+    id: input.id,
+    version: "1.0.0",
+    digest: "",
+    name: input.name,
+    description: input.description,
+    scope: "platform",
+    languageFamily: input.languageFamily,
+    capabilities,
+    runtimePatterns: input.runtimePatterns,
+    validationBaseline: input.validationBaseline,
+    evidenceContract: defaultHarnessEvidenceContract(),
+    failureTaxonomy: defaultHarnessFailureTaxonomy(),
+    diagnosticsBaseline: defaultHarnessDiagnosticsBaseline(),
+    observabilityBaseline: defaultHarnessObservabilityBaseline(),
+    governanceRules: defaultHarnessGovernanceRules(),
+    phaseMapping: input.phaseMapping,
+    llmDraftPolicy: defaultHarnessLlmDraftPolicy(),
+    sourceReferences: input.sourceReferences,
     changelog: [{
       version: "1.0.0",
-      changedAt: "2026-07-31T00:00:00.000Z",
+      changedAt: input.createdAt,
       changedBy: "evopilot",
-      summary: "Initial Python enterprise harness template.",
-      changes: ["Initial Python enterprise harness template."]
+      summary: input.changelogSummary,
+      changes: [input.changelogSummary]
     }],
-    createdAt: "2026-07-31T00:00:00.000Z",
-    updatedAt: "2026-07-31T00:00:00.000Z"
-  })];
+    createdAt: input.createdAt,
+    updatedAt: input.createdAt
+  };
+}
+
+function defaultHarnessEvidenceContract(): Record<string, unknown> {
+  return {
+    format: "json",
+    requiredArtifacts: ["target-evidence-package", "phase-package", "goal-completion-report"],
+    requiredEvidence: ["command", "exit-code", "stdout-or-log", "changed-files", "ci-status-or-local-proof", "api-or-interface-contract", "observability-signal"],
+    retention: "control-plane"
+  };
+}
+
+function defaultHarnessFailureTaxonomy(): Record<string, unknown> {
+  return {
+    categories: ["dependency", "environment", "syntax", "type", "test", "contract", "security", "performance", "deploy", "observability", "governance", "unknown"],
+    requiresOwner: true,
+    requiresNextAction: true,
+    requiresReproduction: true
+  };
+}
+
+function defaultHarnessDiagnosticsBaseline(): Record<string, unknown> {
+  return {
+    requiredSignals: ["failing-command", "exit-code", "stack-trace-or-log", "changed-files", "runtime-env", "dependency-lock"],
+    rootCauseFields: ["symptom", "hypothesis", "evidence", "fix", "verification"]
+  };
+}
+
+function defaultHarnessObservabilityBaseline(): Record<string, unknown> {
+  return {
+    requiredSignals: ["health", "readiness", "logs", "metrics", "traces", "apm", "alerts"],
+    logLevels: ["debug", "info", "warn", "error"],
+    productionHealthRequired: true,
+    gaRequiresLiveHealthEvidence: true
+  };
+}
+
+function defaultHarnessGovernanceRules(): Record<string, unknown> {
+  return {
+    tenantWorkspaceScopeRequired: true,
+    targetPlanRequiresApproval: true,
+    profileActivationRequiresApproval: true,
+    promotionRequiresReleaseDecision: true,
+    sourceClosureRequired: true,
+    noSilentProfileMutation: true,
+    mandatoryGates: ["project-harness-profile-active", "target-plan-user-confirmed", "target-evidence-package", "phase-package", "source-closure", "release-decision"],
+    cannotWeaken: ["tenantWorkspaceScopeRequired", "targetPlanRequiresApproval", "profileActivationRequiresApproval", "promotionRequiresReleaseDecision", "sourceClosureRequired", "noSilentProfileMutation"]
+  };
+}
+
+function defaultHarnessLlmDraftPolicy(): Record<string, unknown> {
+  return {
+    enabled: true,
+    generatedStatus: "DRAFT",
+    requireUserReview: true,
+    activationRequiresAdmin: true,
+    reonboardingUsesPreviousActiveProfile: true,
+    allowedToSuggestProfileRevision: true,
+    allowedToSilentlyModifyActiveProfile: false
+  };
+}
+
+function referenceSource(name: string, url: string | undefined, category: HarnessTemplateSourceReference["category"], rationale: string): HarnessTemplateSourceReference {
+  return {
+    name,
+    ...(url ? { url } : {}),
+    category,
+    rationale
+  };
 }
 
 function parseHarnessTemplateApplyPayload(input: unknown, actor: string): HarnessTemplateProfile {
@@ -10987,6 +11362,7 @@ function hydrateHarnessTemplate(input: unknown): HarnessTemplateProfile {
     governanceRules: recordObject(record.governanceRules),
     phaseMapping,
     llmDraftPolicy: recordObject(record.llmDraftPolicy),
+    sourceReferences: hydrateHarnessTemplateSourceReferences(record.sourceReferences),
     changelog: hydrateHarnessTemplateChangelog(record.changelog, String(record.version ?? "1.0.0"), String(record.updatedAt ?? now)),
     createdAt: String(record.createdAt ?? now),
     updatedAt: String(record.updatedAt ?? record.createdAt ?? now)
@@ -11027,6 +11403,28 @@ function hydrateHarnessTemplateChangelog(value: unknown, fallbackVersion: string
       };
     })
     .filter((entry): entry is HarnessTemplateChangelogEntry => Boolean(entry));
+}
+
+function hydrateHarnessTemplateSourceReferences(value: unknown): HarnessTemplateSourceReference[] {
+  const raw = Array.isArray(value) ? value : [];
+  return raw
+    .map((item): HarnessTemplateSourceReference | undefined => {
+      const record = isRecord(item) ? item : {};
+      const name = optionalTrimmedString(record.name ?? record.id ?? record.title);
+      const rationale = optionalTrimmedString(record.rationale ?? record.reason ?? record.description);
+      if (!name || !rationale) return undefined;
+      const categoryValue = String(record.category ?? record.type ?? "engineering-practice").trim();
+      const category: HarnessTemplateSourceReference["category"] = categoryValue === "github" || categoryValue === "official-doc"
+        ? categoryValue
+        : "engineering-practice";
+      return {
+        name,
+        url: optionalTrimmedString(record.url ?? record.href),
+        category,
+        rationale
+      };
+    })
+    .filter((reference): reference is HarnessTemplateSourceReference => Boolean(reference));
 }
 
 function hydrateHarnessCapabilities(value: unknown): HarnessCapabilityDefinition[] {
@@ -11273,32 +11671,36 @@ function deterministicProjectHarnessProfileSource(project: StoredProject, templa
   const profileId = safeFileName(String(body.profileId ?? "default"));
   const goalLoopTarget = optionalTrimmedString(body.goalLoopTarget ?? body.objective ?? body.target ?? body.prompt);
   const projectRuntime = project.runtime;
+  const defaultCommands = harnessTemplateDefaultCommands(template);
+  const templateService = recordObject(template.runtimePatterns.service);
+  const language = projectRuntime?.language ?? template.languageFamily;
+  const requiredCommandGroups = normalizeStringList(template.validationBaseline.requiredCommandGroups, ["install", "unit", "smoke"]);
   return {
     schema: "evopilot-project-harness-profile/v1",
     profileId,
     projectId: project.id,
     tenantId: project.tenantId,
     workspaceId: project.workspaceId,
-    name: String(body.name ?? `${project.name} Python Harness Profile`),
+    name: String(body.name ?? `${project.name} ${template.name} Profile`),
     description: goalLoopTarget
       ? `Project-level harness profile generated for goal loop target: ${goalLoopTarget}`
-      : "Project-level harness profile generated from the platform Python enterprise template.",
+      : `Project-level harness profile generated from ${template.id}@${template.version}.`,
     template: harnessTemplateRef(template),
     capabilities: template.capabilities,
     runtime: {
-      language: projectRuntime?.language ?? "python",
-      installCommands: projectRuntime?.installCommands ?? ["uv sync", "pip install -e ."],
-      lintCommands: ["ruff check ."],
-      typecheckCommands: ["mypy ."],
-      unitCommands: projectRuntime?.unitCommands ?? ["pytest"],
-      smokeCommands: projectRuntime?.smokeCommands ?? ["pytest -q tests"],
-      functionalCommands: projectRuntime?.functionalCommands ?? [],
-      service: projectRuntime?.service,
+      language,
+      installCommands: projectRuntime?.installCommands ?? defaultCommands.install,
+      lintCommands: defaultCommands.lint,
+      typecheckCommands: defaultCommands.typecheck,
+      unitCommands: projectRuntime?.unitCommands ?? defaultCommands.unit,
+      smokeCommands: projectRuntime?.smokeCommands ?? defaultCommands.smoke,
+      functionalCommands: projectRuntime?.functionalCommands ?? defaultCommands.functional,
+      service: projectRuntime?.service ?? templateService,
       repositoryProvider: project.repository?.provider ?? "unknown",
       devopsProvider: project.devops?.provider ?? "unknown"
     },
     validation: {
-      requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke"],
+      requiredCommandGroups,
       commands: ["installCommands", "lintCommands", "typecheckCommands", "unitCommands", "smokeCommands"],
       requireExitCode: true,
       requireCommandOutput: true,
@@ -11315,16 +11717,16 @@ function deterministicProjectHarnessProfileSource(project: StoredProject, templa
       noSilentActiveProfileMutation: true
     },
     failureHandling: {
-      categories: ["dependency", "environment", "syntax", "type", "test", "contract", "security", "performance", "deploy", "observability", "governance", "unknown"],
+      categories: normalizeStringList(template.failureTaxonomy.categories, ["dependency", "environment", "test", "contract", "deploy", "observability", "governance", "unknown"]),
       requiredFields: ["failingCommand", "exitCode", "symptom", "rootCauseHypothesis", "owner", "nextAction", "verificationCommand"]
     },
     diagnostics: {
-      requiredSignals: ["failing-command", "exit-code", "stack-trace-or-log", "changed-files", "runtime-env", "dependency-lock"],
-      commands: ["python --version", "pip --version", "pytest --version"]
+      requiredSignals: normalizeStringList(template.diagnosticsBaseline.requiredSignals, ["failing-command", "exit-code", "stack-trace-or-log", "changed-files", "runtime-env"]),
+      commands: harnessTemplateDiagnosticCommands(template)
     },
     observability: {
-      requiredSignals: ["health", "readiness", "logs", "metrics", "traces", "alerts"],
-      healthCheck: projectRuntime?.service?.healthPath ?? "/health",
+      requiredSignals: normalizeStringList(template.observabilityBaseline.requiredSignals, ["health", "readiness", "logs", "metrics", "traces", "alerts"]),
+      healthCheck: projectRuntime?.service?.healthPath ?? optionalTrimmedString(templateService.healthPath) ?? "/health",
       gaRequiresLiveHealthEvidence: true
     },
     governance: {
@@ -11354,9 +11756,33 @@ function deterministicProjectHarnessProfileSource(project: StoredProject, templa
   };
 }
 
+function harnessTemplateDefaultCommands(template: HarnessTemplateProfile): Record<"install" | "lint" | "typecheck" | "unit" | "smoke" | "functional", string[]> {
+  const defaults = recordObject(template.runtimePatterns.defaultCommands);
+  return {
+    install: normalizeStringList(defaults.install, []),
+    lint: normalizeStringList(defaults.lint, []),
+    typecheck: normalizeStringList(defaults.typecheck, []),
+    unit: normalizeStringList(defaults.unit, []),
+    smoke: normalizeStringList(defaults.smoke, []),
+    functional: normalizeStringList(defaults.functional, [])
+  };
+}
+
+function harnessTemplateDiagnosticCommands(template: HarnessTemplateProfile): string[] {
+  const defaults: Record<HarnessTemplateProfile["languageFamily"], string[]> = {
+    python: ["python --version", "pip --version", "pytest --version"],
+    node: ["node --version", "npm --version"],
+    java: ["java -version", "./mvnw --version", "./gradlew --version"],
+    go: ["go version", "go env"],
+    generic: ["uname -a", "env | sort"]
+  };
+  const runtimeDiagnostics = normalizeStringList(recordObject(template.runtimePatterns).diagnosticCommands, []);
+  return runtimeDiagnostics.length > 0 ? runtimeDiagnostics : defaults[template.languageFamily];
+}
+
 function projectHarnessProfileGeneratorPrompt(project: StoredProject, template: HarnessTemplateProfile, body: Record<string, unknown>, previousActive?: ProjectHarnessProfileVersion): string {
   return [
-    "You are EvoPilot's ProjectHarnessProfile generator for enterprise Python projects.",
+    "You are EvoPilot's ProjectHarnessProfile generator for enterprise software projects.",
     "Return only one JSON object. Do not include Markdown.",
     "The generated profile is a DRAFT control-plane definition. It must be reviewable by a user and must not silently activate itself.",
     "Generate a project-level ProjectHarnessProfile from the goal loop target, the platform HarnessTemplate, project onboarding/runtime/devops/observability context, and any previous active profile.",
@@ -11373,7 +11799,7 @@ function projectHarnessProfileGeneratorPrompt(project: StoredProject, template: 
     "  \"description\": \"what this profile controls\",",
     "  \"template\": { \"templateId\": \"id\", \"version\": \"version\", \"digest\": \"sha256:...\" },",
     "  \"capabilities\": [{ \"id\": \"kebab-case\", \"name\": \"name\", \"boundary\": \"boundary\", \"requiredEvidence\": [\"evidence\"] }],",
-    "  \"runtime\": { \"language\": \"python\", \"installCommands\": [], \"lintCommands\": [], \"typecheckCommands\": [], \"unitCommands\": [], \"smokeCommands\": [], \"functionalCommands\": [] },",
+    "  \"runtime\": { \"language\": \"python|node|java|go|generic\", \"installCommands\": [], \"lintCommands\": [], \"typecheckCommands\": [], \"unitCommands\": [], \"smokeCommands\": [], \"functionalCommands\": [] },",
     "  \"validation\": { \"requiredCommandGroups\": [], \"commands\": [], \"requireExitCode\": true, \"requireCommandOutput\": true },",
     "  \"evidence\": { \"format\": \"json\", \"requiredArtifacts\": [], \"requiredEvidence\": [] },",
     "  \"rules\": { \"noSilentActiveProfileMutation\": true },",

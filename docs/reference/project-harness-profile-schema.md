@@ -4,7 +4,9 @@ This reference documents the YAML/JSON source profile accepted by the CLI and AP
 
 ## HarnessTemplate Source
 
-Administrators publish template harness versions as YAML or JSON through `evopilot harness template apply --file <template.yaml> --changelog <text> --json`. The file is a full template definition; different languages, architecture styles, or software types should use distinct template ids or versions.
+EvoPilot ships multiple built-in template harness types. Fresh installs expose `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness` through `evopilot harness template list --json`.
+
+Administrators publish template harness versions as YAML or JSON through `evopilot harness template apply --file <template.yaml> --changelog <text> --json`. The file is a full template definition; different languages, architecture styles, or software types should use distinct template ids or versions. Markdown can document a template, but Markdown is not the authoritative template format because the server must parse, validate, merge, version, and digest structured data.
 
 ```yaml
 schema: evopilot-harness-template/v1
@@ -14,6 +16,14 @@ name: Python Enterprise Harness
 description: Python enterprise harness baseline.
 scope: platform
 languageFamily: python
+sourceReferences:
+  - name: FastAPI
+    url: https://github.com/fastapi/fastapi
+    category: github
+    rationale: Python API service conventions and OpenAPI ergonomics.
+  - name: Enterprise Python service practice
+    category: engineering-practice
+    rationale: Typed runtime commands, dependency locks, command evidence, and health/readiness controls.
 capabilities:
   - id: python-runtime
     name: Python runtime harness

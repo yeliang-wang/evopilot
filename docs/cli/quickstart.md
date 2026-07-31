@@ -116,7 +116,9 @@ Continue only when source credentials, DevOps, and LLM readiness are `READY`.
 
 ## Admin: Maintain Template Harness
 
-Project onboarding consumes an already published template. Administrators can publish additional template ids or versions for different languages, architecture styles, or software types:
+Project onboarding consumes an already published template. Fresh installs include `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`.
+
+Administrators can publish additional template ids or versions for different languages, architecture styles, or software types:
 
 ```bash
 evopilot harness template list --json
@@ -127,7 +129,7 @@ evopilot harness template apply \
   --json
 ```
 
-The template file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. The server stores it in the control plane with a computed digest and changelog. Reusing the same `id@version` is rejected unless the administrator passes `--force`. Existing active project profiles are not silently rewritten; use `harness profile generate` or `harness profile upgrade` to create a reviewed project revision.
+The template file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown is documentation only. The server stores it in the control plane with a computed digest and changelog. Reusing the same `id@version` is rejected unless the administrator passes `--force`. Existing active project profiles are not silently rewritten; use `harness profile generate` or `harness profile upgrade` to create a reviewed project revision.
 
 ## 5. Generate And Confirm Project Harness Profile
 
@@ -142,7 +144,7 @@ evopilot harness profile generate \
   --json
 ```
 
-For a first onboarding, EvoPilot generates the DRAFT from the `python-enterprise-harness` template, the goal loop target, and project context. For a second onboarding or project evolution, EvoPilot also includes the previous active profile in the generation context and returns a diff-aware DRAFT.
+For a first onboarding, EvoPilot generates the DRAFT from the selected template, the goal loop target, and project context. Use `--from-template python-enterprise-harness` for Python projects, `java-ddd-service-harness` for Java DDD services, `go-middleware-harness` for Go infrastructure/middleware, and so on. For a second onboarding or project evolution, EvoPilot also includes the previous active profile in the generation context and returns a diff-aware DRAFT.
 
 Continue only when the JSON response shows:
 
