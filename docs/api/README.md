@@ -52,6 +52,32 @@ GET /api/v1/loops/{loopId}/trace-tree -> executor-step 节点中的 token/cost
 
 CLI、WorkBuddy 或 CI 调用 API 时可发送 `x-evopilot-client`、`x-evopilot-client-surface`、`x-evopilot-cli-command`、`x-evopilot-cli-step` 和 `x-evopilot-cli-version`。EvoPilot 结构化 HTTP 日志会在 `metadata.client` 中记录调用来源，并在 `metadata.llmUsage.request` 中记录本请求的 LLM token delta；通过响应 `requestId` 可以把 CLI step 与生产日志对齐。
 
+## Logging Settings
+
+```http
+GET /api/v1/settings/logging
+PUT /api/v1/settings/logging
+POST /api/v1/settings/logging
+```
+
+`GET /api/v1/settings/logging` 需要 viewer 权限，返回当前 EvoPilot 结构化日志设置：
+
+```json
+{
+  "schema": "evopilot-logging-settings/v1",
+  "level": "info",
+  "format": "json",
+  "includeStack": true,
+  "source": "control-plane",
+  "updatedBy": "tenant-admin",
+  "updatedAt": "2026-07-31T00:00:00.000Z"
+}
+```
+
+`PUT` 和 `POST` 需要 admin 权限，支持 `level=debug|info|warn|error` 和 `includeStack=true|false`。控制面设置会持久化到 `<dataRoot>/settings/logging.json` 并优先于 `EVOPILOT_LOG_LEVEL` / `EVOPILOT_LOG_STACK`。生产默认建议 `info`；排障时可以临时提升到 `debug`，收集同一 `requestId`、`projectId`、`goalId`、`loopId` 或 release id 的 JSON Lines 日志后恢复。
+
+结构化日志使用 `schema=evopilot-log/v1`，包含 `severity`、`category`、`routeGroup`、`outcome`、`errorCode`、`correlation.*`、`diagnosis.*` 和脱敏后的 `metadata`。Harness 相关事件使用 `category=harness`，包括 template 发布、重复版本拒绝、项目 profile 生成、校验失败、应用、激活、升级 DRAFT，以及 goal plan 是否绑定 active profile。
+
 ## LLM Profile 与项目绑定
 
 EvoPilot 支持 tenant/workspace 级 LLM Profile。Profile 用于声明公有或私有 OpenAI-compatible 模型的 provider、base URL、model、timeout、重试和 `apiKeyRef`。真实 API key 只保存在服务端环境变量或当前 tenant/workspace secret vault；API 响应不会回显明文。
@@ -359,6 +385,7 @@ GET /api/v1/projects/{projectId}/onboarding-checklist
 
 ```http
 GET /api/v1/harness/templates
+POST /api/v1/harness/templates
 GET /api/v1/harness/templates/{templateId}
 GET /api/v1/projects/{projectId}/harness-profiles
 POST /api/v1/projects/{projectId}/harness-profiles/generate
@@ -380,7 +407,9 @@ POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/upgrade
 
 项目仓库里的 `.evopilot/project.harness.yaml` 或 CLI `--file profile.yaml` 只是 import source。服务端会把 source profile 与 `HarnessTemplate` 合并成 compiled profile，并计算 `sourceDigest` 与 `compiledDigest`。`activate` 只允许激活校验通过的版本，并把同一 profile 的旧 `ACTIVE` 版本标记为 `SUPERSEDED`。
 
-内置 `python-enterprise-harness` 模板提供默认能力边界、Python runtime command groups、validation baseline、evidence contract、failure taxonomy、diagnostics、observability、release governance、Alpha/Beta/RC/GA phase mapping 和 LLM draft policy。项目 profile 可以绑定真实命令并增强规则，但不能关闭模板强制治理门禁，例如 `targetPlanRequiresApproval`、`profileActivationRequiresApproval`、`promotionRequiresReleaseDecision`、`sourceClosureRequired` 和 `noSilentProfileMutation`。
+内置 `python-enterprise-harness` 模板提供默认能力边界、Python runtime command groups、validation baseline、evidence contract、failure taxonomy、diagnostics、observability、release governance、Alpha/Beta/RC/GA phase mapping 和 LLM draft policy。管理员也可以通过 `POST /api/v1/harness/templates` 发布新的 template id 或版本，用于表达不同语言、架构范式或软件类型的 harness。模板写入要求 `id`、`version` 和当前版本 changelog；服务端计算 `digest` 并按 `<dataRoot>/harness-templates/<templateId>-<version>.json` 持久化。重复写入同一个 `id@version` 默认返回 `HARNESS_TEMPLATE_VERSION_EXISTS`，只有显式 `force=true` 才会替换该版本。已有 active `ProjectHarnessProfile` 不会因为模板更新被静默改写，必须通过 `generate` 或 `upgrade` 生成新的 profile revision 后再 review/activate。
+
+项目 profile 可以绑定真实命令并增强规则，但不能关闭模板强制治理门禁，例如 `targetPlanRequiresApproval`、`profileActivationRequiresApproval`、`promotionRequiresReleaseDecision`、`sourceClosureRequired` 和 `noSilentProfileMutation`。
 
 `generate` 会根据项目接入信息、可选 `goalLoopTarget`、模板、当前项目 runtime/devops/observability 以及已有 active profile 生成新版本。若配置了可用 LLM，则使用 LLM 生成结构化 JSON；若 debug 模式没有 LLM，则返回 deterministic-template DRAFT；若生产 `requireLlm=true` 且没有 READY LLM，则返回阻断。生成结果永远是 `DRAFT`，用户或管理员必须显式 review/validate/apply/activate。
 

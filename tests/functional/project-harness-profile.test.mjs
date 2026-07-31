@@ -5,9 +5,165 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import test from "node:test";
+import { parse as parseYaml } from "yaml";
 import { createServer } from "../../packages/server/dist/index.js";
 
 const cliPath = path.resolve("packages/cli/dist/index.js");
+
+test("HarnessTemplate API and CLI apply versioned templates with changelog", async () => {
+  assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-template-"));
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-template-repo-"));
+  fs.writeFileSync(path.join(repoRoot, "pyproject.toml"), "[project]\nname = \"template-agent\"\nversion = \"0.1.0\"\n");
+  const templateFile = path.join(dataRoot, "template.yaml");
+  fs.writeFileSync(templateFile, [
+    "schema: evopilot-harness-template/v1",
+    "id: python-enterprise-harness",
+    "version: 1.1.0",
+    "name: Python Enterprise Harness",
+    "description: Python enterprise harness with explicit admin-managed template versioning.",
+    "scope: platform",
+    "languageFamily: python",
+    "capabilities:",
+    "  - id: source-boundary",
+    "    name: Source and workspace boundary",
+    "    boundary: Tenant, workspace, repository, branch, and writeback boundaries are explicit.",
+    "    requiredEvidence:",
+    "      - project-registration",
+    "      - source-readiness-preflight",
+    "  - id: python-runtime",
+    "    name: Python runtime harness",
+    "    boundary: Python install, lint, type, unit, and smoke commands are declared.",
+    "    requiredEvidence:",
+    "      - install-output",
+    "      - unit-output",
+    "runtimePatterns:",
+    "  language: python",
+    "  defaultCommands:",
+    "    install:",
+    "      - uv sync",
+    "    unit:",
+    "      - pytest",
+    "validationBaseline:",
+    "  requiredCommandGroups:",
+    "    - install",
+    "    - unit",
+    "evidenceContract:",
+    "  requiredArtifacts:",
+    "    - target-evidence-package",
+    "failureTaxonomy:",
+    "  categories:",
+    "    - dependency",
+    "    - test",
+    "diagnosticsBaseline:",
+    "  requiredSignals:",
+    "    - failing-command",
+    "observabilityBaseline:",
+    "  requiredSignals:",
+    "    - health",
+    "governanceRules:",
+    "  tenantWorkspaceScopeRequired: true",
+    "  profileActivationRequiresApproval: true",
+    "  cannotWeaken:",
+    "    - tenantWorkspaceScopeRequired",
+    "    - profileActivationRequiresApproval",
+    "phaseMapping:",
+    "  alpha:",
+    "    - source-boundary",
+    "    - python-runtime",
+    "  beta:",
+    "    - python-runtime",
+    "  rc:",
+    "    - python-runtime",
+    "  ga:",
+    "    - source-boundary",
+    "llmDraftPolicy:",
+    "  enabled: true",
+    "  generatedStatus: DRAFT",
+    "  requireUserReview: true",
+    ""
+  ].join("\n"));
+
+  const server = createServer({ dataRoot, runtimeMode: "debug" });
+  await listen(server);
+  const baseUrl = serverUrl(server);
+
+  try {
+    const applied = await runCliJson([
+      "--server", baseUrl,
+      "harness", "template", "apply",
+      "--file", templateFile,
+      "--changelog", "Add admin-managed Python enterprise harness template version 1.1.0.",
+      "--json"
+    ]);
+    assert.equal(applied.action, "CREATED_VERSION");
+    assert.equal(applied.template.id, "python-enterprise-harness");
+    assert.equal(applied.template.version, "1.1.0");
+    assert.ok(applied.template.changelog.some((entry) => entry.version === "1.1.0"));
+
+    const duplicate = await postExpectStatus(`${baseUrl}/api/v1/harness/templates`, {
+      templateContent: parseYaml(fs.readFileSync(templateFile, "utf8")),
+      changelog: ["Duplicate version should require force."]
+    }, 409);
+    assert.equal(duplicate.error, "HARNESS_TEMPLATE_VERSION_EXISTS");
+
+    const project = await post(`${baseUrl}/api/v1/projects`, {
+      id: "template-python-agent",
+      name: "Template Python Agent",
+      repository: { provider: "local-git", root: repoRoot },
+      runtime: {
+        language: "python",
+        installCommands: ["uv sync"],
+        unitCommands: ["pytest"]
+      }
+    });
+    assert.equal(project.data.id, "template-python-agent");
+
+    const generated = await post(`${baseUrl}/api/v1/projects/template-python-agent/harness-profiles/generate`, {
+      profileId: "default",
+      templateId: "python-enterprise-harness",
+      templateVersion: "1.1.0",
+      goalLoopTarget: "Use the admin-managed Python enterprise harness template version"
+    });
+    assert.equal(generated.data.profile.templateRef.version, "1.1.0");
+    assert.equal(generated.data.profile.templateRef.digest, applied.template.digest);
+  } finally {
+    await close(server);
+  }
+});
+
+test("EvoPilot CLI manages server logging settings", async () => {
+  assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-logging-cli-"));
+  const server = createServer({ dataRoot, runtimeMode: "debug" });
+  await listen(server);
+  const baseUrl = serverUrl(server);
+
+  try {
+    const initial = await runCliJson(["--server", baseUrl, "logging", "inspect", "--json"]);
+    assert.equal(initial.schema, "evopilot-logging-settings/v1");
+    assert.equal(initial.level, "info");
+    assert.equal(initial.format, "json");
+
+    const updated = await runCliJson([
+      "--server", baseUrl,
+      "logging", "set",
+      "--level", "debug",
+      "--include-stack", "false",
+      "--json"
+    ]);
+    assert.equal(updated.status, "UPDATED");
+    assert.equal(updated.settings.level, "debug");
+    assert.equal(updated.settings.includeStack, false);
+
+    const inspected = await runCliJson(["--server", baseUrl, "logging", "inspect", "--json"]);
+    assert.equal(inspected.level, "debug");
+    assert.equal(inspected.includeStack, false);
+    assert.equal(inspected.source, "control-plane");
+  } finally {
+    await close(server);
+  }
+});
 
 test("ProjectHarnessProfile API creates, validates, activates, explains, and binds profiles to goal plans", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-profile-api-"));
@@ -220,6 +376,17 @@ async function post(url, body) {
   });
   const parsed = await response.json();
   assert.ok(response.ok, `${response.status} ${JSON.stringify(parsed)}`);
+  return parsed;
+}
+
+async function postExpectStatus(url, body, status) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  const parsed = await response.json();
+  assert.equal(response.status, status, JSON.stringify(parsed));
   return parsed;
 }
 

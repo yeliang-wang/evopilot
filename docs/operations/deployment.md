@@ -247,7 +247,7 @@ EvoPilot V1.0.0 的主服务、Loop worker 和 soak 脚本都输出 JSON Lines�
 |---|---|
 | `schema` | 固定为 `evopilot-log/v1`，便于日志平台和 AI prompt 过滤。 |
 | `timestamp` / `level` / `severity` | ISO 时间、程序级别和标准严重级别。 |
-| `service` / `version` / `event` / `category` | 服务、版本、事件名和分类。`category` 包括 `http`、`runtime`、`release`、`worker`、`code-upgrade`、`cicd`、`audit`。 |
+| `service` / `version` / `event` / `category` | 服务、版本、事件名和分类。`category` 包括 `http`、`runtime`、`release`、`worker`、`code-upgrade`、`cicd`、`audit`、`harness`。 |
 | `requestId` / `correlation.requestId` | API 响应头 `x-request-id` 对应的请求关联 ID。 |
 | `tenantId` / `workspaceId` / `actor` / `role` | 多租户排障范围和操作者角色。 |
 | `method` / `path` / `routeGroup` / `statusCode` | HTTP 请求、业务路由分组和响应状态。 |
@@ -269,6 +269,9 @@ EvoPilot V1.0.0 的主服务、Loop worker 和 soak 脚本都输出 JSON Lines�
 | `code-upgrade.starting` / `code-upgrade.started` / `code-upgrade.status-changed` | 定位代码升级执行器、分支、会话、状态变化。 |
 | `project.devops.preflight` | 定位项目 GitHub Actions/GitLab CI provider、executionMode、devopsOwner、workflowRepository、credentialRef、claimBoundary、required checks/jobs 和 health/ready blocker。 |
 | `llm-profile.preflight` | 定位项目或租户 LLM profile、provider、model、apiKeyRef、readiness 和 blocker。 |
+| `harness-template.applied` / `harness-template.apply.rejected` | 定位 template harness 的 id、version、digest、changelog、重复版本和下一步动作。 |
+| `project-harness-profile.generated` / `project-harness-profile.validation.failed` / `project-harness-profile.activated` | 定位项目 harness profile 的 templateRef、sourceDigest、compiledDigest、validation blockers、changed sections 和 nextAction。 |
+| `goal-plan.project-harness-bound` / `goal-plan.project-harness-missing` | 定位目标规划是否绑定 active ProjectHarnessProfile。 |
 | `devops.pipeline.triggering` / `devops.pipeline.triggered` | 定位 GitHub Actions/GitLab CI workflow/pipeline、ref、queueId、build URL 和状态。 |
 | `loop-worker.*` | 定位独立 Loop worker 的启动、空闲、推进、审批等待和错误。 |
 
@@ -279,6 +282,16 @@ EVOPILOT_LOG_LEVEL=info
 EVOPILOT_LOG_STACK=true
 ```
 
+也可以通过 EvoPilot 控制面临时调整日志粒度：
+
+```bash
+evopilot logging inspect --json
+evopilot logging set --level debug --include-stack true --json
+evopilot logging set --level info --include-stack true --json
+```
+
+控制面设置优先于环境变量。支持的级别是 `debug`、`info`、`warn`、`error`，输出格式固定为 JSON Lines。
+
 排障示例：
 
 ```bash
@@ -288,6 +301,7 @@ journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .outco
 journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .tenantId=="<tenant-id>" and .workspaceId=="<workspace-id>")'
 journalctl -u evopilot -o cat | jq 'select(.correlation.loopId=="<loop-id>" or .target=="<loop-id>")'
 journalctl -u evopilot -o cat | jq 'select(.category=="release" or .correlation.releaseRunId=="<release-run-id>")'
+journalctl -u evopilot -o cat | jq 'select(.category=="harness" and (.metadata.projectId=="<project-id>" or .correlation.projectId=="<project-id>"))'
 journalctl -u evopilot -o cat | jq 'select(.latencyBucket=="1-4s" or .latencyBucket=="5s+") | {timestamp,event,path,durationMs,latencyBucket,tenantId,workspaceId,errorCode,diagnosis}'
 journalctl -u evopilot-worker -o cat | jq 'select(.schema=="evopilot-log/v1" and (.event|startswith("loop-worker.")))'
 ```

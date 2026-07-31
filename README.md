@@ -44,7 +44,7 @@ Detailed release evidence and deployment checklists live in [docs/reference/rele
 |---|---|
 | Loop Engineering | Durable loop state, executor graphs, checkpoints, replay, watchdog recovery, worker leases, sandbox proof, and timeline audit. |
 | GlobalGoal planning | A white-box goal layer above LoopRun that takes a business objective, decomposes it through Alpha -> Beta -> RC -> GA GoalTargets, waits for plan approval, binds each target to governed loops, and exposes progress, blockers, timeline, graph, evidence matrix, phase packages, and final report. |
-| Project harness profiles | Tenant/workspace/project-scoped `ProjectHarnessProfile` versions that define capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, governance, template inheritance, and active profile digests for goal planning. |
+| Project harness profiles | Versioned administrator-managed `HarnessTemplate` records plus tenant/workspace/project-scoped `ProjectHarnessProfile` versions that define capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, governance, template inheritance, and active profile digests for goal planning. |
 | Evidence ingestion | Runtime events, traces, logs, evaluations, release signals, APM-derived data, and user feedback. |
 | Human approval | Reviewable proposals before high-risk evolution, source writeback, merge, or release actions. |
 | Code upgrades | Bounded code-upgrader execution with allowed paths, validation commands, branch/commit evidence, and source closure. |
@@ -216,7 +216,7 @@ Primary API surfaces include:
 | Auth and users | `POST /api/v1/auth/login`, `GET /api/v1/users`, `POST /api/v1/users` |
 | Projects and evidence | `GET /api/v1/projects`, `POST /api/v1/evidence/events` |
 | Project DevOps | `POST /api/v1/projects/{projectId}/devops`, `POST /api/v1/projects/{projectId}/devops/preflight` |
-| Project harness profiles | `GET /api/v1/harness/templates`, `POST /api/v1/projects/{projectId}/harness-profiles/generate`, `POST /api/v1/projects/{projectId}/harness-profiles`, `POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/activate` |
+| Project harness profiles | `GET /api/v1/harness/templates`, `POST /api/v1/harness/templates`, `POST /api/v1/projects/{projectId}/harness-profiles/generate`, `POST /api/v1/projects/{projectId}/harness-profiles`, `POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/activate` |
 | LLM profiles | `POST /api/v1/llm-profiles`, `POST /api/v1/llm-profiles/{profileId}/preflight`, `POST /api/v1/projects/{projectId}/llm` |
 | Global goals | `GET /api/v1/goals`, `POST /api/v1/goals`, `POST /api/v1/goals/{goalId}/plan`, `POST /api/v1/goals/{goalId}/plan/apply`, `POST /api/v1/goals/{goalId}/approve-plan`, `POST /api/v1/goals/{goalId}/advance`, `GET /api/v1/goals/{goalId}/phase-plan`, `GET /api/v1/goals/{goalId}/phases`, `GET /api/v1/goals/{goalId}/target-packages`, `GET /api/v1/goals/{goalId}/phase-packages`, `GET /api/v1/goals/{goalId}/snapshot` |
 | Loops | `POST /api/v1/loops`, `POST /api/v1/loops/{loopId}/start`, `GET /api/v1/loops/{loopId}/timeline` |

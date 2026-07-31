@@ -2,6 +2,72 @@
 
 This reference documents the YAML/JSON source profile accepted by the CLI and API. The server compiles it with a `HarnessTemplate` into an active project control-plane profile.
 
+## HarnessTemplate Source
+
+Administrators publish template harness versions as YAML or JSON through `evopilot harness template apply --file <template.yaml> --changelog <text> --json`. The file is a full template definition; different languages, architecture styles, or software types should use distinct template ids or versions.
+
+```yaml
+schema: evopilot-harness-template/v1
+id: python-enterprise-harness
+version: 1.1.0
+name: Python Enterprise Harness
+description: Python enterprise harness baseline.
+scope: platform
+languageFamily: python
+capabilities:
+  - id: python-runtime
+    name: Python runtime harness
+    boundary: Install, lint, typecheck, unit, smoke, and service readiness commands are declared.
+    requiredEvidence:
+      - install-output
+      - unit-output
+runtimePatterns:
+  language: python
+validationBaseline:
+  requiredCommandGroups:
+    - install
+    - unit
+evidenceContract:
+  requiredArtifacts:
+    - target-evidence-package
+failureTaxonomy:
+  categories:
+    - dependency
+    - test
+diagnosticsBaseline:
+  requiredSignals:
+    - failing-command
+observabilityBaseline:
+  requiredSignals:
+    - health
+governanceRules:
+  tenantWorkspaceScopeRequired: true
+  profileActivationRequiresApproval: true
+  cannotWeaken:
+    - tenantWorkspaceScopeRequired
+    - profileActivationRequiresApproval
+phaseMapping:
+  alpha:
+    - python-runtime
+  beta:
+    - python-runtime
+  rc:
+    - python-runtime
+  ga:
+    - python-runtime
+llmDraftPolicy:
+  enabled: true
+  generatedStatus: DRAFT
+  requireUserReview: true
+changelog:
+  - version: 1.1.0
+    summary: Add stricter runtime and observability defaults.
+    changes:
+      - Add stricter runtime and observability defaults.
+```
+
+`id` and `version` are required. The server computes `digest`; callers should not hand-edit it. A changelog entry for the current version is required, either in the file or through CLI `--changelog`. Reusing the same `id@version` requires `--force`; normal updates should publish a new version.
+
 ## Source Profile
 
 ```yaml

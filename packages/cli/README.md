@@ -100,6 +100,17 @@ evopilot target plan --project <project-id> --objective "Enable the requested bu
 
 `ProjectHarnessProfile` is a project-level control-plane definition. It is generated or imported as YAML/JSON, validated by the server, activated explicitly, and then bound into `GoalPlan.projectHarness` by version and digest.
 
+Administrators can publish or replace template harness versions through the server-governed CLI:
+
+```bash
+evopilot harness template apply \
+  --file <template.yaml> \
+  --changelog "Describe this template version." \
+  --json
+```
+
+The same `id@version` requires `--force`; normal updates should publish a new version and then draft project profile upgrades from it.
+
 ## Documentation
 
 The canonical CLI documentation lives in the EvoPilot repository:

@@ -15,6 +15,7 @@ It answers a different question from a goal loop target:
 
 ```mermaid
 flowchart LR
+  Admin["Admin template apply/update"] --> Template["HarnessTemplate"]
   Template["HarnessTemplate"] --> Generate["Generate DRAFT"]
   Project["StoredProject + runtime/devops/llm"] --> Generate
   Goal["Goal loop target"] --> Generate
@@ -26,6 +27,8 @@ flowchart LR
   Plan --> Gap["Profile gap found"]
   Gap --> Revision["New DRAFT revision suggestion"]
 ```
+
+Administrators can publish multiple template ids and versions for language, architecture, or software-type baselines. Template files are YAML/JSON control-plane inputs with `id`, `version`, template sections, and a current-version changelog. Reusing the same `id@version` requires explicit force; normal changes should publish a new version.
 
 Generated profiles are `DRAFT`. EvoPilot can use an LLM to draft them when a READY LLM profile exists; in debug mode without LLM it can create a deterministic template draft. Production `requireLlm=true` blocks generation if no READY LLM is configured.
 

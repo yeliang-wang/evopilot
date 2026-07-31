@@ -191,10 +191,18 @@ async function main(argv: string[]): Promise<number> {
         if (maybeId === "list" || maybeId === undefined) return await maturityStandardsList(ctx);
         if (maybeId === "inspect") return await maturityStandardsInspect(ctx, args.positionals[3]);
         throw usage("Use: evopilot maturity standards <list|inspect> [phase-or-standard-id]");
+      case "logging:":
+      case "logging:undefined":
+        return await loggingInspect(ctx);
+      case "logging:inspect":
+        return await loggingInspect(ctx);
+      case "logging:set":
+        return await loggingSet(ctx);
       case "harness:template":
         if (maybeId === "list" || maybeId === undefined) return await harnessTemplateList(ctx);
         if (maybeId === "inspect") return await harnessTemplateInspect(ctx, args.positionals[3]);
-        throw usage("Use: evopilot harness template <list|inspect> [template-id] [--version <version>]");
+        if (maybeId === "apply" || maybeId === "update") return await harnessTemplateApply(ctx);
+        throw usage("Use: evopilot harness template <list|inspect|apply|update> [template-id] [--version <version>]");
       case "harness:profile":
         if (maybeId === "list") return await harnessProfileList(ctx);
         if (maybeId === "generate") return await harnessProfileGenerate(ctx);
@@ -1327,6 +1335,24 @@ async function maturityStandardsInspect(ctx: RuntimeContext, id?: string): Promi
   return 0;
 }
 
+async function loggingInspect(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.get("/api/v1/settings/logging");
+  printLoggingResult(ctx, "logging inspect", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function loggingSet(ctx: RuntimeContext): Promise<number> {
+  const level = stringOption(ctx.args, "level");
+  if (!level) throw usage("logging set requires --level <debug|info|warn|error>.");
+  const body = {
+    level,
+    includeStack: optionalBoolean(ctx.args, "include-stack") ?? optionalBoolean(ctx.args, "stack")
+  };
+  const response = await ctx.client.request("PUT", "/api/v1/settings/logging", { ...requestOptions(ctx), body });
+  printLoggingResult(ctx, "logging set", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
 async function harnessTemplateList(ctx: RuntimeContext): Promise<number> {
   const response = await ctx.client.expectOk(ctx.client.get("/api/v1/harness/templates"));
   const templates = field(response.data, "templates");
@@ -1343,6 +1369,13 @@ async function harnessTemplateInspect(ctx: RuntimeContext, id?: string): Promise
   const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/harness/templates/${encodeURIComponent(templateId)}${query}`));
   printOutput(ctx, response.data, `template=${field(response.data, "id")} version=${field(response.data, "version")} digest=${field(response.data, "digest")}`);
   return 0;
+}
+
+async function harnessTemplateApply(ctx: RuntimeContext): Promise<number> {
+  const payload = harnessTemplateFilePayload(ctx.args);
+  const response = await ctx.client.post("/api/v1/harness/templates", payload, requestOptions(ctx));
+  printHarnessTemplateApplyResult(ctx, response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
 }
 
 async function harnessProfileList(ctx: RuntimeContext): Promise<number> {
@@ -3470,6 +3503,15 @@ function harnessProfileFilePayload(args: ParsedArgs): Record<string, unknown> {
   };
 }
 
+function harnessTemplateFilePayload(args: ParsedArgs): Record<string, unknown> {
+  const file = requiredOption(args, "file");
+  return {
+    templateContent: readStructuredFile(file),
+    changelog: repeatedOption(args, "changelog"),
+    force: hasFlag(args, "force")
+  };
+}
+
 function harnessProfileSourceFormat(file: string): "json" | "yaml" | "object" {
   if (file === "-") return "object";
   const extension = path.extname(file).toLowerCase();
@@ -3654,6 +3696,39 @@ function printHarnessProfileResult(ctx: RuntimeContext, command: string, data: u
   process.stdout.write(`${lines.join("\n")}\n`);
 }
 
+function printHarnessTemplateApplyResult(ctx: RuntimeContext, data: unknown, statusCode: number): void {
+  const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
+  if (ctx.json) {
+    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    return;
+  }
+  const template = field(payload, "template");
+  const lines = [
+    `harness template apply: http=${statusCode}`,
+    isRecord(payload) ? `action=${field(payload, "action") ?? "UNKNOWN"}` : undefined,
+    isRecord(template) ? `template=${field(template, "id")}@${field(template, "version")}` : undefined,
+    isRecord(template) ? `digest=${field(template, "digest")}` : undefined,
+    isRecord(template) ? `changelog=${arrayLength(field(template, "changelog"))}` : undefined,
+    isRecord(payload) && field(payload, "instruction") ? `instruction=${field(payload, "instruction")}` : undefined
+  ].filter(Boolean);
+  process.stdout.write(`${lines.join("\n")}\n`);
+}
+
+function printLoggingResult(ctx: RuntimeContext, command: string, data: unknown, statusCode: number): void {
+  const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
+  if (ctx.json) {
+    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    return;
+  }
+  const settings = field(payload, "settings") ?? payload;
+  const lines = [
+    `${command}: http=${statusCode}`,
+    isRecord(settings) ? `level=${field(settings, "level")} format=${field(settings, "format")} includeStack=${field(settings, "includeStack")} source=${field(settings, "source")}` : undefined,
+    isRecord(payload) && field(payload, "status") ? `status=${field(payload, "status")}` : undefined
+  ].filter(Boolean);
+  process.stdout.write(`${lines.join("\n")}\n`);
+}
+
 function formatHarnessProfileSummary(value: unknown): string {
   if (!isRecord(value)) return String(value);
   return [
@@ -3773,8 +3848,12 @@ Usage:
   evopilot llm profile preflight <profile-id>
   evopilot maturity standards list
   evopilot maturity standards inspect <alpha|beta|rc|ga|standard-id>
+  evopilot logging inspect
+  evopilot logging set --level <debug|info|warn|error> [--include-stack <true|false>]
   evopilot harness template list
   evopilot harness template inspect <template-id> [--version <version>]
+  evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
+  evopilot harness template update --file <template.yaml> --changelog <text> [--force]
   evopilot harness profile list --project <project-id>
   evopilot harness profile generate --project <project-id> [--profile <id>] [--from-template <template-id>] [--goal-loop-target <text>] [--llm-profile <id>]
   evopilot harness profile validate --project <project-id> --file <profile.yaml>
@@ -3864,6 +3943,10 @@ Global options:
   --from-template <id>        Harness template id for ProjectHarnessProfile generation or upgrade
   --from-template-version <v> Harness template version for profile generation or upgrade
   --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
+  --changelog <text>          HarnessTemplate version changelog entry; repeat for multiple changes
+  --force                     Replace an existing HarnessTemplate id/version intentionally
+  --level <level>             EvoPilot logging level: debug, info, warn, or error
+  --include-stack <bool>      Include stack traces in structured error logs
   --execution-mode <mode>     DevOps boundary: owned-repository, fork-validated-pr, upstream-authorized, or read-only-public
   --upstream-repo <repo>      Upstream GitHub/GitLab repository for public read-only or fork-validated PR mode
   --working-repo <repo>       Writable GitHub/GitLab repository where EvoPilot runs source writeback and native CI/CD

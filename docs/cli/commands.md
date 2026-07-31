@@ -27,6 +27,8 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --from-template <id>        Harness template id for ProjectHarnessProfile generation or upgrade
 --from-template-version <v> Harness template version for ProjectHarnessProfile generation or upgrade
 --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
+--level <debug|info|warn|error> EvoPilot structured logging level
+--include-stack <true|false>    Include redacted stack traces in error logs
 --json                      Print JSON response data
 --config <file>             Config path, defaults to ~/.evopilot/config.json
 ```
@@ -41,6 +43,7 @@ Use `--json` for AI agents and CI. Human-readable output is for operators and ca
 | `project onboard plan ... --json` | `evopilot-project-onboarding-checklist/v1` | `status`, `nextAction`, `missingInputs`, `blockers`, `commands`, `sourceCredentials`, `devops`, `llm`, `requestId` |
 | `project onboard verify ... --json` | `evopilot-project-onboarding-checklist/v1` | Persisted project readiness, same fields as `plan`, including project LLM readiness |
 | `project onboard ... --json` | `evopilot-cli-project-onboard/v1` | `projectId`, `sourceCredentials`, `devops`, `steps`, `result`, `llmUsage`; onboarding does not start Goal/Loop execution |
+| `logging inspect/set --json` | `evopilot-logging-settings/v1` or `evopilot-logging-settings-update-result/v1` | `level`, `format`, `includeStack`, `source`, `updatedBy`, `updatedAt` |
 | `harness profile generate ... --json` | `evopilot-project-harness-profile-generate-result/v1` | `profile`, `summary`, `validation`, `generatedBy`, `instruction`; generated profiles are DRAFT until activated |
 | `harness profile validate/apply/activate ... --json` | `evopilot-project-harness-profile-*-result/v1` | `profile`, `summary`, `validation`, `diffFromActive`, `compiledDigest`, `templateRef` |
 | `target plan ... --json` | `evopilot-cli-target-plan/v1` | `projectId`, `targetId`, `goalId`, `terminalMaturity`, `phasePlan.phases`, `phasePlan.targets`, `editablePlan`, `llmUsage` |
@@ -346,11 +349,24 @@ Goal and Loop creation resolve the LLM in this order:
 
 For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution. Use `project llm clear` only for local/debug projects or explicitly non-enterprise runs that are allowed to fall back to the global default.
 
+## Logging Control
+
+```bash
+evopilot logging inspect --json
+evopilot logging set --level debug --include-stack false --json
+```
+
+`logging inspect` reads the server-side EvoPilot logging setting. `logging set` requires admin permission and updates the control-plane setting used by structured `evopilot-log/v1` output. Supported levels are `debug`, `info`, `warn`, and `error`; `format` is currently fixed to `json`. When no control-plane setting exists, the server uses `EVOPILOT_LOG_LEVEL` and `EVOPILOT_LOG_STACK`, defaulting to `info` and stack output enabled.
+
+Agents should use `requestId`, `correlation.*`, `event`, `errorCode`, `diagnosis.recommendedAction`, and harness metadata such as `templateId`, `templateVersion`, `profileVersion`, `sourceDigest`, and `compiledDigest` to trace failures. Do not ask operators to expose raw tokens or secrets; structured logs are recursively redacted.
+
 ## Project Harness Profiles
 
 ```bash
 evopilot harness template list
 evopilot harness template inspect python-enterprise-harness
+evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
+evopilot harness template update --file <template.yaml> --changelog <text> [--force]
 evopilot harness profile list --project <project-id>
 evopilot harness profile generate --project <project-id> --from-template python-enterprise-harness --goal-loop-target <text> [--llm-profile <id>]
 evopilot harness profile validate --project <project-id> --file <profile.yaml>
@@ -363,6 +379,17 @@ evopilot harness profile upgrade default --project <project-id> --from-template 
 ```
 
 `ProjectHarnessProfile` is a project-level control-plane profile, not a per-goal plan and not a target maturity template. It defines the project's capability boundaries, runtime commands, validation rules, evidence contract, failure handling, diagnostics, observability, release governance, LLM draft policy, and the template version/digest it inherits.
+
+`HarnessTemplate` is an administrator-managed control-plane resource. The built-in `python-enterprise-harness@1.0.0` remains available, and administrators can publish additional template ids or newer versions for other language, architecture, or software-type harnesses:
+
+```bash
+evopilot harness template apply \
+  --file python-enterprise-harness-1.1.0.yaml \
+  --changelog "Add stricter runtime and observability defaults." \
+  --json
+```
+
+`apply` and `update` are aliases. The file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. The server computes `digest`, stores the version under the control plane, and requires a changelog entry for that version. Reusing an existing `id@version` is rejected unless `--force` is supplied; prefer publishing a new version for normal changes. Existing active `ProjectHarnessProfile` versions keep their old `templateRef` until an administrator generates or upgrades a new profile revision.
 
 Generated profiles are stored as `DRAFT` versions. A user or administrator must review the profile, run `validate` or `apply`, and then call `activate` before goal planning binds it. When an active profile exists, `target plan` and `goal plan` include `plan.projectHarness.profileId`, `version`, `templateRef`, `sourceDigest`, and `compiledDigest`; those fields make the plan reproducible and auditable.
 

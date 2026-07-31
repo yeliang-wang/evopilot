@@ -280,6 +280,14 @@ interface HarnessCapabilityDefinition {
   requiredEvidence: string[];
 }
 
+interface HarnessTemplateChangelogEntry {
+  version: string;
+  changedAt: string;
+  changedBy?: string;
+  summary: string;
+  changes: string[];
+}
+
 interface HarnessTemplateProfile {
   schema: "evopilot-harness-template/v1";
   id: string;
@@ -299,6 +307,7 @@ interface HarnessTemplateProfile {
   governanceRules: Record<string, unknown>;
   phaseMapping: Record<MaturityPhase, string[]>;
   llmDraftPolicy: Record<string, unknown>;
+  changelog: HarnessTemplateChangelogEntry[];
   createdAt: string;
   updatedAt: string;
 }
@@ -582,8 +591,18 @@ interface AuditRecord {
 
 type LogLevel = "debug" | "info" | "warn" | "error";
 type LogSeverity = "DEBUG" | "INFO" | "WARN" | "ERROR";
-type LogCategory = "http" | "auth" | "runtime" | "release" | "worker" | "code-upgrade" | "cicd" | "audit" | "system";
+type LogCategory = "http" | "auth" | "runtime" | "release" | "worker" | "code-upgrade" | "cicd" | "audit" | "harness" | "system";
 type LogOutcome = "success" | "rejected" | "failed" | "blocked";
+
+interface LoggingSettings {
+  schema: "evopilot-logging-settings/v1";
+  level: LogLevel;
+  format: "json";
+  includeStack: boolean;
+  source: "env" | "control-plane";
+  updatedAt: string;
+  updatedBy?: string;
+}
 
 interface LogRecord {
   timestamp?: string;
@@ -2549,6 +2568,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
   const requireLlm = runtime.requireLlm;
   const tokens = normalizeTokens(options);
   const store = new FileStore(options.dataRoot, { llmClient, requireLlm });
+  setActiveLoggingSettings(store.readLoggingSettings());
   store.ensureBootstrapAdmin();
   const users = normalizeUsers(options, tokens, runtime, store);
   const authTokens = mergeUserTokens(tokens, users);
@@ -2580,7 +2600,8 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       authRequired: authTokens.length > 0,
       loginEnabled: users.length > 0,
       profileId: profile.id,
-      dashboardEnabled: Boolean(options.dashboardRoot)
+      dashboardEnabled: Boolean(options.dashboardRoot),
+      logging: store.readLoggingSettings()
     }
   });
   void reconcilePendingSourceReleaseDeployFinalizers(store).catch((error) => logError("source-release.deploy-finalizer.reconcile-failed", error));
@@ -2733,6 +2754,29 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const nextUser = authUserFromRecord(updated);
         const safeUser = publicUser(nextUser);
         return writeJson(response, 200, envelope({ ...safeUser, user: safeUser, token: userSessionToken(nextUser) }));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/settings/logging") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope(store.readLoggingSettings()));
+      }
+      if ((request.method === "PUT" || request.method === "POST") && url.pathname === "/api/v1/settings/logging") {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const previous = store.readLoggingSettings();
+        const settings = store.writeLoggingSettings(body, auth.actor);
+        setActiveLoggingSettings(settings);
+        store.appendAudit(audit(auth, "logging.settings.updated", "evopilot", {
+          previousLevel: previous.level,
+          level: settings.level,
+          format: settings.format,
+          includeStack: settings.includeStack
+        }));
+        return writeJson(response, 200, envelope({
+          schema: "evopilot-logging-settings-update-result/v1",
+          status: "UPDATED",
+          settings,
+          previous
+        }));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/summary") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -2907,6 +2951,80 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         return writeJson(response, 200, envelope({
           schema: "evopilot-harness-template-set/v1",
           templates: store.listHarnessTemplates()
+        }));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/harness/templates") {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const force = isRecord(body) && body.force === true;
+        const template = parseHarnessTemplateApplyPayload(body, auth.actor);
+        const previous = store.readHarnessTemplate(template.id, template.version);
+        if (previous && !force) {
+          requestErrorCode = "HARNESS_TEMPLATE_VERSION_EXISTS";
+          logWarn("harness-template.apply.rejected", {
+            requestId,
+            tenantId: auth.tenantId,
+            workspaceId: auth.workspaceId,
+            actor: auth.actor,
+            role: auth.role,
+            outcome: "blocked",
+            errorCode: "HARNESS_TEMPLATE_VERSION_EXISTS",
+            correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+            diagnosis: {
+              summary: "HarnessTemplate version already exists.",
+              likelyCause: `${template.id}@${template.version} is already stored in the control plane.`,
+              recommendedAction: "Publish a new template version, or retry with force=true only for an intentional replacement.",
+              retriable: false,
+              humanActionRequired: true
+            },
+            metadata: {
+              templateId: template.id,
+              templateVersion: template.version,
+              templateDigest: template.digest,
+              previousDigest: previous.digest,
+              nextAction: "publish-new-template-version-or-force-replace"
+            }
+          });
+          return writeJson(response, 409, {
+            error: "HARNESS_TEMPLATE_VERSION_EXISTS",
+            detail: `HarnessTemplate ${template.id}@${template.version} already exists. Use force=true only for an intentional replacement, or publish a new version.`
+          });
+        }
+        const saved = store.writeHarnessTemplate(template);
+        logInfo("harness-template.applied", {
+          requestId,
+          tenantId: auth.tenantId,
+          workspaceId: auth.workspaceId,
+          actor: auth.actor,
+          role: auth.role,
+          outcome: "success",
+          correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+          metadata: {
+            templateId: saved.id,
+            templateVersion: saved.version,
+            templateDigest: saved.digest,
+            languageFamily: saved.languageFamily,
+            scope: saved.scope,
+            action: previous ? "REPLACED_VERSION" : "CREATED_VERSION",
+            force,
+            changelogCount: saved.changelog.length,
+            nextAction: "generate-or-upgrade-project-harness-profile"
+          }
+        });
+        store.appendAudit(audit(auth, "harness-template.applied", `${saved.id}@${saved.version}`, {
+          templateId: saved.id,
+          version: saved.version,
+          digest: saved.digest,
+          action: previous ? "REPLACED_VERSION" : "CREATED_VERSION",
+          force,
+          changelog: saved.changelog.filter((entry) => entry.version === saved.version).map((entry) => entry.summary)
+        }));
+        return writeJson(response, previous ? 200 : 201, envelope({
+          schema: "evopilot-harness-template-apply-result/v1",
+          action: previous ? "REPLACED_VERSION" : "CREATED_VERSION",
+          template: saved,
+          previousTemplate: previous,
+          instruction: "HarnessTemplate version is stored in the control plane. Existing ProjectHarnessProfiles keep their templateRef until an administrator generates or upgrades a new profile revision."
         }));
       }
       const harnessTemplateMatch = url.pathname.match(/^\/api\/v1\/harness\/templates\/([^/]+)$/);
@@ -4587,6 +4705,25 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           status: "VALIDATED"
         });
         if (candidate.validation.status !== "VALIDATED") {
+          requestErrorCode = "PROJECT_HARNESS_PROFILE_VALIDATION_FAILED";
+          logWarn("project-harness-profile.validation.failed", {
+            requestId,
+            tenantId: project.tenantId,
+            workspaceId: project.workspaceId,
+            actor: auth.actor,
+            role: auth.role,
+            outcome: "blocked",
+            errorCode: "PROJECT_HARNESS_PROFILE_VALIDATION_FAILED",
+            correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+            diagnosis: {
+              summary: "ProjectHarnessProfile validation failed.",
+              likelyCause: candidate.validation.blockers.join("; ") || "Project harness profile did not satisfy mandatory template gates.",
+              recommendedAction: "Inspect validation.checks and validation.blockers, edit the source profile, then rerun harness profile validate/apply.",
+              retriable: false,
+              humanActionRequired: true
+            },
+            metadata: projectHarnessLogMetadata(project, candidate, { nextAction: "edit-validate-apply" })
+          });
           return writeJson(response, 409, envelope({
             schema: "evopilot-project-harness-profile-apply-result/v1",
             status: "FAILED",
@@ -4595,6 +4732,16 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           }));
         }
         const saved = store.writeProjectHarnessProfileVersion(candidate);
+        logInfo("project-harness-profile.applied", {
+          requestId,
+          tenantId: project.tenantId,
+          workspaceId: project.workspaceId,
+          actor: auth.actor,
+          role: auth.role,
+          outcome: "success",
+          correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+          metadata: projectHarnessLogMetadata(project, saved, { nextAction: "activate-reviewed-profile" })
+        });
         store.appendAudit(audit(auth, "project-harness-profile.applied", `${project.id}/${saved.profileId}/v${saved.version}`, {
           projectId: project.id,
           profileId: saved.profileId,
@@ -4620,6 +4767,23 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const body = await readJson(request, options.maxBodyBytes) as Record<string, unknown>;
         const draft = await generateProjectHarnessProfileDraft(store, project, body, auth.actor);
         const saved = store.writeProjectHarnessProfileVersion(draft);
+        logInfo("project-harness-profile.generated", {
+          requestId,
+          tenantId: project.tenantId,
+          workspaceId: project.workspaceId,
+          actor: auth.actor,
+          role: auth.role,
+          outcome: "success",
+          correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+          metadata: projectHarnessLogMetadata(project, saved, {
+            generatedBy: saved.generatedBy.mode,
+            llmProvider: saved.generatedBy.provider,
+            llmModel: saved.generatedBy.model,
+            llmRequestId: saved.generatedBy.requestId,
+            goalLoopTarget: optionalTrimmedString(body.goalLoopTarget) ? "provided" : "missing",
+            nextAction: "review-draft-profile"
+          })
+        });
         store.appendAudit(audit(auth, "project-harness-profile.generated", `${project.id}/${saved.profileId}/v${saved.version}`, {
           projectId: project.id,
           profileId: saved.profileId,
@@ -4653,6 +4817,27 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           actor: auth.actor,
           status: "DRAFT"
         });
+        if (candidate.validation.status !== "VALIDATED") {
+          requestErrorCode = "PROJECT_HARNESS_PROFILE_VALIDATION_FAILED";
+          logWarn("project-harness-profile.validation.failed", {
+            requestId,
+            tenantId: project.tenantId,
+            workspaceId: project.workspaceId,
+            actor: auth.actor,
+            role: auth.role,
+            outcome: "blocked",
+            errorCode: "PROJECT_HARNESS_PROFILE_VALIDATION_FAILED",
+            correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+            diagnosis: {
+              summary: "ProjectHarnessProfile validation failed.",
+              likelyCause: candidate.validation.blockers.join("; ") || "Project harness profile did not satisfy mandatory template gates.",
+              recommendedAction: "Inspect validation.checks and validation.blockers, edit the source profile, then rerun harness profile validate.",
+              retriable: false,
+              humanActionRequired: true
+            },
+            metadata: projectHarnessLogMetadata(project, candidate, { nextAction: "edit-profile-source" })
+          });
+        }
         return writeJson(response, candidate.validation.status === "VALIDATED" ? 200 : 409, envelope({
           schema: "evopilot-project-harness-profile-validate-result/v1",
           status: candidate.validation.status,
@@ -4705,6 +4890,16 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           if (!selectedVersion) return writeJson(response, 404, { error: "PROJECT_HARNESS_PROFILE_VERSION_NOT_FOUND" });
           const activated = store.activateProjectHarnessProfileVersion(project.id, profileId, selectedVersion, auth.actor);
           if (!activated) return writeJson(response, 404, { error: "PROJECT_HARNESS_PROFILE_VERSION_NOT_FOUND" });
+          logInfo("project-harness-profile.activated", {
+            requestId,
+            tenantId: project.tenantId,
+            workspaceId: project.workspaceId,
+            actor: auth.actor,
+            role: auth.role,
+            outcome: "success",
+            correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+            metadata: projectHarnessLogMetadata(project, activated, { nextAction: "target-plan" })
+          });
           store.appendAudit(audit(auth, "project-harness-profile.activated", `${project.id}/${profileId}/v${activated.version}`, {
             projectId: project.id,
             profileId,
@@ -4760,6 +4955,21 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
             }
           });
           const saved = store.writeProjectHarnessProfileVersion(draft);
+          logInfo("project-harness-profile.upgrade-drafted", {
+            requestId,
+            tenantId: project.tenantId,
+            workspaceId: project.workspaceId,
+            actor: auth.actor,
+            role: auth.role,
+            outcome: "success",
+            correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+            metadata: projectHarnessLogMetadata(project, saved, {
+              upgradeFromVersion: active.version,
+              fromTemplateId: active.templateRef.templateId,
+              fromTemplateVersion: active.templateRef.version,
+              nextAction: "review-template-upgrade-draft"
+            })
+          });
           store.appendAudit(audit(auth, "project-harness-profile.upgrade-drafted", `${project.id}/${profileId}/v${saved.version}`, {
             projectId: project.id,
             profileId,
@@ -5491,6 +5701,7 @@ class FileStore {
     fs.mkdirSync(this.secretsDir, { recursive: true });
     fs.mkdirSync(this.llmProfilesDir, { recursive: true });
     fs.mkdirSync(this.githubAppInstallationsDir, { recursive: true });
+    fs.mkdirSync(this.settingsDir, { recursive: true });
     fs.mkdirSync(this.runsDir, { recursive: true });
     fs.mkdirSync(this.projectsDir, { recursive: true });
     fs.mkdirSync(this.harnessTemplatesDir, { recursive: true });
@@ -5551,6 +5762,14 @@ class FileStore {
 
   get githubAppInstallationsDir(): string {
     return path.join(this.dataRoot, "github-app-installations");
+  }
+
+  get settingsDir(): string {
+    return path.join(this.dataRoot, "settings");
+  }
+
+  get loggingSettingsFile(): string {
+    return path.join(this.settingsDir, "logging.json");
   }
 
   get runsDir(): string {
@@ -5705,6 +5924,18 @@ class FileStore {
 
   metadata(): { schemaVersion: number; createdAt: string; product: string } {
     return JSON.parse(fs.readFileSync(this.metadataFile, "utf8"));
+  }
+
+  readLoggingSettings(): LoggingSettings {
+    if (!fs.existsSync(this.loggingSettingsFile)) return defaultLoggingSettings();
+    return normalizeLoggingSettings(JSON.parse(fs.readFileSync(this.loggingSettingsFile, "utf8")), "control-plane");
+  }
+
+  writeLoggingSettings(input: unknown, actor: string): LoggingSettings {
+    const current = this.readLoggingSettings();
+    const next = normalizeLoggingSettings({ ...current, ...(isRecord(input) ? input : {}), updatedBy: actor, updatedAt: new Date().toISOString() }, "control-plane");
+    atomicWriteJson(this.loggingSettingsFile, next);
+    return next;
   }
 
   loopStoreRuntime(): LoopStoreRuntime {
@@ -10672,9 +10903,66 @@ function defaultHarnessTemplates(): HarnessTemplateProfile[] {
       allowedToSuggestProfileRevision: true,
       allowedToSilentlyModifyActiveProfile: false
     },
+    changelog: [{
+      version: "1.0.0",
+      changedAt: "2026-07-31T00:00:00.000Z",
+      changedBy: "evopilot",
+      summary: "Initial Python enterprise harness template.",
+      changes: ["Initial Python enterprise harness template."]
+    }],
     createdAt: "2026-07-31T00:00:00.000Z",
     updatedAt: "2026-07-31T00:00:00.000Z"
   })];
+}
+
+function parseHarnessTemplateApplyPayload(input: unknown, actor: string): HarnessTemplateProfile {
+  const body = isRecord(input) ? input : {};
+  const source = isRecord(body.templateContent)
+    ? body.templateContent
+    : isRecord(body.template)
+      ? body.template
+      : isRecord(body.sourceContent)
+        ? body.sourceContent
+        : body;
+  const record = isRecord(source) ? source : {};
+  const id = optionalTrimmedString(record.id);
+  const version = optionalTrimmedString(record.version);
+  if (!id || !version) {
+    throw httpError(400, "HARNESS_TEMPLATE_ID_AND_VERSION_REQUIRED", "HarnessTemplate apply requires id and version.");
+  }
+
+  const now = new Date().toISOString();
+  const suppliedChangelog = hydrateHarnessTemplateChangelog(record.changelog, version, String(record.updatedAt ?? now));
+  const cliChanges = normalizeStringList(body.changelog ?? body.changes ?? body.change, []);
+  const changelog = cliChanges.length > 0
+    ? [
+      ...suppliedChangelog,
+      {
+        version,
+        changedAt: now,
+        changedBy: actor,
+        summary: cliChanges[0],
+        changes: cliChanges
+      }
+    ]
+    : suppliedChangelog;
+
+  const hasCurrentVersionChangelog = changelog.some((entry) =>
+    entry.version === version &&
+    (entry.summary.trim().length > 0 || entry.changes.length > 0)
+  );
+  if (!hasCurrentVersionChangelog) {
+    throw httpError(400, "HARNESS_TEMPLATE_CHANGELOG_REQUIRED", "HarnessTemplate apply requires a changelog entry for the template version.");
+  }
+
+  return hydrateHarnessTemplate({
+    ...record,
+    id,
+    version,
+    changelog,
+    createdAt: record.createdAt ?? now,
+    updatedAt: now
+  });
 }
 
 function hydrateHarnessTemplate(input: unknown): HarnessTemplateProfile {
@@ -10699,6 +10987,7 @@ function hydrateHarnessTemplate(input: unknown): HarnessTemplateProfile {
     governanceRules: recordObject(record.governanceRules),
     phaseMapping,
     llmDraftPolicy: recordObject(record.llmDraftPolicy),
+    changelog: hydrateHarnessTemplateChangelog(record.changelog, String(record.version ?? "1.0.0"), String(record.updatedAt ?? now)),
     createdAt: String(record.createdAt ?? now),
     updatedAt: String(record.updatedAt ?? record.createdAt ?? now)
   };
@@ -10706,6 +10995,38 @@ function hydrateHarnessTemplate(input: unknown): HarnessTemplateProfile {
     ...template,
     digest: digestObject({ ...template, digest: undefined })
   };
+}
+
+function hydrateHarnessTemplateChangelog(value: unknown, fallbackVersion: string, fallbackChangedAt: string): HarnessTemplateChangelogEntry[] {
+  const raw = Array.isArray(value) ? value : typeof value === "string" ? [value] : [];
+  return raw
+    .map((item): HarnessTemplateChangelogEntry | undefined => {
+      if (typeof item === "string") {
+        const summary = item.trim();
+        if (!summary) return undefined;
+        return {
+          version: fallbackVersion,
+          changedAt: fallbackChangedAt,
+          summary,
+          changes: [summary]
+        };
+      }
+      const record = isRecord(item) ? item : {};
+      const version = optionalTrimmedString(record.version) ?? fallbackVersion;
+      const changedAt = String(record.changedAt ?? record.date ?? fallbackChangedAt);
+      const changedBy = optionalTrimmedString(record.changedBy ?? record.actor ?? record.author);
+      const changes = normalizeStringList(record.changes ?? record.items ?? record.details, []);
+      const summary = optionalTrimmedString(record.summary ?? record.message ?? record.description) ?? changes[0] ?? "";
+      if (!summary && changes.length === 0) return undefined;
+      return {
+        version,
+        changedAt,
+        ...(changedBy ? { changedBy } : {}),
+        summary: summary || changes[0],
+        changes: changes.length > 0 ? uniqueStrings(changes) : [summary]
+      };
+    })
+    .filter((entry): entry is HarnessTemplateChangelogEntry => Boolean(entry));
 }
 
 function hydrateHarnessCapabilities(value: unknown): HarnessCapabilityDefinition[] {
@@ -11559,6 +11880,29 @@ function harnessTemplateRef(template: HarnessTemplateProfile): HarnessTemplateRe
     templateId: template.id,
     version: template.version,
     digest: template.digest
+  };
+}
+
+function projectHarnessLogMetadata(project: StoredProject, profile: ProjectHarnessProfileVersion, extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    projectId: project.id,
+    tenantId: project.tenantId,
+    workspaceId: project.workspaceId,
+    profileId: profile.profileId,
+    profileVersion: profile.version,
+    profileStatus: profile.status,
+    sourceDigest: profile.sourceDigest,
+    compiledDigest: profile.compiledDigest,
+    templateId: profile.templateRef.templateId,
+    templateVersion: profile.templateRef.version,
+    templateDigest: profile.templateRef.digest,
+    validationStatus: profile.validation.status,
+    validationBlockers: profile.validation.blockers,
+    validationWarnings: profile.validation.warnings,
+    changedSections: profile.diffFromActive?.changedSections ?? [],
+    previousActiveVersion: profile.diffFromActive?.baseVersion ?? "none",
+    nextAction: profile.status === "ACTIVE" ? "target-plan" : "review-validate-activate",
+    ...extra
   };
 }
 
@@ -12711,6 +13055,57 @@ async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, relea
   const project = store.readProject(goal.projectId);
   const projectHarnessProfile = store.readActiveProjectHarnessProfile(goal.projectId);
   const projectHarness = projectHarnessPlanBinding(projectHarnessProfile, now);
+  if (projectHarnessProfile && projectHarness) {
+    logInfo("goal-plan.project-harness-bound", {
+      tenantId: goal.tenantId,
+      workspaceId: goal.workspaceId,
+      actor,
+      outcome: "success",
+      correlation: {
+        goalId: goal.id,
+        projectId: goal.projectId,
+        releaseTargetId: goal.releaseTargetId
+      },
+      metadata: project
+        ? projectHarnessLogMetadata(project, projectHarnessProfile, { goalId: goal.id, releaseTargetId: goal.releaseTargetId, nextAction: "review-phase-plan" })
+        : {
+          projectId: goal.projectId,
+          profileId: projectHarness.profileId,
+          profileVersion: projectHarness.version,
+          compiledDigest: projectHarness.compiledDigest,
+          templateId: projectHarness.templateRef.templateId,
+          templateVersion: projectHarness.templateRef.version,
+          templateDigest: projectHarness.templateRef.digest,
+          nextAction: "review-phase-plan"
+        }
+    });
+  } else {
+    logWarn("goal-plan.project-harness-missing", {
+      tenantId: goal.tenantId,
+      workspaceId: goal.workspaceId,
+      actor,
+      outcome: "blocked",
+      errorCode: "PROJECT_HARNESS_PROFILE_ACTIVE_MISSING",
+      correlation: {
+        goalId: goal.id,
+        projectId: goal.projectId,
+        releaseTargetId: goal.releaseTargetId
+      },
+      diagnosis: {
+        summary: "Goal planning has no active ProjectHarnessProfile binding.",
+        likelyCause: "The project has not activated a reviewed harness profile.",
+        recommendedAction: "Run harness profile generate/review/activate before approving the phase plan.",
+        retriable: false,
+        humanActionRequired: true
+      },
+      metadata: {
+        projectId: goal.projectId,
+        goalId: goal.id,
+        releaseTargetId: goal.releaseTargetId,
+        nextAction: "activate-project-harness-profile"
+      }
+    });
+  }
   const llmResolution = resolveLoopLlmSelection(store, {
     project,
     tenantId: goal.tenantId,
@@ -22548,6 +22943,56 @@ function logError(event: string, error: unknown, record: Omit<LogRecord, "level"
   });
 }
 
+let activeLoggingSettings: LoggingSettings | undefined;
+
+function setActiveLoggingSettings(settings: LoggingSettings): void {
+  activeLoggingSettings = settings;
+}
+
+function defaultLoggingSettings(): LoggingSettings {
+  return {
+    schema: "evopilot-logging-settings/v1",
+    level: normalizeLogLevel(process.env.EVOPILOT_LOG_LEVEL),
+    format: "json",
+    includeStack: parseBoolean(process.env.EVOPILOT_LOG_STACK, true),
+    source: "env",
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function normalizeLoggingSettings(input: unknown, source: LoggingSettings["source"]): LoggingSettings {
+  const record = isRecord(input) ? input : {};
+  const includeStack = record.includeStack !== undefined
+    ? parseLoggingBoolean(record.includeStack, true)
+    : record.stack !== undefined
+      ? parseLoggingBoolean(record.stack, true)
+      : parseBoolean(process.env.EVOPILOT_LOG_STACK, true);
+  return {
+    schema: "evopilot-logging-settings/v1",
+    level: normalizeLogLevel(record.level ?? process.env.EVOPILOT_LOG_LEVEL),
+    format: "json",
+    includeStack,
+    source,
+    updatedAt: String(record.updatedAt ?? new Date().toISOString()),
+    ...(record.updatedBy ? { updatedBy: String(record.updatedBy) } : {})
+  };
+}
+
+function parseLoggingBoolean(value: unknown, defaultValue: boolean): boolean {
+  if (value === undefined || value === null || value === "") return defaultValue;
+  if (typeof value === "boolean") return value;
+  const normalized = String(value).trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(normalized)) return true;
+  if (["0", "false", "no", "off"].includes(normalized)) return false;
+  return defaultValue;
+}
+
+function normalizeLogLevel(value: unknown): LogLevel {
+  const normalized = String(value ?? "info").trim().toLowerCase();
+  if (normalized === "debug" || normalized === "info" || normalized === "warn" || normalized === "error") return normalized;
+  throw httpError(400, "LOG_LEVEL_INVALID", "Log level must be debug, info, warn, or error.");
+}
+
 function logSeverity(level: LogLevel): LogSeverity {
   const severities: Record<LogLevel, LogSeverity> = { debug: "DEBUG", info: "INFO", warn: "WARN", error: "ERROR" };
   return severities[level];
@@ -22556,6 +23001,7 @@ function logSeverity(level: LogLevel): LogSeverity {
 function logCategory(event: string): LogCategory {
   if (event.startsWith("http.")) return "http";
   if (event.startsWith("audit.")) return "audit";
+  if (event.startsWith("harness-") || event.startsWith("project-harness") || event.startsWith("goal-plan.project-harness")) return "harness";
   if (event.startsWith("code-upgrade.")) return "code-upgrade";
   if (event.startsWith("devops.") || event.startsWith("project.devops")) return "cicd";
   if (event.startsWith("loop-worker.")) return "worker";
@@ -22569,6 +23015,8 @@ function routeGroup(pathname: string): string {
   if (pathname === "/health" || pathname === "/ready") return "platform-readiness";
   if (pathname.startsWith("/api/v1/tenants")) return "tenant-control-plane";
   if (pathname.startsWith("/api/v1/workspaces")) return "workspace-control-plane";
+  if (pathname.startsWith("/api/v1/settings/logging")) return "logging-control-plane";
+  if (pathname.includes("harness")) return "harness-control-plane";
   if (pathname.startsWith("/api/v1/loops") || pathname.includes("loop-")) return "loop-runtime";
   if (pathname.includes("release")) return "release-governance";
   if (pathname.includes("evidence") || pathname.includes("audit")) return "evidence-audit";
@@ -22737,14 +23185,14 @@ function writeLog(record: LogRecord): void {
 }
 
 function shouldLog(level: LogLevel): boolean {
-  const configured = (process.env.EVOPILOT_LOG_LEVEL ?? "info").toLowerCase();
   const ranks: Record<LogLevel, number> = { debug: 10, info: 20, warn: 30, error: 40 };
-  const threshold = ranks[configured as LogLevel] ?? ranks.info;
+  const configured = activeLoggingSettings?.level ?? defaultLoggingSettings().level;
+  const threshold = ranks[configured] ?? ranks.info;
   return ranks[level] >= threshold;
 }
 
 function includeLogStack(): boolean {
-  return parseBoolean(process.env.EVOPILOT_LOG_STACK, true);
+  return activeLoggingSettings?.includeStack ?? defaultLoggingSettings().includeStack;
 }
 
 function redactLogValue(value: unknown, path: string[] = []): unknown {

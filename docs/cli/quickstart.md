@@ -20,9 +20,10 @@ Verify before changing state:
 
 ```bash
 evopilot status --json
+evopilot logging inspect --json
 ```
 
-Continue only when `status=READY`, `health.status=UP`, `ready.status=READY`, and authenticated `summary` is present.
+Continue only when `status=READY`, `health.status=UP`, `ready.status=READY`, and authenticated `summary` is present. `logging inspect` shows the active EvoPilot log level and stack policy. For normal automation keep the server at `info`; an administrator may temporarily use `evopilot logging set --level debug --json` during diagnosis, then restore `info`.
 
 ## 2. Prepare LLM Profile
 
@@ -112,6 +113,21 @@ evopilot project llm preflight my-agent --json
 ```
 
 Continue only when source credentials, DevOps, and LLM readiness are `READY`.
+
+## Admin: Maintain Template Harness
+
+Project onboarding consumes an already published template. Administrators can publish additional template ids or versions for different languages, architecture styles, or software types:
+
+```bash
+evopilot harness template list --json
+evopilot harness template inspect python-enterprise-harness --json
+evopilot harness template apply \
+  --file ./python-enterprise-harness-1.1.0.yaml \
+  --changelog "Add FastAPI service defaults and pytest coverage gates." \
+  --json
+```
+
+The template file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. The server stores it in the control plane with a computed digest and changelog. Reusing the same `id@version` is rejected unless the administrator passes `--force`. Existing active project profiles are not silently rewritten; use `harness profile generate` or `harness profile upgrade` to create a reviewed project revision.
 
 ## 5. Generate And Confirm Project Harness Profile
 

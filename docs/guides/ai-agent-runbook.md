@@ -44,7 +44,10 @@ Verify the control plane before making changes:
 ```bash
 evopilot config show --json
 evopilot status --json
+evopilot logging inspect --json
 ```
+
+`logging inspect` returns the active server log level, output format, stack policy, source, and update metadata. Normal automation should keep `level=info`. During a live incident, an administrator may temporarily run `evopilot logging set --level debug --include-stack true --json`, collect the correlated logs, and restore `info`.
 
 For a first-time GitHub or GitLab project, ask EvoPilot for a checklist before mutating state:
 
@@ -134,6 +137,19 @@ run override --llm-profile -> project default LLM -> server global default LLM
 ```
 
 For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
+
+Administrator template maintenance is separate from daily project execution. Agents should normally consume an existing template through `harness profile generate --from-template ...`. Administrators can list, inspect, and publish template versions:
+
+```bash
+evopilot harness template list --json
+evopilot harness template inspect python-enterprise-harness --json
+evopilot harness template apply \
+  --file ./python-enterprise-harness-1.1.0.yaml \
+  --changelog "Add FastAPI service defaults and pytest coverage gates." \
+  --json
+```
+
+Template files use `schema: evopilot-harness-template/v1` and include `id`, `version`, capabilities, runtime patterns, validation baseline, evidence contract, failure taxonomy, diagnostics, observability, governance, phase mapping, LLM draft policy, and changelog. EvoPilot computes the digest and stores the version in the control plane. Reusing an existing `id@version` returns `HARNESS_TEMPLATE_VERSION_EXISTS` unless the admin passes `--force`. Template updates never rewrite an active `ProjectHarnessProfile`; they become effective for a project only after a generated or upgraded profile revision is reviewed and activated.
 
 Generate and confirm the project harness profile before phase planning:
 
@@ -786,7 +802,7 @@ EvoPilot server and Loop worker logs use JSON Lines with:
 ```text
 schema=="evopilot-log/v1"
 service=="evopilot"
-category in ["http","runtime","release","worker","code-upgrade","cicd","audit","system"]
+category in ["http","runtime","release","worker","code-upgrade","cicd","audit","harness","auth","system"]
 correlation.requestId
 correlation.goalId
 correlation.loopId
@@ -808,6 +824,16 @@ metadata.client.surface
 metadata.llmUsage.request.totalTokens
 ```
 
+Logging control:
+
+```bash
+evopilot logging inspect --json
+evopilot logging set --level debug --include-stack true --json
+evopilot logging set --level info --include-stack true --json
+```
+
+The control-plane setting overrides `EVOPILOT_LOG_LEVEL` and `EVOPILOT_LOG_STACK`. Supported levels are `debug`, `info`, `warn`, and `error`; logs remain JSON Lines so AI agents can trace failures by `requestId`, `projectId`, `goalId`, `loopId`, release ids, route group, outcome, error code, and diagnosis fields.
+
 Log queries:
 
 ```bash
@@ -816,6 +842,7 @@ journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .corre
 journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .correlation.loopId=="<loop-id>")'
 journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .correlation.releaseRunId=="<release-run-id>")'
 journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and (.event=="project.devops.preflight" or .event=="devops.pipeline.triggered"))'
+journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .category=="harness" and (.metadata.projectId=="<project-id>" or .correlation.projectId=="<project-id>"))'
 journalctl -u evopilot -o cat | jq 'select(.schema=="evopilot-log/v1" and .outcome=="failed")'
 journalctl -u evopilot-worker -o cat | jq 'select(.schema=="evopilot-log/v1" and (.event|startswith("loop-worker.")))'
 ```
@@ -836,7 +863,7 @@ When a production agent cannot continue, collect:
 ```text
 1. Full CLI JSON output from the failed wrapper or atomic command.
 2. The HTTP `x-request-id` or `correlation.requestId`.
-3. Logs with the same requestId, goalId, loopId, releaseRunId, or releaseDecisionId.
+3. `evopilot logging inspect --json` output and logs with the same requestId, goalId, loopId, projectId, releaseRunId, or releaseDecisionId.
 4. `evopilot goal snapshot <goal-id> --json`.
 5. `evopilot harness profile inspect default --project <project-id> --json`.
 6. `evopilot harness profile explain default --project <project-id> --json`.

@@ -477,4 +477,8 @@ Do not include raw tokens, passwords, deploy secrets, or unredacted `Authorizati
 
 CLI wrapper output exposes `llmUsage.process.responses[].requestId` and recent `steps[].requestId`. EvoPilot structured logs expose the same request under `correlation.requestId`. When the CLI sends `--client workbuddy` or `EVOPILOT_CLI_CLIENT=workbuddy`, server logs also include caller metadata under `metadata.client` and request-level LLM token deltas under `metadata.llmUsage`.
 
+Use `evopilot logging inspect --json` to check the active server logging level. Admin automation may temporarily run `evopilot logging set --level debug --json` while diagnosing a failed run, then restore `info`.
+
+Harness control-plane logs use `category=harness`. Important events include `harness-template.applied`, `harness-template.apply.rejected`, `project-harness-profile.generated`, `project-harness-profile.validation.failed`, `project-harness-profile.applied`, `project-harness-profile.activated`, `project-harness-profile.upgrade-drafted`, `goal-plan.project-harness-bound`, and `goal-plan.project-harness-missing`. Parse `metadata.templateId`, `metadata.templateVersion`, `metadata.templateDigest`, `metadata.profileId`, `metadata.profileVersion`, `metadata.sourceDigest`, `metadata.compiledDigest`, `metadata.validationBlockers`, `metadata.changedSections`, `errorCode`, and `diagnosis.recommendedAction` before asking a human to inspect raw logs.
+
 Use these fields to prove that terminal CLI output, Dashboard state, and production server logs describe the same run.

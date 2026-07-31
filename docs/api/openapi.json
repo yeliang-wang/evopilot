@@ -888,6 +888,62 @@
             "description": "需要只读或更高角色"
           }
         }
+      },
+      "post": {
+        "summary": "发布或更新 HarnessTemplate",
+        "description": "管理员写入一个版本化 HarnessTemplate。请求体包含 templateContent 或 template，以及当前版本 changelog；重复 id@version 默认拒绝，force=true 时替换。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "templateContent"
+                ],
+                "properties": {
+                  "templateContent": {
+                    "type": "object",
+                    "description": "evopilot-harness-template/v1 模板对象，必须包含 id 和 version。"
+                  },
+                  "changelog": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "当前模板版本的变更说明。"
+                  },
+                  "force": {
+                    "type": "boolean",
+                    "description": "是否替换已存在的同一 id@version。"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HarnessTemplate 版本已替换"
+          },
+          "201": {
+            "description": "HarnessTemplate 新版本已创建"
+          },
+          "400": {
+            "description": "缺少 id、version 或 changelog"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "409": {
+            "description": "HarnessTemplate id@version 已存在"
+          }
+        }
       }
     },
     "/api/v1/harness/templates/{templateId}": {
@@ -5495,6 +5551,93 @@
           },
           "409": {
             "description": "需要代码升级或用户确认"
+          }
+        }
+      }
+    },
+    "/api/v1/settings/logging": {
+      "get": {
+        "summary": "获取日志设置",
+        "description": "返回 EvoPilot 当前结构化日志级别、格式和 stack 输出设置。AI Agent 可用该接口确认日志打印粒度。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "日志设置"
+          },
+          "403": {
+            "description": "需要只读或更高角色"
+          }
+        }
+      },
+      "put": {
+        "summary": "更新日志设置",
+        "description": "管理员更新 EvoPilot 结构化日志级别。level 必须是 debug、info、warn 或 error；format 当前固定为 json。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "level"
+                ],
+                "properties": {
+                  "level": {
+                    "type": "string",
+                    "enum": [
+                      "debug",
+                      "info",
+                      "warn",
+                      "error"
+                    ]
+                  },
+                  "includeStack": {
+                    "type": "boolean",
+                    "description": "是否在 error 日志中输出脱敏 stack。"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "日志设置已更新"
+          },
+          "400": {
+            "description": "日志级别无效"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          }
+        }
+      },
+      "post": {
+        "summary": "更新日志设置",
+        "description": "兼容 PUT 的管理员日志设置更新入口。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "日志设置已更新"
+          },
+          "400": {
+            "description": "日志级别无效"
+          },
+          "403": {
+            "description": "需要管理员角色"
           }
         }
       }

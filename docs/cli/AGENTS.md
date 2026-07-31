@@ -13,6 +13,7 @@ Read this file first. Then read [quickstart.md](quickstart.md). Use [automation.
 - Do not activate a generated `ProjectHarnessProfile` until the user or project owner has reviewed the DRAFT profile definition.
 - Do not approve a phase plan until the user or project owner has reviewed it.
 - Do not invent `--confirmed-by` or `--confirmation` values.
+- Use `logging inspect --json` and response `requestId` / `correlation.*` fields for troubleshooting; only an administrator should temporarily raise logging to `debug`, and it should be restored to `info` after diagnosis.
 - Do not claim source writeback, PR/MR, CI/CD, merge, deploy, release readiness, or GA beyond the server-returned `claimBoundary` and release decision.
 - Stop when the server returns a blocker, `nextAction`, `NO-GO`, `BLOCKED`, `FAILED`, human approval, policy review, repair action, timeout, or max-step boundary.
 
@@ -42,6 +43,7 @@ export EVOPILOT_CONFIG="$PWD/.evopilot-agent-config.json"
 
 ```bash
 evopilot status --json
+evopilot logging inspect --json
 evopilot project onboard plan github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://my-agent.example.com/health --llm-profile my-agent-llm --json
 evopilot project onboard github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://my-agent.example.com/health --llm-profile my-agent-llm --client workbuddy --json
 evopilot project onboard verify my-agent --json

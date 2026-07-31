@@ -11,6 +11,17 @@ evopilot harness template inspect python-enterprise-harness --json
 
 `python-enterprise-harness` is the built-in platform baseline for enterprise Python projects. It defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, and LLM draft policy.
 
+Administrators can publish additional template ids or versions for other languages, architecture styles, or software types. Template updates are versioned control-plane changes with changelog management:
+
+```bash
+evopilot harness template apply \
+  --file python-enterprise-harness-1.1.0.yaml \
+  --changelog "Add stricter runtime and observability defaults." \
+  --json
+```
+
+Publishing the same `id@version` again is rejected unless `--force` is supplied. Existing active project profiles keep their previous `templateRef`; use `harness profile generate` or `harness profile upgrade` to draft a reviewed project-level revision from a newer template.
+
 ## 2. Generate A Draft
 
 ```bash

@@ -102,19 +102,24 @@ WorkBuddy, Codex, Claude Code, CI jobs, and other agents should start with [AGEN
 
 1. Configure `EVOPILOT_SERVER`, `EVOPILOT_API_TOKEN`, `EVOPILOT_TENANT`, `EVOPILOT_WORKSPACE`, `EVOPILOT_ACTOR`, and `EVOPILOT_CLI_CLIENT`.
 2. Run `evopilot status --json`.
-3. For a new project, run `evopilot project onboard plan ... --json` before mutating state.
-4. Store or repair server-side `tokenRef` values when the checklist asks for it.
-5. Verify with `project preflight`, `project devops preflight`, and `project onboard verify`.
-6. For GitHub/GitLab enterprise real loops, or whenever the project needs a non-default model, store the LLM key server-side, create an LLM profile, bind it to the project, and run `project llm preflight`.
-7. Generate the project `ProjectHarnessProfile` DRAFT with `harness profile generate`, show it to the user, optionally validate/diff/apply edits, and activate only after confirmation.
-8. Generate the Goal phase plan with `target plan`.
-9. Show `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
-10. Run `target run`, `goal run`, or `loop run` with `--json`.
-11. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
-12. For troubleshooting, run `evopilot audit list --limit 50 --json`; the limit is applied by the server and returns newest records first.
-13. Report the server-derived result, active harness profile version/digest, release verdict, IDs, LLM provider/model, token totals, and request IDs.
+3. When troubleshooting or preparing unattended automation, run `evopilot logging inspect --json`; an administrator may temporarily use `evopilot logging set --level debug --json` and then restore `info`.
+4. For a new project, run `evopilot project onboard plan ... --json` before mutating state.
+5. Store or repair server-side `tokenRef` values when the checklist asks for it.
+6. Verify with `project preflight`, `project devops preflight`, and `project onboard verify`.
+7. For GitHub/GitLab enterprise real loops, or whenever the project needs a non-default model, store the LLM key server-side, create an LLM profile, bind it to the project, and run `project llm preflight`.
+8. Generate the project `ProjectHarnessProfile` DRAFT with `harness profile generate`, show it to the user, optionally validate/diff/apply edits, and activate only after confirmation.
+9. Generate the Goal phase plan with `target plan`.
+10. Show `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
+11. Run `target run`, `goal run`, or `loop run` with `--json`.
+12. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
+13. For troubleshooting, run `evopilot audit list --limit 50 --json`; the limit is applied by the server and returns newest records first.
+14. Report the server-derived result, active harness profile version/digest, release verdict, IDs, LLM provider/model, token totals, and request IDs.
 
 An agent must not parse human-readable output when `--json` is available, must not pass raw GitHub/GitLab tokens in daily wrapper commands, must not activate a `ProjectHarnessProfile` before showing it to the user or project owner, must not approve a phase plan before showing it to the user or project owner, and must not claim a stronger DevOps or release result than the server-returned `claimBoundary` and release decision.
+
+Template harness maintenance is an administrator workflow, not a daily project execution step. Use `harness template apply --file <template.yaml> --changelog <text> --json` to publish a new template id or version. Reusing the same `id@version` requires `--force`; otherwise project onboarding should consume an already published template through `harness profile generate --from-template ...`.
+
+When a command returns an error or blocker, use the response `requestId` to query structured logs. Harness events such as `harness-template.apply.rejected`, `project-harness-profile.validation.failed`, `project-harness-profile.generated`, `project-harness-profile.activated`, `goal-plan.project-harness-bound`, and `goal-plan.project-harness-missing` carry template/profile digest metadata and `diagnosis.recommendedAction`.
 
 `--until` is only a wrapper stop policy. It is not a phase confirmation switch. All wrapper commands default to `--until terminal`; use `--until blocked-or-complete` only when the caller intentionally wants a narrower stop boundary, most commonly to stop a low-level `loop run` as soon as the LoopRun becomes `BLOCKED`.
 
