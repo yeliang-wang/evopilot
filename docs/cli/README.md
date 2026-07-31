@@ -106,14 +106,15 @@ WorkBuddy, Codex, Claude Code, CI jobs, and other agents should start with [AGEN
 4. Store or repair server-side `tokenRef` values when the checklist asks for it.
 5. Verify with `project preflight`, `project devops preflight`, and `project onboard verify`.
 6. For GitHub/GitLab enterprise real loops, or whenever the project needs a non-default model, store the LLM key server-side, create an LLM profile, bind it to the project, and run `project llm preflight`.
-7. Generate the Goal phase plan with `target plan`.
-8. Show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
-9. Run `target run`, `goal run`, or `loop run` with `--json`.
-10. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
-11. For troubleshooting, run `evopilot audit list --limit 50 --json`; the limit is applied by the server and returns newest records first.
-12. Report the server-derived result, release verdict, IDs, LLM provider/model, token totals, and request IDs.
+7. Generate the project `ProjectHarnessProfile` DRAFT with `harness profile generate`, show it to the user, optionally validate/diff/apply edits, and activate only after confirmation.
+8. Generate the Goal phase plan with `target plan`.
+9. Show `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
+10. Run `target run`, `goal run`, or `loop run` with `--json`.
+11. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
+12. For troubleshooting, run `evopilot audit list --limit 50 --json`; the limit is applied by the server and returns newest records first.
+13. Report the server-derived result, active harness profile version/digest, release verdict, IDs, LLM provider/model, token totals, and request IDs.
 
-An agent must not parse human-readable output when `--json` is available, must not pass raw GitHub/GitLab tokens in daily wrapper commands, must not approve a phase plan before showing it to the user or project owner, and must not claim a stronger DevOps or release result than the server-returned `claimBoundary` and release decision.
+An agent must not parse human-readable output when `--json` is available, must not pass raw GitHub/GitLab tokens in daily wrapper commands, must not activate a `ProjectHarnessProfile` before showing it to the user or project owner, must not approve a phase plan before showing it to the user or project owner, and must not claim a stronger DevOps or release result than the server-returned `claimBoundary` and release decision.
 
 `--until` is only a wrapper stop policy. It is not a phase confirmation switch. All wrapper commands default to `--until terminal`; use `--until blocked-or-complete` only when the caller intentionally wants a narrower stop boundary, most commonly to stop a low-level `loop run` as soon as the LoopRun becomes `BLOCKED`.
 
@@ -131,6 +132,9 @@ llmUsage.summary.totalTokens
 llmUsage.summary.inputTokens
 llmUsage.summary.outputTokens
 llmUsage.summary.creditsConsumed
+plan.projectHarness.profileId or phasePlan.projectHarness.profileId
+plan.projectHarness.version or phasePlan.projectHarness.version
+plan.projectHarness.compiledDigest or phasePlan.projectHarness.compiledDigest
 llmUsage.process.responses[]
 llmUsage.server.steps[]
 ```
@@ -416,7 +420,7 @@ evopilot project onboard github \
   --json
 ```
 
-After `project onboard verify` returns `READY_TO_RUN`, the checklist returns `nextAction=plan-target`. Use `target plan` first, show the Alpha/Beta/RC/GA plan to the user or project owner, approve only after explicit confirmation, and then run `target run`.
+After `project onboard verify` returns `READY_TO_RUN`, the checklist returns `nextAction=plan-target`. Generate or inspect the project harness profile first, activate only after user review, then use `target plan`, show the harness binding and Alpha/Beta/RC/GA plan to the user or project owner, approve only after explicit confirmation, and then run `target run`.
 
 For a public upstream with a writable fork:
 

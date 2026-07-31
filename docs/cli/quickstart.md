@@ -113,7 +113,67 @@ evopilot project llm preflight my-agent --json
 
 Continue only when source credentials, DevOps, and LLM readiness are `READY`.
 
-## 5. Generate The Phase Plan
+## 5. Generate And Confirm Project Harness Profile
+
+Before phase planning, create the project-level harness definition that controls capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, and governance.
+
+```bash
+evopilot harness profile generate \
+  --project my-agent \
+  --from-template python-enterprise-harness \
+  --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" \
+  --llm-profile my-agent-llm \
+  --json
+```
+
+For a first onboarding, EvoPilot generates the DRAFT from the `python-enterprise-harness` template, the goal loop target, and project context. For a second onboarding or project evolution, EvoPilot also includes the previous active profile in the generation context and returns a diff-aware DRAFT.
+
+Continue only when the JSON response shows:
+
+```text
+schema=evopilot-project-harness-profile-generate-result/v1
+status=DRAFT
+profile.status=DRAFT
+profile.validation.status=VALIDATED
+profile.version=<harness-version>
+profile.compiledDigest=<digest>
+```
+
+Stop after generation. Show these fields to the user or project owner:
+
+```text
+profile.sourceContent
+profile.compiledContent
+profile.validation
+profile.diffFromActive
+profile.generatedBy
+profile.sourceDigest
+profile.compiledDigest
+summary
+```
+
+If the user asks for changes, write the edited source profile to YAML or JSON, then repeat validate/diff/apply:
+
+```bash
+evopilot harness profile validate --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
+evopilot harness profile diff default --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
+evopilot harness profile apply --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
+```
+
+After `apply`, use the returned `profile.version` as `<harness-version>` for activation.
+
+If the generated DRAFT is accepted without edits, review the server diff and activate the reviewed version:
+
+```bash
+evopilot harness profile inspect default --project my-agent --version <harness-version> --json
+evopilot harness profile diff default --project my-agent --version <harness-version> --json
+evopilot harness profile activate default --project my-agent --version <harness-version> --json
+evopilot harness profile explain default --project my-agent --json
+```
+
+Do not activate a profile version until the user or project owner confirms that the DRAFT harness definition is acceptable. After activation, `target plan` and `goal plan` must bind the active profile by version and digest.
+
+## 6. Generate The Phase Plan
 
 The objective is a business goal, not a maturity label:
 
@@ -134,7 +194,9 @@ Alpha -> Beta -> RC -> GA
 
 Stop after this command. Show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or project owner.
 
-## 6. Apply User Changes And Approve
+Also show `plan.projectHarness` or `phasePlan.projectHarness`. It must include the activated harness profile id, version, template reference, source digest, compiled digest, and capabilities. If the binding is missing, stop and repair the harness activation before approval.
+
+## 7. Apply User Changes And Approve
 
 Only after the user or project owner confirms:
 
@@ -151,7 +213,7 @@ evopilot target plan approve <goal-id> \
 
 Do not invent confirmation text.
 
-## 7. Run The Target
+## 8. Run The Target
 
 ```bash
 evopilot target run \
@@ -165,7 +227,7 @@ evopilot target run \
 
 If the plan is not approved, the wrapper stops with `PENDING_PLAN_APPROVAL` and `nextAction=approve-plan`.
 
-## 8. Inspect Evidence Packages
+## 9. Inspect Evidence Packages
 
 ```bash
 evopilot goal target-package <goal-id> --target <target-id> --json
@@ -185,12 +247,15 @@ llmUsage.summary.model is present
 llmUsage.summary.totalTokens is present
 ```
 
-## 9. Final Agent Report
+## 10. Final Agent Report
 
 Report server-derived fields only:
 
 ```text
 projectId=<project-id>
+projectHarnessProfile=<profile-id-or-missing>
+projectHarnessVersion=<version-or-missing>
+projectHarnessDigest=<compiled-digest-or-missing>
 goalId=<goal-id>
 activeTargetId=<target-id>
 loopId=<loop-id>

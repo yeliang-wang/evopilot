@@ -2,7 +2,7 @@
 
 > Production runbook for WorkBuddy, Codex, Claude Code, CI jobs, and other AI agents that operate EvoPilot through the CLI.
 
-Use this file as the agent entrypoint. It gives the shortest safe path first, then the atomic fallback commands and the log evidence needed to troubleshoot a production run.
+Use this file as the agent entrypoint. It gives the shortest safe path first, including ProjectHarnessProfile confirmation, then the atomic fallback commands and the log evidence needed to troubleshoot a production run.
 
 EvoPilot is the system of record. The CLI submits server-governed requests; it does not bypass RBAC, tenant/workspace scope, approval gates, source-closure preflight, release policy, deployment gates, audit records, or final release decisions.
 
@@ -23,6 +23,8 @@ Alpha -> Beta -> RC -> GA
 Each phase has baseline standards, acceptance criteria, required evidence, review capabilities, package outputs, and a GO/NO-GO decision. The active standard set is `evopilot-default/v1`, visible through `evopilot maturity standards list --json` and `evopilot maturity standards inspect <alpha|beta|rc|ga> --json`.
 
 WorkBuddy must show the generated plan to the user before execution. Users may add project-specific GoalTargets or strengthen evidence and review requirements, but they must not delete Alpha/Beta/RC/GA, skip a phase, or remove baseline criteria while claiming standard GA.
+
+Before phase planning, the project should have an active `ProjectHarnessProfile`. This profile is the project-level harness definition for capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, release governance, and LLM draft policy. A generated profile is always a DRAFT until the user or project owner reviews it and an admin activates it. For a first onboarding, EvoPilot generates it from the HarnessTemplate, the goal loop target, and project context. For re-onboarding or project evolution, EvoPilot also reads the previous active profile and returns a diff-aware DRAFT.
 
 ## Fast Path
 
@@ -88,7 +90,7 @@ The agent must not claim more than `claimBoundary`. In particular, `fork-ci-pr` 
 
 Writable GitHub/GitLab modes require an execution principal owned by the operator, user, or organization. For third-party open-source upstreams, use an operator-owned fork with `fork-validated-pr`, or use `upstream-authorized` only with maintainer credentials. If no GitHub/GitLab account or group exists, use `read-only-public` and do not claim PR, CI/CD, merge, deploy, or release readiness.
 
-If `nextAction=store-secret`, use the suggested `secret set` command from the checklist only from a trusted shell where the token environment variable is available. If `nextAction=connect-github-account` or `nextAction=connect-gitlab-account`, stop until the operator connects or creates the matching SCM account/group/principal and stores the server-side tokenRef. If `nextAction=configure-llm-profile`, create or repair the project LLM profile before continuing. If `nextAction=register-project`, continue with `project onboard`. If `nextAction=plan-target`, generate or inspect the phase plan with `target plan`, approve it only after user confirmation, then continue with `target run`. If `status=BLOCKED`, stop and report `blockers`.
+If `nextAction=store-secret`, use the suggested `secret set` command from the checklist only from a trusted shell where the token environment variable is available. If `nextAction=connect-github-account` or `nextAction=connect-gitlab-account`, stop until the operator connects or creates the matching SCM account/group/principal and stores the server-side tokenRef. If `nextAction=configure-llm-profile`, create or repair the project LLM profile before continuing. If `nextAction=register-project`, continue with `project onboard`. If `nextAction=plan-target`, generate or inspect the project harness profile first, activate the reviewed harness definition, then generate the phase plan with `target plan`, approve it only after user confirmation, and continue with `target run`. If `status=BLOCKED`, stop and report `blockers`.
 
 For an already registered project, verify source credentials and native DevOps before invoking a one-command target:
 
@@ -133,6 +135,39 @@ run override --llm-profile -> project default LLM -> server global default LLM
 
 For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
 
+Generate and confirm the project harness profile before phase planning:
+
+```bash
+evopilot harness profile generate \
+  --project my-agent \
+  --from-template python-enterprise-harness \
+  --goal-loop-target "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
+  --llm-profile my-agent-llm \
+  --json
+
+evopilot harness profile inspect default --project my-agent --version <harness-version> --json
+evopilot harness profile diff default --project my-agent --version <harness-version> --json
+```
+
+EvoPilot returns `evopilot-project-harness-profile-generate-result/v1` with `status=DRAFT`, `profile.status=DRAFT`, `profile.validation`, `profile.sourceContent`, `profile.compiledContent`, `profile.diffFromActive`, `profile.generatedBy`, `profile.sourceDigest`, `profile.compiledDigest`, and `summary`. WorkBuddy must show those fields to the user or project owner before activation. If the user wants changes, write the edited source profile to YAML or JSON and repeat:
+
+```bash
+evopilot harness profile validate --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
+evopilot harness profile diff default --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
+evopilot harness profile apply --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
+```
+
+After `apply`, use the returned `profile.version` as `<harness-version>` for activation.
+
+Do not activate until the user or project owner confirms the DRAFT harness definition:
+
+```bash
+evopilot harness profile activate default --project my-agent --version <harness-version> --json
+evopilot harness profile explain default --project my-agent --json
+```
+
+The activation response must show `status=ACTIVE` and `summary.activeVersion=<harness-version>`. For second onboarding or project evolution, report whether `profile.generatedBy.evidence[]` contains `previousActiveVersion=<n>` or `previousActiveVersion=none`.
+
 Generate the project phase plan before execution:
 
 ```bash
@@ -144,7 +179,7 @@ evopilot target plan \
   --json
 ```
 
-EvoPilot returns `evopilot-cli-target-plan/v1` with `goalId`, `terminalMaturity=ga`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan`. WorkBuddy should show this plan to the user. If the user wants changes, export, edit, diff, and apply before approval:
+EvoPilot returns `evopilot-cli-target-plan/v1` with `goalId`, `terminalMaturity=ga`, `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan`. WorkBuddy should show this plan to the user. If `projectHarness` is missing or does not match the activated harness version and compiled digest, stop and repair the harness activation before approval. If the user wants changes, export, edit, diff, and apply before approval:
 
 ```bash
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
@@ -349,7 +384,7 @@ Expected onboarding checklist result before Goal/Loop execution:
 }
 ```
 
-Only after source and DevOps preflight return `READY`, `project onboard verify` returns `READY_TO_RUN`, and the phase plan has been reviewed and approved, run the one-command target. If no approved plan exists, go back to the Fast Path and run `target plan` first:
+Only after source and DevOps preflight return `READY`, `project onboard verify` returns `READY_TO_RUN`, the ProjectHarnessProfile DRAFT has been reviewed and activated, and the phase plan has been reviewed and approved, run the one-command target. If no active harness profile or approved plan exists, go back to the Fast Path and run `harness profile generate` before `target plan`:
 
 ```bash
 evopilot target run \
@@ -622,6 +657,17 @@ evopilot target create \
 
 evopilot project preflight my-agent --json
 evopilot project devops preflight my-agent --json
+evopilot project llm preflight my-agent --json
+
+evopilot harness profile generate \
+  --project my-agent \
+  --from-template python-enterprise-harness \
+  --goal-loop-target "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
+  --llm-profile my-agent-llm \
+  --json
+evopilot harness profile diff default --project my-agent --version <harness-version> --json
+# STOP: show the ProjectHarnessProfile DRAFT to the user or project owner; continue only after explicit confirmation.
+evopilot harness profile activate default --project my-agent --version <harness-version> --json
 
 evopilot goal create \
   --project my-agent \
@@ -703,6 +749,7 @@ Progress   2/6 required (33%)
 
 Workflow
 [OK] Project - my-agent
+[OK] ProjectHarnessProfile - default v3 digest=sha256:...
 [OK] Release Target - my-agent-ga / GA Release
 [RUNNING] GlobalGoal - goal-my-agent-ga-run / 2/6 required targets
 [RUNNING] GoalTarget - source-closure-deploy / next=resume-loop
@@ -719,6 +766,7 @@ Evidence
 - snapshot: /api/v1/goals/<goal-id>/snapshot
 - graph: /api/v1/goals/<goal-id>/graph
 - evidence matrix: /api/v1/goals/<goal-id>/evidence-matrix
+- project harness: /api/v1/projects/my-agent/harness-profiles/default/explain
 - release decision: pending
 
 LLM Usage
@@ -790,12 +838,14 @@ When a production agent cannot continue, collect:
 2. The HTTP `x-request-id` or `correlation.requestId`.
 3. Logs with the same requestId, goalId, loopId, releaseRunId, or releaseDecisionId.
 4. `evopilot goal snapshot <goal-id> --json`.
-5. `evopilot goal graph <goal-id> --json`.
-6. `evopilot goal evidence-matrix <goal-id> --json`.
-7. `evopilot trace tree <loop-id> --json` when a loop exists.
-8. `evopilot release decisions --project <project-id> --target <target-id> --json`.
-9. `evopilot audit list --limit 50 --json`.
-10. `/health`, `/ready`, and recent deployment/configuration changes.
+5. `evopilot harness profile inspect default --project <project-id> --json`.
+6. `evopilot harness profile explain default --project <project-id> --json`.
+7. `evopilot goal graph <goal-id> --json`.
+8. `evopilot goal evidence-matrix <goal-id> --json`.
+9. `evopilot trace tree <loop-id> --json` when a loop exists.
+10. `evopilot release decisions --project <project-id> --target <target-id> --json`.
+11. `evopilot audit list --limit 50 --json`.
+12. `/health`, `/ready`, and recent deployment/configuration changes.
 ```
 
 Ask the diagnosing AI to prioritize `correlation.*`, `tenantId`, `workspaceId`, `routeGroup`, `outcome`, `errorCode`, `latencyBucket`, `diagnosis`, trace tree, release decisions, and audit. Do not infer the release verdict from scattered logs.
@@ -806,6 +856,7 @@ AI agents must not:
 
 - parse human text when `--json` is available.
 - synthesize `GO`, `NO-GO`, `GA stable`, or `RC ready` from local tests alone.
+- activate a `ProjectHarnessProfile` before the user or project owner reviews the DRAFT source and compiled controls.
 - bypass human gates, source credential blockers, release policy, or deployment gates.
 - store tokens, passwords, or credentials in committed files.
 - assume `/opt/evopilot` or any ECS path exists on the agent machine.

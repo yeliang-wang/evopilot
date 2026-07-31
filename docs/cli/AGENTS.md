@@ -10,6 +10,7 @@ Read this file first. Then read [quickstart.md](quickstart.md). Use [automation.
 - Do not parse human-readable output for automation.
 - Do not pass raw GitHub, GitLab, LLM, deploy, API, or password secrets in daily `target run`, `goal run`, or `loop run` commands.
 - Store secrets on the EvoPilot server or tenant/workspace secret vault, then reference them through `tokenRef`, `apiKeyRef`, or an LLM profile id.
+- Do not activate a generated `ProjectHarnessProfile` until the user or project owner has reviewed the DRAFT profile definition.
 - Do not approve a phase plan until the user or project owner has reviewed it.
 - Do not invent `--confirmed-by` or `--confirmation` values.
 - Do not claim source writeback, PR/MR, CI/CD, merge, deploy, release readiness, or GA beyond the server-returned `claimBoundary` and release decision.
@@ -44,10 +45,22 @@ evopilot status --json
 evopilot project onboard plan github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://my-agent.example.com/health --llm-profile my-agent-llm --json
 evopilot project onboard github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://my-agent.example.com/health --llm-profile my-agent-llm --client workbuddy --json
 evopilot project onboard verify my-agent --json
+evopilot project preflight my-agent --json
+evopilot project devops preflight my-agent --json
+evopilot project llm preflight my-agent --json
+evopilot harness profile generate --project my-agent --from-template python-enterprise-harness --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --json
+evopilot harness profile inspect default --project my-agent --version <harness-version> --json
+evopilot harness profile diff default --project my-agent --version <harness-version> --json
+```
+
+After `harness profile generate`, stop. Show `profile.sourceContent`, `compiledContent`, `validation`, `diffFromActive`, `generatedBy`, `sourceDigest`, and `compiledDigest` to the user or project owner. If the user edits the harness, write the edited YAML/JSON to a file and run `harness profile validate`, `harness profile diff`, and `harness profile apply`; then use the `profile.version` returned by `apply` as `<harness-version>`. Activate only the reviewed version.
+
+```bash
+evopilot harness profile activate default --project my-agent --version <harness-version> --json
 evopilot target plan --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
 ```
 
-After `target plan`, stop. Show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or project owner. Continue only after explicit confirmation.
+After `target plan`, stop. Show `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or project owner. Continue only after explicit confirmation.
 
 ```bash
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
@@ -102,6 +115,9 @@ schema=<wrapper-schema>
 status=<server-status>
 nextAction=<server-next-action>
 projectId=<project-id>
+projectHarnessProfile=<profile-id-or-missing>
+projectHarnessVersion=<version-or-missing>
+projectHarnessDigest=<compiled-digest-or-missing>
 goalId=<goal-id>
 activeTargetId=<target-id>
 loopId=<loop-id>

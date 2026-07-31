@@ -28,6 +28,11 @@ evopilot llm profile preflight my-agent-llm --json
 evopilot project onboard plan github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://my-agent.example.com/health --llm-profile my-agent-llm --json
 evopilot project onboard github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://my-agent.example.com/health --llm-profile my-agent-llm --client workbuddy --json
 evopilot project llm preflight my-agent --json
+evopilot harness profile generate --project my-agent --from-template python-enterprise-harness --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --json
+evopilot harness profile inspect default --project my-agent --version <harness-version> --json
+evopilot harness profile diff default --project my-agent --version <harness-version> --json
+# STOP: show the ProjectHarnessProfile DRAFT to the user or project owner; continue only after explicit confirmation.
+evopilot harness profile activate default --project my-agent --version <harness-version> --json
 evopilot target plan --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
@@ -47,6 +52,8 @@ When humans do read the console output, wrapper commands print the same core cha
 
 When WorkBuddy is simulating a human operator, it must pause after `target plan`, show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan`, and wait for user confirmation before `target plan approve`. The required `--confirmed-by` and `--confirmation` values must reflect the real confirmation; automation must not invent them.
 
+WorkBuddy must also pause after `harness profile generate`. It must show `profile.sourceContent`, `compiledContent`, `validation`, `diffFromActive`, `generatedBy`, `sourceDigest`, and `compiledDigest`, and it must wait for user confirmation before `harness profile activate`. If the user edits the profile, automation must run `harness profile validate`, `harness profile diff`, and `harness profile apply` before activation.
+
 ## Required Parse Order
 
 For every `--json` command, automation should parse in this order:
@@ -59,10 +66,11 @@ For every `--json` command, automation should parse in this order:
 6. IDs: `projectId`, `releaseTargetId`, `goalId`, `activeTargetId`, `loopId`, `releaseRunId`, `releaseDecisionId`, `requestId`
 7. Execution boundary: `executionMode`, `devopsOwner`, `workflowRepository`, `credentialRef`, `credentialPrincipal`, `claimBoundary`
 8. LLM boundary: `llm.profileId`, `llm.source`, `llm.provider`, `llm.model`, project LLM readiness, and run override `--llm-profile`
-9. Goal phase plan: `phasePlan.phases[]`, `phasePlan.targets[]`, `editablePlan`, `status.nextAction`
-10. Package gates: `status.targetPackages[]`, `status.phasePackages[]`, `TargetEvidencePackage.status`, `PhasePackage.decision.status`, `blockers`, and `llmUsage`
-11. Release decision fields from EvoPilot release APIs, never local inference
-12. `llmUsage.summary`, `llmUsage.process.responses[]`, and `llmUsage.server.steps[]`
+9. Project harness profile: `profile.status`, `profile.version`, `profile.sourceContent`, `profile.compiledContent`, `profile.validation`, `profile.diffFromActive`, `profile.generatedBy`, `profile.sourceDigest`, `profile.compiledDigest`, `summary.activeVersion`, and `summary.latestVersion`
+10. Goal phase plan: `plan.projectHarness`, `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, `editablePlan`, `status.nextAction`
+11. Package gates: `status.targetPackages[]`, `status.phasePackages[]`, `TargetEvidencePackage.status`, `PhasePackage.decision.status`, `blockers`, and `llmUsage`
+12. Release decision fields from EvoPilot release APIs, never local inference
+13. `llmUsage.summary`, `llmUsage.process.responses[]`, and `llmUsage.server.steps[]`
 
 Do not continue just because a command printed a workflow graph. Continue only when the JSON status and `nextAction` allow it.
 
@@ -92,6 +100,9 @@ exitCode=<0-or-nonzero>
 status=<server-status>
 nextAction=<server-next-action>
 projectId=<project-id>
+projectHarnessProfile=<profile-id-or-missing>
+projectHarnessVersion=<version-or-missing>
+projectHarnessDigest=<compiled-digest-or-missing>
 goalId=<goal-id-or-empty>
 loopId=<loop-id-or-empty>
 releaseDecisionId=<id-or-empty>
@@ -158,7 +169,7 @@ repair-llm-provider
 
 Automation must not pass raw LLM API keys in `target run`, `goal run`, `loop run`, or daily `project onboard` commands. It must report the selected profile id when available and must include `llmUsage.summary.provider`, `llmUsage.summary.model`, and token totals in the final run report.
 
-`project onboard plan` and `project onboard verify` are the onboarding control surface for automation. Both print `evopilot-project-onboarding-checklist/v1`; the checklist contains machine-readable `steps`, `missingInputs`, `blockers`, `commands`, and `nextAction`. `plan` does not mutate project state. `verify` reads persisted project state and should return `READY_TO_RUN` with `nextAction=plan-target` before an agent claims that source writeback, repository-native DevOps, and project LLM readiness are ready for phase planning.
+`project onboard plan` and `project onboard verify` are the onboarding control surface for automation. Both print `evopilot-project-onboarding-checklist/v1`; the checklist contains machine-readable `steps`, `missingInputs`, `blockers`, `commands`, and `nextAction`. `plan` does not mutate project state. `verify` reads persisted project state and should return `READY_TO_RUN` with `nextAction=plan-target` before an agent claims that source writeback, repository-native DevOps, and project LLM readiness are ready for harness profile generation and phase planning.
 
 For any GitHub/GitLab DevOps flow, automation must parse and persist these fields from onboarding or `project devops preflight`:
 
@@ -202,9 +213,41 @@ evopilot goal create \
 
 Mutating wrapper commands should use stable job or task identifiers when available.
 
+## Project Harness Profile Rules
+
+Automation must treat `ProjectHarnessProfile` as a governed project control-plane artifact. It is generated as a DRAFT, reviewed by the user or project owner, optionally edited, then activated explicitly:
+
+```bash
+evopilot harness profile generate \
+  --project my-agent \
+  --from-template python-enterprise-harness \
+  --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" \
+  --llm-profile my-agent-llm \
+  --json
+
+evopilot harness profile inspect default --project my-agent --version <harness-version> --json
+evopilot harness profile diff default --project my-agent --version <harness-version> --json
+# STOP: show the ProjectHarnessProfile DRAFT to the user or project owner; continue only after explicit confirmation.
+evopilot harness profile activate default --project my-agent --version <harness-version> --json
+```
+
+If the user changes the DRAFT, write the edited source profile to YAML or JSON and repeat this loop before activation:
+
+```bash
+evopilot harness profile validate --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
+evopilot harness profile diff default --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
+evopilot harness profile apply --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
+```
+
+After `apply`, use the returned `profile.version` as `<harness-version>` for activation.
+
+First onboarding uses the harness template, goal loop target, and project context. Re-onboarding or project evolution also uses the previous active profile. The agent must report whether `generatedBy.evidence[]` includes `previousActiveVersion=<n>` or `previousActiveVersion=none`.
+
+Automation may proceed to `target plan` only after `harness profile activate` returns `status=ACTIVE` and `summary.activeVersion=<harness-version>`. `target plan` or `goal plan` must then expose `plan.projectHarness` or `phasePlan.projectHarness` with the same profile id, version, and compiled digest. If the binding is missing, stop and repair the harness activation.
+
 ## Goal Plan Approval Rules
 
-Automation must treat the generated phase plan as a governed artifact. The normal path is:
+Automation must treat the generated phase plan as a governed artifact. The normal path after harness activation is:
 
 ```bash
 evopilot target plan --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
@@ -334,7 +377,7 @@ evopilot project onboard github \
   --json
 ```
 
-After `project onboard verify my-agent --json` returns `READY_TO_RUN` and `nextAction=plan-target`, generate the phase plan with `target plan`, approve it after user review, and continue with `target run`.
+After `project onboard verify my-agent --json` returns `READY_TO_RUN` and `nextAction=plan-target`, generate or inspect the project harness profile first. Activate the reviewed harness profile, then generate the phase plan with `target plan`, approve it after user review, and continue with `target run`.
 
 ## Native DevOps Rules
 
