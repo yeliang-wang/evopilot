@@ -44,7 +44,7 @@ Detailed release evidence and deployment checklists live in [docs/reference/rele
 |---|---|
 | Loop Engineering | Durable loop state, executor graphs, checkpoints, replay, watchdog recovery, worker leases, sandbox proof, and timeline audit. |
 | GlobalGoal planning | A white-box goal layer above LoopRun that takes a business objective, decomposes it through Alpha -> Beta -> RC -> GA GoalTargets, waits for plan approval, binds each target to governed loops, and exposes progress, blockers, timeline, graph, evidence matrix, phase packages, and final report. |
-| Project harness profiles | Versioned administrator-managed `HarnessTemplate` records plus tenant/workspace/project-scoped `ProjectHarnessProfile` versions that define capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, governance, template inheritance, and active profile digests for goal planning. |
+| Project harness profiles | Versioned `HarnessTemplate` baselines, tenant/workspace `TenantHarnessPolicy` private constraints, and project-scoped `ProjectHarnessProfile` versions that define capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, governance, inheritance, and active digests for goal planning. |
 | Evidence ingestion | Runtime events, traces, logs, evaluations, release signals, APM-derived data, and user feedback. |
 | Human approval | Reviewable proposals before high-risk evolution, source writeback, merge, or release actions. |
 | Code upgrades | Bounded code-upgrader execution with allowed paths, validation commands, branch/commit evidence, and source closure. |
@@ -102,6 +102,7 @@ evopilot secret set --id LLM_API_KEY_MY_AGENT --kind llm-key --from-env LLM_API_
 evopilot llm profile set my-agent-llm --provider openai-compatible --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_MY_AGENT --json
 evopilot project llm set <project-id> --profile my-agent-llm --require-llm-ready --json
 evopilot harness template list --json
+evopilot harness policy list --json
 evopilot harness profile generate \
   --project <project-id> \
   --goal-loop-target "Define the project harness for this project" \
@@ -137,6 +138,8 @@ evopilot target run \
 
 Fresh installs include multiple built-in template harnesses: `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. On project onboarding, EvoPilot automatically matches one of the published templates from project runtime/repository context and the goal loop target; `--from-template` is only an explicit administrator or advanced override. The built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured YAML/JSON-compatible template data with version, changelog, digest, and `sourceReferences[]`. Current built-ins ship as `@1.1.0` enterprise harness baselines with structured logging, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. Administrators can publish or upgrade template versions through the independent `evopilot harness template apply|update|upgrade` CLI channel.
 
+Tenants can also activate private `TenantHarnessPolicy` versions through `evopilot harness policy apply|update|upgrade|activate`. A policy is scoped to the current tenant/workspace and can require organization-specific capabilities, evidence fields, correlation IDs, structured log fields, exception attributes, diagnostics, observability, governance booleans, and phase mappings for all matching project profiles. Once active, generated or imported `ProjectHarnessProfile` versions compile as `HarnessTemplate + TenantHarnessPolicy + project profile`; activation and goal planning are blocked if the active project profile does not bind the current policy version and digest.
+
 The raw LLM API key is stored once in the EvoPilot server-side secret vault. Daily `target run`, `goal run`, and `loop run` commands pass only the LLM profile id. For GitHub/GitLab enterprise real loops, the project must have an explicit READY project LLM profile or the run must pass `--llm-profile`; the server global default LLM is not sufficient for user/project attribution. Before Goal/Loop execution, wrapper commands preflight source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness by default.
 
 `--objective` is the user's business objective, not a maturity label. The terminal maturity is GA by default, and EvoPilot decomposes every governed goal through Alpha, Beta, RC, and GA. Wrapper commands stop at `PENDING_PLAN_APPROVAL` until WorkBuddy, a human operator, or a project owner reviews, edits if needed, and explicitly approves the generated phase plan. Phase-plan confirmation is mandatory; approval commands require `--confirmed-by` and `--confirmation`, and automation may continue execution only after those values come from a real confirmation.
@@ -160,10 +163,13 @@ The full browser operation guide lives in the standalone Dashboard repository un
 EvoPilot applies Loop Engineering to product evolution. For larger business objectives, the GlobalGoal layer sits above LoopRun and turns one global objective into Alpha -> Beta -> RC -> GA phase GoalTargets before each target is executed through the governed loop runtime:
 
 ```text
-ProjectHarnessProfile + GlobalGoal -> GoalTarget -> LoopRun -> Release Decision
+HarnessTemplate + TenantHarnessPolicy + ProjectHarnessProfile
                                       |
                                       v
-                         Sandbox -> Context -> Harness -> Loop
+                         GlobalGoal -> GoalTarget -> LoopRun -> Release Decision
+                                                    |
+                                                    v
+                                       Sandbox -> Context -> Harness -> Loop
 ```
 
 | Layer | EvoPilot responsibility |
@@ -218,7 +224,7 @@ Primary API surfaces include:
 | Auth and users | `POST /api/v1/auth/login`, `GET /api/v1/users`, `POST /api/v1/users` |
 | Projects and evidence | `GET /api/v1/projects`, `POST /api/v1/evidence/events` |
 | Project DevOps | `POST /api/v1/projects/{projectId}/devops`, `POST /api/v1/projects/{projectId}/devops/preflight` |
-| Project harness profiles | `GET /api/v1/harness/templates`, `POST /api/v1/harness/templates`, `POST /api/v1/projects/{projectId}/harness-profiles/generate`, `POST /api/v1/projects/{projectId}/harness-profiles`, `POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/activate` |
+| Project harness profiles | `GET /api/v1/harness/templates`, `POST /api/v1/harness/templates`, `GET /api/v1/harness/policies`, `POST /api/v1/harness/policies`, `POST /api/v1/harness/policies/{policyId}/activate`, `POST /api/v1/projects/{projectId}/harness-profiles/generate`, `POST /api/v1/projects/{projectId}/harness-profiles`, `POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/activate` |
 | LLM profiles | `POST /api/v1/llm-profiles`, `POST /api/v1/llm-profiles/{profileId}/preflight`, `POST /api/v1/projects/{projectId}/llm` |
 | Global goals | `GET /api/v1/goals`, `POST /api/v1/goals`, `POST /api/v1/goals/{goalId}/plan`, `POST /api/v1/goals/{goalId}/plan/apply`, `POST /api/v1/goals/{goalId}/approve-plan`, `POST /api/v1/goals/{goalId}/advance`, `GET /api/v1/goals/{goalId}/phase-plan`, `GET /api/v1/goals/{goalId}/phases`, `GET /api/v1/goals/{goalId}/target-packages`, `GET /api/v1/goals/{goalId}/phase-packages`, `GET /api/v1/goals/{goalId}/snapshot` |
 | Loops | `POST /api/v1/loops`, `POST /api/v1/loops/{loopId}/start`, `GET /api/v1/loops/{loopId}/timeline` |

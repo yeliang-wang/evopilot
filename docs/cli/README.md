@@ -107,17 +107,20 @@ WorkBuddy, Codex, Claude Code, CI jobs, and other agents should start with [AGEN
 5. Store or repair server-side `tokenRef` values when the checklist asks for it.
 6. Verify with `project preflight`, `project devops preflight`, and `project onboard verify`.
 7. For GitHub/GitLab enterprise real loops, or whenever the project needs a non-default model, store the LLM key server-side, create an LLM profile, bind it to the project, and run `project llm preflight`.
-8. Generate the project `ProjectHarnessProfile` DRAFT with `harness profile generate`, show it to the user, optionally validate/diff/apply edits, and activate only after confirmation.
-9. Generate the Goal phase plan with `target plan`.
-10. Show `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
-11. Run `target run`, `goal run`, or `loop run` with `--json`.
-12. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
-13. For troubleshooting, run `evopilot audit list --limit 50 --json`; the limit is applied by the server and returns newest records first.
-14. Report the server-derived result, active harness profile version/digest, release verdict, IDs, LLM provider/model, token totals, and request IDs.
+8. If the tenant/workspace uses private harness constraints, inspect `harness policy list --json`; administrators manage those policies through `harness policy apply|activate`.
+9. Generate the project `ProjectHarnessProfile` DRAFT with `harness profile generate`, show it to the user, optionally validate/diff/apply edits, and activate only after confirmation.
+10. Generate the Goal phase plan with `target plan`.
+11. Show `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
+12. Run `target run`, `goal run`, or `loop run` with `--json`.
+13. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
+14. For troubleshooting, run `evopilot audit list --limit 50 --json`; the limit is applied by the server and returns newest records first.
+15. Report the server-derived result, active harness profile version/digest, release verdict, IDs, LLM provider/model, token totals, and request IDs.
 
 An agent must not parse human-readable output when `--json` is available, must not pass raw GitHub/GitLab tokens in daily wrapper commands, must not activate a `ProjectHarnessProfile` before showing it to the user or project owner, must not approve a phase plan before showing it to the user or project owner, and must not claim a stronger DevOps or release result than the server-returned `claimBoundary` and release decision.
 
 Template harness maintenance is an administrator workflow, not a daily project execution step. Fresh installs include `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. Project onboarding automatically matches a published template from project context and the goal loop target; `--from-template` is only an explicit administrator or advanced override. Current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. Use `harness template inspect <id> --json` to read a template's `sourceReferences[]`, capabilities, runtime defaults, validation baseline, evidence contract, failure taxonomy, diagnostics, observability, governance, phase mapping, and changelog. Use `harness template upgrade --file <template.yaml> --changelog <text> --json` to publish a new template id or version. Reusing the same `id@version` requires `--force`; existing active project profiles keep their templateRef until a reviewed profile revision is generated or upgraded and activated.
+
+Tenant harness policy maintenance is a separate administrator workflow for private organization constraints. Use `harness policy apply --file <policy.yaml> --changelog <text> --json` and `harness policy activate default --version <n> --json` to activate a tenant/workspace policy. Active policies are automatically inherited by matching generated/imported project profiles and appear as `profile.policyRefs[]` and `plan.projectHarness.policyRefs[]`. If a policy changes after a profile was activated, goal planning returns `PROJECT_HARNESS_PROFILE_POLICY_STALE` until a reviewed profile revision is generated or applied and activated.
 
 When a command returns an error or blocker, use the response `requestId` to query structured logs. Harness events such as `harness-template.apply.rejected`, `project-harness-profile.validation.failed`, `project-harness-profile.generated`, `project-harness-profile.activated`, `goal-plan.project-harness-bound`, and `goal-plan.project-harness-missing` carry template/profile digest metadata and `diagnosis.recommendedAction`.
 
@@ -140,6 +143,7 @@ llmUsage.summary.creditsConsumed
 plan.projectHarness.profileId or phasePlan.projectHarness.profileId
 plan.projectHarness.version or phasePlan.projectHarness.version
 plan.projectHarness.compiledDigest or phasePlan.projectHarness.compiledDigest
+plan.projectHarness.policyRefs or phasePlan.projectHarness.policyRefs
 llmUsage.process.responses[]
 llmUsage.server.steps[]
 ```

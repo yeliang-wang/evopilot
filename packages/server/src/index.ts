@@ -266,11 +266,20 @@ interface ProjectRuntimeDiagnostic {
 
 type ProjectHarnessProfileStatus = "DRAFT" | "VALIDATED" | "ACTIVE" | "SUPERSEDED" | "REJECTED";
 type ProjectHarnessProfileSourceFormat = "object" | "json" | "yaml" | "llm-generated";
+type TenantHarnessPolicyStatus = "DRAFT" | "VALIDATED" | "ACTIVE" | "SUPERSEDED" | "REJECTED";
+type TenantHarnessPolicySourceFormat = "object" | "json" | "yaml";
 
 interface HarnessTemplateRef {
   templateId: string;
   version: string;
   digest: string;
+}
+
+interface TenantHarnessPolicyRef {
+  policyId: string;
+  version: number;
+  digest: string;
+  scope: "tenant-workspace";
 }
 
 interface HarnessCapabilityDefinition {
@@ -320,6 +329,34 @@ interface HarnessTemplateProfile {
   updatedAt: string;
 }
 
+interface TenantHarnessPolicySource {
+  schema: "evopilot-tenant-harness-policy/v1";
+  policyId: string;
+  tenantId?: string;
+  workspaceId?: string;
+  name: string;
+  description?: string;
+  appliesTo?: {
+    projectIds?: string[];
+    excludeProjectIds?: string[];
+    languageFamilies?: string[];
+    templateIds?: string[];
+  };
+  requiredCapabilities?: HarnessCapabilityDefinition[];
+  runtime?: Record<string, unknown>;
+  validation?: Record<string, unknown>;
+  evidence?: Record<string, unknown>;
+  rules?: Record<string, unknown>;
+  failureHandling?: Record<string, unknown>;
+  diagnostics?: Record<string, unknown>;
+  observability?: Record<string, unknown>;
+  governance?: Record<string, unknown>;
+  phaseMapping?: Partial<Record<MaturityPhase, string[]>>;
+  llmDraftPolicy?: Record<string, unknown>;
+  enforcement?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+}
+
 interface ProjectHarnessProfileSource {
   schema: "evopilot-project-harness-profile/v1";
   profileId: string;
@@ -351,6 +388,7 @@ interface CompiledProjectHarnessProfile {
   profileId: string;
   name: string;
   templateRef: HarnessTemplateRef;
+  policyRefs: TenantHarnessPolicyRef[];
   capabilities: HarnessCapabilityDefinition[];
   runtime: Record<string, unknown>;
   validation: Record<string, unknown>;
@@ -374,6 +412,7 @@ interface ProjectHarnessProfileValidationResult {
   projectId: string;
   profileId: string;
   templateRef?: HarnessTemplateRef;
+  policyRefs?: TenantHarnessPolicyRef[];
   status: "VALIDATED" | "FAILED";
   checks: Array<{
     id: string;
@@ -417,6 +456,7 @@ interface ProjectHarnessProfileVersion {
   compiledContent: CompiledProjectHarnessProfile;
   compiledDigest: string;
   templateRef: HarnessTemplateRef;
+  policyRefs: TenantHarnessPolicyRef[];
   validation: ProjectHarnessProfileValidationResult;
   diffFromActive?: ProjectHarnessProfileDiff;
   generatedBy: {
@@ -448,6 +488,7 @@ interface ProjectHarnessProfileSummary {
   sourceDigest?: string;
   compiledDigest?: string;
   templateRef?: HarnessTemplateRef;
+  policyRefs?: TenantHarnessPolicyRef[];
   storage: {
     authority: "evopilot-control-plane";
     format: "json";
@@ -456,6 +497,107 @@ interface ProjectHarnessProfileSummary {
   versions: Array<{
     version: number;
     status: ProjectHarnessProfileStatus;
+    sourceDigest: string;
+    compiledDigest: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  updatedAt?: string;
+}
+
+interface CompiledTenantHarnessPolicy {
+  schema: "evopilot-tenant-harness-policy-compiled/v1";
+  tenantId: string;
+  workspaceId: string;
+  policyId: string;
+  name: string;
+  description?: string;
+  appliesTo: {
+    projectIds: string[];
+    excludeProjectIds: string[];
+    languageFamilies: string[];
+    templateIds: string[];
+  };
+  requiredCapabilities: HarnessCapabilityDefinition[];
+  runtime: Record<string, unknown>;
+  validation: Record<string, unknown>;
+  evidence: Record<string, unknown>;
+  rules: Record<string, unknown>;
+  failureHandling: Record<string, unknown>;
+  diagnostics: Record<string, unknown>;
+  observability: Record<string, unknown>;
+  governance: Record<string, unknown>;
+  phaseMapping: Partial<Record<MaturityPhase, string[]>>;
+  llmDraftPolicy: Record<string, unknown>;
+  enforcement: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
+  compiledAt: string;
+}
+
+interface TenantHarnessPolicyValidationResult {
+  schema: "evopilot-tenant-harness-policy-validation/v1";
+  tenantId: string;
+  workspaceId: string;
+  policyId: string;
+  status: "VALIDATED" | "FAILED";
+  checks: Array<{
+    id: string;
+    status: "PASS" | "FAIL" | "WARN";
+    required: boolean;
+    evidence: string[];
+  }>;
+  blockers: string[];
+  warnings: string[];
+  sourceDigest: string;
+  compiledDigest: string;
+  evaluatedAt: string;
+}
+
+interface TenantHarnessPolicyVersion {
+  schema: "evopilot-tenant-harness-policy-version/v1";
+  tenantId: string;
+  workspaceId: string;
+  policyId: string;
+  version: number;
+  status: TenantHarnessPolicyStatus;
+  sourceFormat: TenantHarnessPolicySourceFormat;
+  sourceContent: TenantHarnessPolicySource;
+  sourceDigest: string;
+  compiledContent: CompiledTenantHarnessPolicy;
+  compiledDigest: string;
+  validation: TenantHarnessPolicyValidationResult;
+  changelog: HarnessTemplateChangelogEntry[];
+  generatedBy: {
+    mode: "user";
+    actor?: string;
+    evidence: string[];
+  };
+  approvedAt?: string;
+  approvedBy?: string;
+  activatedAt?: string;
+  activatedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface TenantHarnessPolicySummary {
+  schema: "evopilot-tenant-harness-policy-summary/v1";
+  tenantId: string;
+  workspaceId: string;
+  policyId: string;
+  status: TenantHarnessPolicyStatus | "MISSING";
+  activeVersion?: number;
+  latestVersion?: number;
+  sourceDigest?: string;
+  compiledDigest?: string;
+  storage: {
+    authority: "evopilot-control-plane";
+    format: "json";
+    path: string;
+  };
+  versions: Array<{
+    version: number;
+    status: TenantHarnessPolicyStatus;
     sourceDigest: string;
     compiledDigest: string;
     createdAt: string;
@@ -1429,6 +1571,7 @@ interface GoalPlanProjectHarnessBinding {
   version: number;
   status: "ACTIVE";
   templateRef: HarnessTemplateRef;
+  policyRefs: TenantHarnessPolicyRef[];
   sourceDigest: string;
   compiledDigest: string;
   capabilities: string[];
@@ -3055,6 +3198,136 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         const template = store.readHarnessTemplate(decodeURIComponent(harnessTemplateMatch[1]), url.searchParams.get("version") ?? undefined);
         if (!template) return writeJson(response, 404, { error: "HARNESS_TEMPLATE_NOT_FOUND" });
         return writeJson(response, 200, envelope(template));
+      }
+      if (request.method === "GET" && url.pathname === "/api/v1/harness/policies") {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        return writeJson(response, 200, envelope({
+          schema: "evopilot-tenant-harness-policy-list/v1",
+          tenantId: auth.tenantId,
+          workspaceId: auth.workspaceId,
+          policies: store.listTenantHarnessPolicySummaries(auth.tenantId, auth.workspaceId)
+        }));
+      }
+      if (request.method === "POST" && url.pathname === "/api/v1/harness/policies") {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const parsed = parseTenantHarnessPolicyPayload(body, auth.tenantId, auth.workspaceId);
+        const candidate = createTenantHarnessPolicyVersion(store, auth.tenantId, auth.workspaceId, {
+          source: parsed.source,
+          sourceFormat: parsed.sourceFormat,
+          actor: auth.actor,
+          changelog: parsed.changelog,
+          status: "VALIDATED"
+        });
+        if (candidate.validation.status !== "VALIDATED") {
+          requestErrorCode = "TENANT_HARNESS_POLICY_VALIDATION_FAILED";
+          logWarn("tenant-harness-policy.validation.failed", {
+            requestId,
+            category: "harness",
+            tenantId: auth.tenantId,
+            workspaceId: auth.workspaceId,
+            actor: auth.actor,
+            role: auth.role,
+            outcome: "blocked",
+            errorCode: "TENANT_HARNESS_POLICY_VALIDATION_FAILED",
+            correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+            diagnosis: {
+              summary: "TenantHarnessPolicy validation failed.",
+              likelyCause: candidate.validation.blockers.join("; ") || "Tenant harness policy did not declare a valid private project contract.",
+              recommendedAction: "Inspect validation.checks and validation.blockers, edit the policy source, then rerun harness policy apply.",
+              retriable: false,
+              humanActionRequired: true
+            },
+            metadata: tenantHarnessPolicyLogMetadata(candidate, { nextAction: "edit-policy-source" })
+          });
+          return writeJson(response, 409, envelope({
+            schema: "evopilot-tenant-harness-policy-apply-result/v1",
+            status: "FAILED",
+            validation: candidate.validation,
+            candidate
+          }));
+        }
+        const saved = store.writeTenantHarnessPolicyVersion(candidate);
+        logInfo("tenant-harness-policy.applied", {
+          requestId,
+          category: "harness",
+          tenantId: auth.tenantId,
+          workspaceId: auth.workspaceId,
+          actor: auth.actor,
+          role: auth.role,
+          outcome: "success",
+          correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+          metadata: tenantHarnessPolicyLogMetadata(saved, { nextAction: "activate-reviewed-policy" })
+        });
+        store.appendAudit(audit(auth, "tenant-harness-policy.applied", `${saved.policyId}/v${saved.version}`, {
+          policyId: saved.policyId,
+          version: saved.version,
+          sourceDigest: saved.sourceDigest,
+          compiledDigest: saved.compiledDigest,
+          validation: saved.validation.status
+        }));
+        return writeJson(response, 201, envelope({
+          schema: "evopilot-tenant-harness-policy-apply-result/v1",
+          status: "VALIDATED",
+          policy: saved,
+          summary: store.tenantHarnessPolicySummary(saved.tenantId, saved.workspaceId, saved.policyId),
+          instruction: "TenantHarnessPolicy is stored as a validated version. Activate it explicitly before it constrains new ProjectHarnessProfile validation and goal planning."
+        }));
+      }
+      const tenantHarnessPolicyVersionMatch = url.pathname.match(/^\/api\/v1\/harness\/policies\/([^/]+)\/versions\/(\d+)$/);
+      if (request.method === "GET" && tenantHarnessPolicyVersionMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const policyId = safeFileName(decodeURIComponent(tenantHarnessPolicyVersionMatch[1]));
+        const version = store.readTenantHarnessPolicyVersion(auth.tenantId, auth.workspaceId, policyId, Number(tenantHarnessPolicyVersionMatch[2]));
+        if (!version) return writeJson(response, 404, { error: "TENANT_HARNESS_POLICY_VERSION_NOT_FOUND" });
+        return writeJson(response, 200, envelope(version));
+      }
+      const tenantHarnessPolicyActionMatch = url.pathname.match(/^\/api\/v1\/harness\/policies\/([^/]+)\/(activate)$/);
+      if (tenantHarnessPolicyActionMatch) {
+        const policyId = safeFileName(decodeURIComponent(tenantHarnessPolicyActionMatch[1]));
+        if (request.method === "POST" && tenantHarnessPolicyActionMatch[2] === "activate") {
+          if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+          const body = await readJson(request, options.maxBodyBytes) as Record<string, unknown>;
+          const versions = store.listTenantHarnessPolicyVersions(auth.tenantId, auth.workspaceId, policyId);
+          const selectedVersion = Number(body.version ?? versions[versions.length - 1]?.version ?? 0);
+          if (!selectedVersion) return writeJson(response, 404, { error: "TENANT_HARNESS_POLICY_VERSION_NOT_FOUND" });
+          const activated = store.activateTenantHarnessPolicyVersion(auth.tenantId, auth.workspaceId, policyId, selectedVersion, auth.actor);
+          if (!activated) return writeJson(response, 404, { error: "TENANT_HARNESS_POLICY_VERSION_NOT_FOUND" });
+          logInfo("tenant-harness-policy.activated", {
+            requestId,
+            category: "harness",
+            tenantId: auth.tenantId,
+            workspaceId: auth.workspaceId,
+            actor: auth.actor,
+            role: auth.role,
+            outcome: "success",
+            correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+            metadata: tenantHarnessPolicyLogMetadata(activated, { nextAction: "generate-or-upgrade-project-harness-profile" })
+          });
+          store.appendAudit(audit(auth, "tenant-harness-policy.activated", `${policyId}/v${activated.version}`, {
+            policyId,
+            version: activated.version,
+            sourceDigest: activated.sourceDigest,
+            compiledDigest: activated.compiledDigest
+          }));
+          return writeJson(response, 200, envelope({
+            schema: "evopilot-tenant-harness-policy-activate-result/v1",
+            status: "ACTIVE",
+            policy: activated,
+            summary: store.tenantHarnessPolicySummary(auth.tenantId, auth.workspaceId, policyId)
+          }));
+        }
+      }
+      const tenantHarnessPolicyMatch = url.pathname.match(/^\/api\/v1\/harness\/policies\/([^/]+)$/);
+      if (request.method === "GET" && tenantHarnessPolicyMatch) {
+        if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const policyId = safeFileName(decodeURIComponent(tenantHarnessPolicyMatch[1]));
+        const selectedVersion = url.searchParams.get("version") ? Number(url.searchParams.get("version")) : undefined;
+        const policy = selectedVersion
+          ? store.readTenantHarnessPolicyVersion(auth.tenantId, auth.workspaceId, policyId, selectedVersion)
+          : store.readActiveTenantHarnessPolicy(auth.tenantId, auth.workspaceId, policyId) ?? store.listTenantHarnessPolicyVersions(auth.tenantId, auth.workspaceId, policyId).at(-1);
+        if (!policy) return writeJson(response, 404, { error: "TENANT_HARNESS_POLICY_NOT_FOUND" });
+        return writeJson(response, 200, envelope(policy));
       }
       if (request.method === "POST" && url.pathname === "/api/v1/release/targets") {
         if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -5729,6 +6002,7 @@ class FileStore {
     fs.mkdirSync(this.runsDir, { recursive: true });
     fs.mkdirSync(this.projectsDir, { recursive: true });
     fs.mkdirSync(this.harnessTemplatesDir, { recursive: true });
+    fs.mkdirSync(this.tenantHarnessPoliciesDir, { recursive: true });
     fs.mkdirSync(this.projectHarnessProfilesDir, { recursive: true });
     fs.mkdirSync(path.dirname(this.auditFile), { recursive: true });
     fs.mkdirSync(this.idempotencyDir, { recursive: true });
@@ -5806,6 +6080,10 @@ class FileStore {
 
   get harnessTemplatesDir(): string {
     return path.join(this.dataRoot, "harness-templates");
+  }
+
+  get tenantHarnessPoliciesDir(): string {
+    return path.join(this.dataRoot, "tenant-harness-policies");
   }
 
   get projectHarnessProfilesDir(): string {
@@ -6832,6 +7110,111 @@ class FileStore {
     return hydrated;
   }
 
+  listTenantHarnessPolicySummaries(tenantId: string, workspaceId: string): TenantHarnessPolicySummary[] {
+    const root = this.tenantHarnessPolicyWorkspaceDir(tenantId, workspaceId);
+    if (!fs.existsSync(root)) return [];
+    return fs.readdirSync(root)
+      .filter((file) => fs.statSync(path.join(root, file)).isDirectory())
+      .sort()
+      .map((policyId) => this.tenantHarnessPolicySummary(tenantId, workspaceId, policyId))
+      .filter((summary): summary is TenantHarnessPolicySummary => Boolean(summary));
+  }
+
+  listTenantHarnessPolicyVersions(tenantId: string, workspaceId: string, policyId = "default"): TenantHarnessPolicyVersion[] {
+    const versionsDir = this.tenantHarnessPolicyVersionsDir(tenantId, workspaceId, policyId);
+    if (!fs.existsSync(versionsDir)) return [];
+    return fs.readdirSync(versionsDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort((left, right) => versionNumberFromFile(left) - versionNumberFromFile(right))
+      .map((file) => hydrateTenantHarnessPolicyVersion(JSON.parse(fs.readFileSync(path.join(versionsDir, file), "utf8"))));
+  }
+
+  readTenantHarnessPolicyVersion(tenantId: string, workspaceId: string, policyId: string, version: number): TenantHarnessPolicyVersion | undefined {
+    const file = path.join(this.tenantHarnessPolicyVersionsDir(tenantId, workspaceId, policyId), `v${version}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return hydrateTenantHarnessPolicyVersion(JSON.parse(fs.readFileSync(file, "utf8")));
+  }
+
+  readActiveTenantHarnessPolicy(tenantId: string, workspaceId: string, policyId = "default"): TenantHarnessPolicyVersion | undefined {
+    return this.listTenantHarnessPolicyVersions(tenantId, workspaceId, policyId).find((version) => version.status === "ACTIVE");
+  }
+
+  listActiveTenantHarnessPoliciesForProject(project: StoredProject, template?: HarnessTemplateProfile): TenantHarnessPolicyVersion[] {
+    return this.listTenantHarnessPolicySummaries(project.tenantId, project.workspaceId)
+      .map((summary) => this.readActiveTenantHarnessPolicy(project.tenantId, project.workspaceId, summary.policyId))
+      .filter((policy): policy is TenantHarnessPolicyVersion => Boolean(policy))
+      .filter((policy) => tenantHarnessPolicyAppliesToProject(policy, project, template));
+  }
+
+  writeTenantHarnessPolicyVersion(version: TenantHarnessPolicyVersion): TenantHarnessPolicyVersion {
+    const hydrated = hydrateTenantHarnessPolicyVersion(version);
+    const versionsDir = this.tenantHarnessPolicyVersionsDir(hydrated.tenantId, hydrated.workspaceId, hydrated.policyId);
+    fs.mkdirSync(versionsDir, { recursive: true });
+    atomicWriteJson(path.join(versionsDir, `v${hydrated.version}.json`), hydrated);
+    return hydrated;
+  }
+
+  activateTenantHarnessPolicyVersion(tenantId: string, workspaceId: string, policyId: string, version: number, actor: string): TenantHarnessPolicyVersion | undefined {
+    const versions = this.listTenantHarnessPolicyVersions(tenantId, workspaceId, policyId);
+    const selected = versions.find((item) => item.version === version);
+    if (!selected) return undefined;
+    if (selected.validation.status !== "VALIDATED") {
+      throw httpError(409, "TENANT_HARNESS_POLICY_NOT_VALIDATED", "Only validated TenantHarnessPolicy versions can be activated.");
+    }
+    const now = new Date().toISOString();
+    for (const item of versions) {
+      const next = item.version === selected.version
+        ? {
+            ...item,
+            status: "ACTIVE" as TenantHarnessPolicyStatus,
+            approvedAt: item.approvedAt ?? now,
+            approvedBy: item.approvedBy ?? actor,
+            activatedAt: now,
+            activatedBy: actor,
+            updatedAt: now
+          }
+        : item.status === "ACTIVE"
+          ? { ...item, status: "SUPERSEDED" as TenantHarnessPolicyStatus, updatedAt: now }
+          : item;
+      this.writeTenantHarnessPolicyVersion(next);
+    }
+    return this.readTenantHarnessPolicyVersion(tenantId, workspaceId, policyId, selected.version);
+  }
+
+  tenantHarnessPolicySummary(tenantId: string, workspaceId: string, policyId = "default"): TenantHarnessPolicySummary | undefined {
+    const safeTenantId = safeFileName(tenantId);
+    const safeWorkspaceId = safeFileName(workspaceId);
+    const safePolicyId = safeFileName(policyId);
+    const versions = this.listTenantHarnessPolicyVersions(safeTenantId, safeWorkspaceId, safePolicyId);
+    const active = versions.find((version) => version.status === "ACTIVE");
+    const latest = versions[versions.length - 1];
+    return {
+      schema: "evopilot-tenant-harness-policy-summary/v1",
+      tenantId: safeTenantId,
+      workspaceId: safeWorkspaceId,
+      policyId: safePolicyId,
+      status: active?.status ?? latest?.status ?? "MISSING",
+      activeVersion: active?.version,
+      latestVersion: latest?.version,
+      sourceDigest: active?.sourceDigest ?? latest?.sourceDigest,
+      compiledDigest: active?.compiledDigest ?? latest?.compiledDigest,
+      storage: {
+        authority: "evopilot-control-plane",
+        format: "json",
+        path: this.tenantHarnessPolicyRoot(safeTenantId, safeWorkspaceId, safePolicyId)
+      },
+      versions: versions.map((item) => ({
+        version: item.version,
+        status: item.status,
+        sourceDigest: item.sourceDigest,
+        compiledDigest: item.compiledDigest,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
+      })),
+      updatedAt: latest?.updatedAt
+    };
+  }
+
   listProjectHarnessProfileSummaries(projectId: string): ProjectHarnessProfileSummary[] {
     const project = this.readProject(projectId);
     if (!project) return [];
@@ -6886,6 +7269,12 @@ class FileStore {
     if (selected.validation.status !== "VALIDATED") {
       throw httpError(409, "PROJECT_HARNESS_PROFILE_NOT_VALIDATED", "Only validated ProjectHarnessProfile versions can be activated.");
     }
+    const template = this.readHarnessTemplate(selected.templateRef.templateId, selected.templateRef.version);
+    const activePolicies = this.listActiveTenantHarnessPoliciesForProject(project, template);
+    const policyFailures = detectTenantHarnessPolicyBindingFailures(activePolicies, selected.compiledContent);
+    if (policyFailures.length > 0) {
+      throw httpError(409, "PROJECT_HARNESS_PROFILE_POLICY_STALE", `ProjectHarnessProfile must be regenerated or reapplied against the active TenantHarnessPolicy before activation: ${policyFailures.join("; ")}`);
+    }
     const now = new Date().toISOString();
     for (const item of versions) {
       const next = item.version === selected.version
@@ -6925,6 +7314,7 @@ class FileStore {
       sourceDigest: active?.sourceDigest ?? latest?.sourceDigest,
       compiledDigest: active?.compiledDigest ?? latest?.compiledDigest,
       templateRef: active?.templateRef ?? latest?.templateRef,
+      policyRefs: active?.policyRefs ?? latest?.policyRefs,
       storage: {
         authority: "evopilot-control-plane",
         format: "json",
@@ -6944,6 +7334,18 @@ class FileStore {
 
   private projectHarnessProjectDir(project: StoredProject): string {
     return path.join(this.projectHarnessProfilesDir, safeFileName(project.tenantId), safeFileName(project.workspaceId), safeFileName(project.id));
+  }
+
+  private tenantHarnessPolicyWorkspaceDir(tenantId: string, workspaceId: string): string {
+    return path.join(this.tenantHarnessPoliciesDir, safeFileName(tenantId), safeFileName(workspaceId));
+  }
+
+  private tenantHarnessPolicyRoot(tenantId: string, workspaceId: string, policyId: string): string {
+    return path.join(this.tenantHarnessPolicyWorkspaceDir(tenantId, workspaceId), safeFileName(policyId));
+  }
+
+  private tenantHarnessPolicyVersionsDir(tenantId: string, workspaceId: string, policyId: string): string {
+    return path.join(this.tenantHarnessPolicyRoot(tenantId, workspaceId, policyId), "versions");
   }
 
   private projectHarnessProfileRoot(project: StoredProject, profileId: string): string {
@@ -11909,6 +12311,316 @@ function normalizeRawProjectHarnessProfileSource(input: unknown): ProjectHarness
   };
 }
 
+function parseTenantHarnessPolicyPayload(input: unknown, tenantId: string, workspaceId: string): { source: TenantHarnessPolicySource; sourceFormat: TenantHarnessPolicySourceFormat; changelog: string[] } {
+  const body = isRecord(input) ? input : {};
+  const format = normalizeTenantHarnessPolicySourceFormat(body.sourceFormat ?? body.format);
+  const sourceText = optionalTrimmedString(body.sourceText);
+  const changelog = normalizeStringList(body.changelog ?? body.changes ?? body.change, []);
+  if (sourceText) {
+    const parsed = format === "json" ? JSON.parse(sourceText) : parseYaml(sourceText);
+    return { source: normalizeRawTenantHarnessPolicySource(parsed, tenantId, workspaceId), sourceFormat: format === "object" ? "yaml" : format, changelog };
+  }
+  const sourceContent = isRecord(body.sourceContent)
+    ? body.sourceContent
+    : isRecord(body.policy)
+      ? body.policy
+      : body;
+  const source = normalizeRawTenantHarnessPolicySource(sourceContent, tenantId, workspaceId);
+  return {
+    source,
+    sourceFormat: format,
+    changelog
+  };
+}
+
+function normalizeTenantHarnessPolicySourceFormat(value: unknown): TenantHarnessPolicySourceFormat {
+  const format = String(value ?? "object").trim().toLowerCase();
+  if (format === "json" || format === "yaml") return format as TenantHarnessPolicySourceFormat;
+  return "object";
+}
+
+function normalizeRawTenantHarnessPolicySource(input: unknown, tenantId = DEFAULT_TENANT_ID, workspaceId = DEFAULT_WORKSPACE_ID): TenantHarnessPolicySource {
+  const record = isRecord(input) ? input : {};
+  const appliesTo = isRecord(record.appliesTo) ? record.appliesTo : {};
+  const sourceMetadata = isRecord(record.metadata) ? record.metadata : {};
+  const sourceChangelog = record.changelog ?? sourceMetadata.changelog;
+  return {
+    schema: "evopilot-tenant-harness-policy/v1",
+    policyId: safeFileName(String(record.policyId ?? record.id ?? "default")),
+    tenantId: safeFileName(String(record.tenantId ?? tenantId)),
+    workspaceId: safeFileName(String(record.workspaceId ?? workspaceId)),
+    name: String(record.name ?? record.policyId ?? record.id ?? "Tenant Harness Policy"),
+    description: optionalTrimmedString(record.description),
+    appliesTo: {
+      projectIds: normalizeStringList(appliesTo.projectIds, []),
+      excludeProjectIds: normalizeStringList(appliesTo.excludeProjectIds, []),
+      languageFamilies: normalizeStringList(appliesTo.languageFamilies, []).map((item) => item.toLowerCase()),
+      templateIds: normalizeStringList(appliesTo.templateIds, [])
+    },
+    requiredCapabilities: Array.isArray(record.requiredCapabilities)
+      ? hydrateHarnessCapabilities(record.requiredCapabilities)
+      : Array.isArray(record.capabilities)
+        ? hydrateHarnessCapabilities(record.capabilities)
+        : undefined,
+    runtime: isRecord(record.runtime) ? record.runtime : undefined,
+    validation: isRecord(record.validation) ? record.validation : undefined,
+    evidence: isRecord(record.evidence) ? record.evidence : undefined,
+    rules: isRecord(record.rules) ? record.rules : undefined,
+    failureHandling: isRecord(record.failureHandling) ? record.failureHandling : undefined,
+    diagnostics: isRecord(record.diagnostics) ? record.diagnostics : undefined,
+    observability: isRecord(record.observability) ? record.observability : undefined,
+    governance: isRecord(record.governance) ? record.governance : undefined,
+    phaseMapping: isRecord(record.phaseMapping) ? record.phaseMapping as TenantHarnessPolicySource["phaseMapping"] : undefined,
+    llmDraftPolicy: isRecord(record.llmDraftPolicy) ? record.llmDraftPolicy : undefined,
+    enforcement: isRecord(record.enforcement) ? record.enforcement : undefined,
+    metadata: Object.keys(sourceMetadata).length > 0 || sourceChangelog !== undefined
+      ? { ...sourceMetadata, ...(sourceChangelog !== undefined ? { changelog: sourceChangelog } : {}) }
+      : undefined
+  };
+}
+
+function createTenantHarnessPolicyVersion(store: FileStore, tenantId: string, workspaceId: string, input: {
+  source: TenantHarnessPolicySource;
+  sourceFormat: TenantHarnessPolicySourceFormat;
+  actor: string;
+  changelog?: string[];
+  status?: TenantHarnessPolicyStatus;
+}): TenantHarnessPolicyVersion {
+  const now = new Date().toISOString();
+  const source = normalizeRawTenantHarnessPolicySource(input.source, tenantId, workspaceId);
+  const compiled = compileTenantHarnessPolicy(source, tenantId, workspaceId, now);
+  const sourceDigest = digestObject(source);
+  const compiledDigest = digestObject(compiled);
+  const validation = validateTenantHarnessPolicy(source, compiled, sourceDigest, compiledDigest, now);
+  const versions = store.listTenantHarnessPolicyVersions(source.tenantId ?? tenantId, source.workspaceId ?? workspaceId, source.policyId);
+  const version = versions.reduce((max, item) => Math.max(max, item.version), 0) + 1;
+  const suppliedChangelog = hydrateHarnessTemplateChangelog(source.metadata?.changelog, String(version), now);
+  const cliChanges = normalizeStringList(input.changelog, []);
+  const changelog = cliChanges.length > 0
+    ? [
+      ...suppliedChangelog,
+      {
+        version: String(version),
+        changedAt: now,
+        changedBy: input.actor,
+        summary: cliChanges[0],
+        changes: cliChanges
+      }
+    ]
+    : suppliedChangelog;
+  return {
+    schema: "evopilot-tenant-harness-policy-version/v1",
+    tenantId: source.tenantId ?? tenantId,
+    workspaceId: source.workspaceId ?? workspaceId,
+    policyId: source.policyId,
+    version,
+    status: input.status ?? (validation.status === "VALIDATED" ? "VALIDATED" : "DRAFT"),
+    sourceFormat: input.sourceFormat,
+    sourceContent: source,
+    sourceDigest,
+    compiledContent: compiled,
+    compiledDigest,
+    validation,
+    changelog,
+    generatedBy: {
+      mode: "user",
+      actor: input.actor,
+      evidence: [`actor=${input.actor}`, `sourceFormat=${input.sourceFormat}`]
+    },
+    createdAt: now,
+    updatedAt: now
+  };
+}
+
+function compileTenantHarnessPolicy(source: TenantHarnessPolicySource, tenantId: string, workspaceId: string, now: string): CompiledTenantHarnessPolicy {
+  const appliesTo = source.appliesTo ?? {};
+  return {
+    schema: "evopilot-tenant-harness-policy-compiled/v1",
+    tenantId: safeFileName(source.tenantId ?? tenantId),
+    workspaceId: safeFileName(source.workspaceId ?? workspaceId),
+    policyId: source.policyId,
+    name: source.name,
+    description: source.description,
+    appliesTo: {
+      projectIds: normalizeStringList(appliesTo.projectIds, []),
+      excludeProjectIds: normalizeStringList(appliesTo.excludeProjectIds, []),
+      languageFamilies: normalizeStringList(appliesTo.languageFamilies, []),
+      templateIds: normalizeStringList(appliesTo.templateIds, [])
+    },
+    requiredCapabilities: source.requiredCapabilities ?? [],
+    runtime: source.runtime ?? {},
+    validation: source.validation ?? {},
+    evidence: source.evidence ?? {},
+    rules: source.rules ?? {},
+    failureHandling: source.failureHandling ?? {},
+    diagnostics: source.diagnostics ?? {},
+    observability: source.observability ?? {},
+    governance: source.governance ?? {},
+    phaseMapping: source.phaseMapping ?? {},
+    llmDraftPolicy: source.llmDraftPolicy ?? {},
+    enforcement: source.enforcement ?? {},
+    metadata: source.metadata,
+    compiledAt: now
+  };
+}
+
+function validateTenantHarnessPolicy(source: TenantHarnessPolicySource, compiled: CompiledTenantHarnessPolicy, sourceDigest: string, compiledDigest: string, now: string): TenantHarnessPolicyValidationResult {
+  const checks: TenantHarnessPolicyValidationResult["checks"] = [];
+  const add = (id: string, status: "PASS" | "FAIL" | "WARN", required: boolean, evidence: string[]) => checks.push({ id, status, required, evidence });
+  add("tenant-workspace-scope", source.tenantId === compiled.tenantId && source.workspaceId === compiled.workspaceId ? "PASS" : "FAIL", true, [
+    `sourceTenant=${source.tenantId}`,
+    `compiledTenant=${compiled.tenantId}`,
+    `sourceWorkspace=${source.workspaceId}`,
+    `compiledWorkspace=${compiled.workspaceId}`
+  ]);
+  add("policy-id", compiled.policyId.length > 0 ? "PASS" : "FAIL", true, [`policyId=${compiled.policyId || "missing"}`]);
+  const controlSections = [
+    compiled.requiredCapabilities.length > 0 ? "requiredCapabilities" : "",
+    Object.keys(compiled.validation).length > 0 ? "validation" : "",
+    Object.keys(compiled.evidence).length > 0 ? "evidence" : "",
+    Object.keys(compiled.failureHandling).length > 0 ? "failureHandling" : "",
+    Object.keys(compiled.diagnostics).length > 0 ? "diagnostics" : "",
+    Object.keys(compiled.observability).length > 0 ? "observability" : "",
+    Object.keys(compiled.governance).length > 0 ? "governance" : "",
+    Object.keys(compiled.enforcement).length > 0 ? "enforcement" : ""
+  ].filter(Boolean);
+  add("policy-controls", controlSections.length > 0 ? "PASS" : "FAIL", true, [`sections=${controlSections.join(",") || "none"}`]);
+  const blockers = checks
+    .filter((check) => check.required && check.status === "FAIL")
+    .map((check) => `${check.id}:${check.evidence.join(";")}`);
+  return {
+    schema: "evopilot-tenant-harness-policy-validation/v1",
+    tenantId: compiled.tenantId,
+    workspaceId: compiled.workspaceId,
+    policyId: compiled.policyId,
+    status: blockers.length === 0 ? "VALIDATED" : "FAILED",
+    checks,
+    blockers,
+    warnings: checks.filter((check) => check.status === "WARN").map((check) => `${check.id}:${check.evidence.join(";")}`),
+    sourceDigest,
+    compiledDigest,
+    evaluatedAt: now
+  };
+}
+
+function hydrateTenantHarnessPolicyVersion(input: unknown): TenantHarnessPolicyVersion {
+  const record = isRecord(input) ? input : {};
+  const source = normalizeRawTenantHarnessPolicySource(record.sourceContent);
+  const compiled = hydrateCompiledTenantHarnessPolicy(record.compiledContent, source);
+  const now = new Date().toISOString();
+  const validation = hydrateTenantHarnessPolicyValidation(record.validation, source, record.sourceDigest, record.compiledDigest);
+  const generatedBy = isRecord(record.generatedBy) ? record.generatedBy : {};
+  return {
+    schema: "evopilot-tenant-harness-policy-version/v1",
+    tenantId: safeFileName(String(record.tenantId ?? source.tenantId ?? DEFAULT_TENANT_ID)),
+    workspaceId: safeFileName(String(record.workspaceId ?? source.workspaceId ?? DEFAULT_WORKSPACE_ID)),
+    policyId: safeFileName(String(record.policyId ?? source.policyId ?? "default")),
+    version: clampPositiveInteger(record.version, 1),
+    status: normalizeTenantHarnessPolicyStatus(record.status),
+    sourceFormat: normalizeTenantHarnessPolicySourceFormat(record.sourceFormat),
+    sourceContent: source,
+    sourceDigest: String(record.sourceDigest ?? digestObject(source)),
+    compiledContent: compiled,
+    compiledDigest: String(record.compiledDigest ?? digestObject(compiled)),
+    validation,
+    changelog: hydrateHarnessTemplateChangelog(record.changelog ?? source.metadata?.changelog, String(record.version ?? 1), String(record.updatedAt ?? now)),
+    generatedBy: {
+      mode: "user",
+      actor: optionalTrimmedString(generatedBy.actor),
+      evidence: normalizeStringList(generatedBy.evidence, [])
+    },
+    approvedAt: optionalTrimmedString(record.approvedAt),
+    approvedBy: optionalTrimmedString(record.approvedBy),
+    activatedAt: optionalTrimmedString(record.activatedAt),
+    activatedBy: optionalTrimmedString(record.activatedBy),
+    createdAt: String(record.createdAt ?? now),
+    updatedAt: String(record.updatedAt ?? record.createdAt ?? now)
+  };
+}
+
+function hydrateCompiledTenantHarnessPolicy(value: unknown, source: TenantHarnessPolicySource): CompiledTenantHarnessPolicy {
+  const record = isRecord(value) ? value : {};
+  const appliesTo = isRecord(record.appliesTo) ? record.appliesTo : {};
+  return {
+    schema: "evopilot-tenant-harness-policy-compiled/v1",
+    tenantId: safeFileName(String(record.tenantId ?? source.tenantId ?? DEFAULT_TENANT_ID)),
+    workspaceId: safeFileName(String(record.workspaceId ?? source.workspaceId ?? DEFAULT_WORKSPACE_ID)),
+    policyId: safeFileName(String(record.policyId ?? source.policyId ?? "default")),
+    name: String(record.name ?? source.name ?? "Tenant Harness Policy"),
+    description: optionalTrimmedString(record.description ?? source.description),
+    appliesTo: {
+      projectIds: normalizeStringList(appliesTo.projectIds, source.appliesTo?.projectIds ?? []),
+      excludeProjectIds: normalizeStringList(appliesTo.excludeProjectIds, source.appliesTo?.excludeProjectIds ?? []),
+      languageFamilies: normalizeStringList(appliesTo.languageFamilies, source.appliesTo?.languageFamilies ?? []),
+      templateIds: normalizeStringList(appliesTo.templateIds, source.appliesTo?.templateIds ?? [])
+    },
+    requiredCapabilities: hydrateHarnessCapabilities(record.requiredCapabilities ?? source.requiredCapabilities ?? []),
+    runtime: recordObject(record.runtime),
+    validation: recordObject(record.validation),
+    evidence: recordObject(record.evidence),
+    rules: recordObject(record.rules),
+    failureHandling: recordObject(record.failureHandling),
+    diagnostics: recordObject(record.diagnostics),
+    observability: recordObject(record.observability),
+    governance: recordObject(record.governance),
+    phaseMapping: isRecord(record.phaseMapping) ? record.phaseMapping as Partial<Record<MaturityPhase, string[]>> : source.phaseMapping ?? {},
+    llmDraftPolicy: recordObject(record.llmDraftPolicy),
+    enforcement: recordObject(record.enforcement),
+    metadata: isRecord(record.metadata) ? record.metadata : source.metadata,
+    compiledAt: String(record.compiledAt ?? new Date().toISOString())
+  };
+}
+
+function hydrateTenantHarnessPolicyValidation(value: unknown, source: TenantHarnessPolicySource, sourceDigest: unknown, compiledDigest: unknown): TenantHarnessPolicyValidationResult {
+  const record = isRecord(value) ? value : {};
+  const checks: TenantHarnessPolicyValidationResult["checks"] = Array.isArray(record.checks) ? record.checks.map((check) => {
+    const item = isRecord(check) ? check : {};
+    const status = String(item.status ?? "FAIL");
+    const normalizedStatus: "PASS" | "FAIL" | "WARN" = status === "PASS" || status === "WARN" ? status : "FAIL";
+    return {
+      id: String(item.id ?? "unknown"),
+      status: normalizedStatus,
+      required: item.required !== false,
+      evidence: normalizeStringList(item.evidence, [])
+    };
+  }) : [];
+  const blockers = normalizeStringList(record.blockers, []);
+  return {
+    schema: "evopilot-tenant-harness-policy-validation/v1",
+    tenantId: safeFileName(String(record.tenantId ?? source.tenantId ?? DEFAULT_TENANT_ID)),
+    workspaceId: safeFileName(String(record.workspaceId ?? source.workspaceId ?? DEFAULT_WORKSPACE_ID)),
+    policyId: safeFileName(String(record.policyId ?? source.policyId ?? "default")),
+    status: record.status === "VALIDATED" && blockers.length === 0 ? "VALIDATED" : "FAILED",
+    checks,
+    blockers,
+    warnings: normalizeStringList(record.warnings, []),
+    sourceDigest: optionalTrimmedString(record.sourceDigest) ?? optionalTrimmedString(sourceDigest) ?? "",
+    compiledDigest: optionalTrimmedString(record.compiledDigest) ?? optionalTrimmedString(compiledDigest) ?? "",
+    evaluatedAt: String(record.evaluatedAt ?? new Date().toISOString())
+  };
+}
+
+function tenantHarnessPolicyRef(policy: TenantHarnessPolicyVersion): TenantHarnessPolicyRef {
+  return {
+    policyId: policy.policyId,
+    version: policy.version,
+    digest: policy.compiledDigest,
+    scope: "tenant-workspace"
+  };
+}
+
+function tenantHarnessPolicyAppliesToProject(policy: TenantHarnessPolicyVersion, project: StoredProject, template?: HarnessTemplateProfile): boolean {
+  const appliesTo = policy.compiledContent.appliesTo;
+  if (appliesTo.projectIds.length > 0 && !appliesTo.projectIds.includes(project.id)) return false;
+  if (appliesTo.excludeProjectIds.includes(project.id)) return false;
+  if (appliesTo.languageFamilies.length > 0) {
+    const language = String(project.runtime?.language ?? template?.languageFamily ?? "generic").toLowerCase();
+    if (!appliesTo.languageFamilies.includes(language)) return false;
+  }
+  if (appliesTo.templateIds.length > 0 && (!template || !appliesTo.templateIds.includes(template.id))) return false;
+  return true;
+}
+
 function createProjectHarnessProfileVersion(store: FileStore, project: StoredProject, input: {
   source: ProjectHarnessProfileSource;
   sourceFormat: ProjectHarnessProfileSourceFormat;
@@ -11919,10 +12631,11 @@ function createProjectHarnessProfileVersion(store: FileStore, project: StoredPro
   const now = new Date().toISOString();
   const source = normalizeProjectHarnessProfileSourceForProject(input.source, project);
   const template = resolveHarnessTemplateForSource(store, project, source);
-  const compiled = compileProjectHarnessProfile(project, template, source, now);
+  const tenantPolicies = store.listActiveTenantHarnessPoliciesForProject(project, template);
+  const compiled = compileProjectHarnessProfile(project, template, tenantPolicies, source, now);
   const sourceDigest = digestObject(source);
   const compiledDigest = digestObject(compiled);
-  const validation = validateCompiledProjectHarnessProfile(project, template, source, compiled, sourceDigest, compiledDigest, now);
+  const validation = validateCompiledProjectHarnessProfile(project, template, tenantPolicies, source, compiled, sourceDigest, compiledDigest, now);
   const previousActive = store.readActiveProjectHarnessProfile(project.id, source.profileId);
   const versions = store.listProjectHarnessProfileVersions(project.id, source.profileId);
   const version = versions.reduce((max, item) => Math.max(max, item.version), 0) + 1;
@@ -11941,6 +12654,7 @@ function createProjectHarnessProfileVersion(store: FileStore, project: StoredPro
     compiledContent: compiled,
     compiledDigest,
     templateRef,
+    policyRefs: tenantPolicies.map(tenantHarnessPolicyRef),
     validation,
     diffFromActive: previousActive ? diffProjectHarnessProfiles(project, source.profileId, previousActive, compiled, undefined, now) : undefined,
     generatedBy: input.generatedBy ?? {
@@ -11957,6 +12671,7 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
   const previousActive = store.readActiveProjectHarnessProfile(project.id, safeFileName(String(body.profileId ?? "default")));
   const templateSelection = selectHarnessTemplateForGeneration(store, project, body, previousActive);
   const template = templateSelection.template;
+  const tenantPolicies = store.listActiveTenantHarnessPoliciesForProject(project, template);
   const requestedProfileId = optionalTrimmedString(body.llmProfileId ?? body.llmProfile);
   const llmResolution = resolveLoopLlmSelection(store, {
     project,
@@ -11971,7 +12686,7 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
       throw httpError(409, "PROJECT_HARNESS_PROFILE_LLM_REQUIRED", "ProjectHarnessProfile generation requires a READY LLM profile or production LLM provider.");
     }
     return createProjectHarnessProfileVersion(store, project, {
-      source: deterministicProjectHarnessProfileSource(project, template, body, previousActive, templateSelection),
+      source: deterministicProjectHarnessProfileSource(project, template, tenantPolicies, body, previousActive, templateSelection),
       sourceFormat: "llm-generated",
       actor,
       status: "DRAFT",
@@ -11985,7 +12700,9 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
           `templateSelection=${templateSelection.mode}`,
           ...templateSelection.reasons.map((reason) => `templateSelectionReason=${reason}`),
           `template=${template.id}@${template.version}`,
-          `templateDigest=${template.digest}`
+          `templateDigest=${template.digest}`,
+          ...tenantPolicies.map((policy) => `tenantPolicy=${policy.policyId}@v${policy.version}`),
+          ...tenantPolicies.map((policy) => `tenantPolicyDigest=${policy.compiledDigest}`)
         ]
       }
     });
@@ -12010,7 +12727,7 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
       actor,
       llmProfileId: llmResolution.selection.profileId ?? "global-default"
     },
-    prompt: projectHarnessProfileGeneratorPrompt(project, template, body, previousActive)
+    prompt: projectHarnessProfileGeneratorPrompt(project, template, tenantPolicies, body, previousActive)
   });
   if (!response.success || !response.text.trim()) {
     throw httpError(409, "PROJECT_HARNESS_PROFILE_LLM_FAILED", response.errorMessage ?? response.errorCode ?? "LLM harness profile generation failed.");
@@ -12036,7 +12753,8 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
         generatedFromGoalLoopTarget: optionalTrimmedString(body.goalLoopTarget ?? body.objective),
         previousActiveProfileVersion: previousActive?.version,
         templateSelectionMode: templateSelection.mode,
-        templateSelectionReasons: templateSelection.reasons
+        templateSelectionReasons: templateSelection.reasons,
+        tenantPolicyRefs: tenantPolicies.map(tenantHarnessPolicyRef)
       }
     },
     sourceFormat: "llm-generated",
@@ -12059,13 +12777,15 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
         `templateSelection=${templateSelection.mode}`,
         ...templateSelection.reasons.map((reason) => `templateSelectionReason=${reason}`),
         `template=${template.id}@${template.version}`,
-        `templateDigest=${template.digest}`
+        `templateDigest=${template.digest}`,
+        ...tenantPolicies.map((policy) => `tenantPolicy=${policy.policyId}@v${policy.version}`),
+        ...tenantPolicies.map((policy) => `tenantPolicyDigest=${policy.compiledDigest}`)
       ]
     }
   });
 }
 
-function deterministicProjectHarnessProfileSource(project: StoredProject, template: HarnessTemplateProfile, body: Record<string, unknown>, previousActive?: ProjectHarnessProfileVersion, templateSelection?: HarnessTemplateSelection): ProjectHarnessProfileSource {
+function deterministicProjectHarnessProfileSource(project: StoredProject, template: HarnessTemplateProfile, tenantPolicies: TenantHarnessPolicyVersion[], body: Record<string, unknown>, previousActive?: ProjectHarnessProfileVersion, templateSelection?: HarnessTemplateSelection): ProjectHarnessProfileSource {
   const profileId = safeFileName(String(body.profileId ?? "default"));
   const goalLoopTarget = optionalTrimmedString(body.goalLoopTarget ?? body.objective ?? body.target ?? body.prompt);
   const projectRuntime = project.runtime;
@@ -12171,7 +12891,8 @@ function deterministicProjectHarnessProfileSource(project: StoredProject, templa
       previousActiveCompiledDigest: previousActive?.compiledDigest,
       generatedBy: "deterministic-template",
       templateSelectionMode: templateSelection?.mode,
-      templateSelectionReasons: templateSelection?.reasons
+      templateSelectionReasons: templateSelection?.reasons,
+      tenantPolicyRefs: tenantPolicies.map(tenantHarnessPolicyRef)
     }
   };
 }
@@ -12200,13 +12921,13 @@ function harnessTemplateDiagnosticCommands(template: HarnessTemplateProfile): st
   return runtimeDiagnostics.length > 0 ? runtimeDiagnostics : defaults[template.languageFamily];
 }
 
-function projectHarnessProfileGeneratorPrompt(project: StoredProject, template: HarnessTemplateProfile, body: Record<string, unknown>, previousActive?: ProjectHarnessProfileVersion): string {
+function projectHarnessProfileGeneratorPrompt(project: StoredProject, template: HarnessTemplateProfile, tenantPolicies: TenantHarnessPolicyVersion[], body: Record<string, unknown>, previousActive?: ProjectHarnessProfileVersion): string {
   return [
     "You are EvoPilot's ProjectHarnessProfile generator for enterprise software projects.",
     "Return only one JSON object. Do not include Markdown.",
     "The generated profile is a DRAFT control-plane definition. It must be reviewable by a user and must not silently activate itself.",
-    "Generate a project-level ProjectHarnessProfile from the goal loop target, the platform HarnessTemplate, project onboarding/runtime/devops/observability context, and any previous active profile.",
-    "The project profile may bind concrete commands and strengthen criteria. It must not weaken mandatory governance gates from the template.",
+    "Generate a project-level ProjectHarnessProfile from the goal loop target, the platform HarnessTemplate, active tenant/workspace HarnessPolicy records, project onboarding/runtime/devops/observability context, and any previous active profile.",
+    "The project profile may bind concrete commands and strengthen criteria. It must inherit every active tenant/workspace policy and must not weaken mandatory governance gates from the template or policy.",
     "",
     "Output JSON schema:",
     "{",
@@ -12236,6 +12957,15 @@ function projectHarnessProfileGeneratorPrompt(project: StoredProject, template: 
     "",
     "HarnessTemplate:",
     JSON.stringify(template, null, 2),
+    "",
+    "Active tenant/workspace HarnessPolicy records:",
+    tenantPolicies.length > 0 ? JSON.stringify(tenantPolicies.map((policy) => ({
+      policyId: policy.policyId,
+      version: policy.version,
+      compiledDigest: policy.compiledDigest,
+      sourceContent: policy.sourceContent,
+      compiledContent: policy.compiledContent
+    })), null, 2) : "none",
     "",
     "Goal loop target and control-plane requirements:",
     JSON.stringify({
@@ -12288,6 +13018,7 @@ function explainProjectHarnessProfile(project: StoredProject, version: ProjectHa
     sourceDigest: version.sourceDigest,
     compiledDigest: version.compiledDigest,
     templateRef: version.templateRef,
+    policyRefs: version.policyRefs,
     storage: {
       authority: "evopilot-control-plane",
       format: "json",
@@ -12296,8 +13027,8 @@ function explainProjectHarnessProfile(project: StoredProject, version: ProjectHa
     moduleMapping: [
       {
         module: "Project onboarding",
-        profileSections: ["tenantId", "workspaceId", "projectId", "templateRef"],
-        controls: ["tenant/workspace isolation", "project identity", "template version/digest lock"]
+        profileSections: ["tenantId", "workspaceId", "projectId", "templateRef", "policyRefs"],
+        controls: ["tenant/workspace isolation", "project identity", "template version/digest lock", "tenant/workspace policy version/digest lock"]
       },
       {
         module: "Goal target planner",
@@ -12348,7 +13079,8 @@ function explainProjectHarnessProfile(project: StoredProject, version: ProjectHa
     },
     inheritance: {
       inheritedSections: compiled.inheritedSections,
-      overrideSections: compiled.overrideSections
+      overrideSections: compiled.overrideSections,
+      policyRefs: compiled.policyRefs
     },
     generatedAt: new Date().toISOString()
   };
@@ -12616,10 +13348,35 @@ function compareHarnessTemplateVersions(left: string, right: string): number {
   return left.localeCompare(right);
 }
 
-function compileProjectHarnessProfile(project: StoredProject, template: HarnessTemplateProfile, source: ProjectHarnessProfileSource, now: string): CompiledProjectHarnessProfile {
+function compileProjectHarnessProfile(project: StoredProject, template: HarnessTemplateProfile, tenantPolicies: TenantHarnessPolicyVersion[], source: ProjectHarnessProfileSource, now: string): CompiledProjectHarnessProfile {
   const sourceCapabilityIds = new Set((source.capabilities ?? []).map((capability) => capability.id));
-  const capabilities = mergeHarnessCapabilities(template.capabilities, source.capabilities ?? []);
+  const policyCapabilities = tenantPolicies.flatMap((policy) => policy.compiledContent.requiredCapabilities);
+  const capabilities = mergeHarnessCapabilities(template.capabilities, policyCapabilities, source.capabilities ?? []);
+  const policyRefs = tenantPolicies.map(tenantHarnessPolicyRef);
+  const policyRuntime = mergeHarnessPolicyRecords(tenantPolicies.map((policy) => policy.compiledContent.runtime));
+  const policyValidation = mergeHarnessPolicyRecords(tenantPolicies.map((policy) => policy.compiledContent.validation));
+  const policyEvidence = mergeHarnessPolicyRecords(tenantPolicies.map((policy) => policy.compiledContent.evidence));
+  const policyRules = mergeHarnessPolicyRecords(tenantPolicies.map((policy) => policy.compiledContent.rules));
+  const policyFailureHandling = mergeHarnessPolicyRecords(tenantPolicies.map((policy) => policy.compiledContent.failureHandling));
+  const policyDiagnostics = mergeHarnessPolicyRecords(tenantPolicies.map((policy) => policy.compiledContent.diagnostics));
+  const policyObservability = mergeHarnessPolicyRecords(tenantPolicies.map((policy) => policy.compiledContent.observability));
+  const policyGovernance = mergeHarnessPolicyRecords(tenantPolicies.map((policy) => policy.compiledContent.governance));
+  const policyLlmDraftPolicy = mergeHarnessPolicyRecords(tenantPolicies.map((policy) => policy.compiledContent.llmDraftPolicy));
+  const policyPhaseMapping = mergeTenantHarnessPolicyPhaseMapping(tenantPolicies);
   const inheritedSections = ["capabilities", "runtime", "validation", "evidence", "failureHandling", "diagnostics", "observability", "governance", "phaseMapping", "llmDraftPolicy"];
+  const policySections = [
+    tenantPolicies.some((policy) => policy.compiledContent.requiredCapabilities.length > 0) ? "capabilities" : "",
+    Object.keys(policyRuntime).length > 0 ? "runtime" : "",
+    Object.keys(policyValidation).length > 0 ? "validation" : "",
+    Object.keys(policyEvidence).length > 0 ? "evidence" : "",
+    Object.keys(policyRules).length > 0 ? "rules" : "",
+    Object.keys(policyFailureHandling).length > 0 ? "failureHandling" : "",
+    Object.keys(policyDiagnostics).length > 0 ? "diagnostics" : "",
+    Object.keys(policyObservability).length > 0 ? "observability" : "",
+    Object.keys(policyGovernance).length > 0 ? "governance" : "",
+    MATURITY_PHASES.some((phase) => (policyPhaseMapping[phase] ?? []).length > 0) ? "phaseMapping" : "",
+    Object.keys(policyLlmDraftPolicy).length > 0 ? "llmDraftPolicy" : ""
+  ].filter(Boolean);
   const overrideSections = [
     source.capabilities ? "capabilities" : "",
     source.runtime ? "runtime" : "",
@@ -12641,37 +13398,42 @@ function compileProjectHarnessProfile(project: StoredProject, template: HarnessT
     profileId: source.profileId,
     name: source.name,
     templateRef: harnessTemplateRef(template),
+    policyRefs,
     capabilities,
-    runtime: mergeRecord(template.runtimePatterns, {
+    runtime: mergeHarnessPolicyRecord(mergeHarnessPolicyRecord(template.runtimePatterns, policyRuntime), {
       projectRuntime: project.runtime,
       repositoryProvider: project.repository?.provider,
       devopsProvider: project.devops?.provider,
       ...(source.runtime ?? {})
     }),
-    validation: mergeRecord(template.validationBaseline, source.validation ?? {}),
-    evidence: mergeRecord(template.evidenceContract, source.evidence ?? {}),
-    rules: mergeRecord({ capabilityBoundaries: capabilities.map((capability) => capability.id) }, source.rules ?? {}),
-    failureHandling: mergeRecord(template.failureTaxonomy, source.failureHandling ?? {}),
-    diagnostics: mergeRecord(template.diagnosticsBaseline, source.diagnostics ?? {}),
-    observability: mergeRecord(template.observabilityBaseline, source.observability ?? {}),
-    governance: mergeRecord(template.governanceRules, source.governance ?? {}),
-    phaseMapping: mergeHarnessPhaseMapping(template.phaseMapping, source.phaseMapping),
-    llmDraftPolicy: mergeRecord(template.llmDraftPolicy, source.llmDraftPolicy ?? {}),
-    inheritedSections: inheritedSections.filter((section) => !overrideSections.includes(section) || section === "capabilities" && sourceCapabilityIds.size < capabilities.length),
+    validation: mergeHarnessPolicyRecord(mergeHarnessPolicyRecord(template.validationBaseline, policyValidation), source.validation ?? {}),
+    evidence: mergeHarnessPolicyRecord(mergeHarnessPolicyRecord(template.evidenceContract, policyEvidence), source.evidence ?? {}),
+    rules: mergeHarnessPolicyRecord(mergeHarnessPolicyRecord({ capabilityBoundaries: capabilities.map((capability) => capability.id) }, policyRules), source.rules ?? {}),
+    failureHandling: mergeHarnessPolicyRecord(mergeHarnessPolicyRecord(template.failureTaxonomy, policyFailureHandling), source.failureHandling ?? {}),
+    diagnostics: mergeHarnessPolicyRecord(mergeHarnessPolicyRecord(template.diagnosticsBaseline, policyDiagnostics), source.diagnostics ?? {}),
+    observability: mergeHarnessPolicyRecord(mergeHarnessPolicyRecord(template.observabilityBaseline, policyObservability), source.observability ?? {}),
+    governance: mergeHarnessPolicyRecord(mergeHarnessPolicyRecord(template.governanceRules, policyGovernance), source.governance ?? {}),
+    phaseMapping: mergeHarnessPhaseMapping(mergeHarnessPhaseMapping(template.phaseMapping, policyPhaseMapping), source.phaseMapping),
+    llmDraftPolicy: mergeHarnessPolicyRecord(mergeHarnessPolicyRecord(template.llmDraftPolicy, policyLlmDraftPolicy), source.llmDraftPolicy ?? {}),
+    inheritedSections: uniqueStrings([
+      ...inheritedSections.filter((section) => !overrideSections.includes(section) || section === "capabilities" && sourceCapabilityIds.size < capabilities.length),
+      ...policySections.map((section) => `tenant-policy:${section}`)
+    ]),
     overrideSections,
     compiledAt: now
   };
 }
 
-function mergeHarnessCapabilities(templateCapabilities: HarnessCapabilityDefinition[], projectCapabilities: HarnessCapabilityDefinition[]): HarnessCapabilityDefinition[] {
+function mergeHarnessCapabilities(...capabilityGroups: HarnessCapabilityDefinition[][]): HarnessCapabilityDefinition[] {
   const byId = new Map<string, HarnessCapabilityDefinition>();
-  for (const capability of templateCapabilities) byId.set(capability.id, capability);
-  for (const capability of projectCapabilities) {
-    byId.set(capability.id, {
-      ...byId.get(capability.id),
-      ...capability,
-      requiredEvidence: uniqueStrings([...(byId.get(capability.id)?.requiredEvidence ?? []), ...capability.requiredEvidence])
-    });
+  for (const capabilities of capabilityGroups) {
+    for (const capability of capabilities) {
+      byId.set(capability.id, {
+        ...byId.get(capability.id),
+        ...capability,
+        requiredEvidence: uniqueStrings([...(byId.get(capability.id)?.requiredEvidence ?? []), ...capability.requiredEvidence])
+      });
+    }
   }
   return [...byId.values()];
 }
@@ -12685,6 +13447,25 @@ function mergeRecord(base: Record<string, unknown>, override: Record<string, unk
   return result;
 }
 
+function mergeHarnessPolicyRecords(records: Record<string, unknown>[]): Record<string, unknown> {
+  return records.reduce((merged, record) => mergeHarnessPolicyRecord(merged, record), {});
+}
+
+function mergeHarnessPolicyRecord(base: Record<string, unknown>, override: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const current = result[key];
+    if (Array.isArray(current) && Array.isArray(value)) {
+      result[key] = uniqueStrings([...current.map(String), ...value.map(String)]);
+    } else if (isRecord(current) && isRecord(value)) {
+      result[key] = mergeHarnessPolicyRecord(current, value);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 function mergeHarnessPhaseMapping(base: Record<MaturityPhase, string[]>, override?: Partial<Record<MaturityPhase, string[]>>): Record<MaturityPhase, string[]> {
   return {
     alpha: uniqueStrings([...(base.alpha ?? []), ...(override?.alpha ?? [])]),
@@ -12694,7 +13475,16 @@ function mergeHarnessPhaseMapping(base: Record<MaturityPhase, string[]>, overrid
   };
 }
 
-function validateCompiledProjectHarnessProfile(project: StoredProject, template: HarnessTemplateProfile, source: ProjectHarnessProfileSource, compiled: CompiledProjectHarnessProfile, sourceDigest: string, compiledDigest: string, now: string): ProjectHarnessProfileValidationResult {
+function mergeTenantHarnessPolicyPhaseMapping(tenantPolicies: TenantHarnessPolicyVersion[]): Partial<Record<MaturityPhase, string[]>> {
+  return tenantPolicies.reduce((mapping, policy) => ({
+    alpha: uniqueStrings([...(mapping.alpha ?? []), ...(policy.compiledContent.phaseMapping.alpha ?? [])]),
+    beta: uniqueStrings([...(mapping.beta ?? []), ...(policy.compiledContent.phaseMapping.beta ?? [])]),
+    rc: uniqueStrings([...(mapping.rc ?? []), ...(policy.compiledContent.phaseMapping.rc ?? [])]),
+    ga: uniqueStrings([...(mapping.ga ?? []), ...(policy.compiledContent.phaseMapping.ga ?? [])])
+  }), {} as Partial<Record<MaturityPhase, string[]>>);
+}
+
+function validateCompiledProjectHarnessProfile(project: StoredProject, template: HarnessTemplateProfile, tenantPolicies: TenantHarnessPolicyVersion[], source: ProjectHarnessProfileSource, compiled: CompiledProjectHarnessProfile, sourceDigest: string, compiledDigest: string, now: string): ProjectHarnessProfileValidationResult {
   const checks: ProjectHarnessProfileValidationResult["checks"] = [];
   const add = (id: string, status: "PASS" | "FAIL" | "WARN", required: boolean, evidence: string[]) => checks.push({ id, status, required, evidence });
   add("project-scope", source.projectId === project.id && source.tenantId === project.tenantId && source.workspaceId === project.workspaceId ? "PASS" : "FAIL", true, [
@@ -12710,6 +13500,12 @@ function validateCompiledProjectHarnessProfile(project: StoredProject, template:
     `templateVersion=${template.version}`,
     `templateDigest=${template.digest}`
   ]);
+  const policyBindingFailures = detectTenantHarnessPolicyBindingFailures(tenantPolicies, compiled);
+  add("tenant-harness-policy-binding", policyBindingFailures.length === 0 ? "PASS" : "FAIL", tenantPolicies.length > 0, policyBindingFailures.length === 0 ? [
+    tenantPolicies.length > 0
+      ? `policies=${tenantPolicies.map((policy) => `${policy.policyId}@v${policy.version}`).join(",")}`
+      : "policies=none"
+  ] : policyBindingFailures);
   add("capability-boundaries", compiled.capabilities.length > 0 && compiled.capabilities.every((capability) => capability.boundary && capability.requiredEvidence.length > 0) ? "PASS" : "FAIL", true, [
     `capabilities=${compiled.capabilities.map((capability) => capability.id).join(",") || "none"}`
   ]);
@@ -12743,6 +13539,10 @@ function validateCompiledProjectHarnessProfile(project: StoredProject, template:
     `requireUserReview=${String(compiled.llmDraftPolicy.requireUserReview)}`,
     `allowedToSilentlyModifyActiveProfile=${String(compiled.llmDraftPolicy.allowedToSilentlyModifyActiveProfile)}`
   ]);
+  const policyComplianceFailures = detectTenantHarnessPolicyComplianceFailures(tenantPolicies, compiled);
+  add("tenant-harness-policy-compliance", policyComplianceFailures.length === 0 ? "PASS" : "FAIL", tenantPolicies.length > 0, policyComplianceFailures.length === 0 ? [
+    tenantPolicies.length > 0 ? "active tenant/workspace policies inherited" : "active tenant/workspace policies=none"
+  ] : policyComplianceFailures);
   const blockers = checks
     .filter((check) => check.required && check.status === "FAIL")
     .map((check) => `${check.id}:${check.evidence.join(";")}`);
@@ -12756,6 +13556,7 @@ function validateCompiledProjectHarnessProfile(project: StoredProject, template:
     projectId: project.id,
     profileId: source.profileId,
     templateRef: compiled.templateRef,
+    policyRefs: compiled.policyRefs,
     status: blockers.length === 0 ? "VALIDATED" : "FAILED",
     checks,
     blockers,
@@ -12764,6 +13565,86 @@ function validateCompiledProjectHarnessProfile(project: StoredProject, template:
     compiledDigest,
     evaluatedAt: now
   };
+}
+
+function detectTenantHarnessPolicyBindingFailures(tenantPolicies: TenantHarnessPolicyVersion[], compiled: CompiledProjectHarnessProfile): string[] {
+  return tenantPolicies.flatMap((policy) => {
+    const ref = compiled.policyRefs.find((item) => item.policyId === policy.policyId);
+    if (!ref) return [`policy=${policy.policyId}@v${policy.version} missing from compiled policyRefs`];
+    const failures: string[] = [];
+    if (ref.version !== policy.version) failures.push(`policy=${policy.policyId} version=${ref.version} expected=${policy.version}`);
+    if (ref.digest !== policy.compiledDigest) failures.push(`policy=${policy.policyId} digest=${ref.digest} expected=${policy.compiledDigest}`);
+    return failures;
+  });
+}
+
+function detectTenantHarnessPolicyComplianceFailures(tenantPolicies: TenantHarnessPolicyVersion[], compiled: CompiledProjectHarnessProfile): string[] {
+  const failures: string[] = [];
+  const capabilityIds = compiled.capabilities.map((capability) => capability.id);
+  for (const policy of tenantPolicies) {
+    const policyName = `${policy.policyId}@v${policy.version}`;
+    const policyContent = policy.compiledContent;
+    for (const capability of policyContent.requiredCapabilities) {
+      if (!capabilityIds.includes(capability.id)) failures.push(`${policyName}: capability ${capability.id} missing`);
+    }
+    failures.push(...missingRequiredStrings(policyName, "evidence.requiredArtifacts", compiled.evidence.requiredArtifacts, [
+      ...normalizeStringList(policyContent.evidence.requiredArtifacts, []),
+      ...normalizeStringList(policyContent.enforcement.requiredArtifacts, [])
+    ]));
+    failures.push(...missingRequiredStrings(policyName, "evidence.requiredEvidence", compiled.evidence.requiredEvidence, [
+      ...normalizeStringList(policyContent.evidence.requiredEvidence, []),
+      ...normalizeStringList(policyContent.enforcement.requiredEvidence, [])
+    ]));
+    failures.push(...missingRequiredStrings(policyName, "evidence.correlationFields", compiled.evidence.correlationFields, [
+      ...normalizeStringList(policyContent.evidence.correlationFields, []),
+      ...normalizeStringList(policyContent.enforcement.requiredCorrelationFields, [])
+    ]));
+    failures.push(...missingRequiredStrings(policyName, "failureHandling.requiredFields", compiled.failureHandling.requiredFields, [
+      ...normalizeStringList(policyContent.failureHandling.requiredFields, []),
+      ...normalizeStringList(policyContent.enforcement.requiredFailureFields, [])
+    ]));
+    const compiledExceptionTracking = recordObject(compiled.failureHandling.exceptionTracking);
+    const policyExceptionTracking = recordObject(policyContent.failureHandling.exceptionTracking);
+    failures.push(...missingRequiredStrings(policyName, "failureHandling.exceptionTracking.requiredAttributes", compiledExceptionTracking.requiredAttributes, [
+      ...normalizeStringList(policyExceptionTracking.requiredAttributes, []),
+      ...normalizeStringList(policyContent.enforcement.requiredExceptionAttributes, [])
+    ]));
+    failures.push(...missingRequiredStrings(policyName, "diagnostics.requiredSignals", compiled.diagnostics.requiredSignals, [
+      ...normalizeStringList(policyContent.diagnostics.requiredSignals, []),
+      ...normalizeStringList(policyContent.enforcement.requiredDiagnosticSignals, [])
+    ]));
+    failures.push(...missingRequiredStrings(policyName, "observability.requiredSignals", compiled.observability.requiredSignals, [
+      ...normalizeStringList(policyContent.observability.requiredSignals, []),
+      ...normalizeStringList(policyContent.enforcement.requiredObservabilitySignals, [])
+    ]));
+    const compiledStructuredLogs = recordObject(compiled.observability.structuredLogs);
+    const policyStructuredLogs = recordObject(policyContent.observability.structuredLogs);
+    failures.push(...missingRequiredStrings(policyName, "observability.structuredLogs.requiredFields", compiledStructuredLogs.requiredFields, [
+      ...normalizeStringList(policyStructuredLogs.requiredFields, []),
+      ...normalizeStringList(policyContent.enforcement.requiredStructuredLogFields, [])
+    ]));
+    for (const key of tenantHarnessPolicyRequiredGovernanceTrueKeys(policyContent)) {
+      if (compiled.governance[key] !== true) failures.push(`${policyName}: governance.${key}=true required`);
+    }
+    for (const phase of MATURITY_PHASES) {
+      failures.push(...missingRequiredStrings(policyName, `phaseMapping.${phase}`, compiled.phaseMapping[phase], normalizeStringList(policyContent.phaseMapping[phase], [])));
+    }
+  }
+  return uniqueStrings(failures);
+}
+
+function tenantHarnessPolicyRequiredGovernanceTrueKeys(policy: CompiledTenantHarnessPolicy): string[] {
+  const explicit = normalizeStringList(policy.enforcement.requiredGovernanceTrue, []);
+  const cannotWeaken = normalizeStringList(policy.governance.cannotWeaken, []);
+  const trueKeys = Object.entries(policy.governance)
+    .filter(([, value]) => value === true)
+    .map(([key]) => key);
+  return uniqueStrings([...explicit, ...cannotWeaken.filter((key) => policy.governance[key] === true), ...trueKeys]);
+}
+
+function missingRequiredStrings(policyName: string, pathName: string, actualValue: unknown, requiredValues: string[]): string[] {
+  const actual = normalizeStringList(actualValue, []);
+  return uniqueStrings(requiredValues).filter((value) => !actual.includes(value)).map((value) => `${policyName}: ${pathName} missing ${value}`);
 }
 
 function hasHarnessCommandEvidence(runtime: Record<string, unknown>, validation: Record<string, unknown>): boolean {
@@ -12813,6 +13694,7 @@ function projectHarnessPlanBinding(version: ProjectHarnessProfileVersion | undef
     version: version.version,
     status: "ACTIVE",
     templateRef: version.templateRef,
+    policyRefs: version.policyRefs,
     sourceDigest: version.sourceDigest,
     compiledDigest: version.compiledDigest,
     capabilities: version.compiledContent.capabilities.map((capability) => capability.id),
@@ -12823,7 +13705,9 @@ function projectHarnessPlanBinding(version: ProjectHarnessProfileVersion | undef
       `version=${version.version}`,
       `compiledDigest=${version.compiledDigest}`,
       `template=${version.templateRef.templateId}@${version.templateRef.version}`,
-      `templateDigest=${version.templateRef.digest}`
+      `templateDigest=${version.templateRef.digest}`,
+      ...version.policyRefs.map((policy) => `tenantPolicy=${policy.policyId}@v${policy.version}`),
+      ...version.policyRefs.map((policy) => `tenantPolicyDigest=${policy.digest}`)
     ],
     boundAt: now
   };
@@ -12842,6 +13726,7 @@ function hydrateGoalPlanProjectHarnessBinding(value: unknown): GoalPlanProjectHa
       version: String(templateRef.version ?? "1.0.0"),
       digest: String(templateRef.digest ?? "")
     },
+    policyRefs: hydrateTenantHarnessPolicyRefs(value.policyRefs),
     sourceDigest: String(value.sourceDigest ?? ""),
     compiledDigest: String(value.compiledDigest ?? ""),
     capabilities: normalizeStringList(value.capabilities, []),
@@ -12874,6 +13759,7 @@ function hydrateProjectHarnessProfileVersion(input: unknown): ProjectHarnessProf
     compiledContent: compiled,
     compiledDigest: String(record.compiledDigest ?? digestObject(compiled)),
     templateRef,
+    policyRefs: hydrateTenantHarnessPolicyRefs(record.policyRefs ?? compiled.policyRefs),
     validation,
     diffFromActive: isRecord(record.diffFromActive) ? record.diffFromActive as unknown as ProjectHarnessProfileDiff : undefined,
     generatedBy: {
@@ -12904,6 +13790,7 @@ function hydrateCompiledProjectHarnessProfile(value: unknown, source: ProjectHar
     profileId: safeFileName(String(record.profileId ?? source.profileId ?? "default")),
     name: String(record.name ?? source.name ?? "Project Harness Profile"),
     templateRef: hydrateHarnessTemplateRef(record.templateRef),
+    policyRefs: hydrateTenantHarnessPolicyRefs(record.policyRefs),
     capabilities: hydrateHarnessCapabilities(record.capabilities),
     runtime: recordObject(record.runtime),
     validation: recordObject(record.validation),
@@ -12942,6 +13829,7 @@ function hydrateProjectHarnessProfileValidation(value: unknown, source: ProjectH
     projectId: safeFileName(String(record.projectId ?? source.projectId)),
     profileId: safeFileName(String(record.profileId ?? source.profileId ?? "default")),
     templateRef,
+    policyRefs: hydrateTenantHarnessPolicyRefs(record.policyRefs),
     status: record.status === "VALIDATED" && blockers.length === 0 ? "VALIDATED" : "FAILED",
     checks,
     blockers,
@@ -12959,6 +13847,19 @@ function hydrateHarnessTemplateRef(value: unknown): HarnessTemplateRef {
     version: String(record.version ?? "1.0.0"),
     digest: String(record.digest ?? "")
   };
+}
+
+function hydrateTenantHarnessPolicyRefs(value: unknown): TenantHarnessPolicyRef[] {
+  const raw = Array.isArray(value) ? value : [];
+  return raw.map((item) => {
+    const record = isRecord(item) ? item : {};
+    return {
+      policyId: safeFileName(String(record.policyId ?? record.id ?? "default")),
+      version: clampPositiveInteger(record.version, 1),
+      digest: String(record.digest ?? ""),
+      scope: "tenant-workspace" as const
+    };
+  });
 }
 
 function harnessTemplateRef(template: HarnessTemplateProfile): HarnessTemplateRef {
@@ -12999,6 +13900,8 @@ function projectHarnessLogMetadata(project: StoredProject, profile: ProjectHarne
     templateId: profile.templateRef.templateId,
     templateVersion: profile.templateRef.version,
     templateDigest: profile.templateRef.digest,
+    policyRefs: profile.policyRefs.map((policy) => `${policy.policyId}@v${policy.version}`),
+    policyDigests: profile.policyRefs.map((policy) => policy.digest),
     validationStatus: profile.validation.status,
     validationBlockers: profile.validation.blockers,
     validationWarnings: profile.validation.warnings,
@@ -13011,7 +13914,29 @@ function projectHarnessLogMetadata(project: StoredProject, profile: ProjectHarne
   };
 }
 
+function tenantHarnessPolicyLogMetadata(policy: TenantHarnessPolicyVersion, extra: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    policyId: policy.policyId,
+    policyVersion: policy.version,
+    policyStatus: policy.status,
+    sourceDigest: policy.sourceDigest,
+    compiledDigest: policy.compiledDigest,
+    validationStatus: policy.validation.status,
+    validationBlockers: policy.validation.blockers,
+    validationWarnings: policy.validation.warnings,
+    appliesTo: policy.compiledContent.appliesTo,
+    nextAction: policy.status === "ACTIVE" ? "generate-or-upgrade-project-harness-profile" : "review-activate-policy",
+    ...extra
+  };
+}
+
 function normalizeProjectHarnessProfileStatus(value: unknown): ProjectHarnessProfileStatus {
+  const status = String(value ?? "DRAFT");
+  if (status === "VALIDATED" || status === "ACTIVE" || status === "SUPERSEDED" || status === "REJECTED") return status;
+  return "DRAFT";
+}
+
+function normalizeTenantHarnessPolicyStatus(value: unknown): TenantHarnessPolicyStatus {
   const status = String(value ?? "DRAFT");
   if (status === "VALIDATED" || status === "ACTIVE" || status === "SUPERSEDED" || status === "REJECTED") return status;
   return "DRAFT";
@@ -14159,6 +15084,39 @@ function buildGoalRunStatusChain(store: FileStore, snapshot: GoalSnapshot, lates
 async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, actor: string, now: string): Promise<{ targets: GoalTarget[]; planner: GoalPlanPlannerTrace; projectHarness?: GoalPlanProjectHarnessBinding }> {
   const project = store.readProject(goal.projectId);
   const projectHarnessProfile = store.readActiveProjectHarnessProfile(goal.projectId);
+  if (project && projectHarnessProfile) {
+    const template = store.readHarnessTemplate(projectHarnessProfile.templateRef.templateId, projectHarnessProfile.templateRef.version);
+    const activePolicies = store.listActiveTenantHarnessPoliciesForProject(project, template);
+    const policyFailures = detectTenantHarnessPolicyBindingFailures(activePolicies, projectHarnessProfile.compiledContent);
+    if (policyFailures.length > 0) {
+      logWarn("goal-plan.project-harness-policy-stale", {
+        tenantId: goal.tenantId,
+        workspaceId: goal.workspaceId,
+        actor,
+        outcome: "blocked",
+        errorCode: "PROJECT_HARNESS_PROFILE_POLICY_STALE",
+        correlation: {
+          goalId: goal.id,
+          projectId: goal.projectId,
+          releaseTargetId: goal.releaseTargetId
+        },
+        diagnosis: {
+          summary: "Active ProjectHarnessProfile does not bind the current TenantHarnessPolicy.",
+          likelyCause: "A tenant/workspace harness policy was activated after this project profile version was compiled.",
+          recommendedAction: "Run harness profile generate or apply a revised ProjectHarnessProfile, review it, and activate the new version before goal planning.",
+          retriable: false,
+          humanActionRequired: true
+        },
+        metadata: projectHarnessLogMetadata(project, projectHarnessProfile, {
+          goalId: goal.id,
+          releaseTargetId: goal.releaseTargetId,
+          policyFailures,
+          nextAction: "regenerate-project-harness-profile"
+        })
+      });
+      throw httpError(409, "PROJECT_HARNESS_PROFILE_POLICY_STALE", `Active ProjectHarnessProfile must be regenerated against active TenantHarnessPolicy before goal planning: ${policyFailures.join("; ")}`);
+    }
+  }
   const projectHarness = projectHarnessPlanBinding(projectHarnessProfile, now);
   if (projectHarnessProfile && projectHarness) {
     logInfo("goal-plan.project-harness-bound", {

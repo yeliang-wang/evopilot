@@ -51,6 +51,7 @@ evopilot project preflight my-agent --json
 evopilot project devops preflight my-agent --json
 evopilot project llm preflight my-agent --json
 evopilot harness template list --json
+evopilot harness policy list --json
 evopilot harness profile generate --project my-agent --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --json
 evopilot harness profile inspect default --project my-agent --version <harness-version> --json
 evopilot harness profile diff default --project my-agent --version <harness-version> --json
@@ -58,14 +59,16 @@ evopilot harness profile diff default --project my-agent --version <harness-vers
 
 EvoPilot automatically matches a built-in or administrator-published template from the project context and goal loop target. `--from-template` is only an explicit administrator or advanced override. Fresh installs include Python enterprise, Java DDD service, Node SaaS control-plane, Go middleware, observability/APM, and generic management-software baselines; current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. `harness template inspect <id> --json` exposes their `sourceReferences[]`, `failureTaxonomy`, `diagnosticsBaseline`, `observabilityBaseline`, and `governanceRules`.
 
-After `harness profile generate`, stop. Show `profile.sourceContent`, `compiledContent`, `validation`, `diffFromActive`, `generatedBy`, `sourceDigest`, and `compiledDigest` to the user or project owner. Report whether `generatedBy.evidence[]` contains `templateSelection=auto-match`, `templateSelection=previous-active-profile`, or `templateSelection=request-override`. If the user edits the harness, write the edited YAML/JSON to a file and run `harness profile validate`, `harness profile diff`, and `harness profile apply`; then use the `profile.version` returned by `apply` as `<harness-version>`. Activate only the reviewed version.
+Tenant/workspace `TenantHarnessPolicy` records are administrator-managed private constraints. Daily agents do not choose them manually; they should read `harness policy list --json` for awareness and confirm generated profiles include current `profile.policyRefs[]` when policies are active. If profile activation or goal planning returns `PROJECT_HARNESS_PROFILE_POLICY_STALE`, stop and regenerate or reapply the ProjectHarnessProfile against the active policy before continuing.
+
+After `harness profile generate`, stop. Show `profile.sourceContent`, `compiledContent`, `validation`, `diffFromActive`, `generatedBy`, `sourceDigest`, `compiledDigest`, and `policyRefs` to the user or project owner. Report whether `generatedBy.evidence[]` contains `templateSelection=auto-match`, `templateSelection=previous-active-profile`, or `templateSelection=request-override`, and whether it contains `tenantPolicy=<policy>@v<version>`. If the user edits the harness, write the edited YAML/JSON to a file and run `harness profile validate`, `harness profile diff`, and `harness profile apply`; then use the `profile.version` returned by `apply` as `<harness-version>`. Activate only the reviewed version.
 
 ```bash
 evopilot harness profile activate default --project my-agent --version <harness-version> --json
 evopilot target plan --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
 ```
 
-After `target plan`, stop. Show `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or project owner. Continue only after explicit confirmation.
+After `target plan`, stop. Show `plan.projectHarness` or `phasePlan.projectHarness`, including `policyRefs` when present, plus `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or project owner. Continue only after explicit confirmation.
 
 ```bash
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json

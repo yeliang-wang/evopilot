@@ -131,6 +131,21 @@ evopilot harness template upgrade \
 
 The template file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown is documentation only. The server stores it in the control plane with a computed digest and changelog. Reusing the same `id@version` is rejected unless the administrator passes `--force`. Existing active project profiles are not silently rewritten; use `harness profile generate` or `harness profile upgrade` to create a reviewed project revision.
 
+## Admin: Maintain Tenant Harness Policy
+
+`TenantHarnessPolicy` is the private tenant/workspace layer between public templates and project profiles. It is optional for a workspace, but once an administrator activates one, every matching project profile must compile with its `policyRefs` and satisfy its required capabilities, evidence, diagnostics, observability, and governance constraints.
+
+```bash
+evopilot harness policy list --json
+evopilot harness policy apply \
+  --file ./tenant-harness-policy.yaml \
+  --changelog "Add workspace private evidence, logging, and governance requirements." \
+  --json
+evopilot harness policy activate default --version <policy-version> --json
+```
+
+Policy files use `schema: evopilot-tenant-harness-policy/v1`. The server stores versions under tenant/workspace scope, computes source and compiled digests, and blocks `harness profile activate` or `target plan` with `PROJECT_HARNESS_PROFILE_POLICY_STALE` when an active project profile was compiled against an older policy.
+
 ## 5. Generate And Confirm Project Harness Profile
 
 Before phase planning, create the project-level harness definition that controls capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, and governance.
@@ -143,7 +158,7 @@ evopilot harness profile generate \
   --json
 ```
 
-For a first onboarding, EvoPilot automatically matches a template and generates the DRAFT from that template, the goal loop target, and project context. For a second onboarding or project evolution, EvoPilot first reuses the previous active profile's template unless an administrator explicitly overrides it, then includes the previous active profile in the generation context and returns a diff-aware DRAFT. The response `generatedBy.evidence[]` includes `templateSelection=auto-match`, `templateSelection=previous-active-profile`, or `templateSelection=request-override`.
+For a first onboarding, EvoPilot automatically matches a template and generates the DRAFT from that template, any active tenant/workspace policies, the goal loop target, and project context. For a second onboarding or project evolution, EvoPilot first reuses the previous active profile's template unless an administrator explicitly overrides it, then includes the previous active profile in the generation context and returns a diff-aware DRAFT. The response `generatedBy.evidence[]` includes `templateSelection=auto-match`, `templateSelection=previous-active-profile`, or `templateSelection=request-override`, and includes `tenantPolicy=<policy>@v<version>` when a private policy was inherited.
 
 Continue only when the JSON response shows:
 
@@ -154,6 +169,7 @@ profile.status=DRAFT
 profile.validation.status=VALIDATED
 profile.version=<harness-version>
 profile.compiledDigest=<digest>
+profile.policyRefs=<active-policy-refs-or-empty>
 ```
 
 Stop after generation. Show these fields to the user or project owner:
@@ -166,6 +182,7 @@ profile.diffFromActive
 profile.generatedBy
 profile.sourceDigest
 profile.compiledDigest
+profile.policyRefs
 summary
 ```
 
@@ -188,7 +205,7 @@ evopilot harness profile activate default --project my-agent --version <harness-
 evopilot harness profile explain default --project my-agent --json
 ```
 
-Do not activate a profile version until the user or project owner confirms that the DRAFT harness definition is acceptable. After activation, `target plan` and `goal plan` must bind the active profile by version and digest.
+Do not activate a profile version until the user or project owner confirms that the DRAFT harness definition is acceptable. After activation, `target plan` and `goal plan` must bind the active profile by version and digest, plus `policyRefs` when tenant/workspace policies are active.
 
 ## 6. Generate The Phase Plan
 
@@ -211,7 +228,7 @@ Alpha -> Beta -> RC -> GA
 
 Stop after this command. Show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or project owner.
 
-Also show `plan.projectHarness` or `phasePlan.projectHarness`. It must include the activated harness profile id, version, template reference, source digest, compiled digest, and capabilities. If the binding is missing, stop and repair the harness activation before approval.
+Also show `plan.projectHarness` or `phasePlan.projectHarness`. It must include the activated harness profile id, version, template reference, `policyRefs`, source digest, compiled digest, and capabilities. If the binding is missing or the server returns `PROJECT_HARNESS_PROFILE_POLICY_STALE`, stop and repair the harness activation before approval.
 
 ## 7. Apply User Changes And Approve
 

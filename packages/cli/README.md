@@ -89,6 +89,7 @@ After registration, verify persisted readiness:
 ```bash
 evopilot project onboard verify <project-id> --json
 evopilot harness template list --json
+evopilot harness policy list --json
 evopilot harness profile generate \
   --project <project-id> \
   --goal-loop-target "Define the project harness for this project" \
@@ -98,7 +99,7 @@ evopilot harness profile activate default --project <project-id> --version 1 --j
 evopilot target plan --project <project-id> --objective "Enable the requested business capability and lifecycle evidence" --llm-profile <llm-profile-id> --json
 ```
 
-`ProjectHarnessProfile` is a project-level control-plane definition. It is generated or imported as YAML/JSON, validated by the server, activated explicitly, and then bound into `GoalPlan.projectHarness` by version and digest.
+`ProjectHarnessProfile` is a project-level control-plane definition. It is generated or imported as YAML/JSON, validated by the server, activated explicitly, and then bound into `GoalPlan.projectHarness` by version and digest. If the tenant/workspace has an active `TenantHarnessPolicy`, the compiled profile also includes `policyRefs[]`; activation and goal planning are blocked when the profile was compiled against an older active policy.
 
 Fresh installs include multiple built-in template harnesses: `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. Project onboarding automatically matches a published template from project runtime/repository context and the goal loop target; `--from-template` is only an explicit administrator or advanced override. Inspect `sourceReferences[]` to see the public projects, official specifications, or engineering-practice sources used to initialize a template. Current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. The authoritative template format is YAML or JSON; Markdown is documentation only.
 
@@ -112,6 +113,18 @@ evopilot harness template upgrade \
 ```
 
 The same `id@version` requires `--force`; normal updates should publish a new version and then draft project profile upgrades from it.
+
+Administrators can publish tenant/workspace private constraints through a separate policy channel:
+
+```bash
+evopilot harness policy apply \
+  --file <policy.yaml> \
+  --changelog "Describe this private policy version." \
+  --json
+evopilot harness policy activate default --version <policy-version> --json
+```
+
+Policy source files use `schema: evopilot-tenant-harness-policy/v1` and can require organization-specific capabilities, evidence fields, correlation IDs, structured log fields, exception attributes, diagnostics, observability, governance booleans, and phase mappings for matching project profiles.
 
 ## Documentation
 

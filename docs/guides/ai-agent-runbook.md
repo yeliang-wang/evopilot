@@ -153,6 +153,19 @@ evopilot harness template upgrade \
 
 Template files use `schema: evopilot-harness-template/v1` and include `id`, `version`, capabilities, runtime patterns, validation baseline, evidence contract, failure taxonomy, diagnostics, observability, governance, phase mapping, LLM draft policy, source references, and changelog. YAML or JSON is authoritative; Markdown is documentation only. EvoPilot computes the digest and stores the version in the control plane. Reusing an existing `id@version` returns `HARNESS_TEMPLATE_VERSION_EXISTS` unless the admin passes `--force`. Template updates never rewrite an active `ProjectHarnessProfile`; they become effective for a project only after a generated or upgraded profile revision is reviewed and activated.
 
+Tenant/workspace policy maintenance is a separate administrator channel. Daily project agents do not choose a private policy manually; they inspect the active policy list for awareness, then let EvoPilot inherit every matching active policy during `harness profile generate`, `validate`, and `apply`.
+
+```bash
+evopilot harness policy list --json
+evopilot harness policy apply \
+  --file ./workspace-private-harness-policy.yaml \
+  --changelog "Require tenant audit fields, trace correlation, and organization repair evidence." \
+  --json
+evopilot harness policy activate default --version <policy-version> --json
+```
+
+Policy files use `schema: evopilot-tenant-harness-policy/v1`. The server stores versions under `<dataRoot>/tenant-harness-policies/<tenantId>/<workspaceId>/<policyId>/versions/v<version>.json`, records changelog entries, computes source and compiled digests, and applies the policy between the selected `HarnessTemplate` and the project `ProjectHarnessProfile`. Project profile activation and goal planning return `PROJECT_HARNESS_PROFILE_POLICY_STALE` when an active profile was compiled against an older active policy; stop and regenerate or reapply a reviewed profile revision before continuing.
+
 Generate and confirm the project harness profile before phase planning:
 
 ```bash
@@ -166,7 +179,7 @@ evopilot harness profile inspect default --project my-agent --version <harness-v
 evopilot harness profile diff default --project my-agent --version <harness-version> --json
 ```
 
-EvoPilot returns `evopilot-project-harness-profile-generate-result/v1` with `status=DRAFT`, `profile.status=DRAFT`, `profile.validation`, `profile.sourceContent`, `profile.compiledContent`, `profile.diffFromActive`, `profile.generatedBy`, `profile.sourceDigest`, `profile.compiledDigest`, and `summary`. WorkBuddy must show those fields to the user or project owner before activation, including whether `profile.generatedBy.evidence[]` reports `templateSelection=auto-match`, `templateSelection=previous-active-profile`, or `templateSelection=request-override`. If the user wants changes, write the edited source profile to YAML or JSON and repeat:
+EvoPilot returns `evopilot-project-harness-profile-generate-result/v1` with `status=DRAFT`, `profile.status=DRAFT`, `profile.validation`, `profile.sourceContent`, `profile.compiledContent`, `profile.diffFromActive`, `profile.generatedBy`, `profile.sourceDigest`, `profile.compiledDigest`, `profile.policyRefs[]`, and `summary`. WorkBuddy must show those fields to the user or project owner before activation, including whether `profile.generatedBy.evidence[]` reports `templateSelection=auto-match`, `templateSelection=previous-active-profile`, `templateSelection=request-override`, and any `tenantPolicy=<policy>@v<version>` evidence. If the user wants changes, write the edited source profile to YAML or JSON and repeat:
 
 ```bash
 evopilot harness profile validate --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
@@ -196,7 +209,7 @@ evopilot target plan \
   --json
 ```
 
-EvoPilot returns `evopilot-cli-target-plan/v1` with `goalId`, `terminalMaturity=ga`, `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan`. WorkBuddy should show this plan to the user. If `projectHarness` is missing or does not match the activated harness version and compiled digest, stop and repair the harness activation before approval. If the user wants changes, export, edit, diff, and apply before approval:
+EvoPilot returns `evopilot-cli-target-plan/v1` with `goalId`, `terminalMaturity=ga`, `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan`. WorkBuddy should show this plan to the user. If `projectHarness` is missing, does not match the activated harness version and compiled digest, or omits current `policyRefs[]` when private policies are active, stop and repair the harness activation before approval. If the server returns `PROJECT_HARNESS_PROFILE_POLICY_STALE`, regenerate or reapply a profile revision against the active policy, show the DRAFT again, activate only after confirmation, then rerun planning. If the user wants changes, export, edit, diff, and apply before approval:
 
 ```bash
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
@@ -569,7 +582,7 @@ evopilot target run \
   --json
 ```
 
-If `project devops preflight` returns `BLOCKED`, repair provider, tokenRef, workflow, required checks/jobs, or project binding before running the target. If it returns `OBSERVABLE`, current CI evidence is not green; an agent may inspect but must not claim release readiness. If `project llm preflight` returns `BLOCKED`, repair the server-side LLM key, profile, or provider before starting the Loop. If `target run` stops with `configure-source-credentials`, run `project preflight` and repair tokenRef. If it stops with `repair-deploy-target`, inspect or create the deploy connector. If it stops with `policy-review`, inspect the release run and do not merge until the server-side policy allows it. If it returns `NO-GO`, stop and report the release decision as authoritative.
+If `project devops preflight` returns `BLOCKED`, repair provider, tokenRef, workflow, required checks/jobs, or project binding before running the target. If it returns `OBSERVABLE`, current CI evidence is not green; an agent may inspect but must not claim release readiness. If `project llm preflight` returns `BLOCKED`, repair the server-side LLM key, profile, or provider before starting the Loop. If `target run` stops with `configure-source-credentials`, run `project preflight` and repair tokenRef. If it stops with `repair-deploy-target`, inspect or create the deploy connector. If it stops with `policy-review`, inspect the release run and do not merge until the server-side policy allows it. If profile activation, `target plan`, or `goal plan` returns `PROJECT_HARNESS_PROFILE_POLICY_STALE`, inspect `harness policy list --json`, regenerate or reapply the project profile, show the DRAFT, and activate the reviewed version before planning again. If it returns `NO-GO`, stop and report the release decision as authoritative.
 
 ### Security Rules For Agents
 
@@ -601,6 +614,7 @@ Agents must stop and report when any of these are returned:
 | `connect-gitlab-account` | GitLab writeback or GitLab CI requires a GitLab account/group/deploy principal. | Connect or create the group/principal, fork or authorize the project as needed, store tokenRef, then rerun preflight. |
 | `human-approval` | A governed human gate is waiting. | Ask the operator; do not self-approve. |
 | `policy-review` | Release or merge policy blocked progress. | Inspect release run policy blockers. |
+| `PROJECT_HARNESS_PROFILE_POLICY_STALE` | Active ProjectHarnessProfile was compiled against an older active TenantHarnessPolicy. | Run `harness policy list --json`, regenerate or apply a reviewed ProjectHarnessProfile revision, activate it, then rerun planning. |
 | `configure-source-credentials` | Source writeback credentials are missing or read-only. | Ask for credential repair. |
 | `configure-devops` | Project GitHub Actions/GitLab CI contract is missing or invalid. | Run `project devops set` or ask the operator to repair tokenRef/workflow/checks. |
 | `configure-llm` | No usable project or global LLM is selected for a required LLM run. | Create or bind an LLM profile, then run `project llm preflight`. |
@@ -644,6 +658,12 @@ result.goalId
 result.activeTargetId
 result.latestLoopId
 result.releaseDecision
+plan.projectHarness.profileId
+plan.projectHarness.version
+plan.projectHarness.templateRef
+plan.projectHarness.policyRefs
+plan.projectHarness.compiledDigest
+phasePlan.projectHarness.policyRefs
 status.goal.id
 status.goal.projectId
 status.goal.releaseTargetId
@@ -865,14 +885,15 @@ When a production agent cannot continue, collect:
 2. The HTTP `x-request-id` or `correlation.requestId`.
 3. `evopilot logging inspect --json` output and logs with the same requestId, goalId, loopId, projectId, releaseRunId, or releaseDecisionId.
 4. `evopilot goal snapshot <goal-id> --json`.
-5. `evopilot harness profile inspect default --project <project-id> --json`.
-6. `evopilot harness profile explain default --project <project-id> --json`.
-7. `evopilot goal graph <goal-id> --json`.
-8. `evopilot goal evidence-matrix <goal-id> --json`.
-9. `evopilot trace tree <loop-id> --json` when a loop exists.
-10. `evopilot release decisions --project <project-id> --target <target-id> --json`.
-11. `evopilot audit list --limit 50 --json`.
-12. `/health`, `/ready`, and recent deployment/configuration changes.
+5. `evopilot harness policy list --json`.
+6. `evopilot harness profile inspect default --project <project-id> --json`.
+7. `evopilot harness profile explain default --project <project-id> --json`.
+8. `evopilot goal graph <goal-id> --json`.
+9. `evopilot goal evidence-matrix <goal-id> --json`.
+10. `evopilot trace tree <loop-id> --json` when a loop exists.
+11. `evopilot release decisions --project <project-id> --target <target-id> --json`.
+12. `evopilot audit list --limit 50 --json`.
+13. `/health`, `/ready`, and recent deployment/configuration changes.
 ```
 
 Ask the diagnosing AI to prioritize `correlation.*`, `tenantId`, `workspaceId`, `routeGroup`, `outcome`, `errorCode`, `latencyBucket`, `diagnosis`, trace tree, release decisions, and audit. Do not infer the release verdict from scattered logs.
@@ -884,6 +905,7 @@ AI agents must not:
 - parse human text when `--json` is available.
 - synthesize `GO`, `NO-GO`, `GA stable`, or `RC ready` from local tests alone.
 - activate a `ProjectHarnessProfile` before the user or project owner reviews the DRAFT source and compiled controls.
+- continue planning when `plan.projectHarness.policyRefs[]` is stale or missing for an active tenant/workspace policy.
 - bypass human gates, source credential blockers, release policy, or deployment gates.
 - store tokens, passwords, or credentials in committed files.
 - assume `/opt/evopilot` or any ECS path exists on the agent machine.

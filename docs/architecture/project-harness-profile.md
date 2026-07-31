@@ -9,6 +9,8 @@ It answers a different question from a goal loop target:
 | Goal loop target | What outcome should this project reach now? |
 | ReleaseTargetProfile | What release thresholds and scenario evidence define the target? |
 | Maturity Standards | What Alpha/Beta/RC/GA baseline must every governed goal keep? |
+| HarnessTemplate | What public language/software-type baseline should this class of project inherit? |
+| TenantHarnessPolicy | What private tenant/workspace constraints must all matching project profiles satisfy? |
 | ProjectHarnessProfile | What project-specific capabilities, commands, evidence, failure handling, diagnostics, observability, and governance rules must every goal use? |
 
 ## Lifecycle
@@ -16,7 +18,9 @@ It answers a different question from a goal loop target:
 ```mermaid
 flowchart LR
   Admin["Admin template apply/update"] --> Template["HarnessTemplate"]
+  PolicyAdmin["Admin policy apply/activate"] --> Policy["TenantHarnessPolicy"]
   Template["HarnessTemplate"] --> Generate["Generate DRAFT"]
+  Policy["TenantHarnessPolicy"] --> Generate
   Project["StoredProject + runtime/devops/llm"] --> Generate
   Goal["Goal loop target"] --> Generate
   Previous["Previous active profile"] --> Generate
@@ -30,6 +34,14 @@ flowchart LR
 
 Fresh installs include multiple built-in `HarnessTemplate` baselines for Python enterprise projects, Java DDD services, Node SaaS control planes, Go middleware, observability/APM systems, and generic management software. Current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. Project onboarding automatically matches a published template from runtime/repository context and the goal loop target; an explicit template id is an administrator or advanced override. Administrators can publish more template ids and versions for language, architecture, or software-type baselines through an independent template maintenance channel. Template files are YAML/JSON control-plane inputs with `id`, `version`, template sections, `sourceReferences[]`, and a current-version changelog. Reusing the same `id@version` requires explicit force; normal changes should publish a new version.
 
+`TenantHarnessPolicy` is a separate private control layer scoped to one tenant/workspace. It is optional, but when active it is automatically applied to matching project profiles between the public template and the project-specific source. It can require organization-specific capabilities, evidence fields, correlation IDs, structured log fields, exception attributes, diagnostics, observability, governance booleans, and phase mappings. A project profile compiles as:
+
+```text
+HarnessTemplate + active TenantHarnessPolicy records + ProjectHarnessProfile source
+```
+
+Project-specific fields may add or specialize controls, but validation fails if they weaken active policy requirements. If a policy is activated after a profile version was compiled, profile activation and goal planning return `PROJECT_HARNESS_PROFILE_POLICY_STALE` until a reviewed profile revision binds the current policy version and digest.
+
 Generated profiles are `DRAFT`. EvoPilot can use an LLM to draft them when a READY LLM profile exists; in debug mode without LLM it can create a deterministic template draft. Production `requireLlm=true` blocks generation if no READY LLM is configured.
 
 Activation is the governance point. The server stores a profile version only after validation, and `activate` records the selected version as `ACTIVE` while marking the old active version `SUPERSEDED`.
@@ -42,15 +54,17 @@ Current file-store path:
 
 ```text
 <dataRoot>/project-harness-profiles/<tenantId>/<workspaceId>/<projectId>/<profileId>/versions/v<version>.json
+<dataRoot>/tenant-harness-policies/<tenantId>/<workspaceId>/<policyId>/versions/v<version>.json
 ```
 
 The stored version contains:
 
 - `sourceContent`: the YAML/JSON source profile normalized by the server.
 - `sourceDigest`: digest of the source profile.
-- `compiledContent`: template defaults plus project overrides.
+- `compiledContent`: template defaults plus active tenant/workspace policy constraints plus project overrides.
 - `compiledDigest`: digest used by goal plans.
 - `templateRef`: `templateId`, `version`, and `digest`.
+- `policyRefs`: active tenant/workspace policy ids, versions, and digests that the compiled profile inherited.
 - `validation`: checks, blockers, warnings.
 - `diffFromActive`: changed sections against the previous active version.
 - `generatedBy`: `user`, `llm`, or `deterministic-template`.
@@ -67,7 +81,7 @@ The explain projection maps profile sections to EvoPilot modules:
 
 | Module | Profile sections |
 |---|---|
-| Project onboarding | `tenantId`, `workspaceId`, `projectId`, `templateRef` |
+| Project onboarding | `tenantId`, `workspaceId`, `projectId`, `templateRef`, `policyRefs` |
 | Goal target planner | `capabilities`, `validation`, `phaseMapping`, `governance` |
 | Executor and runtime | `runtime`, `rules` |
 | Evidence contract | `evidence`, `validation` |
@@ -87,12 +101,20 @@ When a profile is active, `POST /api/v1/goals/{goalId}/plan` binds it into the g
     "schema": "evopilot-goal-plan-project-harness-binding/v1",
     "profileId": "default",
     "version": 1,
-    "templateRef": {
-      "templateId": "python-enterprise-harness",
-      "version": "1.1.0",
-      "digest": "sha256:..."
-    },
-    "sourceDigest": "sha256:...",
+	    "templateRef": {
+	      "templateId": "python-enterprise-harness",
+	      "version": "1.1.0",
+	      "digest": "sha256:..."
+	    },
+	    "policyRefs": [
+	      {
+	        "policyId": "default",
+	        "version": 1,
+	        "digest": "sha256:...",
+	        "scope": "tenant-workspace"
+	      }
+	    ],
+	    "sourceDigest": "sha256:...",
     "compiledDigest": "sha256:...",
     "capabilities": ["source-boundary", "python-runtime", "release-governance"]
   }

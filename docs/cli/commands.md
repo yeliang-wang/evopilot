@@ -44,8 +44,9 @@ Use `--json` for AI agents and CI. Human-readable output is for operators and ca
 | `project onboard verify ... --json` | `evopilot-project-onboarding-checklist/v1` | Persisted project readiness, same fields as `plan`, including project LLM readiness |
 | `project onboard ... --json` | `evopilot-cli-project-onboard/v1` | `projectId`, `sourceCredentials`, `devops`, `steps`, `result`, `llmUsage`; onboarding does not start Goal/Loop execution |
 | `logging inspect/set --json` | `evopilot-logging-settings/v1` or `evopilot-logging-settings-update-result/v1` | `level`, `format`, `includeStack`, `source`, `updatedBy`, `updatedAt` |
+| `harness policy apply/activate ... --json` | `evopilot-tenant-harness-policy-*-result/v1` | `policy`, `summary`, `validation`, `compiledDigest`; active policies constrain matching project profiles |
 | `harness profile generate ... --json` | `evopilot-project-harness-profile-generate-result/v1` | `profile`, `summary`, `validation`, `generatedBy`, `instruction`; generated profiles are DRAFT until activated |
-| `harness profile validate/apply/activate ... --json` | `evopilot-project-harness-profile-*-result/v1` | `profile`, `summary`, `validation`, `diffFromActive`, `compiledDigest`, `templateRef` |
+| `harness profile validate/apply/activate ... --json` | `evopilot-project-harness-profile-*-result/v1` | `profile`, `summary`, `validation`, `diffFromActive`, `compiledDigest`, `templateRef`, `policyRefs` |
 | `target plan ... --json` | `evopilot-cli-target-plan/v1` | `projectId`, `targetId`, `goalId`, `terminalMaturity`, `phasePlan.phases`, `phasePlan.targets`, `editablePlan`, `llmUsage` |
 | `target plan diff ... --json` | `evopilot-cli-target-plan-diff/v1` | `addedTargets`, `removedTargets`, `changedTargets`, `changedPhases`, `baselineGuard` |
 | `target run ... --json` | `evopilot-cli-goal-run/v1` | `status`, `steps`, `result`, `llmUsage` |
@@ -369,6 +370,12 @@ evopilot harness template inspect java-ddd-service-harness
 evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
 evopilot harness template update --file <template.yaml> --changelog <text> [--force]
 evopilot harness template upgrade --file <template.yaml> --changelog <text> [--force]
+evopilot harness policy list
+evopilot harness policy inspect default
+evopilot harness policy apply --file <policy.yaml> [--changelog <text>]
+evopilot harness policy update --file <policy.yaml> [--changelog <text>]
+evopilot harness policy upgrade --file <policy.yaml> [--changelog <text>]
+evopilot harness policy activate default --version <n>
 evopilot harness profile list --project <project-id>
 evopilot harness profile generate --project <project-id> --goal-loop-target <text> [--llm-profile <id>] [--from-template <template-id>]
 evopilot harness profile validate --project <project-id> --file <profile.yaml>
@@ -380,7 +387,7 @@ evopilot harness profile activate default --project <project-id> --version <n>
 evopilot harness profile upgrade default --project <project-id> --from-template python-enterprise-harness --from-template-version <version>
 ```
 
-`ProjectHarnessProfile` is a project-level control-plane profile, not a per-goal plan and not a target maturity template. It defines the project's capability boundaries, runtime commands, validation rules, evidence contract, failure handling, diagnostics, observability, release governance, LLM draft policy, and the template version/digest it inherits.
+`ProjectHarnessProfile` is a project-level control-plane profile, not a per-goal plan and not a target maturity template. It defines the project's capability boundaries, runtime commands, validation rules, evidence contract, failure handling, diagnostics, observability, release governance, LLM draft policy, and the template and policy versions/digests it inherits.
 
 `HarnessTemplate` is an administrator-managed control-plane resource. Fresh installs include multiple built-in template types:
 
@@ -404,7 +411,47 @@ evopilot harness template upgrade \
 
 `apply`, `update`, and `upgrade` are aliases for publishing a template version. The file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown is documentation only. The server computes `digest`, stores the version under the control plane, and requires a changelog entry for that version. Include `sourceReferences[]` when the template is derived from public projects, official docs, or internal engineering practice. Reusing an existing `id@version` is rejected unless `--force` is supplied; prefer publishing a new version for normal changes. Existing active `ProjectHarnessProfile` versions keep their old `templateRef` until an administrator generates or upgrades a new profile revision.
 
-Generated profiles are stored as `DRAFT` versions. A user or administrator must review the profile, run `validate` or `apply`, and then call `activate` before goal planning binds it. When an active profile exists, `target plan` and `goal plan` include `plan.projectHarness.profileId`, `version`, `templateRef`, `sourceDigest`, and `compiledDigest`; those fields make the plan reproducible and auditable.
+`TenantHarnessPolicy` is the tenant/workspace private control layer between public templates and project profiles. Administrators publish policy versions with `harness policy apply|update|upgrade`, then explicitly activate a reviewed version. A policy can require organization-specific capabilities, evidence fields, correlation IDs, structured log fields, exception attributes, diagnostics, observability, governance booleans, and phase mappings. It is stored under `<dataRoot>/tenant-harness-policies/<tenantId>/<workspaceId>/<policyId>/versions/v<version>.json` with source/compiled digests and changelog entries. Active policies are applied automatically during `harness profile generate`, `validate`, and `apply`; `harness profile activate` and `target plan`/`goal plan` block with `PROJECT_HARNESS_PROFILE_POLICY_STALE` if the profile does not bind the current active policy version and digest.
+
+Policy source files can be YAML or JSON:
+
+```yaml
+schema: evopilot-tenant-harness-policy/v1
+policyId: default
+name: Workspace private harness policy
+appliesTo:
+  languageFamilies:
+    - python
+requiredCapabilities:
+  - id: tenant-audit-boundary
+    name: Tenant audit boundary
+    boundary: Every project profile preserves tenant audit and repair evidence.
+    requiredEvidence:
+      - tenant-audit-proof
+evidence:
+  correlationFields:
+    - tenantId
+    - workspaceId
+    - projectId
+    - requestId
+    - traceId
+observability:
+  structuredLogs:
+    requiredFields:
+      - tenantId
+      - workspaceId
+      - projectId
+      - errorCode
+governance:
+  tenantPolicyRequired: true
+  cannotWeaken:
+    - tenantPolicyRequired
+enforcement:
+  requiredGovernanceTrue:
+    - tenantPolicyRequired
+```
+
+Generated profiles are stored as `DRAFT` versions. A user or administrator must review the profile, run `validate` or `apply`, and then call `activate` before goal planning binds it. When an active profile exists, `target plan` and `goal plan` include `plan.projectHarness.profileId`, `version`, `templateRef`, `policyRefs`, `sourceDigest`, and `compiledDigest`; those fields make the plan reproducible and auditable.
 
 Profile files can be YAML or JSON. The server is the source of truth; the file is only an import source:
 

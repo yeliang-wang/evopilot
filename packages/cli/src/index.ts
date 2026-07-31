@@ -203,6 +203,12 @@ async function main(argv: string[]): Promise<number> {
         if (maybeId === "inspect") return await harnessTemplateInspect(ctx, args.positionals[3]);
         if (maybeId === "apply" || maybeId === "update" || maybeId === "upgrade") return await harnessTemplateApply(ctx, maybeId);
         throw usage("Use: evopilot harness template <list|inspect|apply|update|upgrade> [template-id] [--version <version>]");
+      case "harness:policy":
+        if (maybeId === "list" || maybeId === undefined) return await harnessPolicyList(ctx);
+        if (maybeId === "inspect") return await harnessPolicyInspect(ctx, args.positionals[3]);
+        if (maybeId === "apply" || maybeId === "update" || maybeId === "upgrade") return await harnessPolicyApply(ctx, maybeId);
+        if (maybeId === "activate") return await harnessPolicyActivate(ctx, args.positionals[3]);
+        throw usage("Use: evopilot harness policy <list|inspect|apply|update|upgrade|activate> [policy-id] [--version <version>]");
       case "harness:profile":
         if (maybeId === "list") return await harnessProfileList(ctx);
         if (maybeId === "generate") return await harnessProfileGenerate(ctx);
@@ -1375,6 +1381,41 @@ async function harnessTemplateApply(ctx: RuntimeContext, command = "apply"): Pro
   const payload = harnessTemplateFilePayload(ctx.args);
   const response = await ctx.client.post("/api/v1/harness/templates", payload, requestOptions(ctx));
   printHarnessTemplateApplyResult(ctx, `harness template ${command}`, response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessPolicyList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/harness/policies"));
+  const policies = field(response.data, "policies");
+  printOutput(ctx, response.data, Array.isArray(policies)
+    ? policies.map(formatHarnessPolicySummary).join("\n") || "No TenantHarnessPolicy records."
+    : "policies=0");
+  return 0;
+}
+
+async function harnessPolicyInspect(ctx: RuntimeContext, id?: string): Promise<number> {
+  const policyId = id ?? stringOption(ctx.args, "policy") ?? stringOption(ctx.args, "policy-id") ?? "default";
+  const version = numberOption(ctx.args, "version");
+  const path = version
+    ? `/api/v1/harness/policies/${encodeURIComponent(policyId)}/versions/${version}`
+    : `/api/v1/harness/policies/${encodeURIComponent(policyId)}`;
+  const response = await ctx.client.get(path);
+  printHarnessPolicyResult(ctx, "harness policy inspect", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessPolicyApply(ctx: RuntimeContext, command = "apply"): Promise<number> {
+  const payload = harnessPolicyFilePayload(ctx.args);
+  const response = await ctx.client.post("/api/v1/harness/policies", payload, requestOptions(ctx));
+  printHarnessPolicyResult(ctx, `harness policy ${command}`, response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessPolicyActivate(ctx: RuntimeContext, id?: string): Promise<number> {
+  const policyId = id ?? stringOption(ctx.args, "policy") ?? stringOption(ctx.args, "policy-id") ?? "default";
+  const version = numberOption(ctx.args, "version");
+  const response = await ctx.client.post(`/api/v1/harness/policies/${encodeURIComponent(policyId)}/activate`, version ? { version } : {}, requestOptions(ctx));
+  printHarnessPolicyResult(ctx, "harness policy activate", response.data ?? response.body, response.status);
   return response.ok ? 0 : 2;
 }
 
@@ -3512,6 +3553,15 @@ function harnessTemplateFilePayload(args: ParsedArgs): Record<string, unknown> {
   };
 }
 
+function harnessPolicyFilePayload(args: ParsedArgs): Record<string, unknown> {
+  const file = requiredOption(args, "file");
+  return {
+    sourceFormat: harnessProfileSourceFormat(file),
+    sourceContent: readStructuredFile(file),
+    changelog: repeatedOption(args, "changelog")
+  };
+}
+
 function harnessProfileSourceFormat(file: string): "json" | "yaml" | "object" {
   if (file === "-") return "object";
   const extension = path.extname(file).toLowerCase();
@@ -3714,6 +3764,26 @@ function printHarnessTemplateApplyResult(ctx: RuntimeContext, command: string, d
   process.stdout.write(`${lines.join("\n")}\n`);
 }
 
+function printHarnessPolicyResult(ctx: RuntimeContext, command: string, data: unknown, statusCode: number): void {
+  const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
+  if (ctx.json) {
+    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    return;
+  }
+  const summary = field(payload, "summary");
+  const policy = field(payload, "policy") ?? payload;
+  const validation = field(payload, "validation") ?? field(policy, "validation");
+  const lines = [
+    `${command}: http=${statusCode}`,
+    isRecord(summary) ? `summary ${formatHarnessPolicySummary(summary)}` : undefined,
+    isRecord(policy) ? `policy=${field(policy, "policyId") ?? "default"} version=${field(policy, "version") ?? nestedField(summary, ["latestVersion"]) ?? "n/a"} status=${field(policy, "status") ?? field(payload, "status") ?? "n/a"}` : undefined,
+    isRecord(policy) && field(policy, "compiledDigest") ? `compiledDigest=${field(policy, "compiledDigest")}` : undefined,
+    isRecord(validation) ? `validation=${field(validation, "status")} blockers=${arrayLength(field(validation, "blockers"))}` : undefined,
+    isRecord(payload) && field(payload, "instruction") ? `instruction=${field(payload, "instruction")}` : undefined
+  ].filter(Boolean);
+  process.stdout.write(`${lines.join("\n")}\n`);
+}
+
 function printLoggingResult(ctx: RuntimeContext, command: string, data: unknown, statusCode: number): void {
   const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
   if (ctx.json) {
@@ -3733,6 +3803,17 @@ function formatHarnessProfileSummary(value: unknown): string {
   if (!isRecord(value)) return String(value);
   return [
     `profile=${value.profileId ?? "default"}`,
+    `status=${value.status ?? "MISSING"}`,
+    `active=${value.activeVersion ?? "none"}`,
+    `latest=${value.latestVersion ?? "none"}`,
+    value.compiledDigest ? `compiledDigest=${value.compiledDigest}` : ""
+  ].filter(Boolean).join(" ");
+}
+
+function formatHarnessPolicySummary(value: unknown): string {
+  if (!isRecord(value)) return String(value);
+  return [
+    `policy=${value.policyId ?? "default"}`,
     `status=${value.status ?? "MISSING"}`,
     `active=${value.activeVersion ?? "none"}`,
     `latest=${value.latestVersion ?? "none"}`,
@@ -3855,6 +3936,12 @@ Usage:
   evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
   evopilot harness template update --file <template.yaml> --changelog <text> [--force]
   evopilot harness template upgrade --file <template.yaml> --changelog <text> [--force]
+  evopilot harness policy list
+  evopilot harness policy inspect [policy-id] [--version <n>]
+  evopilot harness policy apply --file <policy.yaml> [--changelog <text>]
+  evopilot harness policy update --file <policy.yaml> [--changelog <text>]
+  evopilot harness policy upgrade --file <policy.yaml> [--changelog <text>]
+  evopilot harness policy activate [policy-id] --version <n>
   evopilot harness profile list --project <project-id>
   evopilot harness profile generate --project <project-id> [--profile <id>] [--from-template <template-id>] [--goal-loop-target <text>] [--llm-profile <id>]
   evopilot harness profile validate --project <project-id> --file <profile.yaml>
@@ -3944,7 +4031,7 @@ Global options:
   --from-template <id>        Optional admin override for ProjectHarnessProfile generation, or required template id for profile upgrade
   --from-template-version <v> Optional template version override for profile generation or upgrade
   --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
-  --changelog <text>          HarnessTemplate version changelog entry; repeat for multiple changes
+  --changelog <text>          HarnessTemplate or TenantHarnessPolicy changelog entry; repeat for multiple changes
   --force                     Replace an existing HarnessTemplate id/version intentionally
   --level <level>             EvoPilot logging level: debug, info, warn, or error
   --include-stack <bool>      Include stack traces in structured error logs

@@ -1,6 +1,6 @@
 # Project Harness Profile Schema
 
-This reference documents the YAML/JSON source profile accepted by the CLI and API. The server compiles it with a `HarnessTemplate` into an active project control-plane profile.
+This reference documents the YAML/JSON source profile accepted by the CLI and API. The server compiles it with a `HarnessTemplate` and any active tenant/workspace `TenantHarnessPolicy` records into an active project control-plane profile.
 
 ## HarnessTemplate Source
 
@@ -124,6 +124,71 @@ changelog:
 ```
 
 `id` and `version` are required. The server computes `digest`; callers should not hand-edit it. A changelog entry for the current version is required, either in the file or through CLI `--changelog`. Reusing the same `id@version` requires `--force`; normal updates should publish a new version.
+
+## TenantHarnessPolicy Source
+
+`TenantHarnessPolicy` is the private tenant/workspace constraint layer. Administrators apply and activate policy versions with `evopilot harness policy apply --file <policy.yaml> --changelog <text> --json` and `evopilot harness policy activate <policy-id> --version <n> --json`. Project onboarding does not choose a policy manually; active matching policies are inherited automatically.
+
+```yaml
+schema: evopilot-tenant-harness-policy/v1
+policyId: default
+name: Workspace Private Harness Policy
+description: Tenant/workspace controls that every matching project profile must satisfy.
+appliesTo:
+  languageFamilies:
+    - python
+requiredCapabilities:
+  - id: tenant-audit-boundary
+    name: Tenant audit boundary
+    boundary: Every project profile preserves tenant audit and repair evidence.
+    requiredEvidence:
+      - tenant-audit-proof
+evidence:
+  requiredEvidence:
+    - tenant-audit-proof
+  correlationFields:
+    - tenantId
+    - workspaceId
+    - projectId
+    - requestId
+    - traceId
+failureHandling:
+  requiredFields:
+    - errorCode
+    - requestId
+    - traceId
+  exceptionTracking:
+    requiredAttributes:
+      - tenantId
+      - workspaceId
+      - exception.type
+diagnostics:
+  requiredSignals:
+    - tenant-audit-event
+observability:
+  structuredLogs:
+    requiredFields:
+      - tenantId
+      - workspaceId
+      - projectId
+      - requestId
+      - traceId
+      - errorCode
+governance:
+  tenantPolicyRequired: true
+  cannotWeaken:
+    - tenantPolicyRequired
+enforcement:
+  requiredGovernanceTrue:
+    - tenantPolicyRequired
+changelog:
+  - version: "1"
+    summary: Initial workspace private policy.
+    changes:
+      - Initial workspace private policy.
+```
+
+Policy versions are stored under `<dataRoot>/tenant-harness-policies/<tenantId>/<workspaceId>/<policyId>/versions/v<version>.json`. The server records changelog entries supplied in the file or through CLI `--changelog`, plus source and compiled digests. When active, a policy is merged between the template and project source. The project source may strengthen controls, but validation fails if it weakens policy-required governance or omits required policy evidence, diagnostic, observability, or correlation fields.
 
 ## Source Profile
 
@@ -268,6 +333,14 @@ The server stores each version as `evopilot-project-harness-profile-version/v1`:
       "version": "1.1.0",
       "digest": "sha256:..."
     },
+  "policyRefs": [
+    {
+      "policyId": "default",
+      "version": 1,
+      "digest": "sha256:...",
+      "scope": "tenant-workspace"
+    }
+  ],
   "validation": {},
   "generatedBy": {
     "mode": "user",
@@ -277,7 +350,7 @@ The server stores each version as `evopilot-project-harness-profile-version/v1`:
 }
 ```
 
-`compiledContent` is what EvoPilot modules consume. It merges template defaults with project overrides and records `inheritedSections` and `overrideSections`.
+`compiledContent` is what EvoPilot modules consume. It merges template defaults, active tenant/workspace policy constraints, and project overrides. It records `inheritedSections`, `overrideSections`, and `policyRefs`.
 
 ## Validation Checks
 
@@ -287,6 +360,7 @@ The server returns `evopilot-project-harness-profile-validation/v1` with these c
 |---|---|
 | `project-scope` | Source profile matches route project, tenant, and workspace. |
 | `template-binding` | Template exists and digest is known. |
+| `tenant-harness-policy-binding` | Compiled profile binds active tenant/workspace policy versions and digests. |
 | `capability-boundaries` | Capabilities have boundaries and required evidence. |
 | `runtime-validation` | Runtime or validation commands are declared. |
 | `evidence-contract` | Required artifacts exist. |
@@ -295,6 +369,7 @@ The server returns `evopilot-project-harness-profile-validation/v1` with these c
 | `observability` | Observability section is present. |
 | `phase-mapping` | Alpha/Beta/RC/GA phase mapping is non-empty. |
 | `llm-draft-policy` | LLM drafts require review and cannot mutate active profiles silently. |
+| `tenant-harness-policy-compliance` | Compiled profile satisfies policy-required capabilities, evidence, failure fields, diagnostics, observability, structured logs, governance booleans, and phase mappings. |
 
 ## Status Values
 

@@ -387,6 +387,11 @@ GET /api/v1/projects/{projectId}/onboarding-checklist
 GET /api/v1/harness/templates
 POST /api/v1/harness/templates
 GET /api/v1/harness/templates/{templateId}
+GET /api/v1/harness/policies
+POST /api/v1/harness/policies
+GET /api/v1/harness/policies/{policyId}
+GET /api/v1/harness/policies/{policyId}/versions/{version}
+POST /api/v1/harness/policies/{policyId}/activate
 GET /api/v1/projects/{projectId}/harness-profiles
 POST /api/v1/projects/{projectId}/harness-profiles/generate
 POST /api/v1/projects/{projectId}/harness-profiles/validate
@@ -405,7 +410,7 @@ POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/upgrade
 <dataRoot>/project-harness-profiles/<tenantId>/<workspaceId>/<projectId>/<profileId>/versions/v<version>.json
 ```
 
-项目仓库里的 `.evopilot/project.harness.yaml` 或 CLI `--file profile.yaml` 只是 import source。服务端会把 source profile 与 `HarnessTemplate` 合并成 compiled profile，并计算 `sourceDigest` 与 `compiledDigest`。`activate` 只允许激活校验通过的版本，并把同一 profile 的旧 `ACTIVE` 版本标记为 `SUPERSEDED`。
+项目仓库里的 `.evopilot/project.harness.yaml` 或 CLI `--file profile.yaml` 只是 import source。服务端会把 source profile 与 `HarnessTemplate` 以及当前 tenant/workspace 下匹配的 active `TenantHarnessPolicy` 合并成 compiled profile，并计算 `sourceDigest` 与 `compiledDigest`。`activate` 只允许激活校验通过的版本，并把同一 profile 的旧 `ACTIVE` 版本标记为 `SUPERSEDED`。
 
 Fresh install 默认带多套内置 `HarnessTemplate`，覆盖不同语言、架构范式和软件类型：
 
@@ -421,6 +426,24 @@ generic-management-software-harness@1.1.0
 这些内置模板不是运行时动态从 GitHub 拉取。EvoPilot 将精选开源项目、官方规范和工程实践固化为本地版本化模板，并在 `sourceReferences[]` 中暴露初始化来源，例如 FastAPI、Spring Boot、Micrometer、Kubernetes、Prometheus、OpenTelemetry、Sentry、Apache SkyWalking、ERPNext/Frappe 和 Odoo。`@1.1.0` 模板提供默认能力边界、runtime command groups、validation baseline、evidence contract、failure taxonomy、diagnostics、observability、release governance、Alpha/Beta/RC/GA phase mapping 和 LLM draft policy，并细化结构化日志、异常追踪、trace 关联、SLO 监控、告警路由、operational runbook、语言/软件类型专项诊断与 release evidence 规则。
 
 管理员也可以通过 `POST /api/v1/harness/templates` 或独立管理员 CLI `evopilot harness template upgrade` 发布新的 template id 或版本，用于表达更多语言、架构范式或软件类型的 harness。模板写入要求 `id`、`version` 和当前版本 changelog；建议同时包含 `sourceReferences[]`。服务端计算 `digest` 并按 `<dataRoot>/harness-templates/<templateId>-<version>.json` 持久化。重复写入同一个 `id@version` 默认返回 `HARNESS_TEMPLATE_VERSION_EXISTS`，只有显式 `force=true` 才会替换该版本。已有 active `ProjectHarnessProfile` 不会因为模板更新被静默改写，必须通过 `generate` 或 `upgrade` 生成新的 profile revision 后再 review/activate。
+
+`TenantHarnessPolicy` 是私有 tenant/workspace 约束层，用于表达组织级或工作区级的项目 harness 契约。它不是项目接入时由普通操作者选择的模板；管理员通过 `POST /api/v1/harness/policies` 写入版本，通过 `POST /api/v1/harness/policies/{policyId}/activate` 激活，服务端在 `generate`、`validate`、`apply` 时自动把所有匹配的 active policy 合并到项目 profile。
+
+当前文件存储实现的路径形态为：
+
+```text
+<dataRoot>/tenant-harness-policies/<tenantId>/<workspaceId>/<policyId>/versions/v<version>.json
+```
+
+Policy source 使用 `schema: evopilot-tenant-harness-policy/v1`，可以声明 `appliesTo.projectIds`、`appliesTo.languageFamilies`、`appliesTo.templateIds`、`requiredCapabilities`、`evidence`、`failureHandling`、`diagnostics`、`observability`、`governance`、`phaseMapping` 和 `enforcement`。服务端会记录 changelog、`sourceDigest`、`compiledDigest`、validation checks 和 active/superseded 状态。项目 profile 可以增强或细化控制，但不能删除 policy 要求的 capability、evidence、correlation fields、structured log fields、exception attributes、diagnostic signals、observability signals、governance true keys 或 phase mapping。
+
+最终编译链路是：
+
+```text
+HarnessTemplate + active TenantHarnessPolicy records + ProjectHarnessProfile source
+```
+
+如果 active policy 在 profile 激活后升级，旧 active profile 不会被静默改写。后续 profile activation、`target plan` 或 `goal plan` 会返回 `409 PROJECT_HARNESS_PROFILE_POLICY_STALE`，直到用户或管理员重新生成/导入、review 并激活一个绑定当前 `policyRefs[]` 的 profile revision。
 
 项目 profile 可以绑定真实命令并增强规则，但不能关闭模板强制治理门禁，例如 `targetPlanRequiresApproval`、`profileActivationRequiresApproval`、`promotionRequiresReleaseDecision`、`sourceClosureRequired` 和 `noSilentProfileMutation`。
 
@@ -440,6 +463,14 @@ generic-management-software-harness@1.1.0
     "version": "1.1.0",
     "digest": "sha256:..."
   },
+  "policyRefs": [
+    {
+      "policyId": "default",
+      "version": 2,
+      "digest": "sha256:...",
+      "scope": "tenant-workspace"
+    }
+  ],
   "sourceDigest": "sha256:...",
   "compiledDigest": "sha256:...",
   "capabilities": ["source-boundary", "python-runtime", "release-governance"]

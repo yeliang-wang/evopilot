@@ -165,6 +165,210 @@ test("EvoPilot CLI manages server logging settings", async () => {
   }
 });
 
+test("TenantHarnessPolicy constrains project profiles and goal-plan harness bindings", async () => {
+  assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-tenant-harness-policy-"));
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-tenant-harness-policy-repo-"));
+  fs.writeFileSync(path.join(repoRoot, "pyproject.toml"), "[project]\nname = \"tenant-python-agent\"\nversion = \"0.1.0\"\n");
+  fs.mkdirSync(path.join(repoRoot, "tests"));
+  fs.writeFileSync(path.join(repoRoot, "tests", "test_smoke.py"), "def test_smoke():\n    assert True\n");
+
+  const policyFile = path.join(dataRoot, "tenant-policy.yaml");
+  fs.writeFileSync(policyFile, [
+    "schema: evopilot-tenant-harness-policy/v1",
+    "policyId: default",
+    "name: Tenant Private Harness Policy",
+    "description: Workspace-wide private policy for project-level harness contracts.",
+    "appliesTo:",
+    "  languageFamilies:",
+    "    - python",
+    "requiredCapabilities:",
+    "  - id: tenant-audit-boundary",
+    "    name: Tenant audit boundary",
+    "    boundary: Every project profile must preserve tenant audit, business request, and repair evidence fields.",
+    "    requiredEvidence:",
+    "      - tenant-audit-proof",
+    "      - business-request-correlation-proof",
+    "evidence:",
+    "  requiredEvidence:",
+    "    - tenant-audit-proof",
+    "  correlationFields:",
+    "    - tenantId",
+    "    - workspaceId",
+    "    - projectId",
+    "    - requestId",
+    "    - traceId",
+    "    - businessRequestId",
+    "failureHandling:",
+    "  requiredFields:",
+    "    - tenantId",
+    "    - workspaceId",
+    "    - errorCode",
+    "    - businessRequestId",
+    "  exceptionTracking:",
+    "    requiredAttributes:",
+    "      - tenantId",
+    "      - workspaceId",
+    "      - business.request_id",
+    "diagnostics:",
+    "  requiredSignals:",
+    "    - tenant-audit-event",
+    "observability:",
+    "  requiredSignals:",
+    "    - audit-log",
+    "    - traces",
+    "  structuredLogs:",
+    "    requiredFields:",
+    "      - tenantId",
+    "      - workspaceId",
+    "      - projectId",
+    "      - businessRequestId",
+    "      - errorCode",
+    "governance:",
+    "  tenantPolicyRequired: true",
+    "  tenantWorkspaceScopeRequired: true",
+    "  profileActivationRequiresApproval: true",
+    "  cannotWeaken:",
+    "    - tenantPolicyRequired",
+    "    - tenantWorkspaceScopeRequired",
+    "    - profileActivationRequiresApproval",
+    "phaseMapping:",
+    "  beta:",
+    "    - tenant-audit-boundary",
+    "  ga:",
+    "    - tenant-audit-boundary",
+    "enforcement:",
+    "  requiredStructuredLogFields:",
+    "    - tenantId",
+    "    - workspaceId",
+    "    - businessRequestId",
+    "  requiredGovernanceTrue:",
+    "    - tenantPolicyRequired",
+    ""
+  ].join("\n"));
+
+  const server = createServer({ dataRoot, runtimeMode: "debug" });
+  await listen(server);
+  const baseUrl = serverUrl(server);
+
+  try {
+    const appliedPolicy = await runCliJson([
+      "--server", baseUrl,
+      "harness", "policy", "apply",
+      "--file", policyFile,
+      "--changelog", "Add workspace private harness policy.",
+      "--json"
+    ]);
+    assert.equal(appliedPolicy.status, "VALIDATED");
+    assert.equal(appliedPolicy.policy.policyId, "default");
+    assert.equal(appliedPolicy.policy.version, 1);
+    assert.equal(appliedPolicy.policy.validation.status, "VALIDATED");
+    assert.equal(appliedPolicy.policy.changelog[0].summary, "Add workspace private harness policy.");
+
+    const activatedPolicy = await runCliJson([
+      "--server", baseUrl,
+      "harness", "policy", "activate", "default",
+      "--version", "1",
+      "--json"
+    ]);
+    assert.equal(activatedPolicy.status, "ACTIVE");
+    assert.equal(activatedPolicy.summary.activeVersion, 1);
+    const policyDigestV1 = activatedPolicy.policy.compiledDigest;
+
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "tenant-python-agent",
+      name: "Tenant Python Agent",
+      repository: { provider: "local-git", root: repoRoot },
+      runtime: {
+        language: "python",
+        installCommands: ["pip install -e ."],
+        unitCommands: ["pytest"],
+        smokeCommands: ["pytest -q tests"]
+      }
+    });
+
+    const generated = await post(`${baseUrl}/api/v1/projects/tenant-python-agent/harness-profiles/generate`, {
+      profileId: "default",
+      goalLoopTarget: "Define the project harness under the tenant private contract"
+    });
+    assert.equal(generated.data.profile.policyRefs.length, 1);
+    assert.equal(generated.data.profile.policyRefs[0].policyId, "default");
+    assert.equal(generated.data.profile.policyRefs[0].version, 1);
+    assert.equal(generated.data.profile.policyRefs[0].digest, policyDigestV1);
+    assert.ok(generated.data.profile.generatedBy.evidence.includes("tenantPolicy=default@v1"));
+    assert.ok(generated.data.profile.compiledContent.capabilities.some((capability) => capability.id === "tenant-audit-boundary"));
+    assert.ok(generated.data.profile.compiledContent.evidence.correlationFields.includes("businessRequestId"));
+    assert.ok(generated.data.profile.compiledContent.observability.structuredLogs.requiredFields.includes("businessRequestId"));
+    assert.ok(generated.data.profile.compiledContent.phaseMapping.ga.includes("tenant-audit-boundary"));
+    assert.equal(generated.data.profile.validation.status, "VALIDATED");
+
+    const weakenedSource = {
+      ...generated.data.profile.sourceContent,
+      governance: {
+        ...generated.data.profile.sourceContent.governance,
+        tenantPolicyRequired: false
+      }
+    };
+    const weakened = await postExpectStatus(`${baseUrl}/api/v1/projects/tenant-python-agent/harness-profiles/validate`, {
+      sourceFormat: "json",
+      sourceContent: weakenedSource
+    }, 409);
+    assert.equal(weakened.data.status, "FAILED");
+    assert.ok(weakened.data.validation.blockers.some((blocker) => blocker.includes("tenantPolicyRequired")));
+
+    const activatedProfile = await post(`${baseUrl}/api/v1/projects/tenant-python-agent/harness-profiles/default/activate`, { version: 1 });
+    assert.equal(activatedProfile.data.status, "ACTIVE");
+    assert.equal(activatedProfile.data.profile.policyRefs[0].digest, policyDigestV1);
+
+    const goal = await post(`${baseUrl}/api/v1/goals`, {
+      projectId: "tenant-python-agent",
+      objective: "Ship a tenant-private controlled Python service"
+    });
+    const planned = await post(`${baseUrl}/api/v1/goals/${goal.data.id}/plan`, {});
+    assert.equal(planned.data.plan.projectHarness.policyRefs[0].policyId, "default");
+    assert.equal(planned.data.plan.projectHarness.policyRefs[0].digest, policyDigestV1);
+    assert.ok(planned.data.plan.projectHarness.evidence.includes("tenantPolicy=default@v1"));
+
+    const policyV2File = path.join(dataRoot, "tenant-policy-v2.yaml");
+    fs.writeFileSync(policyV2File, fs.readFileSync(policyFile, "utf8").replace(
+      "      - businessRequestId\n      - errorCode",
+      "      - businessRequestId\n      - orgIncidentId\n      - errorCode"
+    ));
+    const appliedPolicyV2 = await runCliJson([
+      "--server", baseUrl,
+      "harness", "policy", "apply",
+      "--file", policyV2File,
+      "--changelog", "Require organization incident correlation in structured logs.",
+      "--json"
+    ]);
+    assert.equal(appliedPolicyV2.policy.version, 2);
+    assert.equal(appliedPolicyV2.policy.changelog[0].summary, "Require organization incident correlation in structured logs.");
+    const activatedPolicyV2 = await runCliJson([
+      "--server", baseUrl,
+      "harness", "policy", "activate", "default",
+      "--version", "2",
+      "--json"
+    ]);
+    assert.equal(activatedPolicyV2.summary.activeVersion, 2);
+
+    const staleGoal = await post(`${baseUrl}/api/v1/goals`, {
+      projectId: "tenant-python-agent",
+      objective: "Plan after tenant policy upgrade"
+    });
+    const stalePlan = await postExpectStatus(`${baseUrl}/api/v1/goals/${staleGoal.data.id}/plan`, {}, 409);
+    assert.equal(stalePlan.error, "PROJECT_HARNESS_PROFILE_POLICY_STALE");
+
+    const regenerated = await post(`${baseUrl}/api/v1/projects/tenant-python-agent/harness-profiles/generate`, {
+      profileId: "default",
+      goalLoopTarget: "Regenerate the project harness after tenant policy v2"
+    });
+    assert.equal(regenerated.data.profile.policyRefs[0].version, 2);
+    assert.ok(regenerated.data.profile.compiledContent.observability.structuredLogs.requiredFields.includes("orgIncidentId"));
+  } finally {
+    await close(server);
+  }
+});
+
 test("Fresh install exposes multiple built-in HarnessTemplate types and generates non-Python profiles", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-builtin-harness-library-"));
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-java-harness-repo-"));

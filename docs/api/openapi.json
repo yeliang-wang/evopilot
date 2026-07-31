@@ -983,6 +983,212 @@
         }
       }
     },
+    "/api/v1/harness/policies": {
+      "get": {
+        "summary": "列出 TenantHarnessPolicy",
+        "description": "返回当前 tenant/workspace 下的私有 harness policy summary。普通项目接入不会手动选择 policy；所有匹配的 active policy 会在 ProjectHarnessProfile generate、validate 和 apply 时自动继承。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "TenantHarnessPolicy summary 列表"
+          },
+          "403": {
+            "description": "需要只读或更高角色"
+          }
+        }
+      },
+      "post": {
+        "summary": "发布 TenantHarnessPolicy version",
+        "description": "管理员写入一个 tenant/workspace 私有 policy 版本。请求体包含 sourceContent、sourceText 或 policy；policy 使用 schema evopilot-tenant-harness-policy/v1。服务端记录 changelog、sourceDigest、compiledDigest 和 validation，不会自动激活。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sourceContent": {
+                    "type": "object",
+                    "description": "evopilot-tenant-harness-policy/v1 policy 对象。"
+                  },
+                  "sourceText": {
+                    "type": "string",
+                    "description": "YAML 或 JSON policy 文本。"
+                  },
+                  "policy": {
+                    "type": "object",
+                    "description": "sourceContent 的别名。"
+                  },
+                  "sourceFormat": {
+                    "type": "string",
+                    "enum": [
+                      "object",
+                      "json",
+                      "yaml"
+                    ]
+                  },
+                  "changelog": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "当前 policy 版本的变更说明。"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "TenantHarnessPolicy version 已校验并写入"
+          },
+          "400": {
+            "description": "请求体或 policy source 无效"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "409": {
+            "description": "TenantHarnessPolicy 校验失败"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/policies/{policyId}": {
+      "get": {
+        "summary": "查看 TenantHarnessPolicy",
+        "description": "返回指定 policy 的 active version；若没有 active version，则返回 latest version。可通过 query version 指定版本。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "policyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "TenantHarnessPolicy version 详情"
+          },
+          "404": {
+            "description": "TenantHarnessPolicy 不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/policies/{policyId}/versions/{version}": {
+      "get": {
+        "summary": "查看 TenantHarnessPolicy version",
+        "description": "按 policyId 和 version 查询私有 policy 的 sourceContent、compiledContent、validation、changelog 和 digest。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "policyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "TenantHarnessPolicy version 详情"
+          },
+          "404": {
+            "description": "TenantHarnessPolicy version 不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/policies/{policyId}/activate": {
+      "post": {
+        "summary": "激活 TenantHarnessPolicy version",
+        "description": "管理员激活一个已校验 policy version。激活后，匹配项目的 ProjectHarnessProfile 必须绑定该 policy version/digest；旧 active project profile 若未重新编译，后续 activation 或 goal planning 会返回 PROJECT_HARNESS_PROFILE_POLICY_STALE。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "policyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "type": "integer",
+                    "description": "要激活的 policy version；省略时使用 latest version。"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "TenantHarnessPolicy version 已激活"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "404": {
+            "description": "TenantHarnessPolicy version 不存在"
+          },
+          "409": {
+            "description": "只能激活已校验通过的 policy version"
+          }
+        }
+      }
+    },
     "/api/v1/projects/{projectId}/harness-profiles": {
       "get": {
         "summary": "列出项目 ProjectHarnessProfile",
@@ -1013,7 +1219,7 @@
       },
       "post": {
         "summary": "应用 ProjectHarnessProfile",
-        "description": "从 YAML/JSON sourceContent 编译并写入新的 VALIDATED profile version。不会自动激活。",
+        "description": "从 YAML/JSON sourceContent 编译并写入新的 VALIDATED profile version。编译顺序为 HarnessTemplate + active TenantHarnessPolicy records + ProjectHarnessProfile source；不会自动激活。",
         "security": [
           {
             "bearerAuth": []
@@ -1032,7 +1238,7 @@
     "/api/v1/projects/{projectId}/harness-profiles/generate": {
       "post": {
         "summary": "生成 ProjectHarnessProfile DRAFT",
-        "description": "结合项目、自动匹配的 HarnessTemplate、goalLoopTarget、可选 LLM 和 previous active profile 生成 DRAFT profile version。首次接入默认自动匹配；二次接入默认复用 previous active profile 的模板；templateId/fromTemplate 仅作为管理员或高级 override。",
+        "description": "结合项目、自动匹配的 HarnessTemplate、active TenantHarnessPolicy records、goalLoopTarget、可选 LLM 和 previous active profile 生成 DRAFT profile version。首次接入默认自动匹配；二次接入默认复用 previous active profile 的模板并参考历史 active profile；templateId/fromTemplate 仅作为管理员或高级 override。",
         "security": [
           {
             "bearerAuth": []
@@ -1051,7 +1257,7 @@
     "/api/v1/projects/{projectId}/harness-profiles/validate": {
       "post": {
         "summary": "校验 ProjectHarnessProfile",
-        "description": "只编译和校验 profile，不写入控制面。",
+        "description": "只编译和校验 profile，不写入控制面。校验会强制 active TenantHarnessPolicy 所要求的能力、证据、故障字段、诊断、观测、结构化日志、governance 和 phase mapping。",
         "security": [
           {
             "bearerAuth": []
@@ -1089,7 +1295,7 @@
     "/api/v1/projects/{projectId}/harness-profiles/{profileId}/activate": {
       "post": {
         "summary": "激活 ProjectHarnessProfile version",
-        "description": "把指定 version 标记为 ACTIVE，并把旧 ACTIVE version 标记为 SUPERSEDED。",
+        "description": "把指定 version 标记为 ACTIVE，并把旧 ACTIVE version 标记为 SUPERSEDED。若当前 active TenantHarnessPolicy 与该 profile 编译时绑定的 policyRefs 不一致，返回 PROJECT_HARNESS_PROFILE_POLICY_STALE。",
         "security": [
           {
             "bearerAuth": []
@@ -1100,7 +1306,7 @@
             "description": "Profile 已激活"
           },
           "409": {
-            "description": "Profile 未通过校验，不能激活"
+            "description": "Profile 未通过校验、不能激活，或 policyRefs 已过期"
           }
         }
       }
