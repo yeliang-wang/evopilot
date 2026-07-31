@@ -201,8 +201,8 @@ async function main(argv: string[]): Promise<number> {
       case "harness:template":
         if (maybeId === "list" || maybeId === undefined) return await harnessTemplateList(ctx);
         if (maybeId === "inspect") return await harnessTemplateInspect(ctx, args.positionals[3]);
-        if (maybeId === "apply" || maybeId === "update") return await harnessTemplateApply(ctx);
-        throw usage("Use: evopilot harness template <list|inspect|apply|update> [template-id] [--version <version>]");
+        if (maybeId === "apply" || maybeId === "update" || maybeId === "upgrade") return await harnessTemplateApply(ctx, maybeId);
+        throw usage("Use: evopilot harness template <list|inspect|apply|update|upgrade> [template-id] [--version <version>]");
       case "harness:profile":
         if (maybeId === "list") return await harnessProfileList(ctx);
         if (maybeId === "generate") return await harnessProfileGenerate(ctx);
@@ -1371,10 +1371,10 @@ async function harnessTemplateInspect(ctx: RuntimeContext, id?: string): Promise
   return 0;
 }
 
-async function harnessTemplateApply(ctx: RuntimeContext): Promise<number> {
+async function harnessTemplateApply(ctx: RuntimeContext, command = "apply"): Promise<number> {
   const payload = harnessTemplateFilePayload(ctx.args);
   const response = await ctx.client.post("/api/v1/harness/templates", payload, requestOptions(ctx));
-  printHarnessTemplateApplyResult(ctx, response.data ?? response.body, response.status);
+  printHarnessTemplateApplyResult(ctx, `harness template ${command}`, response.data ?? response.body, response.status);
   return response.ok ? 0 : 2;
 }
 
@@ -3696,7 +3696,7 @@ function printHarnessProfileResult(ctx: RuntimeContext, command: string, data: u
   process.stdout.write(`${lines.join("\n")}\n`);
 }
 
-function printHarnessTemplateApplyResult(ctx: RuntimeContext, data: unknown, statusCode: number): void {
+function printHarnessTemplateApplyResult(ctx: RuntimeContext, command: string, data: unknown, statusCode: number): void {
   const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
   if (ctx.json) {
     process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
@@ -3704,7 +3704,7 @@ function printHarnessTemplateApplyResult(ctx: RuntimeContext, data: unknown, sta
   }
   const template = field(payload, "template");
   const lines = [
-    `harness template apply: http=${statusCode}`,
+    `${command}: http=${statusCode}`,
     isRecord(payload) ? `action=${field(payload, "action") ?? "UNKNOWN"}` : undefined,
     isRecord(template) ? `template=${field(template, "id")}@${field(template, "version")}` : undefined,
     isRecord(template) ? `digest=${field(template, "digest")}` : undefined,
@@ -3854,6 +3854,7 @@ Usage:
   evopilot harness template inspect <template-id> [--version <version>]
   evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
   evopilot harness template update --file <template.yaml> --changelog <text> [--force]
+  evopilot harness template upgrade --file <template.yaml> --changelog <text> [--force]
   evopilot harness profile list --project <project-id>
   evopilot harness profile generate --project <project-id> [--profile <id>] [--from-template <template-id>] [--goal-loop-target <text>] [--llm-profile <id>]
   evopilot harness profile validate --project <project-id> --file <profile.yaml>
@@ -3940,8 +3941,8 @@ Global options:
   --require-devops-ready      Explicit DevOps readiness assertion for project onboarding; remote target/goal/loop run preflights native DevOps by default
   --require-llm-ready         Explicit LLM readiness assertion for onboarding/profile setup; target/goal/loop run preflights selected LLM by default
   --llm-profile <id>          LLM profile for this project onboarding or new Goal/Loop run
-  --from-template <id>        Harness template id for ProjectHarnessProfile generation or upgrade
-  --from-template-version <v> Harness template version for profile generation or upgrade
+  --from-template <id>        Optional admin override for ProjectHarnessProfile generation, or required template id for profile upgrade
+  --from-template-version <v> Optional template version override for profile generation or upgrade
   --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
   --changelog <text>          HarnessTemplate version changelog entry; repeat for multiple changes
   --force                     Replace an existing HarnessTemplate id/version intentionally
@@ -3959,7 +3960,7 @@ Global options:
 Project DevOps examples:
   evopilot project onboard plan github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health --llm-profile qwen-private --json
   evopilot project onboard verify my-agent --json
-  evopilot harness profile generate --project my-agent --from-template python-enterprise-harness --goal-loop-target "Define the Python enterprise harness for this project" --llm-profile qwen-private --json
+  evopilot harness profile generate --project my-agent --goal-loop-target "Define the project harness for this project" --llm-profile qwen-private --json
   evopilot harness profile activate default --project my-agent --version 1 --json
   evopilot target plan --project my-agent --objective "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility" --llm-profile qwen-private --json
   evopilot target plan export <goal-id> --format json > plan.json

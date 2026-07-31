@@ -10,7 +10,7 @@ import { createServer } from "../../packages/server/dist/index.js";
 
 const cliPath = path.resolve("packages/cli/dist/index.js");
 
-test("HarnessTemplate API and CLI apply versioned templates with changelog", async () => {
+test("HarnessTemplate API and CLI upgrade versioned templates with changelog", async () => {
   assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-template-"));
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-template-repo-"));
@@ -91,7 +91,7 @@ test("HarnessTemplate API and CLI apply versioned templates with changelog", asy
   try {
     const applied = await runCliJson([
       "--server", baseUrl,
-      "harness", "template", "apply",
+      "harness", "template", "upgrade",
       "--file", templateFile,
       "--changelog", "Add admin-managed Python enterprise harness template version 1.1.0.",
       "--json"
@@ -204,14 +204,26 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
 
     const generated = await post(`${baseUrl}/api/v1/projects/java-ddd-agent/harness-profiles/generate`, {
       profileId: "default",
-      templateId: "java-ddd-service-harness",
       goalLoopTarget: "Add customer lifecycle aggregate and release evidence"
     });
     assert.equal(generated.data.profile.templateRef.templateId, "java-ddd-service-harness");
+    assert.ok(generated.data.profile.generatedBy.evidence.includes("templateSelection=auto-match"));
+    assert.ok(generated.data.profile.generatedBy.evidence.some((item) => item.includes("runtimeLanguage=java")));
     assert.equal(generated.data.profile.sourceContent.runtime.language, "java");
     assert.ok(generated.data.profile.sourceContent.capabilities.some((capability) => capability.id === "ddd-boundaries"));
     assert.ok(generated.data.profile.sourceContent.runtime.installCommands.some((command) => command.includes("mvnw") || command.includes("gradlew")));
     assert.equal(generated.data.profile.validation.status, "VALIDATED");
+
+    const activated = await post(`${baseUrl}/api/v1/projects/java-ddd-agent/harness-profiles/default/activate`, { version: 1 });
+    assert.equal(activated.data.profile.templateRef.templateId, "java-ddd-service-harness");
+
+    const evolved = await post(`${baseUrl}/api/v1/projects/java-ddd-agent/harness-profiles/generate`, {
+      profileId: "default",
+      goalLoopTarget: "Add Python integration notes without changing the active Java DDD harness lineage"
+    });
+    assert.equal(evolved.data.profile.templateRef.templateId, "java-ddd-service-harness");
+    assert.ok(evolved.data.profile.generatedBy.evidence.includes("templateSelection=previous-active-profile"));
+    assert.ok(evolved.data.profile.generatedBy.evidence.includes("previousActiveVersion=1"));
   } finally {
     await close(server);
   }

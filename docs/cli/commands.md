@@ -24,8 +24,8 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --credential-principal <id> Optional operator-readable principal expected behind the DevOps tokenRef
 --llm-profile <id>          LLM profile for project onboarding or this Goal/Loop run
 --require-llm-ready         Explicit LLM readiness assertion for onboarding/profile setup; target/goal/loop run preflights the selected LLM by default
---from-template <id>        Harness template id for ProjectHarnessProfile generation or upgrade
---from-template-version <v> Harness template version for ProjectHarnessProfile generation or upgrade
+--from-template <id>        Optional admin override for ProjectHarnessProfile generation, or required template id for profile upgrade
+--from-template-version <v> Optional template version override for ProjectHarnessProfile generation or upgrade
 --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
 --level <debug|info|warn|error> EvoPilot structured logging level
 --include-stack <true|false>    Include redacted stack traces in error logs
@@ -368,8 +368,9 @@ evopilot harness template inspect python-enterprise-harness
 evopilot harness template inspect java-ddd-service-harness
 evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
 evopilot harness template update --file <template.yaml> --changelog <text> [--force]
+evopilot harness template upgrade --file <template.yaml> --changelog <text> [--force]
 evopilot harness profile list --project <project-id>
-evopilot harness profile generate --project <project-id> --from-template python-enterprise-harness --goal-loop-target <text> [--llm-profile <id>]
+evopilot harness profile generate --project <project-id> --goal-loop-target <text> [--llm-profile <id>] [--from-template <template-id>]
 evopilot harness profile validate --project <project-id> --file <profile.yaml>
 evopilot harness profile apply --project <project-id> --file <profile.yaml>
 evopilot harness profile diff --project <project-id> --file <profile.yaml>
@@ -392,16 +393,16 @@ observability-apm-harness@1.0.0
 generic-management-software-harness@1.0.0
 ```
 
-Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. Inspect `sourceReferences[]` to see that initialization basis. Administrators can publish additional template ids or newer versions for other language, architecture, or software-type harnesses:
+Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. Inspect `sourceReferences[]` to see that initialization basis. Project onboarding automatically matches a published template from project runtime/repository context and the goal loop target. `--from-template` is an explicit administrator or advanced override, not the normal first-onboarding path. Administrators can publish additional template ids or newer versions for other language, architecture, or software-type harnesses through the independent template maintenance channel:
 
 ```bash
-evopilot harness template apply \
+evopilot harness template upgrade \
   --file python-enterprise-harness-1.1.0.yaml \
   --changelog "Add stricter runtime and observability defaults." \
   --json
 ```
 
-`apply` and `update` are aliases. The file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown is documentation only. The server computes `digest`, stores the version under the control plane, and requires a changelog entry for that version. Include `sourceReferences[]` when the template is derived from public projects, official docs, or internal engineering practice. Reusing an existing `id@version` is rejected unless `--force` is supplied; prefer publishing a new version for normal changes. Existing active `ProjectHarnessProfile` versions keep their old `templateRef` until an administrator generates or upgrades a new profile revision.
+`apply`, `update`, and `upgrade` are aliases for publishing a template version. The file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown is documentation only. The server computes `digest`, stores the version under the control plane, and requires a changelog entry for that version. Include `sourceReferences[]` when the template is derived from public projects, official docs, or internal engineering practice. Reusing an existing `id@version` is rejected unless `--force` is supplied; prefer publishing a new version for normal changes. Existing active `ProjectHarnessProfile` versions keep their old `templateRef` until an administrator generates or upgrades a new profile revision.
 
 Generated profiles are stored as `DRAFT` versions. A user or administrator must review the profile, run `validate` or `apply`, and then call `activate` before goal planning binds it. When an active profile exists, `target plan` and `goal plan` include `plan.projectHarness.profileId`, `version`, `templateRef`, `sourceDigest`, and `compiledDigest`; those fields make the plan reproducible and auditable.
 

@@ -116,14 +116,14 @@ Continue only when source credentials, DevOps, and LLM readiness are `READY`.
 
 ## Admin: Maintain Template Harness
 
-Project onboarding consumes an already published template. Fresh installs include `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`.
+Project onboarding consumes an already published template, but normal onboarding does not require the operator to choose one manually. Fresh installs include `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. EvoPilot automatically matches a template from project runtime/repository context and the goal loop target; `--from-template` is only an explicit administrator or advanced override. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`.
 
 Administrators can publish additional template ids or versions for different languages, architecture styles, or software types:
 
 ```bash
 evopilot harness template list --json
 evopilot harness template inspect python-enterprise-harness --json
-evopilot harness template apply \
+evopilot harness template upgrade \
   --file ./python-enterprise-harness-1.1.0.yaml \
   --changelog "Add FastAPI service defaults and pytest coverage gates." \
   --json
@@ -138,13 +138,12 @@ Before phase planning, create the project-level harness definition that controls
 ```bash
 evopilot harness profile generate \
   --project my-agent \
-  --from-template python-enterprise-harness \
   --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" \
   --llm-profile my-agent-llm \
   --json
 ```
 
-For a first onboarding, EvoPilot generates the DRAFT from the selected template, the goal loop target, and project context. Use `--from-template python-enterprise-harness` for Python projects, `java-ddd-service-harness` for Java DDD services, `go-middleware-harness` for Go infrastructure/middleware, and so on. For a second onboarding or project evolution, EvoPilot also includes the previous active profile in the generation context and returns a diff-aware DRAFT.
+For a first onboarding, EvoPilot automatically matches a template and generates the DRAFT from that template, the goal loop target, and project context. For a second onboarding or project evolution, EvoPilot first reuses the previous active profile's template unless an administrator explicitly overrides it, then includes the previous active profile in the generation context and returns a diff-aware DRAFT. The response `generatedBy.evidence[]` includes `templateSelection=auto-match`, `templateSelection=previous-active-profile`, or `templateSelection=request-override`.
 
 Continue only when the JSON response shows:
 

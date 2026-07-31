@@ -138,14 +138,14 @@ run override --llm-profile -> project default LLM -> server global default LLM
 
 For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
 
-Administrator template maintenance is separate from daily project execution. Agents should normally consume an existing template through `harness profile generate --from-template ...`. Fresh installs include multiple built-in template types: `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`.
+Administrator template maintenance is separate from daily project execution. Agents should normally let EvoPilot automatically match an existing template during `harness profile generate`; `--from-template` is only an explicit administrator or advanced override. Fresh installs include multiple built-in template types: `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`.
 
 Administrators can list, inspect, and publish template versions:
 
 ```bash
 evopilot harness template list --json
 evopilot harness template inspect python-enterprise-harness --json
-evopilot harness template apply \
+evopilot harness template upgrade \
   --file ./python-enterprise-harness-1.1.0.yaml \
   --changelog "Add FastAPI service defaults and pytest coverage gates." \
   --json
@@ -158,7 +158,6 @@ Generate and confirm the project harness profile before phase planning:
 ```bash
 evopilot harness profile generate \
   --project my-agent \
-  --from-template python-enterprise-harness \
   --goal-loop-target "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --llm-profile my-agent-llm \
   --json
@@ -167,7 +166,7 @@ evopilot harness profile inspect default --project my-agent --version <harness-v
 evopilot harness profile diff default --project my-agent --version <harness-version> --json
 ```
 
-EvoPilot returns `evopilot-project-harness-profile-generate-result/v1` with `status=DRAFT`, `profile.status=DRAFT`, `profile.validation`, `profile.sourceContent`, `profile.compiledContent`, `profile.diffFromActive`, `profile.generatedBy`, `profile.sourceDigest`, `profile.compiledDigest`, and `summary`. WorkBuddy must show those fields to the user or project owner before activation. If the user wants changes, write the edited source profile to YAML or JSON and repeat:
+EvoPilot returns `evopilot-project-harness-profile-generate-result/v1` with `status=DRAFT`, `profile.status=DRAFT`, `profile.validation`, `profile.sourceContent`, `profile.compiledContent`, `profile.diffFromActive`, `profile.generatedBy`, `profile.sourceDigest`, `profile.compiledDigest`, and `summary`. WorkBuddy must show those fields to the user or project owner before activation, including whether `profile.generatedBy.evidence[]` reports `templateSelection=auto-match`, `templateSelection=previous-active-profile`, or `templateSelection=request-override`. If the user wants changes, write the edited source profile to YAML or JSON and repeat:
 
 ```bash
 evopilot harness profile validate --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
@@ -679,7 +678,6 @@ evopilot project llm preflight my-agent --json
 
 evopilot harness profile generate \
   --project my-agent \
-  --from-template python-enterprise-harness \
   --goal-loop-target "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --llm-profile my-agent-llm \
   --json

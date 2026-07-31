@@ -4,9 +4,9 @@ This reference documents the YAML/JSON source profile accepted by the CLI and AP
 
 ## HarnessTemplate Source
 
-EvoPilot ships multiple built-in template harness types. Fresh installs expose `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness` through `evopilot harness template list --json`.
+EvoPilot ships multiple built-in template harness types. Fresh installs expose `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness` through `evopilot harness template list --json`. During profile generation, EvoPilot automatically matches a published template from project context and the goal loop target when the source profile or request omits `template.templateId`.
 
-Administrators publish template harness versions as YAML or JSON through `evopilot harness template apply --file <template.yaml> --changelog <text> --json`. The file is a full template definition; different languages, architecture styles, or software types should use distinct template ids or versions. Markdown can document a template, but Markdown is not the authoritative template format because the server must parse, validate, merge, version, and digest structured data.
+Administrators publish template harness versions as YAML or JSON through `evopilot harness template upgrade --file <template.yaml> --changelog <text> --json` or the equivalent `apply/update` aliases. The file is a full template definition; different languages, architecture styles, or software types should use distinct template ids or versions. Markdown can document a template, but Markdown is not the authoritative template format because the server must parse, validate, merge, version, and digest structured data.
 
 ```yaml
 schema: evopilot-harness-template/v1
@@ -193,7 +193,7 @@ metadata:
 | `profileId` | no | Defaults to `default`. |
 | `projectId` | yes after normalization | Must match the API route project. |
 | `tenantId` / `workspaceId` | no | Defaults to the persisted project scope; if supplied, must match. |
-| `template.templateId` | no | Defaults to `python-enterprise-harness`. |
+| `template.templateId` | no | If omitted during generation, EvoPilot automatically matches a published template from project context and the goal loop target; if omitted in an imported source profile, the server applies the same control-plane matching logic. |
 | `runtime` / `validation` | yes by validation | Must expose command evidence through runtime command arrays or validation command groups. |
 | `evidence.requiredArtifacts` | yes by validation | Must include artifact expectations such as target and phase packages. |
 | `governance` | yes by validation | Cannot weaken mandatory template gates. |

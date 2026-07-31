@@ -28,7 +28,7 @@ evopilot llm profile preflight my-agent-llm --json
 evopilot project onboard plan github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://my-agent.example.com/health --llm-profile my-agent-llm --json
 evopilot project onboard github --repo owner/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner owner --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://my-agent.example.com/health --llm-profile my-agent-llm --client workbuddy --json
 evopilot project llm preflight my-agent --json
-evopilot harness profile generate --project my-agent --from-template python-enterprise-harness --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --json
+evopilot harness profile generate --project my-agent --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --json
 evopilot harness profile inspect default --project my-agent --version <harness-version> --json
 evopilot harness profile diff default --project my-agent --version <harness-version> --json
 # STOP: show the ProjectHarnessProfile DRAFT to the user or project owner; continue only after explicit confirmation.
@@ -220,7 +220,6 @@ Automation must treat `ProjectHarnessProfile` as a governed project control-plan
 ```bash
 evopilot harness profile generate \
   --project my-agent \
-  --from-template python-enterprise-harness \
   --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" \
   --llm-profile my-agent-llm \
   --json
@@ -241,7 +240,7 @@ evopilot harness profile apply --project my-agent --file /tmp/my-agent-harness-p
 
 After `apply`, use the returned `profile.version` as `<harness-version>` for activation.
 
-First onboarding uses the harness template, goal loop target, and project context. Re-onboarding or project evolution also uses the previous active profile. The agent must report whether `generatedBy.evidence[]` includes `previousActiveVersion=<n>` or `previousActiveVersion=none`.
+First onboarding uses EvoPilot's automatically matched harness template, the goal loop target, and project context. Re-onboarding or project evolution reuses the previous active profile's template unless an administrator explicitly overrides it, and also includes the previous active profile. The agent must report whether `generatedBy.evidence[]` includes `templateSelection=auto-match`, `templateSelection=previous-active-profile`, or `templateSelection=request-override`, and whether it includes `previousActiveVersion=<n>` or `previousActiveVersion=none`.
 
 Automation may proceed to `target plan` only after `harness profile activate` returns `status=ACTIVE` and `summary.activeVersion=<harness-version>`. `target plan` or `goal plan` must then expose `plan.projectHarness` or `phasePlan.projectHarness` with the same profile id, version, and compiled digest. If the binding is missing, stop and repair the harness activation.
 
@@ -479,6 +478,6 @@ CLI wrapper output exposes `llmUsage.process.responses[].requestId` and recent `
 
 Use `evopilot logging inspect --json` to check the active server logging level. Admin automation may temporarily run `evopilot logging set --level debug --json` while diagnosing a failed run, then restore `info`.
 
-Harness control-plane logs use `category=harness`. Important events include `harness-template.applied`, `harness-template.apply.rejected`, `project-harness-profile.generated`, `project-harness-profile.validation.failed`, `project-harness-profile.applied`, `project-harness-profile.activated`, `project-harness-profile.upgrade-drafted`, `goal-plan.project-harness-bound`, and `goal-plan.project-harness-missing`. Parse `metadata.templateId`, `metadata.templateVersion`, `metadata.templateDigest`, `metadata.profileId`, `metadata.profileVersion`, `metadata.sourceDigest`, `metadata.compiledDigest`, `metadata.validationBlockers`, `metadata.changedSections`, `errorCode`, and `diagnosis.recommendedAction` before asking a human to inspect raw logs.
+Harness control-plane logs use `category=harness`. Important events include `harness-template.applied`, `harness-template.apply.rejected`, `project-harness-profile.generated`, `project-harness-profile.validation.failed`, `project-harness-profile.applied`, `project-harness-profile.activated`, `project-harness-profile.upgrade-drafted`, `goal-plan.project-harness-bound`, and `goal-plan.project-harness-missing`. Parse `metadata.templateId`, `metadata.templateVersion`, `metadata.templateDigest`, `metadata.templateSelectionMode`, `metadata.templateSelectionReasons`, `metadata.profileId`, `metadata.profileVersion`, `metadata.sourceDigest`, `metadata.compiledDigest`, `metadata.validationBlockers`, `metadata.changedSections`, `errorCode`, and `diagnosis.recommendedAction` before asking a human to inspect raw logs.
 
 Use these fields to prove that terminal CLI output, Dashboard state, and production server logs describe the same run.

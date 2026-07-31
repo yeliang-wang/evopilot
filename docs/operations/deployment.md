@@ -270,7 +270,7 @@ EvoPilot V1.0.0 的主服务、Loop worker 和 soak 脚本都输出 JSON Lines�
 | `project.devops.preflight` | 定位项目 GitHub Actions/GitLab CI provider、executionMode、devopsOwner、workflowRepository、credentialRef、claimBoundary、required checks/jobs 和 health/ready blocker。 |
 | `llm-profile.preflight` | 定位项目或租户 LLM profile、provider、model、apiKeyRef、readiness 和 blocker。 |
 | `harness-template.applied` / `harness-template.apply.rejected` | 定位 template harness 的 id、version、digest、changelog、重复版本和下一步动作。 |
-| `project-harness-profile.generated` / `project-harness-profile.validation.failed` / `project-harness-profile.activated` | 定位项目 harness profile 的 templateRef、sourceDigest、compiledDigest、validation blockers、changed sections 和 nextAction。 |
+| `project-harness-profile.generated` / `project-harness-profile.validation.failed` / `project-harness-profile.activated` | 定位项目 harness profile 的 templateRef、templateSelectionMode、templateSelectionReasons、sourceDigest、compiledDigest、validation blockers、changed sections 和 nextAction。 |
 | `goal-plan.project-harness-bound` / `goal-plan.project-harness-missing` | 定位目标规划是否绑定 active ProjectHarnessProfile。 |
 | `devops.pipeline.triggering` / `devops.pipeline.triggered` | 定位 GitHub Actions/GitLab CI workflow/pipeline、ref、queueId、build URL 和状态。 |
 | `loop-worker.*` | 定位独立 Loop worker 的启动、空闲、推进、审批等待和错误。 |

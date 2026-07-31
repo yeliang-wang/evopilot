@@ -1335,6 +1335,20 @@ interface MaturityStandardTemplate {
   };
 }
 
+type HarnessTemplateSelectionMode = "request-override" | "previous-active-profile" | "auto-match";
+
+interface HarnessTemplateSelection {
+  template: HarnessTemplateProfile;
+  mode: HarnessTemplateSelectionMode;
+  reasons: string[];
+  candidateScores?: Array<{
+    templateId: string;
+    version: string;
+    score: number;
+    reasons: string[];
+  }>;
+}
+
 interface PhaseTarget {
   schema: "evopilot-phase-target/v1";
   id: string;
@@ -4801,6 +4815,8 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           compiledDigest: saved.compiledDigest,
           templateId: saved.templateRef.templateId,
           templateVersion: saved.templateRef.version,
+          templateSelectionMode: projectHarnessTemplateSelectionMode(saved),
+          templateSelectionReasons: projectHarnessTemplateSelectionReasons(saved),
           validation: saved.validation.status
         }));
         return writeJson(response, 201, envelope({
@@ -11525,7 +11541,7 @@ function createProjectHarnessProfileVersion(store: FileStore, project: StoredPro
 }): ProjectHarnessProfileVersion {
   const now = new Date().toISOString();
   const source = normalizeProjectHarnessProfileSourceForProject(input.source, project);
-  const template = resolveHarnessTemplateForSource(store, source);
+  const template = resolveHarnessTemplateForSource(store, project, source);
   const compiled = compileProjectHarnessProfile(project, template, source, now);
   const sourceDigest = digestObject(source);
   const compiledDigest = digestObject(compiled);
@@ -11561,11 +11577,9 @@ function createProjectHarnessProfileVersion(store: FileStore, project: StoredPro
 }
 
 async function generateProjectHarnessProfileDraft(store: FileStore, project: StoredProject, body: Record<string, unknown>, actor: string): Promise<ProjectHarnessProfileVersion> {
-  const requestedTemplateId = safeFileName(String(body.templateId ?? body.fromTemplate ?? "python-enterprise-harness"));
-  const requestedTemplateVersion = optionalTrimmedString(body.templateVersion);
-  const template = store.readHarnessTemplate(requestedTemplateId, requestedTemplateVersion);
-  if (!template) throw httpError(404, "HARNESS_TEMPLATE_NOT_FOUND", `Harness template ${requestedTemplateId}${requestedTemplateVersion ? `@${requestedTemplateVersion}` : ""} was not found.`);
   const previousActive = store.readActiveProjectHarnessProfile(project.id, safeFileName(String(body.profileId ?? "default")));
+  const templateSelection = selectHarnessTemplateForGeneration(store, project, body, previousActive);
+  const template = templateSelection.template;
   const requestedProfileId = optionalTrimmedString(body.llmProfileId ?? body.llmProfile);
   const llmResolution = resolveLoopLlmSelection(store, {
     project,
@@ -11580,7 +11594,7 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
       throw httpError(409, "PROJECT_HARNESS_PROFILE_LLM_REQUIRED", "ProjectHarnessProfile generation requires a READY LLM profile or production LLM provider.");
     }
     return createProjectHarnessProfileVersion(store, project, {
-      source: deterministicProjectHarnessProfileSource(project, template, body, previousActive),
+      source: deterministicProjectHarnessProfileSource(project, template, body, previousActive, templateSelection),
       sourceFormat: "llm-generated",
       actor,
       status: "DRAFT",
@@ -11591,6 +11605,8 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
           "llmGenerator=false",
           "reason=LLM provider is not configured in debug mode",
           previousActive ? `previousActiveVersion=${previousActive.version}` : "previousActiveVersion=none",
+          `templateSelection=${templateSelection.mode}`,
+          ...templateSelection.reasons.map((reason) => `templateSelectionReason=${reason}`),
           `template=${template.id}@${template.version}`,
           `templateDigest=${template.digest}`
         ]
@@ -11613,6 +11629,7 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
       workspaceId: project.workspaceId,
       templateId: template.id,
       templateVersion: template.version,
+      templateSelectionMode: templateSelection.mode,
       actor,
       llmProfileId: llmResolution.selection.profileId ?? "global-default"
     },
@@ -11640,7 +11657,9 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
       metadata: {
         ...(source.metadata ?? {}),
         generatedFromGoalLoopTarget: optionalTrimmedString(body.goalLoopTarget ?? body.objective),
-        previousActiveProfileVersion: previousActive?.version
+        previousActiveProfileVersion: previousActive?.version,
+        templateSelectionMode: templateSelection.mode,
+        templateSelectionReasons: templateSelection.reasons
       }
     },
     sourceFormat: "llm-generated",
@@ -11660,6 +11679,8 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
         `startedAt=${startedAt}`,
         `durationMs=${response.durationMs}`,
         previousActive ? `previousActiveVersion=${previousActive.version}` : "previousActiveVersion=none",
+        `templateSelection=${templateSelection.mode}`,
+        ...templateSelection.reasons.map((reason) => `templateSelectionReason=${reason}`),
         `template=${template.id}@${template.version}`,
         `templateDigest=${template.digest}`
       ]
@@ -11667,7 +11688,7 @@ async function generateProjectHarnessProfileDraft(store: FileStore, project: Sto
   });
 }
 
-function deterministicProjectHarnessProfileSource(project: StoredProject, template: HarnessTemplateProfile, body: Record<string, unknown>, previousActive?: ProjectHarnessProfileVersion): ProjectHarnessProfileSource {
+function deterministicProjectHarnessProfileSource(project: StoredProject, template: HarnessTemplateProfile, body: Record<string, unknown>, previousActive?: ProjectHarnessProfileVersion, templateSelection?: HarnessTemplateSelection): ProjectHarnessProfileSource {
   const profileId = safeFileName(String(body.profileId ?? "default"));
   const goalLoopTarget = optionalTrimmedString(body.goalLoopTarget ?? body.objective ?? body.target ?? body.prompt);
   const projectRuntime = project.runtime;
@@ -11751,7 +11772,9 @@ function deterministicProjectHarnessProfileSource(project: StoredProject, templa
       goalLoopTarget,
       previousActiveProfileVersion: previousActive?.version,
       previousActiveCompiledDigest: previousActive?.compiledDigest,
-      generatedBy: "deterministic-template"
+      generatedBy: "deterministic-template",
+      templateSelectionMode: templateSelection?.mode,
+      templateSelectionReasons: templateSelection?.reasons
     }
   };
 }
@@ -11947,13 +11970,253 @@ function normalizeProjectHarnessProfileSourceForProject(source: ProjectHarnessPr
   };
 }
 
-function resolveHarnessTemplateForSource(store: FileStore, source: ProjectHarnessProfileSource): HarnessTemplateProfile {
+function selectHarnessTemplateForGeneration(store: FileStore, project: StoredProject, body: Record<string, unknown>, previousActive?: ProjectHarnessProfileVersion): HarnessTemplateSelection {
+  const requestedTemplateId = optionalTrimmedString(body.templateId) ?? optionalTrimmedString(body.fromTemplate);
+  const requestedTemplateVersion = optionalTrimmedString(body.templateVersion);
+  if (requestedTemplateId) {
+    const templateId = safeFileName(requestedTemplateId);
+    const template = store.readHarnessTemplate(templateId, requestedTemplateVersion);
+    if (!template) throw httpError(404, "HARNESS_TEMPLATE_NOT_FOUND", `Harness template ${templateId}${requestedTemplateVersion ? `@${requestedTemplateVersion}` : ""} was not found.`);
+    return {
+      template,
+      mode: "request-override",
+      reasons: [
+        `requestOverrideTemplate=${template.id}`,
+        `requestOverrideVersion=${requestedTemplateVersion ?? "latest"}`
+      ]
+    };
+  }
+  if (requestedTemplateVersion) {
+    throw httpError(400, "HARNESS_TEMPLATE_ID_REQUIRED_FOR_VERSION", "templateVersion requires templateId or fromTemplate.");
+  }
+  if (previousActive) {
+    const template = store.readHarnessTemplate(previousActive.templateRef.templateId, previousActive.templateRef.version)
+      ?? store.readHarnessTemplate(previousActive.templateRef.templateId);
+    if (template) {
+      return {
+        template,
+        mode: "previous-active-profile",
+        reasons: [
+          `previousActiveVersion=${previousActive.version}`,
+          `previousActiveTemplate=${previousActive.templateRef.templateId}@${previousActive.templateRef.version}`
+        ]
+      };
+    }
+  }
+  return selectHarnessTemplateForProjectContext(store, project, body);
+}
+
+function selectHarnessTemplateForProjectContext(store: FileStore, project: StoredProject, body: Record<string, unknown>): HarnessTemplateSelection {
+  const contextText = harnessTemplateSelectionContextText(project, body);
+  const candidates = store.listHarnessTemplates().map((template) => {
+    const scored = scoreHarnessTemplateForProjectContext(template, project, contextText);
+    return {
+      template,
+      score: scored.score,
+      reasons: scored.reasons
+    };
+  }).sort((left, right) => {
+    if (right.score !== left.score) return right.score - left.score;
+    if (left.template.id === right.template.id) return compareHarnessTemplateVersions(right.template.version, left.template.version);
+    if (left.template.id === "generic-management-software-harness") return -1;
+    if (right.template.id === "generic-management-software-harness") return 1;
+    return left.template.id.localeCompare(right.template.id);
+  });
+  const selected = candidates[0];
+  if (!selected) throw httpError(404, "HARNESS_TEMPLATE_NOT_FOUND", "No HarnessTemplate is available for automatic ProjectHarnessProfile generation.");
+  return {
+    template: selected.template,
+    mode: "auto-match",
+    reasons: selected.reasons.length > 0 ? selected.reasons : ["fallback=generic-management-software"],
+    candidateScores: candidates.slice(0, 6).map((candidate) => ({
+      templateId: candidate.template.id,
+      version: candidate.template.version,
+      score: candidate.score,
+      reasons: candidate.reasons
+    }))
+  };
+}
+
+function resolveHarnessTemplateForSource(store: FileStore, project: StoredProject, source: ProjectHarnessProfileSource): HarnessTemplateProfile {
   const templateRecord = isRecord(source.template) ? source.template : {};
-  const templateId = safeFileName(String(templateRecord.templateId ?? templateRecord.id ?? "python-enterprise-harness"));
+  const requestedTemplateId = optionalTrimmedString(templateRecord.templateId) ?? optionalTrimmedString(templateRecord.id);
   const version = optionalTrimmedString(templateRecord.version);
+  if (!requestedTemplateId && version) throw httpError(400, "HARNESS_TEMPLATE_ID_REQUIRED_FOR_VERSION", "template.version requires template.templateId or template.id.");
+  if (!requestedTemplateId) return selectHarnessTemplateForProjectContext(store, project, { profileSource: source }).template;
+  const templateId = safeFileName(requestedTemplateId);
   const template = store.readHarnessTemplate(templateId, version);
   if (!template) throw httpError(404, "HARNESS_TEMPLATE_NOT_FOUND", `Harness template ${templateId}${version ? `@${version}` : ""} was not found.`);
   return template;
+}
+
+function scoreHarnessTemplateForProjectContext(template: HarnessTemplateProfile, project: StoredProject, contextText: string): { score: number; reasons: string[] } {
+  let score = 0;
+  const reasons: string[] = [];
+  const runtimeLanguage = project.runtime?.language;
+  if (runtimeLanguage && template.languageFamily === runtimeLanguage) {
+    score += 120;
+    reasons.push(`runtimeLanguage=${runtimeLanguage}`);
+  } else if (runtimeLanguage === "generic" && template.languageFamily === "generic") {
+    score += 70;
+    reasons.push("runtimeLanguage=generic");
+  } else if (!runtimeLanguage) {
+    const detectedLanguage = detectHarnessTemplateLanguageFromContext(contextText);
+    if (detectedLanguage && detectedLanguage === template.languageFamily) {
+      score += 95;
+      reasons.push(`detectedLanguage=${detectedLanguage}`);
+    }
+  }
+
+  const builtInSignals = harnessTemplateBuiltInSignals(template.id);
+  for (const signal of builtInSignals) {
+    if (harnessSelectionTextIncludes(contextText, signal)) {
+      score += signal.includes(".") || signal.includes("-") ? 18 : 12;
+      reasons.push(`signal=${signal}`);
+    }
+  }
+
+  const intrinsicSignals = harnessTemplateIntrinsicSignals(template).slice(0, 40);
+  for (const signal of intrinsicSignals) {
+    if (harnessSelectionTextIncludes(contextText, signal)) {
+      score += 4;
+      reasons.push(`templateSignal=${signal}`);
+    }
+  }
+
+  if (template.languageFamily === "generic") score += 4;
+  if (template.id === "generic-management-software-harness") {
+    score += 8;
+    reasons.push("fallback=generic-management-software");
+  }
+  return { score, reasons: uniqueStrings(reasons).slice(0, 12) };
+}
+
+function harnessTemplateSelectionContextText(project: StoredProject, body: Record<string, unknown>): string {
+  const runtime = project.runtime;
+  const repository = project.repository;
+  const profileSource = isRecord(body.profileSource) ? body.profileSource : {};
+  const fields = [
+    project.id,
+    project.name,
+    project.profileId,
+    runtime?.language,
+    ...(runtime?.installCommands ?? []),
+    ...(runtime?.unitCommands ?? []),
+    ...(runtime?.smokeCommands ?? []),
+    ...(runtime?.functionalCommands ?? []),
+    runtime?.service?.startCommand,
+    runtime?.service?.healthPath,
+    repository?.provider,
+    repository?.root,
+    repository?.gitUrl,
+    repository?.owner,
+    repository?.repo,
+    repository?.projectId,
+    repository?.topology?.claimBoundary,
+    project.devops?.provider,
+    project.devops?.ci.workflow,
+    project.devops?.cd?.workflow,
+    body.goalLoopTarget,
+    body.objective,
+    body.target,
+    body.prompt,
+    body.runtimeNotes,
+    body.observabilityNotes,
+    body.failureHandlingNotes,
+    body.governanceNotes,
+    ...(Array.isArray(body.controlPlaneRequirements) ? body.controlPlaneRequirements.map(String) : []),
+    profileSource.name,
+    profileSource.description,
+    JSON.stringify(profileSource.runtime ?? {}),
+    JSON.stringify(profileSource.capabilities ?? []),
+    ...projectRepositoryFileHints(project)
+  ].filter((value) => value !== undefined && value !== null).map(String);
+  return fields.join("\n").toLowerCase();
+}
+
+function projectRepositoryFileHints(project: StoredProject): string[] {
+  const root = project.repository?.provider === "local-git" ? optionalTrimmedString(project.repository.root) : undefined;
+  if (!root) return [];
+  const absoluteRoot = path.resolve(root);
+  if (!fs.existsSync(absoluteRoot) || !fs.statSync(absoluteRoot).isDirectory()) return [];
+  const ignored = new Set([".git", "node_modules", "dist", "build", "target", ".venv", "venv", "__pycache__"]);
+  const results: string[] = [];
+  const visit = (dir: string, depth: number) => {
+    if (depth > 2 || results.length >= 200) return;
+    for (const entry of fs.readdirSync(dir).sort()) {
+      if (ignored.has(entry) || results.length >= 200) continue;
+      const absolute = path.join(dir, entry);
+      const relative = path.relative(absoluteRoot, absolute);
+      results.push(relative);
+      if (fs.statSync(absolute).isDirectory()) visit(absolute, depth + 1);
+    }
+  };
+  try {
+    visit(absoluteRoot, 0);
+  } catch {
+    return [];
+  }
+  return results;
+}
+
+function detectHarnessTemplateLanguageFromContext(contextText: string): HarnessTemplateProfile["languageFamily"] | undefined {
+  if (harnessSelectionTextIncludes(contextText, "pyproject.toml") || harnessSelectionTextIncludes(contextText, "pytest") || harnessSelectionTextIncludes(contextText, "python")) return "python";
+  if (harnessSelectionTextIncludes(contextText, "pom.xml") || harnessSelectionTextIncludes(contextText, "build.gradle") || harnessSelectionTextIncludes(contextText, "spring") || harnessSelectionTextIncludes(contextText, "java")) return "java";
+  if (harnessSelectionTextIncludes(contextText, "package.json") || harnessSelectionTextIncludes(contextText, "typescript") || harnessSelectionTextIncludes(contextText, "node")) return "node";
+  if (harnessSelectionTextIncludes(contextText, "go.mod") || harnessSelectionTextIncludes(contextText, "golang")) return "go";
+  return undefined;
+}
+
+function harnessTemplateBuiltInSignals(templateId: string): string[] {
+  const signals: Record<string, string[]> = {
+    "python-enterprise-harness": ["python", "pyproject.toml", "requirements.txt", "pytest", "fastapi", "django", "flask", "uv", "poetry", "ruff", "mypy"],
+    "java-ddd-service-harness": ["java", "spring", "spring boot", "maven", "gradle", "pom.xml", "build.gradle", "ddd", "domain-driven", "aggregate", "repository"],
+    "node-saas-control-plane-harness": ["node", "typescript", "javascript", "npm", "pnpm", "package.json", "nestjs", "express", "saas", "tenant", "workspace", "rbac", "control plane", "queue", "worker"],
+    "go-middleware-harness": ["go", "golang", "go.mod", "kubernetes", "controller", "middleware", "prometheus", "grpc", "concurrency", "race", "infrastructure", "operator"],
+    "observability-apm-harness": ["observability", "apm", "otel", "opentelemetry", "telemetry", "trace", "metric", "log", "prometheus", "skywalking", "collector", "alert"],
+    "generic-management-software-harness": ["management", "admin", "workflow", "approval", "rbac", "report", "import", "export", "integration", "enterprise", "console", "backoffice"]
+  };
+  return signals[templateId] ?? [];
+}
+
+function harnessTemplateIntrinsicSignals(template: HarnessTemplateProfile): string[] {
+  const runtimePatterns = recordObject(template.runtimePatterns);
+  const values = [
+    template.id,
+    template.name,
+    template.description,
+    template.languageFamily,
+    ...normalizeStringList(runtimePatterns.architectureStyles, []),
+    ...normalizeStringList(runtimePatterns.packageManagers, []),
+    ...normalizeStringList(runtimePatterns.buildTools, []),
+    ...template.capabilities.flatMap((capability) => [capability.id, capability.name])
+  ];
+  return uniqueStrings(values.map((value) => String(value).toLowerCase()).flatMap((value) => value.split(/[,/|]+/)).map((value) => value.trim()).filter((value) => value.length >= 3));
+}
+
+function harnessSelectionTextIncludes(contextText: string, signal: string): boolean {
+  const normalized = signal.trim().toLowerCase();
+  if (!normalized) return false;
+  if (/^[a-z0-9+#.]+$/.test(normalized) && normalized.length <= 4) {
+    return new RegExp(`(^|[^a-z0-9])${escapeRegExp(normalized)}([^a-z0-9]|$)`).test(contextText);
+  }
+  return contextText.includes(normalized);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function compareHarnessTemplateVersions(left: string, right: string): number {
+  const parse = (value: string) => value.split(/[.-]/).map((part) => Number(part)).map((part) => Number.isFinite(part) ? part : 0);
+  const leftParts = parse(left);
+  const rightParts = parse(right);
+  const length = Math.max(leftParts.length, rightParts.length);
+  for (let index = 0; index < length; index += 1) {
+    const diff = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return left.localeCompare(right);
 }
 
 function compileProjectHarnessProfile(project: StoredProject, template: HarnessTemplateProfile, source: ProjectHarnessProfileSource, now: string): CompiledProjectHarnessProfile {
@@ -12309,6 +12572,23 @@ function harnessTemplateRef(template: HarnessTemplateProfile): HarnessTemplateRe
   };
 }
 
+function projectHarnessTemplateSelectionMode(profile: ProjectHarnessProfileVersion): string | undefined {
+  const metadata = recordObject(profile.sourceContent.metadata);
+  const metadataValue = optionalTrimmedString(metadata.templateSelectionMode);
+  if (metadataValue) return metadataValue;
+  const evidenceValue = profile.generatedBy.evidence.find((item) => item.startsWith("templateSelection="));
+  return evidenceValue?.split("=").slice(1).join("=");
+}
+
+function projectHarnessTemplateSelectionReasons(profile: ProjectHarnessProfileVersion): string[] {
+  const metadata = recordObject(profile.sourceContent.metadata);
+  const metadataReasons = normalizeStringList(metadata.templateSelectionReasons, []);
+  if (metadataReasons.length > 0) return metadataReasons;
+  return profile.generatedBy.evidence
+    .filter((item) => item.startsWith("templateSelectionReason="))
+    .map((item) => item.split("=").slice(1).join("="));
+}
+
 function projectHarnessLogMetadata(project: StoredProject, profile: ProjectHarnessProfileVersion, extra: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     projectId: project.id,
@@ -12327,6 +12607,8 @@ function projectHarnessLogMetadata(project: StoredProject, profile: ProjectHarne
     validationWarnings: profile.validation.warnings,
     changedSections: profile.diffFromActive?.changedSections ?? [],
     previousActiveVersion: profile.diffFromActive?.baseVersion ?? "none",
+    templateSelectionMode: projectHarnessTemplateSelectionMode(profile),
+    templateSelectionReasons: projectHarnessTemplateSelectionReasons(profile),
     nextAction: profile.status === "ACTIVE" ? "target-plan" : "review-validate-activate",
     ...extra
   };

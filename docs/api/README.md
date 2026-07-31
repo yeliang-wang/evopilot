@@ -420,11 +420,11 @@ generic-management-software-harness@1.0.0
 
 这些内置模板不是运行时动态从 GitHub 拉取。EvoPilot 将精选开源项目、官方规范和工程实践固化为本地版本化模板，并在 `sourceReferences[]` 中暴露初始化来源，例如 FastAPI、Spring Boot、Microsoft tactical DDD、Kubernetes、Prometheus、OpenTelemetry Specification 和 Apache SkyWalking。模板提供默认能力边界、runtime command groups、validation baseline、evidence contract、failure taxonomy、diagnostics、observability、release governance、Alpha/Beta/RC/GA phase mapping 和 LLM draft policy。
 
-管理员也可以通过 `POST /api/v1/harness/templates` 发布新的 template id 或版本，用于表达更多语言、架构范式或软件类型的 harness。模板写入要求 `id`、`version` 和当前版本 changelog；建议同时包含 `sourceReferences[]`。服务端计算 `digest` 并按 `<dataRoot>/harness-templates/<templateId>-<version>.json` 持久化。重复写入同一个 `id@version` 默认返回 `HARNESS_TEMPLATE_VERSION_EXISTS`，只有显式 `force=true` 才会替换该版本。已有 active `ProjectHarnessProfile` 不会因为模板更新被静默改写，必须通过 `generate` 或 `upgrade` 生成新的 profile revision 后再 review/activate。
+管理员也可以通过 `POST /api/v1/harness/templates` 或独立管理员 CLI `evopilot harness template upgrade` 发布新的 template id 或版本，用于表达更多语言、架构范式或软件类型的 harness。模板写入要求 `id`、`version` 和当前版本 changelog；建议同时包含 `sourceReferences[]`。服务端计算 `digest` 并按 `<dataRoot>/harness-templates/<templateId>-<version>.json` 持久化。重复写入同一个 `id@version` 默认返回 `HARNESS_TEMPLATE_VERSION_EXISTS`，只有显式 `force=true` 才会替换该版本。已有 active `ProjectHarnessProfile` 不会因为模板更新被静默改写，必须通过 `generate` 或 `upgrade` 生成新的 profile revision 后再 review/activate。
 
 项目 profile 可以绑定真实命令并增强规则，但不能关闭模板强制治理门禁，例如 `targetPlanRequiresApproval`、`profileActivationRequiresApproval`、`promotionRequiresReleaseDecision`、`sourceClosureRequired` 和 `noSilentProfileMutation`。
 
-`generate` 会根据项目接入信息、可选 `goalLoopTarget`、模板、当前项目 runtime/devops/observability 以及已有 active profile 生成新版本。若配置了可用 LLM，则使用 LLM 生成结构化 JSON；若 debug 模式没有 LLM，则返回 deterministic-template DRAFT；若生产 `requireLlm=true` 且没有 READY LLM，则返回阻断。生成结果永远是 `DRAFT`，用户或管理员必须显式 review/validate/apply/activate。
+`generate` 会根据项目接入信息、可选 `goalLoopTarget`、自动匹配的 HarnessTemplate、当前项目 runtime/devops/observability 以及已有 active profile 生成新版本。首次接入默认自动匹配；二次接入默认复用 previous active profile 的模板；请求体里的 `templateId/fromTemplate` 只是管理员或高级 override。若配置了可用 LLM，则使用 LLM 生成结构化 JSON；若 debug 模式没有 LLM，则返回 deterministic-template DRAFT；若生产 `requireLlm=true` 且没有 READY LLM，则返回阻断。生成结果永远是 `DRAFT`，用户或管理员必须显式 review/validate/apply/activate。
 
 `validate` 不写入控制面，只返回 `evopilot-project-harness-profile-validation/v1`、compiled digest 和 `diffFromActive`。`POST /harness-profiles` 会写入新的 `VALIDATED` 版本；`activate` 才让它参与后续 goal planning。
 

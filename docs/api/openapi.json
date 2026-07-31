@@ -891,7 +891,7 @@
       },
       "post": {
         "summary": "发布或更新 HarnessTemplate",
-        "description": "管理员写入一个版本化 HarnessTemplate。请求体包含 templateContent 或 template，以及当前版本 changelog；模板对象可包含 sourceReferences[] 说明初始化来源；重复 id@version 默认拒绝，force=true 时替换。",
+        "description": "管理员通过独立模板维护通道写入一个版本化 HarnessTemplate。请求体包含 templateContent 或 template，以及当前版本 changelog；模板对象可包含 sourceReferences[] 说明初始化来源；重复 id@version 默认拒绝，force=true 时替换。",
         "security": [
           {
             "bearerAuth": []
@@ -1032,7 +1032,7 @@
     "/api/v1/projects/{projectId}/harness-profiles/generate": {
       "post": {
         "summary": "生成 ProjectHarnessProfile DRAFT",
-        "description": "结合项目、HarnessTemplate、goalLoopTarget、可选 LLM 和 previous active profile 生成 DRAFT profile version。",
+        "description": "结合项目、自动匹配的 HarnessTemplate、goalLoopTarget、可选 LLM 和 previous active profile 生成 DRAFT profile version。首次接入默认自动匹配；二次接入默认复用 previous active profile 的模板；templateId/fromTemplate 仅作为管理员或高级 override。",
         "security": [
           {
             "bearerAuth": []

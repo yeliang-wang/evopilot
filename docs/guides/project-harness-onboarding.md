@@ -10,7 +10,7 @@ evopilot harness template inspect python-enterprise-harness --json
 evopilot harness template inspect java-ddd-service-harness --json
 ```
 
-Fresh installs include multiple built-in platform baselines:
+Template inspection is optional during normal onboarding. EvoPilot automatically matches a published template when `harness profile generate` receives the project context and goal loop target. Fresh installs include multiple built-in platform baselines:
 
 ```text
 python-enterprise-harness
@@ -23,10 +23,10 @@ generic-management-software-harness
 
 Each built-in template defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, and `sourceReferences[]`. The built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as versioned template data. EvoPilot does not dynamically fetch GitHub at runtime.
 
-Administrators can publish additional template ids or versions for other languages, architecture styles, or software types. Template updates are YAML/JSON control-plane changes with changelog management:
+Administrators can publish additional template ids or versions for other languages, architecture styles, or software types through a separate administrator CLI/API channel. Template updates are YAML/JSON control-plane changes with changelog management:
 
 ```bash
-evopilot harness template apply \
+evopilot harness template upgrade \
   --file python-enterprise-harness-1.1.0.yaml \
   --changelog "Add stricter runtime and observability defaults." \
   --json
@@ -39,17 +39,16 @@ Publishing the same `id@version` again is rejected unless `--force` is supplied.
 ```bash
 evopilot harness profile generate \
   --project my-agent \
-  --from-template python-enterprise-harness \
-  --goal-loop-target "Define the Python enterprise harness for this project" \
+  --goal-loop-target "Define the project harness for this project" \
   --llm-profile my-agent-llm \
   --json
 ```
 
 The generated version is `DRAFT`. It is not active and does not control goal planning yet.
 
-Choose `--from-template` according to the project shape. For example, Java DDD services should use `java-ddd-service-harness`; Go infrastructure or middleware should use `go-middleware-harness`; observability/APM systems should use `observability-apm-harness`; enterprise workflow/admin systems can start from `generic-management-software-harness`.
+For first onboarding, EvoPilot matches the template automatically from runtime language, repository hints, DevOps context, software-type signals, and the goal loop target. `generatedBy.evidence[]` reports the result as `templateSelection=auto-match` and includes selection reasons such as runtime language or matched signals. `--from-template` is only an explicit administrator or advanced override.
 
-For second onboarding or project evolution, EvoPilot reads the previous active profile and produces a diff-aware draft instead of creating an unrelated profile.
+For second onboarding or project evolution, EvoPilot reuses the previous active profile's template unless an administrator explicitly overrides it, reads the previous active profile, and produces a diff-aware draft instead of creating an unrelated profile.
 
 ## 3. Review Or Edit YAML
 
