@@ -34,9 +34,16 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 ## Production Operators
 
 - [Deployment](operations/deployment.md) - production deployment, ECS/Kubernetes, auth, persistence, and logging.
+- [Deployment Assets](../deploy/README.md) - committed Docker Compose and Kubernetes deployment assets, plus production host-local file boundaries.
+- [Runtime Assets](../runtimes/README.md) - runtime locks, code-upgrader boundary, SBOM, license, vulnerability, and validation evidence.
 - [Runtime Management](operations/runtime-management.md) - runtime locks, worker operation, and runtime checks.
 - [Testing](operations/testing.md) - local, functional, E2E, and release validation commands.
 - [Troubleshooting](operations/troubleshooting.md) - common incidents and diagnostic commands.
+
+## Repository Operators
+
+- [Engineering Scripts](../scripts/README.md) - production runtime, verification, release, soak, real-boundary E2E, and maintenance script map.
+- [Public Harness Template Packs](../harness-templates/public/README.md) - human-readable administrator-maintained HarnessTemplate knowledge packs.
 
 ## Architects And Reviewers
 

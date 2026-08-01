@@ -283,18 +283,21 @@ Start with the [documentation index](docs/README.md). The main entry points are:
 ## Repository Layout
 
 ```text
-packages/core/                          lifecycle, evidence, planning, review, delivery, release models
-packages/server/                        control-plane API server
-packages/llm/                           LLM gateway, routing, compression, metrics
-packages/adapter-github/                GitHub adapter
-packages/adapter-gitlab/                GitLab adapter
-packages/adapter-local-git/             local Git adapter
-docs/                                   user, API, deployment, architecture, testing, release docs
-examples/                               onboarding and integration examples
-scripts/                                E2E, LLM, Postgres store, release, and verification scripts
-runtimes/                               managed runtime images, locks, and supply-chain material
+packages/                               TypeScript product code: server, CLI, core, LLM, and adapters
+packages/server/src/domains/            DDD domain modules for control-plane lifecycle behavior
+harness-templates/                      public HarnessTemplate knowledge packs and examples
+standards/                              Alpha/Beta/RC/GA maturity standards and release baselines
+runtimes/                               managed runtime locks, SBOM, license, vulnerability, and code-upgrader assets
+scripts/                                production runtime, verification, release, soak, E2E, and maintenance scripts
+deploy/                                 Docker Compose and Kubernetes deployment assets
+docs/                                   user, API, deployment, architecture, testing, and release docs
+examples/                               onboarding, executor, workflow, and integration examples
 tests/                                  unit, smoke, functional, and E2E tests
 ```
+
+EvoPilot uses a control-plane layout rather than an app-style `src/`, `public/`, or `electron/` tree. TypeScript is the core implementation language. The tracked `.mjs` files under [scripts](scripts/README.md) and `tests/` are engineering control assets for production workers, code upgrades, verification, release evidence, and real-boundary E2E. They are intentionally visible in GitHub language statistics because they are part of EvoPilot's harness and release-governance surface.
+
+Deployment and runtime assets are documented in [deploy](deploy/README.md) and [runtimes](runtimes/README.md). Public HarnessTemplate knowledge packs live under [harness-templates/public](harness-templates/public/README.md).
 
 The product Dashboard is maintained separately in `yeliang-wang/evopilot-dashboard`.
 
