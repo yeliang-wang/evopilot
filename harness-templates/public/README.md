@@ -28,3 +28,33 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 ```
 
 Pack commands are intentionally small. Diff and review happen through Git and the readable files in this directory; EvoPilot Server remains authoritative for validation, version, digest, RBAC, persistence, and audit.
+
+## Source-Driven Evolution
+
+When a template should be upgraded from reviewable source material rather than direct file editing, use the server-governed evolution lifecycle:
+
+```bash
+evopilot harness template evolution create \
+  --base-template python-enterprise-harness \
+  --target-version 1.1.1 \
+  --intent "Add stronger exception tracking, observability, and AI troubleshooting metadata." \
+  --source github=fastapi/fastapi#master \
+  --source url=https://opentelemetry.io/docs/languages/python/ \
+  --source runtime-evidence=release-evidence-2026-08-python \
+  --file ./workspace-observability-notes.md \
+  --note "Require requestId/traceId/errorCode/nextAction in error logs." \
+  --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
+```
+
+Stop at `REVIEW_REQUIRED`, inspect the generated draft pack, validation, diff, and source coverage, then publish only after explicit administrator approval:
+
+```bash
+evopilot harness template evolution approve <evolution-id> --confirmed-by <admin> --confirmation <text> --json
+evopilot harness template evolution publish <evolution-id> --json
+evopilot harness template evolution impact <evolution-id> --refresh --json
+```
+
+The lifecycle stores evidence under `<dataRoot>/harness-template-evolutions/<evolutionId>/` and publishes a normal versioned `HarnessTemplate`. Existing active project profiles are not silently rewritten.

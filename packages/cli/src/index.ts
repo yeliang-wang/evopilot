@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 import { parse as parseYaml } from "yaml";
 import { apiErrorFromResponse, EvoPilotApiError, EvoPilotClient, type EvoPilotRequestOptions, type EvoPilotResponse } from "@evopilot/client";
 
@@ -202,8 +203,11 @@ async function main(argv: string[]): Promise<number> {
         if (maybeId === "list" || maybeId === undefined) return await harnessTemplateList(ctx);
         if (maybeId === "inspect") return await harnessTemplateInspect(ctx, args.positionals[3]);
         if (maybeId === "pack") return await harnessTemplatePack(ctx, args.positionals[3], args.positionals[4]);
+        if (maybeId === "evolution") return await harnessTemplateEvolution(ctx, args.positionals[3], args.positionals[4]);
         if (maybeId === "apply" || maybeId === "update" || maybeId === "upgrade") return await harnessTemplateApply(ctx, maybeId);
-        throw usage("Use: evopilot harness template <list|inspect|apply|update|upgrade|pack> [template-id] [--version <version>]");
+        throw usage("Use: evopilot harness template <list|inspect|apply|update|upgrade|pack|evolution> [template-id] [--version <version>]");
+      case "harness:template-evolution":
+        return await harnessTemplateEvolution(ctx, maybeId, args.positionals[3]);
       case "harness:policy":
         if (maybeId === "list" || maybeId === undefined) return await harnessPolicyList(ctx);
         if (maybeId === "inspect") return await harnessPolicyInspect(ctx, args.positionals[3]);
@@ -1454,6 +1458,88 @@ async function harnessTemplatePackPublish(ctx: RuntimeContext, packPath?: string
   }
   const response = await ctx.client.post("/api/v1/harness/templates", harnessTemplatePackPayload(ctx.args, pack), requestOptions(ctx));
   printHarnessTemplateApplyResult(ctx, "harness template pack publish", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessTemplateEvolution(ctx: RuntimeContext, command?: string, id?: string): Promise<number> {
+  if (command === "list" || command === undefined) return harnessTemplateEvolutionList(ctx);
+  if (command === "create") return harnessTemplateEvolutionCreate(ctx);
+  if (command === "inspect") return harnessTemplateEvolutionInspect(ctx, id);
+  if (command === "advance") return harnessTemplateEvolutionAdvance(ctx, id);
+  if (command === "approve") return harnessTemplateEvolutionApprove(ctx, id);
+  if (command === "publish") return harnessTemplateEvolutionPublish(ctx, id);
+  if (command === "impact") return harnessTemplateEvolutionImpact(ctx, id);
+  if (command === "sources") return harnessTemplateEvolutionSources(ctx, id);
+  throw usage("Use: evopilot harness template evolution <list|create|inspect|advance|approve|publish|impact|sources> [evolution-id]");
+}
+
+async function harnessTemplateEvolutionList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/harness/template-evolutions"));
+  const evolutions = field(response.data, "evolutions");
+  printHarnessTemplateEvolutionResult(ctx, "harness template evolution list", response.data, response.status, Array.isArray(evolutions)
+    ? evolutions.map((run) => isRecord(run) ? `${run.evolutionId} status=${run.status} target=${run.targetTemplateId}@${run.targetVersion}` : String(run)).join("\n") || "No HarnessTemplateEvolution runs."
+    : "evolutions=0");
+  return 0;
+}
+
+async function harnessTemplateEvolutionCreate(ctx: RuntimeContext): Promise<number> {
+  const body = harnessTemplateEvolutionCreatePayload(ctx.args);
+  const response = await ctx.client.post("/api/v1/harness/template-evolutions", body, requestOptions(ctx));
+  printHarnessTemplateEvolutionResult(ctx, "harness template evolution create", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessTemplateEvolutionInspect(ctx: RuntimeContext, id?: string): Promise<number> {
+  const evolutionId = requiredHarnessTemplateEvolutionId(ctx.args, id);
+  const response = await ctx.client.get(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}`);
+  printHarnessTemplateEvolutionResult(ctx, "harness template evolution inspect", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessTemplateEvolutionAdvance(ctx: RuntimeContext, id?: string): Promise<number> {
+  const evolutionId = requiredHarnessTemplateEvolutionId(ctx.args, id);
+  const body = {
+    llmProfileId: stringOption(ctx.args, "llm-profile") ?? stringOption(ctx.args, "llm-profile-id"),
+    requireLlm: hasFlag(ctx.args, "require-llm")
+  };
+  const response = await ctx.client.post(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}/advance`, body, requestOptions(ctx));
+  printHarnessTemplateEvolutionResult(ctx, "harness template evolution advance", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessTemplateEvolutionApprove(ctx: RuntimeContext, id?: string): Promise<number> {
+  const evolutionId = requiredHarnessTemplateEvolutionId(ctx.args, id);
+  const body = {
+    confirmedBy: requiredOption(ctx.args, "confirmed-by"),
+    confirmation: requiredOption(ctx.args, "confirmation"),
+    confirmedAt: stringOption(ctx.args, "confirmed-at")
+  };
+  const response = await ctx.client.post(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}/approve`, body, requestOptions(ctx));
+  printHarnessTemplateEvolutionResult(ctx, "harness template evolution approve", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessTemplateEvolutionPublish(ctx: RuntimeContext, id?: string): Promise<number> {
+  const evolutionId = requiredHarnessTemplateEvolutionId(ctx.args, id);
+  const response = await ctx.client.post(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}/publish`, { force: hasFlag(ctx.args, "force") }, requestOptions(ctx));
+  printHarnessTemplateEvolutionResult(ctx, "harness template evolution publish", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessTemplateEvolutionImpact(ctx: RuntimeContext, id?: string): Promise<number> {
+  const evolutionId = requiredHarnessTemplateEvolutionId(ctx.args, id);
+  const response = hasFlag(ctx.args, "refresh")
+    ? await ctx.client.post(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}/impact`, {}, requestOptions(ctx))
+    : await ctx.client.get(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}/impact`);
+  printHarnessTemplateEvolutionResult(ctx, "harness template evolution impact", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessTemplateEvolutionSources(ctx: RuntimeContext, id?: string): Promise<number> {
+  const evolutionId = requiredHarnessTemplateEvolutionId(ctx.args, id);
+  const body = { sources: harnessTemplateEvolutionSourcesFromArgs(ctx.args) };
+  const response = await ctx.client.post(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}/sources`, body, requestOptions(ctx));
+  printHarnessTemplateEvolutionResult(ctx, "harness template evolution sources", response.data ?? response.body, response.status);
   return response.ok ? 0 : 2;
 }
 
@@ -3762,6 +3848,137 @@ function validateHarnessTemplatePackLocally(pack: HarnessTemplatePack): Record<s
   };
 }
 
+function requiredHarnessTemplateEvolutionId(args: ParsedArgs, positionalId?: string): string {
+  const id = positionalId ?? stringOption(args, "evolution") ?? stringOption(args, "evolution-id") ?? stringOption(args, "id");
+  if (!id) throw usage("HarnessTemplate evolution command requires <evolution-id> or --id <evolution-id>.");
+  return id;
+}
+
+function harnessTemplateEvolutionCreatePayload(args: ParsedArgs): Record<string, unknown> {
+  const sources = harnessTemplateEvolutionSourcesFromArgs(args);
+  return {
+    id: stringOption(args, "id") ?? stringOption(args, "evolution-id"),
+    baseTemplateId: stringOption(args, "base-template") ?? stringOption(args, "base-template-id") ?? stringOption(args, "template") ?? stringOption(args, "template-id"),
+    baseTemplateVersion: stringOption(args, "base-template-version") ?? stringOption(args, "template-version"),
+    targetTemplateId: stringOption(args, "target-template") ?? stringOption(args, "target-template-id"),
+    targetVersion: stringOption(args, "target-version") ?? stringOption(args, "version"),
+    intent: stringOption(args, "intent") ?? stringOption(args, "objective") ?? stringOption(args, "description"),
+    sources
+  };
+}
+
+function harnessTemplateEvolutionSourcesFromArgs(args: ParsedArgs): Record<string, unknown>[] {
+  const sources: Record<string, unknown>[] = [];
+  for (const source of repeatedOption(args, "source")) {
+    sources.push(parseHarnessTemplateEvolutionSource(source));
+  }
+  for (const file of repeatedOption(args, "file")) {
+    sources.push(harnessTemplateEvolutionSourceFromFile(file));
+  }
+  const localPack = stringOption(args, "local-pack") ?? stringOption(args, "pack");
+  if (localPack) sources.push(harnessTemplateEvolutionSourceFromLocalPack(localPack));
+  const github = stringOption(args, "github") ?? stringOption(args, "github-repo");
+  if (github) sources.push(parseHarnessTemplateEvolutionSource(`github=${github}`));
+  const url = stringOption(args, "url") ?? stringOption(args, "website");
+  if (url) sources.push(parseHarnessTemplateEvolutionSource(`url=${url}`));
+  const template = stringOption(args, "existing-template");
+  if (template) sources.push(parseHarnessTemplateEvolutionSource(`template=${template}`));
+  const runtimeEvidence = stringOption(args, "runtime-evidence") ?? stringOption(args, "evidence");
+  if (runtimeEvidence) sources.push(parseHarnessTemplateEvolutionSource(`runtime-evidence=${runtimeEvidence}`));
+  const note = stringOption(args, "note") ?? stringOption(args, "admin-note");
+  if (note) sources.push({ type: "admin-note", name: "Administrator note", contentText: note });
+  return sources;
+}
+
+function parseHarnessTemplateEvolutionSource(value: string): Record<string, unknown> {
+  const trimmed = value.trim();
+  const separator = trimmed.indexOf("=");
+  const key = separator > 0 ? trimmed.slice(0, separator).trim().toLowerCase() : "";
+  const raw = separator > 0 ? trimmed.slice(separator + 1).trim() : trimmed;
+  if (key === "url" || key === "web" || key === "website" || (!key && /^https?:\/\//i.test(raw))) {
+    return { type: "web-url", name: raw, uri: raw };
+  }
+  if (key === "github" || key === "github-repo") {
+    const [uri, ref] = raw.split("#", 2);
+    return { type: "github-repo", name: raw, uri, ref };
+  }
+  if (key === "gitlab" || key === "gitlab-repo") {
+    const [uri, ref] = raw.split("#", 2);
+    return { type: "gitlab-repo", name: raw, uri, ref };
+  }
+  if (key === "runtime-evidence" || key === "evidence") return { type: "runtime-evidence", name: raw, uri: raw };
+  if (key === "local-pack" || key === "pack") return harnessTemplateEvolutionSourceFromLocalPack(raw);
+  if (key === "file" || key === "attachment") return harnessTemplateEvolutionSourceFromFile(raw);
+  if (key === "template" || key === "existing-template") {
+    const [templateId, version] = raw.split("@", 2);
+    return { type: "existing-template", name: raw, uri: templateId, ref: version, metadata: { templateId, templateVersion: version } };
+  }
+  if (key === "note" || key === "admin-note" || !key) return { type: "admin-note", name: key || "Administrator note", contentText: raw };
+  return { type: "admin-note", name: key, contentText: raw, metadata: { originalType: key } };
+}
+
+function harnessTemplateEvolutionSourceFromFile(file: string): Record<string, unknown> {
+  const absolute = path.resolve(file);
+  if (!fs.existsSync(absolute)) throw usage(`HarnessTemplate evolution source file does not exist: ${absolute}`);
+  if (!fs.statSync(absolute).isFile()) throw usage(`HarnessTemplate evolution source file must be a file: ${absolute}`);
+  const buffer = fs.readFileSync(absolute);
+  const text = isTextLikeFile(absolute) ? buffer.toString("utf8") : undefined;
+  return {
+    type: "attachment",
+    name: path.basename(absolute),
+    fileName: path.basename(absolute),
+    mediaType: mediaTypeFromFile(absolute),
+    contentText: text,
+    contentDigest: digestCliBuffer(buffer),
+    metadata: {
+      path: absolute,
+      byteLength: buffer.byteLength,
+      extractedBy: text ? "cli-text-reader" : "cli-binary-digest-only"
+    }
+  };
+}
+
+function harnessTemplateEvolutionSourceFromLocalPack(packPath: string): Record<string, unknown> {
+  const pack = readHarnessTemplatePack(packPath);
+  const parts = [
+    pack.readmePath ? `# README\n${fs.readFileSync(pack.readmePath, "utf8")}` : "",
+    `# TEMPLATE\n${fs.readFileSync(pack.templatePath, "utf8")}`,
+    pack.changelogPath ? `# CHANGELOG\n${fs.readFileSync(pack.changelogPath, "utf8")}` : "",
+    ...pack.exampleFiles.map((file) => `# EXAMPLE ${path.basename(file)}\n${fs.readFileSync(file, "utf8")}`)
+  ].filter(Boolean);
+  return {
+    type: "local-pack",
+    name: pack.name,
+    uri: pack.root,
+    contentText: parts.join("\n\n"),
+    metadata: harnessTemplatePackSummary(pack)
+  };
+}
+
+function isTextLikeFile(file: string): boolean {
+  return [".txt", ".md", ".markdown", ".yaml", ".yml", ".json", ".toml", ".xml", ".html", ".htm", ".rst", ".csv", ".tsv", ".log"].includes(path.extname(file).toLowerCase());
+}
+
+function mediaTypeFromFile(file: string): string {
+  const extension = path.extname(file).toLowerCase();
+  const map: Record<string, string> = {
+    ".txt": "text/plain",
+    ".md": "text/markdown",
+    ".markdown": "text/markdown",
+    ".yaml": "application/yaml",
+    ".yml": "application/yaml",
+    ".json": "application/json",
+    ".pdf": "application/pdf",
+    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+  };
+  return map[extension] ?? "application/octet-stream";
+}
+
+function digestCliBuffer(buffer: Buffer): string {
+  return `sha256:${createHash("sha256").update(buffer).digest("hex")}`;
+}
+
 function nonEmptyFile(file: string): boolean {
   return fs.existsSync(file) && fs.statSync(file).isFile() && fs.readFileSync(file, "utf8").trim().length > 0;
 }
@@ -3977,6 +4194,33 @@ function printHarnessTemplateApplyResult(ctx: RuntimeContext, command: string, d
   process.stdout.write(`${lines.join("\n")}\n`);
 }
 
+function printHarnessTemplateEvolutionResult(ctx: RuntimeContext, command: string, data: unknown, statusCode: number, fallbackText?: string): void {
+  const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
+  if (ctx.json) {
+    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    return;
+  }
+  if (fallbackText) {
+    process.stdout.write(`${fallbackText}\n`);
+    return;
+  }
+  const evolution = field(payload, "evolution") ?? payload;
+  const draft = field(evolution, "draft");
+  const impact = field(payload, "impactReport") ?? field(evolution, "impactReport");
+  const lines = [
+    `${command}: http=${statusCode}`,
+    isRecord(evolution) ? `evolution=${field(evolution, "evolutionId")} status=${field(evolution, "status")}` : undefined,
+    isRecord(evolution) ? `target=${field(evolution, "targetTemplateId")}@${field(evolution, "targetVersion")}` : undefined,
+    isRecord(evolution) ? `sources=${arrayLength(field(evolution, "sources"))} snapshots=${arrayLength(field(evolution, "snapshots"))}` : undefined,
+    isRecord(draft) && isRecord(field(draft, "template")) ? `draft=${nestedField(draft, ["template", "id"])}@${nestedField(draft, ["template", "version"])} digest=${nestedField(draft, ["template", "digest"])}` : undefined,
+    isRecord(draft) && isRecord(field(draft, "validation")) ? `validation=${nestedField(draft, ["validation", "status"])} blockers=${arrayLength(nestedField(draft, ["validation", "blockers"]))}` : undefined,
+    isRecord(impact) ? `impact staleProfiles=${field(impact, "staleProfileCount") ?? 0} affected=${arrayLength(field(impact, "affectedProjectProfiles"))}` : undefined,
+    isRecord(payload) && field(payload, "nextAction") ? `nextAction=${field(payload, "nextAction")}` : undefined,
+    isRecord(payload) && field(payload, "instruction") ? `instruction=${field(payload, "instruction")}` : undefined
+  ].filter(Boolean);
+  process.stdout.write(`${lines.join("\n")}\n`);
+}
+
 function printHarnessPolicyResult(ctx: RuntimeContext, command: string, data: unknown, statusCode: number): void {
   const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
   if (ctx.json) {
@@ -4149,6 +4393,13 @@ Usage:
   evopilot harness template pack list <root>
   evopilot harness template pack validate <path>
   evopilot harness template pack publish <path> [--changelog <text>] [--force]
+  evopilot harness template evolution list
+  evopilot harness template evolution create --base-template <id> --intent <text> (--source <kind=value>|--file <path>|--local-pack <path>|--runtime-evidence <id>|--note <text>)
+  evopilot harness template evolution advance <evolution-id> [--llm-profile <id>] [--require-llm]
+  evopilot harness template evolution inspect <evolution-id>
+  evopilot harness template evolution approve <evolution-id> --confirmed-by <admin> --confirmation <text>
+  evopilot harness template evolution publish <evolution-id> [--force]
+  evopilot harness template evolution impact <evolution-id> [--refresh]
   evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
   evopilot harness template update --file <template.yaml> --changelog <text> [--force]
   evopilot harness template upgrade --file <template.yaml> --changelog <text> [--force]
@@ -4249,6 +4500,14 @@ Global options:
   --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
   --path <path>               HarnessTemplate pack directory for pack validate/publish
   --root <path>               HarnessTemplate pack root directory for pack list
+  --source <kind=value>       HarnessTemplate evolution source: url=, github=, gitlab=, local-pack=, file=, template=, runtime-evidence=, or note=
+  --file <path>               HarnessTemplate evolution attachment or other file input for commands that accept files
+  --local-pack <path>         HarnessTemplate evolution source pack directory
+  --runtime-evidence <id>     HarnessTemplate evolution source pointing to runtime evidence or an evidence bundle id
+  --intent <text>             HarnessTemplate evolution intent reviewed by administrators
+  --target-version <version>  HarnessTemplate evolution target template version
+  --target-template <id>      HarnessTemplate evolution target template id
+  --refresh                   Recompute an impact report
   --changelog <text>          HarnessTemplate or TenantHarnessPolicy changelog entry; repeat for multiple changes
   --force                     Replace an existing HarnessTemplate id/version intentionally
   --level <level>             EvoPilot logging level: debug, info, warn, or error

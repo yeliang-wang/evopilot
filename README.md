@@ -146,6 +146,31 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 
 `apply`, `update`, and `upgrade` remain available for direct YAML/JSON template publishing, but the recommended human-editable model is the template pack directory.
 
+For controlled template evolution, administrators can start a server-governed lifecycle from reviewable knowledge sources:
+
+```bash
+evopilot harness template evolution create \
+  --base-template python-enterprise-harness \
+  --target-version 1.1.1 \
+  --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
+  --source github=fastapi/fastapi#master \
+  --source url=https://opentelemetry.io/docs/languages/python/ \
+  --file ./workspace-observability-notes.md \
+  --note "Require requestId, traceId, errorCode, and nextAction in error logs." \
+  --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
+evopilot harness template evolution approve <evolution-id> \
+  --confirmed-by platform-admin \
+  --confirmation "Reviewed draft template, validation, sources, and project impact." \
+  --json
+evopilot harness template evolution publish <evolution-id> --json
+evopilot harness template evolution impact <evolution-id> --refresh --json
+```
+
+The lifecycle is `CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED`. Drafts are review-only; publishing requires explicit administrator confirmation, server-side validation, audit logging, and an impact report. Existing active project profiles are never silently rewritten when a template changes; affected projects must receive reviewed `ProjectHarnessProfile` revisions before new goal planning binds the new template digest.
+
 Tenants can also activate private `TenantHarnessPolicy` versions through `evopilot harness policy apply|update|upgrade|activate`. A policy is scoped to the current tenant/workspace and can require organization-specific capabilities, evidence fields, correlation IDs, structured log fields, exception attributes, diagnostics, observability, governance booleans, and phase mappings for all matching project profiles. Once active, generated or imported `ProjectHarnessProfile` versions compile as `HarnessTemplate + TenantHarnessPolicy + project profile`; activation and goal planning are blocked if the active project profile does not bind the current policy version and digest.
 
 The raw LLM API key is stored once in the EvoPilot server-side secret vault. Daily `target run`, `goal run`, and `loop run` commands pass only the LLM profile id. For GitHub/GitLab enterprise real loops, the project must have an explicit READY project LLM profile or the run must pass `--llm-profile`; the server global default LLM is not sufficient for user/project attribution. Before Goal/Loop execution, wrapper commands preflight source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness by default.

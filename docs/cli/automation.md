@@ -488,6 +488,39 @@ CLI wrapper output exposes `llmUsage.process.responses[].requestId` and recent `
 
 Use `evopilot logging inspect --json` to check the active server logging level. Admin automation may temporarily run `evopilot logging set --level debug --json` while diagnosing a failed run, then restore `info`.
 
-Harness control-plane logs use `category=harness`. Important events include `harness-template.applied`, `harness-template.apply.rejected`, `project-harness-profile.generated`, `project-harness-profile.validation.failed`, `project-harness-profile.applied`, `project-harness-profile.activated`, `project-harness-profile.upgrade-drafted`, `goal-plan.project-harness-bound`, and `goal-plan.project-harness-missing`. Parse `metadata.templateId`, `metadata.templateVersion`, `metadata.templateDigest`, `metadata.templateSelectionMode`, `metadata.templateSelectionReasons`, `metadata.profileId`, `metadata.profileVersion`, `metadata.sourceDigest`, `metadata.compiledDigest`, `metadata.validationBlockers`, `metadata.changedSections`, `errorCode`, and `diagnosis.recommendedAction` before asking a human to inspect raw logs.
+Harness control-plane logs use `category=harness`. Important events include `harness-template.applied`, `harness-template.apply.rejected`, `harness-template-evolution.created`, `harness-template-evolution.advanced`, `harness-template-evolution.published`, `harness-template-evolution.impact-analyzed`, `project-harness-profile.generated`, `project-harness-profile.validation.failed`, `project-harness-profile.applied`, `project-harness-profile.activated`, `project-harness-profile.upgrade-drafted`, `goal-plan.project-harness-bound`, and `goal-plan.project-harness-missing`. Parse `metadata.templateId`, `metadata.templateVersion`, `metadata.templateDigest`, `metadata.evolutionId`, `metadata.sourceIds`, `metadata.snapshotDigests`, `metadata.draftDigest`, `metadata.publishedTemplateDigest`, `metadata.staleProfileCount`, `metadata.templateSelectionMode`, `metadata.templateSelectionReasons`, `metadata.profileId`, `metadata.profileVersion`, `metadata.sourceDigest`, `metadata.compiledDigest`, `metadata.validationBlockers`, `metadata.changedSections`, `metadata.blockers`, `metadata.warnings`, `errorCode`, and `diagnosis.recommendedAction` before asking a human to inspect raw logs.
 
 Use these fields to prove that terminal CLI output, Dashboard state, and production server logs describe the same run.
+
+## HarnessTemplate Evolution Automation
+
+`harness template evolution` commands are administrator-only lifecycle commands. Automation may collect sources and advance the run, but it must stop at `status=REVIEW_REQUIRED`, `status=BLOCKED`, `nextAction=review-approve-template-evolution`, or any non-empty blocker list.
+
+Allowed source forms are `url=`, `github=`, `gitlab=`, `local-pack=`, `file=`, `template=`, `runtime-evidence=`, and `note=`. The first-stage GitHub collector reads README candidates only; binary attachments record digests and warnings without semantic extraction. Do not claim full repository mining or PDF/PPT/DOCX semantic extraction unless a later server response provides that evidence.
+
+Before approval, show the administrator:
+
+```text
+evolution.evolutionId
+evolution.intent
+evolution.sources
+evolution.snapshots[].contentDigest
+evolution.snapshots[].warnings
+evolution.analysisSummary
+evolution.draft.template
+evolution.draft.pack
+evolution.draft.validation
+evolution.draft.diffFromBase
+evolution.draft.sourceCoverage
+evolution.draft.generatedBy
+```
+
+Only after explicit confirmation may automation call:
+
+```bash
+evopilot harness template evolution approve <evolution-id> --confirmed-by <admin> --confirmation <text> --json
+evopilot harness template evolution publish <evolution-id> --json
+evopilot harness template evolution impact <evolution-id> --refresh --json
+```
+
+Publishing creates a new `HarnessTemplate` version and an impact report; it does not modify existing active `ProjectHarnessProfile` records. If `impactReport.staleProfileCount>0`, stop and create reviewed project profile upgrade drafts for affected projects.

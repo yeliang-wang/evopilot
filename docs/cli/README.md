@@ -108,11 +108,12 @@ WorkBuddy, Codex, Claude Code, CI jobs, and other agents should start with [AGEN
 6. Verify with `project preflight`, `project devops preflight`, and `project onboard verify`.
 7. For GitHub/GitLab enterprise real loops, or whenever the project needs a non-default model, store the LLM key server-side, create an LLM profile, bind it to the project, and run `project llm preflight`.
 8. If the tenant/workspace uses private harness constraints, inspect `harness policy list --json`; administrators manage those policies through `harness policy apply|activate`.
-9. Generate the project `ProjectHarnessProfile` DRAFT with `harness profile generate`, show it to the user, optionally validate/diff/apply edits, and activate only after confirmation.
-10. Generate the Goal phase plan with `target plan`.
-11. Show `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
-12. Run `target run`, `goal run`, or `loop run` with `--json`.
-13. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
+9. Administrator template evolution is separate from daily project runs. If changing a public `HarnessTemplate` from sources, use `harness template evolution create|advance|approve|publish|impact`, stop at `REVIEW_REQUIRED`, and publish only after explicit administrator confirmation.
+10. Generate the project `ProjectHarnessProfile` DRAFT with `harness profile generate`, show it to the user, optionally validate/diff/apply edits, and activate only after confirmation.
+11. Generate the Goal phase plan with `target plan`.
+12. Show `plan.projectHarness` or `phasePlan.projectHarness`, `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or operator; then export, review, optionally edit, diff, apply, and approve the Alpha -> Beta -> RC -> GA phase plan only after confirmation.
+13. Run `target run`, `goal run`, or `loop run` with `--json`.
+14. Stop on blockers, human gates, credential gaps, policy review, repair actions, `NO-GO`, `BLOCKED`, `FAILED`, timeouts, or max-step boundaries.
 14. For troubleshooting, run `evopilot audit list --limit 50 --json`; the limit is applied by the server and returns newest records first.
 15. Report the server-derived result, active harness profile version/digest, release verdict, IDs, LLM provider/model, token totals, and request IDs.
 

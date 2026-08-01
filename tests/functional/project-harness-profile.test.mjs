@@ -665,6 +665,168 @@ test("EvoPilot CLI manages ProjectHarnessProfile YAML through server APIs", asyn
   }
 });
 
+test("HarnessTemplate evolution CLI creates reviewable drafts, publishes, and reports project impact", async () => {
+  assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-template-evolution-"));
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-template-evolution-repo-"));
+  fs.writeFileSync(path.join(repoRoot, "pyproject.toml"), "[project]\nname = \"evolution-python-agent\"\nversion = \"0.1.0\"\n");
+  fs.mkdirSync(path.join(repoRoot, "tests"));
+  fs.writeFileSync(path.join(repoRoot, "tests", "test_smoke.py"), "def test_smoke():\n    assert True\n");
+
+  const server = createServer({ dataRoot, runtimeMode: "debug" });
+  await listen(server);
+  const baseUrl = serverUrl(server);
+
+  try {
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "evolution-python-agent",
+      name: "Evolution Python Agent",
+      repository: { provider: "local-git", root: repoRoot },
+      runtime: {
+        language: "python",
+        installCommands: ["uv sync"],
+        unitCommands: ["pytest"],
+        smokeCommands: ["pytest -q tests"]
+      }
+    });
+
+    const generated = await runCliJson([
+      "--server", baseUrl,
+      "harness", "profile", "generate",
+      "--project", "evolution-python-agent",
+      "--goal-loop-target", "Use the active Python enterprise harness before template evolution",
+      "--json"
+    ]);
+    assert.equal(generated.profile.templateRef.templateId, "python-enterprise-harness");
+    assert.equal(generated.profile.templateRef.version, "1.1.0");
+
+    await runCliJson([
+      "--server", baseUrl,
+      "harness", "profile", "activate", "default",
+      "--project", "evolution-python-agent",
+      "--version", String(generated.profile.version),
+      "--json"
+    ]);
+
+    const created = await runCliJson([
+      "--server", baseUrl,
+      "harness", "template", "evolution", "create",
+      "--base-template", "python-enterprise-harness",
+      "--target-version", "1.1.1",
+      "--intent", "Add reviewable Python exception tracking, observability, and AI troubleshooting metadata from administrator knowledge.",
+      "--note", "Enterprise Python services should map FastAPI exceptions into stable error envelopes, correlate logs with traceId/requestId, expose Prometheus metrics, and keep runbooks for SLO alerts.",
+      "--json"
+    ]);
+    assert.equal(created.status, "CREATED");
+    const evolutionId = created.evolution.evolutionId;
+    assert.equal(created.evolution.sources.length, 1);
+
+    const collected = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "advance", evolutionId, "--json"]);
+    assert.equal(collected.status, "SOURCES_COLLECTED");
+    assert.equal(collected.evolution.snapshots.length, 1);
+    assert.match(collected.evolution.snapshots[0].contentDigest, /^sha256:/);
+
+    const analyzed = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "advance", evolutionId, "--json"]);
+    assert.equal(analyzed.status, "ANALYZED");
+    assert.ok(analyzed.evolution.analysisSummary.observabilitySignals.includes("trace-correlation"));
+
+    const drafted = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "advance", evolutionId, "--json"]);
+    assert.equal(drafted.status, "REVIEW_REQUIRED");
+    assert.equal(drafted.evolution.draft.template.id, "python-enterprise-harness");
+    assert.equal(drafted.evolution.draft.template.version, "1.1.1");
+    assert.equal(drafted.evolution.draft.validation.status, "VALIDATED");
+    assert.ok(drafted.evolution.draft.diffFromBase.changedSections.includes("sourceReferences"));
+
+    const approved = await runCliJson([
+      "--server", baseUrl,
+      "harness", "template", "evolution", "approve", evolutionId,
+      "--confirmed-by", "platform-admin",
+      "--confirmation", "Reviewed the HarnessTemplateEvolution draft and approved publishing version 1.1.1.",
+      "--json"
+    ]);
+    assert.equal(approved.status, "APPROVED");
+
+    const published = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "publish", evolutionId, "--json"]);
+    assert.equal(published.status, "PUBLISHED");
+    assert.equal(published.template.version, "1.1.1");
+    assert.equal(published.impactReport.staleProfileCount, 1);
+    assert.equal(published.impactReport.affectedProjectProfiles[0].projectId, "evolution-python-agent");
+    assert.equal(published.impactReport.affectedProjectProfiles[0].impact, "STALE_TEMPLATE_VERSION");
+
+    const inspected = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "inspect", evolutionId, "--json"]);
+    assert.equal(inspected.status, "PUBLISHED");
+    assert.equal(inspected.publishedTemplateRef.version, "1.1.1");
+
+    const impact = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "impact", evolutionId, "--json"]);
+    assert.equal(impact.impactReport.staleProfileCount, 1);
+
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "evolution-python-agent-two",
+      name: "Evolution Python Agent Two",
+      repository: { provider: "local-git", root: repoRoot },
+      runtime: {
+        language: "python",
+        installCommands: ["uv sync"],
+        unitCommands: ["pytest"],
+        smokeCommands: ["pytest -q tests"]
+      }
+    });
+    const generatedSecondProfile = await runCliJson([
+      "--server", baseUrl,
+      "harness", "profile", "generate",
+      "--project", "evolution-python-agent-two",
+      "--goal-loop-target", "Use the previous Python enterprise harness after template evolution",
+      "--from-template", "python-enterprise-harness",
+      "--from-template-version", "1.1.0",
+      "--json"
+    ]);
+    assert.equal(generatedSecondProfile.profile.templateRef.version, "1.1.0");
+    await runCliJson([
+      "--server", baseUrl,
+      "harness", "profile", "activate", "default",
+      "--project", "evolution-python-agent-two",
+      "--version", String(generatedSecondProfile.profile.version),
+      "--json"
+    ]);
+    const refreshedImpact = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "impact", evolutionId, "--refresh", "--json"]);
+    assert.equal(refreshedImpact.status, "IMPACT_ANALYZED");
+    assert.equal(refreshedImpact.impactReport.staleProfileCount, 2);
+
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "evolution-python-agent-draft-only",
+      name: "Evolution Python Agent Draft Only",
+      repository: { provider: "local-git", root: repoRoot },
+      runtime: {
+        language: "python",
+        installCommands: ["uv sync"],
+        unitCommands: ["pytest"],
+        smokeCommands: ["pytest -q tests"]
+      }
+    });
+    const draftOnlyProfile = await runCliJson([
+      "--server", baseUrl,
+      "harness", "profile", "generate",
+      "--project", "evolution-python-agent-draft-only",
+      "--goal-loop-target", "Draft-only profile should not be counted as stale active impact",
+      "--from-template", "python-enterprise-harness",
+      "--from-template-version", "1.1.0",
+      "--json"
+    ]);
+    assert.equal(draftOnlyProfile.profile.status, "DRAFT");
+    const draftOnlyImpact = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "impact", evolutionId, "--refresh", "--json"]);
+    assert.equal(draftOnlyImpact.impactReport.staleProfileCount, 2);
+    const noActiveProfile = draftOnlyImpact.impactReport.affectedProjectProfiles.find((profile) => profile.projectId === "evolution-python-agent-draft-only");
+    assert.equal(noActiveProfile.impact, "NO_ACTIVE_PROFILE");
+    assert.equal(noActiveProfile.activeVersion, undefined);
+
+    const template = await runCliJson(["--server", baseUrl, "harness", "template", "inspect", "python-enterprise-harness", "--version", "1.1.1", "--json"]);
+    assert.equal(template.version, "1.1.1");
+    assert.ok(template.sourceReferences.some((reference) => reference.name === "Administrator note"));
+  } finally {
+    await close(server);
+  }
+});
+
 async function listen(server) {
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 }

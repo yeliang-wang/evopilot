@@ -1038,6 +1038,433 @@
         }
       }
     },
+    "/api/v1/harness/template-evolutions": {
+      "get": {
+        "summary": "列出 HarnessTemplateEvolution",
+        "description": "列出当前 tenant/workspace 下的模板进化 run。用于管理员和 AI Agent 查看 source、snapshot、draft、publish、impact 的生命周期状态。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HarnessTemplateEvolution summary 列表"
+          },
+          "403": {
+            "description": "需要只读或更高角色"
+          }
+        }
+      },
+      "post": {
+        "summary": "创建 HarnessTemplateEvolution",
+        "description": "管理员从 reviewable sources 创建模板进化 run。至少需要一个 source、file、local pack、existing template 或 administrator note。创建后不会生成或发布模板，需要通过 advance 分步推进。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "baseTemplateId",
+                  "intent",
+                  "sources"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "baseTemplateId": {
+                    "type": "string"
+                  },
+                  "baseTemplateVersion": {
+                    "type": "string"
+                  },
+                  "targetTemplateId": {
+                    "type": "string"
+                  },
+                  "targetVersion": {
+                    "type": "string"
+                  },
+                  "intent": {
+                    "type": "string"
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "type": {
+                          "type": "string",
+                          "enum": [
+                            "web-url",
+                            "github-repo",
+                            "gitlab-repo",
+                            "attachment",
+                            "local-pack",
+                            "admin-note",
+                            "existing-template",
+                            "runtime-evidence"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "uri": {
+                          "type": "string"
+                        },
+                        "ref": {
+                          "type": "string"
+                        },
+                        "contentText": {
+                          "type": "string"
+                        },
+                        "contentDigest": {
+                          "type": "string"
+                        },
+                        "metadata": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "HarnessTemplateEvolution 已创建"
+          },
+          "400": {
+            "description": "缺少 source 或必填字段"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "404": {
+            "description": "base HarnessTemplate 不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/template-evolutions/{evolutionId}": {
+      "get": {
+        "summary": "获取 HarnessTemplateEvolution",
+        "description": "返回完整 run，包括 sources、snapshots、analysisSummary、draft、review、publishedTemplateRef、impactReport、blockers、warnings 和 nextAction 所需字段。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evolutionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "HarnessTemplateEvolution 详情"
+          },
+          "403": {
+            "description": "租户/工作区不匹配或权限不足"
+          },
+          "404": {
+            "description": "HarnessTemplateEvolution 不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/template-evolutions/{evolutionId}/sources": {
+      "post": {
+        "summary": "追加 HarnessTemplateEvolution sources",
+        "description": "只允许在 CREATED 状态追加 source；一旦开始 snapshot collection，source 会被锁定。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evolutionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "source": {
+                    "type": "object"
+                  },
+                  "note": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "sources 已追加"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "409": {
+            "description": "sources 已锁定"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/template-evolutions/{evolutionId}/advance": {
+      "post": {
+        "summary": "推进 HarnessTemplateEvolution",
+        "description": "管理员分步推进 run：CREATED 收集 snapshots，SOURCES_COLLECTED 生成 analysis，ANALYZED 生成 REVIEW_REQUIRED draft。LLM 只能生成 draft，不能发布模板。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evolutionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "llmProfileId": {
+                    "type": "string"
+                  },
+                  "requireLlm": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "run 已推进"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "409": {
+            "description": "run 被阻断或 LLM 不可用"
+          },
+          "422": {
+            "description": "LLM draft 输出无法解析或校验失败"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/template-evolutions/{evolutionId}/approve": {
+      "post": {
+        "summary": "审批 HarnessTemplateEvolution draft",
+        "description": "只允许审批 REVIEW_REQUIRED 且 validation=VALIDATED 的 draft；请求必须包含 confirmedBy 和 confirmation。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evolutionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "confirmedBy",
+                  "confirmation"
+                ],
+                "properties": {
+                  "confirmedBy": {
+                    "type": "string"
+                  },
+                  "confirmation": {
+                    "type": "string"
+                  },
+                  "confirmedAt": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "draft 已审批"
+          },
+          "400": {
+            "description": "缺少确认信息"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "409": {
+            "description": "run 尚未到 REVIEW_REQUIRED 或 draft 未校验通过"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/template-evolutions/{evolutionId}/publish": {
+      "post": {
+        "summary": "发布 HarnessTemplateEvolution draft",
+        "description": "只允许发布 APPROVED run。服务端会重新校验 draft、写入新的 HarnessTemplate 版本、记录审计，并生成 project impact report；已有 active ProjectHarnessProfile 不会被静默改写。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evolutionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "force": {
+                    "type": "boolean",
+                    "description": "是否替换已存在的同一 id@version。"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "HarnessTemplate 版本已发布"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "409": {
+            "description": "未审批、draft 无效或模板版本已存在"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/template-evolutions/{evolutionId}/impact": {
+      "get": {
+        "summary": "获取 HarnessTemplateEvolution impact",
+        "description": "返回当前 run 的 impact report；如果尚未持久化，则根据已发布或 draft/base template ref 计算一次响应。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evolutionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "impact report"
+          },
+          "403": {
+            "description": "需要只读或更高角色"
+          },
+          "404": {
+            "description": "HarnessTemplateEvolution 不存在"
+          }
+        }
+      },
+      "post": {
+        "summary": "刷新 HarnessTemplateEvolution impact",
+        "description": "管理员重新计算并持久化 impact report。若 run 已 PUBLISHED，状态会推进为 IMPACT_ANALYZED。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "evolutionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "impact report 已刷新"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "404": {
+            "description": "HarnessTemplateEvolution 不存在"
+          }
+        }
+      }
+    },
     "/api/v1/harness/policies": {
       "get": {
         "summary": "列出 TenantHarnessPolicy",

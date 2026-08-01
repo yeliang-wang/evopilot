@@ -268,7 +268,7 @@ evopilot harness profile diff default --project my-agent --version <harness-vers
 evopilot harness profile activate default --project my-agent --version <harness-version> --json
 ```
 
-Administrators maintain public template knowledge packs separately with `harness template pack list|validate|publish`; normal project operators should not manually choose a template during onboarding.
+Administrators maintain public template knowledge packs separately with `harness template pack list|validate|publish`; normal project operators should not manually choose a template during onboarding. When a public template should evolve from reviewable sources such as GitHub projects, websites, local packs, attachments, existing templates, or administrator notes, use `harness template evolution create|advance|approve|publish|impact`. Stop at `status=REVIEW_REQUIRED`, show the generated draft pack, validation, source coverage, and diff to the administrator, and publish only after explicit approval. A published template evolution reports stale project profiles but never silently rewrites active `ProjectHarnessProfile` versions.
 
 ## 7. One Command To A Release Target
 

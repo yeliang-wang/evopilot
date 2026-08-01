@@ -51,6 +51,25 @@ evopilot harness template upgrade \
 
 Publishing the same `id@version` again is rejected unless `--force` is supplied. Existing active project profiles keep their previous `templateRef`; use `harness profile generate` or `harness profile upgrade` to draft a reviewed project-level revision from a newer template.
 
+When administrators want EvoPilot to evolve a public template from reviewable sources, use the template evolution lifecycle instead of directly editing a pack:
+
+```bash
+evopilot harness template evolution create \
+  --base-template python-enterprise-harness \
+  --target-version 1.1.1 \
+  --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
+  --source github=fastapi/fastapi#master \
+  --source url=https://opentelemetry.io/docs/languages/python/ \
+  --file ./workspace-observability-notes.md \
+  --note "Require requestId/traceId/errorCode/nextAction in error logs." \
+  --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
+```
+
+Stop at `REVIEW_REQUIRED`, review `evolution.draft.template`, `evolution.draft.pack`, `validation`, `diffFromBase`, `sourceCoverage`, and `generatedBy`, then approve and publish only with explicit administrator confirmation. Published evolutions report stale active project profiles; they do not silently update project profiles.
+
 ## 2. Optional: Inspect Tenant Policies
 
 Tenant/workspace `TenantHarnessPolicy` records are private administrator constraints. Normal onboarding does not require the operator to choose one; active policies are matched and inherited automatically.

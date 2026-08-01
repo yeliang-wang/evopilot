@@ -11,6 +11,7 @@ Read this file first. Then read [quickstart.md](quickstart.md). Use [automation.
 - Do not pass raw GitHub, GitLab, LLM, deploy, API, or password secrets in daily `target run`, `goal run`, or `loop run` commands.
 - Store secrets on the EvoPilot server or tenant/workspace secret vault, then reference them through `tokenRef`, `apiKeyRef`, or an LLM profile id.
 - Do not activate a generated `ProjectHarnessProfile` until the user or project owner has reviewed the DRAFT profile definition.
+- Do not approve or publish a generated `HarnessTemplateEvolution` draft until an administrator has reviewed the source coverage, generated pack, validation, diff, and impact.
 - Do not approve a phase plan until the user or project owner has reviewed it.
 - Do not invent `--confirmed-by` or `--confirmation` values.
 - Use `logging inspect --json` and response `requestId` / `correlation.*` fields for troubleshooting; only an administrator should temporarily raise logging to `debug`, and it should be restored to `info` after diagnosis.
@@ -58,6 +59,33 @@ evopilot harness profile diff default --project my-agent --version <harness-vers
 ```
 
 EvoPilot automatically matches one built-in or administrator-published template from the project context and goal loop target. `--from-template` is only an explicit administrator or advanced override. Fresh installs include Python enterprise, Java DDD service, Node SaaS control-plane, Go middleware, observability/APM, and generic management-software baselines; current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. `harness template inspect <id> --json` exposes their `sourceReferences[]`, `failureTaxonomy`, `diagnosticsBaseline`, `observabilityBaseline`, and `governanceRules`. Administrator agents that maintain templates should read `harness-templates/public/README.md`, edit the target pack's `README.md`, `template.yaml`, `CHANGELOG.md`, and `examples/`, then use `harness template pack validate <path> --json` and `harness template pack publish <path> --json`.
+
+Administrator agents can also run the server-governed template evolution lifecycle when template changes come from reviewable sources instead of direct pack editing:
+
+```bash
+evopilot harness template evolution create \
+  --base-template python-enterprise-harness \
+  --target-version 1.1.1 \
+  --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
+  --source github=fastapi/fastapi#master \
+  --source url=https://opentelemetry.io/docs/languages/python/ \
+  --file ./workspace-observability-notes.md \
+  --note "Require requestId/traceId/errorCode/nextAction in error logs." \
+  --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
+```
+
+Stop at `status=REVIEW_REQUIRED`. Show `evolution.draft.template`, `evolution.draft.pack`, `evolution.draft.validation`, `evolution.draft.diffFromBase`, `evolution.draft.sourceCoverage`, and `evolution.draft.generatedBy` to the administrator. Continue only with explicit confirmation:
+
+```bash
+evopilot harness template evolution approve <evolution-id> --confirmed-by <admin> --confirmation <text> --json
+evopilot harness template evolution publish <evolution-id> --json
+evopilot harness template evolution impact <evolution-id> --refresh --json
+```
+
+Template evolution does not silently rewrite active `ProjectHarnessProfile` versions. If `impactReport.staleProfileCount>0`, stop and create reviewed project profile upgrade drafts for affected projects before relying on the new template in goal planning. Full details are in [../guides/harness-template-evolution.md](../guides/harness-template-evolution.md).
 
 Tenant/workspace `TenantHarnessPolicy` records are administrator-managed private constraints. Daily agents do not choose them manually; they should read `harness policy list --json` for awareness and confirm generated profiles include current `profile.policyRefs[]` when policies are active. If profile activation or goal planning returns `PROJECT_HARNESS_PROFILE_POLICY_STALE`, stop and regenerate or reapply the ProjectHarnessProfile against the active policy before continuing.
 

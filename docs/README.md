@@ -7,6 +7,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Quick Start](quickstart.md) - install, run locally, and verify the API.
 - [Control Plane User Guide](guides/user-guide.md) - operate projects, credentials, goals, loops, releases, and audit through API/CLI semantics.
 - [Project Harness Onboarding](guides/project-harness-onboarding.md) - generate, review, activate, and evolve project-level harness profiles.
+- [HarnessTemplate Evolution](guides/harness-template-evolution.md) - administrator lifecycle for evolving public harness templates from reviewable sources, draft validation, approval, publishing, and project impact.
 
 ## AI Agents And CLI Automation
 
@@ -19,6 +20,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [CLI Automation](cli/automation.md) - WorkBuddy, Codex, Claude Code, and CI usage rules.
 - [AI Agent Runbook](guides/ai-agent-runbook.md) - end-to-end production operating flow and failure handling.
 - [Public Harness Template Packs](../harness-templates/public/README.md) - human-readable administrator-maintained HarnessTemplate knowledge packs.
+- [HarnessTemplate Evolution](guides/harness-template-evolution.md) - source-to-draft-to-publish CLI/API lifecycle for administrator template upgrades.
 
 ## API And Dashboard Integrators
 

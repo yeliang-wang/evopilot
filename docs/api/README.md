@@ -388,6 +388,15 @@ GET /api/v1/harness/templates
 POST /api/v1/harness/templates/validate
 POST /api/v1/harness/templates
 GET /api/v1/harness/templates/{templateId}
+GET /api/v1/harness/template-evolutions
+POST /api/v1/harness/template-evolutions
+GET /api/v1/harness/template-evolutions/{evolutionId}
+POST /api/v1/harness/template-evolutions/{evolutionId}/sources
+POST /api/v1/harness/template-evolutions/{evolutionId}/advance
+POST /api/v1/harness/template-evolutions/{evolutionId}/approve
+POST /api/v1/harness/template-evolutions/{evolutionId}/publish
+GET /api/v1/harness/template-evolutions/{evolutionId}/impact
+POST /api/v1/harness/template-evolutions/{evolutionId}/impact
 GET /api/v1/harness/policies
 POST /api/v1/harness/policies
 GET /api/v1/harness/policies/{policyId}
@@ -429,6 +438,59 @@ generic-management-software-harness@1.1.0
 管理员也可以通过 `POST /api/v1/harness/templates` 或独立管理员 CLI 发布新的 template id 或版本，用于表达更多语言、架构范式或软件类型的 harness。推荐的人工维护形态是 `harness-templates/public/<template-id>/` 目录 pack：`README.md` 给人类和 AI Agent 读，`template.yaml` 给服务端解析，`CHANGELOG.md` 记录版本，`examples/` 给项目级 profile 生成参考。CLI 提供收敛后的 pack 入口：`harness template pack list`、`harness template pack validate`、`harness template pack publish`。`pack validate` 和 `pack publish` 会调用 `POST /api/v1/harness/templates/validate` 做非持久化服务端校验；`pack publish` 校验通过后才写入控制面。
 
 模板写入要求 `id`、`version` 和当前版本 changelog；建议同时包含 `sourceReferences[]`。服务端计算 `digest` 并按 `<dataRoot>/harness-templates/<templateId>-<version>.json` 持久化。重复写入同一个 `id@version` 默认返回 `HARNESS_TEMPLATE_VERSION_EXISTS`，只有显式 `force=true` 才会替换该版本。已有 active `ProjectHarnessProfile` 不会因为模板更新被静默改写，必须通过 `generate` 或 `upgrade` 生成新的 profile revision 后再 review/activate。
+
+`HarnessTemplateEvolution` 是管理员将外部/内部知识材料转成新模板版本的控制面生命周期。它不是普通项目接入命令，也不是让 LLM 直接写入模板。`GET /api/v1/harness/template-evolutions`、`GET /api/v1/harness/template-evolutions/{evolutionId}` 和 `GET /impact` 需要 viewer 权限；`create`、`sources`、`advance`、`approve`、`publish` 和 `POST /impact` refresh 需要 admin 权限。生命周期为：
+
+```text
+CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED -> IMPACT_ANALYZED
+```
+
+`POST /api/v1/harness/template-evolutions` 创建 run，要求至少一个 source。source 支持：
+
+```json
+{
+  "baseTemplateId": "python-enterprise-harness",
+  "targetVersion": "1.1.1",
+  "intent": "Add stronger exception tracking and AI troubleshooting metadata.",
+  "sources": [
+    { "type": "github-repo", "name": "fastapi/fastapi", "uri": "fastapi/fastapi", "ref": "master" },
+    { "type": "web-url", "name": "OpenTelemetry Python", "uri": "https://opentelemetry.io/docs/languages/python/" },
+    { "type": "admin-note", "name": "Workspace note", "contentText": "Require requestId, traceId, errorCode, and nextAction in error logs." }
+  ]
+}
+```
+
+`POST /sources` 只能在 `CREATED` 状态继续追加 source。`POST /advance` 是分步推进：第一次收集 source snapshots 和 digest，第二次生成 analysis signals，第三次生成 DRAFT。若有 READY LLM profile，可以在 body 中传 `llmProfileId`，或传 `requireLlm=true` 强制没有 READY LLM 时阻断；debug 模式未要求 LLM 时会返回 deterministic draft。`REVIEW_REQUIRED` 返回：
+
+```text
+evolution.draft.template
+evolution.draft.pack.readme
+evolution.draft.pack.templateYaml
+evolution.draft.pack.changelog
+evolution.draft.pack.examples
+evolution.draft.validation
+evolution.draft.diffFromBase
+evolution.draft.sourceCoverage
+evolution.draft.generatedBy
+```
+
+LLM 输出只是 draft。`POST /approve` 只接受 `REVIEW_REQUIRED` 且 validation 通过的 run，并要求 `confirmedBy` 与 `confirmation`。`POST /publish` 只接受 `APPROVED`，会再次校验 draft、写入新的 `HarnessTemplate` 版本、记录 audit、生成 `impactReport`。`GET /impact` 返回受影响的 active `ProjectHarnessProfile`；`POST /impact` 会重新计算并持久化 impact。旧 active project profile 不会被静默改写，影响报告只返回 stale 列表和下一步动作。
+
+当前文件存储实现的路径形态为：
+
+```text
+<dataRoot>/harness-template-evolutions/<evolutionId>/run.json
+<dataRoot>/harness-template-evolutions/<evolutionId>/sources/<sourceId>.json
+<dataRoot>/harness-template-evolutions/<evolutionId>/snapshots/<snapshotId>/snapshot.json
+<dataRoot>/harness-template-evolutions/<evolutionId>/snapshots/<snapshotId>/extracted.txt
+<dataRoot>/harness-template-evolutions/<evolutionId>/drafts/<draftId>/README.md
+<dataRoot>/harness-template-evolutions/<evolutionId>/drafts/<draftId>/template.yaml
+<dataRoot>/harness-template-evolutions/<evolutionId>/drafts/<draftId>/CHANGELOG.md
+<dataRoot>/harness-template-evolutions/<evolutionId>/drafts/<draftId>/examples/default-project-profile.yaml
+<dataRoot>/harness-template-evolutions/<evolutionId>/impact/report.json
+```
+
+日志事件为 `harness-template-evolution.created`、`harness-template-evolution.advanced`、`harness-template-evolution.published`、`harness-template-evolution.impact-analyzed`，均带 `metadata.evolutionId`、`sourceIds`、`snapshotDigests`、`draftDigest`、`validationStatus`、`publishedTemplateDigest`、`staleProfileCount`、`blockers`、`warnings` 和 `nextAction`，用于 AI Agent 根据日志溯源。
 
 `TenantHarnessPolicy` 是私有 tenant/workspace 约束层，用于表达组织级或工作区级的项目 harness 契约。它不是项目接入时由普通操作者选择的模板；管理员通过 `POST /api/v1/harness/policies` 写入版本，通过 `POST /api/v1/harness/policies/{policyId}/activate` 激活，服务端在 `generate`、`validate`、`apply` 时自动把所有匹配的 active policy 合并到项目 profile。
 

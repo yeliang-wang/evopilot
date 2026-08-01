@@ -141,6 +141,37 @@ evopilot harness template upgrade \
 
 The template file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown documents the pack for humans and AI agents. The server stores it in the control plane with a computed digest and changelog. Reusing the same `id@version` is rejected unless the administrator passes `--force`. Existing active project profiles are not silently rewritten; use `harness profile generate` or `harness profile upgrade` to create a reviewed project revision.
 
+When template changes should be derived from reviewable sources, use the server-governed evolution lifecycle instead of editing a pack directly:
+
+```bash
+evopilot harness template evolution create \
+  --base-template python-enterprise-harness \
+  --target-version 1.1.1 \
+  --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
+  --source github=fastapi/fastapi#master \
+  --source url=https://opentelemetry.io/docs/languages/python/ \
+  --source runtime-evidence=release-evidence-2026-08-python \
+  --file ./workspace-observability-notes.md \
+  --note "Require requestId/traceId/errorCode/nextAction in error logs." \
+  --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
+```
+
+Stop when the response reaches `status=REVIEW_REQUIRED`. Show `evolution.draft.template`, `evolution.draft.pack`, `evolution.draft.validation`, `evolution.draft.diffFromBase`, `evolution.draft.sourceCoverage`, and `evolution.draft.generatedBy` to the administrator. If approved:
+
+```bash
+evopilot harness template evolution approve <evolution-id> \
+  --confirmed-by platform-admin \
+  --confirmation "Reviewed draft template, validation, source coverage, and impact." \
+  --json
+evopilot harness template evolution publish <evolution-id> --json
+evopilot harness template evolution impact <evolution-id> --refresh --json
+```
+
+The lifecycle stores source snapshots, generated pack files, validation, audit records, and an impact report. Existing active project profiles keep their previous `templateRef`; stale projects must receive reviewed profile upgrade drafts before new goal planning binds the new template digest. See [../guides/harness-template-evolution.md](../guides/harness-template-evolution.md).
+
 ## Admin: Maintain Tenant Harness Policy
 
 `TenantHarnessPolicy` is the private tenant/workspace layer between public templates and project profiles. It is optional for a workspace, but once an administrator activates one, every matching project profile must compile with its `policyRefs` and satisfy its required capabilities, evidence, diagnostics, observability, and governance constraints.

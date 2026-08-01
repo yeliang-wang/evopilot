@@ -29,6 +29,14 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
 --path <path>               HarnessTemplate pack directory for pack validate/publish
 --root <path>               HarnessTemplate pack root directory for pack list
+--source <kind=value>       HarnessTemplate evolution source: url=, github=, gitlab=, local-pack=, file=, template=, runtime-evidence=, or note=
+--runtime-evidence <id>     HarnessTemplate evolution source pointing to runtime evidence or an evidence bundle id
+--file <path>               HarnessTemplate evolution attachment or YAML/JSON file input for commands that accept files
+--local-pack <path>         HarnessTemplate evolution source pack directory
+--intent <text>             HarnessTemplate evolution objective reviewed by administrators
+--target-version <version>  HarnessTemplate evolution target template version
+--target-template <id>      HarnessTemplate evolution target template id
+--refresh                   Recompute HarnessTemplate evolution impact
 --level <debug|info|warn|error> EvoPilot structured logging level
 --include-stack <true|false>    Include redacted stack traces in error logs
 --json                      Print JSON response data
@@ -47,6 +55,7 @@ Use `--json` for AI agents and CI. Human-readable output is for operators and ca
 | `project onboard ... --json` | `evopilot-cli-project-onboard/v1` | `projectId`, `sourceCredentials`, `devops`, `steps`, `result`, `llmUsage`; onboarding does not start Goal/Loop execution |
 | `logging inspect/set --json` | `evopilot-logging-settings/v1` or `evopilot-logging-settings-update-result/v1` | `level`, `format`, `includeStack`, `source`, `updatedBy`, `updatedAt` |
 | `harness template pack list/validate/publish ... --json` | `evopilot-harness-template-pack-*-v1` or `evopilot-harness-template-apply-result/v1` | `packs`, `localValidation`, `serverValidation`, `template`, `action`, `digest` |
+| `harness template evolution create/advance/approve/publish/impact ... --json` | `evopilot-harness-template-evolution-*-result/v1` | `evolution`, `status`, `nextAction`, `draft`, `validation`, `sourceCoverage`, `impactReport` |
 | `harness policy apply/activate ... --json` | `evopilot-tenant-harness-policy-*-result/v1` | `policy`, `summary`, `validation`, `compiledDigest`; active policies constrain matching project profiles |
 | `harness profile generate ... --json` | `evopilot-project-harness-profile-generate-result/v1` | `profile`, `summary`, `validation`, `generatedBy`, `instruction`; generated profiles are DRAFT until activated |
 | `harness profile validate/apply/activate ... --json` | `evopilot-project-harness-profile-*-result/v1` | `profile`, `summary`, `validation`, `diffFromActive`, `compiledDigest`, `templateRef`, `policyRefs` |
@@ -373,6 +382,14 @@ evopilot harness template inspect java-ddd-service-harness
 evopilot harness template pack list harness-templates/public
 evopilot harness template pack validate harness-templates/public/python-enterprise-harness
 evopilot harness template pack publish harness-templates/public/python-enterprise-harness [--force]
+evopilot harness template evolution list
+evopilot harness template evolution create --base-template python-enterprise-harness --target-version <version> --intent <text> --source github=fastapi/fastapi#master
+evopilot harness template evolution sources <evolution-id> --url https://example.com/harness-notes.md --file ./observability-notes.md --note "Add trace-linked error envelopes."
+evopilot harness template evolution advance <evolution-id> [--llm-profile <id>] [--require-llm]
+evopilot harness template evolution inspect <evolution-id>
+evopilot harness template evolution approve <evolution-id> --confirmed-by <admin> --confirmation <text>
+evopilot harness template evolution publish <evolution-id> [--force]
+evopilot harness template evolution impact <evolution-id> [--refresh]
 evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
 evopilot harness template update --file <template.yaml> --changelog <text> [--force]
 evopilot harness template upgrade --file <template.yaml> --changelog <text> [--force]
@@ -426,6 +443,43 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 ```
 
 `pack validate` performs local pack-shape checks and calls the server's non-persistent `POST /api/v1/harness/templates/validate`. `pack publish` repeats server validation before writing the version through the control plane. EvoPilot intentionally does not expose first-stage `compile`, `diff`, or `publish-all` pack commands; use Git for file diffs and add batch publishing later only if CI/admin usage needs it.
+
+`harness template evolution` is the administrator lifecycle for upgrading a public template from reviewable knowledge sources without bypassing the control plane. Sources can be `url=`, `github=owner/repo#ref`, `gitlab=`, `local-pack=`, `file=`, `template=<id>@<version>`, `runtime-evidence=<id>`, or `note=`.
+
+```bash
+evopilot harness template evolution create \
+  --base-template python-enterprise-harness \
+  --target-version 1.1.1 \
+  --intent "Add Python exception tracking and AI troubleshooting metadata." \
+  --source github=fastapi/fastapi#master \
+  --source url=https://opentelemetry.io/docs/languages/python/ \
+  --file ./workspace-observability-notes.md \
+  --note "Require requestId/traceId/errorCode on every error log." \
+  --json
+```
+
+Advance is intentionally step-based and server-governed:
+
+```bash
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
+```
+
+The lifecycle is `CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED`. `REVIEW_REQUIRED` returns a reviewable `draft` with `pack.readme`, `pack.templateYaml`, `pack.changelog`, `pack.examples`, `validation`, `diffFromBase`, `sourceCoverage`, and `generatedBy`. The first-stage GitHub source collector reads repository README files through `raw.githubusercontent.com`; text, Markdown, YAML, JSON, and similar attachments are semantically extracted, while binary PDF/PPT/DOCX attachments record digest and warning only.
+
+Publishing requires explicit administrator approval:
+
+```bash
+evopilot harness template evolution approve <evolution-id> \
+  --confirmed-by platform-admin \
+  --confirmation "Reviewed the draft, validation, source coverage, and impact." \
+  --json
+evopilot harness template evolution publish <evolution-id> --json
+evopilot harness template evolution impact <evolution-id> --refresh --json
+```
+
+LLM output is draft-only. The server validates the draft again during publish, records audit events, writes the new `HarnessTemplate` version only after approval, and generates an impact report for active project profiles that still bind older versions or digests. Existing active `ProjectHarnessProfile` versions are never silently rewritten; administrators must generate or upgrade reviewed project profile revisions and activate them.
 
 Administrators can also publish direct YAML/JSON template files through the lower-level aliases:
 

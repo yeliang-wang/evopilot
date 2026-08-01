@@ -17,7 +17,8 @@ It answers a different question from a goal loop target:
 
 ```mermaid
 flowchart LR
-  Admin["Admin template apply/update"] --> Template["HarnessTemplate"]
+  Admin["Admin template pack or YAML publish"] --> Template["HarnessTemplate"]
+  Evolution["HarnessTemplateEvolution\nsources -> draft -> approval -> publish"] --> Template
   PolicyAdmin["Admin policy apply/activate"] --> Policy["TenantHarnessPolicy"]
   Template["HarnessTemplate"] --> Generate["Generate DRAFT"]
   Policy["TenantHarnessPolicy"] --> Generate
@@ -35,6 +36,8 @@ flowchart LR
 Fresh installs include multiple built-in `HarnessTemplate` baselines for Python enterprise projects, Java DDD services, Node SaaS control planes, Go middleware, observability/APM systems, and generic management software. Current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. Project onboarding automatically matches one published template from runtime/repository context and the goal loop target; an explicit template id is an administrator or advanced override.
 
 Public templates are maintained as human-readable packs under `harness-templates/public/<template-id>/`, with `README.md`, `template.yaml`, `CHANGELOG.md`, and `examples/`. Administrators use the small pack CLI surface, `harness template pack list|validate|publish`, to validate and publish a pack into the server control plane. Direct YAML/JSON publishing with `harness template apply|update|upgrade` remains available for advanced cases. Template files are control-plane inputs with `id`, `version`, template sections, `sourceReferences[]`, and a current-version changelog. Reusing the same `id@version` requires explicit force; normal changes should publish a new version.
+
+When template changes come from reviewable sources, the administrator uses `HarnessTemplateEvolution`. It collects source snapshots from `web-url`, `github-repo`, `gitlab-repo`, `attachment`, `local-pack`, `existing-template`, or `admin-note` sources, analyzes signals, generates a DRAFT template pack, requires explicit approval, publishes a new `HarnessTemplate` version, and reports affected project profiles. This adds a lifecycle around template changes without letting LLM output bypass validation or approval.
 
 `TenantHarnessPolicy` is a separate private control layer scoped to one tenant/workspace. It is optional, but when active it is automatically applied to matching project profiles between the public template and the project-specific source. It can require organization-specific capabilities, evidence fields, correlation IDs, structured log fields, exception attributes, diagnostics, observability, governance booleans, and phase mappings. A project profile compiles as:
 
@@ -57,6 +60,7 @@ Current file-store path:
 ```text
 <dataRoot>/project-harness-profiles/<tenantId>/<workspaceId>/<projectId>/<profileId>/versions/v<version>.json
 <dataRoot>/tenant-harness-policies/<tenantId>/<workspaceId>/<policyId>/versions/v<version>.json
+<dataRoot>/harness-template-evolutions/<evolutionId>/run.json
 ```
 
 The stored version contains:
@@ -70,6 +74,8 @@ The stored version contains:
 - `validation`: checks, blockers, warnings.
 - `diffFromActive`: changed sections against the previous active version.
 - `generatedBy`: `user`, `llm`, or `deterministic-template`.
+
+Template evolution runs additionally store `sources/*.json`, `snapshots/*/snapshot.json`, `snapshots/*/extracted.txt`, `drafts/*/README.md`, `drafts/*/template.yaml`, `drafts/*/CHANGELOG.md`, draft examples, and `impact/report.json`. Those artifacts are evidence for administrator review; the published template remains the versioned `HarnessTemplate` control-plane record.
 
 ## Module Mapping
 

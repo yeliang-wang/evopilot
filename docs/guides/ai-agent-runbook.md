@@ -168,6 +168,33 @@ evopilot harness template upgrade \
 
 Template files use `schema: evopilot-harness-template/v1` and include `id`, `version`, capabilities, runtime patterns, validation baseline, evidence contract, failure taxonomy, diagnostics, observability, governance, phase mapping, LLM draft policy, source references, and changelog. YAML or JSON is authoritative; Markdown documents the pack for humans and AI agents. EvoPilot computes the digest and stores the version in the control plane. Reusing an existing `id@version` returns `HARNESS_TEMPLATE_VERSION_EXISTS` unless the admin passes `--force`. Template updates never rewrite an active `ProjectHarnessProfile`; they become effective for a project only after a generated or upgraded profile revision is reviewed and activated.
 
+When template changes should come from reviewable sources, administrators use the server-governed `HarnessTemplateEvolution` lifecycle instead of treating LLM output as an immediate template write:
+
+```bash
+evopilot harness template evolution create \
+  --base-template python-enterprise-harness \
+  --target-version 1.1.1 \
+  --intent "Add stronger Python exception tracking, observability, and AI troubleshooting metadata." \
+  --source github=fastapi/fastapi#master \
+  --source url=https://opentelemetry.io/docs/languages/python/ \
+  --file ./workspace-observability-notes.md \
+  --note "Require requestId/traceId/errorCode/nextAction in error logs." \
+  --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --json
+evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
+```
+
+Stop at `status=REVIEW_REQUIRED` and show the administrator `evolution.draft.template`, `evolution.draft.pack`, `evolution.draft.validation`, `evolution.draft.diffFromBase`, `evolution.draft.sourceCoverage`, and `evolution.draft.generatedBy`. Continue only after explicit confirmation:
+
+```bash
+evopilot harness template evolution approve <evolution-id> --confirmed-by <admin> --confirmation <text> --json
+evopilot harness template evolution publish <evolution-id> --json
+evopilot harness template evolution impact <evolution-id> --refresh --json
+```
+
+The lifecycle is `CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED`. It stores source snapshots, generated pack files, audit evidence, and an impact report under `<dataRoot>/harness-template-evolutions/<evolutionId>/`. First-stage GitHub sources read README candidates only; binary attachments record digest and warning without semantic extraction. Publishing a template never silently rewrites active project profiles; if `impactReport.staleProfileCount>0`, create reviewed `ProjectHarnessProfile` upgrade drafts for affected projects before using the new template digest in goal planning.
+
 Tenant/workspace policy maintenance is a separate administrator channel. Daily project agents do not choose a private policy manually; they inspect the active policy list for awareness, then let EvoPilot inherit every matching active policy during `harness profile generate`, `validate`, and `apply`.
 
 ```bash
@@ -867,7 +894,7 @@ evopilot logging set --level debug --include-stack true --json
 evopilot logging set --level info --include-stack true --json
 ```
 
-The control-plane setting overrides `EVOPILOT_LOG_LEVEL` and `EVOPILOT_LOG_STACK`. Supported levels are `debug`, `info`, `warn`, and `error`; logs remain JSON Lines so AI agents can trace failures by `requestId`, `projectId`, `goalId`, `loopId`, release ids, route group, outcome, error code, and diagnosis fields.
+The control-plane setting overrides `EVOPILOT_LOG_LEVEL` and `EVOPILOT_LOG_STACK`. Supported levels are `debug`, `info`, `warn`, and `error`; logs remain JSON Lines so AI agents can trace failures by `requestId`, `projectId`, `goalId`, `loopId`, release ids, route group, outcome, error code, and diagnosis fields. For harness template evolution, also trace `metadata.evolutionId`, `metadata.sourceIds`, `metadata.snapshotDigests`, `metadata.draftDigest`, `metadata.validationStatus`, `metadata.publishedTemplateDigest`, `metadata.staleProfileCount`, and `metadata.nextAction`.
 
 Log queries:
 
