@@ -38,5 +38,6 @@ Deep architecture notes remain in:
 
 - [Continuous Evolution Control Plane](continuous-evolution-control-plane.md)
 - [Project Harness Profile](project-harness-profile.md)
+- [Harness Template Domain](harness-template-domain.md)
 - [Loop Runtime](loop-runtime.md)
 - [ProofOps Target Loop Mode](proofops-target-loop-mode.md)
