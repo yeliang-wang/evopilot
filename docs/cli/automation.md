@@ -244,6 +244,16 @@ First onboarding uses EvoPilot's automatically matched harness template, the goa
 
 Automation may proceed to `target plan` only after `harness profile activate` returns `status=ACTIVE` and `summary.activeVersion=<harness-version>`. `target plan` or `goal plan` must then expose `plan.projectHarness` or `phasePlan.projectHarness` with the same profile id, version, and compiled digest. If the binding is missing, stop and repair the harness activation.
 
+Template pack maintenance is administrator automation, not daily project execution. When asked to maintain public HarnessTemplate knowledge packs, use the readable directories under `harness-templates/public/<template-id>/` and only this first-stage CLI surface:
+
+```bash
+evopilot harness template pack list harness-templates/public --json
+evopilot harness template pack validate harness-templates/public/python-enterprise-harness --json
+evopilot harness template pack publish harness-templates/public/python-enterprise-harness --json
+```
+
+Do not invent `compile`, `diff`, or `publish-all` pack commands. Use Git diff for file review, and rely on `pack validate` / `pack publish` for server-side template validation, versioning, digesting, RBAC, persistence, and audit.
+
 ## Goal Plan Approval Rules
 
 Automation must treat the generated phase plan as a governed artifact. The normal path after harness activation is:

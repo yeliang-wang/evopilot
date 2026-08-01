@@ -18,6 +18,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [CLI Commands](cli/commands.md) - atomic command reference.
 - [CLI Automation](cli/automation.md) - WorkBuddy, Codex, Claude Code, and CI usage rules.
 - [AI Agent Runbook](guides/ai-agent-runbook.md) - end-to-end production operating flow and failure handling.
+- [Public Harness Template Packs](../harness-templates/public/README.md) - human-readable administrator-maintained HarnessTemplate knowledge packs.
 
 ## API And Dashboard Integrators
 

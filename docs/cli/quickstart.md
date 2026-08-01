@@ -116,20 +116,30 @@ Continue only when source credentials, DevOps, and LLM readiness are `READY`.
 
 ## Admin: Maintain Template Harness
 
-Project onboarding consumes an already published template, but normal onboarding does not require the operator to choose one manually. Fresh installs include `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. EvoPilot automatically matches a template from project runtime/repository context and the goal loop target; `--from-template` is only an explicit administrator or advanced override. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`. Current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules.
+Project onboarding consumes an already published template, but normal onboarding does not require the operator to choose one manually. Fresh installs include `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. EvoPilot automatically matches one template from project runtime/repository context and the goal loop target; `--from-template` is only an explicit administrator or advanced override. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`. Current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules.
 
-Administrators can publish additional template ids or versions for different languages, architecture styles, or software types:
+Administrators should edit public templates as readable packs under `harness-templates/public/<template-id>/`:
 
 ```bash
 evopilot harness template list --json
 evopilot harness template inspect python-enterprise-harness --json
+evopilot harness template pack list harness-templates/public --json
+evopilot harness template pack validate harness-templates/public/python-enterprise-harness --json
+evopilot harness template pack publish harness-templates/public/python-enterprise-harness --json
+```
+
+Each pack contains `README.md`, `template.yaml`, `CHANGELOG.md`, and `examples/default-project-profile.yaml`. The CLI surface is intentionally small: list, validate, and publish. Use Git for file diff/review; `compile`, `diff`, and `publish-all` are not first-stage pack commands.
+
+Administrators can still publish a direct YAML/JSON template file when they do not need the directory pack shape:
+
+```bash
 evopilot harness template upgrade \
   --file ./python-enterprise-harness-1.2.0.yaml \
   --changelog "Add organization-specific FastAPI service defaults and pytest coverage gates." \
   --json
 ```
 
-The template file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown is documentation only. The server stores it in the control plane with a computed digest and changelog. Reusing the same `id@version` is rejected unless the administrator passes `--force`. Existing active project profiles are not silently rewritten; use `harness profile generate` or `harness profile upgrade` to create a reviewed project revision.
+The template file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown documents the pack for humans and AI agents. The server stores it in the control plane with a computed digest and changelog. Reusing the same `id@version` is rejected unless the administrator passes `--force`. Existing active project profiles are not silently rewritten; use `harness profile generate` or `harness profile upgrade` to create a reviewed project revision.
 
 ## Admin: Maintain Tenant Harness Policy
 

@@ -23,7 +23,24 @@ generic-management-software-harness
 
 Each built-in template defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, and `sourceReferences[]`. The built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as versioned template data. Current built-ins ship as `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. EvoPilot does not dynamically fetch GitHub at runtime.
 
-Administrators can publish additional template ids or versions for other languages, architecture styles, or software types through a separate administrator CLI/API channel. Template updates are YAML/JSON control-plane changes with changelog management:
+For administrator maintenance, the public templates also exist as human-readable packs under `harness-templates/public/<template-id>/`:
+
+```text
+README.md
+template.yaml
+CHANGELOG.md
+examples/default-project-profile.yaml
+```
+
+The normal project operator does not open or choose these packs during onboarding. They are for administrators and AI agents maintaining the public knowledge base:
+
+```bash
+evopilot harness template pack list harness-templates/public --json
+evopilot harness template pack validate harness-templates/public/python-enterprise-harness --json
+evopilot harness template pack publish harness-templates/public/python-enterprise-harness --json
+```
+
+Administrators can also publish additional template ids or versions for other languages, architecture styles, or software types through a direct YAML/JSON CLI/API channel. Template updates are control-plane changes with changelog management:
 
 ```bash
 evopilot harness template upgrade \

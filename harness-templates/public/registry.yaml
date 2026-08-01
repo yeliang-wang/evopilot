@@ -1,0 +1,33 @@
+schema: evopilot-harness-template-registry/v1
+templates:
+  - id: python-enterprise-harness
+    version: 1.1.0
+    path: python-enterprise-harness
+    languageFamily: python
+    softwareTypes: [api-service, enterprise-service, async-worker, platform-tool]
+  - id: java-ddd-service-harness
+    version: 1.1.0
+    path: java-ddd-service-harness
+    languageFamily: java
+    softwareTypes: [ddd-service, spring-boot-service, enterprise-service]
+  - id: node-saas-control-plane-harness
+    version: 1.1.0
+    path: node-saas-control-plane-harness
+    languageFamily: node
+    softwareTypes: [saas-control-plane, api-service, worker-platform]
+  - id: go-middleware-harness
+    version: 1.1.0
+    path: go-middleware-harness
+    languageFamily: go
+    softwareTypes: [middleware, infrastructure-service, control-loop]
+  - id: observability-apm-harness
+    version: 1.1.0
+    path: observability-apm-harness
+    languageFamily: generic
+    softwareTypes: [observability-platform, apm, telemetry-pipeline]
+  - id: generic-management-software-harness
+    version: 1.1.0
+    path: generic-management-software-harness
+    languageFamily: generic
+    softwareTypes: [management-software, workflow-system, enterprise-admin]
+

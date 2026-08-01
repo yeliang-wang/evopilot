@@ -385,6 +385,7 @@ GET /api/v1/projects/{projectId}/onboarding-checklist
 
 ```http
 GET /api/v1/harness/templates
+POST /api/v1/harness/templates/validate
 POST /api/v1/harness/templates
 GET /api/v1/harness/templates/{templateId}
 GET /api/v1/harness/policies
@@ -425,7 +426,9 @@ generic-management-software-harness@1.1.0
 
 这些内置模板不是运行时动态从 GitHub 拉取。EvoPilot 将精选开源项目、官方规范和工程实践固化为本地版本化模板，并在 `sourceReferences[]` 中暴露初始化来源，例如 FastAPI、Spring Boot、Micrometer、Kubernetes、Prometheus、OpenTelemetry、Sentry、Apache SkyWalking、ERPNext/Frappe 和 Odoo。`@1.1.0` 模板提供默认能力边界、runtime command groups、validation baseline、evidence contract、failure taxonomy、diagnostics、observability、release governance、Alpha/Beta/RC/GA phase mapping 和 LLM draft policy，并细化结构化日志、异常追踪、trace 关联、SLO 监控、告警路由、operational runbook、语言/软件类型专项诊断与 release evidence 规则。
 
-管理员也可以通过 `POST /api/v1/harness/templates` 或独立管理员 CLI `evopilot harness template upgrade` 发布新的 template id 或版本，用于表达更多语言、架构范式或软件类型的 harness。模板写入要求 `id`、`version` 和当前版本 changelog；建议同时包含 `sourceReferences[]`。服务端计算 `digest` 并按 `<dataRoot>/harness-templates/<templateId>-<version>.json` 持久化。重复写入同一个 `id@version` 默认返回 `HARNESS_TEMPLATE_VERSION_EXISTS`，只有显式 `force=true` 才会替换该版本。已有 active `ProjectHarnessProfile` 不会因为模板更新被静默改写，必须通过 `generate` 或 `upgrade` 生成新的 profile revision 后再 review/activate。
+管理员也可以通过 `POST /api/v1/harness/templates` 或独立管理员 CLI 发布新的 template id 或版本，用于表达更多语言、架构范式或软件类型的 harness。推荐的人工维护形态是 `harness-templates/public/<template-id>/` 目录 pack：`README.md` 给人类和 AI Agent 读，`template.yaml` 给服务端解析，`CHANGELOG.md` 记录版本，`examples/` 给项目级 profile 生成参考。CLI 提供收敛后的 pack 入口：`harness template pack list`、`harness template pack validate`、`harness template pack publish`。`pack validate` 和 `pack publish` 会调用 `POST /api/v1/harness/templates/validate` 做非持久化服务端校验；`pack publish` 校验通过后才写入控制面。
+
+模板写入要求 `id`、`version` 和当前版本 changelog；建议同时包含 `sourceReferences[]`。服务端计算 `digest` 并按 `<dataRoot>/harness-templates/<templateId>-<version>.json` 持久化。重复写入同一个 `id@version` 默认返回 `HARNESS_TEMPLATE_VERSION_EXISTS`，只有显式 `force=true` 才会替换该版本。已有 active `ProjectHarnessProfile` 不会因为模板更新被静默改写，必须通过 `generate` 或 `upgrade` 生成新的 profile revision 后再 review/activate。
 
 `TenantHarnessPolicy` 是私有 tenant/workspace 约束层，用于表达组织级或工作区级的项目 harness 契约。它不是项目接入时由普通操作者选择的模板；管理员通过 `POST /api/v1/harness/policies` 写入版本，通过 `POST /api/v1/harness/policies/{policyId}/activate` 激活，服务端在 `generate`、`validate`、`apply` 时自动把所有匹配的 active policy 合并到项目 profile。
 

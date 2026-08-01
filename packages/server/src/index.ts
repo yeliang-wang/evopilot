@@ -3118,6 +3118,22 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           templates: store.listHarnessTemplates()
         }));
       }
+      if (request.method === "POST" && url.pathname === "/api/v1/harness/templates/validate") {
+        if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+        const body = await readJson(request, options.maxBodyBytes);
+        const template = parseHarnessTemplateApplyPayload(body, auth.actor);
+        const validation = validateHarnessTemplateProfile(template);
+        const status = validation.status === "VALIDATED" ? 200 : 422;
+        return writeJson(response, status, envelope({
+          schema: "evopilot-harness-template-validation-result/v1",
+          status: validation.status,
+          template,
+          validation,
+          instruction: validation.status === "VALIDATED"
+            ? "HarnessTemplate is valid for pack publishing."
+            : "Fix HarnessTemplate validation blockers before publishing."
+        }));
+      }
       if (request.method === "POST" && url.pathname === "/api/v1/harness/templates") {
         if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const body = await readJson(request, options.maxBodyBytes);
@@ -12165,6 +12181,53 @@ function hydrateHarnessTemplate(input: unknown): HarnessTemplateProfile {
   return {
     ...template,
     digest: digestObject({ ...template, digest: undefined })
+  };
+}
+
+function validateHarnessTemplateProfile(template: HarnessTemplateProfile): {
+  schema: "evopilot-harness-template-validation/v1";
+  status: "VALIDATED" | "FAILED";
+  checks: Array<{ id: string; status: "PASS" | "FAIL" | "WARN"; required: boolean; evidence: string[] }>;
+  blockers: string[];
+  warnings: string[];
+  evaluatedAt: string;
+} {
+  const checks: Array<{ id: string; status: "PASS" | "FAIL" | "WARN"; required: boolean; evidence: string[] }> = [];
+  const add = (id: string, status: "PASS" | "FAIL" | "WARN", required: boolean, evidence: string[]) => checks.push({ id, status, required, evidence });
+  const capabilityIds = template.capabilities.map((capability) => capability.id);
+  const requiredCapabilities = ["source-boundary", "exception-tracking", "test-and-quality", "failure-diagnostics", "observability", "slo-monitoring", "operational-runbooks", "release-governance"];
+  const missingCapabilities = requiredCapabilities.filter((id) => !capabilityIds.includes(id));
+  add("identity", template.id.length > 0 && template.version.length > 0 ? "PASS" : "FAIL", true, [`id=${template.id}`, `version=${template.version}`]);
+  add("language-family", ["python", "node", "java", "go", "generic"].includes(template.languageFamily) ? "PASS" : "FAIL", true, [`languageFamily=${template.languageFamily}`]);
+  add("capability-baseline", missingCapabilities.length === 0 ? "PASS" : "FAIL", true, [`missing=${missingCapabilities.join(",") || "none"}`, `capabilities=${template.capabilities.length}`]);
+  const sectionChecks: Array<[string, Record<string, unknown>]> = [
+    ["runtime-patterns", template.runtimePatterns],
+    ["validation-baseline", template.validationBaseline],
+    ["evidence-contract", template.evidenceContract],
+    ["failure-taxonomy", template.failureTaxonomy],
+    ["diagnostics-baseline", template.diagnosticsBaseline],
+    ["observability-baseline", template.observabilityBaseline],
+    ["governance-rules", template.governanceRules],
+    ["llm-draft-policy", template.llmDraftPolicy]
+  ];
+  for (const [id, value] of sectionChecks) {
+    add(id, Object.keys(value).length > 0 ? "PASS" : "FAIL", true, [`keys=${Object.keys(value).join(",") || "none"}`]);
+  }
+  const mappedPhases = MATURITY_PHASES.filter((phase) => (template.phaseMapping[phase] ?? []).length > 0);
+  add("phase-mapping", mappedPhases.length === MATURITY_PHASES.length ? "PASS" : "FAIL", true, [`phases=${mappedPhases.join(",")}`]);
+  const currentChangelog = template.changelog.some((entry) => entry.version === template.version && (entry.summary.length > 0 || entry.changes.length > 0));
+  add("changelog", currentChangelog ? "PASS" : "FAIL", true, [`version=${template.version}`, `entries=${template.changelog.length}`]);
+  add("source-references", template.sourceReferences.length > 0 ? "PASS" : "WARN", false, [`sourceReferences=${template.sourceReferences.length}`]);
+  const blockers = checks
+    .filter((check) => check.required && check.status === "FAIL")
+    .map((check) => `${check.id}:${check.evidence.join(";")}`);
+  return {
+    schema: "evopilot-harness-template-validation/v1",
+    status: blockers.length === 0 ? "VALIDATED" : "FAILED",
+    checks,
+    blockers,
+    warnings: checks.filter((check) => check.status === "WARN").map((check) => `${check.id}:${check.evidence.join(";")}`),
+    evaluatedAt: new Date().toISOString()
   };
 }
 

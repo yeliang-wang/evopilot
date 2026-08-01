@@ -247,7 +247,30 @@ run override --llm-profile -> project default LLM -> server global default LLM
 
 The final fallback is only acceptable for local/debug validation or explicitly non-enterprise runs.
 
-## 6. One Command To A Release Target
+## 6. Generate And Confirm The Project Harness
+
+Before phase planning, generate the project-level `ProjectHarnessProfile`. EvoPilot automatically matches one published `HarnessTemplate` from project context and the goal loop target, then merges active tenant/workspace policies and, for re-onboarding, the previous active profile.
+
+```bash
+evopilot harness profile generate \
+  --project my-agent \
+  --goal-loop-target "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
+  --llm-profile my-agent-llm \
+  --json
+```
+
+Review the returned DRAFT before activation. Present `profile.sourceContent`, `profile.compiledContent`, `profile.validation`, `profile.diffFromActive`, `profile.generatedBy`, `profile.sourceDigest`, `profile.compiledDigest`, and `profile.policyRefs[]` to the user or project owner.
+
+```bash
+evopilot harness profile inspect default --project my-agent --version <harness-version> --json
+evopilot harness profile diff default --project my-agent --version <harness-version> --json
+# STOP: show the ProjectHarnessProfile DRAFT to the user or project owner; continue only after explicit confirmation.
+evopilot harness profile activate default --project my-agent --version <harness-version> --json
+```
+
+Administrators maintain public template knowledge packs separately with `harness template pack list|validate|publish`; normal project operators should not manually choose a template during onboarding.
+
+## 7. One Command To A Release Target
 
 Use `target run` when the project does not already have a project-scoped release target. EvoPilot resolves or creates the target, creates or resumes a GlobalGoal, generates the server plan, then stops for plan approval when the plan has not been confirmed.
 
@@ -332,7 +355,7 @@ The wrapper result includes LLM and token visibility for summary, process, and e
 
 Human-readable wrapper output includes an `LLM Usage` section. Production HTTP logs include the same caller and request-level token delta in `metadata.client` and `metadata.llmUsage`, so an operator can line up CLI `requestId` values with server logs.
 
-## 7. One Command From New Project To Target
+## 8. One Command From New Project To Target
 
 Use `project onboard` when the project is not registered yet. This wrapper registers the project, verifies source credentials, configures repository-native DevOps when CI/CD flags are present, and verifies DevOps readiness. It does not start Goal/Loop execution.
 
@@ -378,9 +401,9 @@ evopilot project onboard gitlab \
   --json
 ```
 
-After onboarding, run `project onboard verify my-agent --json`. When the checklist returns `READY_TO_RUN`, it also returns `nextAction=plan-target`; use the `target plan` flow from section 6 first, approve the phase plan after user confirmation, and only then run `target run` with the user's business objective.
+After onboarding, run `project onboard verify my-agent --json`. When the checklist returns `READY_TO_RUN`, it also returns `nextAction=plan-target`; generate and confirm the ProjectHarnessProfile from section 6, then use the `target plan` flow from section 7, approve the phase plan after user confirmation, and only then run `target run` with the user's business objective.
 
-## 8. Public Upstream With A Writable Fork
+## 9. Public Upstream With A Writable Fork
 
 Use this mode when the target project is an open-source upstream or any repository that the operator does not directly control. EvoPilot writes code and runs CI/CD in the fork. The upstream still owns merge and release authority.
 
@@ -414,7 +437,7 @@ Expected DevOps readiness fields:
 
 Do not describe this as an upstream release unless the upstream maintainer later authorizes and merges the PR.
 
-## 9. Run Or Resume A GlobalGoal
+## 10. Run Or Resume A GlobalGoal
 
 Use `goal run` when the release target already exists or a previous GlobalGoal should continue. If the command creates a new GlobalGoal and the generated Alpha/Beta/RC/GA plan is not approved yet, it stops with `nextAction=approve-plan`; WorkBuddy must show the plan to the user before approval.
 
@@ -453,7 +476,7 @@ evopilot goal evidence-matrix <goal-id> --json
 
 Use `<target-id>` from `goal targets`, `goal snapshot.activeTarget.id`, or `target run` / `goal run` `status.activeTarget.id`. A target or phase is not passed until the server returns `TargetEvidencePackage.status=GO` and the enclosing `PhasePackage.decision.status=GO`.
 
-## 10. Run One LoopRun
+## 11. Run One LoopRun
 
 Use `loop run` for a narrower loop target. It is lower-level than the GlobalGoal flow and does not replace `target plan` phase confirmation for a release target. If no `<loop-id>` is supplied, `--project`, `--target`, and `--objective` are required.
 
@@ -471,7 +494,7 @@ evopilot loop run \
 
 All wrapper commands default to `--until terminal`. The `--until blocked-or-complete` value in this example is an explicit narrower policy for a single LoopRun: it stops when the LoopRun becomes `BLOCKED` instead of trying to resume it.
 
-## 11. Source Closure
+## 12. Source Closure
 
 Always preflight before source writeback:
 
@@ -499,7 +522,7 @@ evopilot source-closure auto-merge <loop-id> --json
 
 Only run merge actions when server-side review and release policy are satisfied.
 
-## 12. Release Decision
+## 13. Release Decision
 
 Read release decisions from EvoPilot. Do not infer GA from local tests or CI alone.
 
@@ -509,7 +532,7 @@ evopilot release decisions --project my-agent --target my-agent-ga --json
 evopilot target decision my-agent-ga --project my-agent --json
 ```
 
-## 13. Repair
+## 14. Repair
 
 Inspect release-run repair candidates:
 

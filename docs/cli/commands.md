@@ -27,6 +27,8 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --from-template <id>        Optional admin override for ProjectHarnessProfile generation, or required template id for profile upgrade
 --from-template-version <v> Optional template version override for ProjectHarnessProfile generation or upgrade
 --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
+--path <path>               HarnessTemplate pack directory for pack validate/publish
+--root <path>               HarnessTemplate pack root directory for pack list
 --level <debug|info|warn|error> EvoPilot structured logging level
 --include-stack <true|false>    Include redacted stack traces in error logs
 --json                      Print JSON response data
@@ -44,6 +46,7 @@ Use `--json` for AI agents and CI. Human-readable output is for operators and ca
 | `project onboard verify ... --json` | `evopilot-project-onboarding-checklist/v1` | Persisted project readiness, same fields as `plan`, including project LLM readiness |
 | `project onboard ... --json` | `evopilot-cli-project-onboard/v1` | `projectId`, `sourceCredentials`, `devops`, `steps`, `result`, `llmUsage`; onboarding does not start Goal/Loop execution |
 | `logging inspect/set --json` | `evopilot-logging-settings/v1` or `evopilot-logging-settings-update-result/v1` | `level`, `format`, `includeStack`, `source`, `updatedBy`, `updatedAt` |
+| `harness template pack list/validate/publish ... --json` | `evopilot-harness-template-pack-*-v1` or `evopilot-harness-template-apply-result/v1` | `packs`, `localValidation`, `serverValidation`, `template`, `action`, `digest` |
 | `harness policy apply/activate ... --json` | `evopilot-tenant-harness-policy-*-result/v1` | `policy`, `summary`, `validation`, `compiledDigest`; active policies constrain matching project profiles |
 | `harness profile generate ... --json` | `evopilot-project-harness-profile-generate-result/v1` | `profile`, `summary`, `validation`, `generatedBy`, `instruction`; generated profiles are DRAFT until activated |
 | `harness profile validate/apply/activate ... --json` | `evopilot-project-harness-profile-*-result/v1` | `profile`, `summary`, `validation`, `diffFromActive`, `compiledDigest`, `templateRef`, `policyRefs` |
@@ -367,6 +370,9 @@ Agents should use `requestId`, `correlation.*`, `event`, `errorCode`, `diagnosis
 evopilot harness template list
 evopilot harness template inspect python-enterprise-harness
 evopilot harness template inspect java-ddd-service-harness
+evopilot harness template pack list harness-templates/public
+evopilot harness template pack validate harness-templates/public/python-enterprise-harness
+evopilot harness template pack publish harness-templates/public/python-enterprise-harness [--force]
 evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
 evopilot harness template update --file <template.yaml> --changelog <text> [--force]
 evopilot harness template upgrade --file <template.yaml> --changelog <text> [--force]
@@ -400,7 +406,28 @@ observability-apm-harness@1.1.0
 generic-management-software-harness@1.1.0
 ```
 
-Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. The `@1.1.0` baselines include structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. Inspect `sourceReferences[]` to see that initialization basis. Project onboarding automatically matches a published template from project runtime/repository context and the goal loop target. `--from-template` is an explicit administrator or advanced override, not the normal first-onboarding path. Administrators can publish additional template ids or newer versions for other language, architecture, or software-type harnesses through the independent template maintenance channel:
+Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. The `@1.1.0` baselines include structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. Inspect `sourceReferences[]` to see that initialization basis. Project onboarding automatically matches one published template from project runtime/repository context and the goal loop target. `--from-template` is an explicit administrator or advanced override, not the normal first-onboarding path.
+
+The recommended administrator editing model is the human-readable template pack directory under `harness-templates/public/<template-id>/`:
+
+```text
+README.md
+template.yaml
+CHANGELOG.md
+examples/default-project-profile.yaml
+```
+
+Administrators validate and publish packs with a deliberately small CLI surface:
+
+```bash
+evopilot harness template pack list harness-templates/public --json
+evopilot harness template pack validate harness-templates/public/python-enterprise-harness --json
+evopilot harness template pack publish harness-templates/public/python-enterprise-harness --json
+```
+
+`pack validate` performs local pack-shape checks and calls the server's non-persistent `POST /api/v1/harness/templates/validate`. `pack publish` repeats server validation before writing the version through the control plane. EvoPilot intentionally does not expose first-stage `compile`, `diff`, or `publish-all` pack commands; use Git for file diffs and add batch publishing later only if CI/admin usage needs it.
+
+Administrators can also publish direct YAML/JSON template files through the lower-level aliases:
 
 ```bash
 evopilot harness template upgrade \
@@ -409,7 +436,7 @@ evopilot harness template upgrade \
   --json
 ```
 
-`apply`, `update`, and `upgrade` are aliases for publishing a template version. The file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown is documentation only. The server computes `digest`, stores the version under the control plane, and requires a changelog entry for that version. Include `sourceReferences[]` when the template is derived from public projects, official docs, or internal engineering practice. Reusing an existing `id@version` is rejected unless `--force` is supplied; prefer publishing a new version for normal changes. Existing active `ProjectHarnessProfile` versions keep their old `templateRef` until an administrator generates or upgrades a new profile revision.
+`apply`, `update`, and `upgrade` are aliases for publishing a template version. The file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown documents the pack and examples. The server computes `digest`, stores the version under the control plane, and requires a changelog entry for that version. Include `sourceReferences[]` when the template is derived from public projects, official docs, or internal engineering practice. Reusing an existing `id@version` is rejected unless `--force` is supplied; prefer publishing a new version for normal changes. Existing active `ProjectHarnessProfile` versions keep their old `templateRef` until an administrator generates or upgrades a new profile revision.
 
 `TenantHarnessPolicy` is the tenant/workspace private control layer between public templates and project profiles. Administrators publish policy versions with `harness policy apply|update|upgrade`, then explicitly activate a reviewed version. A policy can require organization-specific capabilities, evidence fields, correlation IDs, structured log fields, exception attributes, diagnostics, observability, governance booleans, and phase mappings. It is stored under `<dataRoot>/tenant-harness-policies/<tenantId>/<workspaceId>/<policyId>/versions/v<version>.json` with source/compiled digests and changelog entries. Active policies are applied automatically during `harness profile generate`, `validate`, and `apply`; `harness profile activate` and `target plan`/`goal plan` block with `PROJECT_HARNESS_PROFILE_POLICY_STALE` if the profile does not bind the current active policy version and digest.
 

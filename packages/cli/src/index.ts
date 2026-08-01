@@ -201,8 +201,9 @@ async function main(argv: string[]): Promise<number> {
       case "harness:template":
         if (maybeId === "list" || maybeId === undefined) return await harnessTemplateList(ctx);
         if (maybeId === "inspect") return await harnessTemplateInspect(ctx, args.positionals[3]);
+        if (maybeId === "pack") return await harnessTemplatePack(ctx, args.positionals[3], args.positionals[4]);
         if (maybeId === "apply" || maybeId === "update" || maybeId === "upgrade") return await harnessTemplateApply(ctx, maybeId);
-        throw usage("Use: evopilot harness template <list|inspect|apply|update|upgrade> [template-id] [--version <version>]");
+        throw usage("Use: evopilot harness template <list|inspect|apply|update|upgrade|pack> [template-id] [--version <version>]");
       case "harness:policy":
         if (maybeId === "list" || maybeId === undefined) return await harnessPolicyList(ctx);
         if (maybeId === "inspect") return await harnessPolicyInspect(ctx, args.positionals[3]);
@@ -1381,6 +1382,78 @@ async function harnessTemplateApply(ctx: RuntimeContext, command = "apply"): Pro
   const payload = harnessTemplateFilePayload(ctx.args);
   const response = await ctx.client.post("/api/v1/harness/templates", payload, requestOptions(ctx));
   printHarnessTemplateApplyResult(ctx, `harness template ${command}`, response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessTemplatePack(ctx: RuntimeContext, command?: string, targetPath?: string): Promise<number> {
+  if (command === "list" || command === undefined) return harnessTemplatePackList(ctx, targetPath);
+  if (command === "validate") return harnessTemplatePackValidate(ctx, targetPath);
+  if (command === "publish") return harnessTemplatePackPublish(ctx, targetPath);
+  throw usage("Use: evopilot harness template pack <list|validate|publish> <path> [--changelog <text>] [--force]");
+}
+
+async function harnessTemplatePackList(ctx: RuntimeContext, rootPath?: string): Promise<number> {
+  const root = path.resolve(rootPath ?? stringOption(ctx.args, "root") ?? stringOption(ctx.args, "path") ?? "harness-templates/public");
+  const packs = listHarnessTemplatePacks(root);
+  const data = {
+    schema: "evopilot-harness-template-pack-list/v1",
+    root,
+    packs
+  };
+  printOutput(ctx, data, packs.length > 0
+    ? packs.map((pack) => `${pack.id ?? pack.name}@${pack.version ?? "unknown"} path=${pack.path}`).join("\n")
+    : "packs=0");
+  return 0;
+}
+
+async function harnessTemplatePackValidate(ctx: RuntimeContext, packPath?: string): Promise<number> {
+  const pack = readHarnessTemplatePack(packPath ?? stringOption(ctx.args, "path") ?? stringOption(ctx.args, "root"));
+  const localValidation = validateHarnessTemplatePackLocally(pack);
+  const response = localValidation.status === "FAILED"
+    ? undefined
+    : await ctx.client.post("/api/v1/harness/templates/validate", harnessTemplatePackPayload(ctx.args, pack), requestOptions(ctx));
+  const serverValidation = response ? response.data ?? response.body : undefined;
+  const serverStatus = response ? (response.ok ? "VALIDATED" : "FAILED") : "SKIPPED";
+  const data = {
+    schema: "evopilot-harness-template-pack-validation-result/v1",
+    status: localValidation.status === "VALIDATED" && serverStatus === "VALIDATED" ? "VALIDATED" : "FAILED",
+    pack: harnessTemplatePackSummary(pack),
+    localValidation,
+    serverValidation
+  };
+  printOutput(ctx, data, `pack=${pack.name} status=${data.status} local=${localValidation.status} server=${serverStatus}`);
+  return data.status === "VALIDATED" ? 0 : 2;
+}
+
+async function harnessTemplatePackPublish(ctx: RuntimeContext, packPath?: string): Promise<number> {
+  const pack = readHarnessTemplatePack(packPath ?? stringOption(ctx.args, "path") ?? stringOption(ctx.args, "root"));
+  const localValidation = validateHarnessTemplatePackLocally(pack);
+  if (localValidation.status === "FAILED") {
+    const data = {
+      schema: "evopilot-harness-template-pack-publish-result/v1",
+      status: "FAILED",
+      pack: harnessTemplatePackSummary(pack),
+      localValidation,
+      instruction: "Fix README.md, template.yaml, CHANGELOG.md, examples, and template content before publishing."
+    };
+    printOutput(ctx, data, `pack=${pack.name} status=FAILED local=${localValidation.status}`);
+    return 2;
+  }
+  const validateResponse = await ctx.client.post("/api/v1/harness/templates/validate", harnessTemplatePackPayload(ctx.args, pack), requestOptions(ctx));
+  if (!validateResponse.ok) {
+    const data = {
+      schema: "evopilot-harness-template-pack-publish-result/v1",
+      status: "FAILED",
+      pack: harnessTemplatePackSummary(pack),
+      localValidation,
+      serverValidation: validateResponse.data ?? validateResponse.body,
+      instruction: "Server-side HarnessTemplate validation failed; fix the template pack before publishing."
+    };
+    printOutput(ctx, data, `pack=${pack.name} status=FAILED server=http-${validateResponse.status}`);
+    return 2;
+  }
+  const response = await ctx.client.post("/api/v1/harness/templates", harnessTemplatePackPayload(ctx.args, pack), requestOptions(ctx));
+  printHarnessTemplateApplyResult(ctx, "harness template pack publish", response.data ?? response.body, response.status);
   return response.ok ? 0 : 2;
 }
 
@@ -3553,6 +3626,146 @@ function harnessTemplateFilePayload(args: ParsedArgs): Record<string, unknown> {
   };
 }
 
+interface HarnessTemplatePack {
+  name: string;
+  root: string;
+  readmePath?: string;
+  templatePath: string;
+  changelogPath?: string;
+  examplesDir?: string;
+  exampleFiles: string[];
+  templateContent: unknown;
+}
+
+interface HarnessTemplatePackCheck {
+  id: string;
+  status: "PASS" | "FAIL";
+  required: boolean;
+  evidence: string[];
+}
+
+function listHarnessTemplatePacks(root: string): Array<Record<string, unknown>> {
+  if (!fs.existsSync(root)) throw usage(`HarnessTemplate pack root does not exist: ${root}`);
+  if (!fs.statSync(root).isDirectory()) throw usage(`HarnessTemplate pack root must be a directory: ${root}`);
+  return fs.readdirSync(root)
+    .sort()
+    .map((entry) => path.join(root, entry))
+    .filter((entryPath) => fs.statSync(entryPath).isDirectory())
+    .map((entryPath) => {
+      const templatePath = findHarnessTemplatePackTemplateFile(entryPath);
+      const templateContent = templatePath ? readStructuredFile(templatePath) : undefined;
+      return {
+        name: path.basename(entryPath),
+        path: entryPath,
+        id: isRecord(templateContent) ? templateContent.id : undefined,
+        version: isRecord(templateContent) ? templateContent.version : undefined,
+        languageFamily: isRecord(templateContent) ? templateContent.languageFamily : undefined,
+        hasReadme: fs.existsSync(path.join(entryPath, "README.md")),
+        hasTemplate: Boolean(templatePath),
+        hasChangelog: fs.existsSync(path.join(entryPath, "CHANGELOG.md")),
+        examples: listHarnessTemplatePackExamples(path.join(entryPath, "examples")).length
+      };
+    });
+}
+
+function readHarnessTemplatePack(inputPath: string | undefined): HarnessTemplatePack {
+  if (!inputPath) throw usage("harness template pack requires <path> or --path <path>.");
+  const root = path.resolve(inputPath);
+  if (!fs.existsSync(root)) throw usage(`HarnessTemplate pack path does not exist: ${root}`);
+  if (!fs.statSync(root).isDirectory()) throw usage(`HarnessTemplate pack path must be a directory: ${root}`);
+  const templatePath = findHarnessTemplatePackTemplateFile(root);
+  if (!templatePath) throw usage(`HarnessTemplate pack requires template.yaml, template.yml, or template.json: ${root}`);
+  const readmePath = path.join(root, "README.md");
+  const changelogPath = path.join(root, "CHANGELOG.md");
+  const examplesDir = path.join(root, "examples");
+  return {
+    name: path.basename(root),
+    root,
+    readmePath: fs.existsSync(readmePath) ? readmePath : undefined,
+    templatePath,
+    changelogPath: fs.existsSync(changelogPath) ? changelogPath : undefined,
+    examplesDir: fs.existsSync(examplesDir) ? examplesDir : undefined,
+    exampleFiles: listHarnessTemplatePackExamples(examplesDir),
+    templateContent: readStructuredFile(templatePath)
+  };
+}
+
+function findHarnessTemplatePackTemplateFile(root: string): string | undefined {
+  return ["template.yaml", "template.yml", "template.json"]
+    .map((file) => path.join(root, file))
+    .find((file) => fs.existsSync(file));
+}
+
+function listHarnessTemplatePackExamples(examplesDir: string): string[] {
+  if (!fs.existsSync(examplesDir) || !fs.statSync(examplesDir).isDirectory()) return [];
+  return fs.readdirSync(examplesDir)
+    .sort()
+    .filter((file) => [".yaml", ".yml", ".json"].includes(path.extname(file).toLowerCase()))
+    .map((file) => path.join(examplesDir, file));
+}
+
+function harnessTemplatePackPayload(args: ParsedArgs, pack: HarnessTemplatePack): Record<string, unknown> {
+  return {
+    templateContent: pack.templateContent,
+    changelog: repeatedOption(args, "changelog"),
+    force: hasFlag(args, "force"),
+    packMetadata: {
+      schema: "evopilot-harness-template-pack/v1",
+      name: pack.name,
+      path: pack.root,
+      readmePath: pack.readmePath,
+      templatePath: pack.templatePath,
+      changelogPath: pack.changelogPath,
+      exampleFiles: pack.exampleFiles
+    }
+  };
+}
+
+function harnessTemplatePackSummary(pack: HarnessTemplatePack): Record<string, unknown> {
+  return {
+    name: pack.name,
+    path: pack.root,
+    id: isRecord(pack.templateContent) ? pack.templateContent.id : undefined,
+    version: isRecord(pack.templateContent) ? pack.templateContent.version : undefined,
+    languageFamily: isRecord(pack.templateContent) ? pack.templateContent.languageFamily : undefined,
+    readmePath: pack.readmePath,
+    templatePath: pack.templatePath,
+    changelogPath: pack.changelogPath,
+    exampleFiles: pack.exampleFiles
+  };
+}
+
+function validateHarnessTemplatePackLocally(pack: HarnessTemplatePack): Record<string, unknown> {
+  const template = isRecord(pack.templateContent) ? pack.templateContent : {};
+  const checks: HarnessTemplatePackCheck[] = [];
+  const add = (id: string, status: "PASS" | "FAIL", evidence: string[]) => checks.push({ id, status, required: true, evidence });
+  add("readme", pack.readmePath && nonEmptyFile(pack.readmePath) ? "PASS" : "FAIL", [`path=${pack.readmePath ?? "missing"}`]);
+  add("template-file", fs.existsSync(pack.templatePath) ? "PASS" : "FAIL", [`path=${pack.templatePath}`]);
+  add("changelog", pack.changelogPath && nonEmptyFile(pack.changelogPath) ? "PASS" : "FAIL", [`path=${pack.changelogPath ?? "missing"}`]);
+  add("examples", pack.exampleFiles.length > 0 ? "PASS" : "FAIL", [`examples=${pack.exampleFiles.length}`]);
+  add("schema", template.schema === "evopilot-harness-template/v1" ? "PASS" : "FAIL", [`schema=${String(template.schema ?? "missing")}`]);
+  add("id-version", typeof template.id === "string" && typeof template.version === "string" ? "PASS" : "FAIL", [`id=${String(template.id ?? "missing")}`, `version=${String(template.version ?? "missing")}`]);
+  add("capabilities", Array.isArray(template.capabilities) && template.capabilities.length >= 4 ? "PASS" : "FAIL", [`capabilities=${Array.isArray(template.capabilities) ? template.capabilities.length : 0}`]);
+  const requiredSections = ["runtimePatterns", "validationBaseline", "evidenceContract", "failureTaxonomy", "diagnosticsBaseline", "observabilityBaseline", "governanceRules", "phaseMapping", "llmDraftPolicy"];
+  const missingSections = requiredSections.filter((section) => !isRecord(template[section]));
+  add("enterprise-sections", missingSections.length === 0 ? "PASS" : "FAIL", [`missing=${missingSections.join(",") || "none"}`]);
+  add("source-references", Array.isArray(template.sourceReferences) && template.sourceReferences.length > 0 ? "PASS" : "FAIL", [`sourceReferences=${Array.isArray(template.sourceReferences) ? template.sourceReferences.length : 0}`]);
+  const changelog = template.changelog;
+  const hasChangelog = Array.isArray(changelog) && changelog.some((entry) => isRecord(entry) && String(entry.version ?? "") === String(template.version ?? ""));
+  add("template-changelog", hasChangelog ? "PASS" : "FAIL", [`version=${String(template.version ?? "missing")}`]);
+  const blockers = checks.filter((check) => check.status === "FAIL").map((check) => check.id);
+  return {
+    schema: "evopilot-harness-template-pack-local-validation/v1",
+    status: blockers.length === 0 ? "VALIDATED" : "FAILED",
+    checks,
+    blockers
+  };
+}
+
+function nonEmptyFile(file: string): boolean {
+  return fs.existsSync(file) && fs.statSync(file).isFile() && fs.readFileSync(file, "utf8").trim().length > 0;
+}
+
 function harnessPolicyFilePayload(args: ParsedArgs): Record<string, unknown> {
   const file = requiredOption(args, "file");
   return {
@@ -3933,6 +4146,9 @@ Usage:
   evopilot logging set --level <debug|info|warn|error> [--include-stack <true|false>]
   evopilot harness template list
   evopilot harness template inspect <template-id> [--version <version>]
+  evopilot harness template pack list <root>
+  evopilot harness template pack validate <path>
+  evopilot harness template pack publish <path> [--changelog <text>] [--force]
   evopilot harness template apply --file <template.yaml> --changelog <text> [--force]
   evopilot harness template update --file <template.yaml> --changelog <text> [--force]
   evopilot harness template upgrade --file <template.yaml> --changelog <text> [--force]
@@ -4031,6 +4247,8 @@ Global options:
   --from-template <id>        Optional admin override for ProjectHarnessProfile generation, or required template id for profile upgrade
   --from-template-version <v> Optional template version override for profile generation or upgrade
   --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
+  --path <path>               HarnessTemplate pack directory for pack validate/publish
+  --root <path>               HarnessTemplate pack root directory for pack list
   --changelog <text>          HarnessTemplate or TenantHarnessPolicy changelog entry; repeat for multiple changes
   --force                     Replace an existing HarnessTemplate id/version intentionally
   --level <level>             EvoPilot logging level: debug, info, warn, or error

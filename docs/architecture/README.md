@@ -21,7 +21,7 @@ EvoPilot owns the domain model and execution state. The Dashboard is a replaceab
 | Context | Responsibility |
 |---|---|
 | Project | Registered products, source credentials, workspace ownership |
-| Project Harness | HarnessTemplate baselines, TenantHarnessPolicy private constraints, ProjectHarnessProfile versions, validation, evidence contracts, diagnostics, observability, and governance |
+| Project Harness | Public HarnessTemplate knowledge packs, TenantHarnessPolicy private constraints, ProjectHarnessProfile versions, validation, evidence contracts, diagnostics, observability, and governance |
 | Evidence | Runtime signals, trace/log/eval ingestion, evidence bundles |
 | GlobalGoal | Goal decomposition into GoalTargets, progress, graph, timeline, final report |
 | Loop Runtime | LoopRun execution, worker leases, sandbox proof, trace, events, replay |

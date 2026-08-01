@@ -165,6 +165,40 @@ test("EvoPilot CLI manages server logging settings", async () => {
   }
 });
 
+test("HarnessTemplate pack CLI lists, validates, and publishes human-readable template packs", async () => {
+  assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-template-pack-"));
+  const server = createServer({ dataRoot, runtimeMode: "debug" });
+  await listen(server);
+  const baseUrl = serverUrl(server);
+  const packRoot = path.resolve("harness-templates/public");
+  const packPath = path.join(packRoot, "python-enterprise-harness");
+
+  try {
+    const listed = await runCliJson(["harness", "template", "pack", "list", packRoot, "--json"]);
+    assert.equal(listed.schema, "evopilot-harness-template-pack-list/v1");
+    assert.ok(listed.packs.some((pack) => pack.id === "python-enterprise-harness" && pack.hasReadme && pack.hasTemplate && pack.hasChangelog && pack.examples > 0));
+
+    const validated = await runCliJson(["--server", baseUrl, "harness", "template", "pack", "validate", packPath, "--json"]);
+    assert.equal(validated.status, "VALIDATED");
+    assert.equal(validated.localValidation.status, "VALIDATED");
+    assert.equal(validated.serverValidation.status, "VALIDATED");
+    assert.equal(validated.serverValidation.template.id, "python-enterprise-harness");
+
+    const published = await runCliJson([
+      "--server", baseUrl,
+      "harness", "template", "pack", "publish", packPath,
+      "--force",
+      "--json"
+    ]);
+    assert.equal(published.action, "REPLACED_VERSION");
+    assert.equal(published.template.id, "python-enterprise-harness");
+    assert.equal(published.template.version, "1.1.0");
+  } finally {
+    await close(server);
+  }
+});
+
 test("TenantHarnessPolicy constrains project profiles and goal-plan harness bindings", async () => {
   assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-tenant-harness-policy-"));

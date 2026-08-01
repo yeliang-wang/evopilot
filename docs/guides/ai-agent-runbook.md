@@ -140,18 +140,33 @@ For GitHub/GitLab enterprise real loops, the selected profile must be explicit t
 
 Administrator template maintenance is separate from daily project execution. Agents should normally let EvoPilot automatically match an existing template during `harness profile generate`; `--from-template` is only an explicit administrator or advanced override. Fresh installs include multiple built-in template types: `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`. Current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules.
 
-Administrators can list, inspect, and publish template versions:
+Administrators can list and inspect published template versions:
 
 ```bash
 evopilot harness template list --json
 evopilot harness template inspect python-enterprise-harness --json
+```
+
+For human-readable public template maintenance, edit the directory pack under `harness-templates/public/<template-id>/`, then validate and publish it:
+
+```bash
+evopilot harness template pack list harness-templates/public --json
+evopilot harness template pack validate harness-templates/public/python-enterprise-harness --json
+evopilot harness template pack publish harness-templates/public/python-enterprise-harness --json
+```
+
+The first-stage pack CLI is intentionally limited to `list`, `validate`, and `publish`. Use Git for pack diffs and review; do not assume `compile`, `diff`, or `publish-all` pack commands exist.
+
+Administrators can also publish a direct YAML/JSON template file:
+
+```bash
 evopilot harness template upgrade \
   --file ./python-enterprise-harness-1.2.0.yaml \
   --changelog "Add organization-specific FastAPI service defaults and pytest coverage gates." \
   --json
 ```
 
-Template files use `schema: evopilot-harness-template/v1` and include `id`, `version`, capabilities, runtime patterns, validation baseline, evidence contract, failure taxonomy, diagnostics, observability, governance, phase mapping, LLM draft policy, source references, and changelog. YAML or JSON is authoritative; Markdown is documentation only. EvoPilot computes the digest and stores the version in the control plane. Reusing an existing `id@version` returns `HARNESS_TEMPLATE_VERSION_EXISTS` unless the admin passes `--force`. Template updates never rewrite an active `ProjectHarnessProfile`; they become effective for a project only after a generated or upgraded profile revision is reviewed and activated.
+Template files use `schema: evopilot-harness-template/v1` and include `id`, `version`, capabilities, runtime patterns, validation baseline, evidence contract, failure taxonomy, diagnostics, observability, governance, phase mapping, LLM draft policy, source references, and changelog. YAML or JSON is authoritative; Markdown documents the pack for humans and AI agents. EvoPilot computes the digest and stores the version in the control plane. Reusing an existing `id@version` returns `HARNESS_TEMPLATE_VERSION_EXISTS` unless the admin passes `--force`. Template updates never rewrite an active `ProjectHarnessProfile`; they become effective for a project only after a generated or upgraded profile revision is reviewed and activated.
 
 Tenant/workspace policy maintenance is a separate administrator channel. Daily project agents do not choose a private policy manually; they inspect the active policy list for awareness, then let EvoPilot inherit every matching active policy during `harness profile generate`, `validate`, and `apply`.
 

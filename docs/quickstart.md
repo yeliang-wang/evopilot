@@ -39,6 +39,26 @@ npm run cli -- status \
   --json
 ```
 
+For a new project, generate and confirm the project harness profile before phase planning. EvoPilot automatically matches a published template from project context and the goal loop target; normal operators do not choose a template manually.
+
+```bash
+npm run cli -- harness profile generate \
+  --server http://127.0.0.1:19876 \
+  --token change-me-admin-token \
+  --project my-agent \
+  --goal-loop-target "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
+  --llm-profile my-agent-llm \
+  --json
+
+# STOP: show the ProjectHarnessProfile DRAFT to the user or project owner; continue only after explicit confirmation.
+npm run cli -- harness profile activate default \
+  --server http://127.0.0.1:19876 \
+  --token change-me-admin-token \
+  --project my-agent \
+  --version <harness-version> \
+  --json
+```
+
 Generate and approve the phase plan before running a project:
 
 ```bash

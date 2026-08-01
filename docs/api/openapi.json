@@ -946,6 +946,61 @@
         }
       }
     },
+    "/api/v1/harness/templates/validate": {
+      "post": {
+        "summary": "校验 HarnessTemplate",
+        "description": "管理员校验一个 HarnessTemplate 或本地 template pack 的 template.yaml，不写入控制面。CLI 的 harness template pack validate/publish 会调用该接口；服务端检查 id/version/changelog、核心企业级能力域、phase mapping、diagnostics、observability、governance 和 sourceReferences 警告。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "templateContent"
+                ],
+                "properties": {
+                  "templateContent": {
+                    "type": "object",
+                    "description": "evopilot-harness-template/v1 模板对象，必须包含 id、version 和当前版本 changelog。"
+                  },
+                  "changelog": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "可选当前版本变更说明；pack publish 通常从 template.yaml 内部 changelog 获取。"
+                  },
+                  "packMetadata": {
+                    "type": "object",
+                    "description": "CLI 传入的本地 pack 元数据，仅用于诊断和审计上下文。"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "HarnessTemplate 校验通过"
+          },
+          "400": {
+            "description": "缺少 id、version 或 changelog"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "422": {
+            "description": "HarnessTemplate 企业级能力域校验失败"
+          }
+        }
+      }
+    },
     "/api/v1/harness/templates/{templateId}": {
       "get": {
         "summary": "获取 HarnessTemplate",
