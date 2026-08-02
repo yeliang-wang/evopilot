@@ -1,62 +1,29 @@
 # EvoPilot
 
-> Evidence-driven self-evolution control plane for AI-agent products, with Loop Engineering, human approval, SaaS multi-tenancy, CI/CD delivery, and auditable release decisions.
+> Evidence-driven self-evolution control plane for AI-agent products, with governed goals, auditable loops, human approval, release decisions, and immutable deployment artifacts.
 
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
-[![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#runtime)
-[![Dashboard](https://img.shields.io/badge/dashboard-SaaS%20console-1f7a8c)](#dashboard)
-[![Release](https://img.shields.io/badge/GA%20Release-V1.0-2ea043)](#release-status)
+[![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-release)
+[![Release](https://img.shields.io/badge/GA%20Release-v1.0.5-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-[Quickstart](#quick-start) | [Self-Hosting](docs/operations/self-hosting.md) | [CLI for AI Agents](#cli-for-ai-agents) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Contributing](CONTRIBUTING.md) | [Security](SECURITY.md)
+[Quick Start](#quick-start) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
 
-EvoPilot helps teams operate AI-agent products as releasable software. It collects real evidence from runtime events, traces, evaluations, CI/CD, source changes, LLM calls, and user feedback; turns that evidence into reviewable evolution opportunities; waits for human approval; then drives code upgrades, delivery, and product-native `GO` / `NO-GO` release decisions.
+EvoPilot helps teams operate AI-agent products as releasable software. It collects evidence from runtime events, traces, evaluations, CI/CD, source changes, LLM calls, and user feedback; turns that evidence into reviewable evolution opportunities; then governs goal planning, loop execution, source closure, delivery, and product-native `GO` / `NO-GO` release decisions.
 
-It is not an agent runtime, a prompt playground, or a generic code generator. Agent runtimes do the work; EvoPilot governs whether the product is ready to evolve and release.
+It is not an agent runtime, prompt playground, or generic code generator. Agent runtimes do the work; EvoPilot governs whether a product should evolve and release.
 
-## Release Status
+## What You Can Do
 
-EvoPilot is **v1.0.5 GA** for the open-source product baseline: API/CLI control plane, harness governance, goal loops, release decisions, self-hosting, documentation, AI Agent operation, and immutable release artifacts are ready for external adoption. `v1.0.5` is an immutable ECS deployment patch over the original `v1.0.0` GA baseline.
-
-Current phase: **Production Adoption and Public Trust Building**. Community scale, public case studies, and ecosystem reputation will grow through real deployments and sustained releases.
-
-As of the **2026-07-07 production validation**, the EvoPilot SaaS multi-tenant deployment has reached **GA stable Release** status:
-
-| Signal | Result |
-|---|---:|
-| Production user E2E checks | 92 |
-| PASS | 88 |
-| FAIL | 0 |
-| Low-severity WARN | 4 |
-| Production health | `UP` |
-| Readiness | `READY` |
-| Postgres business store | `READY` |
-| Real LLM path | GLM-5.1 credits and tokens recorded |
-
-The authoritative release verdict is exposed by:
-
-```http
-GET /api/v1/release/decisions
-```
-
-Detailed release evidence and deployment checklists live in [docs/reference/release-package.md](docs/reference/release-package.md), [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md), and the public [release notes](docs/releases/1.0.5.md).
-
-## Core Capabilities
-
-| Capability | What EvoPilot provides |
-|---|---|
-| Loop Engineering | Durable loop state, executor graphs, checkpoints, replay, watchdog recovery, worker leases, sandbox proof, and timeline audit. |
-| GlobalGoal planning | A white-box goal layer above LoopRun that takes a business objective, decomposes it through Alpha -> Beta -> RC -> GA GoalTargets, waits for plan approval, binds each target to governed loops, and exposes progress, blockers, timeline, graph, evidence matrix, phase packages, and final report. |
-| Project harness profiles | Versioned `HarnessTemplate` baselines, tenant/workspace `TenantHarnessPolicy` private constraints, and project-scoped `ProjectHarnessProfile` versions that define capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, governance, inheritance, and active digests for goal planning. |
-| Evidence ingestion | Runtime events, traces, logs, evaluations, release signals, APM-derived data, and user feedback. |
-| Human approval | Reviewable proposals before high-risk evolution, source writeback, merge, or release actions. |
-| Code upgrades | Bounded code-upgrader execution with allowed paths, validation commands, branch/commit evidence, and source closure. |
-| CI/CD delivery | GitHub Actions and GitLab CI native project DevOps, deploy connectors, health gates, and pipeline evidence. |
-| LLM profiles | Tenant/workspace-scoped LLM profiles for public or private OpenAI-compatible models, project defaults, per-run overrides, readiness preflight, provider/model visibility, and token/credit accounting. |
-| Release governance | Per-project release targets, evidence bundles, scenario matrices, risk registers, and `GO` / `CONDITIONAL-GO` / `NO-GO` decisions. |
-| SaaS multi-tenancy | Platform admin, tenant admin, tenant user flows, workspace RBAC, tenant-aware evidence, quota foundations, and scoped secrets. |
-| Dashboard | Chinese SaaS console for onboarding, projects, loops, approvals, release decisions, observability, tenants, users, and help manual workflows. |
+| Area | What EvoPilot provides |
+| --- | --- |
+| Govern product evolution | Alpha -> Beta -> RC -> GA goal planning, human review, phase packages, blockers, and final reports. |
+| Run auditable loops | Durable loop state, executor graphs, checkpoints, replay, worker leases, watchdog recovery, and timeline audit. |
+| Bind project harnesses | `HarnessTemplate`, `TenantHarnessPolicy`, and `ProjectHarnessProfile` versions for project-specific runtime, validation, evidence, and governance rules. |
+| Control source and delivery | Bounded code-upgrader execution, allowed paths, validation commands, source closure, CI/CD delivery, and deploy evidence. |
+| Operate with API, CLI, and Dashboard | API server, agent-safe CLI JSON flows, and the standalone `yeliang-wang/evopilot-dashboard` browser console. |
+| Publish release evidence | GitHub Release assets, source archive, SPDX SBOM, provenance, SHA256 checksums, GHCR image digest metadata, and ECS immutable compose templates. |
 
 ## Quick Start
 
@@ -65,7 +32,7 @@ Prerequisites:
 - Node.js 22+
 - npm
 
-Run locally:
+Run the API locally:
 
 ```bash
 npm install
@@ -73,11 +40,11 @@ npm run build
 npm run server:debug
 ```
 
-Verify the API:
+Verify the server:
 
-```text
-http://127.0.0.1:19876/health
-http://127.0.0.1:19876/ready
+```bash
+curl http://127.0.0.1:19876/health
+curl http://127.0.0.1:19876/ready
 ```
 
 Run the standalone Dashboard from the sibling repository:
@@ -87,117 +54,66 @@ cd ../evopilot-dashboard
 EVOPILOT_API_BASE_URL=http://127.0.0.1:19876 npm run dev
 ```
 
-Debug mode is for local development and UI validation. Production mode is the default for real operation and requires authentication, real runtime boundaries, and configured LLM/source/CI/CD credentials.
+Debug mode is for local development and UI validation. Production mode is the default for real operation and requires authentication plus configured LLM, source, and CI/CD credentials.
 
 ## CLI For AI Agents
 
-The EvoPilot CLI is an HTTP client for remote EvoPilot API servers. WorkBuddy, Codex, Claude Code, CI jobs, and local terminals can install the CLI, point it at a production EvoPilot server, and drive governed Goal/Loop Target workflows without running EvoPilot on the same machine.
+The CLI is an HTTP client for remote EvoPilot API servers. WorkBuddy, Codex, Claude Code, CI jobs, and local terminals should use JSON output and stop on `nextAction`, blockers, approval gates, or `NO-GO` decisions.
 
 ```bash
 export EVOPILOT_SERVER="https://evopilot.example.com"
 export EVOPILOT_API_TOKEN="<operator-or-admin-token>"
 export EVOPILOT_TENANT="tenant-production"
 export EVOPILOT_WORKSPACE="workspace-agent-products"
-export EVOPILOT_ACTOR="workbuddy"
-export EVOPILOT_CLI_CLIENT="workbuddy"
 
 evopilot status --json
-evopilot secret set --id LLM_API_KEY_MY_AGENT --kind llm-key --from-env LLM_API_KEY_MY_AGENT --json
-evopilot llm profile set my-agent-llm --provider openai-compatible --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_MY_AGENT --json
-evopilot project llm set <project-id> --profile my-agent-llm --require-llm-ready --json
-evopilot harness template list --json
-evopilot harness policy list --json
-evopilot harness profile generate \
-  --project <project-id> \
-  --goal-loop-target "Define the project harness for this project" \
-  --llm-profile my-agent-llm \
-  --json
-evopilot harness profile activate default --project <project-id> --version 1 --json
-evopilot target plan \
-  --project <project-id> \
-  --objective "Enable tenant-level onboarding, full lifecycle Dashboard visibility, and operator repair guidance for the project" \
-  --llm-profile my-agent-llm \
-  --client workbuddy \
-  --json
-
-evopilot target plan export <goal-id> --format json > /tmp/evopilot-phase-plan.json
-evopilot target plan diff <goal-id> --file /tmp/evopilot-phase-plan.json --json
-evopilot target plan apply <goal-id> --file /tmp/evopilot-phase-plan.json --json
-# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
-evopilot target plan approve <goal-id> \
-  --confirmed-by "project-owner" \
-  --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
-  --json
-
-evopilot target run \
-  --project <project-id> \
-  --objective "Enable tenant-level onboarding, full lifecycle Dashboard visibility, and operator repair guidance for the project" \
-  --max-steps 20 \
-  --llm-profile my-agent-llm \
-  --client workbuddy \
-  --json
+evopilot target plan --project <project-id> --objective "<business objective>" --json
+evopilot target run --project <project-id> --objective "<business objective>" --json
 ```
 
-`status --json` always returns machine-readable diagnostics. If the configured API Server is unreachable, it prints `schema=evopilot-cli-status/v1`, `status=UNREACHABLE`, `diagnosis.recommendedAction`, `config`, and `missingConfig`, then exits `2`.
+Start with [AGENTS.md](AGENTS.md), then use [docs/cli/AGENTS.md](docs/cli/AGENTS.md), [CLI Quickstart](docs/cli/quickstart.md), [CLI Automation](docs/cli/automation.md), and the [AI Agent Runbook](docs/guides/ai-agent-runbook.md).
 
-Fresh installs include multiple built-in template harnesses: `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. On project onboarding, EvoPilot automatically matches one published template from project runtime/repository context and the goal loop target; `--from-template` is only an explicit administrator or advanced override. The built-ins are available as human-readable knowledge packs under [harness-templates/public](harness-templates/public): each pack has `README.md`, `template.yaml`, `CHANGELOG.md`, and `examples/`. Current built-ins ship as `@1.1.0` enterprise harness baselines with structured logging, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. Administrators maintain packs with the intentionally small CLI surface:
+## Self-Hosting And Release
+
+For production, use the self-hosting and release-management docs rather than ad hoc local builds:
+
+- [Self-Hosting](docs/operations/self-hosting.md)
+- [Deployment](docs/operations/deployment.md)
+- [Release Management](docs/operations/release-management.md)
+- [Troubleshooting](docs/operations/troubleshooting.md)
+
+Immutable ECS deployment uses the image reference recorded in the GitHub Release image metadata:
 
 ```bash
-evopilot harness template pack list harness-templates/public --json
-evopilot harness template pack validate harness-templates/public/python-enterprise-harness --json
-evopilot harness template pack publish harness-templates/public/python-enterprise-harness --json
+export EVOPILOT_IMAGE='ghcr.io/yeliang-wang/evopilot@sha256:<digest>'
+docker compose -p evopilot --env-file .env.production -f deploy/ecs/compose.immutable.yaml up -d --no-build
 ```
 
-`apply`, `update`, and `upgrade` remain available for direct YAML/JSON template publishing, but the recommended human-editable model is the template pack directory.
+Do not treat a source checkout plus production build as immutable artifact deployment. That remains a valid source-ref rollout path, but it is weaker release evidence.
 
-For controlled template evolution, administrators can start a server-governed lifecycle from reviewable knowledge sources:
+## Release Status
 
-```bash
-evopilot harness template evolution create \
-  --base-template python-enterprise-harness \
-  --target-version 1.1.1 \
-  --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
-  --source github=fastapi/fastapi#master \
-  --source url=https://opentelemetry.io/docs/languages/python/ \
-  --file ./workspace-observability-notes.md \
-  --note "Require requestId, traceId, errorCode, and nextAction in error logs." \
-  --json
-evopilot harness template evolution advance <evolution-id> --json
-evopilot harness template evolution advance <evolution-id> --json
-evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
-evopilot harness template evolution approve <evolution-id> \
-  --confirmed-by platform-admin \
-  --confirmation "Reviewed draft template, validation, sources, and project impact." \
-  --json
-evopilot harness template evolution publish <evolution-id> --json
-evopilot harness template evolution impact <evolution-id> --refresh --json
+EvoPilot is **v1.0.5 GA** for the open-source product baseline. `v1.0.5` is an immutable ECS deployment patch over the original `v1.0.0` GA baseline.
+
+Current phase: **Production Adoption and Public Trust Building**. Community scale, public case studies, and ecosystem reputation should grow through real deployments and sustained releases.
+
+Release evidence:
+
+- Latest release notes: [docs/releases/1.0.5.md](docs/releases/1.0.5.md)
+- Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
+- Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
+- Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
+- Open-source maturity report: [docs/reference/open-source-maturity-report.md](docs/reference/open-source-maturity-report.md)
+
+The authoritative product verdict is exposed by:
+
+```http
+GET /api/v1/release/decisions
 ```
-
-The lifecycle is `CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED`. Drafts are review-only; publishing requires explicit administrator confirmation, server-side validation, audit logging, and an impact report. Existing active project profiles are never silently rewritten when a template changes; affected projects must receive reviewed `ProjectHarnessProfile` revisions before new goal planning binds the new template digest.
-
-Tenants can also activate private `TenantHarnessPolicy` versions through `evopilot harness policy apply|update|upgrade|activate`. A policy is scoped to the current tenant/workspace and can require organization-specific capabilities, evidence fields, correlation IDs, structured log fields, exception attributes, diagnostics, observability, governance booleans, and phase mappings for all matching project profiles. Once active, generated or imported `ProjectHarnessProfile` versions compile as `HarnessTemplate + TenantHarnessPolicy + project profile`; activation and goal planning are blocked if the active project profile does not bind the current policy version and digest.
-
-The raw LLM API key is stored once in the EvoPilot server-side secret vault. Daily `target run`, `goal run`, and `loop run` commands pass only the LLM profile id. For GitHub/GitLab enterprise real loops, the project must have an explicit READY project LLM profile or the run must pass `--llm-profile`; the server global default LLM is not sufficient for user/project attribution. Before Goal/Loop execution, wrapper commands preflight source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness by default.
-
-`--objective` is the user's business objective, not a maturity label. The terminal maturity is GA by default, and EvoPilot decomposes every governed goal through Alpha, Beta, RC, and GA. Wrapper commands stop at `PENDING_PLAN_APPROVAL` until WorkBuddy, a human operator, or a project owner reviews, edits if needed, and explicitly approves the generated phase plan. Phase-plan confirmation is mandatory; approval commands require `--confirmed-by` and `--confirmation`, and automation may continue execution only after those values come from a real confirmation.
-
-Wrapper JSON output includes `llmUsage.summary.provider`, `llmUsage.summary.model`, input/output/total token counts, credits consumed, process `requestId` values, and server-side Loop executor usage. AI agents should start with [AGENTS.md](AGENTS.md) and [docs/cli/AGENTS.md](docs/cli/AGENTS.md), then use [docs/cli/quickstart.md](docs/cli/quickstart.md) for the shortest safe WorkBuddy flow. Use [docs/cli/automation.md](docs/cli/automation.md) for parsing rules and [docs/guides/ai-agent-runbook.md](docs/guides/ai-agent-runbook.md) for the full production runbook.
-
-## Dashboard
-
-The dashboard is the primary product surface for operators and tenant users, but it now lives in the standalone `yeliang-wang/evopilot-dashboard` repository. EvoPilot itself focuses on the API server, CLI, domain state, release governance, and execution control plane. The standalone Dashboard consumes EvoPilot APIs and includes the GlobalGoal Cockpit for RC/GA workflow visibility.
-
-| Role | Main workflows |
-|---|---|
-| Platform admin | Create tenants, manage tenant admins, inspect SaaS readiness, observe cross-tenant release health. |
-| Tenant admin | Manage workspace users, bind projects, configure credentials, run target loops, approve source/release actions. |
-| Tenant user | Inspect projects, evidence, loop progress, approvals assigned to them, release decisions, and help manual steps. |
-
-The full browser operation guide lives in the standalone Dashboard repository under `docs/`. EvoPilot keeps the API/CLI/control-plane guide in [docs/guides/user-guide.md](docs/guides/user-guide.md).
 
 ## Architecture
 
-EvoPilot applies Loop Engineering to product evolution. For larger business objectives, the GlobalGoal layer sits above LoopRun and turns one global objective into Alpha -> Beta -> RC -> GA phase GoalTargets before each target is executed through the governed loop runtime:
+EvoPilot applies Loop Engineering to product evolution. For larger objectives, GlobalGoal decomposes one business goal into Alpha -> Beta -> RC -> GA phase targets before each target enters the governed loop runtime.
 
 ```text
 HarnessTemplate + TenantHarnessPolicy + ProjectHarnessProfile
@@ -209,106 +125,60 @@ HarnessTemplate + TenantHarnessPolicy + ProjectHarnessProfile
                                        Sandbox -> Context -> Harness -> Loop
 ```
 
-| Layer | EvoPilot responsibility |
-|---|---|
-| Sandbox | Isolated execution boundaries, credential scope, protected paths, and deploy constraints. |
-| Context | Durable loop state, evidence, artifacts, checkpoints, and replay context. |
-| Harness | API control plane, RBAC, audit, worker leases, approvals, retries, and watchdog recovery. |
-| Loop | Continue, stop, retry, approve, source-close, release, or route to humans. |
-
-Architecture details:
+Key architecture docs:
 
 - [Continuous Evolution Control Plane](docs/architecture/continuous-evolution-control-plane.md)
 - [Loop Runtime Architecture](docs/architecture/loop-runtime.md)
 - [ProofOps Target Loop Mode](docs/architecture/proofops-target-loop-mode.md)
-- [Mainstream Loop Harness Alignment](docs/examples/comparisons/mainstream-loop-harness-alignment.md)
+- [Dashboard Integration](docs/guides/dashboard-integration.md)
 
-## Runtime
+## API
+
+Primary API surfaces include health/readiness, auth and users, projects and evidence, DevOps preflight, harness profiles, LLM profiles, global goals, loops, source closure, release decisions, and SaaS administration.
+
+See [API Reference](docs/api/README.md) and [OpenAPI](docs/api/openapi.json).
+
+## Development
 
 Common commands:
 
 ```bash
 npm run build
 npm run check
-npm run test:e2e:production
-npm run release:soak:ga:active
+npm run cli:test
+npm run release:artifact
+npm run verify:release-artifact
+git diff --check
 ```
 
-Production package commands:
+Repository map:
 
-```bash
-npm run store:postgres:migrate
-npm run store:postgres:backup
-npm run store:postgres:restore
-```
-
-Docker:
-
-```bash
-docker build -t evopilot:1.0.5 .
-docker compose up --build
-```
-
-Deployment details are in [docs/operations/deployment.md](docs/operations/deployment.md). For a complete API, worker, code-upgrader, Postgres, and standalone Dashboard setup, use [Self-Hosting](docs/operations/self-hosting.md). Release tagging, GitHub Release artifacts, checksums, SBOM, provenance, and image digest deployment are documented in [Release Management](docs/operations/release-management.md).
-
-## API
-
-Primary API surfaces include:
-
-| Area | Examples |
-|---|---|
-| Health and readiness | `GET /health`, `GET /ready` |
-| Auth and users | `POST /api/v1/auth/login`, `GET /api/v1/users`, `POST /api/v1/users` |
-| Projects and evidence | `GET /api/v1/projects`, `POST /api/v1/evidence/events` |
-| Project DevOps | `POST /api/v1/projects/{projectId}/devops`, `POST /api/v1/projects/{projectId}/devops/preflight` |
-| Project harness profiles | `GET /api/v1/harness/templates`, `POST /api/v1/harness/templates`, `GET /api/v1/harness/policies`, `POST /api/v1/harness/policies`, `POST /api/v1/harness/policies/{policyId}/activate`, `POST /api/v1/projects/{projectId}/harness-profiles/generate`, `POST /api/v1/projects/{projectId}/harness-profiles`, `POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/activate` |
-| LLM profiles | `POST /api/v1/llm-profiles`, `POST /api/v1/llm-profiles/{profileId}/preflight`, `POST /api/v1/projects/{projectId}/llm` |
-| Global goals | `GET /api/v1/goals`, `POST /api/v1/goals`, `POST /api/v1/goals/{goalId}/plan`, `POST /api/v1/goals/{goalId}/plan/apply`, `POST /api/v1/goals/{goalId}/approve-plan`, `POST /api/v1/goals/{goalId}/advance`, `GET /api/v1/goals/{goalId}/phase-plan`, `GET /api/v1/goals/{goalId}/phases`, `GET /api/v1/goals/{goalId}/target-packages`, `GET /api/v1/goals/{goalId}/phase-packages`, `GET /api/v1/goals/{goalId}/snapshot` |
-| Loops | `POST /api/v1/loops`, `POST /api/v1/loops/{loopId}/start`, `GET /api/v1/loops/{loopId}/timeline` |
-| Source closure | `POST /api/v1/loops/{loopId}/source-closure/execute`, `POST /api/v1/loops/{loopId}/source-closure/review-decision` |
-| Release | `POST /api/v1/release/evidence`, `GET /api/v1/release/decisions` |
-| SaaS | `GET /api/v1/tenants`, `GET /api/v1/workspaces`, `GET /api/v1/saas/observability` |
-
-See [docs/api/README.md](docs/api/README.md) and [docs/api/openapi.json](docs/api/openapi.json) for the full API reference.
+| Path | Purpose |
+| --- | --- |
+| `packages/` | TypeScript product code: server, CLI, core, LLM, and adapters. |
+| `scripts/` | Runtime workers, verification, release, soak, E2E, and maintenance scripts. |
+| `harness-templates/` | Public HarnessTemplate knowledge packs and examples. |
+| `standards/` | Alpha/Beta/RC/GA maturity standards and release baselines. |
+| `runtimes/` | Runtime locks, SBOM, license, vulnerability, and code-upgrader assets. |
+| `deploy/` | Docker Compose, ECS, and Kubernetes deployment assets. |
+| `docs/` | User, API, deployment, architecture, testing, and release docs. |
+| `tests/` | Unit, smoke, functional, and E2E tests. |
 
 ## Documentation
 
-Start with the [documentation index](docs/README.md). The main entry points are:
-
 | Reader | Start here |
-|---|---|
+| --- | --- |
 | New user | [Quick Start](docs/quickstart.md) |
-| AI agent or CLI automation | [CLI](docs/cli/README.md), [CLI Automation](docs/cli/automation.md), and [AI Agent Runbook](docs/guides/ai-agent-runbook.md) |
+| AI agent or CLI automation | [CLI](docs/cli/README.md), [CLI Automation](docs/cli/automation.md), [AI Agent Runbook](docs/guides/ai-agent-runbook.md) |
 | Dashboard integrator | [Dashboard Integration](docs/guides/dashboard-integration.md) |
-| API integrator | [API Reference](docs/api/README.md) and [OpenAPI](docs/api/openapi.json) |
-| Production operator | [Operations](docs/operations/deployment.md) |
+| API integrator | [API Reference](docs/api/README.md), [OpenAPI](docs/api/openapi.json) |
+| Production operator | [Self-Hosting](docs/operations/self-hosting.md), [Deployment](docs/operations/deployment.md) |
+| Release maintainer | [Release Management](docs/operations/release-management.md), [Open Source Maturity Report](docs/reference/open-source-maturity-report.md) |
 | Architect | [Architecture](docs/architecture/README.md) |
-| Release maintainer | [Release Management](docs/operations/release-management.md) and [Open Source Maturity Report](docs/reference/open-source-maturity-report.md) |
 
-## Repository Layout
+## Governance
 
-```text
-packages/                               TypeScript product code: server, CLI, core, LLM, and adapters
-packages/server/src/domains/            DDD domain modules for control-plane lifecycle behavior
-harness-templates/                      public HarnessTemplate knowledge packs and examples
-standards/                              Alpha/Beta/RC/GA maturity standards and release baselines
-runtimes/                               managed runtime locks, SBOM, license, vulnerability, and code-upgrader assets
-scripts/                                production runtime, verification, release, soak, E2E, and maintenance scripts
-deploy/                                 Docker Compose and Kubernetes deployment assets
-docs/                                   user, API, deployment, architecture, testing, and release docs
-examples/                               onboarding, executor, workflow, and integration examples
-tests/                                  unit, smoke, functional, and E2E tests
-```
-
-EvoPilot uses a control-plane layout rather than an app-style `src/`, `public/`, or `electron/` tree. TypeScript is the core implementation language. The tracked `.mjs` files under [scripts](scripts/README.md) and `tests/` are engineering control assets for production workers, code upgrades, verification, release evidence, and real-boundary E2E. They are intentionally visible in GitHub language statistics because they are part of EvoPilot's harness and release-governance surface.
-
-Deployment and runtime assets are documented in [deploy](deploy/README.md) and [runtimes](runtimes/README.md). Public HarnessTemplate knowledge packs live under [harness-templates/public](harness-templates/public/README.md).
-
-The product Dashboard is maintained separately in `yeliang-wang/evopilot-dashboard`.
-
-## Open Source Governance
-
-EvoPilot uses Apache License 2.0 and includes the standard public-repository governance entry points:
+EvoPilot uses Apache License 2.0 and includes standard public-repository governance entry points:
 
 - [CONTRIBUTING.md](CONTRIBUTING.md)
 - [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
@@ -316,10 +186,6 @@ EvoPilot uses Apache License 2.0 and includes the standard public-repository gov
 - [NOTICE](NOTICE)
 - [LICENSE](LICENSE)
 - [CHANGELOG.md](CHANGELOG.md)
-- [Open Source Readiness](docs/reference/open-source-readiness.md)
-- [Open Source Maturity Report](docs/reference/open-source-maturity-report.md)
-- [Release Management](docs/operations/release-management.md)
-- [Self-Hosting](docs/operations/self-hosting.md)
 - [GitHub Metadata](docs/reference/github-metadata.md)
 
 Governance verification:
