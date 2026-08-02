@@ -15,14 +15,14 @@ spec:
         app: evopilot-code-upgrader
     spec:
       containers:
-        - name: openhands
-          image: evopilot/code-upgrader-runtime:0.59
+        - name: code-upgrader
+          image: evopilot/code-upgrader-runtime:1.0.0
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 3000
           env:
-            - name: SANDBOX_RUNTIME_CONTAINER_IMAGE
-              value: ghcr.io/all-hands-ai/runtime:0.59-nikolaik
+            - name: EVOPILOT_CODE_UPGRADER_SANDBOX_IMAGE
+              value: evopilot/code-upgrader-sandbox:1.0.0
             - name: LOG_ALL_EVENTS
               value: "true"
             - name: WORKSPACE_MOUNT_PATH

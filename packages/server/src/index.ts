@@ -36,7 +36,7 @@ import {
 import { GitHubHttpAdapter, type GitHubPullRequestDraft } from "@evopilot/adapter-github";
 import { GitLabHttpAdapter } from "@evopilot/adapter-gitlab";
 import { listRepositoryFiles } from "@evopilot/adapter-local-git";
-import { OpenHandsClient, type OpenHandsConnectorConfig, type OpenHandsRunStatus } from "@evopilot/adapter-openhands";
+import { CodeUpgraderClient, type CodeUpgraderConnectorConfig, type CodeUpgraderRunStatus } from "@evopilot/adapter-code-upgrader";
 import { createLlmClientFromEnv, createLlmConfigFromEnv, LlmProxy, type LlmGenerateResponse, type LlmTaskClient } from "@evopilot/llm";
 import {
   applyReviewDecision,
@@ -775,7 +775,7 @@ interface LogRecord {
   metadata?: Record<string, unknown>;
 }
 
-interface StoredOpenHandsConnector extends OpenHandsConnectorConfig {
+interface StoredCodeUpgraderConnector extends CodeUpgraderConnectorConfig {
   createdAt: string;
   updatedAt: string;
 }
@@ -818,8 +818,8 @@ interface CodeUpgradeRun {
   deliveryPlanId: string;
   planId: string;
   reviewId?: string;
-  executor: "openhands";
-  status: OpenHandsRunStatus;
+  executor: "code-upgrader";
+  status: CodeUpgraderRunStatus;
   proposalMarkdown: string;
   validationCommands: string[];
   branchStrategy: {
@@ -829,7 +829,7 @@ interface CodeUpgradeRun {
     mergeRequestTitle: string;
     mergeRequestDescription: string;
   };
-  openhands: {
+  codeUpgrader: {
     connectorId: string;
     workspaceId?: string;
     conversationId: string;
@@ -851,7 +851,7 @@ interface CodeUpgradeEvent {
   id: string;
   codeUpgradeRunId: string;
   timestamp: string;
-  source: "agent" | "user" | "environment" | "tool" | "evopilot" | "openhands";
+  source: "agent" | "user" | "environment" | "tool" | "evopilot" | "code-upgrader";
   phase: string;
   level: "info" | "warn" | "error";
   message: string;
@@ -5059,9 +5059,9 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         store.appendAudit(audit(auth, "opportunity-draft.created", draft.id, { projectId, datasetIds, codeContextStatus: codeContext.status, codeContextFiles: codeContext.fileCount }));
         return writeJson(response, 201, envelope(draft));
       }
-      if (request.method === "GET" && url.pathname === "/api/v1/connectors/openhands") {
+      if (request.method === "GET" && url.pathname === "/api/v1/connectors/code-upgrader") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-        return writeJson(response, 200, envelope(store.listOpenHandsConnectors().map(maskOpenHandsConnector)));
+        return writeJson(response, 200, envelope(store.listCodeUpgraderConnectors().map(maskCodeUpgraderConnector)));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/connectors/deploy") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -5114,11 +5114,11 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         store.appendAudit(audit(auth, "deploy.connector.saved", connector.id, { type: connector.type, url: connector.url, workingDir: connector.workingDir }));
         return writeJson(response, 201, envelope(maskDeployConnector(connector)));
       }
-      if (request.method === "POST" && url.pathname === "/api/v1/connectors/openhands") {
+      if (request.method === "POST" && url.pathname === "/api/v1/connectors/code-upgrader") {
         if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
         const body = await readJson(request, options.maxBodyBytes);
         const now = new Date().toISOString();
-        const connector: StoredOpenHandsConnector = {
+        const connector: StoredCodeUpgraderConnector = {
           id: requireBodyString(body.id, "CODE_UPGRADE_CONNECTOR_ID_REQUIRED", runtime, "default"),
           name: String(body.name ?? body.id ?? "代码升级执行器").trim(),
           baseUrl: String(body.baseUrl ?? "").trim(),
@@ -5135,10 +5135,10 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           createdAt: now,
           updatedAt: now
         };
-        if (!connector.id || !connector.baseUrl) return writeJson(response, 400, { error: "OPENHANDS_CONNECTOR_REQUIRED" });
-        store.writeOpenHandsConnector(connector);
-        store.appendAudit(audit(auth, "openhands.connector.saved", connector.id, { baseUrl: connector.baseUrl, workspaceMode: connector.workspaceMode }));
-        return writeJson(response, 201, envelope(maskOpenHandsConnector(connector)));
+        if (!connector.id || !connector.baseUrl) return writeJson(response, 400, { error: "CODE_UPGRADER_CONNECTOR_REQUIRED" });
+        store.writeCodeUpgraderConnector(connector);
+        store.appendAudit(audit(auth, "code-upgrader.connector.saved", connector.id, { baseUrl: connector.baseUrl, workspaceMode: connector.workspaceMode }));
+        return writeJson(response, 201, envelope(maskCodeUpgraderConnector(connector)));
       }
       if (request.method === "GET" && url.pathname === "/api/v1/projects") {
         if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -6065,7 +6065,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         if (delivery.approvalRequired && review?.status !== "USER_CONFIRMED") {
           return writeJson(response, 409, { error: "USER_CONFIRMATION_REQUIRED" });
         }
-        const codeUpgrade = await startOpenHandsCodeUpgrade({ store, auth, run, delivery, plan, review, body, profile, runtime });
+        const codeUpgrade = await startCodeUpgradeExecution({ store, auth, run, delivery, plan, review, body, profile, runtime });
         if (body.batchId) {
           store.updateEvolutionBatch(String(body.batchId), {
             status: "CODE_UPGRADING",
@@ -6234,7 +6234,7 @@ class FileStore {
     fs.mkdirSync(path.dirname(this.auditFile), { recursive: true });
     fs.mkdirSync(this.idempotencyDir, { recursive: true });
     fs.mkdirSync(this.rulesDir, { recursive: true });
-    fs.mkdirSync(this.openHandsConnectorsDir, { recursive: true });
+    fs.mkdirSync(this.codeUpgraderConnectorsDir, { recursive: true });
     fs.mkdirSync(this.deployConnectorsDir, { recursive: true });
     fs.mkdirSync(this.pipelinesDir, { recursive: true });
     fs.mkdirSync(this.evaluationDatasetsDir, { recursive: true });
@@ -6333,8 +6333,8 @@ class FileStore {
     return path.join(this.dataRoot, "rules");
   }
 
-  get openHandsConnectorsDir(): string {
-    return path.join(this.dataRoot, "connectors", "openhands");
+  get codeUpgraderConnectorsDir(): string {
+    return path.join(this.dataRoot, "connectors", "code-upgrader");
   }
 
   get deployConnectorsDir(): string {
@@ -7728,22 +7728,22 @@ class FileStore {
     atomicWriteJson(path.join(this.idempotencyDir, `${safeFileName(key)}.json`), response);
   }
 
-  listOpenHandsConnectors(): StoredOpenHandsConnector[] {
-    return fs.readdirSync(this.openHandsConnectorsDir)
+  listCodeUpgraderConnectors(): StoredCodeUpgraderConnector[] {
+    return fs.readdirSync(this.codeUpgraderConnectorsDir)
       .filter((file) => file.endsWith(".json"))
       .sort()
-      .map((file) => JSON.parse(fs.readFileSync(path.join(this.openHandsConnectorsDir, file), "utf8")) as StoredOpenHandsConnector);
+      .map((file) => JSON.parse(fs.readFileSync(path.join(this.codeUpgraderConnectorsDir, file), "utf8")) as StoredCodeUpgraderConnector);
   }
 
-  readOpenHandsConnector(id: string): StoredOpenHandsConnector | undefined {
-    const file = path.join(this.openHandsConnectorsDir, `${safeFileName(id)}.json`);
+  readCodeUpgraderConnector(id: string): StoredCodeUpgraderConnector | undefined {
+    const file = path.join(this.codeUpgraderConnectorsDir, `${safeFileName(id)}.json`);
     if (!fs.existsSync(file)) return undefined;
-    return JSON.parse(fs.readFileSync(file, "utf8")) as StoredOpenHandsConnector;
+    return JSON.parse(fs.readFileSync(file, "utf8")) as StoredCodeUpgraderConnector;
   }
 
-  writeOpenHandsConnector(connector: StoredOpenHandsConnector): void {
-    const existing = this.readOpenHandsConnector(connector.id);
-    atomicWriteJson(path.join(this.openHandsConnectorsDir, `${safeFileName(connector.id)}.json`), {
+  writeCodeUpgraderConnector(connector: StoredCodeUpgraderConnector): void {
+    const existing = this.readCodeUpgraderConnector(connector.id);
+    atomicWriteJson(path.join(this.codeUpgraderConnectorsDir, `${safeFileName(connector.id)}.json`), {
       ...connector,
       createdAt: existing?.createdAt ?? connector.createdAt,
       updatedAt: connector.updatedAt
@@ -10123,7 +10123,7 @@ class FileStore {
   }
 
   private buildServiceInventory(projects: StoredProject[]): ReleaseEvidenceBundle["serviceInventory"] {
-    const openhands = this.listOpenHandsConnectors().map(maskOpenHandsConnector);
+    const codeUpgrader = this.listCodeUpgraderConnectors().map(maskCodeUpgraderConnector);
     return [
       {
         id: "evopilot-api",
@@ -10132,7 +10132,7 @@ class FileStore {
         status: this.isReady() ? "READY" : "BLOCKED",
         evidence: this.isReady() ? "metadata、runs、projects 存储目录已就绪。" : "存储目录或 metadata 不完整。"
       },
-      ...openhands.map((connector) => ({
+      ...codeUpgrader.map((connector) => ({
         id: connector.id,
         type: "code-upgrader" as const,
         name: connector.name,
@@ -16344,7 +16344,7 @@ function normalizeLoopSandboxPolicy(input?: Partial<LoopSandboxPolicy> | unknown
   const resourceLimits = normalizeSandboxResourceLimits(value.resourceLimits);
   return {
     runtime,
-    image: value.image ? String(value.image) : runtime === "docker" ? "ghcr.io/all-hands-ai/runtime:0.59-nikolaik" : undefined,
+    image: value.image ? String(value.image) : runtime === "docker" ? "evopilot/code-upgrader-sandbox:1.0.0" : undefined,
     namespace: value.namespace ? safeFileName(String(value.namespace)) : runtime === "k8s" ? "evopilot-sandbox" : undefined,
     credentialScope,
     network,
@@ -18089,7 +18089,7 @@ function sandboxK8sManifest(loop: LoopRun, policy: LoopSandboxPolicy): Record<st
           restartPolicy: "Never",
           containers: [{
             name: "executor",
-            image: policy.image ?? "ghcr.io/all-hands-ai/runtime:0.59-nikolaik",
+            image: policy.image ?? "evopilot/code-upgrader-sandbox:1.0.0",
             command: ["sh", "-lc", sandboxBoundaryProbeScript(policy)],
             env: [{ name: "EVOPILOT_CREDENTIAL_SCOPE", value: policy.credentialScope }],
             securityContext: {
@@ -21181,7 +21181,7 @@ async function probeHealthReady(healthUrl?: string, readyUrl?: string): Promise<
 function executorBoundaryLabel(type: ExecutorNodeType): string {
   return ({
     llm: "EvoPilot LLM gateway boundary",
-    "code-upgrader": "OpenHands/code-upgrader runtime boundary",
+    "code-upgrader": "EvoPilot code-upgrader runtime boundary",
     ci: "repository-native CI/CD boundary",
     validator: "independent validation boundary",
     approval: "human approval boundary",
@@ -22096,7 +22096,7 @@ function normalizeDecisionAction(value: unknown): ReviewRecord["decisions"][numb
   throw new Error("Unsupported review decision action");
 }
 
-async function startOpenHandsCodeUpgrade(args: {
+async function startCodeUpgradeExecution(args: {
   store: FileStore;
   auth: AuthContext;
   run: StoredRun;
@@ -22109,8 +22109,8 @@ async function startOpenHandsCodeUpgrade(args: {
 }): Promise<CodeUpgradeRun> {
   const { store, auth, run, delivery, plan, review, body, profile, runtime } = args;
   const connectorId = requireBodyString(body.connectorId, "CODE_UPGRADE_CONNECTOR_ID_REQUIRED", runtime, "default");
-  const connector = store.readOpenHandsConnector(connectorId);
-  if (!connector) throw new Error("OPENHANDS_CONNECTOR_NOT_CONFIGURED");
+  const connector = store.readCodeUpgraderConnector(connectorId);
+  if (!connector) throw new Error("CODE_UPGRADER_CONNECTOR_NOT_CONFIGURED");
   const project = store.readProject(delivery.projectId);
   if (!project?.repository && runtime.mode === "prod") throw new Error("PROJECT_REPOSITORY_NOT_CONFIGURED");
   const proposalMarkdown = String(body.proposalMarkdown ?? body.PROPOSAL_MARKDOWN ?? renderPlanMarkdown(plan));
@@ -22139,7 +22139,7 @@ async function startOpenHandsCodeUpgrade(args: {
       allowedPaths
     }
   });
-  const session = await new OpenHandsClient(connector).startCodeUpgrade({
+  const session = await new CodeUpgraderClient(connector).startCodeUpgrade({
     projectId: delivery.projectId,
     repository: project?.repository ? {
       provider: project.repository.provider,
@@ -22168,12 +22168,12 @@ async function startOpenHandsCodeUpgrade(args: {
     deliveryPlanId: delivery.id,
     planId: plan.id,
     reviewId: review?.id,
-    executor: "openhands",
+    executor: "code-upgrader",
     status: session.status,
     proposalMarkdown,
     validationCommands,
     branchStrategy,
-    openhands: {
+    codeUpgrader: {
       connectorId,
       workspaceId: session.workspaceId,
       conversationId: session.conversationId
@@ -22296,16 +22296,16 @@ async function refreshCodeUpgradeRun(store: FileStore, codeUpgradeRunId: string)
   const run = store.readCodeUpgradeRun(codeUpgradeRunId);
   if (!run) return undefined;
   if (run.status === "SUCCEEDED" || run.status === "FAILED" || run.status === "CANCELED") return run;
-  const connector = store.readOpenHandsConnector(run.openhands.connectorId);
+  const connector = store.readCodeUpgraderConnector(run.codeUpgrader.connectorId);
   if (!connector) return run;
-  const snapshot = await new OpenHandsClient(connector).readCodeUpgradeSnapshot(run.openhands.conversationId);
+  const snapshot = await new CodeUpgraderClient(connector).readCodeUpgradeSnapshot(run.codeUpgrader.conversationId);
   const events = [
     ...store.listCodeUpgradeEvents(run.id).filter((event) => event.source === "evopilot"),
     ...snapshot.events.map((event, index): CodeUpgradeEvent => ({
-      id: event.id || `openhands-${run.id}-${index}`,
+      id: event.id || `code-upgrader-${run.id}-${index}`,
       codeUpgradeRunId: run.id,
       timestamp: event.timestamp ?? new Date().toISOString(),
-      source: event.source ?? "openhands",
+      source: event.source ?? "code-upgrader",
       phase: event.phase ?? inferCodeUpgradePhase(event.message),
       level: event.level ?? "info",
       message: event.message,
@@ -22315,9 +22315,9 @@ async function refreshCodeUpgradeRun(store: FileStore, codeUpgradeRunId: string)
   const updated: CodeUpgradeRun = {
     ...run,
     status: snapshot.status,
-    openhands: {
-      ...run.openhands,
-      workspaceId: snapshot.workspaceId ?? run.openhands.workspaceId
+    codeUpgrader: {
+      ...run.codeUpgrader,
+      workspaceId: snapshot.workspaceId ?? run.codeUpgrader.workspaceId
     },
     artifacts: {
       ...run.artifacts,
@@ -22341,7 +22341,7 @@ async function refreshCodeUpgradeRun(store: FileStore, codeUpgradeRunId: string)
         deliveryPlanId: updated.deliveryPlanId,
         previousStatus: run.status,
         status: updated.status,
-        conversationId: updated.openhands.conversationId,
+        conversationId: updated.codeUpgrader.conversationId,
         changedFileCount: updated.artifacts.changedFiles?.length ?? 0,
         commitSha: updated.artifacts.commitSha,
         pullRequestUrl: updated.artifacts.pullRequestUrl,
@@ -22353,7 +22353,7 @@ async function refreshCodeUpgradeRun(store: FileStore, codeUpgradeRunId: string)
   return updated;
 }
 
-function terminalCodeUpgradeFailureReason(status: OpenHandsRunStatus, events: CodeUpgradeEvent[]): string | undefined {
+function terminalCodeUpgradeFailureReason(status: CodeUpgraderRunStatus, events: CodeUpgradeEvent[]): string | undefined {
   if (status !== "FAILED" && status !== "CANCELED") return undefined;
   const terminal = [...events].reverse().find((event) => event.level === "error" || /失败|failed|error/i.test(event.message));
   const message = terminal?.message?.trim();
@@ -22361,7 +22361,7 @@ function terminalCodeUpgradeFailureReason(status: OpenHandsRunStatus, events: Co
   return message.length > 500 ? `${message.slice(0, 500)}...` : message;
 }
 
-function terminalCodeUpgradeError(status: OpenHandsRunStatus, events: CodeUpgradeEvent[]): string | undefined {
+function terminalCodeUpgradeError(status: CodeUpgraderRunStatus, events: CodeUpgradeEvent[]): string | undefined {
   if (status !== "FAILED" && status !== "CANCELED") return undefined;
   const terminal = [...events].reverse().find((event) => event.level === "error" || /失败|failed|error/i.test(event.message));
   const raw = terminal?.raw;
@@ -22582,7 +22582,7 @@ function pipelineProviderLabel(provider: PipelineRun["provider"]): string {
   return provider;
 }
 
-function maskOpenHandsConnector(connector: StoredOpenHandsConnector): Omit<StoredOpenHandsConnector, "apiKey" | "llmApiKey"> & { apiKeyConfigured: boolean; llmApiKeyConfigured: boolean } {
+function maskCodeUpgraderConnector(connector: StoredCodeUpgraderConnector): Omit<StoredCodeUpgraderConnector, "apiKey" | "llmApiKey"> & { apiKeyConfigured: boolean; llmApiKeyConfigured: boolean } {
   const { apiKey, llmApiKey, ...safe } = connector;
   return { ...safe, apiKeyConfigured: Boolean(apiKey), llmApiKeyConfigured: Boolean(llmApiKey) };
 }
@@ -24123,7 +24123,7 @@ async function diagnoseProjectRuntime(args: { store: FileStore; project: StoredP
       remediation: "配置可在升级工作区内启动的服务命令，例如 python3 app.py --host 127.0.0.1 --port 49318。"
     });
   }
-  const codeUpgradeConnector = args.store.readOpenHandsConnector("default");
+  const codeUpgradeConnector = args.store.readCodeUpgraderConnector("default");
   checks.push({
     name: "代码升级运行时",
     status: codeUpgradeConnector?.baseUrl ? "PASSED" : "FAILED",

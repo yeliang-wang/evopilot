@@ -485,7 +485,7 @@ assert.doesNotMatch(controlPlaneUserGuide, /进入 Dashboard 的“接入项目�
 
 const lock = JSON.parse(fs.readFileSync("runtimes/runtime-lock.json", "utf8"));
 assert.equal(lock.schemaVersion, 1);
-assert.ok(lock.runtimes.some((item) => item.implementation === "OpenHands"));
+assert.ok(lock.runtimes.some((item) => item.implementation === "EvoPilot Code Upgrader"));
 assert.ok(lock.runtimes.every((item) => item.role !== "project-ci-cd"), "Project CI/CD must remain repository-native GitHub Actions/GitLab CI, not an EvoPilot managed runtime");
 
 const removedCiWords = [

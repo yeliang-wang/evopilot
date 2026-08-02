@@ -275,7 +275,7 @@ test("project devops API configures GitLab CI and rejects provider mismatch", as
 
 test("delivery execution uses configured GitHub Actions DevOps by default", async () => {
   const github = await startFakeGitHub();
-  const openhands = await startFakeOpenHands();
+  const codeUpgrader = await startFakeCodeUpgrader();
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-project-devops-delivery-"));
   const server = createServer({ dataRoot, runtimeMode: "debug" });
   await listen(server);
@@ -306,10 +306,10 @@ test("delivery execution uses configured GitHub Actions DevOps by default", asyn
         }
       }
     });
-    await post(`${baseUrl}/api/v1/connectors/openhands`, {
+    await post(`${baseUrl}/api/v1/connectors/code-upgrader`, {
       id: "default",
-      name: "Test OpenHands",
-      baseUrl: openhands.baseUrl,
+      name: "Test Code Upgrader",
+      baseUrl: codeUpgrader.baseUrl,
       apiKey: "secret"
     });
     const run = await post(`${baseUrl}/api/v1/runs`, {
@@ -351,7 +351,7 @@ test("delivery execution uses configured GitHub Actions DevOps by default", asyn
   } finally {
     await close(server);
     await github.close();
-    await openhands.close();
+    await codeUpgrader.close();
   }
 });
 
@@ -396,7 +396,7 @@ async function startFakeGitHub() {
   return { baseUrl: serverUrl(server), close: () => close(server) };
 }
 
-async function startFakeOpenHands() {
+async function startFakeCodeUpgrader() {
   const server = http.createServer(async (request, response) => {
     const url = new URL(request.url ?? "/", "http://127.0.0.1");
     if (request.method === "POST" && url.pathname === "/api/v1/conversations") {

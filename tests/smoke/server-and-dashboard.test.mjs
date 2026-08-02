@@ -1303,14 +1303,14 @@ test("release evidence endpoint persists release candidate evidence without leak
     });
     assert.equal(otherProject.status, 201);
 
-    const codeUpgrader = await fetch(`${baseUrl}/api/v1/connectors/openhands`, {
+    const codeUpgrader = await fetch(`${baseUrl}/api/v1/connectors/code-upgrader`, {
       method: "POST",
       headers: { authorization: "Bearer admin-token", "content-type": "application/json" },
       body: JSON.stringify({
         id: "default",
         name: "Real Code Upgrader",
         baseUrl: "http://code-upgrader.internal",
-        apiKey: "secret-openhands-token"
+        apiKey: "secret-code-upgrader-token"
       })
     });
     assert.equal(codeUpgrader.status, 201);
@@ -1356,7 +1356,7 @@ test("release evidence endpoint persists release candidate evidence without leak
       projectId: "connected-project",
       deliveryPlanId: "delivery-plan-failed",
       planId: "plan-failed",
-      executor: "openhands",
+      executor: "code-upgrader",
       status: "FAILED",
       proposalMarkdown: "failed upgrade",
       validationCommands: ["node --version"],
@@ -1367,7 +1367,7 @@ test("release evidence endpoint persists release candidate evidence without leak
         mergeRequestTitle: "failed",
         mergeRequestDescription: "failed"
       },
-      openhands: { connectorId: "default", conversationId: "failed-conversation" },
+      codeUpgrader: { connectorId: "default", conversationId: "failed-conversation" },
       artifacts: {},
       failureReason: "old validation failure",
       createdAt: "2026-06-09T00:30:00.000Z",
@@ -1378,7 +1378,7 @@ test("release evidence endpoint persists release candidate evidence without leak
       projectId: "connected-project",
       deliveryPlanId: "delivery-plan-success",
       planId: "plan-success",
-      executor: "openhands",
+      executor: "code-upgrader",
       status: "SUCCEEDED",
       proposalMarkdown: "successful upgrade",
       validationCommands: ["node --version"],
@@ -1389,7 +1389,7 @@ test("release evidence endpoint persists release candidate evidence without leak
         mergeRequestTitle: "success",
         mergeRequestDescription: "success"
       },
-      openhands: { connectorId: "default", conversationId: "success-conversation" },
+      codeUpgrader: { connectorId: "default", conversationId: "success-conversation" },
       artifacts: { branchName: "evopilot/upgrade/success", commitSha: "abc123" },
       createdAt: "2026-06-09T01:00:00.000Z",
       updatedAt: "2026-06-09T01:00:00.000Z"
@@ -1422,7 +1422,7 @@ test("release evidence endpoint persists release candidate evidence without leak
     assert.ok(body.data.riskRegister.some((item) => item.source === "scenario-matrix"));
     assert.equal(body.data.riskRegister.find((item) => item.id === "risk-code-upgrade-failed-upgrade")?.status, "MITIGATED");
     assert.ok(body.data.artifacts.some((item) => item.type === "dashboard"));
-    assert.doesNotMatch(JSON.stringify(body.data), /secret-project-token|secret-openhands-token/);
+    assert.doesNotMatch(JSON.stringify(body.data), /secret-project-token|secret-code-upgrader-token/);
 
     const fetched = await fetch(`${baseUrl}/api/v1/release/evidence/rc-1`, {
       headers: { authorization: "Bearer viewer-token" }

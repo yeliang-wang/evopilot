@@ -1,7 +1,6 @@
 {
   "runtime": "code-upgrader",
-  "upstream": "OpenHands capability asset",
-  "version": "0.59",
+  "version": "1.0.0",
   "scanner": "trivy",
   "generatedAt": "2026-06-06T07:58:42.165Z",
   "status": "PASSED",
@@ -11,6 +10,5 @@
     "critical": 0,
     "total": 0
   },
-  "findings": [],
-  "rawReport": "code-upgrader-current.raw.json"
+  "findings": []
 }

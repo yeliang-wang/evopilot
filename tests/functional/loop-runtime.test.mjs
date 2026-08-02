@@ -562,7 +562,7 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
         },
         sandbox: {
           runtime: "docker",
-          image: "ghcr.io/all-hands-ai/runtime:0.59-nikolaik",
+          image: "evopilot/code-upgrader-sandbox:1.0.0",
           credentialScope: "loop",
           network: "restricted",
           allowedPaths: ["src", "test"],
@@ -624,7 +624,7 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(started.body.data.iterations[0].executorSteps[1].output.adapterId, "evopilot.code-upgrader-adapter");
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "adapter=evopilot.llm-context-adapter"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "adapter=evopilot.code-upgrader-adapter"));
-    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item.includes("executorBoundary=OpenHands/code-upgrader runtime boundary")));
+    assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item.includes("executorBoundary=EvoPilot code-upgrader runtime boundary")));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "coordinationMode=parallel"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sandboxRuntime=docker"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "sandbox.enforcement.status=ENFORCED"));

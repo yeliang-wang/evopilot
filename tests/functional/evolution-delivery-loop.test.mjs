@@ -158,7 +158,7 @@ test("self-learning discovery generates evaluation datasets and opportunity insi
     assert.ok(policies.data.some((policy) => policy.name === "成本预算门禁" && policy.status !== "PASSED"));
 
     const supplyChain = await getWithToken(`${baseUrl}/api/v1/supply-chain/reports`, "viewer-token");
-    assert.ok(supplyChain.data.some((report) => report.implementation === "OpenHands" && report.status === "READY"));
+    assert.ok(supplyChain.data.some((report) => report.implementation === "EvoPilot Code Upgrader" && report.status === "READY"));
     assert.ok(supplyChain.data.every((report) => Array.isArray(report.packageArtifacts)));
     assert.ok(supplyChain.data.every((report) => Array.isArray(report.missingArtifacts)));
 
@@ -482,7 +482,7 @@ test("supports run detail API and pluggable delivery executor", async () => {
 });
 
 test("triggers repository-native DevOps after review gate and closes delivery from pipeline result", async () => {
-  const openhands = await startFakeOpenHands();
+  const codeUpgrader = await startFakeCodeUpgrader();
   const github = await startFakeGitHubActions();
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-native-devops-loop-"));
   const server = createServer({
@@ -526,14 +526,14 @@ test("triggers repository-native DevOps after review gate and closes delivery fr
       }
     }, "admin-token");
     assert.equal(project.data.devops.provider, "github-actions");
-    const openhandsConnector = await postWithToken(`${baseUrl}/api/v1/connectors/openhands`, {
+    const codeUpgraderConnector = await postWithToken(`${baseUrl}/api/v1/connectors/code-upgrader`, {
       id: "default",
-      name: "本地测试 OpenHands",
-      baseUrl: openhands.baseUrl,
+      name: "本地测试 Code Upgrader",
+      baseUrl: codeUpgrader.baseUrl,
       apiKey: "secret"
     }, "admin-token");
-    assert.equal(openhandsConnector.data.apiKeyConfigured, true);
-    assert.equal(openhandsConnector.data.apiKey, undefined);
+    assert.equal(codeUpgraderConnector.data.apiKeyConfigured, true);
+    assert.equal(codeUpgraderConnector.data.apiKey, undefined);
 
     const run = await postWithToken(`${baseUrl}/api/v1/runs`, {
       projectId: "domainforge-fabric",
@@ -577,8 +577,8 @@ test("triggers repository-native DevOps after review gate and closes delivery fr
       validationCommands: ["npm test"]
     }, "admin-token");
     assert.equal(upgrade.data.codeUpgradeRun.status, "SUCCEEDED");
-    assert.match(openhands.prompt, /性能优化方案/);
-    assert.ok(openhands.allowedPaths.includes("src"), `allowedPaths should include src: ${JSON.stringify(openhands.allowedPaths)}`);
+    assert.match(codeUpgrader.prompt, /性能优化方案/);
+    assert.ok(codeUpgrader.allowedPaths.includes("src"), `allowedPaths should include src: ${JSON.stringify(codeUpgrader.allowedPaths)}`);
     const upgradeEvents = await getWithToken(`${baseUrl}/api/v1/code-upgrade-runs/${encodeURIComponent(upgrade.data.codeUpgradeRun.id)}/events`, "viewer-token");
     assert.ok(upgradeEvents.data.some((event) => event.phase === "运行验证"));
 
@@ -614,13 +614,13 @@ test("triggers repository-native DevOps after review gate and closes delivery fr
     assert.ok(audit.data.some((record) => record.action === "devops.pipeline.triggered"));
   } finally {
     await new Promise((resolve) => server.close(resolve));
-    await openhands.close();
+    await codeUpgrader.close();
     await github.close();
   }
 });
 
 test("cost over budget freezes standard evolution but allows cost optimization delivery", async () => {
-  const openhands = await startFakeOpenHands();
+  const codeUpgrader = await startFakeCodeUpgrader();
   const github = await startFakeGitHubActions();
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-cost-freeze-"));
   const server = createServer({
@@ -663,10 +663,10 @@ test("cost over budget freezes standard evolution but allows cost optimization d
         }
       }
     }, "admin-token");
-    await postWithToken(`${baseUrl}/api/v1/connectors/openhands`, {
+    await postWithToken(`${baseUrl}/api/v1/connectors/code-upgrader`, {
       id: "default",
       name: "成本优化代码升级执行器",
-      baseUrl: openhands.baseUrl
+      baseUrl: codeUpgrader.baseUrl
     }, "admin-token");
 
     const run = await postWithToken(`${baseUrl}/api/v1/runs`, {
@@ -722,7 +722,7 @@ test("cost over budget freezes standard evolution but allows cost optimization d
       batchId: scan.data.created[0].id
     }, "admin-token");
     assert.equal(costOptimizationUpgrade.data.codeUpgradeRun.status, "SUCCEEDED");
-    assert.match(openhands.prompt, /成本优化方案/);
+    assert.match(codeUpgrader.prompt, /成本优化方案/);
 
     const blockedDelivery = await fetch(`${baseUrl}/api/v1/deliveries/${encodeURIComponent(run.data.deliveryPlans[0].id)}/execute`, {
       method: "POST",
@@ -747,13 +747,13 @@ test("cost over budget freezes standard evolution but allows cost optimization d
     assert.equal(summary.data.costOptimizationEvolutionBatchCount, 1);
   } finally {
     await new Promise((resolve) => server.close(resolve));
-    await openhands.close();
+    await codeUpgrader.close();
     await github.close();
   }
 });
 
 test("OTLP trace evidence enters the full evolution delivery loop", async () => {
-  const openhands = await startFakeOpenHands();
+  const codeUpgrader = await startFakeCodeUpgrader();
   const github = await startFakeGitHubActions();
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-otlp-loop-"));
   const server = createServer({
@@ -796,10 +796,10 @@ test("OTLP trace evidence enters the full evolution delivery loop", async () => 
         }
       }
     }, "admin-token");
-    await postWithToken(`${baseUrl}/api/v1/connectors/openhands`, {
+    await postWithToken(`${baseUrl}/api/v1/connectors/code-upgrader`, {
       id: "default",
       name: "代码升级执行器",
-      baseUrl: openhands.baseUrl
+      baseUrl: codeUpgrader.baseUrl
     }, "admin-token");
 
     const ingested = await postWithToken(`${baseUrl}/api/v1/evidence/otlp/v1/traces?projectId=domainforge-fabric`, {
@@ -842,7 +842,7 @@ test("OTLP trace evidence enters the full evolution delivery loop", async () => 
     assert.equal(detail.data.releaseReports[0].status, "SUCCEEDED");
   } finally {
     await new Promise((resolve) => server.close(resolve));
-    await openhands.close();
+    await codeUpgrader.close();
     await github.close();
   }
 });
@@ -994,7 +994,7 @@ async function getWithToken(url, token) {
   return JSON.parse(text);
 }
 
-async function startFakeOpenHands() {
+async function startFakeCodeUpgrader() {
   const state = { prompt: "", allowedPaths: [], baseUrl: "" };
   const server = (await import("node:http")).createServer(async (request, response) => {
     const url = new URL(request.url ?? "/", "http://127.0.0.1");
@@ -1009,7 +1009,7 @@ async function startFakeOpenHands() {
         workspaceId: "workspace-1",
         conversationId: "conversation-1",
         status: "SUCCEEDED",
-        events: fakeOpenHandsEvents(),
+        events: fakeCodeUpgraderEvents(),
         branchName: "evopilot/upgrade",
         commitSha: "abc123",
         pullRequestUrl: "https://git.example.com/agent-prod/merge_requests/1",
@@ -1038,7 +1038,7 @@ async function startFakeOpenHands() {
       return writeFakeJson(response, { conversation_id: "conversation-1", status: "ok", conversation_status: "RUNNING" });
     }
     if (request.method === "GET" && url.pathname === "/api/conversations/conversation-1/events") {
-      return writeFakeJson(response, { events: fakeOpenHandsEvents(), has_more: false });
+      return writeFakeJson(response, { events: fakeCodeUpgraderEvents(), has_more: false });
     }
     if (request.method === "GET" && url.pathname === "/api/conversations/conversation-1/git/changes") {
       return writeFakeJson(response, { files: ["docs/evopilot-upgrades/performance.md"] });
@@ -1060,7 +1060,7 @@ async function startFakeOpenHands() {
   };
 }
 
-function fakeOpenHandsEvents() {
+function fakeCodeUpgraderEvents() {
   return [
     { id: 1, timestamp: "2026-06-03T10:02:00.000Z", source: "agent", action: "message", message: "读取方案" },
     { id: 2, timestamp: "2026-06-03T10:02:01.000Z", source: "tool", action: "message", message: "npm test 通过" },

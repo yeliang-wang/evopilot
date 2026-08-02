@@ -9,7 +9,7 @@ EvoPilot 的生产产品形态不是把第三方组件塞进主进程。代码�
 ```text
 EvoPilot 产品套件
 ├── evopilot-server
-└── evopilot-code-upgrader  基于真实 OpenHands 能力的托管代码升级运行时
+└── evopilot-code-upgrader  EvoPilot 托管代码升级运行时
 ```
 
 代码升级运行时由 EvoPilot 的 `docker-compose.yml`、K8s YAML 或 Helm 包统一部署、统一配置、统一健康检查和统一治理。Dashboard 独立为 `evopilot-dashboard` 服务，通过 EvoPilot API 接入。GitHub Actions 和 GitLab CI 属于项目仓库自身的 DevOps 边界，不随 EvoPilot 打包部署，不进入运行时锁；EvoPilot 只通过项目 DevOps API 触发并记录真实 CI/CD 证据。
@@ -26,7 +26,7 @@ runtimes/runtime-lock.json
 
 - 运行时 ID。
 - 运行时职责。
-- 实现项目。
+- 实现名称。
 - 版本。
 - 镜像。
 - 镜像 Digest。
@@ -77,11 +77,11 @@ npm run verify:runtime-lock:strict
 
 `project.devops.updated` 和 `project.devops.preflight` 日志会输出 `executionMode`、`devopsOwner`、`workflowRepository`、`claimBoundary` 和 blockers。排障时优先用这些字段确认“哪个 GitHub/GitLab 账号运行了项目 DevOps”。
 
-## OpenHands 运行时
+## Code Upgrader 运行时
 
-OpenHands 作为 EvoPilot 代码升级运行时，不以 jar 依赖进入 EvoPilot 主进程，但作为 EvoPilot 产品套件内的托管运行时部署。
+Code Upgrader 作为 EvoPilot 代码升级运行时，不以 jar 依赖进入 EvoPilot 主进程，但作为 EvoPilot 产品套件内的托管运行时部署。
 
-EvoPilot 通过 `packages/adapter-openhands` 调用 OpenHands HTTP API，并传入：
+EvoPilot 通过 `packages/adapter-code-upgrader` 调用 Code Upgrader HTTP API，并传入：
 
 - 进化方案 Markdown。
 - Git 仓库信息。
@@ -90,7 +90,7 @@ EvoPilot 通过 `packages/adapter-openhands` 调用 OpenHands HTTP API，并传�
 - 验证命令。
 - 受保护路径。
 
-OpenHands 必须以真实进程运行，不能使用 fake、mock、stub、simulator 或内部模拟进程冒充。
+Code Upgrader 必须以真实进程运行，不能使用 fake、mock、stub、simulator 或内部模拟进程冒充。
 
 ## 部署入口
 

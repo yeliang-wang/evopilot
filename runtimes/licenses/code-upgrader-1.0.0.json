@@ -1,6 +1,6 @@
 {
-  "runtime": "openhands",
-  "version": "0.59",
+  "runtime": "code-upgrader",
+  "version": "1.0.0",
   "scanner": "trivy",
   "generatedAt": "2026-06-06T02:40:45.146Z",
   "status": "RECORDED",
@@ -10,7 +10,7 @@
   },
   "licenses": [
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "adduser",
       "version": "3.152",
       "licenses": [
@@ -19,7 +19,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "apt",
       "version": "3.0.3",
       "licenses": [
@@ -31,7 +31,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "base-files",
       "version": "13.8+deb13u5",
       "licenses": [
@@ -40,7 +40,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "base-passwd",
       "version": "3.6.7",
       "licenses": [
@@ -49,7 +49,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "bash",
       "version": "5.2.37",
       "licenses": [
@@ -67,7 +67,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "bash-completion",
       "version": "2.16.0",
       "licenses": [
@@ -76,7 +76,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "bsdutils",
       "version": "2.41",
       "licenses": [
@@ -100,7 +100,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "ca-certificates",
       "version": "20250419",
       "licenses": [
@@ -110,7 +110,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "coreutils",
       "version": "9.7",
       "licenses": [
@@ -124,7 +124,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "curl",
       "version": "8.14.1",
       "licenses": [
@@ -142,7 +142,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "dash",
       "version": "0.5.12",
       "licenses": [
@@ -153,7 +153,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "dbus",
       "version": "1.16.2",
       "licenses": [
@@ -170,7 +170,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "dbus-bin",
       "version": "1.16.2",
       "licenses": [
@@ -187,7 +187,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "dbus-daemon",
       "version": "1.16.2",
       "licenses": [
@@ -204,7 +204,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "dbus-session-bus-common",
       "version": "1.16.2",
       "licenses": [
@@ -221,7 +221,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "dbus-system-bus-common",
       "version": "1.16.2",
       "licenses": [
@@ -238,7 +238,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "dbus-user-session",
       "version": "1.16.2",
       "licenses": [
@@ -255,7 +255,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "debconf",
       "version": "1.5.91",
       "licenses": [
@@ -263,7 +263,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "debian-archive-keyring",
       "version": "2025.1",
       "licenses": [
@@ -271,7 +271,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "debianutils",
       "version": "5.23.2",
       "licenses": [
@@ -282,7 +282,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "diffutils",
       "version": "3.10",
       "licenses": [
@@ -307,7 +307,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "dmsetup",
       "version": "1.02.205",
       "licenses": [
@@ -319,7 +319,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "dpkg",
       "version": "1.22.22",
       "licenses": [
@@ -329,7 +329,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "findutils",
       "version": "4.10.0",
       "licenses": [
@@ -358,7 +358,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "gcc-14-base",
       "version": "14.2.0",
       "licenses": [
@@ -370,7 +370,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "grep",
       "version": "3.11",
       "licenses": [
@@ -379,7 +379,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "gzip",
       "version": "1.13",
       "licenses": [
@@ -391,7 +391,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "hostname",
       "version": "3.25",
       "licenses": [
@@ -399,7 +399,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "init-system-helpers",
       "version": "1.69~deb13u1",
       "licenses": [
@@ -409,7 +409,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "krb5-locales",
       "version": "1.21.3",
       "licenses": [
@@ -417,7 +417,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libacl1",
       "version": "2.3.2",
       "licenses": [
@@ -428,7 +428,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libapparmor1",
       "version": "4.1.0",
       "licenses": [
@@ -440,7 +440,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libapt-pkg7.0",
       "version": "3.0.3",
       "licenses": [
@@ -452,7 +452,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libattr1",
       "version": "2.5.2",
       "licenses": [
@@ -463,7 +463,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libaudit-common",
       "version": "4.0.2",
       "licenses": [
@@ -473,7 +473,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libaudit1",
       "version": "4.0.2",
       "licenses": [
@@ -483,7 +483,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libblkid1",
       "version": "2.41",
       "licenses": [
@@ -507,7 +507,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libbrotli1",
       "version": "1.1.0",
       "licenses": [
@@ -515,7 +515,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libbsd0",
       "version": "0.12.2",
       "licenses": [
@@ -536,7 +536,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libbz2-1.0",
       "version": "1.0.8",
       "licenses": [
@@ -545,7 +545,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libc-bin",
       "version": "2.41",
       "licenses": [
@@ -584,7 +584,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libc6",
       "version": "2.41",
       "licenses": [
@@ -623,7 +623,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libcap-ng0",
       "version": "0.8.5",
       "licenses": [
@@ -635,7 +635,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libcap2",
       "version": "2.75",
       "licenses": [
@@ -645,7 +645,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libcbor0.10",
       "version": "0.10.2",
       "licenses": [
@@ -653,7 +653,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libcom-err2",
       "version": "1.47.2",
       "licenses": [
@@ -674,7 +674,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libcryptsetup12",
       "version": "2.7.5",
       "licenses": [
@@ -693,7 +693,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libcurl4t64",
       "version": "8.14.1",
       "licenses": [
@@ -711,7 +711,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libdb5.3t64",
       "version": "5.3.28+dfsg2",
       "licenses": [
@@ -729,7 +729,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libdbus-1-3",
       "version": "1.16.2",
       "licenses": [
@@ -746,7 +746,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libdebconfclient0",
       "version": "0.280",
       "licenses": [
@@ -756,7 +756,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libdevmapper1.02.1",
       "version": "1.02.205",
       "licenses": [
@@ -768,7 +768,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libedit2",
       "version": "3.1-20250104",
       "licenses": [
@@ -776,7 +776,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libexpat1",
       "version": "2.7.1",
       "licenses": [
@@ -784,7 +784,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libffi8",
       "version": "3.4.8",
       "licenses": [
@@ -798,7 +798,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libfido2-1",
       "version": "1.15.0",
       "licenses": [
@@ -808,7 +808,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libgdbm6t64",
       "version": "1.24",
       "licenses": [
@@ -820,7 +820,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libgmp10",
       "version": "6.3.0+dfsg",
       "licenses": [
@@ -834,7 +834,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libgnutls30t64",
       "version": "3.8.9",
       "licenses": [
@@ -855,7 +855,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libgssapi-krb5-2",
       "version": "1.21.3",
       "licenses": [
@@ -863,7 +863,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libhogweed6t64",
       "version": "3.10.1",
       "licenses": [
@@ -879,7 +879,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libidn2-0",
       "version": "2.3.8",
       "licenses": [
@@ -894,7 +894,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libjson-c5",
       "version": "0.18+ds",
       "licenses": [
@@ -902,7 +902,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libk5crypto3",
       "version": "1.21.3",
       "licenses": [
@@ -910,7 +910,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libkeyutils1",
       "version": "1.6.3",
       "licenses": [
@@ -921,7 +921,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libkmod2",
       "version": "34.2",
       "licenses": [
@@ -932,7 +932,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libkrb5-3",
       "version": "1.21.3",
       "licenses": [
@@ -940,7 +940,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libkrb5support0",
       "version": "1.21.3",
       "licenses": [
@@ -948,7 +948,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "liblastlog2-2",
       "version": "2.41",
       "licenses": [
@@ -972,7 +972,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libldap-common",
       "version": "2.6.10+dfsg",
       "licenses": [
@@ -1003,7 +1003,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libldap2",
       "version": "2.6.10+dfsg",
       "licenses": [
@@ -1034,7 +1034,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "liblz4-1",
       "version": "1.10.0",
       "licenses": [
@@ -1044,7 +1044,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "liblzma5",
       "version": "5.8.1",
       "licenses": [
@@ -1065,7 +1065,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libmd0",
       "version": "1.1.0",
       "licenses": [
@@ -1081,7 +1081,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libmount1",
       "version": "2.41",
       "licenses": [
@@ -1105,7 +1105,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libnettle8t64",
       "version": "3.10.1",
       "licenses": [
@@ -1121,7 +1121,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libnghttp2-14",
       "version": "1.64.0",
       "licenses": [
@@ -1133,7 +1133,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libnghttp3-9",
       "version": "1.8.0",
       "licenses": [
@@ -1150,7 +1150,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libnss-systemd",
       "version": "257.13",
       "licenses": [
@@ -1165,7 +1165,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libp11-kit0",
       "version": "0.25.5",
       "licenses": [
@@ -1184,7 +1184,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libpam-modules",
       "version": "1.7.0",
       "licenses": [
@@ -1202,7 +1202,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libpam-modules-bin",
       "version": "1.7.0",
       "licenses": [
@@ -1220,7 +1220,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libpam-runtime",
       "version": "1.7.0",
       "licenses": [
@@ -1238,7 +1238,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libpam-systemd",
       "version": "257.13",
       "licenses": [
@@ -1253,7 +1253,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libpam0g",
       "version": "1.7.0",
       "licenses": [
@@ -1271,7 +1271,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libpcre2-8-0",
       "version": "10.46",
       "licenses": [
@@ -1283,7 +1283,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libproc2-0",
       "version": "4.0.4",
       "licenses": [
@@ -1296,7 +1296,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libpsl5t64",
       "version": "0.21.2",
       "licenses": [
@@ -1306,7 +1306,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libreadline8t64",
       "version": "8.2",
       "licenses": [
@@ -1320,7 +1320,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "librtmp1",
       "version": "2.4+20151223.gitfa8646d.1",
       "licenses": [
@@ -1329,7 +1329,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libsasl2-2",
       "version": "2.1.28+dfsg1",
       "licenses": [
@@ -1353,7 +1353,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libsasl2-modules",
       "version": "2.1.28+dfsg1",
       "licenses": [
@@ -1377,7 +1377,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libsasl2-modules-db",
       "version": "2.1.28+dfsg1",
       "licenses": [
@@ -1401,7 +1401,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libseccomp2",
       "version": "2.6.0",
       "licenses": [
@@ -1409,7 +1409,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libselinux1",
       "version": "3.8.1",
       "licenses": [
@@ -1418,7 +1418,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libsemanage-common",
       "version": "3.8.1",
       "licenses": [
@@ -1428,7 +1428,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libsemanage2",
       "version": "3.8.1",
       "licenses": [
@@ -1438,7 +1438,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libsepol2",
       "version": "3.8.1",
       "licenses": [
@@ -1450,7 +1450,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libsmartcols1",
       "version": "2.41",
       "licenses": [
@@ -1474,7 +1474,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libsqlite3-0",
       "version": "3.46.1",
       "licenses": [
@@ -1484,7 +1484,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libssh2-1t64",
       "version": "1.11.1",
       "licenses": [
@@ -1493,7 +1493,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libssl3t64",
       "version": "3.5.6",
       "licenses": [
@@ -1504,7 +1504,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libsystemd-shared",
       "version": "257.13",
       "licenses": [
@@ -1519,7 +1519,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libsystemd0",
       "version": "257.13",
       "licenses": [
@@ -1534,7 +1534,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libtasn1-6",
       "version": "4.20.0",
       "licenses": [
@@ -1545,7 +1545,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libtext-charwidth-perl",
       "version": "0.04",
       "licenses": [
@@ -1554,7 +1554,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libtext-wrapi18n-perl",
       "version": "0.06",
       "licenses": [
@@ -1564,7 +1564,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libtinfo6",
       "version": "6.5+20250216",
       "licenses": [
@@ -1574,7 +1574,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libudev1",
       "version": "257.13",
       "licenses": [
@@ -1589,7 +1589,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libunistring5",
       "version": "1.3",
       "licenses": [
@@ -1616,7 +1616,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libuuid1",
       "version": "2.41",
       "licenses": [
@@ -1640,7 +1640,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libwrap0",
       "version": "7.6.q",
       "licenses": [
@@ -1650,7 +1650,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libwtmpdb0",
       "version": "0.73.0",
       "licenses": [
@@ -1660,7 +1660,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libxxhash0",
       "version": "0.8.3",
       "licenses": [
@@ -1670,7 +1670,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "libzstd1",
       "version": "1.5.7+dfsg",
       "licenses": [
@@ -1681,7 +1681,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "linux-sysctl-defaults",
       "version": "4.12.1",
       "licenses": [
@@ -1691,7 +1691,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "login",
       "version": "4.16.0-2+really2.41",
       "licenses": [
@@ -1715,7 +1715,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "login.defs",
       "version": "4.17.4",
       "licenses": [
@@ -1726,7 +1726,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "mawk",
       "version": "1.3.4.20250131",
       "licenses": [
@@ -1736,7 +1736,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "mount",
       "version": "2.41",
       "licenses": [
@@ -1760,7 +1760,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "ncurses-base",
       "version": "6.5+20250216",
       "licenses": [
@@ -1770,7 +1770,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "ncurses-bin",
       "version": "6.5+20250216",
       "licenses": [
@@ -1780,7 +1780,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "ncurses-term",
       "version": "6.5+20250216",
       "licenses": [
@@ -1790,7 +1790,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "netbase",
       "version": "6.5",
       "licenses": [
@@ -1798,7 +1798,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "openssh-client",
       "version": "10.0p1",
       "licenses": [
@@ -1812,7 +1812,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "openssl",
       "version": "3.5.6",
       "licenses": [
@@ -1823,7 +1823,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "openssl-provider-legacy",
       "version": "3.5.6",
       "licenses": [
@@ -1834,7 +1834,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "passwd",
       "version": "4.17.4",
       "licenses": [
@@ -1845,7 +1845,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "perl-base",
       "version": "5.40.1",
       "licenses": [
@@ -1875,7 +1875,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "procps",
       "version": "4.0.4",
       "licenses": [
@@ -1888,7 +1888,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "psmisc",
       "version": "23.7",
       "licenses": [
@@ -1897,7 +1897,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "publicsuffix",
       "version": "20250328.1952",
       "licenses": [
@@ -1906,7 +1906,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "readline-common",
       "version": "8.2",
       "licenses": [
@@ -1920,7 +1920,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "runit-helper",
       "version": "2.16.4",
       "licenses": [
@@ -1929,7 +1929,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "sed",
       "version": "4.9",
       "licenses": [
@@ -1945,7 +1945,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "sensible-utils",
       "version": "0.0.25",
       "licenses": [
@@ -1957,7 +1957,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "sqv",
       "version": "1.3.0",
       "licenses": [
@@ -1966,7 +1966,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "ssh",
       "version": "10.0p1",
       "licenses": [
@@ -1980,7 +1980,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "sudo",
       "version": "1.9.16p2",
       "licenses": [
@@ -1995,7 +1995,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "systemd",
       "version": "257.13",
       "licenses": [
@@ -2010,7 +2010,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "systemd-cryptsetup",
       "version": "257.13",
       "licenses": [
@@ -2025,7 +2025,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "systemd-sysv",
       "version": "257.13",
       "licenses": [
@@ -2040,7 +2040,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "systemd-timesyncd",
       "version": "257.13",
       "licenses": [
@@ -2055,7 +2055,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "sysvinit-utils",
       "version": "3.14",
       "licenses": [
@@ -2067,7 +2067,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "tar",
       "version": "1.35+dfsg",
       "licenses": [
@@ -2083,7 +2083,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "tzdata",
       "version": "2026b",
       "licenses": [
@@ -2091,7 +2091,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "ucf",
       "version": "3.0052",
       "licenses": [
@@ -2099,7 +2099,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "util-linux",
       "version": "2.41",
       "licenses": [
@@ -2123,7 +2123,7 @@
       ]
     },
     {
-      "target": "evopilot/code-upgrader-runtime:0.59 (debian 13.5)",
+      "target": "evopilot/code-upgrader-runtime:1.0.0 (debian 13.5)",
       "package": "zlib1g",
       "version": "1.3.dfsg+really1.3.1",
       "licenses": [
@@ -2148,7 +2148,7 @@
     },
     {
       "target": "Node.js",
-      "package": "openhands-vscode",
+      "package": "code-upgrader-vscode",
       "version": "0.0.1",
       "licenses": [
         "MIT"
@@ -2538,6 +2538,5 @@
         "MIT"
       ]
     }
-  ],
-  "rawReport": "openhands-0.59.raw.json"
+  ]
 }

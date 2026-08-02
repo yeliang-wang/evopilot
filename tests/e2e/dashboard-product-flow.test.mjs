@@ -7,7 +7,7 @@ import test from "node:test";
 import { createServer } from "../../packages/server/dist/index.js";
 
 test("API product flow covers connected projects, rules, opportunities, confirmation, pipeline, schedule, and history", async () => {
-  const openhands = await startFakeOpenHands();
+  const codeUpgrader = await startFakeCodeUpgrader();
   const github = await startFakeGitHubActions();
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-product-e2e-"));
   const server = createServer({
@@ -24,16 +24,16 @@ test("API product flow covers connected projects, rules, opportunities, confirma
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
   try {
-    const openhandsConnector = await postWithToken(`${baseUrl}/api/v1/connectors/openhands`, {
+    const codeUpgraderConnector = await postWithToken(`${baseUrl}/api/v1/connectors/code-upgrader`, {
       id: "default",
-      name: "产品 E2E OpenHands",
-      baseUrl: openhands.baseUrl,
+      name: "产品 E2E Code Upgrader",
+      baseUrl: codeUpgrader.baseUrl,
       apiKey: "agent-secret",
       workspaceMode: "docker",
       defaultModel: "test-model"
     }, "admin-token");
-    assert.equal(openhandsConnector.data.apiKeyConfigured, true);
-    assert.equal(openhandsConnector.data.apiKey, undefined);
+    assert.equal(codeUpgraderConnector.data.apiKeyConfigured, true);
+    assert.equal(codeUpgraderConnector.data.apiKey, undefined);
 
     const repoRoot = createLocalProjectRepo(dataRoot, "agent-prod-repo");
     const project = await postWithToken(`${baseUrl}/api/v1/projects`, {
@@ -155,12 +155,12 @@ test("API product flow covers connected projects, rules, opportunities, confirma
     assert.equal(codeUpgrade.data.codeUpgradeRun.status, "SUCCEEDED");
     assert.equal(codeUpgrade.data.codeUpgradeRun.branchStrategy.sourceBranch, "main");
     assert.match(codeUpgrade.data.codeUpgradeRun.branchStrategy.upgradeBranch, /^evopilot\/upgrade\/agent-prod\//);
-    assert.match(openhands.prompt, /降低链路延迟/);
-    assert.match(openhands.prompt, /npm run check/);
-    assert.match(openhands.prompt, /源分支：main/);
-    assert.match(openhands.prompt, /升级分支：evopilot\/upgrade\/agent-prod\//);
-    assert.equal(openhands.body.selected_branch, "main");
-    assert.match(openhands.body.initial_user_msg, /升级分支：evopilot\/upgrade\/agent-prod\//);
+    assert.match(codeUpgrader.prompt, /降低链路延迟/);
+    assert.match(codeUpgrader.prompt, /npm run check/);
+    assert.match(codeUpgrader.prompt, /源分支：main/);
+    assert.match(codeUpgrader.prompt, /升级分支：evopilot\/upgrade\/agent-prod\//);
+    assert.equal(codeUpgrader.body.selected_branch, "main");
+    assert.match(codeUpgrader.body.initial_user_msg, /升级分支：evopilot\/upgrade\/agent-prod\//);
     const codeUpgradeEvents = await getWithToken(`${baseUrl}/api/v1/code-upgrade-runs/${encodeURIComponent(codeUpgrade.data.codeUpgradeRun.id)}/events`, "viewer-token");
     assert.ok(codeUpgradeEvents.data.some((event) => event.phase === "生成补丁"));
     const codeUpgradeDetail = await getWithToken(`${baseUrl}/api/v1/code-upgrade-runs/${encodeURIComponent(codeUpgrade.data.codeUpgradeRun.id)}`, "viewer-token");
@@ -250,7 +250,7 @@ test("API product flow covers connected projects, rules, opportunities, confirma
     }
   } finally {
     await new Promise((resolve) => server.close(resolve));
-    await openhands.close();
+    await codeUpgrader.close();
     await github.close();
   }
 });
@@ -285,7 +285,7 @@ function authHeaders(token) {
   };
 }
 
-async function startFakeOpenHands() {
+async function startFakeCodeUpgrader() {
   const state = {
     prompt: "",
     body: {},

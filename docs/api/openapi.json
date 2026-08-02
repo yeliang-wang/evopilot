@@ -6139,7 +6139,7 @@
     "/api/v1/deliveries/{deliveryId}/code-upgrade": {
       "post": {
         "summary": "启动交付计划代码升级",
-        "description": "Dashboard 在演进交付流程中触发 OpenHands/code-upgrader 执行代码升级。",
+        "description": "Dashboard 在演进交付流程中触发 EvoPilot Code Upgrader 执行代码升级。",
         "security": [
           {
             "bearerAuth": []

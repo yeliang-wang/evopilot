@@ -1,4 +1,4 @@
-export interface OpenHandsConnectorConfig {
+export interface CodeUpgraderConnectorConfig {
   id: string;
   name: string;
   baseUrl: string;
@@ -14,9 +14,9 @@ export interface OpenHandsConnectorConfig {
   gitUserEmail?: string;
 }
 
-export type OpenHandsRunStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELED";
+export type CodeUpgraderRunStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELED";
 
-export interface OpenHandsRepositoryRef {
+export interface CodeUpgraderRepositoryRef {
   provider: "local-git" | "gitlab" | "github";
   gitUrl?: string;
   root?: string;
@@ -29,7 +29,7 @@ export interface OpenHandsRepositoryRef {
   tokenRef?: string;
 }
 
-export interface OpenHandsBranchStrategy {
+export interface CodeUpgraderBranchStrategy {
   sourceBranch: string;
   upgradeBranch: string;
   commitMessage: string;
@@ -37,19 +37,19 @@ export interface OpenHandsBranchStrategy {
   mergeRequestDescription: string;
 }
 
-export interface OpenHandsCodeUpgradeRequest {
+export interface CodeUpgraderRequest {
   projectId: string;
-  repository?: OpenHandsRepositoryRef;
-  branchStrategy: OpenHandsBranchStrategy;
+  repository?: CodeUpgraderRepositoryRef;
+  branchStrategy: CodeUpgraderBranchStrategy;
   proposalMarkdown: string;
   codeContext?: Array<{ path: string; content: string }>;
   validationCommands: string[];
-  validationPlan?: OpenHandsValidationPlan;
+  validationPlan?: CodeUpgraderValidationPlan;
   allowedPaths?: string[];
   protectedPaths?: string[];
 }
 
-export interface OpenHandsValidationPlan {
+export interface CodeUpgraderValidationPlan {
   language?: "python" | "node" | "java" | "go" | "generic";
   installCommands?: string[];
   unitCommands?: string[];
@@ -65,24 +65,24 @@ export interface OpenHandsValidationPlan {
   functionalCommands?: string[];
 }
 
-export interface OpenHandsCodeUpgradeSession {
+export interface CodeUpgraderSession {
   workspaceId?: string;
   conversationId: string;
-  status: OpenHandsRunStatus;
+  status: CodeUpgraderRunStatus;
 }
 
-export interface OpenHandsCodeUpgradeEvent {
+export interface CodeUpgraderRuntimeEvent {
   id: string;
   timestamp?: string;
-  source?: "agent" | "user" | "environment" | "tool" | "openhands";
+  source?: "agent" | "user" | "environment" | "tool" | "code-upgrader";
   phase?: string;
   level?: "info" | "warn" | "error";
   message: string;
   raw?: unknown;
 }
 
-export interface OpenHandsCodeUpgradeSnapshot extends OpenHandsCodeUpgradeSession {
-  events: OpenHandsCodeUpgradeEvent[];
+export interface CodeUpgraderSnapshot extends CodeUpgraderSession {
+  events: CodeUpgraderRuntimeEvent[];
   diff?: string;
   branchName?: string;
   commitSha?: string;
@@ -90,13 +90,13 @@ export interface OpenHandsCodeUpgradeSnapshot extends OpenHandsCodeUpgradeSessio
   changedFiles?: string[];
 }
 
-export class OpenHandsClient {
+export class CodeUpgraderClient {
   constructor(
-    private readonly config: OpenHandsConnectorConfig,
+    private readonly config: CodeUpgraderConnectorConfig,
     private readonly fetchFn: typeof fetch = fetch
   ) {}
 
-  async startCodeUpgrade(request: OpenHandsCodeUpgradeRequest): Promise<OpenHandsCodeUpgradeSession> {
+  async startCodeUpgrade(request: CodeUpgraderRequest): Promise<CodeUpgraderSession> {
     const managedSession = await this.startManagedCodeUpgrade(request).catch((error) => {
       if (isMissingManagedRuntimeRoute(error)) return undefined;
       throw error;
@@ -123,11 +123,11 @@ export class OpenHandsClient {
     });
     return {
       conversationId: String(response.conversation_id ?? response.conversationId ?? response.id),
-      status: normalizeOpenHandsStatus(response.conversation_status ?? response.status)
+      status: normalizeCodeUpgraderStatus(response.conversation_status ?? response.status)
     };
   }
 
-  async readCodeUpgradeSnapshot(conversationId: string): Promise<OpenHandsCodeUpgradeSnapshot> {
+  async readCodeUpgradeSnapshot(conversationId: string): Promise<CodeUpgraderSnapshot> {
     const managedSnapshot = await this.readManagedCodeUpgradeSnapshot(conversationId).catch((error) => {
       if (isMissingManagedRuntimeRoute(error)) return undefined;
       throw error;
@@ -140,7 +140,7 @@ export class OpenHandsClient {
       this.fetchJson(`/api/conversations/${encodeURIComponent(conversationId)}/git/changes`).catch(() => undefined),
       this.fetchJson(`/api/conversations/${encodeURIComponent(conversationId)}/git/diff?path=${encodeURIComponent(".")}`).catch(() => undefined)
     ]);
-    const events = Array.isArray(eventResponse.events) ? eventResponse.events.map(normalizeOpenHandsEvent) : [];
+    const events = Array.isArray(eventResponse.events) ? eventResponse.events.map(normalizeCodeUpgraderEvent) : [];
     const finish = parseFinishArtifacts(events);
     const status = containsTerminalExecutionError(events) || containsForbiddenLocalFallback(events) ? "FAILED" : statusFromConversationAndEvents(conversation, events);
     return {
@@ -151,11 +151,11 @@ export class OpenHandsClient {
       branchName: finish.branchName,
       commitSha: finish.commitSha,
       pullRequestUrl: finish.pullRequestUrl,
-      changedFiles: finish.changedFiles ?? changedFilesFromOpenHands(changes)
+      changedFiles: finish.changedFiles ?? changedFilesFromCodeUpgrader(changes)
     };
   }
 
-  private async startManagedCodeUpgrade(request: OpenHandsCodeUpgradeRequest): Promise<OpenHandsCodeUpgradeSession> {
+  private async startManagedCodeUpgrade(request: CodeUpgraderRequest): Promise<CodeUpgraderSession> {
     const response = await this.fetchJson("/api/v1/conversations", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -174,17 +174,17 @@ export class OpenHandsClient {
     return {
       workspaceId: response.workspaceId,
       conversationId: String(response.conversationId ?? response.conversation_id ?? response.id),
-      status: normalizeOpenHandsStatus(response.status)
+      status: normalizeCodeUpgraderStatus(response.status)
     };
   }
 
-  private async readManagedCodeUpgradeSnapshot(conversationId: string): Promise<OpenHandsCodeUpgradeSnapshot> {
+  private async readManagedCodeUpgradeSnapshot(conversationId: string): Promise<CodeUpgraderSnapshot> {
     const response = await this.fetchJson(`/api/v1/conversations/${encodeURIComponent(conversationId)}`);
     const events = Array.isArray(response.events) ? response.events.map(normalizeManagedRuntimeEvent) : [];
     return {
       workspaceId: response.workspaceId,
       conversationId: String(response.conversationId ?? conversationId),
-      status: normalizeOpenHandsStatus(response.status),
+      status: normalizeCodeUpgraderStatus(response.status),
       events,
       diff: typeof response.diff === "string" ? response.diff : undefined,
       branchName: response.branchName,
@@ -194,7 +194,7 @@ export class OpenHandsClient {
     };
   }
 
-  private async configureRuntime(request: OpenHandsCodeUpgradeRequest): Promise<void> {
+  private async configureRuntime(request: CodeUpgraderRequest): Promise<void> {
     const providerToken = providerTokenPayload(request.repository);
     if (this.config.llmApiKey || this.config.llmBaseUrl || this.config.llmModel || this.config.defaultModel) {
       await this.fetchJson("/api/settings", {
@@ -269,7 +269,7 @@ export class OpenHandsClient {
         ...(init?.headers ?? {})
       }
     });
-    if (!response.ok) throw new Error(`OpenHands API 失败：${response.status} ${await response.text()}`);
+    if (!response.ok) throw new Error(`Code upgrader API 失败：${response.status} ${await response.text()}`);
     return response.json();
   }
 
@@ -282,7 +282,7 @@ export class OpenHandsClient {
   }
 }
 
-export function renderCodeUpgradePrompt(request: OpenHandsCodeUpgradeRequest): string {
+export function renderCodeUpgradePrompt(request: CodeUpgraderRequest): string {
   return [
     "你是 EvoPilot 的代码升级 Agent。",
     "请基于用户确认后的进化方案修改当前项目代码，并保持过程可追踪。",
@@ -329,7 +329,7 @@ export function renderCodeUpgradePrompt(request: OpenHandsCodeUpgradeRequest): s
   ].join("\n");
 }
 
-export function normalizeOpenHandsStatus(value: unknown): OpenHandsRunStatus {
+export function normalizeCodeUpgraderStatus(value: unknown): CodeUpgraderRunStatus {
   const text = String(value ?? "RUNNING").toUpperCase();
   if (text === "QUEUED" || text === "RUNNING" || text === "SUCCEEDED" || text === "FAILED" || text === "CANCELED") return text;
   if (text === "SUCCESS" || text === "COMPLETED" || text === "COMPLETE") return "SUCCEEDED";
@@ -339,42 +339,42 @@ export function normalizeOpenHandsStatus(value: unknown): OpenHandsRunStatus {
   return "RUNNING";
 }
 
-function normalizeOpenHandsEvent(event: any): OpenHandsCodeUpgradeEvent {
+function normalizeCodeUpgraderEvent(event: any): CodeUpgraderRuntimeEvent {
   const state = event.extras?.agent_state;
   const reason = event.extras?.reason;
   const message = event.message ?? event.content ?? reason ?? state ?? "";
   return {
     id: String(event.id ?? `event-${Date.now()}`),
     timestamp: event.timestamp ? String(event.timestamp) : undefined,
-    source: event.source ? String(event.source) as OpenHandsCodeUpgradeEvent["source"] : "openhands",
+    source: event.source ? String(event.source) as CodeUpgraderRuntimeEvent["source"] : "code-upgrader",
     phase: event.phase ? String(event.phase) : event.action && event.action !== "message" ? String(event.action) : event.observation ? String(event.observation) : undefined,
-    level: state === "error" ? "error" : event.level ? String(event.level) as OpenHandsCodeUpgradeEvent["level"] : "info",
+    level: state === "error" ? "error" : event.level ? String(event.level) as CodeUpgraderRuntimeEvent["level"] : "info",
     message: String(message),
     raw: event
   };
 }
 
-function normalizeManagedRuntimeEvent(event: any): OpenHandsCodeUpgradeEvent {
+function normalizeManagedRuntimeEvent(event: any): CodeUpgraderRuntimeEvent {
   return {
     id: String(event.id ?? `event-${Date.now()}`),
     timestamp: event.timestamp ? String(event.timestamp) : undefined,
-    source: event.source ? String(event.source) as OpenHandsCodeUpgradeEvent["source"] : "openhands",
+    source: event.source ? String(event.source) as CodeUpgraderRuntimeEvent["source"] : "code-upgrader",
     phase: event.phase ? String(event.phase) : undefined,
-    level: event.level ? String(event.level) as OpenHandsCodeUpgradeEvent["level"] : "info",
+    level: event.level ? String(event.level) as CodeUpgraderRuntimeEvent["level"] : "info",
     message: String(event.message ?? ""),
     raw: event.raw ?? event
   };
 }
 
-function statusFromConversationAndEvents(conversation: any, events: OpenHandsCodeUpgradeEvent[]): OpenHandsRunStatus {
+function statusFromConversationAndEvents(conversation: any, events: CodeUpgraderRuntimeEvent[]): CodeUpgraderRunStatus {
   const lastState = [...events].reverse().find((event) => event.phase === "agent_state_changed");
   const state = (lastState?.raw as any)?.extras?.agent_state;
   if (state === "finished" || state === "stopped") return "SUCCEEDED";
   if (state === "error") return "FAILED";
-  return normalizeOpenHandsStatus(conversation.conversation_status ?? conversation.status);
+  return normalizeCodeUpgraderStatus(conversation.conversation_status ?? conversation.status);
 }
 
-function parseFinishArtifacts(events: OpenHandsCodeUpgradeEvent[]): Partial<Pick<OpenHandsCodeUpgradeSnapshot, "branchName" | "commitSha" | "pullRequestUrl" | "changedFiles" | "diff">> {
+function parseFinishArtifacts(events: CodeUpgraderRuntimeEvent[]): Partial<Pick<CodeUpgraderSnapshot, "branchName" | "commitSha" | "pullRequestUrl" | "changedFiles" | "diff">> {
   const finish = [...events].reverse().find((event) => (event.raw as any)?.action === "finish" || event.phase === "finish");
   const text = finish?.message?.trim();
   if (!text) return {};
@@ -402,14 +402,14 @@ function stringifyDiff(value: any): string | undefined {
   return undefined;
 }
 
-function changedFilesFromOpenHands(value: any): string[] | undefined {
+function changedFilesFromCodeUpgrader(value: any): string[] | undefined {
   if (!value) return undefined;
   const files = Array.isArray(value) ? value : Array.isArray(value.files) ? value.files : Array.isArray(value.changes) ? value.changes : undefined;
   if (!files) return undefined;
   return files.map((item: any) => String(item.path ?? item.filename ?? item)).filter(Boolean);
 }
 
-function repositorySelector(repository?: OpenHandsRepositoryRef): string | null {
+function repositorySelector(repository?: CodeUpgraderRepositoryRef): string | null {
   if (!repository) return null;
   if (repository.provider === "local-git") return repository.root ?? null;
   if (!repository.gitUrl) return null;
@@ -417,12 +417,12 @@ function repositorySelector(repository?: OpenHandsRepositoryRef): string | null 
   return pathname || repository.gitUrl;
 }
 
-function gitProvider(repository?: OpenHandsRepositoryRef): "gitlab" | "github" | null {
+function gitProvider(repository?: CodeUpgraderRepositoryRef): "gitlab" | "github" | null {
   if (repository?.provider === "gitlab" || repository?.provider === "github") return repository.provider;
   return null;
 }
 
-function providerSet(repository?: OpenHandsRepositoryRef): Array<"gitlab" | "github"> | null {
+function providerSet(repository?: CodeUpgraderRepositoryRef): Array<"gitlab" | "github"> | null {
   const provider = gitProvider(repository);
   return provider ? [provider] : null;
 }
@@ -441,7 +441,7 @@ function toLiteLlmModel(model: string | undefined): string | undefined {
   return `openai/${model}`;
 }
 
-function providerTokenPayload(repository?: OpenHandsRepositoryRef): { provider: "gitlab" | "github"; token: string; host: string } | undefined {
+function providerTokenPayload(repository?: CodeUpgraderRepositoryRef): { provider: "gitlab" | "github"; token: string; host: string } | undefined {
   const provider = gitProvider(repository);
   const token = repository?.token || repository?.password;
   const host = repository?.gitUrl ? safeHost(repository.gitUrl) : undefined;
@@ -449,12 +449,12 @@ function providerTokenPayload(repository?: OpenHandsRepositoryRef): { provider: 
   return { provider, token, host };
 }
 
-function containsForbiddenLocalFallback(events: OpenHandsCodeUpgradeEvent[]): boolean {
+function containsForbiddenLocalFallback(events: CodeUpgraderRuntimeEvent[]): boolean {
   const text = events.map((event) => `${event.message}\n${JSON.stringify((event.raw as any)?.extras?.command ?? "")}`).join("\n");
   return /git\s+init/.test(text) || /Initial commit/.test(text) || /本地空仓库|示例代码|占位文件/.test(text);
 }
 
-function containsTerminalExecutionError(events: OpenHandsCodeUpgradeEvent[]): boolean {
+function containsTerminalExecutionError(events: CodeUpgraderRuntimeEvent[]): boolean {
   return events.some((event) => {
     const raw = event.raw as any;
     const text = `${event.message}\n${raw?.content ?? ""}`;
@@ -464,5 +464,5 @@ function containsTerminalExecutionError(events: OpenHandsCodeUpgradeEvent[]): bo
 
 function isMissingManagedRuntimeRoute(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return /OpenHands API 失败：404|OpenHands API 失败：405/.test(message);
+  return /Code upgrader API 失败：404|Code upgrader API 失败：405/.test(message);
 }

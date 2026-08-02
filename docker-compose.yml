@@ -44,7 +44,7 @@ services:
     build:
       context: .
       dockerfile: runtimes/code-upgrader/Dockerfile
-    image: evopilot/code-upgrader-runtime:0.59
+    image: evopilot/code-upgrader-runtime:1.0.0
     ports:
       - "3000:3000"
     env_file:
@@ -53,12 +53,12 @@ services:
       EVOPILOT_RUN_MODE: "prod"
       EVOPILOT_CODE_UPGRADER_PORT: "3000"
       EVOPILOT_CODE_UPGRADER_DATA_ROOT: "/var/lib/evopilot-code-upgrader"
-      SANDBOX_RUNTIME_CONTAINER_IMAGE: ghcr.io/all-hands-ai/runtime:0.59-nikolaik
+      EVOPILOT_CODE_UPGRADER_SANDBOX_IMAGE: evopilot/code-upgrader-sandbox:1.0.0
       LOG_ALL_EVENTS: "true"
       WORKSPACE_MOUNT_PATH: /opt/workspace_base
     volumes:
       - ${EVOPILOT_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock
-      - evopilot-code-upgrader-state:/.openhands-state
+      - evopilot-code-upgrader-state:/var/lib/evopilot-code-upgrader/state
       - evopilot-code-upgrader-data:/var/lib/evopilot-code-upgrader
       - evopilot-workspaces:/opt/workspace_base
     healthcheck:

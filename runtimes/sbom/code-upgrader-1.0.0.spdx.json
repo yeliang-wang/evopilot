@@ -2,8 +2,8 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "evopilot/code-upgrader-runtime:0.59",
-  "documentNamespace": "http://trivy.dev/container_image/evopilot/code-upgrader-runtime:0.59-a96f1924-e757-47ce-a97e-b613037783f0",
+  "name": "evopilot/code-upgrader-runtime:1.0.0",
+  "documentNamespace": "http://trivy.dev/container_image/evopilot/code-upgrader-runtime:1.0.0-a96f1924-e757-47ce-a97e-b613037783f0",
   "creationInfo": {
     "creators": [
       "Organization: aquasecurity",
@@ -13,7 +13,7 @@
   },
   "packages": [
     {
-      "name": "evopilot/code-upgrader-runtime:0.59",
+      "name": "evopilot/code-upgrader-runtime:1.0.0",
       "SPDXID": "SPDXRef-ContainerImage-65849809c1371fa3",
       "downloadLocation": "NONE",
       "filesAnalyzed": false,
@@ -122,7 +122,7 @@
           "annotator": "Tool: trivy-0.71.0",
           "annotationDate": "2026-06-06T07:58:54Z",
           "annotationType": "OTHER",
-          "comment": "Reference: evopilot/code-upgrader-runtime:0.59"
+          "comment": "Reference: evopilot/code-upgrader-runtime:1.0.0"
         },
         {
           "annotator": "Tool: trivy-0.71.0",
@@ -134,7 +134,7 @@
           "annotator": "Tool: trivy-0.71.0",
           "annotationDate": "2026-06-06T07:58:54Z",
           "annotationType": "OTHER",
-          "comment": "RepoTag: evopilot/code-upgrader-runtime:0.59"
+          "comment": "RepoTag: evopilot/code-upgrader-runtime:1.0.0"
         },
         {
           "annotator": "Tool: trivy-0.71.0",
@@ -371,7 +371,7 @@
       ]
     },
     {
-      "name": "@evopilot/adapter-openhands",
+      "name": "@evopilot/adapter-code-upgrader",
       "SPDXID": "SPDXRef-Package-8c0941f3b05af2e2",
       "versionInfo": "0.1.0",
       "supplier": "NOASSERTION",
@@ -383,7 +383,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40evopilot/adapter-openhands@0.1.0"
+          "referenceLocator": "pkg:npm/%40evopilot/adapter-code-upgrader@0.1.0"
         }
       ],
       "primaryPackagePurpose": "LIBRARY",
@@ -404,7 +404,7 @@
           "annotator": "Tool: trivy-0.71.0",
           "annotationDate": "2026-06-06T07:58:54Z",
           "annotationType": "OTHER",
-          "comment": "PkgID: @evopilot/adapter-openhands@0.1.0"
+          "comment": "PkgID: @evopilot/adapter-code-upgrader@0.1.0"
         },
         {
           "annotator": "Tool: trivy-0.71.0",

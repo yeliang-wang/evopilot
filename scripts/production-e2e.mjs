@@ -140,13 +140,13 @@ async function assertHealth() {
 }
 
 async function registerExternalConnectors() {
-  await post("/api/v1/connectors/openhands", {
+  await post("/api/v1/connectors/code-upgrader", {
     id: "default",
     name: "生产代码升级执行器",
     baseUrl: codeUpgraderBaseUrl(),
-    apiKey: envFirst("EVOPILOT_CODE_UPGRADER_API_KEY", "EVOPILOT_REAL_OPENHANDS_API_KEY"),
-    workspaceMode: envFirst("EVOPILOT_CODE_UPGRADER_WORKSPACE_MODE", "EVOPILOT_REAL_OPENHANDS_WORKSPACE_MODE") ?? "docker",
-    defaultModel: envFirst("EVOPILOT_CODE_UPGRADER_MODEL", "EVOPILOT_REAL_OPENHANDS_MODEL", "EVOPILOT_LLM_MODEL_NAME")
+    apiKey: envFirst("EVOPILOT_CODE_UPGRADER_API_KEY", "EVOPILOT_REAL_CODE_UPGRADER_API_KEY"),
+    workspaceMode: envFirst("EVOPILOT_CODE_UPGRADER_WORKSPACE_MODE", "EVOPILOT_REAL_CODE_UPGRADER_WORKSPACE_MODE") ?? "docker",
+    defaultModel: envFirst("EVOPILOT_CODE_UPGRADER_MODEL", "EVOPILOT_REAL_CODE_UPGRADER_MODEL", "EVOPILOT_LLM_MODEL_NAME")
   }, "admin");
 }
 
@@ -393,7 +393,7 @@ function listEnv(key) {
 
 function configured(key) {
   if (process.env[key]?.trim()) return true;
-  if (key === "EVOPILOT_CODE_UPGRADER_BASE_URL") return Boolean(process.env.EVOPILOT_REAL_OPENHANDS_BASE_URL?.trim());
+  if (key === "EVOPILOT_CODE_UPGRADER_BASE_URL") return Boolean(process.env.EVOPILOT_REAL_CODE_UPGRADER_BASE_URL?.trim());
   return false;
 }
 
@@ -406,7 +406,7 @@ function envFirst(...keys) {
 }
 
 function codeUpgraderBaseUrl() {
-  return envFirst("EVOPILOT_CODE_UPGRADER_BASE_URL", "EVOPILOT_REAL_OPENHANDS_BASE_URL") ?? "http://127.0.0.1:3000";
+  return envFirst("EVOPILOT_CODE_UPGRADER_BASE_URL", "EVOPILOT_REAL_CODE_UPGRADER_BASE_URL") ?? "http://127.0.0.1:3000";
 }
 
 function assertProductionRuntimesConfigured() {
@@ -439,7 +439,7 @@ function maskProjectRepository(repository) {
 }
 
 function classifyProductionBlocker(message) {
-  if (/\/code-upgrade failed: 500 .*fetch failed/.test(message) || /OPENHANDS|code-upgrade/i.test(message) && /fetch failed/.test(message)) {
+  if (/\/code-upgrade failed: 500 .*fetch failed/.test(message) || /CODE_UPGRADER|code-upgrade/i.test(message) && /fetch failed/.test(message)) {
     return {
       status: "BLOCKED",
       reason: "EvoPilot 代码升级托管运行时未启动或不可达；不会降级为 mock。",
