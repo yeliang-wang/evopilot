@@ -17,7 +17,9 @@ It is not an agent runtime, a prompt playground, or a generic code generator. Ag
 
 ## Release Status
 
-EvoPilot is marked **GA Release V1.0** for its product control plane and Loop Engineering runtime.
+EvoPilot is **v1.0.0 GA** for the open-source product baseline: API/CLI control plane, harness governance, goal loops, release decisions, self-hosting, documentation, and AI Agent operation are ready for external adoption.
+
+Current phase: **Production Adoption and Public Trust Building**. Community scale, public case studies, and ecosystem reputation will grow through real deployments and sustained releases.
 
 As of the **2026-07-07 production validation**, the EvoPilot SaaS multi-tenant deployment has reached **GA stable Release** status:
 
