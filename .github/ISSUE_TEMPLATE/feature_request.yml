@@ -1,0 +1,53 @@
+name: Feature request
+description: Propose an EvoPilot product, governance, harness, CLI, API, or documentation improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What operator, project owner, administrator, or AI Agent problem should this solve?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Harness governance
+        - Goal loop
+        - Release governance
+        - CLI automation
+        - API contract
+        - LLM profile
+        - Evidence and logging
+        - Documentation
+        - Open-source productization
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the smallest useful change and its expected evidence or validation.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What could be done instead?
+    validations:
+      required: false
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: Boundary checks
+      options:
+        - label: This proposal preserves RBAC, tenant/workspace scope, approval gates, release policy, and audit.
+          required: true
+        - label: This proposal does not require passing raw secrets in daily run commands.
+          required: true

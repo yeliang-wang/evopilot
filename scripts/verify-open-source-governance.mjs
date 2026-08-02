@@ -3,9 +3,16 @@ import { readFile } from "node:fs/promises";
 const requiredFiles = [
   "LICENSE",
   "NOTICE",
+  "CHANGELOG.md",
   "CONTRIBUTING.md",
   "CODE_OF_CONDUCT.md",
   "SECURITY.md",
+  ".github/ISSUE_TEMPLATE/bug_report.yml",
+  ".github/ISSUE_TEMPLATE/feature_request.yml",
+  ".github/ISSUE_TEMPLATE/config.yml",
+  ".github/pull_request_template.md",
+  "docs/reference/open-source-readiness.md",
+  "docs/reference/github-metadata.md",
 ];
 
 const requiredReadmeLinkTargets = [
@@ -14,6 +21,9 @@ const requiredReadmeLinkTargets = [
   "SECURITY.md",
   "NOTICE",
   "LICENSE",
+  "CHANGELOG.md",
+  "docs/reference/open-source-readiness.md",
+  "docs/reference/github-metadata.md",
 ];
 
 const failures = [];
@@ -52,9 +62,22 @@ if (!notice.includes("EvoPilot") || !notice.includes("Apache License, Version 2.
 
 const readme = await readRequired("README.md");
 for (const target of requiredReadmeLinkTargets) {
-  const linkPattern = new RegExp(`\\[[^\\]]+\\]\\(${target.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\)`);
-  if (!linkPattern.test(readme)) {
+  if (!readme.includes(`(${target})`) && !readme.includes(`(./${target})`)) {
     failures.push(`README.md must link to ${target}`);
+  }
+}
+
+const readiness = await readRequired("docs/reference/open-source-readiness.md");
+for (const phrase of ["Public Trust Assets", "Product Evidence Assets", "Validation Commands"]) {
+  if (!readiness.includes(phrase)) {
+    failures.push(`docs/reference/open-source-readiness.md must include ${phrase}`);
+  }
+}
+
+const metadata = await readRequired("docs/reference/github-metadata.md");
+for (const phrase of ["Description", "Topics", "Update Rule"]) {
+  if (!metadata.includes(phrase)) {
+    failures.push(`docs/reference/github-metadata.md must include ${phrase}`);
   }
 }
 

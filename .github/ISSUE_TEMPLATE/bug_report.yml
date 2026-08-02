@@ -1,0 +1,68 @@
+name: Bug report
+description: Report a reproducible EvoPilot control-plane, CLI, API, or governance defect.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Do not include secrets, tokens, private tenant data, or exploit-ready vulnerability details.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What failed, and what did you expect?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI
+        - API server
+        - HarnessTemplate
+        - ProjectHarnessProfile
+        - TenantHarnessPolicy
+        - Goal loop
+        - Release governance
+        - LLM profile
+        - Logging or evidence
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Reproduction steps
+      description: Include commands and sanitized JSON output where possible.
+      placeholder: |
+        1. Run ...
+        2. Observe ...
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Include requestId, correlation fields, nextAction, blockers, logs, or package IDs with secrets removed.
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "1.0.0 or commit SHA"
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed secrets, tokens, private tenant data, and private repository content.
+          required: true
+        - label: This is not a vulnerability report. Security reports should follow SECURITY.md.
+          required: true

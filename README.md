@@ -9,6 +9,8 @@
 [![Release](https://img.shields.io/badge/GA%20Release-V1.0-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
+[Quickstart](#quick-start) | [CLI for AI Agents](#cli-for-ai-agents) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Contributing](CONTRIBUTING.md) | [Security](SECURITY.md)
+
 EvoPilot helps teams operate AI-agent products as releasable software. It collects real evidence from runtime events, traces, evaluations, CI/CD, source changes, LLM calls, and user feedback; turns that evidence into reviewable evolution opportunities; waits for human approval; then drives code upgrades, delivery, and product-native `GO` / `NO-GO` release decisions.
 
 It is not an agent runtime, a prompt playground, or a generic code generator. Agent runtimes do the work; EvoPilot governs whether the product is ready to evolve and release.
@@ -310,6 +312,9 @@ EvoPilot uses Apache License 2.0 and includes the standard public-repository gov
 - [SECURITY.md](SECURITY.md)
 - [NOTICE](NOTICE)
 - [LICENSE](LICENSE)
+- [CHANGELOG.md](CHANGELOG.md)
+- [Open Source Readiness](docs/reference/open-source-readiness.md)
+- [GitHub Metadata](docs/reference/github-metadata.md)
 
 Governance verification:
 
