@@ -128,7 +128,7 @@ export interface AuthUser {
 
 const DEFAULT_TENANT_ID = "tenant-production";
 const DEFAULT_WORKSPACE_ID = "workspace-agent-products";
-const EVOPILOT_PRODUCT_VERSION = process.env.EVOPILOT_PRODUCT_VERSION ?? "1.0.0";
+const EVOPILOT_PRODUCT_VERSION = process.env.EVOPILOT_PRODUCT_VERSION ?? "1.0.1";
 const EVOPILOT_SERVER_VERSION = process.env.EVOPILOT_SERVER_VERSION ?? "0.1.0";
 const EVOPILOT_API_CONTRACT_VERSION = "v1";
 const EVOPILOT_MINIMUM_CLI_VERSION = "0.1.0";
@@ -733,7 +733,7 @@ interface LogRecord {
   schema?: "evopilot-log/v1";
   severity?: LogSeverity;
   service?: "evopilot";
-  version?: "1.0.0";
+  version?: string;
   event: string;
   category?: LogCategory;
   requestId?: string;
@@ -25395,7 +25395,7 @@ function writeLog(record: LogRecord): void {
     timestamp: record.timestamp ?? new Date().toISOString(),
     schema: "evopilot-log/v1",
     service: "evopilot",
-    version: "1.0.0",
+    version: EVOPILOT_PRODUCT_VERSION,
     severity: logSeverity(record.level),
     category: record.category ?? logCategory(record.event),
     ...record,

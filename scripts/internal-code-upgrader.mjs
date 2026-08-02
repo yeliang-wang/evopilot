@@ -656,8 +656,30 @@ async function runServiceValidation({ repoDir, env, session, validationPlan }) {
     for (const command of validationPlan.smokeCommands ?? []) await runValidationCommand(command, { repoDir, env: { ...env, AGENT_BASE_URL: baseUrl }, session, category: "smoke" });
     for (const command of validationPlan.functionalCommands ?? []) await runValidationCommand(command, { repoDir, env: { ...env, AGENT_BASE_URL: baseUrl }, session, category: "functional" });
   } finally {
-    child.kill("SIGTERM");
+    await stopChildProcess(child);
   }
+}
+
+async function stopChildProcess(child) {
+  if (child.exitCode !== null || child.signalCode !== null) return;
+  await new Promise((resolve) => {
+    let settled = false;
+    let killTimer;
+    let resolveTimer;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(killTimer);
+      clearTimeout(resolveTimer);
+      resolve();
+    };
+    child.once("close", finish);
+    child.kill("SIGTERM");
+    killTimer = setTimeout(() => {
+      if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+      resolveTimer = setTimeout(finish, 1000);
+    }, 2000);
+  });
 }
 
 async function waitForServiceReady(healthUrl, timeoutSeconds, child) {

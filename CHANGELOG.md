@@ -4,6 +4,18 @@ All notable changes to EvoPilot are documented here.
 
 This project follows a product-readiness changelog model: release entries should summarize user-visible capability, governance impact, validation evidence, and migration notes. Do not use local tests alone as release proof.
 
+## 1.0.1 - 2026-08-02
+
+### Fixed
+
+- Hardened service-validation cleanup in the built-in code-upgrader runtime so CI waits for spawned validation services to terminate cleanly on Linux runners.
+
+### Validation
+
+- `npm run check`
+- `node --test tests/unit/internal-runtimes.test.mjs`
+- `git diff --check`
+
 ## 1.0.0 - 2026-08-02
 
 ### Added

@@ -39,7 +39,7 @@ test("Loop worker process advances durable loops and loop soak proves runtime co
     const iterationLog = workerLogs.find((record) => record.event === "loop-worker.iteration");
     assert.equal(iterationLog.schema, "evopilot-log/v1");
     assert.equal(iterationLog.service, "evopilot");
-    assert.equal(iterationLog.version, "1.0.0");
+    assert.equal(iterationLog.version, "1.0.1");
     assert.equal(iterationLog.category, "worker");
     assert.equal(iterationLog.severity, "INFO");
     assert.equal(iterationLog.workerId, "test-worker");
