@@ -17,7 +17,7 @@ It is not an agent runtime, a prompt playground, or a generic code generator. Ag
 
 ## Release Status
 
-EvoPilot is **v1.0.4 GA** for the open-source product baseline: API/CLI control plane, harness governance, goal loops, release decisions, self-hosting, documentation, AI Agent operation, and immutable release artifacts are ready for external adoption. `v1.0.4` is an artifact-publishing patch over the original `v1.0.0` GA baseline.
+EvoPilot is **v1.0.5 GA** for the open-source product baseline: API/CLI control plane, harness governance, goal loops, release decisions, self-hosting, documentation, AI Agent operation, and immutable release artifacts are ready for external adoption. `v1.0.5` is an immutable ECS deployment patch over the original `v1.0.0` GA baseline.
 
 Current phase: **Production Adoption and Public Trust Building**. Community scale, public case studies, and ecosystem reputation will grow through real deployments and sustained releases.
 
@@ -40,7 +40,7 @@ The authoritative release verdict is exposed by:
 GET /api/v1/release/decisions
 ```
 
-Detailed release evidence and deployment checklists live in [docs/reference/release-package.md](docs/reference/release-package.md), [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md), and the public [release notes](docs/releases/1.0.4.md).
+Detailed release evidence and deployment checklists live in [docs/reference/release-package.md](docs/reference/release-package.md), [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md), and the public [release notes](docs/releases/1.0.5.md).
 
 ## Core Capabilities
 
@@ -245,7 +245,7 @@ npm run store:postgres:restore
 Docker:
 
 ```bash
-docker build -t evopilot:1.0.4 .
+docker build -t evopilot:1.0.5 .
 docker compose up --build
 ```
 

@@ -4,6 +4,20 @@ All notable changes to EvoPilot are documented here.
 
 This project follows a product-readiness changelog model: release entries should summarize user-visible capability, governance impact, validation evidence, and migration notes. Do not use local tests alone as release proof.
 
+## 1.0.5 - 2026-08-02
+
+### Fixed
+
+- Fixed immutable ECS compose defaults so the template keeps the `evopilot` project name and resolves the production env file from the repository root.
+- Updated immutable deployment docs to use explicit project name, env file, and no-build rollout commands for pinned image digests.
+
+### Validation
+
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `npm run check`
+- `git diff --check`
+
 ## 1.0.4 - 2026-08-02
 
 ### Added

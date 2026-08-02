@@ -1,3 +1,5 @@
+name: evopilot
+
 services:
   evopilot-server:
     image: "${EVOPILOT_IMAGE:?set EVOPILOT_IMAGE to ghcr.io/...@sha256:...}"
@@ -7,7 +9,7 @@ services:
       - evopilot-postgres
       - evopilot-code-upgrader
     env_file:
-      - "${EVOPILOT_ENV_FILE:-.env.production}"
+      - "${EVOPILOT_ENV_FILE:-../../.env.production}"
     environment:
       EVOPILOT_PORT: "19876"
       EVOPILOT_HOST: "0.0.0.0"
@@ -29,7 +31,7 @@ services:
     depends_on:
       - evopilot-postgres
     env_file:
-      - "${EVOPILOT_ENV_FILE:-.env.production}"
+      - "${EVOPILOT_ENV_FILE:-../../.env.production}"
     environment:
       EVOPILOT_RUN_MODE: "prod"
       EVOPILOT_DATA_ROOT: "/var/lib/evopilot"
@@ -52,7 +54,7 @@ services:
       - evopilot-postgres
       - evopilot-code-upgrader
     env_file:
-      - "${EVOPILOT_ENV_FILE:-.env.production}"
+      - "${EVOPILOT_ENV_FILE:-../../.env.production}"
     environment:
       EVOPILOT_BASE_URL: "${EVOPILOT_BASE_URL:-http://host.containers.internal:19876}"
       EVOPILOT_BASE_URL_FALLBACKS: "${EVOPILOT_BASE_URL_FALLBACKS:-http://evopilot-server:19876}"

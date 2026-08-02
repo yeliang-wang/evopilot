@@ -94,7 +94,7 @@ The release archive is for inspection and reproducibility. Production deployment
 
 ```bash
 export EVOPILOT_IMAGE='ghcr.io/yeliang-wang/evopilot@sha256:<digest>'
-docker compose -f deploy/ecs/compose.immutable.yaml up -d
+docker compose -p evopilot --env-file .env.production -f deploy/ecs/compose.immutable.yaml up -d --no-build
 ```
 
 Before using a release asset, verify checksums:
