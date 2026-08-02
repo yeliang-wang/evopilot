@@ -50,5 +50,7 @@ docker compose -f docker-compose.prod.yml ps
 ## Related Docs
 
 - [Production deployment guide](../docs/operations/deployment.md)
+- [Self-hosting guide](../docs/operations/self-hosting.md)
+- [Release management](../docs/operations/release-management.md)
 - [Runtime management](../docs/operations/runtime-management.md)
 - [Production release package](../docs/reference/release-package.md)

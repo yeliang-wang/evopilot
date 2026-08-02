@@ -23,6 +23,10 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | AI Agent entrypoint | Present | `AGENTS.md`, `docs/cli/AGENTS.md` |
 | API contract | Present | `docs/api/openapi.json` |
 | Dashboard repository | External | `yeliang-wang/evopilot-dashboard` |
+| Self-hosting guide | Present | `docs/operations/self-hosting.md` |
+| Release playbook | Present | `docs/operations/release-management.md` |
+| Release notes | Present | `docs/releases/1.0.0.md` |
+| Open-source maturity report | Present | `docs/reference/open-source-maturity-report.md` |
 
 ## Product Evidence Assets
 
@@ -34,6 +38,8 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | Goal loops | `docs/cli/workflows.md`, `docs/guides/ai-agent-runbook.md` |
 | Release governance | `docs/reference/release-package.md`, `docs/reference/production-user-e2e.md` |
 | Logging and troubleshooting | `AGENTS.md`, `docs/cli/automation.md` |
+| Source-to-GA examples | `examples/source-to-ga/` |
+| Self-hosting and upgrade | `docs/operations/self-hosting.md`, `docs/operations/release-management.md` |
 
 ## Validation Commands
 
@@ -42,6 +48,10 @@ npm run cli:test
 npm run check
 git diff --check
 ```
+
+## Top-Tier Open Source Boundary
+
+The repository now provides the assets needed for external users to understand, deploy, verify, contribute to, and operate EvoPilot. This is the open-source productization baseline. Public community maturity still depends on sustained releases, external adopters, issue traffic, contributor activity, and real-world case studies. Track the current assessment in [Open Source Maturity Report](open-source-maturity-report.md).
 
 ## What This Does Not Prove
 

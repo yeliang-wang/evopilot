@@ -9,7 +9,7 @@
 [![Release](https://img.shields.io/badge/GA%20Release-V1.0-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-[Quickstart](#quick-start) | [CLI for AI Agents](#cli-for-ai-agents) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Contributing](CONTRIBUTING.md) | [Security](SECURITY.md)
+[Quickstart](#quick-start) | [Self-Hosting](docs/operations/self-hosting.md) | [CLI for AI Agents](#cli-for-ai-agents) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Contributing](CONTRIBUTING.md) | [Security](SECURITY.md)
 
 EvoPilot helps teams operate AI-agent products as releasable software. It collects real evidence from runtime events, traces, evaluations, CI/CD, source changes, LLM calls, and user feedback; turns that evidence into reviewable evolution opportunities; waits for human approval; then drives code upgrades, delivery, and product-native `GO` / `NO-GO` release decisions.
 
@@ -38,7 +38,7 @@ The authoritative release verdict is exposed by:
 GET /api/v1/release/decisions
 ```
 
-Detailed release evidence and deployment checklists live in [docs/reference/release-package.md](docs/reference/release-package.md) and [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md).
+Detailed release evidence and deployment checklists live in [docs/reference/release-package.md](docs/reference/release-package.md), [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md), and the public [release notes](docs/releases/1.0.0.md).
 
 ## Core Capabilities
 
@@ -247,7 +247,7 @@ docker build -t evopilot:1.0.0 .
 docker compose up --build
 ```
 
-Deployment details are in [docs/operations/deployment.md](docs/operations/deployment.md).
+Deployment details are in [docs/operations/deployment.md](docs/operations/deployment.md). For a complete API, worker, code-upgrader, Postgres, and standalone Dashboard setup, use [Self-Hosting](docs/operations/self-hosting.md). Release tagging and GitHub Release preparation are documented in [Release Management](docs/operations/release-management.md).
 
 ## API
 
@@ -281,6 +281,7 @@ Start with the [documentation index](docs/README.md). The main entry points are:
 | API integrator | [API Reference](docs/api/README.md) and [OpenAPI](docs/api/openapi.json) |
 | Production operator | [Operations](docs/operations/deployment.md) |
 | Architect | [Architecture](docs/architecture/README.md) |
+| Release maintainer | [Release Management](docs/operations/release-management.md) and [Open Source Maturity Report](docs/reference/open-source-maturity-report.md) |
 
 ## Repository Layout
 
@@ -314,6 +315,9 @@ EvoPilot uses Apache License 2.0 and includes the standard public-repository gov
 - [LICENSE](LICENSE)
 - [CHANGELOG.md](CHANGELOG.md)
 - [Open Source Readiness](docs/reference/open-source-readiness.md)
+- [Open Source Maturity Report](docs/reference/open-source-maturity-report.md)
+- [Release Management](docs/operations/release-management.md)
+- [Self-Hosting](docs/operations/self-hosting.md)
 - [GitHub Metadata](docs/reference/github-metadata.md)
 
 Governance verification:

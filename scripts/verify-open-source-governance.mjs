@@ -12,7 +12,15 @@ const requiredFiles = [
   ".github/ISSUE_TEMPLATE/config.yml",
   ".github/pull_request_template.md",
   "docs/reference/open-source-readiness.md",
+  "docs/reference/open-source-maturity-report.md",
   "docs/reference/github-metadata.md",
+  "docs/operations/self-hosting.md",
+  "docs/operations/release-management.md",
+  "docs/releases/1.0.0.md",
+  "examples/README.md",
+  "examples/source-to-ga/README.md",
+  "examples/source-to-ga/node-api-service-goal-loop.md",
+  "examples/source-to-ga/evopilot-dashboard-goal-loop.md",
 ];
 
 const requiredReadmeLinkTargets = [
@@ -23,6 +31,9 @@ const requiredReadmeLinkTargets = [
   "LICENSE",
   "CHANGELOG.md",
   "docs/reference/open-source-readiness.md",
+  "docs/reference/open-source-maturity-report.md",
+  "docs/operations/self-hosting.md",
+  "docs/operations/release-management.md",
   "docs/reference/github-metadata.md",
 ];
 
@@ -68,9 +79,37 @@ for (const target of requiredReadmeLinkTargets) {
 }
 
 const readiness = await readRequired("docs/reference/open-source-readiness.md");
-for (const phrase of ["Public Trust Assets", "Product Evidence Assets", "Validation Commands"]) {
+for (const phrase of ["Public Trust Assets", "Product Evidence Assets", "Validation Commands", "Top-Tier Open Source Boundary"]) {
   if (!readiness.includes(phrase)) {
     failures.push(`docs/reference/open-source-readiness.md must include ${phrase}`);
+  }
+}
+
+const maturity = await readRequired("docs/reference/open-source-maturity-report.md");
+for (const phrase of ["Conclusion", "Capability Coverage", "Top-Tier Gap Assessment", "Maturity Target"]) {
+  if (!maturity.includes(phrase)) {
+    failures.push(`docs/reference/open-source-maturity-report.md must include ${phrase}`);
+  }
+}
+
+const selfHosting = await readRequired("docs/operations/self-hosting.md");
+for (const phrase of ["15 Minute Path", "Backup", "Upgrade Path", "Acceptance Checklist"]) {
+  if (!selfHosting.includes(phrase)) {
+    failures.push(`docs/operations/self-hosting.md must include ${phrase}`);
+  }
+}
+
+const releaseManagement = await readRequired("docs/operations/release-management.md");
+for (const phrase of ["Release Policy", "Versioning", "Release Checklist", "GitHub Release Notes"]) {
+  if (!releaseManagement.includes(phrase)) {
+    failures.push(`docs/operations/release-management.md must include ${phrase}`);
+  }
+}
+
+const examples = await readRequired("examples/source-to-ga/README.md");
+for (const phrase of ["Node API service", "EvoPilot Dashboard", "Required Stop Points"]) {
+  if (!examples.includes(phrase)) {
+    failures.push(`examples/source-to-ga/README.md must include ${phrase}`);
   }
 }
 

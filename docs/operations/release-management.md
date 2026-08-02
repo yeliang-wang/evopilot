@@ -1,0 +1,87 @@
+# Release Management
+
+> Publish EvoPilot from validated control-plane evidence, not from a local build alone.
+
+## Release Policy
+
+EvoPilot release readiness has two layers:
+
+| Layer | Purpose | Required Evidence |
+| --- | --- | --- |
+| Product release decision | Proves the control plane reached the requested target. | `GET /api/v1/release/decisions`, release evidence, criteria, blockers, risk register. |
+| Open-source release package | Makes the public repository adoptable. | Tag, changelog, release notes, self-hosting docs, validation commands, security and contribution docs. |
+
+Do not claim a public release from `npm run check` alone. `npm run check` proves repository validation. The authoritative product verdict remains EvoPilot release governance.
+
+## Versioning
+
+Use semantic versions for public releases:
+
+```text
+vMAJOR.MINOR.PATCH
+```
+
+Rules:
+
+- Do not move an existing public tag.
+- Update `CHANGELOG.md` before tagging.
+- Keep release notes under `docs/releases/`.
+- Include operator impact, compatibility, migration, and validation evidence.
+- Dashboard releases are separate from EvoPilot releases, but release notes must state the compatible EvoPilot API version.
+
+## Release Checklist
+
+Before tagging:
+
+```bash
+git status --short --branch
+npm ci
+npm run cli:test
+npm run check
+git diff --check
+```
+
+For broader product release evidence, also run the applicable production or staging gates:
+
+```bash
+npm run test:e2e:production
+npm run release:soak:ga:active
+evopilot release decisions --project <project-id> --target <release-target-id> --json
+```
+
+Stop if the product-native release decision is `NO-GO`, `BLOCKED`, missing, or has unresolved required criteria.
+
+## Tag And Push
+
+```bash
+git tag -a v1.0.0 -m "EvoPilot v1.0.0"
+git push origin main
+git push origin v1.0.0
+git ls-remote origin refs/heads/main refs/tags/v1.0.0
+```
+
+If the tag already exists, do not retag by force. Create a new patch version after adding the new changelog and release notes.
+
+## GitHub Release Notes
+
+Use the corresponding file in `docs/releases/` as the GitHub Release body. Each release note must include:
+
+- What changed.
+- Who should upgrade.
+- Compatibility with Dashboard and API clients.
+- Validation commands and product evidence.
+- Migration or rollback notes.
+- Known limits.
+
+If `gh` is unavailable, create the GitHub Release manually from the pushed tag and paste the release note body from this repository.
+
+## Rollback
+
+Rollback is an operator action, not a Git-only action:
+
+1. Stop new goal loop execution.
+2. Preserve logs, release decision, audit, and `requestId` evidence.
+3. Restore the previous image or checked-out tag.
+4. Restore Postgres or file-state backup only if data migration introduced the fault.
+5. Verify `/health`, `/ready`, worker queue, Dashboard proxy, and release decisions.
+6. Record the rollback in `CHANGELOG.md` or the next release note.

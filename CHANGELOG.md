@@ -23,6 +23,7 @@ This project follows a product-readiness changelog model: release entries should
 - Harness template evolution runbook in `docs/guides/harness-template-evolution.md`.
 - ProjectHarnessProfile schema in `docs/reference/project-harness-profile-schema.md`.
 - Production release evidence in `docs/reference/release-package.md` and `docs/reference/production-user-e2e.md`.
+- Self-hosting path, public release management, version release notes, source-to-GA examples, and open-source maturity reporting.
 
 ### Validation
 

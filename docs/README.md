@@ -5,6 +5,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 ## New Users
 
 - [Quick Start](quickstart.md) - install, run locally, and verify the API.
+- [Self-Hosting](operations/self-hosting.md) - run the API server, loop worker, code-upgrader, Postgres, and standalone Dashboard.
 - [Control Plane User Guide](guides/user-guide.md) - operate projects, credentials, goals, loops, releases, and audit through API/CLI semantics.
 - [Project Harness Onboarding](guides/project-harness-onboarding.md) - generate, review, activate, and evolve project-level harness profiles.
 - [HarnessTemplate Evolution](guides/harness-template-evolution.md) - administrator lifecycle for evolving public harness templates from reviewable sources, draft validation, approval, publishing, and project impact.
@@ -33,7 +34,9 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 
 ## Production Operators
 
+- [Self-Hosting](operations/self-hosting.md) - 15 minute Docker Compose path and upgrade/backup boundaries.
 - [Deployment](operations/deployment.md) - production deployment, ECS/Kubernetes, auth, persistence, and logging.
+- [Release Management](operations/release-management.md) - versioning, release notes, tag rules, rollback, and public release checklist.
 - [Deployment Assets](../deploy/README.md) - committed Docker Compose and Kubernetes deployment assets, plus production host-local file boundaries.
 - [Runtime Assets](../runtimes/README.md) - runtime locks, code-upgrader boundary, SBOM, license, vulnerability, and validation evidence.
 - [Runtime Management](operations/runtime-management.md) - runtime locks, worker operation, and runtime checks.
@@ -55,11 +58,15 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Lifecycle](reference/lifecycle.md) - evidence-to-release lifecycle model.
 - [Project Harness Profile Schema](reference/project-harness-profile-schema.md) - YAML/JSON source format and compiled control-plane contract.
 - [Product Readiness](reference/product-readiness.md) - GA readiness review.
+- [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
+- [EvoPilot v1.0.0 Release Notes](releases/1.0.0.md) - public release body and compatibility notes.
 
 ## Examples And Comparisons
 
+- [Examples](../examples/README.md) - example index for onboarding, source-to-GA, executor adapters, and GitHub workflows.
+- [Source-To-GA Examples](../examples/source-to-ga/README.md) - end-to-end project onboarding, harness review, goal loop, and release decision scenarios.
 - [Mainstream Loop Harness Alignment](examples/comparisons/mainstream-loop-harness-alignment.md) - alignment notes against mainstream loop-harness patterns.
 
 ## Runtime Artifacts

@@ -1,5 +1,7 @@
 # 部署
 
+完整自托管路径见 [Self-Hosting](self-hosting.md)。版本发布、tag、GitHub Release notes 和 rollback 规则见 [Release Management](release-management.md)。
+
 ## 本地生产近似运行
 
 ```bash
