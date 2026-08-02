@@ -4,6 +4,18 @@ All notable changes to EvoPilot are documented here.
 
 This project follows a product-readiness changelog model: release entries should summarize user-visible capability, governance impact, validation evidence, and migration notes. Do not use local tests alone as release proof.
 
+## 1.0.3 - 2026-08-02
+
+### Fixed
+
+- Aligned CLI functional tests with the documented CI client-surface contract so GitHub Actions expects `ci` when `CI=true`.
+
+### Validation
+
+- `npm run cli:test`
+- `npm run check`
+- `git diff --check`
+
 ## 1.0.2 - 2026-08-02
 
 ### Fixed

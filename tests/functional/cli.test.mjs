@@ -532,7 +532,7 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     assert.equal(status.api.apiContractVersion, "v1");
     assert.equal(status.health.status, "UP");
     assert.equal(status.ready.status, "READY");
-    assert.equal(status.client.surface, "agent-or-script");
+    assert.equal(status.client.surface, expectedCliSurface());
     assert.equal(status.llmUsage.summary.totalTokens, 0);
     assert.ok(status.summary);
 
@@ -813,7 +813,7 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
     assert.equal(goalRunJson.status.goal.id, goal.id);
     assert.ok(goalRunJson.status.chain.some((node) => node.id === "goal-target"));
     assert.ok(goalRunJson.status.targetPackages.some((item) => item.targetId === goalAdvance.loop.context.goalTargetId && item.status === "NO-GO"));
-    assert.equal(goalRunJson.llmUsage.client.surface, "agent-or-script");
+    assert.equal(goalRunJson.llmUsage.client.surface, expectedCliSurface());
     assert.equal(goalRunJson.llmUsage.summary.totalTokens, 0);
 
     const goalRunLlmPreflightJson = await runCli([
@@ -1352,4 +1352,8 @@ function cliPlannerTarget(id, phase, title, layer, acceptanceCriteria) {
     reviewCapabilities: phase === "alpha" || phase === "rc" || phase === "ga" ? ["architecture"] : ["testing"],
     packageOutputs: [`${id}-target-evidence-package`]
   };
+}
+
+function expectedCliSurface() {
+  return process.env.CI ? "ci" : "agent-or-script";
 }

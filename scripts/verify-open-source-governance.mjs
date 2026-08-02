@@ -16,7 +16,7 @@ const requiredFiles = [
   "docs/reference/github-metadata.md",
   "docs/operations/self-hosting.md",
   "docs/operations/release-management.md",
-  "docs/releases/1.0.2.md",
+  "docs/releases/1.0.3.md",
   "examples/README.md",
   "examples/source-to-ga/README.md",
   "examples/source-to-ga/node-api-service-goal-loop.md",

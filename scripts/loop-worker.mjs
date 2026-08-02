@@ -14,7 +14,7 @@ const requestAttempts = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_REQUEST
 const requestRetryBackoffMs = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_RETRY_BACKOFF_MS, 250);
 const once = process.env.EVOPILOT_LOOP_WORKER_ONCE === "1" || process.argv.includes("--once");
 const maxCycles = positiveInteger(process.env.EVOPILOT_LOOP_WORKER_MAX_CYCLES, once ? 1 : Number.MAX_SAFE_INTEGER);
-const productVersion = process.env.EVOPILOT_PRODUCT_VERSION ?? "1.0.2";
+const productVersion = process.env.EVOPILOT_PRODUCT_VERSION ?? "1.0.3";
 
 let stopped = false;
 for (const signal of ["SIGINT", "SIGTERM"]) {

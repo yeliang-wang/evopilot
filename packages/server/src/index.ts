@@ -128,7 +128,7 @@ export interface AuthUser {
 
 const DEFAULT_TENANT_ID = "tenant-production";
 const DEFAULT_WORKSPACE_ID = "workspace-agent-products";
-const EVOPILOT_PRODUCT_VERSION = process.env.EVOPILOT_PRODUCT_VERSION ?? "1.0.2";
+const EVOPILOT_PRODUCT_VERSION = process.env.EVOPILOT_PRODUCT_VERSION ?? "1.0.3";
 const EVOPILOT_SERVER_VERSION = process.env.EVOPILOT_SERVER_VERSION ?? "0.1.0";
 const EVOPILOT_API_CONTRACT_VERSION = "v1";
 const EVOPILOT_MINIMUM_CLI_VERSION = "0.1.0";
