@@ -7,6 +7,7 @@ const requiredFiles = [
   "CONTRIBUTING.md",
   "CODE_OF_CONDUCT.md",
   "SECURITY.md",
+  ".github/workflows/release-artifacts.yml",
   ".github/ISSUE_TEMPLATE/bug_report.yml",
   ".github/ISSUE_TEMPLATE/feature_request.yml",
   ".github/ISSUE_TEMPLATE/config.yml",
@@ -16,7 +17,10 @@ const requiredFiles = [
   "docs/reference/github-metadata.md",
   "docs/operations/self-hosting.md",
   "docs/operations/release-management.md",
-  "docs/releases/1.0.3.md",
+  "docs/releases/1.0.4.md",
+  "deploy/ecs/compose.immutable.yaml",
+  "scripts/build-release-artifacts.mjs",
+  "scripts/verify-release-artifacts.mjs",
   "examples/README.md",
   "examples/source-to-ga/README.md",
   "examples/source-to-ga/node-api-service-goal-loop.md",
@@ -100,7 +104,7 @@ for (const phrase of ["15 Minute Path", "Backup", "Upgrade Path", "Acceptance Ch
 }
 
 const releaseManagement = await readRequired("docs/operations/release-management.md");
-for (const phrase of ["Release Policy", "Versioning", "Release Checklist", "GitHub Release Notes"]) {
+for (const phrase of ["Release Policy", "Versioning", "Release Checklist", "GitHub Release Notes", "Immutable Release Artifacts"]) {
   if (!releaseManagement.includes(phrase)) {
     failures.push(`docs/operations/release-management.md must include ${phrase}`);
   }

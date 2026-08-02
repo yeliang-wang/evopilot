@@ -4,6 +4,21 @@ All notable changes to EvoPilot are documented here.
 
 This project follows a product-readiness changelog model: release entries should summarize user-visible capability, governance impact, validation evidence, and migration notes. Do not use local tests alone as release proof.
 
+## 1.0.4 - 2026-08-02
+
+### Added
+
+- Added immutable release artifact publishing for GA patch releases: release archive, SPDX SBOM, provenance, SHA256 checksums, and GHCR image digest metadata.
+- Added tag-triggered GitHub Actions release artifact workflow.
+- Added ECS immutable compose template that deploys a pinned image digest instead of building from a production checkout.
+
+### Validation
+
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `npm run check`
+- `git diff --check`
+
 ## 1.0.3 - 2026-08-02
 
 ### Fixed

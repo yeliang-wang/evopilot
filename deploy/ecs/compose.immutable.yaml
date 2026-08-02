@@ -1,0 +1,90 @@
+services:
+  evopilot-server:
+    image: "${EVOPILOT_IMAGE:?set EVOPILOT_IMAGE to ghcr.io/...@sha256:...}"
+    ports:
+      - "${EVOPILOT_PORT:-19876}:19876"
+    depends_on:
+      - evopilot-postgres
+      - evopilot-code-upgrader
+    env_file:
+      - "${EVOPILOT_ENV_FILE:-.env.production}"
+    environment:
+      EVOPILOT_PORT: "19876"
+      EVOPILOT_HOST: "0.0.0.0"
+      EVOPILOT_RUN_MODE: "prod"
+      EVOPILOT_DATA_ROOT: "/var/lib/evopilot"
+      EVOPILOT_CODE_UPGRADER_BASE_URL: "http://evopilot-code-upgrader:3000"
+      EVOPILOT_LOG_LEVEL: "${EVOPILOT_LOG_LEVEL:-info}"
+      EVOPILOT_LOG_STACK: "${EVOPILOT_LOG_STACK:-true}"
+    volumes:
+      - evopilot-data:/var/lib/evopilot
+      - "${EVOPILOT_HOST_WORKSPACE:-/opt/evopilot}:/workspace:Z"
+      - "${EVOPILOT_HOST_WORKSPACE:-/opt/evopilot}:/opt/evopilot:Z"
+      - "${EVOPILOT_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock"
+    restart: unless-stopped
+
+  evopilot-code-upgrader:
+    image: "${EVOPILOT_IMAGE:?set EVOPILOT_IMAGE to ghcr.io/...@sha256:...}"
+    command: ["npm", "run", "code-upgrader"]
+    depends_on:
+      - evopilot-postgres
+    env_file:
+      - "${EVOPILOT_ENV_FILE:-.env.production}"
+    environment:
+      EVOPILOT_RUN_MODE: "prod"
+      EVOPILOT_DATA_ROOT: "/var/lib/evopilot"
+      EVOPILOT_CODE_UPGRADER_HOST: "0.0.0.0"
+      EVOPILOT_CODE_UPGRADER_PORT: "3000"
+      EVOPILOT_LOG_LEVEL: "${EVOPILOT_LOG_LEVEL:-info}"
+      EVOPILOT_LOG_STACK: "${EVOPILOT_LOG_STACK:-true}"
+    volumes:
+      - evopilot-data:/var/lib/evopilot
+      - "${EVOPILOT_HOST_WORKSPACE:-/opt/evopilot}:/workspace:Z"
+      - "${EVOPILOT_HOST_WORKSPACE:-/opt/evopilot}:/opt/evopilot:Z"
+      - "${EVOPILOT_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock"
+    restart: unless-stopped
+
+  evopilot-loop-worker:
+    image: "${EVOPILOT_IMAGE:?set EVOPILOT_IMAGE to ghcr.io/...@sha256:...}"
+    command: ["npm", "run", "loop-worker"]
+    depends_on:
+      - evopilot-server
+      - evopilot-postgres
+      - evopilot-code-upgrader
+    env_file:
+      - "${EVOPILOT_ENV_FILE:-.env.production}"
+    environment:
+      EVOPILOT_BASE_URL: "${EVOPILOT_BASE_URL:-http://host.containers.internal:19876}"
+      EVOPILOT_BASE_URL_FALLBACKS: "${EVOPILOT_BASE_URL_FALLBACKS:-http://evopilot-server:19876}"
+      EVOPILOT_RUN_MODE: "prod"
+      EVOPILOT_DATA_ROOT: "/var/lib/evopilot"
+      EVOPILOT_LOOP_WORKER_ID: "${EVOPILOT_LOOP_WORKER_ID:-evopilot-prod-worker}"
+      EVOPILOT_LOOP_WORKER_POLL_MS: "${EVOPILOT_LOOP_WORKER_POLL_MS:-5000}"
+      EVOPILOT_LOOP_WORKER_LEASE_SECONDS: "${EVOPILOT_LOOP_WORKER_LEASE_SECONDS:-120}"
+      EVOPILOT_LOG_LEVEL: "${EVOPILOT_LOG_LEVEL:-info}"
+      EVOPILOT_LOG_STACK: "${EVOPILOT_LOG_STACK:-true}"
+    volumes:
+      - evopilot-data:/var/lib/evopilot
+      - "${EVOPILOT_HOST_WORKSPACE:-/opt/evopilot}:/workspace:Z"
+      - "${EVOPILOT_HOST_WORKSPACE:-/opt/evopilot}:/opt/evopilot:Z"
+      - "${EVOPILOT_DOCKER_SOCK:-/var/run/docker.sock}:/var/run/docker.sock"
+    restart: unless-stopped
+
+  evopilot-postgres:
+    image: "${EVOPILOT_POSTGRES_IMAGE:-docker.m.daocloud.io/library/postgres:16-alpine}"
+    environment:
+      POSTGRES_DB: "${EVOPILOT_POSTGRES_DB:-evopilot}"
+      POSTGRES_USER: "${EVOPILOT_POSTGRES_USER:-evopilot}"
+      POSTGRES_PASSWORD: "${EVOPILOT_POSTGRES_PASSWORD:?set EVOPILOT_POSTGRES_PASSWORD in the production environment}"
+    volumes:
+      - evopilot-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${EVOPILOT_POSTGRES_USER:-evopilot} -d ${EVOPILOT_POSTGRES_DB:-evopilot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+volumes:
+  evopilot-data:
+  evopilot-postgres-data:

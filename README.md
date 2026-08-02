@@ -17,7 +17,7 @@ It is not an agent runtime, a prompt playground, or a generic code generator. Ag
 
 ## Release Status
 
-EvoPilot is **v1.0.3 GA** for the open-source product baseline: API/CLI control plane, harness governance, goal loops, release decisions, self-hosting, documentation, and AI Agent operation are ready for external adoption. `v1.0.3` is a publication-hardening patch over the original `v1.0.0` GA baseline.
+EvoPilot is **v1.0.4 GA** for the open-source product baseline: API/CLI control plane, harness governance, goal loops, release decisions, self-hosting, documentation, AI Agent operation, and immutable release artifacts are ready for external adoption. `v1.0.4` is an artifact-publishing patch over the original `v1.0.0` GA baseline.
 
 Current phase: **Production Adoption and Public Trust Building**. Community scale, public case studies, and ecosystem reputation will grow through real deployments and sustained releases.
 
@@ -40,7 +40,7 @@ The authoritative release verdict is exposed by:
 GET /api/v1/release/decisions
 ```
 
-Detailed release evidence and deployment checklists live in [docs/reference/release-package.md](docs/reference/release-package.md), [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md), and the public [release notes](docs/releases/1.0.3.md).
+Detailed release evidence and deployment checklists live in [docs/reference/release-package.md](docs/reference/release-package.md), [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md), and the public [release notes](docs/releases/1.0.4.md).
 
 ## Core Capabilities
 
@@ -245,11 +245,11 @@ npm run store:postgres:restore
 Docker:
 
 ```bash
-docker build -t evopilot:1.0.3 .
+docker build -t evopilot:1.0.4 .
 docker compose up --build
 ```
 
-Deployment details are in [docs/operations/deployment.md](docs/operations/deployment.md). For a complete API, worker, code-upgrader, Postgres, and standalone Dashboard setup, use [Self-Hosting](docs/operations/self-hosting.md). Release tagging and GitHub Release preparation are documented in [Release Management](docs/operations/release-management.md).
+Deployment details are in [docs/operations/deployment.md](docs/operations/deployment.md). For a complete API, worker, code-upgrader, Postgres, and standalone Dashboard setup, use [Self-Hosting](docs/operations/self-hosting.md). Release tagging, GitHub Release artifacts, checksums, SBOM, provenance, and image digest deployment are documented in [Release Management](docs/operations/release-management.md).
 
 ## API
 

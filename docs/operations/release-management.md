@@ -10,6 +10,7 @@ EvoPilot release readiness has two layers:
 | --- | --- | --- |
 | Product release decision | Proves the control plane reached the requested target. | `GET /api/v1/release/decisions`, release evidence, criteria, blockers, risk register. |
 | Open-source release package | Makes the public repository adoptable. | Tag, changelog, release notes, self-hosting docs, validation commands, security and contribution docs. |
+| Immutable deployment artifact | Proves the production rollout can use a fixed artifact instead of rebuilding from a checkout. | Release archive, SHA256SUMS, SPDX SBOM, provenance, GHCR image digest metadata, ECS immutable compose template. |
 
 Do not claim a public release from `npm run check` alone. `npm run check` proves repository validation. The authoritative product verdict remains EvoPilot release governance.
 
@@ -38,6 +39,8 @@ git status --short --branch
 npm ci
 npm run cli:test
 npm run check
+npm run release:artifact
+npm run verify:release-artifact
 git diff --check
 ```
 
@@ -74,6 +77,33 @@ Use the corresponding file in `docs/releases/` as the GitHub Release body. Each 
 - Known limits.
 
 If `gh` is unavailable, create the GitHub Release manually from the pushed tag and paste the release note body from this repository.
+
+## Immutable Release Artifacts
+
+Patch releases publish immutable deployment evidence from `.github/workflows/release-artifacts.yml`.
+
+Expected assets:
+
+- `evopilot-<version>-source.tar.gz`
+- `evopilot-<version>-sbom.spdx.json`
+- `evopilot-<version>-provenance.json`
+- `evopilot-<version>-image-metadata.json`
+- `SHA256SUMS`
+
+The release archive is for inspection and reproducibility. Production deployment should prefer the immutable image reference recorded in `evopilot-<version>-image-metadata.json`:
+
+```bash
+export EVOPILOT_IMAGE='ghcr.io/yeliang-wang/evopilot@sha256:<digest>'
+docker compose -f deploy/ecs/compose.immutable.yaml up -d
+```
+
+Before using a release asset, verify checksums:
+
+```bash
+sha256sum -c SHA256SUMS
+```
+
+Do not treat a source checkout plus production build as immutable artifact deployment. That remains a valid source-ref rollout path, but it is weaker release evidence.
 
 ## Rollback
 

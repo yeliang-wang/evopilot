@@ -18,6 +18,7 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | Security policy | Present | `SECURITY.md` |
 | Code of conduct | Present | `CODE_OF_CONDUCT.md` |
 | CI workflow | Present | `.github/workflows/ci.yml` |
+| Release artifact workflow | Present | `.github/workflows/release-artifacts.yml` |
 | Issue forms | Present | `.github/ISSUE_TEMPLATE/` |
 | Pull request template | Present | `.github/pull_request_template.md` |
 | AI Agent entrypoint | Present | `AGENTS.md`, `docs/cli/AGENTS.md` |
@@ -25,7 +26,8 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | Dashboard repository | External | `yeliang-wang/evopilot-dashboard` |
 | Self-hosting guide | Present | `docs/operations/self-hosting.md` |
 | Release playbook | Present | `docs/operations/release-management.md` |
-| Release notes | Present | `docs/releases/1.0.0.md` |
+| Release notes | Present | `docs/releases/1.0.4.md` |
+| Immutable release artifacts | Present | `scripts/build-release-artifacts.mjs`, `scripts/verify-release-artifacts.mjs`, `deploy/ecs/compose.immutable.yaml` |
 | Open-source maturity report | Present | `docs/reference/open-source-maturity-report.md` |
 
 ## Product Evidence Assets
@@ -37,6 +39,7 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | CLI automation | `docs/cli/AGENTS.md`, `docs/cli/quickstart.md`, `docs/cli/commands.md` |
 | Goal loops | `docs/cli/workflows.md`, `docs/guides/ai-agent-runbook.md` |
 | Release governance | `docs/reference/release-package.md`, `docs/reference/production-user-e2e.md` |
+| Immutable deployment evidence | `docs/operations/release-management.md`, `deploy/ecs/compose.immutable.yaml`, `npm run release:artifact` |
 | Logging and troubleshooting | `AGENTS.md`, `docs/cli/automation.md` |
 | Source-to-GA examples | `examples/source-to-ga/` |
 | Self-hosting and upgrade | `docs/operations/self-hosting.md`, `docs/operations/release-management.md` |
@@ -46,6 +49,8 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 ```bash
 npm run cli:test
 npm run check
+npm run release:artifact
+npm run verify:release-artifact
 git diff --check
 ```
 

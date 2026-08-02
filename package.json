@@ -1,6 +1,6 @@
 {
   "name": "evopilot",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "description": "GA Release V1.0 Loop Engineering and self-evolution control plane for AI agent products.",
   "license": "Apache-2.0",
@@ -37,6 +37,8 @@
     "test:e2e:production": "npm run build && node scripts/production-e2e.mjs",
     "release:soak:ga": "node scripts/ga-soak.mjs",
     "release:soak:ga:active": "EVOPILOT_GA_SOAK_WORKLOAD_COMMAND=\"node scripts/release-matrix-project-loop.mjs\" node scripts/ga-soak.mjs",
+    "release:artifact": "node scripts/build-release-artifacts.mjs",
+    "verify:release-artifact": "node scripts/verify-release-artifacts.mjs",
     "verify:production-assets": "node scripts/verify-production-assets.mjs",
     "verify:oss-governance": "node scripts/verify-open-source-governance.mjs",
     "verify:runtime-lock": "node scripts/verify-runtime-lock.mjs",

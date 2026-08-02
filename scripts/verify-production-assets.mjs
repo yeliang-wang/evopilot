@@ -7,12 +7,14 @@ const requiredFiles = [
   "docker-compose.yml",
   ".env.example",
   ".github/workflows/ci.yml",
+  ".github/workflows/release-artifacts.yml",
   "deploy/k8s/deployment.yaml",
   "deploy/k8s/service.yaml",
   "deploy/k8s/pvc.yaml",
   "deploy/k8s/code-upgrader-deployment.yaml",
   "deploy/k8s/code-upgrader-service.yaml",
   "deploy/k8s/secret.example.yaml",
+  "deploy/ecs/compose.immutable.yaml",
   "docs/README.md",
   "docs/quickstart.md",
   "docs/api/README.md",
@@ -40,6 +42,8 @@ const requiredFiles = [
   "standards/maturity/evopilot-default/v1/ga.json",
   "scripts/loop-worker.mjs",
   "scripts/loop-soak.mjs",
+  "scripts/build-release-artifacts.mjs",
+  "scripts/verify-release-artifacts.mjs",
   "scripts/verify-runtime-lock.mjs",
   "runtimes/runtime-lock.json"
 ];
