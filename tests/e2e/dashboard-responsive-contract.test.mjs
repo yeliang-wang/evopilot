@@ -128,7 +128,7 @@ test("dashboard page-operation docs are owned by the standalone dashboard reposi
   assert.match(userGuide, /Dashboard operation docs/);
   assert.match(userGuide, /Control Plane Model/);
   assert.doesNotMatch(userGuide, /进入 Dashboard 的“接入项目”/);
-  assert.match(dashboardDocsIndex, /Dashboard docs describe UI operations/);
+  assert.match(dashboardDocsIndex, /Dashboard docs describe the browser operation path/);
   assert.match(dashboardAiDocs, /WorkBuddy/);
 });
 
