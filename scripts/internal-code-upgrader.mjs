@@ -643,6 +643,7 @@ async function runServiceValidation({ repoDir, env, session, validationPlan }) {
       HOST: host,
       AGENT_BASE_URL: baseUrl
     },
+    detached: process.platform !== "win32",
     stdio: ["ignore", "pipe", "pipe"]
   });
   let stdout = "";
@@ -671,15 +672,30 @@ async function stopChildProcess(child) {
       settled = true;
       clearTimeout(killTimer);
       clearTimeout(resolveTimer);
+      child.stdout?.destroy();
+      child.stderr?.destroy();
       resolve();
     };
     child.once("close", finish);
-    child.kill("SIGTERM");
+    signalChildProcessTree(child, "SIGTERM");
     killTimer = setTimeout(() => {
-      if (child.exitCode === null && child.signalCode === null) child.kill("SIGKILL");
+      if (child.exitCode === null && child.signalCode === null) signalChildProcessTree(child, "SIGKILL");
       resolveTimer = setTimeout(finish, 1000);
     }, 2000);
   });
+}
+
+function signalChildProcessTree(child, signal) {
+  if (!child?.pid) return false;
+  if (process.platform !== "win32") {
+    try {
+      process.kill(-child.pid, signal);
+      return true;
+    } catch (error) {
+      if (error?.code === "ESRCH") return false;
+    }
+  }
+  return child.kill(signal);
 }
 
 async function waitForServiceReady(healthUrl, timeoutSeconds, child) {

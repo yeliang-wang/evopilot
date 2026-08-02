@@ -868,7 +868,7 @@ GitHub Actions 请求示例：
 ```json
 {
   "parameters": {
-    "VERSION": "1.0.1"
+    "VERSION": "1.0.2"
   }
 }
 ```
@@ -879,7 +879,7 @@ GitLab CI 请求示例：
 {
   "executor": "gitlab-ci",
   "parameters": {
-    "VERSION": "1.0.1",
+    "VERSION": "1.0.2",
     "TARGET_ENV": "production"
   }
 }
@@ -889,7 +889,7 @@ GitLab CI 请求示例：
 
 ```json
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "ciStatus": "PASSED"
 }
 ```
