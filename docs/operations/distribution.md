@@ -7,7 +7,7 @@ EvoPilot distribution has three supported entry points. These labels match the r
 | README CTA | Audience | Command |
 | --- | --- | --- |
 | Install CLI | Operators, CI jobs, and AI agents that already have a server | `npm install -g @evopilot/cli` |
-| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.8/install.sh)"` |
+| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.9/install.sh)"` |
 | Kubernetes | Platform teams running EvoPilot on Kubernetes | `helm install evopilot ./charts/evopilot` |
 
 The CLI and installer are release artifacts. They do not replace server-side RBAC, tenant/workspace scope, approval gates, source closure, release policy, or audit.
@@ -26,19 +26,28 @@ evopilot status --server https://evopilot.example.com --json
 
 The CLI package depends on the published `@evopilot/client` and `@evopilot/contracts` packages. Release validation must prove that all three tarballs install together in an empty project.
 
-## Self-Host Installer
+## Self-Host Installers
 
-Bootstrap from the tagged installer:
+Bootstrap from the tagged POSIX installer. It downloads the release manifest first and verifies the requested package/version boundary before calling `npx`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.8/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.9/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
+
+Windows operators can use the tagged PowerShell entrypoint:
+
+```powershell
+iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.9/install.ps1 -OutFile install.ps1
+.\install.ps1 -Dir evopilot-stack
+```
+
+The manifest is published at `installers/manifest.json` in the release tag and as `evopilot-<version>-install-manifest.json` in GitHub Release assets. Use `--skip-manifest` only for an explicitly reviewed offline install.
 
 Or generate directly from npm:
 
 ```bash
-npx create-evopilot@1.0.8 self-host --dir evopilot-stack --init-env
+npx create-evopilot@1.0.9 self-host --dir evopilot-stack --init-env
 cd evopilot-stack
 ```
 
@@ -52,7 +61,7 @@ docker compose up -d
 After `.env` has real LLM settings, the installer can start and verify the stack:
 
 ```bash
-npx create-evopilot@1.0.8 self-host --dir evopilot-stack --start
+npx create-evopilot@1.0.9 self-host --dir evopilot-stack --start
 ```
 
 The generated stack starts:
@@ -84,7 +93,7 @@ helm upgrade --install evopilot ./charts/evopilot \
   --set ingress.hosts[0].host=evopilot.example.com
 ```
 
-The chart deploys the control-plane API, loop worker, code-upgrader, Postgres, Dashboard service, optional Ingress, and persistent volumes.
+The chart deploys the control-plane API, loop worker, code-upgrader, Postgres, Dashboard service, optional Ingress, and persistent volumes. Use `service.extraPorts` and `dashboard.service.extraPorts` when the platform needs additional Service ports for metrics, private health routing, or controlled previews.
 
 Set `postgres.enabled=false` only when `postgres.externalDsn` is provided or `auth.existingSecret` contains `EVOPILOT_LOOP_STORE_DSN`. Set `persistence.enabled=false` only for disposable evaluation environments; the chart then uses an `emptyDir` volume for EvoPilot runtime data.
 
@@ -98,12 +107,12 @@ npm run verify:distribution
 
 This command verifies:
 
-- Helm chart structure, version, and optional `helm lint` when Helm is installed.
+- Helm chart structure, version, Service extra ports, and optional `helm lint` plus `helm template` render smoke when Helm is installed.
 - npm tarballs for `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, and `create-evopilot`.
 - Empty-project install smoke for the `evopilot` and `create-evopilot` binaries.
 - Generated self-host stack files and initialized `.env` output.
 
-Release artifacts also include npm package tarballs, `install.sh`, and `evopilot-<version>-helm-chart.tgz`.
+Release artifacts also include npm package tarballs, `install.sh`, `install.ps1`, `evopilot-<version>-install-manifest.json`, and `evopilot-<version>-helm-chart.tgz`.
 
 ## Publishing
 

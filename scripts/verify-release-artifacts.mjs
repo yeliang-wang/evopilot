@@ -33,6 +33,9 @@ const required = [
   `evopilot-client-${version}.tgz`,
   `evopilot-cli-${version}.tgz`,
   `create-evopilot-${version}.tgz`,
+  `${projectName}-${version}-install-manifest.json`,
+  "install.sh",
+  "install.ps1",
   "SHA256SUMS"
 ];
 
@@ -65,7 +68,15 @@ const sourceListing = execFileSync("tar", ["-tzf", path.join(outDir, `${projectN
   encoding: "utf8"
 });
 assert.match(sourceListing, /^install\.sh$/m, "source archive must include install.sh");
+assert.match(sourceListing, /^install\.ps1$/m, "source archive must include install.ps1");
+assert.match(sourceListing, /^installers\/manifest\.json$/m, "source archive must include installer manifest");
 assert.match(sourceListing, /^charts\/evopilot\/values\.production\.example\.yaml$/m, "source archive must include production Helm values");
+
+const installManifest = readJson(path.join(outDir, `${projectName}-${version}-install-manifest.json`));
+assert.equal(installManifest.schema, "evopilot-install-manifest/v1");
+assert.equal(installManifest.version, version);
+assert.equal(installManifest.installers?.["install.sh"]?.sha256, sha256(path.join(outDir, "install.sh")));
+assert.equal(installManifest.installers?.["install.ps1"]?.sha256, sha256(path.join(outDir, "install.ps1")));
 
 const provenance = readJson(path.join(outDir, `${projectName}-${version}-provenance.json`));
 assert.equal(provenance.schema, "evopilot-release-provenance/v1");

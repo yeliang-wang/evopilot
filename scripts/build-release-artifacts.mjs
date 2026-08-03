@@ -144,6 +144,8 @@ run("tar", [
   "CONTRIBUTING.md",
   "Dockerfile",
   "install.sh",
+  "install.ps1",
+  "installers",
   "LICENSE",
   "NOTICE",
   "README.md",
@@ -177,6 +179,10 @@ run("tar", [
   path.join(root, "charts"),
   projectName
 ], { stdio: "inherit" });
+
+fs.copyFileSync(path.join(root, "install.sh"), path.join(outDir, "install.sh"));
+fs.copyFileSync(path.join(root, "install.ps1"), path.join(outDir, "install.ps1"));
+fs.copyFileSync(path.join(root, "installers", "manifest.json"), path.join(outDir, `${projectName}-${version}-install-manifest.json`));
 
 const sbomPath = path.join(outDir, `${projectName}-${version}-sbom.spdx.json`);
 fs.writeFileSync(sbomPath, `${JSON.stringify(generateSbom(), null, 2)}\n`);

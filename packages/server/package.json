@@ -1,6 +1,6 @@
 {
   "name": "@evopilot/server",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
@@ -10,14 +10,14 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
-    "@evopilot/adapter-github": "1.0.8",
-    "@evopilot/adapter-gitlab": "1.0.8",
-    "@evopilot/adapter-local-git": "1.0.8",
-    "@evopilot/adapter-code-upgrader": "1.0.8",
-    "@evopilot/contracts": "1.0.8",
-    "@evopilot/core": "1.0.8",
-    "@evopilot/llm": "1.0.8",
-    "@evopilot/profile-domainforge-fabric": "1.0.8",
+    "@evopilot/adapter-code-upgrader": "1.0.9",
+    "@evopilot/adapter-github": "1.0.9",
+    "@evopilot/adapter-gitlab": "1.0.9",
+    "@evopilot/adapter-local-git": "1.0.9",
+    "@evopilot/contracts": "1.0.9",
+    "@evopilot/core": "1.0.9",
+    "@evopilot/llm": "1.0.9",
+    "@evopilot/profile-domainforge-fabric": "1.0.9",
     "pg": "^8.22.0",
     "yaml": "^2.9.0"
   },

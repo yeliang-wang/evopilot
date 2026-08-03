@@ -28,9 +28,9 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | Self-hosting guide | Present | `docs/operations/self-hosting.md` |
 | Distribution guide | Present | `docs/operations/distribution.md` |
 | Release playbook | Present | `docs/operations/release-management.md` |
-| Release notes | Present | `docs/releases/1.0.8.md` |
+| Release notes | Present | `docs/releases/1.0.9.md` |
 | Immutable release artifacts | Present | `scripts/build-release-artifacts.mjs`, `scripts/verify-release-artifacts.mjs`, `deploy/ecs/compose.immutable.yaml` |
-| Installable distribution | Present | `install.sh`, `packages/cli/`, `packages/client/`, `packages/contracts/`, `packages/create-evopilot/`, `charts/evopilot/`, `npm run verify:distribution` |
+| Installable distribution | Present | `install.sh`, `install.ps1`, `installers/manifest.json`, `packages/cli/`, `packages/client/`, `packages/contracts/`, `packages/create-evopilot/`, `charts/evopilot/`, `npm run verify:distribution` |
 | Open-source maturity report | Present | `docs/reference/open-source-maturity-report.md` |
 
 ## Product Evidence Assets
@@ -43,7 +43,7 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | Goal loops | `docs/cli/workflows.md`, `docs/guides/ai-agent-runbook.md` |
 | Release governance | `docs/reference/release-package.md`, `docs/reference/production-user-e2e.md` |
 | Immutable deployment evidence | `docs/operations/release-management.md`, `deploy/ecs/compose.immutable.yaml`, `npm run release:artifact` |
-| Distribution evidence | `docs/operations/distribution.md`, `install.sh`, `.github/workflows/npm-packages.yml`, `charts/evopilot/`, `packages/create-evopilot/` |
+| Distribution evidence | `docs/operations/distribution.md`, `install.sh`, `install.ps1`, `installers/manifest.json`, `.github/workflows/npm-packages.yml`, `charts/evopilot/`, `packages/create-evopilot/` |
 | Logging and troubleshooting | `AGENTS.md`, `docs/cli/automation.md` |
 | Source-to-GA examples | `examples/source-to-ga/` |
 | Self-hosting and upgrade | `docs/operations/self-hosting.md`, `docs/operations/release-management.md` |

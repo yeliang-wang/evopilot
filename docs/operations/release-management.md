@@ -11,7 +11,7 @@ EvoPilot release readiness has two layers:
 | Product release decision | Proves the control plane reached the requested target. | `GET /api/v1/release/decisions`, release evidence, criteria, blockers, risk register. |
 | Open-source release package | Makes the public repository adoptable. | Tag, changelog, release notes, self-hosting docs, validation commands, security and contribution docs. |
 | Immutable deployment artifact | Proves the production rollout can use a fixed artifact instead of rebuilding from a checkout. | Release archive, SHA256SUMS, SPDX SBOM, provenance, GHCR image digest metadata, ECS immutable compose template. |
-| Distribution package | Proves new users can install or deploy without cloning the source tree. | npm package tarballs, empty-project install smoke, tagged `install.sh`, self-host installer output, Helm chart archive, and npm publish workflow. |
+| Distribution package | Proves new users can install or deploy without cloning the source tree. | npm package tarballs, empty-project install smoke, tagged `install.sh` / `install.ps1`, release install manifest, self-host installer output, Helm chart archive, and npm publish workflow. |
 
 Do not claim a public release from `npm run check` alone. `npm run check` proves repository validation. The authoritative product verdict remains EvoPilot release governance.
 
@@ -101,7 +101,9 @@ Expected assets:
 - `evopilot-client-<version>.tgz`
 - `evopilot-cli-<version>.tgz`
 - `create-evopilot-<version>.tgz`
-- `install.sh` inside `evopilot-<version>-source.tar.gz`
+- `install.sh`
+- `install.ps1`
+- `evopilot-<version>-install-manifest.json`
 - `SHA256SUMS`
 
 The release archive is for inspection and reproducibility. Production deployment should prefer the immutable image reference recorded in `evopilot-<version>-image-metadata.json`:

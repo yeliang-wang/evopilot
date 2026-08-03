@@ -8,6 +8,29 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.0.9 - 2026-08-03
+
+### Added
+
+- Added release manifest verification for the tagged self-host installer.
+- Added `install.ps1` for Windows PowerShell one-command bootstrap.
+- Added installer manifest checksums and release assets for `install.sh`, `install.ps1`, and `evopilot-<version>-install-manifest.json`.
+- Added Helm service `extraPorts` rendering and a Helm template smoke check for API and Dashboard service exposure.
+
+### Documented
+
+- Updated README, self-hosting, distribution, release management, open-source readiness, and package installer docs for the P2 distribution entrypoints.
+- Added v1.0.9 release notes covering installer manifest, PowerShell, Helm exposure, and artifact validation.
+
+### Validation
+
+- `npm run cli:test`
+- `npm run check`
+- `npm run verify:distribution`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.0.8 - 2026-08-03
 
 ### Added

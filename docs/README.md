@@ -6,7 +6,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 
 - [Quick Start](quickstart.md) - install, run locally, and verify the API.
 - [Self-Hosting](operations/self-hosting.md) - run the API server, loop worker, code-upgrader, Postgres, and standalone Dashboard.
-- [Distribution](operations/distribution.md) - npm CLI, self-host installer, and Helm chart entry points.
+- [Distribution](operations/distribution.md) - npm CLI, manifest-verified installers, and Helm chart entry points.
 - [Control Plane User Guide](guides/user-guide.md) - operate projects, credentials, goals, loops, releases, and audit through API/CLI semantics.
 - [Project Harness Onboarding](guides/project-harness-onboarding.md) - generate, review, activate, and evolve project-level harness profiles.
 - [HarnessTemplate Evolution](guides/harness-template-evolution.md) - administrator lifecycle for evolving public harness templates from reviewable sources, draft validation, approval, publishing, and project impact.
@@ -37,7 +37,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 
 - [Self-Hosting](operations/self-hosting.md) - 15 minute Docker Compose path and upgrade/backup boundaries.
 - [Deployment](operations/deployment.md) - production deployment, ECS/Kubernetes, auth, persistence, and logging.
-- [Distribution](operations/distribution.md) - npm package, `npx create-evopilot`, and Helm chart release paths.
+- [Distribution](operations/distribution.md) - npm package, tagged installers, `npx create-evopilot`, and Helm chart release paths.
 - [Release Management](operations/release-management.md) - versioning, release notes, tag rules, rollback, and public release checklist.
 - [Deployment Assets](../deploy/README.md) - committed Docker Compose and Kubernetes deployment assets, plus production host-local file boundaries.
 - [Runtime Assets](../runtimes/README.md) - runtime locks, code-upgrader boundary, SBOM, license, vulnerability, and validation evidence.
@@ -65,7 +65,8 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
-- [EvoPilot v1.0.8 Release Notes](releases/1.0.8.md) - current distribution-expansion release body and compatibility notes.
+- [EvoPilot v1.0.9 Release Notes](releases/1.0.9.md) - current distribution-entrypoint hardening release body and compatibility notes.
+- [EvoPilot v1.0.8 Release Notes](releases/1.0.8.md) - distribution-expansion release body and compatibility notes.
 - [EvoPilot v1.0.6 Release Notes](releases/1.0.6.md) - package-boundary and worker runtime release body and compatibility notes.
 - [EvoPilot v1.0.5 Release Notes](releases/1.0.5.md) - immutable ECS deployment body and compatibility notes.
 - [EvoPilot v1.0.4 Release Notes](releases/1.0.4.md) - immutable release artifact body and compatibility notes.

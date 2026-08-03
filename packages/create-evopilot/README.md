@@ -13,7 +13,7 @@ docker compose up -d
 For a single command from a release tag:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.8/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.9/install.sh | bash -s -- --dir evopilot-stack
 ```
 
 Use `--start` only after `EVOPILOT_LLM_BASE_URL`, `EVOPILOT_LLM_MODEL_NAME`, and `EVOPILOT_LLM_API_KEY` are set or after `.env` has been edited. The installer refuses to start with unresolved production placeholders.

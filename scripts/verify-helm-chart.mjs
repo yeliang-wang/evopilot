@@ -44,6 +44,7 @@ for (const phrase of [
   "EVOPILOT_TOKENS",
   "existingSecret",
   "externalDsn",
+  "extraPorts",
   "ingress:"
 ]) {
   assert.ok(valuesYaml.includes(phrase), `values.yaml must include ${phrase}`);
@@ -52,7 +53,7 @@ for (const phrase of [
 const productionValuesYaml = fs.readFileSync(path.join(chartDir, "values.production.example.yaml"), "utf8");
 assert.ok(productionValuesYaml.includes("existingSecret: evopilot-prod-secrets"), "production values must use an existing secret");
 assert.ok(productionValuesYaml.includes(`tag: "${packageJson.version}"`), "production values must pin the EvoPilot release tag");
-assert.ok(productionValuesYaml.includes('tag: "1.0.6"'), "production values must pin the compatible Dashboard tag");
+assert.ok(productionValuesYaml.includes('tag: "1.0.7"'), "production values must pin the compatible Dashboard tag");
 for (const forbidden of ["change-me", "replace-with", "server-side-secret"]) {
   assert.ok(!productionValuesYaml.includes(forbidden), `production values must not include ${forbidden}`);
 }
@@ -65,6 +66,10 @@ assert.ok(controlPlaneTemplate.includes(".Values.postgres.enabled"), "control pl
 const secretTemplate = fs.readFileSync(path.join(chartDir, "templates/secret.yaml"), "utf8");
 assert.ok(secretTemplate.includes("postgres.externalDsn is required"), "secret template must require an external DSN when bundled Postgres is disabled");
 
+const servicesTemplate = fs.readFileSync(path.join(chartDir, "templates/services.yaml"), "utf8");
+assert.ok(servicesTemplate.includes(".Values.service.extraPorts"), "API service must render service.extraPorts");
+assert.ok(servicesTemplate.includes(".Values.dashboard.service.extraPorts"), "Dashboard service must render dashboard.service.extraPorts");
+
 const helm = spawnSync("helm", ["lint", chartDir], { cwd: root, encoding: "utf8" });
 if (helm.error && helm.error.code === "ENOENT") {
   console.log("Helm CLI not found; static chart verification passed.");
@@ -74,6 +79,32 @@ if (helm.error && helm.error.code === "ENOENT") {
     process.stderr.write(helm.stderr || "");
   }
   assert.equal(helm.status, 0, "helm lint must pass");
+  const rendered = spawnSync("helm", [
+    "template",
+    "evopilot",
+    chartDir,
+    "--set",
+    "service.extraPorts[0].name=metrics",
+    "--set",
+    "service.extraPorts[0].port=9090",
+    "--set",
+    "service.extraPorts[0].targetPort=http",
+    "--set",
+    "dashboard.service.extraPorts[0].name=preview",
+    "--set",
+    "dashboard.service.extraPorts[0].port=18080",
+    "--set",
+    "dashboard.service.extraPorts[0].targetPort=http"
+  ], { cwd: root, encoding: "utf8" });
+  if (rendered.status !== 0) {
+    process.stderr.write(rendered.stdout || "");
+    process.stderr.write(rendered.stderr || "");
+  }
+  assert.equal(rendered.status, 0, "helm template must pass");
+  assert.match(rendered.stdout, /name: metrics/);
+  assert.match(rendered.stdout, /port: 9090/);
+  assert.match(rendered.stdout, /name: preview/);
+  assert.match(rendered.stdout, /port: 18080/);
   console.log("Helm chart verification passed.");
 }
 

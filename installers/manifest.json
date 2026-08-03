@@ -1,0 +1,32 @@
+{
+  "schema": "evopilot-install-manifest/v1",
+  "version": "1.0.9",
+  "generatedAt": "2026-08-03T00:00:00.000Z",
+  "repository": "https://github.com/yeliang-wang/evopilot",
+  "packages": {
+    "create-evopilot": {
+      "version": "1.0.9",
+      "registry": "https://registry.npmjs.org/",
+      "command": "npx --yes create-evopilot@1.0.9 self-host --init-env"
+    },
+    "@evopilot/cli": {
+      "version": "1.0.9",
+      "registry": "https://registry.npmjs.org/",
+      "command": "npm install -g @evopilot/cli@1.0.9"
+    }
+  },
+  "containers": {
+    "evopilot": "ghcr.io/yeliang-wang/evopilot:1.0.9",
+    "evopilot-dashboard": "ghcr.io/yeliang-wang/evopilot-dashboard:1.0.7"
+  },
+  "installers": {
+    "install.sh": {
+      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.9/install.sh",
+      "sha256": "170ca0c10acdd110ed0c3d06f4258eeecab8e72489f92fa79ef579bd655a75da"
+    },
+    "install.ps1": {
+      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.9/install.ps1",
+      "sha256": "ca74b87cd46f20d1da7f21a880cf6b1043dc2802e6dffb61b6a5ec5bd98899c6"
+    }
+  }
+}
