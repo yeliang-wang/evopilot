@@ -8,6 +8,9 @@ const requiredFiles = [
   ".env.example",
   ".github/workflows/ci.yml",
   ".github/workflows/release-artifacts.yml",
+  ".github/workflows/failure-recovery.yml",
+  ".github/workflows/release-ready.yml",
+  ".github/workflows/pr-artifacts.yml",
   "deploy/k8s/deployment.yaml",
   "deploy/k8s/service.yaml",
   "deploy/k8s/pvc.yaml",
@@ -32,6 +35,7 @@ const requiredFiles = [
   "docs/reference/production-user-e2e.md",
   "docs/operations/runtime-management.md",
   "docs/operations/testing.md",
+  "docs/operations/test-matrix.md",
   "docs/operations/troubleshooting.md",
   "docs/reference/product-readiness.md",
   "docs/reference/release-package.md",
@@ -42,15 +46,60 @@ const requiredFiles = [
   "standards/maturity/evopilot-default/v1/ga.json",
   "scripts/loop-worker.mjs",
   "scripts/loop-soak.mjs",
+  "scripts/failure-recovery-matrix.mjs",
+  "scripts/release-ready.mjs",
   "scripts/build-release-artifacts.mjs",
   "scripts/verify-release-artifacts.mjs",
   "scripts/verify-runtime-lock.mjs",
+  "tests/failure-recovery/control-plane-failure-recovery.test.mjs",
   "runtimes/runtime-lock.json"
 ];
 
 for (const file of requiredFiles) {
   assert.ok(fs.existsSync(file), `${file} is required`);
 }
+
+const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+assert.match(packageJson.scripts["test:failure-recovery"], /failure-recovery-matrix\.mjs/);
+assert.match(packageJson.scripts["release:ready"], /release-ready\.mjs/);
+
+const testMatrix = fs.readFileSync("docs/operations/test-matrix.md", "utf8");
+assert.match(testMatrix, /Failure Recovery Scope/);
+assert.match(testMatrix, /Release Readiness Scope/);
+assert.match(testMatrix, /PR artifacts/);
+assert.match(testMatrix, /npm run test:failure-recovery/);
+assert.match(testMatrix, /npm run release:ready/);
+assert.match(testMatrix, /dist\/test-matrix\/failure-recovery-matrix\.json/);
+assert.match(testMatrix, /dist\/test-matrix\/release-ready\.json/);
+
+const testingDoc = fs.readFileSync("docs/operations/testing.md", "utf8");
+assert.match(testingDoc, /npm run test:failure-recovery/);
+assert.match(testingDoc, /npm run release:ready/);
+assert.match(testingDoc, /failure-recovery-matrix\.json/);
+assert.match(testingDoc, /release-ready\.json/);
+
+const failureRecoveryScript = fs.readFileSync("scripts/failure-recovery-matrix.mjs", "utf8");
+assert.match(failureRecoveryScript, /evopilot-failure-recovery-matrix\/v1/);
+assert.match(failureRecoveryScript, /control-plane-failure-recovery\.test\.mjs/);
+assert.match(failureRecoveryScript, /loop-worker\.test\.mjs/);
+
+const releaseReadyScript = fs.readFileSync("scripts/release-ready.mjs", "utf8");
+assert.match(releaseReadyScript, /evopilot-release-readiness\/v1/);
+assert.match(releaseReadyScript, /git", \["diff", "--check"\]/);
+
+const failureRecoveryWorkflow = fs.readFileSync(".github/workflows/failure-recovery.yml", "utf8");
+assert.match(failureRecoveryWorkflow, /npm run test:failure-recovery/);
+assert.match(failureRecoveryWorkflow, /actions\/upload-artifact@v4/);
+const releaseReadyWorkflow = fs.readFileSync(".github/workflows/release-ready.yml", "utf8");
+assert.match(releaseReadyWorkflow, /npm run release:ready/);
+assert.match(releaseReadyWorkflow, /actions\/upload-artifact@v4/);
+const prArtifactsWorkflow = fs.readFileSync(".github/workflows/pr-artifacts.yml", "utf8");
+assert.match(prArtifactsWorkflow, /npm run check/);
+assert.match(prArtifactsWorkflow, /npm run test:failure-recovery/);
+assert.match(prArtifactsWorkflow, /npm run release:ready/);
+assert.match(prArtifactsWorkflow, /npm run release:artifact/);
+assert.match(prArtifactsWorkflow, /npm run verify:release-artifact/);
+assert.match(prArtifactsWorkflow, /dist\/test-matrix\//);
 
 const rootDocsFiles = fs.readdirSync("docs", { withFileTypes: true })
   .filter((entry) => entry.isFile())

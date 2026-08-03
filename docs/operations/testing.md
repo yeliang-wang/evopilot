@@ -66,6 +66,44 @@ npm run check
 
 该命令会执行构建、单元测试、冒烟测试和功能闭环测试。
 
+## 故障恢复矩阵
+
+```bash
+npm run test:failure-recovery
+```
+
+该命令会构建项目，运行控制平面故障恢复测试和 loop-worker retry/fallback 测试，并写入：
+
+```text
+dist/test-matrix/failure-recovery-matrix.json
+```
+
+覆盖范围：
+
+- 受保护 API 未授权请求返回 `401`、`UNAUTHORIZED` 和 `x-request-id`。
+- source credential preflight 返回 `READ_ONLY`、`connect-github-account` 和 blockers。
+- DevOps preflight 返回 `BLOCKED`、`configure-devops` 和 readiness evidence。
+- 显式绑定缺失 Project LLM profile 时返回 `LLM_PROFILE_NOT_READY`、`BLOCKED`、`configure-llm-profile`。
+- source closure preflight 返回 `FAIL`、`repair-credentials` 并记录 evidence。
+- loop-worker 对瞬时 API 失败执行 retry。
+- loop-worker 在 primary API base URL 不可用时使用 fallback base URL。
+
+## Release Readiness
+
+```bash
+npm run release:ready
+```
+
+该命令只读检查当前仓库是否具备发布前置条件，并写入：
+
+```text
+dist/test-matrix/release-ready.json
+```
+
+它会检查版本、`CHANGELOG.md`、`docs/releases/<version>.md`、测试矩阵文档、CI workflows、PR artifacts workflow、release artifact scripts 和 `git diff --check`。它不会创建 tag、push、GitHub Release 或部署生产。
+
+完整矩阵见 [Test Matrix](test-matrix.md)。
+
 ## GA 有负载稳定性证明
 
 ```bash

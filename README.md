@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-release)
-[![Release](https://img.shields.io/badge/GA%20Release-v1.0.6-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v1.0.7-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -94,13 +94,13 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## Release Status
 
-EvoPilot is **v1.0.6 GA** for the open-source product baseline. `v1.0.6` is a package-boundary and loop worker runtime patch over the original `v1.0.0` GA baseline.
+EvoPilot is **v1.0.7 GA** for the open-source product baseline. `v1.0.7` is a test-matrix and release-readiness patch over the original `v1.0.0` GA baseline.
 
 Current phase: **Production Adoption and Public Trust Building**. Community scale, public case studies, and ecosystem reputation should grow through real deployments and sustained releases.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/1.0.6.md](docs/releases/1.0.6.md)
+- Latest release notes: [docs/releases/1.0.7.md](docs/releases/1.0.7.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)

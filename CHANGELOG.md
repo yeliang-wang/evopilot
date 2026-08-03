@@ -4,6 +4,27 @@ All notable changes to EvoPilot are documented here.
 
 This project follows a product-readiness changelog model: release entries should summarize user-visible capability, governance impact, validation evidence, and migration notes. Do not use local tests alone as release proof.
 
+## 1.0.7 - 2026-08-03
+
+### Added
+
+- Added a failure recovery matrix covering protected API rejection, source credential blockers, DevOps blockers, explicit LLM profile blockers, source closure repair actions, loop-worker retry, and fallback API base URLs.
+- Added a read-only release readiness report that verifies version notes, changelog coverage, test-matrix docs, release workflows, PR artifacts, release artifact scripts, and `git diff --check`.
+- Added CI workflows for failure recovery, release readiness, and PR review artifacts.
+
+### Documented
+
+- Added the test matrix operations guide and updated testing, release management, and docs index entries for failure recovery, release readiness, and PR artifacts.
+
+### Validation
+
+- `npm run check`
+- `npm run test:failure-recovery`
+- `npm run release:ready`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.0.6 - 2026-08-03
 
 ### Added

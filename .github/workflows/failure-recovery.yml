@@ -1,0 +1,35 @@
+name: Failure Recovery Matrix
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  failure-recovery:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Run failure recovery matrix
+        run: npm run test:failure-recovery
+
+      - name: Upload failure recovery report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evopilot-failure-recovery-matrix
+          path: dist/test-matrix/failure-recovery-matrix.json
+          if-no-files-found: ignore

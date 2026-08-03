@@ -138,6 +138,7 @@ run("tar", [
   "-czf",
   sourceArchivePath,
   "AGENTS.md",
+  ".github",
   "CHANGELOG.md",
   "CODE_OF_CONDUCT.md",
   "CONTRIBUTING.md",

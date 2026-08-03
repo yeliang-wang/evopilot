@@ -1,0 +1,46 @@
+name: PR Artifacts
+
+on:
+  pull_request:
+
+jobs:
+  pr-artifacts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Repository check
+        run: npm run check
+
+      - name: Failure recovery matrix
+        run: npm run test:failure-recovery
+
+      - name: Release readiness report
+        run: npm run release:ready
+
+      - name: Build release artifacts for review
+        run: npm run release:artifact
+
+      - name: Verify release artifacts
+        run: npm run verify:release-artifact
+
+      - name: Upload PR artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evopilot-pr-readiness-artifacts
+          path: |
+            dist/release/
+            dist/test-matrix/
+          if-no-files-found: ignore

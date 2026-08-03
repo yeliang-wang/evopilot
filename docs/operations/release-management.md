@@ -41,6 +41,8 @@ git status --short --branch
 npm ci
 npm run cli:test
 npm run check
+npm run test:failure-recovery
+npm run release:ready
 npm run release:artifact
 npm run verify:release-artifact
 git diff --check
@@ -55,6 +57,8 @@ evopilot release decisions --project <project-id> --target <release-target-id> -
 ```
 
 Stop if the product-native release decision is `NO-GO`, `BLOCKED`, missing, or has unresolved required criteria.
+
+PRs that prepare a release should also preserve the uploaded PR artifacts from `.github/workflows/pr-artifacts.yml`: failure recovery matrix, release readiness report, built release assets, and verification output.
 
 ## Tag And Push
 
