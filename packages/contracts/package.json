@@ -1,0 +1,16 @@
+{
+  "name": "@evopilot/contracts",
+  "version": "0.1.0",
+  "description": "Shared EvoPilot API, CLI, runtime, and package boundary contracts.",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

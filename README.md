@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-release)
-[![Release](https://img.shields.io/badge/GA%20Release-v1.0.5-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v1.0.6-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -67,8 +67,9 @@ export EVOPILOT_TENANT="tenant-production"
 export EVOPILOT_WORKSPACE="workspace-agent-products"
 
 evopilot status --json
-evopilot target plan --project <project-id> --objective "<business objective>" --json
-evopilot target run --project <project-id> --objective "<business objective>" --json
+evopilot target plan --project <project-id> --objective "<business objective>" --llm-profile <llm-profile-id> --json
+evopilot target plan approve <goal-id> --confirmed-by "<project-owner>" --confirmation "<phase plan reviewed and approved>" --json
+evopilot target run --project <project-id> --objective "<business objective>" --llm-profile <llm-profile-id> --json
 ```
 
 Start with [AGENTS.md](AGENTS.md), then use [docs/cli/AGENTS.md](docs/cli/AGENTS.md), [CLI Quickstart](docs/cli/quickstart.md), [CLI Automation](docs/cli/automation.md), and the [AI Agent Runbook](docs/guides/ai-agent-runbook.md).
@@ -93,13 +94,13 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## Release Status
 
-EvoPilot is **v1.0.5 GA** for the open-source product baseline. `v1.0.5` is an immutable ECS deployment patch over the original `v1.0.0` GA baseline.
+EvoPilot is **v1.0.6 GA** for the open-source product baseline. `v1.0.6` is a package-boundary and loop worker runtime patch over the original `v1.0.0` GA baseline.
 
 Current phase: **Production Adoption and Public Trust Building**. Community scale, public case studies, and ecosystem reputation should grow through real deployments and sustained releases.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/1.0.5.md](docs/releases/1.0.5.md)
+- Latest release notes: [docs/releases/1.0.6.md](docs/releases/1.0.6.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
@@ -155,14 +156,27 @@ Repository map:
 
 | Path | Purpose |
 | --- | --- |
-| `packages/` | TypeScript product code: server, CLI, core, LLM, and adapters. |
-| `scripts/` | Runtime workers, verification, release, soak, E2E, and maintenance scripts. |
+| `packages/contracts/` | Shared API, CLI, runtime, version, and package-boundary contracts. |
+| `packages/core/` | Domain primitives for evidence, evolution opportunities, delivery, and release reports. |
+| `packages/server/` | HTTP composition root, API orchestration, RBAC, tenant/workspace scope, audit, and server-side domain modules. |
+| `packages/worker-runtime/` | Loop worker runtime package used by `scripts/loop-worker.mjs`. |
+| `packages/cli/` | Agent-safe HTTP adapter CLI; command parsing and JSON/human output only. |
+| `packages/client/` | HTTP client used by CLI and external integrations. |
+| `packages/adapter-*` | Source, DevOps, MCP, and code-upgrader connector adapters. |
+| `packages/llm/` | LLM profile loading, proxying, and token usage accounting. |
+| `scripts/` | Thin runtime launchers, verification, release, soak, E2E, and maintenance scripts. |
 | `harness-templates/` | Public HarnessTemplate knowledge packs and examples. |
 | `standards/` | Alpha/Beta/RC/GA maturity standards and release baselines. |
 | `runtimes/` | Runtime locks, SBOM, license, vulnerability, and code-upgrader assets. |
 | `deploy/` | Docker Compose, ECS, and Kubernetes deployment assets. |
 | `docs/` | User, API, deployment, architecture, testing, and release docs. |
 | `tests/` | Unit, smoke, functional, and E2E tests. |
+
+Architecture boundaries are documented in [Package Boundaries](docs/architecture/package-boundaries.md) and verified with:
+
+```bash
+npm run verify:architecture
+```
 
 ## Documentation
 

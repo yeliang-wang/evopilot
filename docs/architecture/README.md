@@ -16,6 +16,21 @@ EvoPilot CLI  --->  EvoPilot API Server  ---> Evidence / Audit / Release State
 
 EvoPilot owns the domain model and execution state. The Dashboard is a replaceable UI client that consumes the API.
 
+## Package Boundaries
+
+The current TypeScript workspace is split by control-plane responsibility:
+
+| Package | Responsibility |
+|---|---|
+| `@evopilot/contracts` | Shared schema names, version constants, and API/CLI/runtime boundary metadata. |
+| `@evopilot/core` | Evidence, evolution, delivery, and release domain primitives. |
+| `@evopilot/server` | HTTP composition root, RBAC, audit, tenant/workspace scope, and API orchestration. |
+| `@evopilot/worker-runtime` | Loop worker polling, heartbeat, watchdog, and start/resume API loop. |
+| `@evopilot/cli` | HTTP adapter CLI for agent-safe JSON and operator output. |
+| `@evopilot/client` | HTTP request helper for CLI and integrations. |
+
+See [Package Boundaries](package-boundaries.md) for ownership rules, transitional hotspots, and validation commands.
+
 ## Bounded Contexts
 
 | Context | Responsibility |
@@ -37,6 +52,7 @@ The Dashboard can visualize and request actions, but only EvoPilot API state can
 Deep architecture notes remain in:
 
 - [Continuous Evolution Control Plane](continuous-evolution-control-plane.md)
+- [Package Boundaries](package-boundaries.md)
 - [Project Harness Profile](project-harness-profile.md)
 - [Harness Template Domain](harness-template-domain.md)
 - [Loop Runtime](loop-runtime.md)

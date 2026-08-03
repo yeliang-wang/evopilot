@@ -6,6 +6,8 @@ import { execFileSync } from "node:child_process";
 import test from "node:test";
 import { createServer } from "../../packages/server/dist/index.js";
 
+const rootPackage = JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
+
 test("server health is UP and dashboard is external by default", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-smoke-"));
   const server = createServer({ dataRoot, runtimeMode: "debug" });
@@ -110,7 +112,7 @@ test("server emits production-grade structured logs with request ids and redacti
   }
   const records = stdout.map((line) => JSON.parse(line));
   assert.ok(records.every((record) => record.schema === "evopilot-log/v1"));
-  assert.ok(records.some((record) => record.event === "server.configured" && record.version === "1.0.5" && record.severity === "INFO" && record.category === "runtime"));
+  assert.ok(records.some((record) => record.event === "server.configured" && record.version === rootPackage.version && record.severity === "INFO" && record.category === "runtime"));
   const healthLog = records.find((record) => record.event === "http.request.completed" && record.requestId === "req-health-log");
   assert.equal(healthLog.statusCode, 200);
   assert.equal(healthLog.category, "http");

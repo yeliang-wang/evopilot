@@ -4,6 +4,25 @@ All notable changes to EvoPilot are documented here.
 
 This project follows a product-readiness changelog model: release entries should summarize user-visible capability, governance impact, validation evidence, and migration notes. Do not use local tests alone as release proof.
 
+## 1.0.6 - 2026-08-03
+
+### Added
+
+- Added `@evopilot/contracts` as the shared package for API, CLI, runtime, version, stop-rule, and package-boundary metadata.
+- Added `@evopilot/worker-runtime` as the packaged loop worker runtime, with `scripts/loop-worker.mjs` reduced to a thin launcher.
+- Added `npm run verify:architecture` to verify package-boundary wiring and include it in `npm run check`.
+
+### Documented
+
+- Added package-boundary architecture documentation and updated README, architecture, loop runtime, scripts, and release-management docs for the new structure.
+
+### Validation
+
+- `npm run check`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.0.5 - 2026-08-02
 
 ### Fixed
@@ -94,7 +113,3 @@ This project follows a product-readiness changelog model: release entries should
 
 - `npm run cli:test`
 - `npm run check`
-
-## Unreleased
-
-Track future changes here before tagging a release. Each entry should include validation commands and any required migration or operator action.

@@ -26,7 +26,7 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | Dashboard repository | External | `yeliang-wang/evopilot-dashboard` |
 | Self-hosting guide | Present | `docs/operations/self-hosting.md` |
 | Release playbook | Present | `docs/operations/release-management.md` |
-| Release notes | Present | `docs/releases/1.0.5.md` |
+| Release notes | Present | `docs/releases/1.0.6.md` |
 | Immutable release artifacts | Present | `scripts/build-release-artifacts.mjs`, `scripts/verify-release-artifacts.mjs`, `deploy/ecs/compose.immutable.yaml` |
 | Open-source maturity report | Present | `docs/reference/open-source-maturity-report.md` |
 

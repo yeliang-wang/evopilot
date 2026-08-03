@@ -35,7 +35,8 @@ The runtime introduces:
 - worker heartbeat leases and watchdog recovery.
 - timeline, evidence, artifact, approval, and audit APIs.
 - per-step sandbox workspace paths under `loop-workspaces`.
-- standalone `loop-worker` and `loop-soak` scripts.
+- `@evopilot/worker-runtime` as the loop worker package, launched by the thin `scripts/loop-worker.mjs` entrypoint.
+- standalone `loop-soak` release/runtime validation script.
 - Feishu and WeCom webhook adapters that create `LoopRun` entries through the same control plane.
 
 Existing release, evolution, conversation, and target-loop entry points can remain product-specific surfaces, but the common execution substrate is `/api/v1/loops`.
@@ -147,6 +148,7 @@ The runtime is still intentionally conservative: it does not pretend to execute 
 Use:
 
 ```bash
+npm run build -w @evopilot/worker-runtime
 npm run loop-runtime:check
 npm run loop:soak
 ```

@@ -93,6 +93,8 @@ For project harnesses, `HarnessTemplate` supplies public defaults, `TenantHarnes
 
 The Harness Template lifecycle is implemented as the `packages/server/src/domains/harness-template/` domain module. The server entrypoint is the composition root: it handles HTTP, RBAC, audit/logging, file storage, and LLM profile readiness, then calls domain use cases through repository and LLM ports. Template lifecycle rules should not be reimplemented in CLI, Dashboard, or goal-loop code.
 
+The shared package boundary is now explicit. `@evopilot/contracts` owns API/CLI/runtime schema names, version constants, stop-rule metadata, and package-boundary metadata. `@evopilot/worker-runtime` owns the loop worker runtime that was previously only a top-level script. `@evopilot/server` remains the HTTP composition root during migration, and `@evopilot/cli` remains an HTTP adapter. The detailed package contract is [Package Boundaries](package-boundaries.md).
+
 The key design tradeoff is an extra control-plane layer instead of overloading LoopRun. This makes the dashboard and CLI white-box for multi-step goals without turning CLI commands into semantic orchestration. The CLI remains an adapter over atomic use cases such as create goal, plan goal, export/diff/apply/approve plan, read phases, read phase package, advance one step, read snapshot, read graph, read evidence matrix, and read final report.
 
 GlobalGoal exposes dashboard projections rather than forcing clients to reconstruct state from raw loops:

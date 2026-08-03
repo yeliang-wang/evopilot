@@ -37,6 +37,13 @@ import { GitHubHttpAdapter, type GitHubPullRequestDraft } from "@evopilot/adapte
 import { GitLabHttpAdapter } from "@evopilot/adapter-gitlab";
 import { listRepositoryFiles } from "@evopilot/adapter-local-git";
 import { CodeUpgraderClient, type CodeUpgraderConnectorConfig, type CodeUpgraderRunStatus } from "@evopilot/adapter-code-upgrader";
+import {
+  EVOPILOT_API_CONTRACT_VERSION,
+  EVOPILOT_LOG_SCHEMA,
+  EVOPILOT_MINIMUM_CLI_VERSION,
+  EVOPILOT_PRODUCT_VERSION_FALLBACK,
+  EVOPILOT_SERVER_VERSION_FALLBACK
+} from "@evopilot/contracts";
 import { createLlmClientFromEnv, createLlmConfigFromEnv, LlmProxy, type LlmGenerateResponse, type LlmTaskClient } from "@evopilot/llm";
 import {
   applyReviewDecision,
@@ -69,6 +76,7 @@ import {
   type RuntimeEvidenceEvent
 } from "@evopilot/core";
 import { domainforgeFabricProfile } from "@evopilot/profile-domainforge-fabric";
+import { serverCompositionRootMetadata } from "./http/composition-root.js";
 
 export interface EvoPilotServerOptions {
   dataRoot: string;
@@ -128,10 +136,8 @@ export interface AuthUser {
 
 const DEFAULT_TENANT_ID = "tenant-production";
 const DEFAULT_WORKSPACE_ID = "workspace-agent-products";
-const EVOPILOT_PRODUCT_VERSION = process.env.EVOPILOT_PRODUCT_VERSION ?? "1.0.5";
-const EVOPILOT_SERVER_VERSION = process.env.EVOPILOT_SERVER_VERSION ?? "0.1.0";
-const EVOPILOT_API_CONTRACT_VERSION = "v1";
-const EVOPILOT_MINIMUM_CLI_VERSION = "0.1.0";
+const EVOPILOT_PRODUCT_VERSION = process.env.EVOPILOT_PRODUCT_VERSION ?? EVOPILOT_PRODUCT_VERSION_FALLBACK;
+const EVOPILOT_SERVER_VERSION = process.env.EVOPILOT_SERVER_VERSION ?? EVOPILOT_SERVER_VERSION_FALLBACK;
 
 export interface DeliveryExecutorResult {
   ciStatus: "PASSED" | "FAILED";
@@ -730,7 +736,7 @@ interface LoggingSettings {
 interface LogRecord {
   timestamp?: string;
   level: LogLevel;
-  schema?: "evopilot-log/v1";
+  schema?: typeof EVOPILOT_LOG_SCHEMA;
   severity?: LogSeverity;
   service?: "evopilot";
   version?: string;
@@ -2739,7 +2745,8 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       loginEnabled: users.length > 0,
       profileId: profile.id,
       dashboardEnabled: Boolean(options.dashboardRoot),
-      logging: store.readLoggingSettings()
+      logging: store.readLoggingSettings(),
+      architecture: serverCompositionRootMetadata()
     }
   });
   void reconcilePendingSourceReleaseDeployFinalizers(store).catch((error) => logError("source-release.deploy-finalizer.reconcile-failed", error));
@@ -25393,7 +25400,7 @@ function writeLog(record: LogRecord): void {
   if (!shouldLog(record.level)) return;
   const normalized: LogRecord = {
     timestamp: record.timestamp ?? new Date().toISOString(),
-    schema: "evopilot-log/v1",
+    schema: EVOPILOT_LOG_SCHEMA,
     service: "evopilot",
     version: EVOPILOT_PRODUCT_VERSION,
     severity: logSeverity(record.level),

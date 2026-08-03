@@ -30,6 +30,8 @@ Rules:
 - Include operator impact, compatibility, migration, and validation evidence.
 - Dashboard releases are separate from EvoPilot releases, but release notes must state the compatible EvoPilot API version.
 
+Internal architecture-only changes do not automatically require a public release. Publish a patch release when the change alters the installable package graph, runtime launch path, deployment assets, CLI/Dashboard compatibility, or operator validation commands. For example, moving `loop-worker` behind `@evopilot/worker-runtime` is release-worthy once `npm run check`, release artifacts, and the applicable product evidence pass, because operators need the new package boundary and startup behavior documented.
+
 ## Release Checklist
 
 Before tagging:

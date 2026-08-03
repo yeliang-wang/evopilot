@@ -5,6 +5,12 @@ import path from "node:path";
 import { createHash } from "node:crypto";
 import { parse as parseYaml } from "yaml";
 import { apiErrorFromResponse, EvoPilotApiError, EvoPilotClient, type EvoPilotRequestOptions, type EvoPilotResponse } from "@evopilot/client";
+import {
+  EVOPILOT_CLI_PACKAGE_NAME,
+  EVOPILOT_CLI_RUNTIME_SCHEMA,
+  EVOPILOT_CLI_VERSION_FALLBACK
+} from "@evopilot/contracts";
+import { cliInterfaceBoundaryMetadata, type EvoPilotCliInterfaceBoundaryMetadata } from "./runtime/boundary.js";
 
 interface CliConfig {
   server?: string;
@@ -31,14 +37,15 @@ interface RuntimeContext {
 }
 
 interface CliRuntimeInfo {
-  schema: "evopilot-cli-runtime/v1";
-  name: "@evopilot/cli";
+  schema: typeof EVOPILOT_CLI_RUNTIME_SCHEMA;
+  name: typeof EVOPILOT_CLI_PACKAGE_NAME;
   version: string;
   command: string;
   surface: string;
   platform: NodeJS.Platform;
   pid: number;
   tty: boolean;
+  boundary: EvoPilotCliInterfaceBoundaryMetadata;
 }
 
 interface CliLlmUsageTracker {
@@ -3578,14 +3585,15 @@ function cliRuntimeInfo(args: ParsedArgs): CliRuntimeInfo {
   const version = readCliVersion();
   const command = args.positionals.join(" ") || (hasFlag(args, "version") ? "version" : "help");
   return {
-    schema: "evopilot-cli-runtime/v1",
-    name: "@evopilot/cli",
+    schema: EVOPILOT_CLI_RUNTIME_SCHEMA,
+    name: EVOPILOT_CLI_PACKAGE_NAME,
     version,
     command,
     surface: detectCliSurface(args),
     platform: process.platform,
     pid: process.pid,
-    tty: Boolean(process.stdout.isTTY)
+    tty: Boolean(process.stdout.isTTY),
+    boundary: cliInterfaceBoundaryMetadata()
   };
 }
 
@@ -4339,16 +4347,16 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function printVersion(json: boolean): void {
-  const data = { name: "@evopilot/cli", version: readCliVersion() };
+  const data = { name: EVOPILOT_CLI_PACKAGE_NAME, version: readCliVersion() };
   process.stdout.write(json ? `${JSON.stringify(data, null, 2)}\n` : `${data.version}\n`);
 }
 
 function readCliVersion(): string {
   try {
     const packageJson = JSON.parse(fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"));
-    return typeof packageJson.version === "string" ? packageJson.version : "0.1.0";
+    return typeof packageJson.version === "string" ? packageJson.version : EVOPILOT_CLI_VERSION_FALLBACK;
   } catch {
-    return "0.1.0";
+    return EVOPILOT_CLI_VERSION_FALLBACK;
   }
 }
 

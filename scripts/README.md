@@ -6,7 +6,7 @@ This directory contains Node.js scripts that operate EvoPilot's control-plane li
 
 | Script | npm command | Purpose |
 |---|---|---|
-| `loop-worker.mjs` | `npm run loop-worker` | Long-running worker that claims loop work, writes heartbeat leases, and advances claimable loops through the API server. |
+| `loop-worker.mjs` | `npm run loop-worker` | Thin launcher for `@evopilot/worker-runtime`, which claims loop work, writes heartbeat leases, and advances claimable loops through the API server. |
 | `internal-code-upgrader.mjs` | `npm run code-upgrader` | Built-in code-upgrader runtime that exposes the production code-upgrade boundary used by EvoPilot delivery flows. |
 
 These scripts are part of the production service set. They run beside `evopilot-server` in Docker Compose and ECS deployments and must keep using server-governed APIs, scoped credentials, structured logs, and auditable request IDs.
@@ -17,9 +17,10 @@ These scripts are part of the production service set. They run beside `evopilot-
 |---|---|---|
 | `verify-production-assets.mjs` | `npm run verify:production-assets` | Verifies production-facing docs, OpenAPI, runtime assets, deployment references, and required repository assets. |
 | `verify-open-source-governance.mjs` | `npm run verify:oss-governance` | Verifies Apache-2.0 governance files and public repository governance links. |
+| `verify-architecture-boundaries.mjs` | `npm run verify:architecture` | Verifies package-boundary packages, runtime launcher delegation, and contracts wiring. |
 | `verify-runtime-lock.mjs` | `npm run verify:runtime-lock` | Checks runtime lock, SBOM, license, vulnerability, and health endpoint metadata. |
 
-Use these scripts before release-impacting documentation, runtime, deployment, or open-source packaging changes. `npm run check` calls the production asset and governance checks after build and test.
+Use these scripts before release-impacting documentation, runtime, deployment, or open-source packaging changes. `npm run check` calls the production asset, governance, and architecture checks after build and test.
 
 ## Release, GA, And Soak
 

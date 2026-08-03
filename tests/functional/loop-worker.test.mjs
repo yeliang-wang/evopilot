@@ -7,6 +7,8 @@ import { spawn } from "node:child_process";
 import test from "node:test";
 import { createServer } from "../../packages/server/dist/index.js";
 
+const rootPackage = JSON.parse(fs.readFileSync(new URL("../../package.json", import.meta.url), "utf8"));
+
 test("Loop worker process advances durable loops and loop soak proves runtime continuity", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-loop-worker-"));
   const server = createServer({
@@ -39,7 +41,7 @@ test("Loop worker process advances durable loops and loop soak proves runtime co
     const iterationLog = workerLogs.find((record) => record.event === "loop-worker.iteration");
     assert.equal(iterationLog.schema, "evopilot-log/v1");
     assert.equal(iterationLog.service, "evopilot");
-    assert.equal(iterationLog.version, "1.0.5");
+    assert.equal(iterationLog.version, rootPackage.version);
     assert.equal(iterationLog.category, "worker");
     assert.equal(iterationLog.severity, "INFO");
     assert.equal(iterationLog.workerId, "test-worker");
