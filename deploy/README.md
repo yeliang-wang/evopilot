@@ -8,6 +8,7 @@ This directory contains committed deployment manifests for EvoPilot's API server
 |---|---|
 | `docker-compose.prod.yml` | Production Compose reference for `evopilot-server`, `evopilot-loop-worker`, `evopilot-code-upgrader`, and Postgres. |
 | `k8s/` | Kubernetes manifests for API server, code-upgrader runtime, service, persistent volume claim, and secret examples. |
+| `../charts/evopilot/` | Helm chart for the API server, loop worker, code-upgrader, Postgres, Dashboard, services, optional Ingress, and persistent volumes. |
 
 The standalone Dashboard is deployed from the separate `yeliang-wang/evopilot-dashboard` repository. EvoPilot deployment assets expose the control-plane API and background runtime services; Dashboard traffic should be routed to the dashboard service and `/api/*` traffic should be routed to EvoPilot.
 
@@ -46,6 +47,12 @@ docker compose -f docker-compose.prod.yml ps
 ## Kubernetes Notes
 
 `deploy/k8s/secret.example.yaml` is a template only. Store raw secrets in the deployment platform's secret manager or sealed-secret workflow, then expose them to EvoPilot as environment variables or server-side secret references. Do not commit real GitHub, GitLab, LLM, database, API, deploy, or password secrets.
+
+For a packaged Kubernetes entry point, prefer the Helm chart:
+
+```bash
+helm install evopilot ../charts/evopilot --namespace evopilot --create-namespace
+```
 
 ## Related Docs
 

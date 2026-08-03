@@ -1,0 +1,198 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "evopilot.fullname" . }}-control-plane
+  labels:
+    {{- include "evopilot.labels" . | nindent 4 }}
+    app.kubernetes.io/component: control-plane
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "evopilot.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: control-plane
+  template:
+    metadata:
+      labels:
+        {{- include "evopilot.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: control-plane
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: evopilot-server
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 19876
+          env:
+            - name: EVOPILOT_HOST
+              value: "0.0.0.0"
+            - name: EVOPILOT_PORT
+              value: "19876"
+            - name: EVOPILOT_RUN_MODE
+              value: {{ .Values.runtime.runMode | quote }}
+            - name: EVOPILOT_DATA_ROOT
+              value: {{ .Values.runtime.dataRoot | quote }}
+            - name: EVOPILOT_LOG_LEVEL
+              value: {{ .Values.runtime.logLevel | quote }}
+            - name: EVOPILOT_CODE_UPGRADER_BASE_URL
+              value: "http://127.0.0.1:3000"
+            - name: EVOPILOT_LOOP_STORE_BACKEND
+              value: postgres
+            {{- if .Values.postgres.enabled }}
+            - name: EVOPILOT_POSTGRES_DB
+              value: {{ .Values.postgres.database | quote }}
+            - name: EVOPILOT_POSTGRES_USER
+              value: {{ .Values.postgres.user | quote }}
+            - name: EVOPILOT_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "evopilot.secretName" . }}
+                  key: EVOPILOT_POSTGRES_PASSWORD
+            - name: EVOPILOT_LOOP_STORE_DSN
+              value: "postgres://$(EVOPILOT_POSTGRES_USER):$(EVOPILOT_POSTGRES_PASSWORD)@{{ include "evopilot.fullname" . }}-postgres:5432/$(EVOPILOT_POSTGRES_DB)"
+            {{- else }}
+            - name: EVOPILOT_LOOP_STORE_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "evopilot.secretName" . }}
+                  key: EVOPILOT_LOOP_STORE_DSN
+            {{- end }}
+            - name: EVOPILOT_TOKENS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "evopilot.secretName" . }}
+                  key: EVOPILOT_TOKENS
+            - name: EVOPILOT_USERS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "evopilot.secretName" . }}
+                  key: EVOPILOT_USERS
+            - name: EVOPILOT_LLM_PROVIDER_NAME
+              value: {{ .Values.llm.providerName | quote }}
+            - name: EVOPILOT_LLM_BASE_URL
+              value: {{ .Values.llm.baseUrl | quote }}
+            - name: EVOPILOT_LLM_MODEL_NAME
+              value: {{ .Values.llm.modelName | quote }}
+            - name: EVOPILOT_REQUIRE_LLM
+              value: {{ .Values.llm.requireLlm | quote }}
+            - name: EVOPILOT_LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "evopilot.secretName" . }}
+                  key: EVOPILOT_LLM_API_KEY
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: evopilot-data
+              mountPath: {{ .Values.runtime.dataRoot | quote }}
+            {{- if .Values.runtime.hostWorkspaceMount }}
+            - name: host-workspace
+              mountPath: /workspace
+            {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+        - name: code-upgrader
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["npm", "run", "code-upgrader"]
+          ports:
+            - name: upgrader
+              containerPort: 3000
+          env:
+            - name: EVOPILOT_RUN_MODE
+              value: {{ .Values.runtime.runMode | quote }}
+            - name: EVOPILOT_DATA_ROOT
+              value: {{ .Values.runtime.dataRoot | quote }}
+            - name: EVOPILOT_CODE_UPGRADER_HOST
+              value: "0.0.0.0"
+            - name: EVOPILOT_CODE_UPGRADER_PORT
+              value: "3000"
+            - name: EVOPILOT_LLM_PROVIDER_NAME
+              value: {{ .Values.llm.providerName | quote }}
+            - name: EVOPILOT_LLM_BASE_URL
+              value: {{ .Values.llm.baseUrl | quote }}
+            - name: EVOPILOT_LLM_MODEL_NAME
+              value: {{ .Values.llm.modelName | quote }}
+            - name: EVOPILOT_LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "evopilot.secretName" . }}
+                  key: EVOPILOT_LLM_API_KEY
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: upgrader
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: evopilot-data
+              mountPath: {{ .Values.runtime.dataRoot | quote }}
+            {{- if .Values.runtime.hostWorkspaceMount }}
+            - name: host-workspace
+              mountPath: /workspace
+            {{- end }}
+
+        - name: loop-worker
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["npm", "run", "loop-worker"]
+          env:
+            - name: EVOPILOT_BASE_URL
+              value: "http://127.0.0.1:19876"
+            - name: EVOPILOT_RUN_MODE
+              value: {{ .Values.runtime.runMode | quote }}
+            - name: EVOPILOT_DATA_ROOT
+              value: {{ .Values.runtime.dataRoot | quote }}
+            - name: EVOPILOT_LOOP_WORKER_ID
+              value: {{ .Values.runtime.loopWorkerId | quote }}
+            - name: EVOPILOT_TOKENS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "evopilot.secretName" . }}
+                  key: EVOPILOT_TOKENS
+            - name: EVOPILOT_LLM_PROVIDER_NAME
+              value: {{ .Values.llm.providerName | quote }}
+            - name: EVOPILOT_LLM_BASE_URL
+              value: {{ .Values.llm.baseUrl | quote }}
+            - name: EVOPILOT_LLM_MODEL_NAME
+              value: {{ .Values.llm.modelName | quote }}
+            - name: EVOPILOT_LLM_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "evopilot.secretName" . }}
+                  key: EVOPILOT_LLM_API_KEY
+          volumeMounts:
+            - name: evopilot-data
+              mountPath: {{ .Values.runtime.dataRoot | quote }}
+            {{- if .Values.runtime.hostWorkspaceMount }}
+            - name: host-workspace
+              mountPath: /workspace
+            {{- end }}
+      volumes:
+        - name: evopilot-data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "evopilot.fullname" . }}-data
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.runtime.hostWorkspaceMount }}
+        - name: host-workspace
+          hostPath:
+            path: {{ .Values.runtime.hostWorkspaceMount | quote }}
+            type: DirectoryOrCreate
+        {{- end }}

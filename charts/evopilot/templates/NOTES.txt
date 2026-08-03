@@ -1,0 +1,15 @@
+EvoPilot has been installed.
+
+API service:
+  {{ include "evopilot.fullname" . }}:{{ .Values.service.apiPort }}
+
+Dashboard service:
+  {{ include "evopilot.fullname" . }}-dashboard:{{ .Values.dashboard.service.port }}
+
+Verify inside the cluster:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "evopilot.fullname" . }} 19876:{{ .Values.service.apiPort }}
+  curl -fsS http://127.0.0.1:19876/health
+  curl -fsS http://127.0.0.1:19876/ready
+
+Production reminder:
+  Replace all change-me secret values before running real project, LLM, source, deploy, or release workflows.

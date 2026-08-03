@@ -1,0 +1,64 @@
+name: NPM Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish packages from, for example v1.0.8"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish npm Packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install
+        run: npm ci
+
+      - name: Validate tag and package boundary
+        run: |
+          set -euo pipefail
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "${{ inputs.tag }}" != "v$VERSION" ]; then
+            echo "::error::Tag ${{ inputs.tag }} does not match package version $VERSION"
+            exit 1
+          fi
+          npm run verify:distribution
+
+      - name: Publish contracts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish -w @evopilot/contracts --access public --provenance
+
+      - name: Publish client
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish -w @evopilot/client --access public --provenance
+
+      - name: Publish CLI
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish -w @evopilot/cli --access public --provenance
+
+      - name: Publish self-host installer
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish -w create-evopilot --access public --provenance

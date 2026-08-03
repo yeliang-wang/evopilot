@@ -4,6 +4,37 @@ All notable changes to EvoPilot are documented here.
 
 This project follows a product-readiness changelog model: release entries should summarize user-visible capability, governance impact, validation evidence, and migration notes. Do not use local tests alone as release proof.
 
+## Unreleased
+
+No unreleased changes yet.
+
+## 1.0.8 - 2026-08-03
+
+### Added
+
+- Added npm distribution readiness for `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, and `create-evopilot`.
+- Added `create-evopilot self-host --init-env` to generate a Docker Compose stack plus random local auth and database secrets for EvoPilot API, loop worker, code-upgrader, Postgres, and Dashboard.
+- Added guarded `create-evopilot self-host --start`, which refuses to start when production placeholders remain unresolved.
+- Added tagged `install.sh` for `curl -fsSL ... | bash` self-host bootstrap from GitHub Releases.
+- Added a Helm chart at `charts/evopilot` for Kubernetes deployment and `values.production.example.yaml` for Secret-backed production installs.
+- Added npm package publication workflow with provenance and release-tag validation.
+- Added distribution verification for Helm chart structure, production values, local npm tarball install smoke, generated self-host stack files, and initialized `.env` output.
+
+### Documented
+
+- Added README CTA-style install entries for CLI, tagged installer, and Helm.
+- Added the Distribution operations guide and updated self-hosting, release management, deployment, open-source readiness, and maturity docs for npm, installer, and Helm entry points.
+- Clarified that Desktop installer and hosted Cloud trial are not published EvoPilot distribution surfaces in this version.
+
+### Validation
+
+- `npm run check`
+- `npm run verify:distribution`
+- `npm run release:ready`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.0.7 - 2026-08-03
 
 ### Added

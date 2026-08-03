@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -27,6 +28,11 @@ const required = [
   `${projectName}-${version}-source.tar.gz`,
   `${projectName}-${version}-sbom.spdx.json`,
   `${projectName}-${version}-provenance.json`,
+  `${projectName}-${version}-helm-chart.tgz`,
+  `evopilot-contracts-${version}.tgz`,
+  `evopilot-client-${version}.tgz`,
+  `evopilot-cli-${version}.tgz`,
+  `create-evopilot-${version}.tgz`,
   "SHA256SUMS"
 ];
 
@@ -55,6 +61,12 @@ assert.equal(sbom.spdxVersion, "SPDX-2.3");
 assert.ok(Array.isArray(sbom.packages));
 assert.ok(sbom.packages.some((pkg) => pkg.name === packageJson.name && pkg.versionInfo === version));
 
+const sourceListing = execFileSync("tar", ["-tzf", path.join(outDir, `${projectName}-${version}-source.tar.gz`)], {
+  encoding: "utf8"
+});
+assert.match(sourceListing, /^install\.sh$/m, "source archive must include install.sh");
+assert.match(sourceListing, /^charts\/evopilot\/values\.production\.example\.yaml$/m, "source archive must include production Helm values");
+
 const provenance = readJson(path.join(outDir, `${projectName}-${version}-provenance.json`));
 assert.equal(provenance.schema, "evopilot-release-provenance/v1");
 assert.equal(provenance.project, projectName);
@@ -62,6 +74,8 @@ assert.equal(provenance.version, version);
 assert.equal(provenance.tag, `v${version}`);
 assert.ok(Array.isArray(provenance.artifacts));
 assert.ok(provenance.artifacts.some((artifact) => artifact.name === `${projectName}-${version}-source.tar.gz`));
+assert.ok(provenance.artifacts.some((artifact) => artifact.name === `${projectName}-${version}-helm-chart.tgz`));
+assert.ok(provenance.artifacts.some((artifact) => artifact.name === `evopilot-cli-${version}.tgz`));
 for (const artifact of provenance.artifacts) {
   const filePath = path.join(outDir, artifact.name);
   assert.ok(fs.existsSync(filePath), `${artifact.name} from provenance must exist`);

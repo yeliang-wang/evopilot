@@ -6,6 +6,12 @@ The CLI is an HTTP client. It does not start EvoPilot locally and does not bypas
 
 ## Quick Start
 
+Install the published CLI package:
+
+```bash
+npm install -g @evopilot/cli
+```
+
 ```bash
 evopilot --server https://evopilot.example.com auth login \
   --username <user> \

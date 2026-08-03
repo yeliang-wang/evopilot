@@ -8,6 +8,7 @@ import test from "node:test";
 import { createServer } from "../../packages/server/dist/index.js";
 
 const cliPath = path.resolve("packages/cli/dist/index.js");
+const cliPackage = JSON.parse(fs.readFileSync(path.resolve("packages/cli/package.json"), "utf8"));
 
 test("EvoPilot CLI exposes distribution metadata without a server", async () => {
   assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
@@ -63,11 +64,11 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   assert.match(removedAutoApprove, /does not accept --auto-approve-plan/);
 
   const version = await runCliText(["--version"]);
-  assert.equal(version.trim(), "0.1.0");
+  assert.equal(version.trim(), cliPackage.version);
 
   const versionJson = await runCli(["--version", "--json"]);
   assert.equal(versionJson.name, "@evopilot/cli");
-  assert.equal(versionJson.version, "0.1.0");
+  assert.equal(versionJson.version, cliPackage.version);
 });
 
 test("EvoPilot CLI status returns structured diagnostics when the API server is unreachable", async () => {

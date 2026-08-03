@@ -8,6 +8,24 @@ Use this guide when you want an external operator, administrator, or AI Agent to
 
 ## 15 Minute Path
 
+For the shortest generated stack, use the installer:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.8/install.sh | bash -s -- --dir evopilot-stack
+cd evopilot-stack
+# Review .env and replace unresolved LLM values before production use.
+docker compose up -d
+./verify.sh
+```
+
+For npm-only bootstrap:
+
+```bash
+npx create-evopilot@1.0.8 self-host --dir evopilot-stack --init-env
+```
+
+Use the manual path below when you need to work from source checkouts.
+
 Prerequisites:
 
 - Docker with Compose v2.
@@ -124,6 +142,14 @@ EVOPILOT_LOOP_STORE_DSN=postgres://evopilot:<password>@127.0.0.1:5432/evopilot \
 5. Confirm `/health` and `/ready`.
 6. Rebuild Dashboard.
 7. Run Dashboard smoke against the deployed API.
+
+If the stack was generated with `create-evopilot`, update `.env` image tags or immutable digest references, then run:
+
+```bash
+docker compose pull
+docker compose up -d
+./verify.sh
+```
 
 ```bash
 cd /opt/evopilot-stack/evopilot

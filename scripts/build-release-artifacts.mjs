@@ -143,10 +143,12 @@ run("tar", [
   "CODE_OF_CONDUCT.md",
   "CONTRIBUTING.md",
   "Dockerfile",
+  "install.sh",
   "LICENSE",
   "NOTICE",
   "README.md",
   "SECURITY.md",
+  "charts",
   "deploy",
   "docker-compose.yml",
   "docs",
@@ -162,6 +164,18 @@ run("tar", [
   "standards",
   "templates",
   "tests"
+], { stdio: "inherit" });
+
+for (const workspace of ["@evopilot/contracts", "@evopilot/client", "@evopilot/cli", "create-evopilot"]) {
+  run("npm", ["pack", "-w", workspace, "--pack-destination", outDir], { stdio: "inherit" });
+}
+
+run("tar", [
+  "-czf",
+  path.join(outDir, `${projectName}-${version}-helm-chart.tgz`),
+  "-C",
+  path.join(root, "charts"),
+  projectName
 ], { stdio: "inherit" });
 
 const sbomPath = path.join(outDir, `${projectName}-${version}-sbom.spdx.json`);

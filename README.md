@@ -1,18 +1,28 @@
 # EvoPilot
 
-> Evidence-driven self-evolution control plane for AI-agent products, with governed goals, auditable loops, human approval, release decisions, and immutable deployment artifacts.
+> Evidence-driven self-evolution control plane for AI-agent products, with governed goals, auditable loops, human approval, release decisions, and installable distribution paths.
 
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
-[![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-release)
-[![Release](https://img.shields.io/badge/GA%20Release-v1.0.7-2ea043)](#release-status)
+[![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
+[![Release](https://img.shields.io/badge/GA%20Release-v1.0.8-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-[Quick Start](#quick-start) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
+[Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
 
 EvoPilot helps teams operate AI-agent products as releasable software. It collects evidence from runtime events, traces, evaluations, CI/CD, source changes, LLM calls, and user feedback; turns that evidence into reviewable evolution opportunities; then governs goal planning, loop execution, source closure, delivery, and product-native `GO` / `NO-GO` release decisions.
 
 It is not an agent runtime, prompt playground, or generic code generator. Agent runtimes do the work; EvoPilot governs whether a product should evolve and release.
+
+## Start Here
+
+| Entry | Use when | Command |
+| --- | --- | --- |
+| Install CLI | You already have an EvoPilot server | `npm install -g @evopilot/cli` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.8/install.sh)"` |
+| Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
+
+Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet. The supported public entry points are CLI, self-host installer, and Helm.
 
 ## What You Can Do
 
@@ -23,26 +33,16 @@ It is not an agent runtime, prompt playground, or generic code generator. Agent 
 | Bind project harnesses | `HarnessTemplate`, `TenantHarnessPolicy`, and `ProjectHarnessProfile` versions for project-specific runtime, validation, evidence, and governance rules. |
 | Control source and delivery | Bounded code-upgrader execution, allowed paths, validation commands, source closure, CI/CD delivery, and deploy evidence. |
 | Operate with API, CLI, and Dashboard | API server, agent-safe CLI JSON flows, and the standalone `yeliang-wang/evopilot-dashboard` browser console. |
-| Publish release evidence | GitHub Release assets, source archive, SPDX SBOM, provenance, SHA256 checksums, GHCR image digest metadata, and ECS immutable compose templates. |
+| Distribute and verify releases | npm package tarballs, self-host installer, Helm chart, source archive, SPDX SBOM, provenance, checksums, and GHCR image digest metadata. |
 
-## Quick Start
+## Run From Source
 
-Prerequisites:
-
-- Node.js 22+
-- npm
-
-Run the API locally:
+For local development:
 
 ```bash
 npm install
 npm run build
 npm run server:debug
-```
-
-Verify the server:
-
-```bash
 curl http://127.0.0.1:19876/health
 curl http://127.0.0.1:19876/ready
 ```
@@ -55,6 +55,8 @@ EVOPILOT_API_BASE_URL=http://127.0.0.1:19876 npm run dev
 ```
 
 Debug mode is for local development and UI validation. Production mode is the default for real operation and requires authentication plus configured LLM, source, and CI/CD credentials.
+
+See [Distribution](docs/operations/distribution.md) for npm, installer, Helm, validation, and publishing details.
 
 ## CLI For AI Agents
 
@@ -74,10 +76,11 @@ evopilot target run --project <project-id> --objective "<business objective>" --
 
 Start with [AGENTS.md](AGENTS.md), then use [docs/cli/AGENTS.md](docs/cli/AGENTS.md), [CLI Quickstart](docs/cli/quickstart.md), [CLI Automation](docs/cli/automation.md), and the [AI Agent Runbook](docs/guides/ai-agent-runbook.md).
 
-## Self-Hosting And Release
+## Self-Hosting And Distribution
 
-For production, use the self-hosting and release-management docs rather than ad hoc local builds:
+For production, use the documented install and release paths rather than ad hoc local builds:
 
+- [Distribution](docs/operations/distribution.md)
 - [Self-Hosting](docs/operations/self-hosting.md)
 - [Deployment](docs/operations/deployment.md)
 - [Release Management](docs/operations/release-management.md)
@@ -94,13 +97,13 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## Release Status
 
-EvoPilot is **v1.0.7 GA** for the open-source product baseline. `v1.0.7` is a test-matrix and release-readiness patch over the original `v1.0.0` GA baseline.
+The latest published GitHub release is **v1.0.8 GA**, a distribution-expansion patch over the original `v1.0.0` GA baseline.
 
-Current phase: **Production Adoption and Public Trust Building**. Community scale, public case studies, and ecosystem reputation should grow through real deployments and sustained releases.
+v1.0.8 adds npm package boundaries, the `create-evopilot` self-host installer, tagged `install.sh`, Helm chart, npm publishing workflow, production values example, and distribution verification.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/1.0.7.md](docs/releases/1.0.7.md)
+- Latest release notes: [docs/releases/1.0.8.md](docs/releases/1.0.8.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
@@ -114,7 +117,7 @@ GET /api/v1/release/decisions
 
 ## Architecture
 
-EvoPilot applies Loop Engineering to product evolution. For larger objectives, GlobalGoal decomposes one business goal into Alpha -> Beta -> RC -> GA phase targets before each target enters the governed loop runtime.
+EvoPilot applies Loop Engineering to product evolution. GlobalGoal decomposes one business goal into Alpha -> Beta -> RC -> GA phase targets before each target enters the governed loop runtime.
 
 ```text
 HarnessTemplate + TenantHarnessPolicy + ProjectHarnessProfile
@@ -141,12 +144,11 @@ See [API Reference](docs/api/README.md) and [OpenAPI](docs/api/openapi.json).
 
 ## Development
 
-Common commands:
-
 ```bash
 npm run build
 npm run check
 npm run cli:test
+npm run verify:distribution
 npm run release:artifact
 npm run verify:release-artifact
 git diff --check
@@ -157,34 +159,24 @@ Repository map:
 | Path | Purpose |
 | --- | --- |
 | `packages/contracts/` | Shared API, CLI, runtime, version, and package-boundary contracts. |
-| `packages/core/` | Domain primitives for evidence, evolution opportunities, delivery, and release reports. |
-| `packages/server/` | HTTP composition root, API orchestration, RBAC, tenant/workspace scope, audit, and server-side domain modules. |
-| `packages/worker-runtime/` | Loop worker runtime package used by `scripts/loop-worker.mjs`. |
-| `packages/cli/` | Agent-safe HTTP adapter CLI; command parsing and JSON/human output only. |
 | `packages/client/` | HTTP client used by CLI and external integrations. |
+| `packages/cli/` | Agent-safe HTTP adapter CLI. |
+| `packages/create-evopilot/` | npm self-host installer that generates a complete Compose stack. |
+| `packages/server/` | HTTP composition root, RBAC, tenant/workspace scope, audit, and server-side modules. |
+| `packages/worker-runtime/` | Loop worker runtime package used by `scripts/loop-worker.mjs`. |
 | `packages/adapter-*` | Source, DevOps, MCP, and code-upgrader connector adapters. |
-| `packages/llm/` | LLM profile loading, proxying, and token usage accounting. |
-| `scripts/` | Thin runtime launchers, verification, release, soak, E2E, and maintenance scripts. |
-| `harness-templates/` | Public HarnessTemplate knowledge packs and examples. |
-| `standards/` | Alpha/Beta/RC/GA maturity standards and release baselines. |
-| `runtimes/` | Runtime locks, SBOM, license, vulnerability, and code-upgrader assets. |
+| `charts/evopilot/` | Helm chart for API, worker, code-upgrader, Postgres, Dashboard, and Ingress. |
 | `deploy/` | Docker Compose, ECS, and Kubernetes deployment assets. |
-| `docs/` | User, API, deployment, architecture, testing, and release docs. |
-| `tests/` | Unit, smoke, functional, and E2E tests. |
+| `docs/` | User, API, deployment, architecture, testing, distribution, and release docs. |
 
-Architecture boundaries are documented in [Package Boundaries](docs/architecture/package-boundaries.md) and verified with:
-
-```bash
-npm run verify:architecture
-```
+Architecture boundaries are documented in [Package Boundaries](docs/architecture/package-boundaries.md) and verified with `npm run verify:architecture`.
 
 ## Documentation
 
 | Reader | Start here |
 | --- | --- |
-| New user | [Quick Start](docs/quickstart.md) |
+| New user | [Quick Start](docs/quickstart.md), [Distribution](docs/operations/distribution.md) |
 | AI agent or CLI automation | [CLI](docs/cli/README.md), [CLI Automation](docs/cli/automation.md), [AI Agent Runbook](docs/guides/ai-agent-runbook.md) |
-| Dashboard integrator | [Dashboard Integration](docs/guides/dashboard-integration.md) |
 | API integrator | [API Reference](docs/api/README.md), [OpenAPI](docs/api/openapi.json) |
 | Production operator | [Self-Hosting](docs/operations/self-hosting.md), [Deployment](docs/operations/deployment.md) |
 | Release maintainer | [Release Management](docs/operations/release-management.md), [Open Source Maturity Report](docs/reference/open-source-maturity-report.md) |
@@ -202,11 +194,7 @@ EvoPilot uses Apache License 2.0 and includes standard public-repository governa
 - [CHANGELOG.md](CHANGELOG.md)
 - [GitHub Metadata](docs/reference/github-metadata.md)
 
-Governance verification:
-
-```bash
-npm run verify:oss-governance
-```
+Governance verification: `npm run verify:oss-governance`
 
 ## License
 

@@ -1,29 +1,33 @@
 {
-  "name": "@evopilot/client",
+  "name": "create-evopilot",
   "version": "1.0.8",
-  "description": "HTTP client used by EvoPilot CLI and integrations to call EvoPilot control-plane APIs.",
+  "description": "Bootstrap a self-hosted EvoPilot control plane with Docker Compose.",
   "license": "Apache-2.0",
   "type": "module",
+  "bin": {
+    "create-evopilot": "dist/index.js"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "README.md"
   ],
   "engines": {
     "node": ">=22"
   },
   "keywords": [
     "evopilot",
-    "client",
-    "http",
-    "api",
+    "installer",
+    "self-hosting",
+    "docker-compose",
     "ai-agent"
   ],
   "homepage": "https://github.com/yeliang-wang/evopilot#readme",
   "repository": {
     "type": "git",
     "url": "git+ssh://git@github.com/yeliang-wang/evopilot.git",
-    "directory": "packages/client"
+    "directory": "packages/create-evopilot"
   },
   "bugs": {
     "url": "https://github.com/yeliang-wang/evopilot/issues"
@@ -35,6 +39,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "typescript": "^5.6.0"
   }
 }

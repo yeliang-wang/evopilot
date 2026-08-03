@@ -11,6 +11,7 @@ EvoPilot release readiness has two layers:
 | Product release decision | Proves the control plane reached the requested target. | `GET /api/v1/release/decisions`, release evidence, criteria, blockers, risk register. |
 | Open-source release package | Makes the public repository adoptable. | Tag, changelog, release notes, self-hosting docs, validation commands, security and contribution docs. |
 | Immutable deployment artifact | Proves the production rollout can use a fixed artifact instead of rebuilding from a checkout. | Release archive, SHA256SUMS, SPDX SBOM, provenance, GHCR image digest metadata, ECS immutable compose template. |
+| Distribution package | Proves new users can install or deploy without cloning the source tree. | npm package tarballs, empty-project install smoke, tagged `install.sh`, self-host installer output, Helm chart archive, and npm publish workflow. |
 
 Do not claim a public release from `npm run check` alone. `npm run check` proves repository validation. The authoritative product verdict remains EvoPilot release governance.
 
@@ -43,6 +44,7 @@ npm run cli:test
 npm run check
 npm run test:failure-recovery
 npm run release:ready
+npm run verify:distribution
 npm run release:artifact
 npm run verify:release-artifact
 git diff --check
@@ -94,6 +96,12 @@ Expected assets:
 - `evopilot-<version>-sbom.spdx.json`
 - `evopilot-<version>-provenance.json`
 - `evopilot-<version>-image-metadata.json`
+- `evopilot-<version>-helm-chart.tgz`
+- `evopilot-contracts-<version>.tgz`
+- `evopilot-client-<version>.tgz`
+- `evopilot-cli-<version>.tgz`
+- `create-evopilot-<version>.tgz`
+- `install.sh` inside `evopilot-<version>-source.tar.gz`
 - `SHA256SUMS`
 
 The release archive is for inspection and reproducibility. Production deployment should prefer the immutable image reference recorded in `evopilot-<version>-image-metadata.json`:
@@ -110,6 +118,19 @@ sha256sum -c SHA256SUMS
 ```
 
 Do not treat a source checkout plus production build as immutable artifact deployment. That remains a valid source-ref rollout path, but it is weaker release evidence.
+
+## npm Packages
+
+Publish npm packages only after the GitHub release and artifacts are clean for the exact tag.
+
+The package publish order is:
+
+1. `@evopilot/contracts`
+2. `@evopilot/client`
+3. `@evopilot/cli`
+4. `create-evopilot`
+
+Use `.github/workflows/npm-packages.yml` with a repository `NPM_TOKEN`. The workflow runs `npm run verify:distribution` and publishes with npm provenance from the requested tag.
 
 ## Rollback
 

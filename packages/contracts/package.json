@@ -1,12 +1,37 @@
 {
   "name": "@evopilot/contracts",
-  "version": "0.1.0",
+  "version": "1.0.8",
   "description": "Shared EvoPilot API, CLI, runtime, and package boundary contracts.",
   "license": "Apache-2.0",
-  "private": true,
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "evopilot",
+    "contracts",
+    "api",
+    "cli",
+    "loop-engineering"
+  ],
+  "homepage": "https://github.com/yeliang-wang/evopilot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/yeliang-wang/evopilot.git",
+    "directory": "packages/contracts"
+  },
+  "bugs": {
+    "url": "https://github.com/yeliang-wang/evopilot/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },

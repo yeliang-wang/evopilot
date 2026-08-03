@@ -1,0 +1,17 @@
+apiVersion: v2
+name: evopilot
+description: EvoPilot control plane, loop worker, code-upgrader, Postgres, and Dashboard.
+type: application
+version: 1.0.8
+appVersion: "1.0.8"
+home: https://github.com/yeliang-wang/evopilot
+sources:
+  - https://github.com/yeliang-wang/evopilot
+  - https://github.com/yeliang-wang/evopilot-dashboard
+keywords:
+  - evopilot
+  - ai-agent
+  - loop-engineering
+  - release-governance
+maintainers:
+  - name: EvoPilot Maintainers

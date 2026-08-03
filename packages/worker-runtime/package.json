@@ -1,6 +1,6 @@
 {
   "name": "@evopilot/worker-runtime",
-  "version": "0.1.0",
+  "version": "1.0.8",
   "description": "Loop worker runtime for advancing EvoPilot control-plane loop runs through API boundaries.",
   "license": "Apache-2.0",
   "private": true,
@@ -11,7 +11,7 @@
     "build": "npm run build -w @evopilot/contracts && tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@evopilot/contracts": "0.1.0"
+    "@evopilot/contracts": "1.0.8"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
