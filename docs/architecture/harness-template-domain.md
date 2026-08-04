@@ -25,7 +25,7 @@ packages/server/src/domains/harness-template/
   index.ts       # Public domain exports
 ```
 
-`packages/server/src/index.ts` is now a thin package entrypoint. `packages/server/src/server.ts` remains the HTTP composition root during migration: it wires auth/RBAC, route modules, audit storage, `FileStore`, and LLM profile resolution into the domain through explicit ports. Shared server contracts live in `packages/server/src/model.ts`; HTTP request logging, structured server logging, response writers, platform readiness/version builders, route registry, and low-coupling route groups live under `packages/server/src/http/` so the package entrypoint does not own reusable interface concerns.
+`packages/server/src/index.ts` is a thin package entrypoint, and `packages/server/src/server.ts` is a thin compatibility adapter for public exports and direct start. `packages/server/src/runtime/control-plane-runtime.ts` owns the current HTTP control-plane wiring during migration: it wires auth/RBAC, route modules, audit storage, `FileStore`, and LLM profile resolution into the domain through explicit ports. Shared server contracts live in `packages/server/src/model.ts`; HTTP errors, request logging, structured server logging, response writers, static Dashboard serving, platform readiness/version builders, route registry, low-coupling route groups, and file-storage primitives live under `packages/server/src/http/` and `packages/server/src/storage/` so the package entrypoint and compatibility adapter do not own reusable interface concerns.
 
 ## Domain Ports
 

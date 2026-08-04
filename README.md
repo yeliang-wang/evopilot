@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/GA%20Release-v1.0.10-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v1.1.0-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -19,7 +19,7 @@ It is not an agent runtime, prompt playground, or generic code generator. Agent 
 | Entry | Use when | Command |
 | --- | --- | --- |
 | Install CLI | You already have an EvoPilot server | `npm install -g @evopilot/cli` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.10/install.sh)"` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.0/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet. The supported public entry points are CLI, self-host installer, and Helm.
@@ -97,13 +97,13 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## Release Status
 
-The latest published GitHub release is **v1.0.10 GA**, a code-structure and module-boundary cleanup patch over the original `v1.0.0` GA baseline.
+The latest published GitHub release is **v1.1.0 GA**, a code-structure evolution release over the original `v1.0.0` GA baseline.
 
-v1.0.10 keeps the v1.0.9 distribution surface, makes the server package entrypoint thin, extracts reusable HTTP helpers and focused route modules, and verifies the architecture boundary during `npm run check`.
+v1.1.0 keeps the v1.0.10 distribution surface, moves the HTTP control-plane runtime behind an explicit runtime boundary, keeps `server.ts` as a thin compatibility adapter, extracts HTTP/storage helpers, and verifies those boundaries during `npm run check`.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/1.0.10.md](docs/releases/1.0.10.md)
+- Latest release notes: [docs/releases/1.1.0.md](docs/releases/1.1.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
@@ -162,7 +162,7 @@ Repository map:
 | `packages/client/` | HTTP client used by CLI and external integrations. |
 | `packages/cli/` | Agent-safe HTTP adapter CLI. |
 | `packages/create-evopilot/` | npm self-host installer that generates a complete Compose stack. |
-| `packages/server/` | HTTP composition root, RBAC, tenant/workspace scope, audit, and server-side modules. |
+| `packages/server/` | HTTP control-plane runtime, thin compatibility adapter, RBAC, tenant/workspace scope, audit, and server-side modules. |
 | `packages/worker-runtime/` | Loop worker runtime package used by `scripts/loop-worker.mjs`. |
 | `packages/adapter-*` | Source, DevOps, MCP, and code-upgrader connector adapters. |
 | `charts/evopilot/` | Helm chart for API, worker, code-upgrader, Postgres, Dashboard, and Ingress. |

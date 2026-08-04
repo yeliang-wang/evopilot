@@ -8,6 +8,26 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.1.0 - 2026-08-04
+
+### Changed
+
+- Moved the HTTP control-plane runtime from `packages/server/src/server.ts` into `packages/server/src/runtime/control-plane-runtime.ts`.
+- Kept `packages/server/src/server.ts` as a thin compatibility adapter that re-exports the runtime boundary and preserves direct start.
+- Extracted shared HTTP error/query helpers, Dashboard static asset serving, and file-backed storage primitives into focused server modules.
+- Updated shared package-boundary metadata so server runtime logs describe the new control-plane runtime boundary.
+
+### Documented
+
+- Updated architecture and maturity docs to describe the runtime boundary, compatibility adapter, extracted HTTP/storage modules, and remaining `FileStore` / application use-case extraction target.
+
+### Validation
+
+- `npm run build -w @evopilot/server`
+- `npm run verify:architecture`
+- `npm run check`
+- `git diff --check`
+
 ## 1.0.10 - 2026-08-04
 
 ### Changed

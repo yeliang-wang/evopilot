@@ -11,7 +11,7 @@ Use this guide when you want an external operator, administrator, or AI Agent to
 For the shortest generated stack, use the installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.10/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.0/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 # Review .env and replace unresolved LLM values before production use.
 docker compose up -d
@@ -21,7 +21,7 @@ docker compose up -d
 For npm-only bootstrap:
 
 ```bash
-npx create-evopilot@1.0.10 self-host --dir evopilot-stack --init-env
+npx create-evopilot@1.1.0 self-host --dir evopilot-stack --init-env
 ```
 
 Use the manual path below when you need to work from source checkouts.

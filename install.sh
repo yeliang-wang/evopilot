@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${EVOPILOT_INSTALL_VERSION:-1.0.10}"
+VERSION="${EVOPILOT_INSTALL_VERSION:-1.1.0}"
 DIR="${EVOPILOT_INSTALL_DIR:-evopilot-stack}"
 PACKAGE="${EVOPILOT_INSTALL_PACKAGE:-create-evopilot}"
 MANIFEST_URL="${EVOPILOT_INSTALL_MANIFEST_URL:-https://raw.githubusercontent.com/yeliang-wang/evopilot/v${VERSION}/installers/manifest.json}"

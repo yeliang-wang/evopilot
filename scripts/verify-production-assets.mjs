@@ -330,10 +330,10 @@ const cliSource = fs.readFileSync("packages/cli/src/index.ts", "utf8");
 assert.doesNotMatch(cliSource, /evopilot target (?:plan|run)[^\n]*--template/, "CLI help must not expose target plan/run --template");
 assert.doesNotMatch(cliSource, /evopilot project onboard[^\n]*--template/, "CLI help must not expose project onboard --template");
 
-const serverSource = fs.readFileSync("packages/server/src/server.ts", "utf8");
-assert.doesNotMatch(serverSource, /id:\s*"target-run"/, "Project onboarding checklist must not suggest target run before phase-plan confirmation");
-assert.doesNotMatch(serverSource, /READY_TO_RUN"\)\s*return\s*"run-target"/, "READY_TO_RUN must not point automation directly to target run");
-assert.match(serverSource, /READY_TO_RUN"\)\s*return\s*"plan-target"/, "READY_TO_RUN must send automation to target plan first");
+const controlPlaneRuntimeSource = fs.readFileSync("packages/server/src/runtime/control-plane-runtime.ts", "utf8");
+assert.doesNotMatch(controlPlaneRuntimeSource, /id:\s*"target-run"/, "Project onboarding checklist must not suggest target run before phase-plan confirmation");
+assert.doesNotMatch(controlPlaneRuntimeSource, /READY_TO_RUN"\)\s*return\s*"run-target"/, "READY_TO_RUN must not point automation directly to target run");
+assert.match(controlPlaneRuntimeSource, /READY_TO_RUN"\)\s*return\s*"plan-target"/, "READY_TO_RUN must send automation to target plan first");
 
 const cliHelp = execFileSync(process.execPath, ["packages/cli/dist/index.js", "--help"], { encoding: "utf8" });
 assert.doesNotMatch(cliHelp, /--template/, "CLI help must not expose removed target template options");

@@ -18,7 +18,8 @@ export function serverCompositionRootMetadata(): EvoPilotServerCompositionRootMe
     packageName: "@evopilot/server",
     layer: boundary?.layer ?? "interface",
     responsibilities: boundary?.owns ?? [
-      "HTTP composition root",
+      "HTTP control-plane runtime",
+      "thin compatibility adapter",
       "RBAC enforcement",
       "tenant/workspace scoped API orchestration"
     ],
