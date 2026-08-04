@@ -8,6 +8,29 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.1.1 - 2026-08-04
+
+### Changed
+
+- Extracted runtime auth/config helpers from the transitional control-plane runtime into `packages/server/src/runtime/runtime-auth.ts`.
+- Extracted loop executor adapter registry, policy-aware executor behavior, LLM executor prompt construction, and executor step evidence assembly into `packages/server/src/runtime/executor-adapters.ts`.
+- Tightened architecture-boundary verification so the control-plane runtime must remain below `21600` lines and the new runtime modules stay focused.
+- Updated shared package-boundary metadata so server runtime logs include runtime auth/config helpers and executor adapters.
+
+### Documented
+
+- Updated README, architecture docs, package-boundary docs, and the open-source maturity report for the new server runtime boundaries and the remaining `FileStore` / route-application extraction target.
+- Updated installer, distribution, package, and product version references to `1.1.1`.
+
+### Validation
+
+- `npm run build -w @evopilot/server`
+- `npm run build`
+- `npm run verify:architecture`
+- `npm run cli:test`
+- `npm run check`
+- `git diff --check`
+
 ## 1.1.0 - 2026-08-04
 
 ### Changed

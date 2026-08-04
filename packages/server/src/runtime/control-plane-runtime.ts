@@ -27,17 +27,15 @@ import {
   publishHarnessTemplateEvolutionRun,
   validateHarnessTemplateProfile,
   type HarnessCapabilityDefinition,
-  type HarnessTemplateChangelogEntry,
   type HarnessTemplateEvolutionRun,
   type HarnessTemplateProfile,
   type HarnessTemplateProjectProfileBinding,
-  type HarnessTemplateRef,
-  type HarnessTemplateSourceReference
+  type HarnessTemplateRef
 } from "../domains/harness-template/index.js";
 import { GitHubHttpAdapter, type GitHubPullRequestDraft } from "@evopilot/adapter-github";
 import { GitLabHttpAdapter } from "@evopilot/adapter-gitlab";
 import { listRepositoryFiles } from "@evopilot/adapter-local-git";
-import { CodeUpgraderClient, type CodeUpgraderConnectorConfig, type CodeUpgraderRunStatus } from "@evopilot/adapter-code-upgrader";
+import { CodeUpgraderClient, type CodeUpgraderRunStatus } from "@evopilot/adapter-code-upgrader";
 import { createLlmClientFromEnv, createLlmConfigFromEnv, LlmProxy, type LlmGenerateResponse, type LlmTaskClient } from "@evopilot/llm";
 import {
   applyReviewDecision,
@@ -53,17 +51,13 @@ import {
   pipelineStatusToReleaseStatus,
   runEvolutionCycle,
   type DeliveryPlan,
-  type EvidenceBundle,
   type EvolutionTriggerCondition,
   type EvolutionOpportunity,
   type EvolutionPlan,
   type EvolutionTriggerRule,
-  type ImpactMap,
-  type LearningRecord,
   type PipelineRun,
   type PipelineStage,
   type PipelineStatus,
-  type PriorityScore,
   type ProjectProfile,
   type ReleaseReport,
   type ReviewRecord,
@@ -75,7 +69,6 @@ import {
   HttpError,
   auditListOrder,
   httpError,
-  isHttpError,
   optionalPositiveIntegerQuery
 } from "../http/errors.js";
 import {
@@ -116,6 +109,31 @@ import {
   writeText
 } from "../http/response.js";
 import { serveDashboard } from "../http/static-assets.js";
+import { executeLoopNode } from "./executor-adapters.js";
+import {
+  DEFAULT_TENANT_ID,
+  DEFAULT_WORKSPACE_ID,
+  assertProductionRuntimeIsConfigured,
+  audit,
+  authUserFromRecord,
+  authorize,
+  getIdempotencyKey,
+  hasRole,
+  hashPassword,
+  loadEnvFile,
+  maskUser,
+  mergeUserTokens,
+  normalizeTokens,
+  normalizeUsers,
+  parseBoolean,
+  parseEnvTokens,
+  parseEnvUsers,
+  publicUser,
+  requireBodyString,
+  resolveRuntimeConfig,
+  userSessionToken,
+  verifyPassword
+} from "./runtime-auth.js";
 import { atomicWriteJson, atomicWriteText, safeFileName } from "../storage/json-files.js";
 import type {
   AdversarialEvaluation,
@@ -477,8 +495,6 @@ export type {
   WorkspaceRecord
 } from "../model.js";
 
-const DEFAULT_TENANT_ID = "tenant-production";
-const DEFAULT_WORKSPACE_ID = "workspace-agent-products";
 const REPAIRABLE_SOURCE_RELEASE_RUN_STATUSES: LoopSourceClosureState[] = ["FAILED", "HEALTH_FAILED", "ROLLED_BACK"];
 
 export function createServer(options: EvoPilotServerOptions): http.Server {
@@ -15450,397 +15466,6 @@ function normalizeLoopDecision(value: unknown): LoopDecision | undefined {
   return undefined;
 }
 
-class ExecutorAdapterRegistry {
-  private readonly adaptersById = new Map<string, ExecutorAdapter>();
-  private readonly adaptersByType = new Map<ExecutorNodeType, ExecutorAdapter>();
-
-  constructor(adapters: ExecutorAdapter[]) {
-    for (const adapter of adapters) this.register(adapter);
-  }
-
-  register(adapter: ExecutorAdapter): void {
-    this.adaptersById.set(adapter.id, adapter);
-    this.adaptersByType.set(adapter.nodeType, adapter);
-  }
-
-  resolve(node: ExecutorNode): ExecutorAdapter {
-    const configuredAdapterId = typeof node.config.adapterId === "string" ? node.config.adapterId.trim() : "";
-    if (configuredAdapterId) {
-      const adapter = this.adaptersById.get(configuredAdapterId);
-      if (!adapter) throw new Error(`EXECUTOR_ADAPTER_NOT_FOUND:${configuredAdapterId}`);
-      if (adapter.nodeType !== node.type) throw new Error(`EXECUTOR_ADAPTER_TYPE_MISMATCH:${configuredAdapterId}:${node.type}`);
-      return adapter;
-    }
-    const adapter = this.adaptersByType.get(node.type);
-    if (!adapter) throw new Error(`EXECUTOR_ADAPTER_TYPE_NOT_REGISTERED:${node.type}`);
-    return adapter;
-  }
-}
-
-function createExecutorAdapterRegistry(): ExecutorAdapterRegistry {
-  return new ExecutorAdapterRegistry([
-    createLlmContextExecutorAdapter("evopilot.llm-context-adapter"),
-    createLlmContextExecutorAdapter("evopilot.target-contract-adapter"),
-    createPolicyAwareExecutorAdapter("evopilot.code-upgrader-adapter", "code-upgrader"),
-    createPolicyAwareExecutorAdapter("evopilot.ci-adapter", "ci"),
-    createPolicyAwareExecutorAdapter("evopilot.validator-adapter", "validator"),
-    createPolicyAwareExecutorAdapter("evopilot.discovery-runtime-adapter", "validator"),
-    createPolicyAwareExecutorAdapter("evopilot.adversarial-evaluator-adapter", "validator"),
-    createPolicyAwareExecutorAdapter("evopilot.approval-adapter", "approval"),
-    createPolicyAwareExecutorAdapter("evopilot.release-action-adapter", "release-action"),
-    createPolicyAwareExecutorAdapter("evopilot.source-release-adapter", "release-action")
-  ]);
-}
-
-function createLlmContextExecutorAdapter(id: string): ExecutorAdapter {
-  return {
-    id,
-    nodeType: "llm",
-    async execute(input) {
-      const policyResult = policyBlockedExecutorResult(id, "llm", input);
-      if (policyResult) return policyResult;
-      if (!input.llmClient) {
-        if (input.requireLlm) {
-          return failedExecutorResult(id, "llm", input, "LLM_REQUIRED_FOR_LOOP_EXECUTOR", "LLM provider is not configured for loop executor.");
-        }
-        return policyAwareExecutorSuccess(id, "llm", input, {
-          result: "llm skipped because no provider is configured in debug mode",
-          executionMode: "debug-no-provider"
-        }, ["llm.executionMode=debug-no-provider"]);
-      }
-      const started = Date.parse(input.now);
-      const response = await input.llmClient.generate({
-        caller: "evopilot-loop-runtime",
-        intent: "plan.generation",
-        outputContract: "markdown_document",
-        latencyClass: "batch",
-        complexity: "high",
-        outputSize: "large",
-        metadata: {
-          productFlow: "loop-executor",
-          loopId: input.loop.id,
-          nodeId: input.node.id,
-          projectId: input.loop.projectId,
-          executorGraphId: input.loop.executorGraphId,
-          sourceProjectId: input.loop.sourceClosure.sourceProjectId,
-          sourceProvider: input.loop.sourceClosure.repositoryProvider,
-          llmSource: input.loop.llm?.source ?? "none",
-          llmProfileId: input.loop.llm?.profileId ?? "global-default"
-        },
-        prompt: loopLlmExecutorPrompt(input)
-      });
-      const totalTokens = Number(response.usage?.totalTokens ?? 0);
-      const costUsd = estimateLlmCostUsd(totalTokens);
-      const commonOutput = {
-        workspacePath: input.nodeWorkspace,
-        executorBoundary: executorBoundaryLabel(input.node.type),
-        adapterId: id,
-        coordinationMode: input.coordination.mode,
-        sandboxRuntime: input.sandbox.runtime,
-        credentialScope: input.sandbox.credentialScope,
-        network: input.sandbox.network,
-        sandboxEnforcement: input.sandboxEnforcement.status,
-        sourceClosure: input.loop.sourceClosure,
-        provider: response.provider,
-        model: response.model,
-        totalTokens,
-        tokens: totalTokens,
-        costUsd,
-        durationMs: response.durationMs,
-        resolvedIntent: response.resolvedIntent,
-        resolvedProfile: response.resolvedProfile,
-        llmProfileId: input.loop.llm?.profileId,
-        llmSource: input.loop.llm?.source ?? "none",
-        llmRequestId: response.requestId,
-        finishReason: response.finishReason,
-        truncated: response.truncated === true
-      };
-      if (!response.success) {
-        return {
-          status: "FAILED",
-          completedAt: new Date(started + Math.max(1, response.durationMs ?? 1)).toISOString(),
-          output: {
-            ...commonOutput,
-            reason: response.errorMessage ?? response.errorCode ?? "LLM executor failed",
-            errorCode: response.errorCode,
-            errorMessage: response.errorMessage
-          },
-          evidence: [
-            ...executorAdapterEvidence(id, "llm", input),
-            "llm.executionMode=provider",
-            `llm.profile=${input.loop.llm?.profileId ?? "global-default"}`,
-            `llm.source=${input.loop.llm?.source ?? "none"}`,
-            `llm.provider=${response.provider ?? "unknown"}`,
-            `llm.model=${response.model ?? "unknown"}`,
-            `llm.totalTokens=${totalTokens}`,
-            `llm.costUsd=${costUsd}`,
-            `llm.success=false`,
-            `status=FAILED`
-          ],
-          failureSignature: `llm:${response.errorCode ?? "provider-failed"}`
-        };
-      }
-      return {
-        status: "SUCCEEDED",
-        completedAt: new Date(started + Math.max(1, response.durationMs ?? 1)).toISOString(),
-        output: {
-          ...commonOutput,
-          result: "llm provider completed",
-          planMarkdown: response.text,
-          usage: response.usage
-        },
-        evidence: [
-          ...executorAdapterEvidence(id, "llm", input),
-          "llm.executionMode=provider",
-          `llm.profile=${input.loop.llm?.profileId ?? "global-default"}`,
-          `llm.source=${input.loop.llm?.source ?? "none"}`,
-          `llm.provider=${response.provider ?? "unknown"}`,
-          `llm.model=${response.model ?? "unknown"}`,
-          `llm.totalTokens=${totalTokens}`,
-          `llm.costUsd=${costUsd}`,
-          `llm.success=true`,
-          `status=SUCCEEDED`
-        ]
-      };
-    }
-  };
-}
-
-function policyBlockedExecutorResult(id: string, nodeType: ExecutorNodeType, input: ExecutorAdapterExecutionInput): ExecutorAdapterExecutionOutput | undefined {
-  const blockedByCircuit = input.previousFailureCount >= input.loop.retryPolicy.circuitBreakerFailures && input.node.type !== "approval";
-  const blockedBySandbox = input.sandboxEnforcement.status === "FAILED" && input.node.type !== "approval";
-  const forcedFailure = input.forceDecision === "FAIL" || input.forceDecision === "BLOCK" || input.forceDecision === "REPAIR";
-  const waitingApproval = input.node.type === "approval" && input.loop.stopPolicy.requireApprovalForRelease && input.iterationIndex >= input.loop.stopPolicy.maxIterations;
-  if (waitingApproval) {
-    return {
-      status: "WAITING_APPROVAL",
-      output: executorOutputBase(id, input, {
-        reason: "approval gate reached"
-      }),
-      evidence: [...executorAdapterEvidence(id, nodeType, input), "status=WAITING_APPROVAL"]
-    };
-  }
-  if (!blockedByCircuit && !blockedBySandbox && !forcedFailure) return undefined;
-  return failedExecutorResult(
-    id,
-    nodeType,
-    input,
-    blockedBySandbox ? "SANDBOX_ENFORCEMENT_FAILED" : "LOOP_POLICY_BLOCKED",
-    blockedBySandbox ? "sandbox enforcement failed" : "loop policy blocked execution",
-    blockedBySandbox ? `${input.node.type}:sandbox-enforcement-failed` : `${input.node.type}:policy-or-forced-failure`
-  );
-}
-
-function failedExecutorResult(
-  id: string,
-  nodeType: ExecutorNodeType,
-  input: ExecutorAdapterExecutionInput,
-  errorCode: string,
-  reason: string,
-  failureSignature = `${input.node.type}:${errorCode.toLowerCase()}`
-): ExecutorAdapterExecutionOutput {
-  return {
-    status: "FAILED",
-    completedAt: new Date(Date.parse(input.now) + 1).toISOString(),
-    output: executorOutputBase(id, input, { reason, errorCode }),
-    evidence: [...executorAdapterEvidence(id, nodeType, input), `errorCode=${errorCode}`, "status=FAILED"],
-    failureSignature
-  };
-}
-
-function policyAwareExecutorSuccess(
-  id: string,
-  nodeType: ExecutorNodeType,
-  input: ExecutorAdapterExecutionInput,
-  extraOutput: Record<string, unknown> = {},
-  extraEvidence: string[] = []
-): ExecutorAdapterExecutionOutput {
-  return {
-    status: "SUCCEEDED",
-    completedAt: new Date(Date.parse(input.now) + 1).toISOString(),
-    output: executorOutputBase(id, input, {
-      result: `${input.node.type} completed`,
-      ...extraOutput
-    }),
-    evidence: [...executorAdapterEvidence(id, nodeType, input), ...extraEvidence, "status=SUCCEEDED"]
-  };
-}
-
-function executorOutputBase(id: string, input: ExecutorAdapterExecutionInput, extra: Record<string, unknown> = {}): Record<string, unknown> {
-  return {
-    ...extra,
-    workspacePath: input.nodeWorkspace,
-    executorBoundary: executorBoundaryLabel(input.node.type),
-    adapterId: id,
-    coordinationMode: input.coordination.mode,
-    sandboxRuntime: input.sandbox.runtime,
-    credentialScope: input.sandbox.credentialScope,
-    network: input.sandbox.network,
-    sandboxEnforcement: input.sandboxEnforcement.status,
-    llm: input.loop.llm,
-    sourceClosure: input.loop.sourceClosure
-  };
-}
-
-function executorAdapterEvidence(id: string, nodeType: ExecutorNodeType, input: ExecutorAdapterExecutionInput): string[] {
-  return [
-    `adapter=${id}`,
-    `adapterNodeType=${nodeType}`,
-    `executorBoundary=${executorBoundaryLabel(input.node.type)}`,
-    `coordinationMode=${input.coordination.mode}`,
-    `sandboxRuntime=${input.sandbox.runtime}`,
-    `sandboxNetwork=${input.sandbox.network}`,
-    `sandboxEnforcement=${input.sandboxEnforcement.status}`,
-    `llm.source=${input.loop.llm?.source ?? "none"}`,
-    `llm.profile=${input.loop.llm?.profileId ?? "global-default"}`,
-    `llm.provider=${input.loop.llm?.provider ?? "runtime-default"}`,
-    `llm.model=${input.loop.llm?.model ?? "runtime-default"}`,
-    `credentialScope=${input.sandbox.credentialScope}`,
-    `sourceProjectId=${input.loop.sourceClosure.sourceProjectId}`,
-    `sourceProvider=${input.loop.sourceClosure.repositoryProvider}`,
-    `sourceRef=${input.loop.sourceClosure.sourceUrl ?? input.loop.sourceClosure.sourceRoot ?? "unknown"}`,
-    `sourceBranch=${input.loop.sourceClosure.sourceBranch}`,
-    `releaseStrategy=${input.loop.sourceClosure.releaseStrategy}`,
-    `requiredGates=${input.loop.sourceClosure.requiredGates.join(",")}`,
-    `targetVersion=${input.loop.sourceClosure.targetVersion ?? "unspecified"}`,
-    `deploymentEnvironment=${input.loop.sourceClosure.deploymentEnvironment ?? "production"}`
-  ];
-}
-
-function createPolicyAwareExecutorAdapter(id: string, nodeType: ExecutorNodeType): ExecutorAdapter {
-  return {
-    id,
-    nodeType,
-    execute(input) {
-      return policyBlockedExecutorResult(id, nodeType, input) ?? policyAwareExecutorSuccess(id, nodeType, input);
-    }
-  };
-}
-
-function loopLlmExecutorPrompt(input: ExecutorAdapterExecutionInput): string {
-  return [
-    "# EvoPilot Loop Executor Plan",
-    "",
-    "You are the real LLM executor for an EvoPilot production loop. Produce a concise Markdown plan that can be audited by the control plane.",
-    "",
-    "## Loop",
-    `- loopId: ${input.loop.id}`,
-    `- projectId: ${input.loop.projectId}`,
-    `- objective: ${input.loop.objective}`,
-    `- currentIteration: ${input.iterationIndex}`,
-    `- executorGraphId: ${input.loop.executorGraphId}`,
-    "",
-    "## Source Closure",
-    `- sourceProjectId: ${input.loop.sourceClosure.sourceProjectId}`,
-    `- provider: ${input.loop.sourceClosure.repositoryProvider}`,
-    `- sourceRef: ${input.loop.sourceClosure.sourceUrl ?? input.loop.sourceClosure.sourceRoot ?? "unknown"}`,
-    `- branch: ${input.loop.sourceClosure.sourceBranch}`,
-    `- targetVersion: ${input.loop.sourceClosure.targetVersion ?? "unspecified"}`,
-    `- requiredGates: ${input.loop.sourceClosure.requiredGates.join(", ")}`,
-    `- releaseStrategy: ${input.loop.sourceClosure.releaseStrategy}`,
-    "",
-    "## Runtime Boundary",
-    `- sandboxRuntime: ${input.sandbox.runtime}`,
-    `- sandboxNetwork: ${input.sandbox.network}`,
-    `- credentialScope: ${input.sandbox.credentialScope}`,
-    `- sandboxEnforcement: ${input.sandboxEnforcement.status}`,
-    `- llmSource: ${input.loop.llm?.source ?? "none"}`,
-    `- llmProfileId: ${input.loop.llm?.profileId ?? "global-default"}`,
-    `- llmProvider: ${input.loop.llm?.provider ?? "runtime-default"}`,
-    `- llmModel: ${input.loop.llm?.model ?? "runtime-default"}`,
-    "",
-    "## Required Output",
-    "- Current code/product facts implied by the loop context.",
-    "- Execution plan for this iteration.",
-    "- Expected code, validation, release, and evidence gates.",
-    "- Risks, blockers, and required human approval points.",
-    "- Keep it actionable and specific; do not claim that code was changed unless a downstream executor actually changes it.",
-    "",
-    "## Context",
-    JSON.stringify(input.loop.context ?? {}, null, 2)
-  ].join("\n");
-}
-
-function estimateLlmCostUsd(totalTokens: number): number {
-  const pricePerThousand = Number(process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD ?? "0");
-  if (!Number.isFinite(pricePerThousand) || pricePerThousand <= 0 || totalTokens <= 0) return 0;
-  return Number(((totalTokens / 1000) * pricePerThousand).toFixed(6));
-}
-
-async function executeLoopNode(args: {
-  node: ExecutorNode;
-  loop: LoopRun;
-  iterationIndex: number;
-  attempt: number;
-  previousFailureCount: number;
-  forceDecision?: LoopDecision;
-  workspaceRoot: string;
-  coordination: ExecutorCoordinationPlan;
-  sandbox: LoopSandboxPolicy;
-  sandboxEnforcement: LoopSandboxEnforcement;
-  now: string;
-  llmClient?: LlmTaskClient;
-  requireLlm: boolean;
-}): Promise<ExecutorStepResult> {
-  const workspacePath = path.join(args.workspaceRoot, safeFileName(args.node.id));
-  fs.mkdirSync(workspacePath, { recursive: true });
-  const nodeCoordination = args.coordination.nodes.find((node) => node.nodeId === args.node.id);
-  const baseEvidence = [
-    `node=${args.node.id}`,
-    `type=${args.node.type}`,
-    `attempt=${args.attempt}`,
-    `objective=${args.loop.objective}`,
-    `executorGraph=${args.loop.executorGraphId}`,
-    `coordinationMode=${args.coordination.mode}`,
-    `workspace=${workspacePath}`,
-    `dependsOn=${nodeCoordination?.dependsOn.join(",") ?? ""}`,
-    `inputSchema=${JSON.stringify(nodeCoordination?.inputSchema ?? {})}`,
-    `outputSchema=${JSON.stringify(nodeCoordination?.outputSchema ?? {})}`,
-    `allowedPaths=${args.sandbox.allowedPaths.join(",")}`,
-    `deniedPaths=${args.sandbox.deniedPaths.join(",")}`
-  ];
-  const adapter = createExecutorAdapterRegistry().resolve(args.node);
-  const adapterResult = await adapter.execute({
-    node: args.node,
-    loop: args.loop,
-    iterationIndex: args.iterationIndex,
-    attempt: args.attempt,
-    previousFailureCount: args.previousFailureCount,
-    forceDecision: args.forceDecision,
-    workspaceRoot: args.workspaceRoot,
-    nodeWorkspace: workspacePath,
-    coordination: args.coordination,
-    sandbox: args.sandbox,
-    sandboxEnforcement: args.sandboxEnforcement,
-    now: args.now,
-    llmClient: args.llmClient,
-    requireLlm: args.requireLlm
-  });
-  return {
-    nodeId: args.node.id,
-    type: args.node.type,
-    status: adapterResult.status,
-    startedAt: args.now,
-    completedAt: adapterResult.completedAt,
-    attempt: args.attempt,
-    input: {
-      loopId: args.loop.id,
-      iteration: args.iterationIndex,
-      adapterId: adapter.id,
-      nodeConfig: args.node.config,
-      schema: nodeCoordination?.inputSchema,
-      dependsOn: nodeCoordination?.dependsOn ?? [],
-      sharedContextKeys: args.coordination.sharedContextKeys,
-      sandbox: args.sandbox,
-      sandboxEnforcement: args.sandboxEnforcement,
-      sourceClosure: args.loop.sourceClosure
-    },
-    output: adapterResult.output,
-    evidence: [...baseEvidence, ...adapterResult.evidence],
-    failureSignature: adapterResult.failureSignature
-  };
-}
-
 async function executeLoopSourceClosure(store: FileStore, loopId: string, actor: string, body: unknown): Promise<{ loop: LoopRun; releaseRun: SourceReleaseClosureRun } | undefined> {
   const loop = store.readLoop(loopId);
   if (!loop) return undefined;
@@ -18019,17 +17644,6 @@ async function probeHealthReady(healthUrl?: string, readyUrl?: string): Promise<
     }
   }
   return { passed, evidence };
-}
-
-function executorBoundaryLabel(type: ExecutorNodeType): string {
-  return ({
-    llm: "EvoPilot LLM gateway boundary",
-    "code-upgrader": "EvoPilot code-upgrader runtime boundary",
-    ci: "repository-native CI/CD boundary",
-    validator: "independent validation boundary",
-    approval: "human approval boundary",
-    "release-action": "guarded release action boundary"
-  })[type];
 }
 
 function decideLoopIteration(loop: LoopRun, nextIndex: number, steps: ExecutorStepResult[], evidenceSet: LoopEvidenceSet, forceDecision?: LoopDecision): LoopDecision {
@@ -21795,197 +21409,6 @@ function extractMarkdownField(markdown: string, name: string): string | undefine
   return match?.[1]?.trim();
 }
 
-function resolveRuntimeConfig(options: EvoPilotServerOptions): RuntimeConfig {
-  const envMode = String(process.env.EVOPILOT_RUN_MODE ?? process.env.EVOPILOT_MODE ?? "").trim().toLowerCase();
-  const debugEnabled = parseBoolean(process.env.EVOPILOT_DEBUG, false);
-  const mode: EvoPilotRuntimeMode = options.runtimeMode ?? (envMode === "debug" || debugEnabled ? "debug" : "prod");
-  const debug = mode === "debug";
-  return {
-    mode,
-    requireLlm: options.requireLlm ?? parseBoolean(process.env.EVOPILOT_REQUIRE_LLM, !debug),
-    allowAnonymousAdmin: options.allowAnonymousAdmin ?? parseBoolean(process.env.EVOPILOT_ALLOW_ANONYMOUS_ADMIN, debug),
-    allowMockIntegrations: options.allowMockIntegrations ?? parseBoolean(process.env.EVOPILOT_ALLOW_MOCK_INTEGRATIONS, debug),
-    allowSampleData: options.allowSampleData ?? parseBoolean(process.env.EVOPILOT_ALLOW_SAMPLE_DATA, debug),
-    autoRegisterProfileProject: options.autoRegisterProfileProject ?? parseBoolean(process.env.EVOPILOT_AUTO_REGISTER_PROFILE_PROJECT, debug)
-  };
-}
-
-function assertProductionRuntimeIsConfigured(runtime: RuntimeConfig, tokens: AuthToken[], llmClient?: LlmTaskClient): void {
-  if (runtime.mode !== "prod") return;
-  if (runtime.allowAnonymousAdmin) throw new Error("EVOPILOT_PROD_FORBIDS_ANONYMOUS_ADMIN");
-  if (runtime.allowMockIntegrations) throw new Error("EVOPILOT_PROD_FORBIDS_MOCK_INTEGRATIONS");
-  if (!runtime.requireLlm) throw new Error("EVOPILOT_PROD_REQUIRES_LLM");
-  if (tokens.length === 0) throw new Error("EVOPILOT_PROD_REQUIRES_TOKENS");
-  if (!llmClient) throw new Error("EVOPILOT_PROD_REQUIRES_LLM_PROVIDER");
-}
-
-function requireBodyString(value: unknown, errorCode: string, runtime: RuntimeConfig, debugFallback?: string): string {
-  const normalized = value === undefined || value === null ? "" : String(value).trim();
-  if (normalized) return normalized;
-  if (runtime.mode === "debug" && debugFallback) return debugFallback;
-  throw new Error(errorCode);
-}
-
-function parseBoolean(value: string | undefined, defaultValue: boolean): boolean {
-  if (value === undefined || value === "") return defaultValue;
-  const normalized = value.trim().toLowerCase();
-  if (["1", "true", "yes", "on"].includes(normalized)) return true;
-  if (["0", "false", "no", "off"].includes(normalized)) return false;
-  return defaultValue;
-}
-
-function normalizeTokens(options: EvoPilotServerOptions): AuthToken[] {
-  if (options.tokens) return options.tokens;
-  if (options.apiToken) return [{ name: "admin", token: options.apiToken, role: "admin" }];
-  return [];
-}
-
-function normalizeUsers(options: EvoPilotServerOptions, tokens: AuthToken[], runtime: RuntimeConfig, store: FileStore): AuthUser[] {
-  const merged = new Map<string, AuthUser>();
-  const addUsers = (users: AuthUser[]) => {
-    for (const user of users) {
-      merged.set(user.username, { ...user, platformAdmin: user.platformAdmin ?? user.role === "admin", status: user.status ?? "ACTIVE" });
-    }
-  };
-  addUsers(store.listUsers(undefined, false).map(authUserFromRecord));
-  const envUsers = parseEnvUsers(process.env.EVOPILOT_USERS);
-  if (envUsers?.length) addUsers(envUsers);
-  if (options.users) addUsers(options.users);
-  if (runtime.mode === "debug") {
-    addUsers(tokens.map((token) => ({
-      username: token.name,
-      password: token.token,
-      role: token.role,
-      tenantId: token.tenantId ?? DEFAULT_TENANT_ID,
-      workspaceId: token.workspaceId ?? DEFAULT_WORKSPACE_ID,
-      displayName: token.displayName ?? token.name,
-      token: token.token,
-      status: "ACTIVE",
-      platformAdmin: token.role === "admin"
-    })));
-  }
-  return [...merged.values()];
-}
-
-function mergeUserTokens(tokens: AuthToken[], users: AuthUser[]): AuthToken[] {
-  const merged = new Map<string, AuthToken>();
-  for (const token of tokens) merged.set(token.token, token);
-  for (const user of users) {
-    const token = userSessionToken(user);
-    if (merged.has(token)) continue;
-    merged.set(token, {
-      name: user.username,
-      token,
-      role: user.role,
-      tenantId: user.tenantId,
-      workspaceId: user.workspaceId,
-      displayName: user.displayName,
-      platformAdmin: user.platformAdmin,
-      mustChangePassword: user.mustChangePassword
-    });
-  }
-  return [...merged.values()];
-}
-
-function userSessionToken(user: AuthUser): string {
-  if (user.token) return user.token;
-  return createHash("sha256")
-    .update(["evopilot-session-v1", user.username, user.password, user.role, user.tenantId, user.workspaceId, user.platformAdmin ? "platform" : "tenant"].join(":"))
-    .digest("hex");
-}
-
-function publicUser(user: AuthUser): Omit<AuthUser, "password" | "token"> {
-  const { password: _password, token: _token, ...safe } = user;
-  return safe;
-}
-
-function authUserFromRecord(user: UserRecord): AuthUser {
-  return {
-    username: user.username,
-    password: user.passwordHash,
-    role: user.role,
-    tenantId: user.tenantId,
-    workspaceId: user.workspaceId,
-    displayName: user.displayName,
-    status: user.status,
-    platformAdmin: user.platformAdmin,
-    mustChangePassword: user.mustChangePassword
-  };
-}
-
-function maskUser(user: UserRecord): Omit<UserRecord, "passwordHash"> {
-  const { passwordHash: _passwordHash, ...safe } = user;
-  return safe;
-}
-
-function hashPassword(password: string): string {
-  return `sha256:${createHash("sha256").update(`evopilot-user-password:${password}`).digest("hex")}`;
-}
-
-function verifyPassword(input: string, stored: string): boolean {
-  if (stored.startsWith("sha256:")) return hashPassword(input) === stored;
-  return input === stored;
-}
-
-function requestScope(request: http.IncomingMessage): Pick<AuthContext, "tenantId" | "workspaceId"> {
-  const tenantId = optionalTrimmedString(request.headers["x-evopilot-tenant"]) ?? DEFAULT_TENANT_ID;
-  const workspaceId = optionalTrimmedString(request.headers["x-evopilot-workspace"]) ?? DEFAULT_WORKSPACE_ID;
-  return {
-    tenantId: safeFileName(tenantId),
-    workspaceId: safeFileName(workspaceId)
-  };
-}
-
-function authorize(request: http.IncomingMessage, tokens: AuthToken[], runtime: RuntimeConfig, allowAnonymousFallback = false): AuthContext | undefined {
-  const requestedScope = requestScope(request);
-  const value = String(request.headers.authorization ?? "");
-  if (allowAnonymousFallback && runtime.allowAnonymousAdmin && !value) {
-    return { actor: String(request.headers["x-evopilot-actor"] ?? "system"), role: "admin", platformAdmin: true, ...requestedScope };
-  }
-  if (tokens.length === 0) {
-    if (!runtime.allowAnonymousAdmin) return undefined;
-    return { actor: String(request.headers["x-evopilot-actor"] ?? "system"), role: "admin", platformAdmin: true, ...requestedScope };
-  }
-  const token = value.startsWith("Bearer ") ? value.slice("Bearer ".length) : "";
-  const matched = tokens.find((item) => item.token === token);
-  if (!matched) return undefined;
-  const scope = {
-    tenantId: matched.tenantId ?? requestedScope.tenantId,
-    workspaceId: matched.workspaceId ?? requestedScope.workspaceId
-  };
-  return {
-    actor: String(request.headers["x-evopilot-actor"] ?? matched.name),
-    role: matched.role,
-    platformAdmin: matched.platformAdmin ?? matched.role === "admin",
-    mustChangePassword: matched.mustChangePassword,
-    ...scope
-  };
-}
-
-function hasRole(context: AuthContext, required: AuthRole): boolean {
-  const rank: Record<AuthRole, number> = { viewer: 1, operator: 2, admin: 3 };
-  return rank[context.role] >= rank[required];
-}
-
-function audit(context: AuthContext, action: string, target: string, metadata?: Record<string, unknown>): AuditRecord {
-  return {
-    id: `audit-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-    actor: context.actor,
-    action,
-    target,
-    tenantId: context.tenantId,
-    workspaceId: context.workspaceId,
-    timestamp: new Date().toISOString(),
-    metadata
-  };
-}
-
-function getIdempotencyKey(request: http.IncomingMessage): string | undefined {
-  const value = request.headers["x-idempotency-key"];
-  const key = Array.isArray(value) ? value[0] : value;
-  return key && key.trim().length > 0 ? key.trim() : undefined;
-}
-
 export function startServerFromEnvironment(): http.Server {
   loadEnvFile(process.env.EVOPILOT_ENV_FILE ?? path.resolve("data/evopilot/evopilot.env"));
   const dataRoot = process.env.EVOPILOT_DATA_ROOT ?? path.resolve("data/evopilot");
@@ -22028,50 +21451,4 @@ export function startServerFromEnvironment(): http.Server {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   startServerFromEnvironment();
-}
-
-function loadEnvFile(file: string): void {
-  if (!fs.existsSync(file)) return;
-  const lines = fs.readFileSync(file, "utf8").split(/\r?\n/);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const index = trimmed.indexOf("=");
-    if (index <= 0) continue;
-    const key = trimmed.slice(0, index).trim();
-    const raw = trimmed.slice(index + 1).trim();
-    const value = raw.replace(/^["']|["']$/g, "");
-    if (!process.env[key]) process.env[key] = value;
-  }
-}
-
-function parseEnvTokens(value: string | undefined): AuthToken[] | undefined {
-  if (!value) return undefined;
-  return value.split(",").map((item) => {
-    const [name, token, role] = item.split(":");
-    if (!name || !token || (role !== "viewer" && role !== "operator" && role !== "admin")) {
-      throw new Error("EVOPILOT_TOKENS 条目必须使用 name:token:role 格式");
-    }
-    return { name, token, role };
-  });
-}
-
-function parseEnvUsers(value: string | undefined): AuthUser[] | undefined {
-  if (!value) return undefined;
-  return value.split(",").map((item) => {
-    const [username, password, role, tenantId = DEFAULT_TENANT_ID, workspaceId = DEFAULT_WORKSPACE_ID, displayName, platformAdminRaw] = item.split(":");
-    if (!username || !password || (role !== "viewer" && role !== "operator" && role !== "admin")) {
-      throw new Error("EVOPILOT_USERS 条目必须使用 username:password:role[:tenantId[:workspaceId[:displayName]]] 格式");
-    }
-    return {
-      username,
-      password,
-      role,
-      tenantId: safeFileName(tenantId),
-      workspaceId: safeFileName(workspaceId),
-      displayName: displayName || username,
-      status: "ACTIVE",
-      platformAdmin: platformAdminRaw === undefined ? role === "admin" : parseBoolean(platformAdminRaw, role === "admin")
-    };
-  });
 }

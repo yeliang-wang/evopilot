@@ -24,7 +24,7 @@ The current TypeScript workspace is split by control-plane responsibility:
 |---|---|
 | `@evopilot/contracts` | Shared schema names, version constants, and API/CLI/runtime boundary metadata. |
 | `@evopilot/core` | Evidence, evolution, delivery, and release domain primitives. |
-| `@evopilot/server` | HTTP control-plane runtime, thin compatibility adapter, RBAC, audit, tenant/workspace scope, and API orchestration. |
+| `@evopilot/server` | HTTP control-plane runtime, thin compatibility adapter, runtime auth/config helpers, executor adapters, RBAC, audit, tenant/workspace scope, and API orchestration. |
 | `@evopilot/worker-runtime` | Loop worker polling, heartbeat, watchdog, and start/resume API loop. |
 | `@evopilot/cli` | HTTP adapter CLI for agent-safe JSON and operator output. |
 | `@evopilot/client` | HTTP request helper for CLI and integrations. |

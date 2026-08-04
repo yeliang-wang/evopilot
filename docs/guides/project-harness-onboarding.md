@@ -56,7 +56,7 @@ When administrators want EvoPilot to evolve a public template from reviewable so
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 1.1.1 \
+  --target-version 1.1.0 \
   --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \
