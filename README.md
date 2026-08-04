@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/GA%20Release-v1.1.2-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v1.1.3-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -18,8 +18,8 @@ It is not an agent runtime, prompt playground, or generic code generator. Agent 
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server | `npm install -g @evopilot/cli` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.2/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and the npm release is published | `npm install -g @evopilot/cli` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.3/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet. The supported public entry points are CLI, self-host installer, and Helm.
@@ -56,7 +56,7 @@ EVOPILOT_API_BASE_URL=http://127.0.0.1:19876 npm run dev
 
 Debug mode is for local development and UI validation. Production mode is the default for real operation and requires authentication plus configured LLM, source, and CI/CD credentials.
 
-See [Distribution](docs/operations/distribution.md) for npm, installer, Helm, validation, and publishing details.
+See [Distribution](docs/operations/distribution.md) for npm, installer, Helm, validation, public registry verification, and publishing details.
 
 ## CLI For AI Agents
 
@@ -97,13 +97,13 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## Release Status
 
-The latest published GitHub release is **v1.1.2 GA**, a release-operations evolution release over the original `v1.0.0` GA baseline.
+The latest published GitHub release is **v1.1.3 GA**, a code-structure and distribution-verification evolution release over the original `v1.0.0` GA baseline.
 
-v1.1.2 keeps the v1.1.1 code-structure boundary work and adds an operator-safe immutable ECS rollout runbook. The runbook resolves GitHub Release image metadata, deploys pinned GHCR digests with `--no-build`, and records health/readiness, Dashboard smoke, and container digest evidence.
+v1.1.3 keeps the v1.1.2 immutable ECS rollout automation and extracts release target runtime logic from the transitional control-plane runtime. It also adds post-publish public npm registry verification for exact-version package metadata, empty-project installs, and CLI binary help output.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/1.1.2.md](docs/releases/1.1.2.md)
+- Latest release notes: [docs/releases/1.1.3.md](docs/releases/1.1.3.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)

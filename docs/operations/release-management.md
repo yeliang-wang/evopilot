@@ -11,7 +11,7 @@ EvoPilot release readiness has two layers:
 | Product release decision | Proves the control plane reached the requested target. | `GET /api/v1/release/decisions`, release evidence, criteria, blockers, risk register. |
 | Open-source release package | Makes the public repository adoptable. | Tag, changelog, release notes, self-hosting docs, validation commands, security and contribution docs. |
 | Immutable deployment artifact | Proves the production rollout can use a fixed artifact instead of rebuilding from a checkout. | Release archive, SHA256SUMS, SPDX SBOM, provenance, GHCR image digest metadata, ECS immutable compose template. |
-| Distribution package | Proves new users can install or deploy without cloning the source tree. | npm package tarballs, empty-project install smoke, tagged `install.sh` / `install.ps1`, release install manifest, self-host installer output, Helm chart archive, and npm publish workflow. |
+| Distribution package | Proves new users can install or deploy without cloning the source tree. | npm package tarballs, empty-project install smoke, tagged `install.sh` / `install.ps1`, release install manifest, self-host installer output, Helm chart archive, npm publish workflow, and public npm registry install verification. |
 
 Do not claim a public release from `npm run check` alone. `npm run check` proves repository validation. The authoritative product verdict remains EvoPilot release governance.
 
@@ -61,6 +61,12 @@ evopilot release decisions --project <project-id> --target <release-target-id> -
 Stop if the product-native release decision is `NO-GO`, `BLOCKED`, missing, or has unresolved required criteria.
 
 PRs that prepare a release should also preserve the uploaded PR artifacts from `.github/workflows/pr-artifacts.yml`: failure recovery matrix, release readiness report, built release assets, and verification output.
+
+After the npm package workflow publishes a tag, verify the public registry path:
+
+```bash
+npm run verify:npm-registry -- --version 1.1.3
+```
 
 ## Tag And Push
 
@@ -117,7 +123,7 @@ Operators can use the tracked runbook script to resolve release metadata, deploy
 
 ```bash
 npm run ecs:immutable-rollout -- \
-  --version 1.1.2 \
+  --version 1.1.3 \
   --host root@8.153.72.80 \
   --apply \
   --json
@@ -127,8 +133,8 @@ For rollback drills, provide both the rollback and forward release versions. The
 
 ```bash
 npm run ecs:immutable-rollout -- \
-  --rollback-version 1.1.1 \
-  --forward-version 1.1.2 \
+  --rollback-version 1.1.2 \
+  --forward-version 1.1.3 \
   --host root@8.153.72.80 \
   --apply \
   --json
@@ -153,7 +159,13 @@ The package publish order is:
 3. `@evopilot/cli`
 4. `create-evopilot`
 
-Use `.github/workflows/npm-packages.yml` with a repository `NPM_TOKEN`. The workflow runs `npm run verify:distribution` and publishes with npm provenance from the requested tag.
+Use `.github/workflows/npm-packages.yml` with a repository `NPM_TOKEN`. The workflow runs `npm run verify:distribution`, publishes with npm provenance from the requested tag, waits for registry propagation, and then runs:
+
+```bash
+npm run verify:npm-registry -- --wait --timeout-ms 300000 --interval-ms 15000
+```
+
+This post-publish verifier checks exact-version npm metadata, installs the four public packages into an empty project from the npm registry, and runs the `evopilot` and `create-evopilot` help commands.
 
 ## Rollback
 

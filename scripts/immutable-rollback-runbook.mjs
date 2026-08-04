@@ -178,8 +178,8 @@ find . -maxdepth 2 \\( -name ".env*" -o -name ".evopilot" -o -name "*compose*.ym
 
 export function printUsage() {
   return `Usage:
-  node scripts/immutable-rollback-runbook.mjs --version 1.1.2 --host root@host --apply --json
-  node scripts/immutable-rollback-runbook.mjs --rollback-version 1.1.1 --forward-version 1.1.2 --host root@host --apply --json
+  node scripts/immutable-rollback-runbook.mjs --version 1.1.3 --host root@host --apply --json
+  node scripts/immutable-rollback-runbook.mjs --rollback-version 1.1.2 --forward-version 1.1.3 --host root@host --apply --json
 
 Options:
   --version <semver>             Deploy one release image digest.

@@ -16,7 +16,7 @@ This document defines the current package boundary. It is intentionally narrower
 |---|---|---|---|
 | `@evopilot/contracts` | Contract | shared schema names, version constants, API/CLI/runtime boundary metadata | business decisions, HTTP transport, filesystem state |
 | `@evopilot/core` | Domain | evidence models, evolution opportunities, release report primitives | HTTP routing, CLI parsing, server-side persistence |
-| `@evopilot/server` | Interface / control-plane runtime | package entrypoint, compatibility adapter, HTTP routing, runtime auth/config helpers, executor adapters, RBAC, tenant/workspace scope, audit, API orchestration | CLI semantics, Dashboard-only state |
+| `@evopilot/server` | Interface / control-plane runtime | package entrypoint, compatibility adapter, HTTP routing, runtime auth/config helpers, executor adapters, release target helpers, RBAC, tenant/workspace scope, audit, API orchestration | CLI semantics, Dashboard-only state |
 | `@evopilot/worker-runtime` | Runtime | loop worker polling, worker lease heartbeat, watchdog/start/resume API loop | release verdicts, approval bypasses, direct store access |
 | `@evopilot/cli` | Interface adapter | command parsing, agent-safe JSON output, stop-rule presentation | server-side policy decisions, direct store mutation |
 | `@evopilot/client` | Adapter | HTTP request helper, request headers, response normalization | business workflow orchestration |
@@ -29,7 +29,7 @@ Move behavior only when a boundary is already named and testable.
 
 1. Put shared names, schemas, status constants, and public boundary metadata in `@evopilot/contracts`.
 2. Move reusable runtime behavior behind a package before changing the operating script. `scripts/loop-worker.mjs` now delegates to `@evopilot/worker-runtime`.
-3. Keep `@evopilot/server` as the HTTP interface boundary: `server.ts` stays a compatibility adapter, `runtime/control-plane-runtime.ts` owns the current control-plane wiring, and reusable HTTP, runtime-auth, executor-adapter, and storage helpers move behind stable modules.
+3. Keep `@evopilot/server` as the HTTP interface boundary: `server.ts` stays a compatibility adapter, `runtime/control-plane-runtime.ts` owns the current control-plane wiring, and reusable HTTP, runtime-auth, executor-adapter, release-target, and storage helpers move behind stable modules.
 4. Keep `@evopilot/cli` as an HTTP adapter. It may format stop rules and JSON summaries, but it must not reimplement server decisions.
 5. Add or update docs in the same change that changes package ownership.
 
@@ -41,9 +41,10 @@ These files remain deliberately transitional:
 |---|---|---|
 | `packages/server/src/index.ts` | Thin package entrypoint and direct-start adapter | HTTP routing, store layout, or application use cases |
 | `packages/server/src/server.ts` | Thin compatibility adapter that re-exports the control-plane runtime and preserves direct start | any new HTTP routing, store layout, or application use cases |
-| `packages/server/src/runtime/control-plane-runtime.ts` | Current HTTP control-plane runtime plus remaining legacy route/application orchestration; runtime auth/config and loop executor adapter execution now delegate to focused modules | remaining route/application handlers, `FileStore`, and application use cases |
+| `packages/server/src/runtime/control-plane-runtime.ts` | Current HTTP control-plane runtime plus remaining legacy route/application orchestration; runtime auth/config, loop executor adapter execution, and release target/scenario/risk helpers now delegate to focused modules | remaining route/application handlers, `FileStore`, and application use cases |
 | `packages/server/src/runtime/runtime-auth.ts` | Runtime mode resolution, production configuration checks, env parsing, user/session token normalization, authorization, RBAC helper, and audit record construction | HTTP route branching, persistence layout, or release decisions |
 | `packages/server/src/runtime/executor-adapters.ts` | Loop executor adapter registry, adapter policy result helpers, LLM executor prompt construction, and executor step output/evidence assembly | source release closure, project DevOps checks, store mutation, or HTTP concerns |
+| `packages/server/src/runtime/release-targets.ts` | Release target defaults, ProofOps target plans, scenario matrix normalization/defaulting, release evidence summaries, active soak checks, release risk deduplication, and artifact type inference | HTTP routing, store mutation, executor invocation, or deployment side effects |
 | `packages/server/src/model.ts` | Server-side API, store, goal, loop, release, and Dashboard projection contracts | route handlers, persistence side effects, or business execution |
 | `packages/server/src/http/errors.ts` | HTTP error type plus shared query parameter validation helpers | route business decisions, auth, audit, or persistence |
 | `packages/server/src/http/router.ts` | shared first-match route registry | route business decisions, auth bypasses, or store mutation |

@@ -6,8 +6,8 @@ EvoPilot distribution has three supported entry points. These labels match the r
 
 | README CTA | Audience | Command |
 | --- | --- | --- |
-| Install CLI | Operators, CI jobs, and AI agents that already have a server | `npm install -g @evopilot/cli` |
-| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.2/install.sh)"` |
+| Install CLI | Operators, CI jobs, and AI agents that already have a server, after the npm package release is published | `npm install -g @evopilot/cli` |
+| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.3/install.sh)"` |
 | Kubernetes | Platform teams running EvoPilot on Kubernetes | `helm install evopilot ./charts/evopilot` |
 
 The CLI and installer are release artifacts. They do not replace server-side RBAC, tenant/workspace scope, approval gates, source closure, release policy, or audit.
@@ -16,7 +16,7 @@ Desktop installer and hosted Cloud trial are not published EvoPilot distribution
 
 ## npm CLI
 
-Install the CLI after the npm package release is published:
+Install the CLI only after the npm package release is published and `npm run verify:npm-registry` has passed for the release version:
 
 ```bash
 npm install -g @evopilot/cli
@@ -31,14 +31,14 @@ The CLI package depends on the published `@evopilot/client` and `@evopilot/contr
 Bootstrap from the tagged POSIX installer. It downloads the release manifest first and verifies the requested package/version boundary before calling `npx`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.2/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.3/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
 
 Windows operators can use the tagged PowerShell entrypoint:
 
 ```powershell
-iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.2/install.ps1 -OutFile install.ps1
+iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.3/install.ps1 -OutFile install.ps1
 .\install.ps1 -Dir evopilot-stack
 ```
 
@@ -47,7 +47,7 @@ The manifest is published at `installers/manifest.json` in the release tag and a
 Or generate directly from npm:
 
 ```bash
-npx create-evopilot@1.1.2 self-host --dir evopilot-stack --init-env
+npx create-evopilot@1.1.3 self-host --dir evopilot-stack --init-env
 cd evopilot-stack
 ```
 
@@ -61,7 +61,7 @@ docker compose up -d
 After `.env` has real LLM settings, the installer can start and verify the stack:
 
 ```bash
-npx create-evopilot@1.1.2 self-host --dir evopilot-stack --start
+npx create-evopilot@1.1.3 self-host --dir evopilot-stack --start
 ```
 
 The generated stack starts:
@@ -114,8 +114,20 @@ This command verifies:
 
 Release artifacts also include npm package tarballs, `install.sh`, `install.ps1`, `evopilot-<version>-install-manifest.json`, and `evopilot-<version>-helm-chart.tgz`.
 
+After npm publication, verify the public registry path separately:
+
+```bash
+npm run verify:npm-registry -- --version 1.1.3
+```
+
+This command checks exact-version npm metadata for `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, and `create-evopilot`, installs those packages into an empty project from the public registry, then verifies the `evopilot` and `create-evopilot` binaries.
+
 ## Publishing
 
-npm publication is a separate release action. The repository includes `.github/workflows/npm-packages.yml`, which publishes from an exact release tag with `NPM_TOKEN` and npm provenance enabled.
+npm publication is a separate release action. The repository includes `.github/workflows/npm-packages.yml`, which publishes from an exact release tag with `NPM_TOKEN`, npm provenance enabled, and post-publish public registry verification:
+
+```bash
+npm run verify:npm-registry -- --wait --timeout-ms 300000 --interval-ms 15000
+```
 
 Do not publish npm packages from an unverified local checkout.

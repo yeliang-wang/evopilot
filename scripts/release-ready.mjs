@@ -17,12 +17,14 @@ requireFile("docs/operations/test-matrix.md");
 requireFile("scripts/failure-recovery-matrix.mjs");
 requireFile("scripts/immutable-rollback-runbook.mjs");
 requireFile("scripts/release-ready.mjs");
+requireFile("scripts/verify-npm-registry-publication.mjs");
 requireFile("tests/failure-recovery/control-plane-failure-recovery.test.mjs");
 requireFile(".github/workflows/ci.yml");
 requireFile(".github/workflows/release-artifacts.yml");
 requireFile(".github/workflows/failure-recovery.yml");
 requireFile(".github/workflows/release-ready.yml");
 requireFile(".github/workflows/pr-artifacts.yml");
+requireFile(".github/workflows/npm-packages.yml");
 
 requirePackageScript("check");
 requirePackageScript("cli:test");
@@ -31,6 +33,7 @@ requirePackageScript("release:ready");
 requirePackageScript("release:artifact");
 requirePackageScript("ecs:immutable-rollout");
 requirePackageScript("verify:release-artifact");
+requirePackageScript("verify:npm-registry");
 requirePackageScript("test:e2e:production");
 requirePackageScript("release:soak:ga:active");
 
@@ -40,10 +43,14 @@ requireContent("docs/operations/test-matrix.md", /test:failure-recovery/, "test 
 requireContent("docs/operations/test-matrix.md", /release:ready/, "test matrix must document release readiness");
 requireContent("docs/operations/test-matrix.md", /PR artifacts/, "test matrix must document PR artifacts");
 requireContent("docs/operations/release-management.md", /ecs:immutable-rollout/, "release management must document immutable rollout automation");
+requireContent("docs/operations/release-management.md", /verify:npm-registry/, "release management must document public npm registry verification");
+requireContent("docs/operations/distribution.md", /verify:npm-registry/, "distribution docs must document public npm registry verification");
 requireContent("scripts/immutable-rollback-runbook.mjs", /evopilot-immutable-rollback-runbook\/v1/, "immutable rollback runbook must emit evidence schema");
 requireContent("scripts/immutable-rollback-runbook.mjs", /--no-build/, "immutable rollback runbook must avoid production rebuilds");
+requireContent("scripts/verify-npm-registry-publication.mjs", /empty-project npm install smoke/, "npm registry verifier must run an empty-project install smoke");
 requireContent(".github/workflows/failure-recovery.yml", /npm run test:failure-recovery/, "failure recovery workflow must run the matrix");
 requireContent(".github/workflows/release-ready.yml", /npm run release:ready/, "release ready workflow must run release:ready");
+requireContent(".github/workflows/npm-packages.yml", /npm run verify:npm-registry/, "npm publish workflow must verify public registry installation");
 requireContent(".github/workflows/pr-artifacts.yml", /npm run check/, "PR artifacts workflow must run check");
 requireContent(".github/workflows/pr-artifacts.yml", /npm run test:failure-recovery/, "PR artifacts workflow must run failure recovery");
 requireContent(".github/workflows/pr-artifacts.yml", /npm run release:artifact/, "PR artifacts workflow must build release artifacts");

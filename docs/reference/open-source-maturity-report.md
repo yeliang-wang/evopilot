@@ -13,23 +13,23 @@ It should not claim parity with the most established public AI-agent projects on
 | Area | Current State | Evidence |
 | --- | --- | --- |
 | Product kernel | Enterprise control plane for evidence, goals, loops, harness profiles, approvals, source closure, and release decisions. | `README.md`, `docs/architecture/`, `docs/api/openapi.json` |
-| Distribution | Docker, Compose, Kubernetes references, Helm chart, npm CLI package boundary, self-host installer, release docs, immutable release archive, SBOM, provenance, checksum, and image digest metadata. | `Dockerfile`, `docker-compose.yml`, `deploy/`, `charts/evopilot/`, `packages/create-evopilot/`, `.github/workflows/release-artifacts.yml`, `docs/operations/distribution.md` |
+| Distribution | Docker, Compose, Kubernetes references, Helm chart, npm CLI package boundary, self-host installer, release docs, immutable release archive, SBOM, provenance, checksum, image digest metadata, npm publish workflow, and public registry install verification. | `Dockerfile`, `docker-compose.yml`, `deploy/`, `charts/evopilot/`, `packages/create-evopilot/`, `.github/workflows/release-artifacts.yml`, `.github/workflows/npm-packages.yml`, `scripts/verify-npm-registry-publication.mjs`, `docs/operations/distribution.md` |
 | Documentation | Reader-oriented docs for users, operators, AI agents, API integrators, and architects. | `docs/README.md`, `AGENTS.md`, `docs/cli/` |
 | Release governance | Product-native release decisions plus public release playbook. | `docs/reference/release-package.md`, `docs/operations/release-management.md` |
 | Examples | Included demo project, GitHub workflow examples, and source-to-GA scenarios. | `examples/README.md`, `examples/source-to-ga/` |
 | Community shell | License, notice, changelog, contribution guide, security policy, code of conduct, issue forms, PR template. | Root governance files and `.github/` |
 | AI Agent readiness | Atomic CLI, JSON automation, stop rules, request IDs, WorkBuddy-safe docs. | `AGENTS.md`, `docs/cli/AGENTS.md`, `docs/guides/ai-agent-runbook.md` |
-| Code structure | Thin server package entrypoint and compatibility adapter, extracted control-plane runtime boundary, runtime auth/config helpers, executor adapter module, HTTP helpers, focused route modules, storage primitives, server contracts, harness-template domain defaults, and architecture-boundary verification. | `packages/server/src/index.ts`, `packages/server/src/server.ts`, `packages/server/src/runtime/`, `packages/server/src/http/`, `packages/server/src/storage/`, `packages/server/src/model.ts`, `packages/server/src/domains/harness-template/defaults.ts`, `scripts/verify-architecture-boundaries.mjs` |
+| Code structure | Thin server package entrypoint and compatibility adapter, extracted control-plane runtime boundary, runtime auth/config helpers, executor adapter module, release target/scenario/risk helper module, HTTP helpers, focused route modules, storage primitives, server contracts, harness-template domain defaults, and architecture-boundary verification. | `packages/server/src/index.ts`, `packages/server/src/server.ts`, `packages/server/src/runtime/`, `packages/server/src/http/`, `packages/server/src/storage/`, `packages/server/src/model.ts`, `packages/server/src/domains/harness-template/defaults.ts`, `scripts/verify-architecture-boundaries.mjs` |
 
 ## Top-Tier Gap Assessment
 
 | Dimension | Status | Remaining Work |
 | --- | --- | --- |
 | Product capability | Strong baseline | Continue hardening through real projects and release evidence. |
-| Self-hosting | Documented, containerized, tagged-installer backed, and npm-installer backed | Publish and monitor npm installer usage, then gather external install feedback. |
+| Self-hosting | Documented, containerized, tagged-installer backed, npm-installer backed, and public-registry verification scripted | Publish packages through the npm workflow, monitor installer usage, then gather external install feedback. |
 | Examples | Baseline examples present | Add public case studies from real adopters. |
 | Release process | Documented and backed by immutable release artifact workflow | Maintain regular tags, release notes, artifact checksums, SBOM, provenance, and production digest verification. |
-| Code structure | Entry, server compatibility adapter, Dashboard shell, HTTP helpers, storage primitives, runtime auth/config, executor adapters, and runtime boundary are bounded; the control-plane runtime remains a transitional large module | Extract remaining route/application handlers and `FileStore` behind smaller application and infrastructure modules. |
+| Code structure | Entry, server compatibility adapter, Dashboard shell, HTTP helpers, storage primitives, runtime auth/config, executor adapters, release target helpers, and runtime boundary are bounded; the control-plane runtime remains a transitional large module | Extract remaining route/application handlers and `FileStore` behind smaller application and infrastructure modules. |
 | Community | Governance files present | Build external contributor activity and triage rhythm. |
 | Ecosystem | GitHub, GitLab, CI/CD, LLM, logs, evidence surfaces documented | Add partner integrations and published deployment guides as users request them. |
 
@@ -44,7 +44,7 @@ Make EvoPilot understandable, deployable, operable, verifiable, and contributabl
 Acceptance signals:
 
 - A new operator can self-host the stack from docs.
-- A new operator can generate the stack with tagged `install.sh` or `npx create-evopilot@latest self-host --init-env` after publication.
+- A new operator can generate the stack with tagged `install.sh` or `npx create-evopilot@latest self-host --init-env` after publication, and maintainers can prove the public registry path with `npm run verify:npm-registry`.
 - An AI Agent can follow `AGENTS.md` and `docs/cli/AGENTS.md` without inventing commands.
 - A maintainer can tag a release using `docs/operations/release-management.md`.
 - A reviewer can inspect examples and understand project onboarding, harness review, goal loop execution, and release decisions.

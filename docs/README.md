@@ -65,7 +65,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
-- [EvoPilot v1.1.2 Release Notes](releases/1.1.2.md) - immutable ECS rollout automation release body and compatibility notes.
+- [EvoPilot v1.1.3 Release Notes](releases/1.1.3.md) - release target boundary and npm registry verification release body and compatibility notes.
 - [EvoPilot v1.1.0 Release Notes](releases/1.1.0.md) - control-plane runtime boundary release body and compatibility notes.
 - [EvoPilot v1.0.10 Release Notes](releases/1.0.10.md) - code-structure and module-boundary cleanup release body and compatibility notes.
 - [EvoPilot v1.0.9 Release Notes](releases/1.0.9.md) - distribution-entrypoint hardening release body and compatibility notes.

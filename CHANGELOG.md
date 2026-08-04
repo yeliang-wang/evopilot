@@ -8,6 +8,34 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.1.3 - 2026-08-04
+
+### Added
+
+- Added `scripts/verify-npm-registry-publication.mjs` and `npm run verify:npm-registry` to prove exact-version public npm metadata, empty-project package installation, and `evopilot` / `create-evopilot` binary help output after npm publication.
+
+### Changed
+
+- Extracted release target defaults, ProofOps target planning, release scenario matrix handling, evidence summaries, active soak checks, release risk deduplication, and artifact type inference from the transitional control-plane runtime into `packages/server/src/runtime/release-targets.ts`.
+- Updated shared package-boundary metadata and tightened `npm run verify:architecture` so the control-plane runtime must delegate release target helpers and remain under the updated line-count guard.
+- Extended the npm package workflow so it verifies the public npm registry install path after publishing from a release tag.
+
+### Documented
+
+- Updated README, CLI, distribution, release-management, architecture, open-source readiness, and maturity docs to separate local distribution validation from post-publish public npm registry verification.
+
+### Validation
+
+- `npm run build -w @evopilot/server`
+- `npm run verify:architecture`
+- `npm run release:ready`
+- `npm run verify:distribution`
+- `npm run check`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+- Post-publish: `npm run verify:npm-registry -- --version 1.1.3`
+
 ## 1.1.2 - 2026-08-04
 
 ### Added

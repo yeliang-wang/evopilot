@@ -30,15 +30,20 @@ mustContain("packages/server/src/http/server-logging.ts", "@evopilot/contracts",
 mustContain("packages/contracts/src/index.ts", "HTTP control-plane runtime", "contracts must describe the server runtime boundary");
 mustContain("packages/contracts/src/index.ts", "runtime auth/config helpers", "contracts must describe extracted server runtime auth/config ownership");
 mustContain("packages/contracts/src/index.ts", "executor adapters", "contracts must describe extracted server executor adapter ownership");
+mustContain("packages/contracts/src/index.ts", "release target helpers", "contracts must describe extracted server release target ownership");
 mustContain("packages/server/src/index.ts", "startServerFromEnvironment", "server package entrypoint must stay thin and delegate startup");
 mustContain("packages/server/src/server.ts", "./runtime/control-plane-runtime.js", "server compatibility adapter must delegate to the runtime boundary");
 mustContain("packages/server/src/runtime/control-plane-runtime.ts", "createServer", "control-plane runtime must own HTTP composition wiring");
 mustContain("packages/server/src/runtime/control-plane-runtime.ts", "./runtime-auth.js", "control-plane runtime must delegate runtime auth and config helpers");
 mustContain("packages/server/src/runtime/control-plane-runtime.ts", "./executor-adapters.js", "control-plane runtime must delegate executor adapter execution");
+mustContain("packages/server/src/runtime/control-plane-runtime.ts", "./release-targets.js", "control-plane runtime must delegate release target helpers");
 mustContain("packages/server/src/runtime/runtime-auth.ts", "resolveRuntimeConfig", "runtime auth and config helpers must live outside the composition root");
 mustContain("packages/server/src/runtime/runtime-auth.ts", "authorize", "runtime authorization must live outside the composition root");
 mustContain("packages/server/src/runtime/executor-adapters.ts", "executeLoopNode", "loop executor adapter execution must live outside the composition root");
 mustContain("packages/server/src/runtime/executor-adapters.ts", "ExecutorAdapterRegistry", "executor adapter registry must live outside the composition root");
+mustContain("packages/server/src/runtime/release-targets.ts", "defaultReleaseTargets", "release target defaults must live outside the runtime composition root");
+mustContain("packages/server/src/runtime/release-targets.ts", "defaultReleaseScenarioMatrix", "release scenario defaults must live outside the runtime composition root");
+mustContain("packages/server/src/runtime/release-targets.ts", "dedupeReleaseRisks", "release risk consolidation must live outside the runtime composition root");
 mustContain("packages/server/src/model.ts", "EvoPilotServerOptions", "server model contracts must live outside the composition root");
 mustContain("packages/server/src/http/composition-root.ts", "serverCompositionRootMetadata", "server must expose composition-root metadata");
 mustContain("packages/server/src/http/errors.ts", "HttpError", "HTTP error helpers must live outside the runtime boundary");
@@ -62,9 +67,10 @@ mustContain("package.json", "verify:architecture", "root check must include arch
 
 maxLines("packages/server/src/index.ts", 80, "server package entrypoint must remain thin");
 maxLines("packages/server/src/server.ts", 80, "server compatibility adapter must remain thin");
-maxLines("packages/server/src/runtime/control-plane-runtime.ts", 21600, "control-plane runtime must not grow without extracting another boundary");
+maxLines("packages/server/src/runtime/control-plane-runtime.ts", 20900, "control-plane runtime must not grow without extracting another boundary");
 maxLines("packages/server/src/runtime/runtime-auth.ts", 450, "runtime auth and config helpers must stay focused");
 maxLines("packages/server/src/runtime/executor-adapters.ts", 650, "executor adapter module must stay focused");
+maxLines("packages/server/src/runtime/release-targets.ts", 900, "release target helpers must stay focused");
 maxLines("packages/server/src/model.ts", 3000, "server contracts must stay readable");
 maxLines("packages/server/src/http/errors.ts", 120, "HTTP error helpers must stay focused");
 maxLines("packages/server/src/http/static-assets.ts", 120, "static asset serving must stay focused");

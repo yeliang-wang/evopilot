@@ -65,7 +65,7 @@ Administrator agents can also run the server-governed template evolution lifecyc
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 1.1.2 \
+  --target-version 1.1.3 \
   --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \

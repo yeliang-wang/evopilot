@@ -20,7 +20,7 @@ For production incident handling and full end-to-end operating steps, read [AI A
 
 ## Install
 
-Production installation uses the published CLI package:
+Production installation uses the published CLI package after the release has passed public npm registry verification:
 
 ```bash
 npm install -g @evopilot/cli
