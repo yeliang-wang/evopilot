@@ -19,6 +19,7 @@ It should not claim parity with the most established public AI-agent projects on
 | Examples | Included demo project, GitHub workflow examples, and source-to-GA scenarios. | `examples/README.md`, `examples/source-to-ga/` |
 | Community shell | License, notice, changelog, contribution guide, security policy, code of conduct, issue forms, PR template. | Root governance files and `.github/` |
 | AI Agent readiness | Atomic CLI, JSON automation, stop rules, request IDs, WorkBuddy-safe docs. | `AGENTS.md`, `docs/cli/AGENTS.md`, `docs/guides/ai-agent-runbook.md` |
+| Code structure | Thin server package entrypoint, extracted HTTP helpers, focused route modules, server contracts, harness-template domain defaults, and architecture-boundary verification. | `packages/server/src/index.ts`, `packages/server/src/http/`, `packages/server/src/model.ts`, `packages/server/src/domains/harness-template/defaults.ts`, `scripts/verify-architecture-boundaries.mjs` |
 
 ## Top-Tier Gap Assessment
 
@@ -28,6 +29,7 @@ It should not claim parity with the most established public AI-agent projects on
 | Self-hosting | Documented, containerized, tagged-installer backed, and npm-installer backed | Publish and monitor npm installer usage, then gather external install feedback. |
 | Examples | Baseline examples present | Add public case studies from real adopters. |
 | Release process | Documented and backed by immutable release artifact workflow | Maintain regular tags, release notes, artifact checksums, SBOM, provenance, and production digest verification. |
+| Code structure | Entry and Dashboard shell are bounded; server composition root remains transitional | Extract remaining route/application handlers and `FileStore` behind smaller application and infrastructure modules. |
 | Community | Governance files present | Build external contributor activity and triage rhythm. |
 | Ecosystem | GitHub, GitLab, CI/CD, LLM, logs, evidence surfaces documented | Add partner integrations and published deployment guides as users request them. |
 

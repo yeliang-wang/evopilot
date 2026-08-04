@@ -28,7 +28,7 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | Self-hosting guide | Present | `docs/operations/self-hosting.md` |
 | Distribution guide | Present | `docs/operations/distribution.md` |
 | Release playbook | Present | `docs/operations/release-management.md` |
-| Release notes | Present | `docs/releases/1.0.9.md` |
+| Release notes | Present | `docs/releases/1.0.10.md` |
 | Immutable release artifacts | Present | `scripts/build-release-artifacts.mjs`, `scripts/verify-release-artifacts.mjs`, `deploy/ecs/compose.immutable.yaml` |
 | Installable distribution | Present | `install.sh`, `install.ps1`, `installers/manifest.json`, `packages/cli/`, `packages/client/`, `packages/contracts/`, `packages/create-evopilot/`, `charts/evopilot/`, `npm run verify:distribution` |
 | Open-source maturity report | Present | `docs/reference/open-source-maturity-report.md` |
@@ -39,6 +39,7 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | --- | --- |
 | Harness governance | `docs/reference/project-harness-profile-schema.md`, `harness-templates/public/` |
 | Template lifecycle | `docs/guides/harness-template-evolution.md` |
+| Code structure boundaries | `docs/architecture/package-boundaries.md`, `scripts/verify-architecture-boundaries.mjs` |
 | CLI automation | `docs/cli/AGENTS.md`, `docs/cli/quickstart.md`, `docs/cli/commands.md` |
 | Goal loops | `docs/cli/workflows.md`, `docs/guides/ai-agent-runbook.md` |
 | Release governance | `docs/reference/release-package.md`, `docs/reference/production-user-e2e.md` |

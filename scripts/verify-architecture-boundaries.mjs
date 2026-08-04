@@ -25,13 +25,35 @@ for (const [packageName, packagePath] of requiredPackages) {
   if (!fs.existsSync(path.join(root, packagePath, "src"))) failures.push(`${packagePath} is missing src/`);
 }
 
-mustContain("packages/server/src/index.ts", "@evopilot/contracts", "server composition root must consume shared contracts");
+mustContain("packages/server/src/http/platform-readiness.ts", "@evopilot/contracts", "platform readiness must consume shared version contracts");
+mustContain("packages/server/src/http/server-logging.ts", "@evopilot/contracts", "server logging must consume shared log schema contracts");
+mustContain("packages/server/src/index.ts", "startServerFromEnvironment", "server package entrypoint must stay thin and delegate startup");
+mustContain("packages/server/src/server.ts", "createServer", "server composition root must live outside the package entrypoint");
+mustContain("packages/server/src/model.ts", "EvoPilotServerOptions", "server model contracts must live outside the composition root");
 mustContain("packages/server/src/http/composition-root.ts", "serverCompositionRootMetadata", "server must expose composition-root metadata");
+mustContain("packages/server/src/http/router.ts", "handleFirstMatchingRoute", "server route dispatch must use a shared route registry");
+mustContain("packages/server/src/http/platform-readiness.ts", "platformHealthBody", "server readiness responses must live outside the composition root");
+mustContain("packages/server/src/http/request-logging.ts", "requestCorrelation", "server request logging helpers must live outside the composition root");
+mustContain("packages/server/src/http/response.ts", "writeJson", "server response helpers must live outside the composition root");
+mustContain("packages/server/src/http/server-logging.ts", "setActiveLoggingSettings", "server structured logging must live outside the composition root");
+mustContain("packages/server/src/http/routes/platform.ts", "handlePlatformRoute", "platform routes must live in a route module");
+mustContain("packages/server/src/http/routes/auth.ts", "handlePublicAuthRoute", "auth routes must live in a route module");
+mustContain("packages/server/src/http/routes/settings.ts", "handleSettingsRoute", "settings routes must live in a route module");
+mustContain("packages/server/src/http/routes/read-models.ts", "handleReadModelRoute", "read-model routes must live in a route module");
+mustContain("packages/server/src/domains/harness-template/defaults.ts", "defaultHarnessTemplates", "built-in harness templates must live in the harness-template domain");
 mustContain("packages/cli/src/index.ts", "@evopilot/contracts", "CLI interface must consume shared contracts");
 mustContain("packages/cli/src/runtime/boundary.ts", "cliInterfaceBoundaryMetadata", "CLI must expose interface-boundary metadata");
 mustContain("packages/worker-runtime/src/index.ts", "EVOPILOT_WORKER_RUNTIME_SCHEMA", "worker runtime must expose a typed runtime result");
 mustContain("scripts/loop-worker.mjs", "@evopilot/worker-runtime", "loop-worker script must delegate to the runtime package");
 mustContain("package.json", "verify:architecture", "root check must include architecture verification");
+
+maxLines("packages/server/src/index.ts", 80, "server package entrypoint must remain thin");
+maxLines("packages/server/src/server.ts", 23000, "server composition root must not grow without extracting another boundary");
+maxLines("packages/server/src/model.ts", 3000, "server contracts must stay readable");
+maxLines("packages/server/src/http/router.ts", 80, "route registry must stay a small infrastructure helper");
+for (const routeFile of fs.readdirSync(path.join(root, "packages/server/src/http/routes")).filter((file) => file.endsWith(".ts"))) {
+  maxLines(`packages/server/src/http/routes/${routeFile}`, 750, "HTTP route modules must stay focused");
+}
 
 if (failures.length > 0) {
   console.error("Architecture boundary verification failed:");
@@ -49,4 +71,14 @@ function mustContain(relativePath, needle, message) {
   }
   const content = fs.readFileSync(absolute, "utf8");
   if (!content.includes(needle)) failures.push(`${message}: ${relativePath} does not contain ${needle}`);
+}
+
+function maxLines(relativePath, limit, message) {
+  const absolute = path.join(root, relativePath);
+  if (!fs.existsSync(absolute)) {
+    failures.push(`${relativePath} is missing`);
+    return;
+  }
+  const count = fs.readFileSync(absolute, "utf8").split(/\r?\n/).length;
+  if (count > limit) failures.push(`${message}: ${relativePath} has ${count} lines, limit ${limit}`);
 }

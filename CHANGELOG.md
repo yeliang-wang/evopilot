@@ -8,6 +8,30 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.0.10 - 2026-08-04
+
+### Changed
+
+- Split the server package entrypoint into a thin startup adapter that delegates to `packages/server/src/server.ts`.
+- Moved server-side API, store, goal, loop, release, and Dashboard projection contracts into `packages/server/src/model.ts`.
+- Extracted reusable HTTP platform readiness, request logging, response writing, structured logging, route registry, and focused route modules under `packages/server/src/http/`.
+- Moved built-in enterprise `HarnessTemplate` defaults into the harness-template domain module.
+
+### Documented
+
+- Updated architecture docs to describe the thin package entrypoint, transitional `server.ts` composition root, extracted HTTP helpers, route modules, and remaining deep extraction target.
+- Added v1.0.10 release notes for the module-boundary cleanup release.
+
+### Validation
+
+- `npm run cli:test`
+- `npm run check`
+- `npm run verify:architecture`
+- `npm run verify:distribution`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.0.9 - 2026-08-03
 
 ### Added

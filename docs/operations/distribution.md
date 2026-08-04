@@ -7,7 +7,7 @@ EvoPilot distribution has three supported entry points. These labels match the r
 | README CTA | Audience | Command |
 | --- | --- | --- |
 | Install CLI | Operators, CI jobs, and AI agents that already have a server | `npm install -g @evopilot/cli` |
-| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.9/install.sh)"` |
+| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.10/install.sh)"` |
 | Kubernetes | Platform teams running EvoPilot on Kubernetes | `helm install evopilot ./charts/evopilot` |
 
 The CLI and installer are release artifacts. They do not replace server-side RBAC, tenant/workspace scope, approval gates, source closure, release policy, or audit.
@@ -31,14 +31,14 @@ The CLI package depends on the published `@evopilot/client` and `@evopilot/contr
 Bootstrap from the tagged POSIX installer. It downloads the release manifest first and verifies the requested package/version boundary before calling `npx`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.9/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.10/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
 
 Windows operators can use the tagged PowerShell entrypoint:
 
 ```powershell
-iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.9/install.ps1 -OutFile install.ps1
+iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.0.10/install.ps1 -OutFile install.ps1
 .\install.ps1 -Dir evopilot-stack
 ```
 
@@ -47,7 +47,7 @@ The manifest is published at `installers/manifest.json` in the release tag and a
 Or generate directly from npm:
 
 ```bash
-npx create-evopilot@1.0.9 self-host --dir evopilot-stack --init-env
+npx create-evopilot@1.0.10 self-host --dir evopilot-stack --init-env
 cd evopilot-stack
 ```
 
@@ -61,7 +61,7 @@ docker compose up -d
 After `.env` has real LLM settings, the installer can start and verify the stack:
 
 ```bash
-npx create-evopilot@1.0.9 self-host --dir evopilot-stack --start
+npx create-evopilot@1.0.10 self-host --dir evopilot-stack --start
 ```
 
 The generated stack starts:

@@ -18,13 +18,14 @@ It does not own project-specific activation, goal planning, loop execution, rele
 packages/server/src/domains/harness-template/
   types.ts       # Domain entities, value objects, refs, reports
   template.ts    # HarnessTemplate hydrate/validate/ref rules
+  defaults.ts    # Built-in enterprise harness templates and baseline knowledge packs
   evolution.ts   # HarnessTemplateEvolution aggregate use cases and ports
   errors.ts      # Domain error type translated by the server adapter
   utils.ts       # Local pure helpers
   index.ts       # Public domain exports
 ```
 
-`packages/server/src/index.ts` remains the composition root. It wires HTTP auth/RBAC, JSON envelopes, audit/logging, `FileStore`, and LLM profile resolution into the domain through explicit ports.
+`packages/server/src/index.ts` is now a thin package entrypoint. `packages/server/src/server.ts` remains the HTTP composition root during migration: it wires auth/RBAC, route modules, audit storage, `FileStore`, and LLM profile resolution into the domain through explicit ports. Shared server contracts live in `packages/server/src/model.ts`; HTTP request logging, structured server logging, response writers, platform readiness/version builders, route registry, and low-coupling route groups live under `packages/server/src/http/` so the package entrypoint does not own reusable interface concerns.
 
 ## Domain Ports
 
@@ -51,5 +52,7 @@ LLM generation is also a port. The domain receives a READY client and selection 
 ## Change Rule
 
 Future changes to template source collection, source extraction, template diffing, draft rendering, validation, impact analysis, or lifecycle states should start in `packages/server/src/domains/harness-template/`.
+
+Future changes to built-in enterprise harness templates should start in `packages/server/src/domains/harness-template/defaults.ts`, not in the HTTP server entrypoint.
 
 HTTP routes, CLI commands, Dashboard flows, and tests may adapt to the domain API, but they must not reimplement template lifecycle rules outside the domain.

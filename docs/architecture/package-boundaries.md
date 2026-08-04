@@ -16,7 +16,7 @@ This document defines the current package boundary. It is intentionally narrower
 |---|---|---|---|
 | `@evopilot/contracts` | Contract | shared schema names, version constants, API/CLI/runtime boundary metadata | business decisions, HTTP transport, filesystem state |
 | `@evopilot/core` | Domain | evidence models, evolution opportunities, release report primitives | HTTP routing, CLI parsing, server-side persistence |
-| `@evopilot/server` | Interface / composition root | HTTP routing, RBAC, tenant/workspace scope, audit, API orchestration | CLI semantics, Dashboard-only state |
+| `@evopilot/server` | Interface / composition root | package entrypoint, HTTP routing, RBAC, tenant/workspace scope, audit, API orchestration | CLI semantics, Dashboard-only state |
 | `@evopilot/worker-runtime` | Runtime | loop worker polling, worker lease heartbeat, watchdog/start/resume API loop | release verdicts, approval bypasses, direct store access |
 | `@evopilot/cli` | Interface adapter | command parsing, agent-safe JSON output, stop-rule presentation | server-side policy decisions, direct store mutation |
 | `@evopilot/client` | Adapter | HTTP request helper, request headers, response normalization | business workflow orchestration |
@@ -39,7 +39,16 @@ These files remain deliberately transitional:
 
 | File | Current role | Next extraction target |
 |---|---|---|
-| `packages/server/src/index.ts` | HTTP composition root plus legacy route/application orchestration | `packages/server/src/http`, `application`, `domains`, and `infra` modules |
+| `packages/server/src/index.ts` | Thin package entrypoint and direct-start adapter | HTTP routing, store layout, or application use cases |
+| `packages/server/src/server.ts` | HTTP composition root plus remaining legacy route/application orchestration | remaining route/application handlers, `FileStore`, and application use cases |
+| `packages/server/src/model.ts` | Server-side API, store, goal, loop, release, and Dashboard projection contracts | route handlers, persistence side effects, or business execution |
+| `packages/server/src/http/router.ts` | shared first-match route registry | route business decisions, auth bypasses, or store mutation |
+| `packages/server/src/http/routes/*.ts` | Focused HTTP route modules for platform, auth, settings, and read-model projections | business decisions, direct filesystem layout, or Dashboard-only state |
+| `packages/server/src/http/platform-readiness.ts` | Health, readiness, and version response builders | broader route orchestration and auth/RBAC |
+| `packages/server/src/http/request-logging.ts` | HTTP route grouping, correlation, diagnosis, client metadata, and redacted query helpers | server business decisions or audit persistence |
+| `packages/server/src/http/response.ts` | JSON/text/event-stream writers plus response LLM usage metadata | route authorization, store mutation, or release decisions |
+| `packages/server/src/http/server-logging.ts` | structured log settings, redaction, severity/category mapping, and active logging state | HTTP response bodies or business audit persistence |
+| `packages/server/src/domains/harness-template/defaults.ts` | Built-in enterprise HarnessTemplate defaults | HTTP routing, project-specific activation, or goal planning |
 | `packages/cli/src/index.ts` | CLI command dispatcher plus legacy command handlers | `packages/cli/src/commands`, `runtime`, `output`, and `guards` modules |
 | `packages/core/src/index.ts` | shared evidence/evolution primitives | smaller domain modules once downstream imports are stable |
 
