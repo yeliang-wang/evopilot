@@ -22,6 +22,31 @@ These scripts are part of the production service set. They run beside `evopilot-
 
 Use these scripts before release-impacting documentation, runtime, deployment, or open-source packaging changes. `npm run check` calls the production asset, governance, and architecture checks after build and test.
 
+## Immutable ECS Rollout
+
+| Script | npm command | Purpose |
+|---|---|---|
+| `immutable-rollback-runbook.mjs` | `npm run ecs:immutable-rollout -- ...` | Resolves GitHub Release image metadata, deploys pinned GHCR digests to ECS when `--apply` is present, verifies `/health`, `/ready`, Dashboard HTTP smoke, and records container digest evidence. |
+
+The script is safe by default: without `--apply`, it only resolves release metadata and prints the planned immutable image references. With `--apply`, it uses SSH and `deploy/ecs/compose.immutable.yaml` with `--no-build`, so production does not rebuild from a mutable checkout.
+
+Deploy one release digest:
+
+```bash
+npm run ecs:immutable-rollout -- --version 1.1.2 --host root@8.153.72.80 --apply --json
+```
+
+Run a rollback and forward drill:
+
+```bash
+npm run ecs:immutable-rollout -- \
+  --rollback-version 1.1.1 \
+  --forward-version 1.1.2 \
+  --host root@8.153.72.80 \
+  --apply \
+  --json
+```
+
 ## Release, GA, And Soak
 
 | Script | npm command | Purpose |

@@ -113,6 +113,27 @@ export EVOPILOT_IMAGE='ghcr.io/yeliang-wang/evopilot@sha256:<digest>'
 docker compose -p evopilot --env-file .env.production -f deploy/ecs/compose.immutable.yaml up -d --no-build
 ```
 
+Operators can use the tracked runbook script to resolve release metadata, deploy the pinned digest, and collect health/readiness/container-digest evidence:
+
+```bash
+npm run ecs:immutable-rollout -- \
+  --version 1.1.2 \
+  --host root@8.153.72.80 \
+  --apply \
+  --json
+```
+
+For rollback drills, provide both the rollback and forward release versions. The script deploys the rollback digest, verifies the service, then deploys the forward digest and verifies again:
+
+```bash
+npm run ecs:immutable-rollout -- \
+  --rollback-version 1.1.1 \
+  --forward-version 1.1.2 \
+  --host root@8.153.72.80 \
+  --apply \
+  --json
+```
+
 Before using a release asset, verify checksums:
 
 ```bash

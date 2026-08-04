@@ -47,6 +47,7 @@ const requiredFiles = [
   "scripts/loop-worker.mjs",
   "scripts/loop-soak.mjs",
   "scripts/failure-recovery-matrix.mjs",
+  "scripts/immutable-rollback-runbook.mjs",
   "scripts/release-ready.mjs",
   "scripts/build-release-artifacts.mjs",
   "scripts/verify-release-artifacts.mjs",
@@ -62,6 +63,7 @@ for (const file of requiredFiles) {
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 assert.match(packageJson.scripts["test:failure-recovery"], /failure-recovery-matrix\.mjs/);
 assert.match(packageJson.scripts["release:ready"], /release-ready\.mjs/);
+assert.match(packageJson.scripts["ecs:immutable-rollout"], /immutable-rollback-runbook\.mjs/);
 
 const testMatrix = fs.readFileSync("docs/operations/test-matrix.md", "utf8");
 assert.match(testMatrix, /Failure Recovery Scope/);
@@ -86,6 +88,10 @@ assert.match(failureRecoveryScript, /loop-worker\.test\.mjs/);
 const releaseReadyScript = fs.readFileSync("scripts/release-ready.mjs", "utf8");
 assert.match(releaseReadyScript, /evopilot-release-readiness\/v1/);
 assert.match(releaseReadyScript, /git", \["diff", "--check"\]/);
+const immutableRollbackRunbook = fs.readFileSync("scripts/immutable-rollback-runbook.mjs", "utf8");
+assert.match(immutableRollbackRunbook, /evopilot-immutable-rollback-runbook\/v1/);
+assert.match(immutableRollbackRunbook, /--no-build/);
+assert.match(immutableRollbackRunbook, /imageDigest/);
 
 const failureRecoveryWorkflow = fs.readFileSync(".github/workflows/failure-recovery.yml", "utf8");
 assert.match(failureRecoveryWorkflow, /npm run test:failure-recovery/);

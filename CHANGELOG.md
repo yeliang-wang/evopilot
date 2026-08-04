@@ -8,6 +8,35 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.1.2 - 2026-08-04
+
+### Added
+
+- Added `scripts/immutable-rollback-runbook.mjs` for GitHub Release metadata resolution, pinned GHCR digest deployment, ECS health/readiness verification, Dashboard HTTP smoke, and rollback/forward drills.
+- Added `npm run ecs:immutable-rollout` as the supported operator command for immutable ECS rollout automation.
+
+### Changed
+
+- Extended release readiness and production asset gates so immutable ECS rollout automation, evidence schema, and `--no-build` deployment behavior are verified before release.
+- Updated package, installer, Helm, OpenAPI, and documentation version references to `1.1.2`.
+
+### Documented
+
+- Added immutable ECS rollout and rollback drill examples to the scripts guide and release-management runbook.
+- Added v1.1.2 release notes covering the immutable rollout automation release.
+
+### Validation
+
+- `npm run build`
+- `node --test tests/unit/immutable-rollback-runbook.test.mjs`
+- `npm run verify:production-assets`
+- `npm run release:ready`
+- `npm run verify:distribution`
+- `npm run check`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.1.1 - 2026-08-04
 
 ### Changed
