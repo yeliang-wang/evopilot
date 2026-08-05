@@ -11,17 +11,19 @@ Use this guide when you want an external operator, administrator, or AI Agent to
 For the shortest generated stack, use the installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.3/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.4/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 # Review .env and replace unresolved LLM values before production use.
 docker compose up -d
 ./verify.sh
 ```
 
-For npm-only bootstrap:
+The tagged installer resolves `create-evopilot` from the release manifest. In v1.1.4, the default package spec is the GitHub Release tarball because public npm registry packages are not published yet.
+
+After public npm registry publication and `npm run verify:npm-registry` pass for the exact version, operators may use npm-only bootstrap:
 
 ```bash
-npx create-evopilot@1.1.3 self-host --dir evopilot-stack --init-env
+npx create-evopilot@1.1.4 self-host --dir evopilot-stack --init-env
 ```
 
 Use the manual path below when you need to work from source checkouts.

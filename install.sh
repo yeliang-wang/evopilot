@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${EVOPILOT_INSTALL_VERSION:-1.1.3}"
+VERSION="${EVOPILOT_INSTALL_VERSION:-1.1.4}"
 DIR="${EVOPILOT_INSTALL_DIR:-evopilot-stack}"
 PACKAGE="${EVOPILOT_INSTALL_PACKAGE:-create-evopilot}"
+PACKAGE_SPEC="${EVOPILOT_INSTALL_PACKAGE_SPEC:-}"
 MANIFEST_URL="${EVOPILOT_INSTALL_MANIFEST_URL:-https://raw.githubusercontent.com/yeliang-wang/evopilot/v${VERSION}/installers/manifest.json}"
 START=0
 FORCE=0
@@ -23,6 +24,7 @@ Environment:
   EVOPILOT_INSTALL_VERSION       create-evopilot version. Default: ${VERSION}
   EVOPILOT_INSTALL_DIR           output directory. Default: ${DIR}
   EVOPILOT_INSTALL_PACKAGE       npm package name. Default: ${PACKAGE}
+  EVOPILOT_INSTALL_PACKAGE_SPEC  npm/npx package spec override. Default: manifest tarball URL, or ${PACKAGE}@${VERSION} with --skip-manifest
   EVOPILOT_INSTALL_MANIFEST_URL  release manifest URL. Default: ${MANIFEST_URL}
   EVOPILOT_LLM_BASE_URL          used by --start validation when creating .env
   EVOPILOT_LLM_MODEL_NAME        used by --start validation when creating .env
@@ -43,7 +45,7 @@ node_major() {
   node -p "Number(process.versions.node.split('.')[0])"
 }
 
-download_manifest() {
+resolve_package_spec() {
   if [ "$SKIP_MANIFEST" -eq 1 ]; then
     return
   fi
@@ -67,6 +69,7 @@ if (!entry || entry.version !== version) {
 if (!manifest.installers?.["install.sh"]?.sha256) {
   throw new Error("manifest must include install.sh checksum");
 }
+console.log(entry.packageSpec || entry.tarballUrl || `${packageName}@${version}`);
 NODE
   rm -f "$manifest_file"
 }
@@ -117,14 +120,22 @@ while [ "$#" -gt 0 ]; do
 done
 
 require_command node
-require_command npm
 require_command curl
+require_command npm
 
 if [ "$(node_major)" -lt 22 ]; then
   fail "Node.js 22+ is required. Current version: $(node -v)"
 fi
 
-download_manifest
+if [ -z "$PACKAGE_SPEC" ]; then
+  if [ "$SKIP_MANIFEST" -eq 1 ]; then
+    PACKAGE_SPEC="${PACKAGE}@${VERSION}"
+  else
+    PACKAGE_SPEC="$(resolve_package_spec)"
+  fi
+else
+  resolve_package_spec >/dev/null
+fi
 
 ARGS=(self-host --dir "$DIR" --init-env)
 if [ "$START" -eq 1 ]; then
@@ -141,10 +152,10 @@ if [ "${#EXTRA_ARGS[@]}" -gt 0 ]; then
 fi
 
 if [ "$DRY_RUN" -eq 1 ]; then
-  printf 'npx --yes %q' "${PACKAGE}@${VERSION}"
+  printf 'npx --yes %q' "$PACKAGE_SPEC"
   printf ' %q' "${ARGS[@]}"
   printf '\n'
   exit 0
 fi
 
-npx --yes "${PACKAGE}@${VERSION}" "${ARGS[@]}"
+npx --yes "$PACKAGE_SPEC" "${ARGS[@]}"

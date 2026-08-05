@@ -11,7 +11,7 @@ EvoPilot release readiness has two layers:
 | Product release decision | Proves the control plane reached the requested target. | `GET /api/v1/release/decisions`, release evidence, criteria, blockers, risk register. |
 | Open-source release package | Makes the public repository adoptable. | Tag, changelog, release notes, self-hosting docs, validation commands, security and contribution docs. |
 | Immutable deployment artifact | Proves the production rollout can use a fixed artifact instead of rebuilding from a checkout. | Release archive, SHA256SUMS, SPDX SBOM, provenance, GHCR image digest metadata, ECS immutable compose template. |
-| Distribution package | Proves new users can install or deploy without cloning the source tree. | npm package tarballs, empty-project install smoke, tagged `install.sh` / `install.ps1`, release install manifest, self-host installer output, Helm chart archive, npm publish workflow, and public npm registry install verification. |
+| Distribution package | Proves new users can install or deploy without cloning the source tree. | Local package tarballs, GitHub Release package assets, empty-project install smoke, tagged `install.sh` / `install.ps1`, release install manifest, self-host installer output, Helm chart archive, npm publish workflow, and public npm registry install verification after publication. |
 
 Do not claim a public release from `npm run check` alone. `npm run check` proves repository validation. The authoritative product verdict remains EvoPilot release governance.
 
@@ -65,8 +65,10 @@ PRs that prepare a release should also preserve the uploaded PR artifacts from `
 After the npm package workflow publishes a tag, verify the public registry path:
 
 ```bash
-npm run verify:npm-registry -- --version 1.1.3
+npm run verify:npm-registry -- --version 1.1.4
 ```
+
+For v1.1.4, the public installable path is the GitHub Release tarball package spec recorded in `installers/manifest.json`; public npm registry publication remains a separate layer until the npm workflow publishes and verifies the exact version.
 
 ## Tag And Push
 
@@ -123,7 +125,7 @@ Operators can use the tracked runbook script to resolve release metadata, deploy
 
 ```bash
 npm run ecs:immutable-rollout -- \
-  --version 1.1.3 \
+  --version 1.1.4 \
   --host root@8.153.72.80 \
   --apply \
   --json
@@ -134,7 +136,7 @@ For rollback drills, provide both the rollback and forward release versions. The
 ```bash
 npm run ecs:immutable-rollout -- \
   --rollback-version 1.1.2 \
-  --forward-version 1.1.3 \
+  --forward-version 1.1.4 \
   --host root@8.153.72.80 \
   --apply \
   --json

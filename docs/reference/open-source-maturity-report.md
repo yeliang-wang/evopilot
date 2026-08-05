@@ -13,7 +13,7 @@ It should not claim parity with the most established public AI-agent projects on
 | Area | Current State | Evidence |
 | --- | --- | --- |
 | Product kernel | Enterprise control plane for evidence, goals, loops, harness profiles, approvals, source closure, and release decisions. | `README.md`, `docs/architecture/`, `docs/api/openapi.json` |
-| Distribution | Docker, Compose, Kubernetes references, Helm chart, npm CLI package boundary, self-host installer, release docs, immutable release archive, SBOM, provenance, checksum, image digest metadata, npm publish workflow, and public registry install verification. | `Dockerfile`, `docker-compose.yml`, `deploy/`, `charts/evopilot/`, `packages/create-evopilot/`, `.github/workflows/release-artifacts.yml`, `.github/workflows/npm-packages.yml`, `scripts/verify-npm-registry-publication.mjs`, `docs/operations/distribution.md` |
+| Distribution | Docker, Compose, Kubernetes references, Helm chart, GitHub Release CLI tarball set, manifest-backed self-host installer, release docs, immutable release archive, SBOM, provenance, checksum, image digest metadata, npm publish workflow, and public registry verifier for the separate post-publish layer. | `Dockerfile`, `docker-compose.yml`, `deploy/`, `charts/evopilot/`, `packages/create-evopilot/`, `installers/manifest.json`, `.github/workflows/release-artifacts.yml`, `.github/workflows/npm-packages.yml`, `scripts/verify-npm-registry-publication.mjs`, `docs/operations/distribution.md` |
 | Documentation | Reader-oriented docs for users, operators, AI agents, API integrators, and architects. | `docs/README.md`, `AGENTS.md`, `docs/cli/` |
 | Release governance | Product-native release decisions plus public release playbook. | `docs/reference/release-package.md`, `docs/operations/release-management.md` |
 | Examples | Included demo project, GitHub workflow examples, and source-to-GA scenarios. | `examples/README.md`, `examples/source-to-ga/` |
@@ -26,7 +26,7 @@ It should not claim parity with the most established public AI-agent projects on
 | Dimension | Status | Remaining Work |
 | --- | --- | --- |
 | Product capability | Strong baseline | Continue hardening through real projects and release evidence. |
-| Self-hosting | Documented, containerized, tagged-installer backed, npm-installer backed, and public-registry verification scripted | Publish packages through the npm workflow, monitor installer usage, then gather external install feedback. |
+| Self-hosting | Documented, containerized, tagged-installer backed, GitHub Release tarball backed, and public-registry verification scripted | Publish packages through the npm workflow, monitor installer usage, then gather external install feedback. |
 | Examples | Baseline examples present | Add public case studies from real adopters. |
 | Release process | Documented and backed by immutable release artifact workflow | Maintain regular tags, release notes, artifact checksums, SBOM, provenance, and production digest verification. |
 | Code structure | Entry, server compatibility adapter, Dashboard shell, HTTP helpers, storage primitives, runtime auth/config, executor adapters, release target helpers, and runtime boundary are bounded; the control-plane runtime remains a transitional large module | Extract remaining route/application handlers and `FileStore` behind smaller application and infrastructure modules. |
@@ -44,7 +44,7 @@ Make EvoPilot understandable, deployable, operable, verifiable, and contributabl
 Acceptance signals:
 
 - A new operator can self-host the stack from docs.
-- A new operator can generate the stack with tagged `install.sh` or `npx create-evopilot@latest self-host --init-env` after publication, and maintainers can prove the public registry path with `npm run verify:npm-registry`.
+- A new operator can generate the stack with tagged `install.sh` using the release manifest's GitHub Release tarball package spec; after npm publication, maintainers can prove the public registry path with `npm run verify:npm-registry`.
 - An AI Agent can follow `AGENTS.md` and `docs/cli/AGENTS.md` without inventing commands.
 - A maintainer can tag a release using `docs/operations/release-management.md`.
 - A reviewer can inspect examples and understand project onboarding, harness review, goal loop execution, and release decisions.

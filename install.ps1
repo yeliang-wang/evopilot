@@ -2,6 +2,7 @@ param(
   [string]$Dir = $env:EVOPILOT_INSTALL_DIR,
   [string]$Version = $env:EVOPILOT_INSTALL_VERSION,
   [string]$Package = $env:EVOPILOT_INSTALL_PACKAGE,
+  [string]$PackageSpec = $env:EVOPILOT_INSTALL_PACKAGE_SPEC,
   [string]$ManifestUrl = $env:EVOPILOT_INSTALL_MANIFEST_URL,
   [switch]$Start,
   [switch]$Force,
@@ -13,7 +14,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if (-not $Version) { $Version = "1.1.3" }
+if (-not $Version) { $Version = "1.1.4" }
 if (-not $Dir) { $Dir = "evopilot-stack" }
 if (-not $Package) { $Package = "create-evopilot" }
 if (-not $ManifestUrl) { $ManifestUrl = "https://raw.githubusercontent.com/yeliang-wang/evopilot/v$Version/installers/manifest.json" }
@@ -29,6 +30,7 @@ Environment:
   EVOPILOT_INSTALL_VERSION       create-evopilot version. Default: $Version
   EVOPILOT_INSTALL_DIR           output directory. Default: $Dir
   EVOPILOT_INSTALL_PACKAGE       npm package name. Default: $Package
+  EVOPILOT_INSTALL_PACKAGE_SPEC  npm/npx package spec override. Default: manifest tarball URL, or $Package@$Version with -SkipManifest
   EVOPILOT_INSTALL_MANIFEST_URL  release manifest URL. Default: $ManifestUrl
 "@
 }
@@ -52,7 +54,7 @@ function Assert-NodeVersion {
 }
 
 function Test-Manifest {
-  if ($SkipManifest) { return }
+  if ($SkipManifest) { return $null }
   $tempFile = [System.IO.Path]::GetTempFileName()
   try {
     Invoke-WebRequest -Uri $ManifestUrl -OutFile $tempFile -UseBasicParsing
@@ -67,6 +69,9 @@ function Test-Manifest {
     if (-not $manifest.installers.'install.ps1'.sha256) {
       Fail "manifest must include install.ps1 checksum"
     }
+    if ($packageEntry.packageSpec) { return $packageEntry.packageSpec }
+    if ($packageEntry.tarballUrl) { return $packageEntry.tarballUrl }
+    return "$Package@$Version"
   } finally {
     Remove-Item -Force $tempFile -ErrorAction SilentlyContinue
   }
@@ -80,7 +85,15 @@ if ($Help) {
 Require-Command node
 Require-Command npm
 Assert-NodeVersion
-Test-Manifest
+if (-not $PackageSpec) {
+  if ($SkipManifest) {
+    $PackageSpec = "$Package@$Version"
+  } else {
+    $PackageSpec = Test-Manifest
+  }
+} else {
+  $null = Test-Manifest
+}
 
 $argsList = @("self-host", "--dir", $Dir, "--init-env")
 if ($Start) { $argsList += "--start" }
@@ -88,8 +101,8 @@ if ($Force) { $argsList += "--force" }
 if ($SkipVerify) { $argsList += "--skip-verify" }
 
 if ($DryRun) {
-  Write-Output ("npx --yes {0}@{1} {2}" -f $Package, $Version, ($argsList -join " "))
+  Write-Output ("npx --yes {0} {1}" -f $PackageSpec, ($argsList -join " "))
   exit 0
 }
 
-& npx --yes "$Package@$Version" @argsList
+& npx --yes "$PackageSpec" @argsList

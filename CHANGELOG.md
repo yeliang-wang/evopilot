@@ -8,6 +8,28 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.1.4 - 2026-08-04
+
+### Changed
+
+- Updated POSIX and PowerShell installers so manifest-provided `packageSpec` / `tarballUrl` values can resolve `create-evopilot` from GitHub Release tarballs while public npm registry packages remain unpublished.
+- Updated `installers/manifest.json`, package versions, shared version fallbacks, OpenAPI metadata, and `create-evopilot` defaults to `1.1.4`.
+- Corrected README, distribution, self-hosting, CLI, package, release-management, open-source readiness, and maturity documentation to separate GitHub Release tarball-set installation from the later npm registry publication layer.
+- Updated distribution readiness verification so local installer dry-run checks use the repository manifest before a release tag exists.
+
+### Validation
+
+- `npm run build`
+- `npm run cli:test`
+- `npm run verify:oss-governance`
+- `npm run release:ready`
+- `npm run verify:distribution`
+- `npm run check`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+- Post-publish only: `npm run verify:npm-registry -- --version 1.1.4`
+
 ## 1.1.3 - 2026-08-04
 
 ### Added

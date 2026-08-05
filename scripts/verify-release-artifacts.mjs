@@ -75,6 +75,14 @@ assert.match(sourceListing, /^charts\/evopilot\/values\.production\.example\.yam
 const installManifest = readJson(path.join(outDir, `${projectName}-${version}-install-manifest.json`));
 assert.equal(installManifest.schema, "evopilot-install-manifest/v1");
 assert.equal(installManifest.version, version);
+assert.equal(installManifest.packages?.["create-evopilot"]?.registryStatus, "not_published");
+assert.equal(installManifest.packages?.["@evopilot/cli"]?.registryStatus, "not_published");
+assert.match(installManifest.packages?.["create-evopilot"]?.packageSpec || "", new RegExp(`create-evopilot-${escapeRegExp(version)}\\.tgz$`));
+assert.match(installManifest.packages?.["@evopilot/cli"]?.packageSpec || "", new RegExp(`evopilot-cli-${escapeRegExp(version)}\\.tgz$`));
+assert.deepEqual(installManifest.packages?.["@evopilot/cli"]?.dependencyPackageSpecs || [], [
+  `https://github.com/yeliang-wang/evopilot/releases/download/v${version}/evopilot-contracts-${version}.tgz`,
+  `https://github.com/yeliang-wang/evopilot/releases/download/v${version}/evopilot-client-${version}.tgz`
+]);
 assert.equal(installManifest.installers?.["install.sh"]?.sha256, sha256(path.join(outDir, "install.sh")));
 assert.equal(installManifest.installers?.["install.ps1"]?.sha256, sha256(path.join(outDir, "install.ps1")));
 
@@ -105,3 +113,7 @@ if (fs.existsSync(imageMetadataPath)) {
 }
 
 console.log("Release artifact verification passed.");
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}

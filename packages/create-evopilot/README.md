@@ -3,17 +3,19 @@
 Bootstrap a self-hosted EvoPilot control plane without cloning the source repositories.
 
 ```bash
-npx create-evopilot@latest self-host --dir evopilot-stack --init-env
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.4/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 # Review .env and replace unresolved LLM values before production use.
 docker compose up -d
 ./verify.sh
 ```
 
-For a single command from a release tag:
+The tagged installer verifies the release manifest and resolves this package from the GitHub Release tarball while public npm registry packages are not published.
+
+After public npm publication, npm-only bootstrap is:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.3/install.sh | bash -s -- --dir evopilot-stack
+npx create-evopilot@1.1.4 self-host --dir evopilot-stack --init-env
 ```
 
 Use `--start` only after `EVOPILOT_LLM_BASE_URL`, `EVOPILOT_LLM_MODEL_NAME`, and `EVOPILOT_LLM_API_KEY` are set or after `.env` has been edited. The installer refuses to start with unresolved production placeholders.

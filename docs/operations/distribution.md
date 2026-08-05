@@ -6,48 +6,52 @@ EvoPilot distribution has three supported entry points. These labels match the r
 
 | README CTA | Audience | Command |
 | --- | --- | --- |
-| Install CLI | Operators, CI jobs, and AI agents that already have a server, after the npm package release is published | `npm install -g @evopilot/cli` |
-| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.3/install.sh)"` |
+| Install CLI | Operators, CI jobs, and AI agents that already have a server | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-contracts-1.1.4.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-client-1.1.4.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-cli-1.1.4.tgz` |
+| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.4/install.sh)"` |
 | Kubernetes | Platform teams running EvoPilot on Kubernetes | `helm install evopilot ./charts/evopilot` |
 
 The CLI and installer are release artifacts. They do not replace server-side RBAC, tenant/workspace scope, approval gates, source closure, release policy, or audit.
 
-Desktop installer and hosted Cloud trial are not published EvoPilot distribution surfaces in this version. Do not present them as available install paths until the product ships a signed desktop package or a hosted tenant onboarding flow.
+Desktop installer, hosted Cloud trial, and public npm registry packages are not published EvoPilot distribution surfaces in this version. Do not present them as available install paths until the product ships a signed desktop package, hosted tenant onboarding flow, or exact-version npm package publication verified from the public registry.
 
-## npm CLI
+## CLI Release Tarballs
 
-Install the CLI only after the npm package release is published and `npm run verify:npm-registry` has passed for the release version:
+Install the CLI from the GitHub Release tarball set when you already have an EvoPilot server:
 
 ```bash
-npm install -g @evopilot/cli
+npm install -g \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-contracts-1.1.4.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-client-1.1.4.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-cli-1.1.4.tgz
 evopilot --help
 evopilot status --server https://evopilot.example.com --json
 ```
 
-The CLI package depends on the published `@evopilot/client` and `@evopilot/contracts` packages. Release validation must prove that all three tarballs install together in an empty project.
+The public npm registry install path is a separate post-publish layer. Do not document `npm install -g @evopilot/cli` as available for a release until `npm run verify:npm-registry` passes for that exact version.
 
 ## Self-Host Installers
 
-Bootstrap from the tagged POSIX installer. It downloads the release manifest first and verifies the requested package/version boundary before calling `npx`:
+Bootstrap from the tagged POSIX installer. It downloads the release manifest first, verifies the requested package/version boundary, and resolves `create-evopilot` to the GitHub Release tarball while public npm registry packages are not published:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.3/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.4/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
 
 Windows operators can use the tagged PowerShell entrypoint:
 
 ```powershell
-iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.3/install.ps1 -OutFile install.ps1
+iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.4/install.ps1 -OutFile install.ps1
 .\install.ps1 -Dir evopilot-stack
 ```
 
 The manifest is published at `installers/manifest.json` in the release tag and as `evopilot-<version>-install-manifest.json` in GitHub Release assets. Use `--skip-manifest` only for an explicitly reviewed offline install.
 
-Or generate directly from npm:
+After public npm publication, operators may explicitly opt into the registry package spec:
 
 ```bash
-npx create-evopilot@1.1.3 self-host --dir evopilot-stack --init-env
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.4/install.sh \
+  | EVOPILOT_INSTALL_PACKAGE_SPEC=create-evopilot@1.1.4 bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
 
@@ -61,7 +65,7 @@ docker compose up -d
 After `.env` has real LLM settings, the installer can start and verify the stack:
 
 ```bash
-npx create-evopilot@1.1.3 self-host --dir evopilot-stack --start
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.4/install.sh | bash -s -- --dir evopilot-stack --start
 ```
 
 The generated stack starts:
@@ -108,16 +112,16 @@ npm run verify:distribution
 This command verifies:
 
 - Helm chart structure, version, Service extra ports, and optional `helm lint` plus `helm template` render smoke when Helm is installed.
-- npm tarballs for `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, and `create-evopilot`.
+- Local release tarballs for `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, and `create-evopilot`.
 - Empty-project install smoke for the `evopilot` and `create-evopilot` binaries.
 - Generated self-host stack files and initialized `.env` output.
 
-Release artifacts also include npm package tarballs, `install.sh`, `install.ps1`, `evopilot-<version>-install-manifest.json`, and `evopilot-<version>-helm-chart.tgz`.
+Release artifacts also include package tarballs, `install.sh`, `install.ps1`, `evopilot-<version>-install-manifest.json`, and `evopilot-<version>-helm-chart.tgz`.
 
 After npm publication, verify the public registry path separately:
 
 ```bash
-npm run verify:npm-registry -- --version 1.1.3
+npm run verify:npm-registry -- --version 1.1.4
 ```
 
 This command checks exact-version npm metadata for `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, and `create-evopilot`, installs those packages into an empty project from the public registry, then verifies the `evopilot` and `create-evopilot` binaries.

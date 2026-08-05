@@ -6,11 +6,16 @@ The CLI is an HTTP client. It does not start EvoPilot locally and does not bypas
 
 ## Quick Start
 
-Install the published CLI package:
+Install the current release CLI tarball set:
 
 ```bash
-npm install -g @evopilot/cli
+npm install -g \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-contracts-1.1.4.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-client-1.1.4.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-cli-1.1.4.tgz
 ```
+
+Use `npm install -g @evopilot/cli@1.1.4` only after public npm registry publication has been verified for that exact version.
 
 ```bash
 evopilot --server https://evopilot.example.com auth login \

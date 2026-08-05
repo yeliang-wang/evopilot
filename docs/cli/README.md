@@ -20,12 +20,17 @@ For production incident handling and full end-to-end operating steps, read [AI A
 
 ## Install
 
-Production installation uses the published CLI package after the release has passed public npm registry verification:
+Production installation uses the GitHub Release CLI tarball set for the current release:
 
 ```bash
-npm install -g @evopilot/cli
+npm install -g \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-contracts-1.1.4.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-client-1.1.4.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-cli-1.1.4.tgz
 evopilot --version
 ```
+
+The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@1.1.4` only after `npm run verify:npm-registry -- --version 1.1.4` passes.
 
 From this repository, use the same CLI package without publishing:
 

@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/GA%20Release-v1.1.3-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v1.1.4-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -18,11 +18,11 @@ It is not an agent runtime, prompt playground, or generic code generator. Agent 
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and the npm release is published | `npm install -g @evopilot/cli` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.3/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-contracts-1.1.4.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-client-1.1.4.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-cli-1.1.4.tgz` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.4/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
-Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet. The supported public entry points are CLI, self-host installer, and Helm.
+Desktop installer, hosted Cloud trial, and public npm registry packages are not published EvoPilot surfaces yet. The supported public entry points are GitHub Release CLI tarballs, self-host installer, and Helm.
 
 ## What You Can Do
 
@@ -33,7 +33,7 @@ Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet
 | Bind project harnesses | `HarnessTemplate`, `TenantHarnessPolicy`, and `ProjectHarnessProfile` versions for project-specific runtime, validation, evidence, and governance rules. |
 | Control source and delivery | Bounded code-upgrader execution, allowed paths, validation commands, source closure, CI/CD delivery, and deploy evidence. |
 | Operate with API, CLI, and Dashboard | API server, agent-safe CLI JSON flows, and the standalone `yeliang-wang/evopilot-dashboard` browser console. |
-| Distribute and verify releases | npm package tarballs, self-host installer, Helm chart, source archive, SPDX SBOM, provenance, checksums, and GHCR image digest metadata. |
+| Distribute and verify releases | Release package tarballs, self-host installer, Helm chart, source archive, SPDX SBOM, provenance, checksums, and GHCR image digest metadata. |
 
 ## Run From Source
 
@@ -56,7 +56,7 @@ EVOPILOT_API_BASE_URL=http://127.0.0.1:19876 npm run dev
 
 Debug mode is for local development and UI validation. Production mode is the default for real operation and requires authentication plus configured LLM, source, and CI/CD credentials.
 
-See [Distribution](docs/operations/distribution.md) for npm, installer, Helm, validation, public registry verification, and publishing details.
+See [Distribution](docs/operations/distribution.md) for release tarballs, installer, Helm, validation, public registry verification, and publishing details.
 
 ## CLI For AI Agents
 
@@ -97,13 +97,13 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## Release Status
 
-The latest published GitHub release is **v1.1.3 GA**, a code-structure and distribution-verification evolution release over the original `v1.0.0` GA baseline.
+The latest published GitHub release is **v1.1.4 GA**, a distribution-closure evolution release over the original `v1.0.0` GA baseline.
 
-v1.1.3 keeps the v1.1.2 immutable ECS rollout automation and extracts release target runtime logic from the transitional control-plane runtime. It also adds post-publish public npm registry verification for exact-version package metadata, empty-project installs, and CLI binary help output.
+v1.1.4 keeps the v1.1.3 code-structure and npm verification work, then makes the default self-host installer resolve `create-evopilot` from the GitHub Release tarball when public npm registry packages have not been published yet.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/1.1.3.md](docs/releases/1.1.3.md)
+- Latest release notes: [docs/releases/1.1.4.md](docs/releases/1.1.4.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
@@ -161,7 +161,7 @@ Repository map:
 | `packages/contracts/` | Shared API, CLI, runtime, version, and package-boundary contracts. |
 | `packages/client/` | HTTP client used by CLI and external integrations. |
 | `packages/cli/` | Agent-safe HTTP adapter CLI. |
-| `packages/create-evopilot/` | npm self-host installer that generates a complete Compose stack. |
+| `packages/create-evopilot/` | Self-host package used by the release installer to generate a complete Compose stack. |
 | `packages/server/` | HTTP control-plane runtime, thin compatibility adapter, RBAC, tenant/workspace scope, audit, and server-side modules. |
 | `packages/worker-runtime/` | Loop worker runtime package used by `scripts/loop-worker.mjs`. |
 | `packages/adapter-*` | Source, DevOps, MCP, and code-upgrader connector adapters. |
