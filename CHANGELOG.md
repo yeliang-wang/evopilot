@@ -8,6 +8,30 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.1.5 - 2026-08-05
+
+### Changed
+
+- Split the large control-plane runtime into a thin HTTP composition root, focused HTTP route modules, a file-backed storage boundary, and a transitional application helper boundary.
+- Moved `FileStore` into `packages/server/src/storage/file-store/` and moved control-plane use-case helpers into `packages/server/src/application/control-plane-services.ts`.
+- Split the CLI process entrypoint from the command runtime so `packages/cli/src/index.ts` stays a thin executable wrapper while command handling remains an HTTP adapter through `EvoPilotClient`.
+- Tightened architecture verification so route prefixes cannot be re-inlined into the runtime, `FileStore` cannot return to the composition root, and line budgets guard server, route, storage, application, and CLI boundaries.
+- Updated package versions, shared version fallbacks, installer defaults, OpenAPI metadata, Helm metadata, and release validation pointers to `1.1.5`.
+
+### Documented
+
+- Updated architecture and maturity docs to describe the storage/application/interface layering and the remaining transitional application and CLI command-runtime split targets.
+
+### Validation
+
+- `npm run verify:architecture`
+- `npm run check`
+- `npm run cli:test`
+- `npm run release:ready`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.1.4 - 2026-08-04
 
 ### Changed

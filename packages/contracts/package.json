@@ -1,6 +1,6 @@
 {
   "name": "@evopilot/contracts",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "description": "Shared EvoPilot API, CLI, runtime, and package boundary contracts.",
   "license": "Apache-2.0",
   "type": "module",

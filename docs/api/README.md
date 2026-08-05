@@ -450,7 +450,7 @@ CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLI
 ```json
 {
   "baseTemplateId": "python-enterprise-harness",
-  "targetVersion": "1.1.4",
+  "targetVersion": "1.1.5",
   "intent": "Add stronger exception tracking and AI troubleshooting metadata.",
   "sources": [
     { "type": "github-repo", "name": "fastapi/fastapi", "uri": "fastapi/fastapi", "ref": "master" },

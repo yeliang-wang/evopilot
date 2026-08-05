@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/GA%20Release-v1.1.4-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v1.1.5-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -18,8 +18,8 @@ It is not an agent runtime, prompt playground, or generic code generator. Agent 
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-contracts-1.1.4.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-client-1.1.4.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.4/evopilot-cli-1.1.4.tgz` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.4/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v1.1.5/evopilot-contracts-1.1.5.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.5/evopilot-client-1.1.5.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.5/evopilot-cli-1.1.5.tgz` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.5/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer, hosted Cloud trial, and public npm registry packages are not published EvoPilot surfaces yet. The supported public entry points are GitHub Release CLI tarballs, self-host installer, and Helm.
@@ -97,13 +97,13 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## Release Status
 
-The latest published GitHub release is **v1.1.4 GA**, a distribution-closure evolution release over the original `v1.0.0` GA baseline.
+The latest published GitHub release is **v1.1.5 GA**, a code-modularity evolution release over the original `v1.0.0` GA baseline.
 
-v1.1.4 keeps the v1.1.3 code-structure and npm verification work, then makes the default self-host installer resolve `create-evopilot` from the GitHub Release tarball when public npm registry packages have not been published yet.
+v1.1.5 keeps the v1.1.4 distribution path, then moves the server from a large control-plane composition root toward clear storage, application, and interface boundaries guarded by `npm run verify:architecture`.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/1.1.4.md](docs/releases/1.1.4.md)
+- Latest release notes: [docs/releases/1.1.5.md](docs/releases/1.1.5.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
