@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "1.1.5"
+    "version": "1.1.6"
   },
   "paths": {
     "/health": {
@@ -3478,7 +3478,8 @@
     },
     "/api/v1/workspaces/{workspaceId}/usage": {
       "get": {
-        "summary": "获取工作区用量和配额",
+        "summary": "获取工作区用量和项目 LLM 用量",
+        "description": "返回 workspace 项目、Loop、evidence 容量配额，以及服务端聚合的 workspace/project LLM provider、model、profile、token、topProject、projectsWithLlmUsage、loopsWithLlmUsage 和 providerModelUsage 明细。Dashboard 必须展示该 projection，不能在浏览器端自行计算 token 总量。",
         "security": [
           {
             "bearerAuth": []
@@ -3933,6 +3934,39 @@
           },
           "409": {
             "description": "LLM Profile BLOCKED"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/usage": {
+      "get": {
+        "summary": "读取项目 LLM 用量",
+        "description": "从服务端 Loop trace 聚合接入项目实际使用的 LLM provider、model、profile、token、credits 和 cost，同时返回 configuredLlm、loop counters、llmUsage 和 providerModelUsage[]。同一项目使用多个 LLM 时 llmUsage.provider/model 为 mixed，providerModelUsage[] 按 project + provider + model + profile 展开。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "description": "Project id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "项目 LLM 用量"
+          },
+          "403": {
+            "description": "权限不足"
+          },
+          "404": {
+            "description": "项目不存在"
           }
         }
       }

@@ -273,11 +273,14 @@ GET /api/v1/github-app/installations/{installationId}/preflight
 POST /api/v1/github-app/installations/{installationId}/preflight
 POST /api/v1/onboarding/project/checklist
 GET /api/v1/projects/{projectId}/onboarding-checklist
+GET /api/v1/projects/{projectId}/usage
 GET /api/v1/loop-store/readiness
 GET /api/v1/saas/observability
 ```
 
-`POST /api/v1/workspaces` 会优先使用请求体中的 `id` 或 `workspaceId` 作为持久化 workspace id；`name` 仅作为展示名称。`GET /api/v1/workspaces/{workspaceId}` 和 `GET /api/v1/workspaces/{workspaceId}/usage` 返回 workspace 详情和 workspace 级项目数、Loop 数、evidence 容量配额；超过项目或 Loop 配额时，创建接口返回 `429 WORKSPACE_PROJECT_QUOTA_EXCEEDED` 或 `429 WORKSPACE_LOOP_QUOTA_EXCEEDED`。详情和 usage 查询也会解析 name/slug，但新集成应始终使用创建接口返回的 `data.id`。
+`POST /api/v1/workspaces` 会优先使用请求体中的 `id` 或 `workspaceId` 作为持久化 workspace id；`name` 仅作为展示名称。`GET /api/v1/workspaces/{workspaceId}` 和 `GET /api/v1/workspaces/{workspaceId}/usage` 返回 workspace 详情、项目数、Loop 数、evidence 容量配额、workspace 级 `llmUsage`、`projectsWithLlmUsage`、`loopsWithLlmUsage`、`topProject` 和 `projectUsage[]`。`projectUsage[]` 按接入项目聚合实际 Loop trace 中的 LLM provider/model、调用次数、input/output/total tokens、credits 和 cost，并同时暴露项目绑定的 `configuredLlm`。`GET /api/v1/projects/{projectId}/usage` 返回单个接入项目的同一用量投影。超过项目或 Loop 配额时，创建接口返回 `429 WORKSPACE_PROJECT_QUOTA_EXCEEDED` 或 `429 WORKSPACE_LOOP_QUOTA_EXCEEDED`。详情和 usage 查询也会解析 name/slug，但新集成应始终使用创建接口返回的 `data.id`。
+
+LLM/token usage 是项目接入与 Loop 执行事实，不是固定重置周期的 LLMOps 配额视图。Dashboard 应使用 `projectUsage[].providerModelUsage[]` 作为主表数据源，一行对应 `projectId + provider + model + profileId`。如果同一接入项目在不同 Loop 中使用了多个 LLM，`projectUsage[].llmUsage.provider` 和 `model` 会返回 `mixed`，而 `providerModelUsage[]` 会分别返回每个组合的 `calls`、`inputTokens`、`outputTokens`、`totalTokens`、`creditsConsumed`、`costUsd`、`latestLoopId`、`latestLoopStatus`、`latestLoopTotalTokens` 和 `requestId`。浏览器端不得自行计算项目或工作区 token 总量。
 
 用户管理接口用于 Dashboard “用户与权限”页。`POST /api/v1/users` 由平台高级管理员或租户管理员调用；平台高级管理员可指定任意 tenant/workspace 并创建 `platformAdmin`，租户管理员只能创建本租户用户且不能授予 `platformAdmin`。`PATCH /api/v1/users/{userId}` 支持修改 displayName、role、tenantId、workspaceId、status、mustChangePassword；`POST /api/v1/users/{userId}/reset-password` 会写入新密码哈希并把 `mustChangePassword` 置为 `true`。所有响应都会隐藏 `passwordHash`。
 
@@ -450,7 +453,7 @@ CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLI
 ```json
 {
   "baseTemplateId": "python-enterprise-harness",
-  "targetVersion": "1.1.5",
+  "targetVersion": "1.1.6",
   "intent": "Add stronger exception tracking and AI troubleshooting metadata.",
   "sources": [
     { "type": "github-repo", "name": "fastapi/fastapi", "uri": "fastapi/fastapi", "ref": "master" },

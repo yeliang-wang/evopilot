@@ -48,7 +48,7 @@ The token and role determine which read and write actions are allowed. A Dashboa
 | Overview | `GET /api/v1/summary` |
 | SaaS control plane | `GET/POST /api/v1/tenants`, `GET/POST /api/v1/workspaces`, `GET /api/v1/workspaces/{workspaceId}/usage`, `GET/POST /api/v1/users`, `PATCH /api/v1/users/{userId}`, `POST /api/v1/users/{userId}/reset-password` |
 | Secrets and GitHub App | `GET/POST /api/v1/secrets`, `POST /api/v1/secrets/{secretId}/revoke`, `GET/POST /api/v1/github-app/installations` |
-| Projects | `GET /api/v1/projects`, `POST /api/v1/projects`, `POST /api/v1/onboarding/project/checklist`, `GET /api/v1/projects/{projectId}/onboarding-checklist`, `POST /api/v1/projects/{projectId}/source-credentials`, `GET/POST /api/v1/projects/{projectId}/source-credentials/preflight` |
+| Projects | `GET /api/v1/projects`, `POST /api/v1/projects`, `POST /api/v1/onboarding/project/checklist`, `GET /api/v1/projects/{projectId}/onboarding-checklist`, `GET /api/v1/projects/{projectId}/usage`, `POST /api/v1/projects/{projectId}/source-credentials`, `GET/POST /api/v1/projects/{projectId}/source-credentials/preflight` |
 | Deploy connectors | `GET/POST /api/v1/connectors/deploy` |
 | Release targets | `GET /api/v1/release/targets`, `POST /api/v1/release/targets` |
 | Maturity standards | `GET /api/v1/maturity/standards`, `GET /api/v1/maturity/standards/{phaseOrStandardId}` |
@@ -96,7 +96,14 @@ Use the response fields as UI contract:
 | `finalReport` | Terminal report state |
 | `llmUsage` | LLM provider/model, command-visible token totals, credits, and executor-step usage |
 
-Dashboards must display or expose server-projected LLM/token usage when it is present. Do not calculate token totals in browser code. If an LLM-backed workflow reaches a terminal claim but `llmUsage.summary.provider`, `llmUsage.summary.model`, or token totals are missing, treat the evidence as incomplete and route the user to logs or CLI/API diagnostics.
+Dashboards must display or expose server-projected LLM/token usage when it is present. Use `GET /api/v1/workspaces/{workspaceId}/usage` for tenant/workspace project rollups and `GET /api/v1/projects/{projectId}/usage` for one connected project. Do not calculate token totals in browser code. If an LLM-backed workflow reaches a terminal claim but `llmUsage.provider`, `llmUsage.model`, or token totals are missing, treat the evidence as incomplete and route the user to logs or CLI/API diagnostics.
+
+Project and workspace usage projections are project-centric, not quota-window LLMOps metrics. The Dashboard should show:
+
+- `projectsWithLlmUsage`, `loopsWithLlmUsage`, workspace `llmUsage.totalTokens`, and `topProject` for workspace summary cards.
+- `projectUsage[].providerModelUsage[]` as the main table, with one row for each `projectId + provider + model + profileId` combination.
+- `calls`, `inputTokens`, `outputTokens`, `totalTokens`, `creditsConsumed`, `costUsd`, `latestLoopId`, `latestLoopStatus`, `latestLoopTotalTokens`, and `requestId` from EvoPilot projection fields.
+- `projectUsage[].llmUsage.provider/model` may be `mixed` when one connected project used more than one LLM provider or model.
 
 For plan review screens, read `/api/v1/goals/{goalId}/phase-plan` and show the fixed maturity ladder:
 

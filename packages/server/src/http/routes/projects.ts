@@ -34,6 +34,7 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
     normalizeProjectRepository,
     normalizeProjectRuntime,
     optionalTrimmedString,
+    projectLlmUsage,
     readJson,
     repositoryDisplayName,
     repositoryNamespaceFromRegistration,
@@ -84,6 +85,14 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
     if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
     if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
     return writeJson(response, 200, envelope(await diagnoseProjectRuntime({ store, project, runtime })));
+  }
+  const projectUsageMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/usage$/);
+  if (request.method === "GET" && projectUsageMatch) {
+    if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+    const project = store.readProject(decodeURIComponent(projectUsageMatch[1]));
+    if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+    if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
+    return writeJson(response, 200, envelope(projectLlmUsage(store, project)));
   }
   const projectSourceCredentialMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/source-credentials$/);
   if (request.method === "POST" && projectSourceCredentialMatch) {

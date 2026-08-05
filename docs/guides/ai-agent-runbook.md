@@ -173,7 +173,7 @@ When template changes should come from reviewable sources, administrators use th
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 1.1.5 \
+  --target-version 1.1.6 \
   --intent "Add stronger Python exception tracking, observability, and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \

@@ -449,7 +449,7 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 1.1.5 \
+  --target-version 1.1.6 \
   --intent "Add Python exception tracking and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \

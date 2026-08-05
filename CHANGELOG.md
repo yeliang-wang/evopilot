@@ -8,6 +8,30 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.1.6 - 2026-08-05
+
+### Added
+
+- Added project-centric LLM usage projections through `GET /api/v1/projects/{projectId}/usage`.
+- Extended `GET /api/v1/workspaces/{workspaceId}/usage` with workspace `llmUsage`, `projectsWithLlmUsage`, `loopsWithLlmUsage`, `topProject`, and per-project `providerModelUsage[]`.
+- Added provider/model/profile grouping for Loop trace token usage so one connected project can show multiple actual LLM combinations over time.
+
+### Changed
+
+- Updated package versions, shared version fallbacks, installer defaults, OpenAPI metadata, Helm metadata, Dashboard image defaults, and release validation pointers to `1.1.6`.
+- Documented Dashboard's server-projection boundary for project token usage: browsers must display EvoPilot projections, not calculate token totals locally.
+
+### Validation
+
+- `npm run build -w @evopilot/server`
+- `node --test tests/functional/loop-runtime.test.mjs`
+- `npm run cli:test`
+- `npm run check`
+- `npm run release:ready`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.1.5 - 2026-08-05
 
 ### Changed

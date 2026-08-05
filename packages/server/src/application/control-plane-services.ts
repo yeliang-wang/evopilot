@@ -142,8 +142,10 @@ import type {
   ProjectHarnessProfileStatus,
   ProjectHarnessProfileValidationResult,
   ProjectHarnessProfileVersion,
+  ProjectLlmUsageProjection,
   ProjectLlmBinding,
   ProjectOnboardingChecklist,
+  ProjectProviderModelUsageProjection,
   ProjectRepositoryCredentials,
   ProjectRepositoryProvider,
   ProjectRepositoryRef,
@@ -186,7 +188,8 @@ import type {
   TenantRecord,
   UserRecord,
   WorkspaceMemberRole,
-  WorkspaceRecord
+  WorkspaceRecord,
+  WorkspaceUsageProjection
 } from "../model.js";
 import {
   DEFAULT_TENANT_ID,
@@ -6527,21 +6530,36 @@ export function onboardingNextAction(status: ProjectOnboardingChecklist["status"
   return status === "READY_TO_ONBOARD" ? "register-project" : "repair";
 }
 
-export function workspaceUsage(store: FileStore, workspace: WorkspaceRecord): {
-  schema: "evopilot-workspace-usage/v1";
-  tenantId: string;
-  workspaceId: string;
-  projects: { used: number; limit: number; remaining: number };
-  loops: { used: number; limit: number; remaining: number };
-  evidenceGb: { used: number; limit: number; remaining: number };
-  evidence: string[];
-  evaluatedAt: string;
-} {
-  const projectsUsed = store.listProjects().filter((project) => project.tenantId === workspace.tenantId && project.workspaceId === workspace.id).length;
+export function workspaceUsage(store: FileStore, workspace: WorkspaceRecord): WorkspaceUsageProjection {
+  const workspaceProjects = store.listProjects().filter((project) => project.tenantId === workspace.tenantId && project.workspaceId === workspace.id);
+  const projectsUsed = workspaceProjects.length;
   const workspaceLoops = store.listLoops().filter((loop) => loop.tenantId === workspace.tenantId && loop.workspaceId === workspace.id);
   const loopsUsed = workspaceLoops.length;
   const evidenceBytes = Buffer.byteLength(JSON.stringify(workspaceLoops.flatMap((loop) => loop.evidenceSets)), "utf8");
   const evidenceGbUsed = Number((evidenceBytes / (1024 * 1024 * 1024)).toFixed(6));
+  const projectUsage = workspaceProjects
+    .map((project) => projectLlmUsageFromLoops(store, project, workspaceLoops.filter((loop) => loop.projectId === project.id)))
+    .sort((left, right) => right.llmUsage.totalTokens - left.llmUsage.totalTokens || left.projectId.localeCompare(right.projectId));
+  const updatedAt = latestIsoTimestamp([
+    workspace.updatedAt,
+    ...workspaceLoops.map((loop) => loop.updatedAt),
+    ...projectUsage.map((usage) => usage.llmUsage.updatedAt)
+  ]);
+  const llmUsage = buildLlmUsageSummary(
+    `workspace:${workspace.id}`,
+    projectUsage.flatMap((usage) => usage.llmUsage.steps),
+    updatedAt
+  );
+  const projectUsageWithShare = projectUsage.map((usage) => ({
+    ...usage,
+    providerModelUsage: usage.providerModelUsage.map((row) => ({
+      ...row,
+      shareOfWorkspace: llmUsage.totalTokens > 0 ? Number((row.totalTokens / llmUsage.totalTokens).toFixed(4)) : undefined
+    }))
+  }));
+  const projectsWithLlmUsage = projectUsageWithShare.filter((usage) => usage.llmUsage.calls > 0 || usage.llmUsage.totalTokens > 0).length;
+  const loopsWithLlmUsage = workspaceLoops.filter((loop) => buildLoopLlmUsageSummary(loop).calls > 0).length;
+  const topProject = projectUsageWithShare.find((usage) => usage.llmUsage.totalTokens > 0);
   return {
     schema: "evopilot-workspace-usage/v1",
     tenantId: workspace.tenantId,
@@ -6561,15 +6579,159 @@ export function workspaceUsage(store: FileStore, workspace: WorkspaceRecord): {
       limit: workspace.quotas.evidenceGb,
       remaining: Math.max(0, Number((workspace.quotas.evidenceGb - evidenceGbUsed).toFixed(6)))
     },
+    range: {
+      label: "all recorded loops"
+    },
+    projectsWithLlmUsage,
+    projectUsageCount: projectUsageWithShare.length,
+    loopsWithLlmUsage,
+    llmUsage,
+    topProject: topProject ? {
+      projectId: topProject.projectId,
+      projectName: topProject.projectName,
+      totalTokens: topProject.llmUsage.totalTokens,
+      latestLoopId: topProject.loops.latestLoopId
+    } : undefined,
+    projectUsage: projectUsageWithShare,
     evidence: [
       `tenant=${workspace.tenantId}`,
       `workspace=${workspace.id}`,
       `projects=${projectsUsed}/${workspace.quotas.projects}`,
       `loops=${loopsUsed}/${workspace.quotas.loops}`,
-      `evidenceGb=${evidenceGbUsed}/${workspace.quotas.evidenceGb}`
+      `evidenceGb=${evidenceGbUsed}/${workspace.quotas.evidenceGb}`,
+      `projectsWithLlmUsage=${projectsWithLlmUsage}`,
+      `loopsWithLlmUsage=${loopsWithLlmUsage}`,
+      `llm.calls=${llmUsage.calls}`,
+      `llm.totalTokens=${llmUsage.totalTokens}`,
+      ...(llmUsage.provider ? [`llm.provider=${llmUsage.provider}`] : []),
+      ...(llmUsage.model ? [`llm.model=${llmUsage.model}`] : [])
     ],
     evaluatedAt: new Date().toISOString()
   };
+}
+
+export function projectLlmUsage(store: FileStore, project: StoredProject): ProjectLlmUsageProjection {
+  const loops = store.listLoops()
+    .filter((loop) => loop.tenantId === project.tenantId && loop.workspaceId === project.workspaceId && loop.projectId === project.id);
+  return projectLlmUsageFromLoops(store, project, loops);
+}
+
+function projectLlmUsageFromLoops(store: FileStore, project: StoredProject, loops: LoopRun[]): ProjectLlmUsageProjection {
+  const profile = project.llm?.profileId ? store.readLlmProfile(project.llm.profileId) : undefined;
+  const updatedAt = latestIsoTimestamp([project.updatedAt, ...loops.map((loop) => loop.updatedAt)]);
+  const llmUsage = buildLlmUsageSummary(
+    `project:${project.id}`,
+    loops.flatMap((loop) => buildLoopLlmUsageSummary(loop).steps),
+    updatedAt
+  );
+  const providerModelUsage = buildProjectProviderModelUsage(llmUsage.steps, loops);
+  const latestLoop = loops
+    .slice()
+    .sort((left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt))[0];
+  const latestLoopUsage = latestLoop ? buildLoopLlmUsageSummary(latestLoop) : undefined;
+  return {
+    schema: "evopilot-project-llm-usage/v1",
+    tenantId: project.tenantId,
+    workspaceId: project.workspaceId,
+    projectId: project.id,
+    projectName: project.name,
+    configuredLlm: project.llm ? {
+      profileId: project.llm.profileId,
+      required: project.llm.required,
+      provider: profile?.providerName,
+      model: profile?.modelName,
+      status: profile?.status,
+      boundAt: project.llm.boundAt
+    } : undefined,
+    loops: {
+      used: loops.length,
+      usedWithLlm: loops.filter((loop) => buildLoopLlmUsageSummary(loop).calls > 0).length,
+      latestLoopId: latestLoop?.id,
+      latestLoopStatus: latestLoop?.status,
+      latestLoopTotalTokens: latestLoopUsage?.totalTokens,
+      latestLoopProvider: latestLoopUsage?.provider,
+      latestLoopModel: latestLoopUsage?.model
+    },
+    llmUsage,
+    providerModelUsage,
+    evidence: [
+      `tenant=${project.tenantId}`,
+      `workspace=${project.workspaceId}`,
+      `project=${project.id}`,
+      `loops=${loops.length}`,
+      `loopsWithLlm=${loops.filter((loop) => buildLoopLlmUsageSummary(loop).calls > 0).length}`,
+      `llm.calls=${llmUsage.calls}`,
+      `llm.totalTokens=${llmUsage.totalTokens}`,
+      ...(project.llm?.profileId ? [`configured.profile=${project.llm.profileId}`] : []),
+      ...(profile?.providerName ? [`configured.provider=${profile.providerName}`] : []),
+      ...(profile?.modelName ? [`configured.model=${profile.modelName}`] : []),
+      ...(llmUsage.provider ? [`actual.provider=${llmUsage.provider}`] : []),
+      ...(llmUsage.model ? [`actual.model=${llmUsage.model}`] : [])
+    ],
+    evaluatedAt: new Date().toISOString()
+  };
+}
+
+function buildProjectProviderModelUsage(steps: LlmUsageStepSummary[], loops: LoopRun[]): ProjectProviderModelUsageProjection[] {
+  const loopById = new Map(loops.map((loop) => [loop.id, loop]));
+  const groups = new Map<string, LlmUsageStepSummary[]>();
+  for (const step of steps) {
+    const key = JSON.stringify([step.provider ?? "", step.model ?? "", step.llmProfileId ?? ""]);
+    groups.set(key, [...(groups.get(key) ?? []), step]);
+  }
+  return [...groups.values()]
+    .map((group) => summarizeProviderModelGroup(group, loopById))
+    .sort((left, right) =>
+      right.totalTokens - left.totalTokens
+      || (left.provider ?? "").localeCompare(right.provider ?? "")
+      || (left.model ?? "").localeCompare(right.model ?? "")
+      || (left.profileId ?? "").localeCompare(right.profileId ?? "")
+    );
+}
+
+function summarizeProviderModelGroup(
+  group: LlmUsageStepSummary[],
+  loopById: Map<string, LoopRun>
+): ProjectProviderModelUsageProjection {
+  const latestStep = group
+    .slice()
+    .sort((left, right) => Date.parse(stepTimestamp(right, loopById)) - Date.parse(stepTimestamp(left, loopById)))[0];
+  const latestLoop = latestStep ? loopById.get(latestStep.loopId) : undefined;
+  const latestLoopTotalTokens = latestStep
+    ? group.filter((step) => step.loopId === latestStep.loopId).reduce((sum, step) => sum + step.totalTokens, 0)
+    : undefined;
+  const total = group.reduce((acc, step) => {
+    acc.inputTokens += step.inputTokens;
+    acc.outputTokens += step.outputTokens;
+    acc.totalTokens += step.totalTokens;
+    acc.creditsConsumed += step.creditsConsumed;
+    acc.costUsd += step.costUsd;
+    return acc;
+  }, { inputTokens: 0, outputTokens: 0, totalTokens: 0, creditsConsumed: 0, costUsd: 0 });
+  return {
+    provider: latestStep?.provider,
+    model: latestStep?.model,
+    profileId: latestStep?.llmProfileId,
+    calls: group.length,
+    inputTokens: total.inputTokens,
+    outputTokens: total.outputTokens,
+    totalTokens: total.totalTokens,
+    creditsConsumed: total.creditsConsumed,
+    creditUnit: "token",
+    costUsd: Number(total.costUsd.toFixed(6)),
+    latestLoopId: latestLoop?.id ?? latestStep?.loopId,
+    latestLoopStatus: latestLoop?.status,
+    latestLoopTotalTokens,
+    latestLoopProvider: latestStep?.provider,
+    latestLoopModel: latestStep?.model,
+    requestId: latestStep?.llmRequestId,
+    updatedAt: stepTimestamp(latestStep, loopById)
+  };
+}
+
+function stepTimestamp(step: LlmUsageStepSummary | undefined, loopById: Map<string, LoopRun>): string {
+  if (!step) return new Date(0).toISOString();
+  return step.completedAt ?? loopById.get(step.loopId)?.updatedAt ?? new Date(0).toISOString();
 }
 
 export function resolveWorkspace(store: FileStore, idOrName: string, auth: AuthContext): WorkspaceRecord | undefined {
@@ -6916,6 +7078,9 @@ export function emptyLlmUsageSummary(scope: string, updatedAt = new Date().toISO
     scope,
     providers: [],
     models: [],
+    providerCount: 0,
+    modelCount: 0,
+    providerModelCount: 0,
     calls: 0,
     inputTokens: 0,
     outputTokens: 0,
@@ -6951,6 +7116,7 @@ export function buildGoalLlmUsageSummary(goal: GlobalGoal, loops: LoopRun[]): Ll
 export function buildLlmUsageSummary(scope: string, steps: LlmUsageStepSummary[], updatedAt = new Date().toISOString()): LlmUsageSummary {
   const providers = uniqueSorted(steps.map((step) => step.provider).filter((value): value is string => Boolean(value)));
   const models = uniqueSorted(steps.map((step) => step.model).filter((value): value is string => Boolean(value)));
+  const providerModelCount = new Set(steps.map((step) => JSON.stringify([step.provider ?? "", step.model ?? "", step.llmProfileId ?? ""]))).size;
   const total = steps.reduce((acc, step) => {
     acc.inputTokens += step.inputTokens;
     acc.outputTokens += step.outputTokens;
@@ -6966,6 +7132,9 @@ export function buildLlmUsageSummary(scope: string, steps: LlmUsageStepSummary[]
     model: models.length === 1 ? models[0] : models.length > 1 ? "mixed" : undefined,
     providers,
     models,
+    providerCount: providers.length,
+    modelCount: models.length,
+    providerModelCount,
     calls: steps.length,
     inputTokens: total.inputTokens,
     outputTokens: total.outputTokens,
@@ -7021,6 +7190,14 @@ export function field(value: unknown, key: string): unknown {
 
 export function uniqueSorted(values: string[]): string[] {
   return [...new Set(values)].sort();
+}
+
+export function latestIsoTimestamp(values: Array<string | undefined>, fallback = new Date().toISOString()): string {
+  const latest = values
+    .map((value) => value ? Date.parse(value) : Number.NaN)
+    .filter((value) => Number.isFinite(value))
+    .reduce((max, value) => Math.max(max, value), Number.NEGATIVE_INFINITY);
+  return Number.isFinite(latest) ? new Date(latest).toISOString() : fallback;
 }
 
 export function buildLoopSandboxBoundaryProof(loop: LoopRun): LoopSandboxBoundaryProof {

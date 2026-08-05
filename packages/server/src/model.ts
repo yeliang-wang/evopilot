@@ -2090,6 +2090,9 @@ export interface LlmUsageSummary {
   model?: string;
   providers: string[];
   models: string[];
+  providerCount: number;
+  modelCount: number;
+  providerModelCount: number;
   calls: number;
   inputTokens: number;
   outputTokens: number;
@@ -2099,6 +2102,79 @@ export interface LlmUsageSummary {
   costUsd: number;
   steps: LlmUsageStepSummary[];
   updatedAt: string;
+}
+
+export interface ProjectProviderModelUsageProjection {
+  provider?: string;
+  model?: string;
+  profileId?: string;
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  creditsConsumed: number;
+  creditUnit: "token";
+  costUsd: number;
+  shareOfWorkspace?: number;
+  latestLoopId?: string;
+  latestLoopStatus?: LoopRunStatus;
+  latestLoopTotalTokens?: number;
+  latestLoopProvider?: string;
+  latestLoopModel?: string;
+  requestId?: string;
+  updatedAt: string;
+}
+
+export interface ProjectLlmUsageProjection {
+  schema: "evopilot-project-llm-usage/v1";
+  tenantId: string;
+  workspaceId: string;
+  projectId: string;
+  projectName: string;
+  configuredLlm?: {
+    profileId: string;
+    required: boolean;
+    provider?: string;
+    model?: string;
+    status?: string;
+    boundAt: string;
+  };
+  loops: {
+    used: number;
+    usedWithLlm: number;
+    latestLoopId?: string;
+    latestLoopStatus?: LoopRunStatus;
+    latestLoopTotalTokens?: number;
+    latestLoopProvider?: string;
+    latestLoopModel?: string;
+  };
+  llmUsage: LlmUsageSummary;
+  providerModelUsage: ProjectProviderModelUsageProjection[];
+  evidence: string[];
+  evaluatedAt: string;
+}
+
+export interface WorkspaceUsageProjection {
+  schema: "evopilot-workspace-usage/v1";
+  tenantId: string;
+  workspaceId: string;
+  projects: { used: number; limit: number; remaining: number };
+  loops: { used: number; limit: number; remaining: number };
+  evidenceGb: { used: number; limit: number; remaining: number };
+  range: { label: string };
+  projectsWithLlmUsage: number;
+  projectUsageCount: number;
+  loopsWithLlmUsage: number;
+  llmUsage: LlmUsageSummary;
+  topProject?: {
+    projectId: string;
+    projectName: string;
+    totalTokens: number;
+    latestLoopId?: string;
+  };
+  projectUsage: ProjectLlmUsageProjection[];
+  evidence: string[];
+  evaluatedAt: string;
 }
 
 export interface ExecutorAdapterExecutionInput {

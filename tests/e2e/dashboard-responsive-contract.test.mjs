@@ -11,6 +11,7 @@ const dashboardOpenApiContract = [
   ["get", "/api/v1/service-scorecards"],
   ["get", "/api/v1/projects"],
   ["post", "/api/v1/projects"],
+  ["get", "/api/v1/projects/{projectId}/usage"],
   ["post", "/api/v1/projects/{projectId}/source-credentials"],
   ["get", "/api/v1/projects/{projectId}/source-credentials/preflight"],
   ["post", "/api/v1/projects/{projectId}/source-credentials/preflight"],

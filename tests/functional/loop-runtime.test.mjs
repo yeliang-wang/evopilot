@@ -1222,20 +1222,24 @@ test("production loop llm executor calls real llm client and records usage", asy
       async generate(request) {
         callCount += 1;
         capturedPrompt = request.prompt;
+        const secondCall = callCount > 1;
         return {
           requestId: request.requestId ?? "loop-llm-request",
           success: true,
-          text: "# Plan\n\nUse tenant and workspace scoped contracts.",
-          provider: "zhipu",
-          model: "glm-5.1",
+          text: secondCall ? "# Plan\n\nUse release evidence gates." : "# Plan\n\nUse tenant and workspace scoped contracts.",
+          provider: secondCall ? "openai" : "zhipu",
+          model: secondCall ? "gpt-4.1" : "glm-5.1",
           durationMs: 5,
-          usage: { inputTokens: 1000, outputTokens: 500, totalTokens: 1500 },
+          usage: secondCall
+            ? { inputTokens: 2000, outputTokens: 800, totalTokens: 2800 }
+            : { inputTokens: 1000, outputTokens: 500, totalTokens: 1500 },
           resolvedIntent: request.intent,
-          resolvedProfile: "deep-reasoning"
+          resolvedProfile: secondCall ? "release-review" : "deep-reasoning"
         };
       }
     },
     tokens: [
+      { name: "admin", token: "admin-token", role: "admin" },
       { name: "operator", token: "operator-token", role: "operator" },
       { name: "viewer", token: "viewer-token", role: "viewer" }
     ]
@@ -1244,6 +1248,22 @@ test("production loop llm executor calls real llm client and records usage", asy
   const address = server.address();
   const baseUrl = `http://127.0.0.1:${address.port}`;
   try {
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "evopilot-github",
+        name: "EvoPilot GitHub",
+        repository: {
+          provider: "local-git",
+          root: process.cwd(),
+          defaultBranch: "main"
+        }
+      }
+    });
+    assert.equal(project.status, 201);
+    assert.equal(project.body.data.id, "evopilot-github");
+
     const created = await jsonFetch(`${baseUrl}/api/v1/loops`, {
       method: "POST",
       token: "operator-token",
@@ -1286,6 +1306,79 @@ test("production loop llm executor calls real llm client and records usage", asy
     assert.ok(started.body.data.trace.llmUsage.steps.some((step) => step.nodeId === llmStep.nodeId && step.totalTokens === 1500));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "llm.executionMode=provider"));
     assert.ok(started.body.data.evidenceSets[0].evidence.some((item) => item === "llm.provider=zhipu"));
+
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    const secondCreated = await jsonFetch(`${baseUrl}/api/v1/loops`, {
+      method: "POST",
+      token: "operator-token",
+      body: {
+        id: "tenant-workspace-release-llm",
+        projectId: "evopilot-github",
+        objective: "Review release evidence gates for EvoPilot SaaS.",
+        sourceClosure: {
+          sourceProjectId: "evopilot-github",
+          repositoryProvider: "github",
+          sourceUrl: "https://github.com/yeliang-wang/evopilot.git",
+          sourceBranch: "main",
+          targetVersion: "saas-release-evidence",
+          releaseStrategy: "github-push"
+        }
+      }
+    });
+    assert.equal(secondCreated.status, 201);
+    const secondStarted = await jsonFetch(`${baseUrl}/api/v1/loops/tenant-workspace-release-llm/start`, {
+      method: "POST",
+      token: "operator-token"
+    });
+    assert.equal(secondStarted.status, 200);
+    assert.equal(callCount, 2);
+    assert.equal(secondStarted.body.data.trace.llmUsage.provider, "openai");
+    assert.equal(secondStarted.body.data.trace.llmUsage.model, "gpt-4.1");
+    assert.equal(secondStarted.body.data.trace.llmUsage.totalTokens, 2800);
+
+    const projectUsage = await jsonFetch(`${baseUrl}/api/v1/projects/evopilot-github/usage`, {
+      token: "viewer-token"
+    });
+    assert.equal(projectUsage.status, 200);
+    assert.equal(projectUsage.body.data.schema, "evopilot-project-llm-usage/v1");
+    assert.equal(projectUsage.body.data.projectId, "evopilot-github");
+    assert.equal(projectUsage.body.data.llmUsage.provider, "mixed");
+    assert.equal(projectUsage.body.data.llmUsage.model, "mixed");
+    assert.equal(projectUsage.body.data.llmUsage.calls, 2);
+    assert.equal(projectUsage.body.data.llmUsage.providerModelCount, 2);
+    assert.equal(projectUsage.body.data.llmUsage.totalTokens, 4300);
+    assert.equal(projectUsage.body.data.loops.usedWithLlm, 2);
+    assert.equal(projectUsage.body.data.loops.latestLoopTotalTokens, 2800);
+    assert.equal(projectUsage.body.data.loops.latestLoopProvider, "openai");
+    assert.equal(projectUsage.body.data.loops.latestLoopModel, "gpt-4.1");
+    assert.equal(projectUsage.body.data.providerModelUsage.length, 2);
+    const zhipuUsage = projectUsage.body.data.providerModelUsage.find((item) => item.provider === "zhipu" && item.model === "glm-5.1");
+    const openaiUsage = projectUsage.body.data.providerModelUsage.find((item) => item.provider === "openai" && item.model === "gpt-4.1");
+    assert.ok(zhipuUsage);
+    assert.ok(openaiUsage);
+    assert.equal(zhipuUsage.totalTokens, 1500);
+    assert.equal(openaiUsage.totalTokens, 2800);
+    assert.equal(openaiUsage.latestLoopTotalTokens, 2800);
+    assert.ok(projectUsage.body.data.evidence.includes("actual.provider=mixed"));
+
+    const workspaceUsage = await jsonFetch(`${baseUrl}/api/v1/workspaces/${encodeURIComponent(started.body.data.workspaceId)}/usage`, {
+      token: "viewer-token"
+    });
+    assert.equal(workspaceUsage.status, 200);
+    assert.equal(workspaceUsage.body.data.llmUsage.totalTokens, 4300);
+    assert.equal(workspaceUsage.body.data.llmUsage.providerModelCount, 2);
+    assert.equal(workspaceUsage.body.data.projectsWithLlmUsage, 1);
+    assert.equal(workspaceUsage.body.data.loopsWithLlmUsage, 2);
+    assert.equal(workspaceUsage.body.data.topProject.projectId, "evopilot-github");
+    assert.equal(workspaceUsage.body.data.topProject.totalTokens, 4300);
+    const projectedProject = workspaceUsage.body.data.projectUsage.find((item) => item.projectId === "evopilot-github");
+    assert.ok(projectedProject);
+    assert.equal(projectedProject.llmUsage.provider, "mixed");
+    assert.equal(projectedProject.llmUsage.model, "mixed");
+    assert.equal(projectedProject.llmUsage.totalTokens, 4300);
+    assert.equal(projectedProject.loops.latestLoopTotalTokens, 2800);
+    assert.equal(projectedProject.providerModelUsage.length, 2);
+    assert.equal(projectedProject.providerModelUsage.find((item) => item.provider === "openai").shareOfWorkspace, 0.6512);
   } finally {
     if (previousPrice === undefined) delete process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD;
     else process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD = previousPrice;
