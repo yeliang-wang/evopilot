@@ -122,11 +122,14 @@ Automation must treat LLM configuration as a server-side project boundary, not a
 evopilot secret set \
   --id LLM_API_KEY_MY_AGENT \
   --kind llm-key \
+  --scope workspace \
   --from-env LLM_API_KEY_MY_AGENT \
   --json
 
 evopilot llm profile set my-agent-llm \
-  --provider openai-compatible \
+  --scope workspace \
+  --provider-preset custom \
+  --provider-name qwen-private \
   --base-url https://llm.example.com/v1 \
   --model qwen2.5-coder-32b \
   --api-key-ref LLM_API_KEY_MY_AGENT \
@@ -136,7 +139,6 @@ evopilot llm profile preflight my-agent-llm --json
 
 evopilot project llm set my-agent \
   --profile my-agent-llm \
-  --require-llm-ready \
   --json
 ```
 
@@ -156,6 +158,8 @@ Resolution order:
 ```text
 run override --llm-profile -> project default LLM -> server global default LLM
 ```
+
+Workspace profiles are admin-managed and bindable as project defaults. User profiles are owner-managed and can be used only as `--llm-profile` run overrides; they are never project defaults. Built-in presets are `glm`, `kimi`, and `gemma`; use `custom` when the operator must supply an OpenAI-compatible base URL and model.
 
 For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
 

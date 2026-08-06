@@ -501,6 +501,184 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
   }
 });
 
+test("LLM profiles support workspace defaults and user-owned run overrides", async () => {
+  assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
+
+  const profileLlm = await startFakeOpenAiLlmForCli();
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-cli-llm-scope-"));
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-cli-llm-scope-repo-"));
+  createGitRepository(repoRoot);
+  const adminConfigPath = path.join(dataRoot, "admin-config.json");
+  const userConfigPath = path.join(dataRoot, "user-config.json");
+  const otherConfigPath = path.join(dataRoot, "other-config.json");
+  const server = createServer({
+    dataRoot,
+    runtimeMode: "debug",
+    users: [
+      {
+        username: "tenant-admin",
+        password: "tenant-password",
+        role: "admin",
+        tenantId: "tenant-production",
+        workspaceId: "workspace-agent-products",
+        displayName: "Tenant Admin"
+      },
+      {
+        username: "loop-operator",
+        password: "operator-password",
+        role: "operator",
+        tenantId: "tenant-production",
+        workspaceId: "workspace-agent-products",
+        displayName: "Loop Operator"
+      },
+      {
+        username: "other-operator",
+        password: "operator-password",
+        role: "operator",
+        tenantId: "tenant-production",
+        workspaceId: "workspace-agent-products",
+        displayName: "Other Operator"
+      }
+    ]
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  try {
+    const adminLogin = await runCli([
+      "auth", "login",
+      "--server", baseUrl,
+      "--username", "tenant-admin",
+      "--password", "tenant-password",
+      "--config", adminConfigPath,
+      "--json"
+    ]);
+    await activateWorkspaceMember(baseUrl, adminLogin.token, {
+      id: "loop-operator",
+      name: "Loop Operator",
+      role: "developer"
+    });
+    await activateWorkspaceMember(baseUrl, adminLogin.token, {
+      id: "other-operator",
+      name: "Other Operator",
+      role: "developer"
+    });
+    await runCli([
+      "auth", "login",
+      "--server", baseUrl,
+      "--username", "loop-operator",
+      "--password", "operator-password",
+      "--config", userConfigPath,
+      "--json"
+    ]);
+    await runCli([
+      "auth", "login",
+      "--server", baseUrl,
+      "--username", "other-operator",
+      "--password", "operator-password",
+      "--config", otherConfigPath,
+      "--json"
+    ]);
+
+    const project = await runCli([
+      "project", "register",
+      "--id", "llm-scope-agent",
+      "--name", "LLM Scope Agent",
+      "--provider", "local-git",
+      "--root", repoRoot,
+      "--branch", "main",
+      "--config", adminConfigPath,
+      "--json"
+    ]);
+    assert.equal(project.id, "llm-scope-agent");
+
+    const workspaceSecret = await runCli([
+      "secret", "set",
+      "--id", "LLM_API_KEY_WORKSPACE_GLM",
+      "--kind", "llm-key",
+      "--value", "fake-workspace-token",
+      "--config", adminConfigPath,
+      "--json"
+    ]);
+    assert.equal(workspaceSecret.scope, "workspace");
+
+    const workspaceProfile = await runCli([
+      "llm", "profile", "set", "workspace-glm-52",
+      "--provider-preset", "glm",
+      "--api-key-ref", "LLM_API_KEY_WORKSPACE_GLM",
+      "--config", adminConfigPath,
+      "--json"
+    ]);
+    assert.equal(workspaceProfile.scope, "workspace");
+    assert.equal(workspaceProfile.providerPreset, "glm");
+    assert.equal(workspaceProfile.providerName, "zhipu");
+    assert.equal(workspaceProfile.modelName, "glm-5.2");
+    assert.match(workspaceProfile.baseUrl, /bigmodel/);
+
+    const userSecret = await runCli([
+      "secret", "set",
+      "--id", "LLM_API_KEY_LOOP_OPERATOR",
+      "--kind", "llm-key",
+      "--scope", "user",
+      "--value", "fake-user-token",
+      "--config", userConfigPath,
+      "--json"
+    ]);
+    assert.equal(userSecret.scope, "user");
+    assert.equal(userSecret.ownerActor, "loop-operator");
+
+    const userProfile = await runCli([
+      "llm", "profile", "set", "my-kimi-debug",
+      "--scope", "user",
+      "--provider", "openai-compatible",
+      "--base-url", profileLlm.baseUrl,
+      "--model", "user-kimi-test",
+      "--api-key-ref", "LLM_API_KEY_LOOP_OPERATOR",
+      "--config", userConfigPath,
+      "--json"
+    ]);
+    assert.equal(userProfile.scope, "user");
+    assert.equal(userProfile.ownerActor, "loop-operator");
+    assert.equal(userProfile.modelName, "user-kimi-test");
+
+    const forbiddenInspect = await runCli([
+      "llm", "profile", "inspect", "my-kimi-debug",
+      "--config", otherConfigPath,
+      "--json"
+    ], { status: 2 });
+    assert.equal(forbiddenInspect.error, "LLM_PROFILE_FORBIDDEN");
+
+    const forbiddenProjectDefault = await runCli([
+      "project", "llm", "set", "llm-scope-agent",
+      "--profile", "my-kimi-debug",
+      "--config", adminConfigPath,
+      "--json"
+    ], { status: 2 });
+    assert.equal(forbiddenProjectDefault.error, "LLM_PROFILE_NOT_BINDABLE");
+
+    const loopRunJson = await runCli([
+      "loop", "run",
+      "--project", "llm-scope-agent",
+      "--target", "llm-scope-ga",
+      "--objective", "Run one loop with a user-owned LLM override",
+      "--llm-profile", "my-kimi-debug",
+      "--force-decision", "SUCCEED",
+      "--max-iterations", "1",
+      "--config", userConfigPath,
+      "--json"
+    ]);
+    assert.equal(loopRunJson.loop.llm.source, "loop-override");
+    assert.equal(loopRunJson.loop.llm.profileId, "my-kimi-debug");
+    assert.equal(loopRunJson.loop.llm.model, "user-kimi-test");
+    assert.equal(loopRunJson.llmUsage.summary.model, "user-kimi-test");
+    assert.equal(loopRunJson.llmUsage.server.steps[0].llmProfileId, "my-kimi-debug");
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await profileLlm.close();
+  }
+});
+
 test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () => {
   assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
 
@@ -1250,6 +1428,39 @@ function runCliErrorText(args, status) {
       resolve(`${stdout}${stderr}`);
     });
   });
+}
+
+async function activateWorkspaceMember(baseUrl, token, member) {
+  const invited = await jsonApi(`${baseUrl}/api/v1/workspaces/workspace-agent-products/invitations`, {
+    method: "POST",
+    token,
+    body: member
+  });
+  assert.equal(invited.status, 201);
+  assert.equal(invited.body.data.invitation.id, member.id);
+  const activated = await jsonApi(`${baseUrl}/api/v1/workspaces/workspace-agent-products/members/${member.id}`, {
+    method: "PATCH",
+    token,
+    body: { status: "ACTIVE", role: member.role }
+  });
+  assert.equal(activated.status, 200);
+  assert.ok(activated.body.data.members.some((item) => item.id === member.id && item.status === "ACTIVE" && item.role === member.role));
+}
+
+async function jsonApi(url, { method = "GET", token, body } = {}) {
+  const response = await fetch(url, {
+    method,
+    headers: {
+      "content-type": "application/json",
+      ...(token ? { authorization: `Bearer ${token}` } : {})
+    },
+    body: body === undefined ? undefined : JSON.stringify(body)
+  });
+  const text = await response.text();
+  return {
+    status: response.status,
+    body: text ? JSON.parse(text) : {}
+  };
 }
 
 function createGitRepository(repoRoot) {

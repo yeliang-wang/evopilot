@@ -10,12 +10,12 @@ Install the current release CLI tarball set:
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-contracts-1.1.7.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-client-1.1.7.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-cli-1.1.7.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.8/evopilot-contracts-1.1.8.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.8/evopilot-client-1.1.8.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.8/evopilot-cli-1.1.8.tgz
 ```
 
-Use `npm install -g @evopilot/cli@1.1.7` only after public npm registry publication has been verified for that exact version.
+Use `npm install -g @evopilot/cli@1.1.8` only after public npm registry publication has been verified for that exact version.
 
 ```bash
 evopilot --server https://evopilot.example.com auth login \

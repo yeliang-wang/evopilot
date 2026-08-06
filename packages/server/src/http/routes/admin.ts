@@ -23,6 +23,8 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     checkLlmProfileReadiness,
     encryptSecretValue,
     envelope,
+    canMutateLlmProfile,
+    canReadLlmProfile,
     githubAppInstallationChecks,
     hasRole,
     hashPassword,
@@ -155,7 +157,9 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
   }
   if (request.method === "GET" && url.pathname === "/api/v1/secrets") {
     if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-    return writeJson(response, 200, envelope(store.listSecrets(auth.tenantId, auth.workspaceId).map(maskSecret)));
+    return writeJson(response, 200, envelope(store.listSecrets(auth.tenantId, auth.workspaceId)
+      .filter((secret: any) => secret.scope !== "user" || secret.ownerActor === auth.actor || auth.platformAdmin || auth.role === "admin")
+      .map(maskSecret)));
   }
   if (request.method === "POST" && url.pathname === "/api/v1/secrets") {
     if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -164,8 +168,12 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     const workspaceId = safeFileName(optionalTrimmedString(body.workspaceId) ?? auth.workspaceId);
     const workspace = store.readWorkspace(workspaceId);
     if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
-    if (!canAccessWorkspace(auth, workspace, "admin")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
     if (workspace.tenantId !== tenantId) return writeJson(response, 409, { error: "SECRET_WORKSPACE_TENANT_MISMATCH" });
+    const secretScope = String(body.scope ?? "").trim().toLowerCase() === "user" ? "user" : "workspace";
+    const kind = normalizeSecretKind(body.kind);
+    const userLlmSecret = secretScope === "user" && (kind === "llm-key" || kind === "llm-api-key") && tenantId === auth.tenantId && workspaceId === auth.workspaceId;
+    if (userLlmSecret && !canAccessWorkspace(auth, workspace, "developer")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+    if (!userLlmSecret && !canAccessWorkspace(auth, workspace, "admin")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
     const value = optionalTrimmedString(body.value);
     if (!value) return writeJson(response, 400, { error: "SECRET_VALUE_REQUIRED" });
     const now = new Date().toISOString();
@@ -176,8 +184,10 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
       id,
       tenantId,
       workspaceId,
+      scope: secretScope,
+      ownerActor: secretScope === "user" ? auth.actor : optionalTrimmedString(body.ownerActor),
       name: optionalTrimmedString(body.name) ?? id,
-      kind: normalizeSecretKind(body.kind),
+      kind,
       status: "ACTIVE",
       version: existing ? existing.version + 1 : 1,
       encryption: encryptSecretValue(value),
@@ -190,10 +200,10 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
   }
   if (request.method === "GET" && url.pathname === "/api/v1/llm-profiles") {
     if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-    return writeJson(response, 200, envelope(store.listLlmProfiles(auth.tenantId, auth.workspaceId).map(maskLlmProfile)));
+    return writeJson(response, 200, envelope(store.listLlmProfiles(auth.tenantId, auth.workspaceId).filter((item: any) => canReadLlmProfile(auth, item)).map(maskLlmProfile)));
   }
   if (request.method === "POST" && url.pathname === "/api/v1/llm-profiles") {
-    if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+    if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
     const body = await readJson(request, options.maxBodyBytes);
     const existingId = optionalTrimmedString(body.id) ?? optionalTrimmedString(body.profileId) ?? optionalTrimmedString(body.name);
     const existing = existingId ? store.readLlmProfile(existingId) : undefined;
@@ -201,13 +211,22 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     const workspace = store.readWorkspace(profile.workspaceId);
     if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
     if (workspace.tenantId !== profile.tenantId) return writeJson(response, 409, { error: "LLM_PROFILE_WORKSPACE_TENANT_MISMATCH" });
-    if (!canAccessWorkspace(auth, workspace, "admin")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+    if (!canMutateLlmProfile(auth, profile)) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN" });
+    if (profile.scope === "user" && profile.ownerActor !== auth.actor && !auth.platformAdmin && auth.role !== "admin") return writeJson(response, 403, { error: "LLM_PROFILE_OWNER_REQUIRED" });
+    if (profile.scope === "user" && !canAccessWorkspace(auth, workspace, "developer")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+    if (profile.scope === "workspace" && !canAccessWorkspace(auth, workspace, "admin")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
+    if (profile.scope === "user") {
+      const secret = store.readSecret(profile.apiKeyRef);
+      if (!secret || secret.scope !== "user" || secret.ownerActor !== profile.ownerActor) return writeJson(response, 403, { error: "LLM_PROFILE_SECRET_FORBIDDEN", detail: "User LLM profiles must reference a user-owned LLM secret." });
+    }
     if (!profile.baseUrl || !profile.modelName || !profile.apiKeyRef) return writeJson(response, 400, { error: "LLM_PROFILE_REQUIRED", detail: "baseUrl, model/modelName, and apiKeyRef are required." });
     const written = store.writeLlmProfile(profile);
     store.appendAudit(audit(auth, existing ? "llm-profile.updated" : "llm-profile.created", written.id, {
       provider: written.providerName,
       model: written.modelName,
       apiKeyRef: written.apiKeyRef,
+      scope: written.scope,
+      ownerActor: written.ownerActor,
       tenantId: written.tenantId,
       workspaceId: written.workspaceId
     }));
@@ -218,7 +237,7 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
     const profileRecord = store.readLlmProfile(decodeURIComponent(llmProfileMatch[1]));
     if (!profileRecord) return writeJson(response, 404, { error: "LLM_PROFILE_NOT_FOUND" });
-    if (!canAccessScopedResource(auth, profileRecord.tenantId, profileRecord.workspaceId)) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN" });
+    if (!canReadLlmProfile(auth, profileRecord)) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN" });
     return writeJson(response, 200, envelope(maskLlmProfile(profileRecord)));
   }
   const llmProfilePreflightMatch = url.pathname.match(/^\/api\/v1\/llm-profiles\/([^/]+)\/preflight$/);
@@ -226,7 +245,7 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     if (!hasRole(auth, request.method === "POST" ? "operator" : "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
     const profileRecord = store.readLlmProfile(decodeURIComponent(llmProfilePreflightMatch[1]));
     if (!profileRecord) return writeJson(response, 404, { error: "LLM_PROFILE_NOT_FOUND" });
-    if (!canAccessScopedResource(auth, profileRecord.tenantId, profileRecord.workspaceId)) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN" });
+    if (!canReadLlmProfile(auth, profileRecord)) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN" });
     const readiness = await checkLlmProfileReadiness(store, profileRecord, { tenantId: profileRecord.tenantId, workspaceId: profileRecord.workspaceId });
     const updated = store.writeLlmProfile({ ...profileRecord, lastPreflight: readiness, updatedAt: new Date().toISOString() });
     if (request.method === "POST") {

@@ -131,7 +131,8 @@ export async function handleHarnessRoutes(context: HarnessRoutesContext): Promis
             tenantId: evolutionRun.tenantId,
             workspaceId: evolutionRun.workspaceId,
             requestedProfileId,
-            requireLlm
+            requireLlm,
+            actor: auth
           });
           return {
             client: store.resolveGoalPlanLlmClient(llmResolution.selection),

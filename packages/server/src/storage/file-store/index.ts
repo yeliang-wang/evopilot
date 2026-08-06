@@ -85,7 +85,9 @@ import {
   normalizeExecutorCoordinationPlan,
   normalizeExecutorGraph,
   normalizeGlobalGoalStatus,
+  llmProviderPresetDefaults,
   normalizeLlmProfileProvider,
+  normalizeLlmProviderPreset,
   normalizeLoopRetryPolicy,
   normalizeLoopRunStatus,
   normalizeLoopSandboxPolicy,
@@ -1188,6 +1190,8 @@ export class FileStore {
       id: safeFileName(String(secret.id ?? `secret-${Date.now()}`)),
       tenantId: safeFileName(String(secret.tenantId ?? DEFAULT_TENANT_ID)),
       workspaceId: safeFileName(String(secret.workspaceId ?? DEFAULT_WORKSPACE_ID)),
+      scope: String(secret.scope ?? "").trim().toLowerCase() === "user" ? "user" : "workspace",
+      ownerActor: optionalTrimmedString(secret.ownerActor),
       name: String(secret.name ?? secret.id ?? "Secret"),
       kind: normalizeSecretKind(secret.kind),
       status: String(secret.status ?? "ACTIVE").toUpperCase() === "REVOKED" ? "REVOKED" : "ACTIVE",
@@ -1250,16 +1254,21 @@ export class FileStore {
 
   private hydrateLlmProfile(profile: any): LlmProfileRecord {
     const now = new Date().toISOString();
+    const providerPreset = normalizeLlmProviderPreset(profile.providerPreset ?? profile.preset, profile.providerName ?? profile.provider);
+    const presetDefaults = llmProviderPresetDefaults(providerPreset);
     return {
       schema: "evopilot-llm-profile/v1",
       id: safeFileName(String(profile.id ?? profile.name ?? `llm-profile-${Date.now()}`)),
       tenantId: safeFileName(String(profile.tenantId ?? DEFAULT_TENANT_ID)),
       workspaceId: safeFileName(String(profile.workspaceId ?? DEFAULT_WORKSPACE_ID)),
+      scope: String(profile.scope ?? "").trim().toLowerCase() === "user" ? "user" : "workspace",
+      ownerActor: optionalTrimmedString(profile.ownerActor),
       name: String(profile.name ?? profile.id ?? "LLM Profile"),
+      providerPreset,
       provider: normalizeLlmProfileProvider(profile.provider),
-      providerName: optionalTrimmedString(profile.providerName) ?? optionalTrimmedString(profile.provider) ?? "openai-compatible",
-      baseUrl: optionalTrimmedString(profile.baseUrl) ?? "",
-      modelName: optionalTrimmedString(profile.modelName) ?? optionalTrimmedString(profile.model) ?? "",
+      providerName: optionalTrimmedString(profile.providerName) ?? optionalTrimmedString(profile.provider) ?? presetDefaults.providerName,
+      baseUrl: optionalTrimmedString(profile.baseUrl) ?? presetDefaults.baseUrl ?? "",
+      modelName: optionalTrimmedString(profile.modelName) ?? optionalTrimmedString(profile.model) ?? presetDefaults.modelName ?? "",
       apiKeyRef: optionalTrimmedString(profile.apiKeyRef) ?? optionalTrimmedString(profile.tokenRef) ?? "",
       status: String(profile.status ?? "ACTIVE").toUpperCase() === "DISABLED" ? "DISABLED" : "ACTIVE",
       timeoutSeconds: clampPositiveInteger(profile.timeoutSeconds, 300),

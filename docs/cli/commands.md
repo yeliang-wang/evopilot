@@ -286,11 +286,11 @@ Execution modes:
 
 ```bash
 evopilot secret list
-evopilot secret set --id <secret-ref> --kind <kind> (--value <value>|--value-file <file>|--from-env <env>)
+evopilot secret set --id <secret-ref> --kind <kind> [--scope workspace|user] (--value <value>|--value-file <file>|--from-env <env>)
 evopilot secret revoke <secret-ref>
 ```
 
-Secret values are sent to the EvoPilot server once and are not printed back. Source and DevOps `tokenRef` resolution first checks server environment variables, then EvoPilot's secret vault.
+Secret values are sent to the EvoPilot server once and are not printed back. Source and DevOps `tokenRef` resolution first checks server environment variables, then EvoPilot's secret vault. `--scope user` is only valid for user-owned LLM keys in the caller's current workspace; workspace secrets remain admin-managed.
 Use `--value-file` or `--from-env` for private keys and other values that start with `-`.
 
 Common kinds:
@@ -309,7 +309,7 @@ generic
 
 ```bash
 evopilot llm profile list
-evopilot llm profile set <profile-id> --provider openai-compatible --base-url <url> --model <name> --api-key-ref <secret-ref>
+evopilot llm profile set <profile-id> [--scope workspace|user] [--provider-preset glm|kimi|gemma|custom] [--provider openai-compatible] [--base-url <url>] [--model <name>] --api-key-ref <secret-ref>
 evopilot llm profile inspect <profile-id>
 evopilot llm profile preflight <profile-id>
 ```
@@ -318,6 +318,9 @@ Common profile options:
 
 ```text
 --name <display-name>
+--scope workspace|user
+--provider-preset glm|kimi|gemma|custom
+--preset glm|kimi|gemma|custom
 --provider openai-compatible
 --provider-name <provider-label>
 --base-url <openai-compatible-base-url>
@@ -333,12 +336,15 @@ Common profile options:
 --disabled
 ```
 
-`llm profile set` creates or updates a tenant/workspace-scoped profile. It stores only metadata and a server-side `apiKeyRef`; it does not print the raw key. Before creating a profile, store the key once:
+`llm profile set` creates or updates a profile. Workspace profiles are admin-managed and can be bound as project defaults. User profiles are owner-managed and can be used only as run-level `--llm-profile` overrides. Presets fill defaults for common providers: `glm` maps to GLM 5.2 on BigModel, `kimi` maps to Kimi K2 on Moonshot, `gemma` maps to an OpenAI-compatible Gemma model, and `custom` expects the caller to provide base URL and model.
+
+The profile stores only metadata and a server-side `apiKeyRef`; it does not print the raw key. Before creating a workspace profile, store the key once:
 
 ```bash
 evopilot secret set \
   --id LLM_API_KEY_QWEN_PRIVATE \
   --kind llm-key \
+  --scope workspace \
   --from-env LLM_API_KEY_QWEN_PRIVATE \
   --json
 ```
@@ -369,12 +375,11 @@ evopilot project llm preflight <project-id>
 evopilot project llm clear <project-id>
 ```
 
-`project llm set` binds a project default LLM profile. Add `--require-llm-ready` during setup to assert the profile can resolve its key and pass provider preflight:
+`project llm set` binds a project default LLM profile. The server accepts only READY workspace profiles; user profiles return `LLM_PROFILE_NOT_BINDABLE`:
 
 ```bash
 evopilot project llm set my-agent \
   --profile qwen-private \
-  --require-llm-ready \
   --json
 ```
 
@@ -473,7 +478,7 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 1.1.7 \
+  --target-version 1.1.8 \
   --intent "Add Python exception tracking and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \

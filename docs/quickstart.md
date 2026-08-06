@@ -125,13 +125,16 @@ npm run cli -- secret set \
   --token change-me-admin-token \
   --id LLM_API_KEY_MY_AGENT \
   --kind llm-key \
+  --scope workspace \
   --from-env LLM_API_KEY_MY_AGENT \
   --json
 
 npm run cli -- llm profile set my-agent-llm \
   --server http://127.0.0.1:19876 \
   --token change-me-admin-token \
-  --provider openai-compatible \
+  --scope workspace \
+  --provider-preset custom \
+  --provider-name qwen-private \
   --base-url https://llm.example.com/v1 \
   --model qwen2.5-coder-32b \
   --api-key-ref LLM_API_KEY_MY_AGENT \
@@ -141,7 +144,6 @@ npm run cli -- project llm set my-agent \
   --server http://127.0.0.1:19876 \
   --token change-me-admin-token \
   --profile my-agent-llm \
-  --require-llm-ready \
   --json
 ```
 

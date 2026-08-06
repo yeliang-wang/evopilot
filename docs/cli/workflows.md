@@ -228,6 +228,7 @@ export LLM_API_KEY_MY_AGENT="<real-llm-api-key>"
 evopilot secret set \
   --id LLM_API_KEY_MY_AGENT \
   --kind llm-key \
+  --scope workspace \
   --from-env LLM_API_KEY_MY_AGENT \
   --json
 ```
@@ -236,7 +237,9 @@ Create and verify the LLM profile:
 
 ```bash
 evopilot llm profile set my-agent-llm \
-  --provider openai-compatible \
+  --scope workspace \
+  --provider-preset custom \
+  --provider-name qwen-private \
   --base-url https://llm.example.com/v1 \
   --model qwen2.5-coder-32b \
   --api-key-ref LLM_API_KEY_MY_AGENT \
@@ -250,7 +253,6 @@ Bind it to the project:
 ```bash
 evopilot project llm set my-agent \
   --profile my-agent-llm \
-  --require-llm-ready \
   --json
 ```
 
@@ -265,6 +267,10 @@ Resolution order for wrappers is:
 ```text
 run override --llm-profile -> project default LLM -> server global default LLM
 ```
+
+Project defaults must be READY workspace profiles. User profiles can override a single run, but they cannot be bound to the project.
+
+Wrapper run commands preflight the selected LLM by default. Use `--require-llm-ready` only when an onboarding or CI script wants the command line to carry an explicit readiness assertion.
 
 The final fallback is only acceptable for local/debug validation or explicitly non-enterprise runs.
 

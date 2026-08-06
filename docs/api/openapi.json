@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "1.1.7"
+    "version": "1.1.8"
   },
   "paths": {
     "/health": {
@@ -3657,7 +3657,7 @@
     "/api/v1/secrets": {
       "get": {
         "summary": "列出 secret refs",
-        "description": "返回当前 workspace 可见 secret 引用，不返回明文或加密 payload。",
+        "description": "返回当前 workspace 可见 secret 引用，不返回明文或加密 payload。User-scope LLM secret 仅 owner、管理员或 platform admin 可见。",
         "security": [
           {
             "bearerAuth": []
@@ -3677,7 +3677,7 @@
       },
       "post": {
         "summary": "创建或轮换 secret",
-        "description": "写入 AES-256-GCM 加密 secret，仅返回 secretRef/valueConfigured。",
+        "description": "写入 AES-256-GCM 加密 secret，仅返回 secretRef/valueConfigured。Workspace secret 需要 workspace admin；scope=user 仅用于当前 workspace member 的 user-owned LLM key。",
         "security": [
           {
             "bearerAuth": []
@@ -3689,7 +3689,35 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "additionalProperties": true
+                "additionalProperties": true,
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "type": "string",
+                    "enum": [
+                      "source-token",
+                      "deploy-token",
+                      "github-app-private-key",
+                      "github-webhook-secret",
+                      "llm-key",
+                      "llm-api-key",
+                      "generic"
+                    ]
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "workspace",
+                      "user"
+                    ],
+                    "default": "workspace"
+                  },
+                  "value": {
+                    "type": "string"
+                  }
+                }
               }
             }
           }
@@ -3756,7 +3784,7 @@
     "/api/v1/llm-profiles": {
       "get": {
         "summary": "列出 LLM Profiles",
-        "description": "返回当前 tenant/workspace 可见的 LLM Profile。响应不回显 API key，只返回 apiKeyRef 和 apiKeyConfigured。",
+        "description": "返回当前 tenant/workspace 可见的 LLM Profile。Workspace profile 可绑定为项目默认 LLM；user profile 仅当前 owner、管理员或 platform admin 可见并只能作为 run override。响应不回显 API key，只返回 apiKeyRef 和 apiKeyConfigured。",
         "security": [
           {
             "bearerAuth": []
@@ -3773,7 +3801,7 @@
       },
       "post": {
         "summary": "创建或更新 LLM Profile",
-        "description": "创建 tenant/workspace scoped LLM Profile。当前 provider 支持 openai-compatible。请求必须包含 baseUrl、model/modelName 和 apiKeyRef；真实 API key 通过服务端环境变量或 secret vault 解析。",
+        "description": "创建或更新 workspace/user scoped LLM Profile。Workspace profile 需要 workspace admin，可绑定为项目默认 LLM；user profile 需要当前 workspace developer/operator，apiKeyRef 必须引用当前 owner 的 user-scope LLM secret，且只能作为 run override。providerPreset 支持 glm、kimi、gemma、custom；custom 必须包含 baseUrl、model/modelName 和 apiKeyRef。",
         "security": [
           {
             "bearerAuth": []
@@ -3789,6 +3817,37 @@
                 "properties": {
                   "id": {
                     "type": "string"
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "workspace",
+                      "user"
+                    ],
+                    "default": "workspace"
+                  },
+                  "ownerActor": {
+                    "type": "string",
+                    "description": "仅 user profile 使用；默认当前 actor。"
+                  },
+                  "providerPreset": {
+                    "type": "string",
+                    "enum": [
+                      "glm",
+                      "kimi",
+                      "gemma",
+                      "custom"
+                    ],
+                    "description": "glm/kimi/gemma 会填充默认 provider/baseUrl/model；custom 使用显式 provider/baseUrl/model。"
+                  },
+                  "preset": {
+                    "type": "string",
+                    "enum": [
+                      "glm",
+                      "kimi",
+                      "gemma",
+                      "custom"
+                    ]
                   },
                   "provider": {
                     "type": "string",
@@ -3827,7 +3886,7 @@
             "description": "缺少 baseUrl、model/modelName 或 apiKeyRef"
           },
           "403": {
-            "description": "需要管理员角色"
+            "description": "权限不足、user profile owner 不匹配、user profile secret 不属于当前 owner，或 user profile 试图绑定项目默认"
           },
           "409": {
             "description": "workspace 与 tenant 不匹配"

@@ -112,11 +112,14 @@ export LLM_API_KEY_MY_AGENT="<real-llm-api-key>"
 evopilot secret set \
   --id LLM_API_KEY_MY_AGENT \
   --kind llm-key \
+  --scope workspace \
   --from-env LLM_API_KEY_MY_AGENT \
   --json
 
 evopilot llm profile set my-agent-llm \
-  --provider openai-compatible \
+  --scope workspace \
+  --provider-preset custom \
+  --provider-name qwen-private \
   --base-url https://llm.example.com/v1 \
   --model qwen2.5-coder-32b \
   --api-key-ref LLM_API_KEY_MY_AGENT \
@@ -126,7 +129,6 @@ evopilot llm profile preflight my-agent-llm --json
 
 evopilot project llm set my-agent \
   --profile my-agent-llm \
-  --require-llm-ready \
   --json
 ```
 
@@ -137,6 +139,8 @@ run override --llm-profile -> project default LLM -> server global default LLM
 ```
 
 For GitHub/GitLab enterprise real loops, the selected profile must be explicit through a READY project default or a run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
+
+`target run`, `goal run`, and `loop run` preflight the selected LLM by default. Use `--require-llm-ready` only when an automation script wants the command line to state the LLM readiness assertion explicitly.
 
 Administrator template maintenance is separate from daily project execution. Agents should normally let EvoPilot automatically match an existing template during `harness profile generate`; `--from-template` is only an explicit administrator or advanced override. Fresh installs include multiple built-in template types: `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, `observability-apm-harness`, and `generic-management-software-harness`. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`. Current built-ins are `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules.
 
@@ -173,7 +177,7 @@ When template changes should come from reviewable sources, administrators use th
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 1.1.7 \
+  --target-version 1.1.8 \
   --intent "Add stronger Python exception tracking, observability, and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \

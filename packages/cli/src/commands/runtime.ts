@@ -1098,13 +1098,16 @@ function buildProjectDevopsBody(args: ParsedArgs, fallbackProvider?: "github-act
 }
 
 function buildLlmProfileBody(args: ParsedArgs, profileId: string): Record<string, unknown> {
+  const providerPreset = stringOption(args, "provider-preset") ?? stringOption(args, "preset");
   return {
     id: profileId,
     name: stringOption(args, "name") ?? profileId,
+    scope: stringOption(args, "scope"),
+    providerPreset,
     provider: stringOption(args, "provider") ?? "openai-compatible",
-    providerName: stringOption(args, "provider-name") ?? stringOption(args, "provider") ?? "openai-compatible",
-    baseUrl: requiredOption(args, "base-url"),
-    modelName: stringOption(args, "model-name") ?? requiredOption(args, "model"),
+    providerName: stringOption(args, "provider-name") ?? stringOption(args, "provider"),
+    baseUrl: stringOption(args, "base-url"),
+    modelName: stringOption(args, "model-name") ?? stringOption(args, "model"),
     apiKeyRef: stringOption(args, "api-key-ref") ?? stringOption(args, "token-ref") ?? requiredOption(args, "api-key-ref"),
     timeoutSeconds: numberOption(args, "timeout-seconds"),
     maxRetries: numberOption(args, "max-retries"),
@@ -1310,6 +1313,7 @@ async function secretSet(ctx: RuntimeContext): Promise<number> {
     id,
     name: stringOption(ctx.args, "name") ?? id,
     kind: stringOption(ctx.args, "kind") ?? "source-token",
+    scope: stringOption(ctx.args, "scope"),
     value,
     tenantId: stringOption(ctx.args, "tenant") ?? stringOption(ctx.args, "tenant-id"),
     workspaceId: stringOption(ctx.args, "workspace") ?? stringOption(ctx.args, "workspace-id")
@@ -3346,6 +3350,8 @@ function printLlmProfileResult(ctx: RuntimeContext, command: string, data: unkno
     `Command    ${command}`,
     `HTTP       ${httpStatus}`,
     `Profile    ${field(data, "id") ?? field(readiness, "profileId") ?? "-"}`,
+    `Scope      ${field(data, "scope") ?? "-"}`,
+    `Preset     ${field(data, "providerPreset") ?? "-"}`,
     `Provider   ${field(data, "providerName") ?? field(readiness, "provider") ?? "-"}`,
     `Model      ${field(data, "modelName") ?? field(readiness, "model") ?? "-"}`,
     `Base URL   ${field(data, "baseUrl") ?? field(readiness, "baseUrl") ?? "-"}`,

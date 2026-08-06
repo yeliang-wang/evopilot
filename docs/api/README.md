@@ -80,7 +80,7 @@ POST /api/v1/settings/logging
 
 ## LLM Profile 与项目绑定
 
-EvoPilot 支持 tenant/workspace 级 LLM Profile。Profile 用于声明公有或私有 OpenAI-compatible 模型的 provider、base URL、model、timeout、重试和 `apiKeyRef`。真实 API key 只保存在服务端环境变量或当前 tenant/workspace secret vault；API 响应不会回显明文。
+EvoPilot 支持 workspace 级和 user 级 LLM Profile。Workspace profile 由管理员维护，可绑定为项目默认 LLM；user profile 由当前用户维护，只能作为一次 Goal/Loop run override 使用，不能绑定为项目默认。Profile 用于声明 GLM、Kimi、Gemma 或自定义 OpenAI-compatible 模型的 provider、base URL、model、timeout、重试和 `apiKeyRef`。真实 API key 只保存在服务端环境变量或当前 tenant/workspace secret vault；API 响应不会回显明文。
 
 ```http
 GET /api/v1/llm-profiles
@@ -102,7 +102,7 @@ POST /api/v1/projects/{projectId}/llm/preflight
 POST /api/v1/secrets
 Content-Type: application/json
 
-{"id":"LLM_API_KEY_MY_AGENT","kind":"llm-key","value":"<raw-llm-key>"}
+{"id":"LLM_API_KEY_MY_AGENT","kind":"llm-key","scope":"workspace","value":"<raw-llm-key>"}
 ```
 
 创建或更新 profile：
@@ -113,6 +113,8 @@ Content-Type: application/json
 
 {
   "id": "my-agent-llm",
+  "scope": "workspace",
+  "providerPreset": "custom",
   "provider": "openai-compatible",
   "providerName": "qwen-private",
   "baseUrl": "https://llm.example.com/v1",
@@ -121,6 +123,29 @@ Content-Type: application/json
   "timeoutSeconds": 60,
   "maxRetries": 2,
   "temperature": 0.2
+}
+```
+
+内置 preset 可以省略部分 provider 参数：`glm` 默认 `providerName=zhipu`、`baseUrl=https://open.bigmodel.cn/api/paas/v4`、`modelName=glm-5.2`；`kimi` 默认 `providerName=moonshot`、`baseUrl=https://api.moonshot.cn/v1`、`modelName=kimi-k2`；`gemma` 默认 `providerName=openai-compatible`、`modelName=gemma`。自定义 provider 使用 `providerPreset=custom` 并传入 `baseUrl` 和 `modelName`。
+
+用户自己的 profile 使用 `scope=user`，并且 `apiKeyRef` 必须引用同一用户创建的 user-scope LLM secret：
+
+```http
+POST /api/v1/secrets
+Content-Type: application/json
+
+{"id":"LLM_API_KEY_MY_DEBUG","kind":"llm-key","scope":"user","value":"<raw-llm-key>"}
+```
+
+```http
+POST /api/v1/llm-profiles
+Content-Type: application/json
+
+{
+  "id": "my-debug-kimi",
+  "scope": "user",
+  "providerPreset": "kimi",
+  "apiKeyRef": "LLM_API_KEY_MY_DEBUG"
 }
 ```
 
@@ -149,6 +174,8 @@ Content-Type: application/json
 
 {"profileId":"my-agent-llm","required":true}
 ```
+
+只有 READY 的 workspace profile 可以成为项目默认 LLM。User profile 不能绑定到项目，但可以在 `Goal/Loop` 请求中通过 `llmProfileId` 做一次运行覆盖。
 
 Goal/Loop 创建接口和 `POST /api/v1/loop-orchestration/instantiate` 都接受 `llmProfileId`。服务端解析顺序是：
 
@@ -453,7 +480,7 @@ CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLI
 ```json
 {
   "baseTemplateId": "python-enterprise-harness",
-  "targetVersion": "1.1.7",
+  "targetVersion": "1.1.8",
   "intent": "Add stronger exception tracking and AI troubleshooting metadata.",
   "sources": [
     { "type": "github-repo", "name": "fastapi/fastapi", "uri": "fastapi/fastapi", "ref": "master" },

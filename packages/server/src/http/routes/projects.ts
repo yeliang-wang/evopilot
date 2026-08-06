@@ -19,6 +19,7 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
   const {
     audit,
     canAccessScopedResource,
+    canBindProjectDefaultLlmProfile,
     checkLlmProfileReadiness,
     checkProjectDevopsReadiness,
     checkSourceCredentialReadiness,
@@ -236,7 +237,7 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
     const project = store.readProject(decodeURIComponent(projectLlmMatch[1]));
     if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
     if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
-    const resolved = resolveLoopLlmSelection(store, { project, tenantId: project.tenantId, workspaceId: project.workspaceId, requireLlm });
+    const resolved = resolveLoopLlmSelection(store, { project, tenantId: project.tenantId, workspaceId: project.workspaceId, requireLlm, actor: auth });
     return writeJson(response, resolved.readiness.status === "READY" ? 200 : 409, envelope({
       schema: "evopilot-project-llm/v1",
       projectId: project.id,
@@ -257,6 +258,9 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
     const profileRecord = store.readLlmProfile(profileId);
     if (!profileRecord) return writeJson(response, 404, { error: "LLM_PROFILE_NOT_FOUND" });
     if (profileRecord.tenantId !== project.tenantId || profileRecord.workspaceId !== project.workspaceId) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN" });
+    if (!canBindProjectDefaultLlmProfile(auth, profileRecord)) return writeJson(response, 403, { error: "LLM_PROFILE_NOT_BINDABLE", detail: "Project default LLM requires a workspace profile." });
+    const readiness = await checkLlmProfileReadiness(store, profileRecord, { tenantId: project.tenantId, workspaceId: project.workspaceId });
+    if (readiness.status !== "READY") return writeJson(response, 409, { error: "LLM_PROFILE_NOT_READY", profileId, readiness });
     const updated: StoredProject = {
       ...project,
       llm: {
@@ -269,13 +273,13 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
       updatedAt: new Date().toISOString()
     };
     store.writeProject(updated);
-    const resolved = resolveLoopLlmSelection(store, { project: updated, tenantId: updated.tenantId, workspaceId: updated.workspaceId, requireLlm: true });
+    const resolved = resolveLoopLlmSelection(store, { project: updated, tenantId: updated.tenantId, workspaceId: updated.workspaceId, requireLlm: true, actor: auth });
     store.appendAudit(audit(auth, "project.llm.updated", updated.id, {
       profileId,
       provider: profileRecord.providerName,
       model: profileRecord.modelName,
-      readiness: resolved.readiness.status,
-      blockers: resolved.readiness.blockers
+      readiness: readiness.status,
+      blockers: readiness.blockers
     }));
     logInfo("project.llm.updated", {
       actor: auth.actor,
@@ -285,17 +289,17 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
         profileId,
         provider: profileRecord.providerName,
         model: profileRecord.modelName,
-        readiness: resolved.readiness.status,
-        blockers: resolved.readiness.blockers
+        readiness: readiness.status,
+        blockers: readiness.blockers
       }
     });
-    return writeJson(response, resolved.readiness.status === "READY" ? 200 : 409, envelope({
+    return writeJson(response, 200, envelope({
       schema: "evopilot-project-llm/v1",
       project: maskProject(updated, store),
       llm: updated.llm,
       selection: resolved.selection,
       profile: maskLlmProfile(profileRecord),
-      readiness: resolved.readiness
+      readiness
     }));
   }
   if (request.method === "DELETE" && projectLlmMatch) {
@@ -307,7 +311,7 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
     const updated: StoredProject = { ...rest, updatedAt: new Date().toISOString() };
     store.writeProject(updated);
     store.appendAudit(audit(auth, "project.llm.cleared", updated.id, { previousProfileId: llm?.profileId }));
-    const resolved = resolveLoopLlmSelection(store, { project: updated, tenantId: updated.tenantId, workspaceId: updated.workspaceId, requireLlm });
+    const resolved = resolveLoopLlmSelection(store, { project: updated, tenantId: updated.tenantId, workspaceId: updated.workspaceId, requireLlm, actor: auth });
     return writeJson(response, 200, envelope({ project: maskProject(updated, store), cleared: Boolean(llm), selection: resolved.selection, readiness: resolved.readiness }));
   }
   const projectLlmPreflightMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/llm\/preflight$/);
@@ -316,7 +320,7 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
     const project = store.readProject(decodeURIComponent(projectLlmPreflightMatch[1]));
     if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
     if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
-    const resolved = resolveLoopLlmSelection(store, { project, tenantId: project.tenantId, workspaceId: project.workspaceId, requireLlm: true });
+    const resolved = resolveLoopLlmSelection(store, { project, tenantId: project.tenantId, workspaceId: project.workspaceId, requireLlm: true, actor: auth });
     const readiness = resolved.profile
       ? await checkLlmProfileReadiness(store, resolved.profile, { tenantId: project.tenantId, workspaceId: project.workspaceId })
       : resolved.readiness;
@@ -376,11 +380,13 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
           tenantId,
           workspaceId,
           requestedProfileId: projectLlm.profileId,
-          requireLlm: true
+          requireLlm: true,
+          actor: auth
         }).readiness;
         return writeJson(response, 409, { error: "LLM_PROFILE_NOT_READY", profileId: projectLlm.profileId, readiness });
       }
       if (llmProfile.tenantId !== tenantId || llmProfile.workspaceId !== workspaceId) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN", profileId: projectLlm.profileId });
+      if (!canBindProjectDefaultLlmProfile(auth, llmProfile)) return writeJson(response, 403, { error: "LLM_PROFILE_NOT_BINDABLE", detail: "Project default LLM requires a workspace profile.", profileId: projectLlm.profileId });
     }
     const projectDevops = normalizeProjectDevops(body, {
       id: projectId,

@@ -33,6 +33,7 @@ Store the raw LLM key once in the EvoPilot server-side secret vault:
 evopilot secret set \
   --id LLM_API_KEY_MY_AGENT \
   --kind llm-key \
+  --scope workspace \
   --from-env LLM_API_KEY_MY_AGENT \
   --json
 ```
@@ -41,7 +42,9 @@ Create and verify the profile:
 
 ```bash
 evopilot llm profile set my-agent-llm \
-  --provider openai-compatible \
+  --scope workspace \
+  --provider-preset custom \
+  --provider-name qwen-private \
   --base-url https://llm.example.com/v1 \
   --model qwen2.5-coder-32b \
   --api-key-ref LLM_API_KEY_MY_AGENT \
@@ -146,7 +149,7 @@ When template changes should be derived from reviewable sources, use the server-
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 1.1.7 \
+  --target-version 1.1.8 \
   --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \

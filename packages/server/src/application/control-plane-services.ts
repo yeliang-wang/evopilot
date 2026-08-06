@@ -86,6 +86,8 @@ import type {
   GovernancePolicyEvaluation,
   HarnessTemplateSelection,
   LlmProfileProvider,
+  LlmProfileScope,
+  LlmProviderPreset,
   LlmProfileReadiness,
   LlmProfileRecord,
   LlmUsageStepSummary,
@@ -5629,6 +5631,25 @@ export function normalizeLlmProfileProvider(value: unknown): LlmProfileProvider 
   return provider === "openai-compatible" ? "openai-compatible" : "openai-compatible";
 }
 
+export function normalizeLlmProfileScope(value: unknown, fallback: LlmProfileScope = "workspace"): LlmProfileScope {
+  return String(value ?? fallback).trim().toLowerCase() === "user" ? "user" : "workspace";
+}
+
+export function normalizeLlmProviderPreset(value: unknown, providerName?: string): LlmProviderPreset {
+  const preset = String(value ?? providerName ?? "").trim().toLowerCase();
+  if (preset === "glm" || preset === "zhipu" || preset.startsWith("glm-")) return "glm";
+  if (preset === "kimi" || preset === "moonshot" || preset.startsWith("kimi")) return "kimi";
+  if (preset === "gemma" || preset.includes("gemma")) return "gemma";
+  return "custom";
+}
+
+export function llmProviderPresetDefaults(preset: LlmProviderPreset): { providerName: string; baseUrl?: string; modelName?: string } {
+  if (preset === "glm") return { providerName: "zhipu", baseUrl: "https://open.bigmodel.cn/api/paas/v4", modelName: "glm-5.2" };
+  if (preset === "kimi") return { providerName: "moonshot", baseUrl: "https://api.moonshot.cn/v1", modelName: "kimi-k2" };
+  if (preset === "gemma") return { providerName: "openai-compatible", modelName: "gemma" };
+  return { providerName: "openai-compatible" };
+}
+
 export function normalizeTemperature(value: unknown, fallback: number): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -5704,16 +5725,23 @@ export function maskLlmProfile(profile: LlmProfileRecord): LlmProfileRecord & { 
 export function normalizeLlmProfileBody(body: any, auth: AuthContext, existing?: LlmProfileRecord): LlmProfileRecord {
   const now = new Date().toISOString();
   const id = safeFileName(optionalTrimmedString(body.id) ?? optionalTrimmedString(body.profileId) ?? optionalTrimmedString(body.name) ?? existing?.id ?? `llm-profile-${Date.now()}`);
+  const scope = normalizeLlmProfileScope(body.scope, existing?.scope ?? "workspace");
+  const providerPreset = normalizeLlmProviderPreset(body.providerPreset ?? body.preset, body.providerName ?? body.provider ?? existing?.providerName);
+  const presetDefaults = llmProviderPresetDefaults(providerPreset);
+  const rawBaseUrl = optionalTrimmedString(body.baseUrl) ?? existing?.baseUrl ?? presetDefaults.baseUrl ?? "";
   return {
     schema: "evopilot-llm-profile/v1",
     id,
     tenantId: safeFileName(optionalTrimmedString(body.tenantId) ?? existing?.tenantId ?? auth.tenantId),
     workspaceId: safeFileName(optionalTrimmedString(body.workspaceId) ?? existing?.workspaceId ?? auth.workspaceId),
+    scope,
+    ownerActor: scope === "user" ? optionalTrimmedString(body.ownerActor) ?? existing?.ownerActor ?? auth.actor : optionalTrimmedString(body.ownerActor) ?? existing?.ownerActor,
     name: optionalTrimmedString(body.name) ?? existing?.name ?? id,
+    providerPreset,
     provider: normalizeLlmProfileProvider(body.provider ?? existing?.provider),
-    providerName: optionalTrimmedString(body.providerName) ?? optionalTrimmedString(body.provider) ?? existing?.providerName ?? "openai-compatible",
-    baseUrl: optionalTrimmedString(body.baseUrl) ?? existing?.baseUrl ?? "",
-    modelName: optionalTrimmedString(body.modelName) ?? optionalTrimmedString(body.model) ?? existing?.modelName ?? "",
+    providerName: optionalTrimmedString(body.providerName) ?? (providerPreset === "custom" ? optionalTrimmedString(body.provider) : undefined) ?? existing?.providerName ?? presetDefaults.providerName,
+    baseUrl: rawBaseUrl,
+    modelName: optionalTrimmedString(body.modelName) ?? optionalTrimmedString(body.model) ?? existing?.modelName ?? presetDefaults.modelName ?? "",
     apiKeyRef: optionalTrimmedString(body.apiKeyRef) ?? optionalTrimmedString(body.tokenRef) ?? existing?.apiKeyRef ?? "",
     status: String(body.status ?? existing?.status ?? "ACTIVE").toUpperCase() === "DISABLED" ? "DISABLED" : "ACTIVE",
     timeoutSeconds: clampPositiveInteger(body.timeoutSeconds, existing?.timeoutSeconds ?? 300),
@@ -5731,6 +5759,25 @@ export function normalizeLlmProfileBody(body: any, auth: AuthContext, existing?:
 export function resolveLlmProfileApiKey(store: FileStore | undefined, profile: LlmProfileRecord): string | undefined {
   if (!profile.apiKeyRef) return undefined;
   return resolveTokenRef(store, profile.apiKeyRef, profile);
+}
+
+export function canReadLlmProfile(auth: AuthContext, profile: LlmProfileRecord): boolean {
+  if (!canAccessScopedResource(auth, profile.tenantId, profile.workspaceId)) return false;
+  return profile.scope !== "user" || auth.platformAdmin === true || auth.role === "admin" || profile.ownerActor === auth.actor;
+}
+
+export function canMutateLlmProfile(auth: AuthContext, profile: LlmProfileRecord): boolean {
+  if (!canAccessScopedResource(auth, profile.tenantId, profile.workspaceId)) return false;
+  if (profile.scope === "user") return profile.ownerActor === auth.actor || auth.platformAdmin === true || auth.role === "admin";
+  return auth.platformAdmin === true || auth.role === "admin";
+}
+
+export function canUseLlmProfileForRun(auth: AuthContext, profile: LlmProfileRecord): boolean {
+  return canReadLlmProfile(auth, profile);
+}
+
+export function canBindProjectDefaultLlmProfile(auth: AuthContext, profile: LlmProfileRecord): boolean {
+  return profile.scope === "workspace" && canMutateLlmProfile(auth, profile);
 }
 
 export function createLlmClientFromProfile(profile: LlmProfileRecord, apiKey: string): LlmTaskClient | undefined {
@@ -5886,6 +5933,7 @@ export function resolveLoopLlmSelection(store: FileStore, input: {
   workspaceId: string;
   requestedProfileId?: string;
   requireLlm?: boolean;
+  actor?: AuthContext;
 }): { selection: LoopLlmSelection; readiness: LlmProfileReadiness; profile?: LlmProfileRecord } {
   const now = new Date().toISOString();
   const projectProfileId = input.project?.llm?.profileId;
@@ -5893,12 +5941,12 @@ export function resolveLoopLlmSelection(store: FileStore, input: {
   if (profileId) {
     const profile = store.readLlmProfile(profileId);
     const source: LoopLlmSelection["source"] = input.requestedProfileId ? "loop-override" : "project-default";
-    if (!profile || profile.tenantId !== input.tenantId || profile.workspaceId !== input.workspaceId || profile.status !== "ACTIVE") {
+    if (!profile || profile.tenantId !== input.tenantId || profile.workspaceId !== input.workspaceId || profile.status !== "ACTIVE" || (input.actor && source === "loop-override" && !canUseLlmProfileForRun(input.actor, profile))) {
       const readiness = llmProfileReadinessResult({
         tenantId: input.tenantId,
         workspaceId: input.workspaceId,
         source: "missing",
-        checks: [{ id: "profile", status: "FAIL", required: true, evidence: [`profile=${profileId}`, "profile=missing-or-inaccessible"] }],
+        checks: [{ id: "profile", status: "FAIL", required: true, evidence: [`profile=${profileId}`, "profile=missing-or-inaccessible-or-forbidden"] }],
         checkedAt: now
       });
       return {

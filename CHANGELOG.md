@@ -8,6 +8,31 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.1.8 - 2026-08-06
+
+### Added
+
+- Added workspace-owned and user-owned LLM profile scopes with provider presets for GLM, Kimi, Gemma, and custom OpenAI-compatible providers.
+- Added server-side profile readability, mutation, usage, and project-binding guards so workspace defaults require administrator ownership and READY preflight, while user profiles are available only as per-run overrides for their owner.
+- Added project LLM default binding and run override resolution across target, goal, harness, loop, and project routes without exposing raw LLM secrets to CLI or Dashboard clients.
+- Added CLI flags for LLM profile scope and provider preset registration, plus server-governed run override submission through `--llm-profile`.
+- Added functional coverage for workspace default binding, user-owned run overrides, and rejected user-profile project defaults.
+
+### Changed
+
+- Kept existing GitHub-native, GitLab-native, and GitHub source + GitLab CI bridge project flows intact while routing LLM selection through EvoPilot profile IDs and secret refs.
+- Updated OpenAPI, CLI, automation, quickstart, deployment, and runbook documentation for the workspace default plus user override model.
+- Updated package versions, shared version fallbacks, installer defaults, OpenAPI metadata, and release validation pointers to `1.1.8`.
+
+### Validation
+
+- `npm run build`
+- `npm run cli:test`
+- `npm run check`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.1.7 - 2026-08-06
 
 ### Added

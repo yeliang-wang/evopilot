@@ -63,7 +63,8 @@ export async function handleGoalRoutes(context: GoalRoutesContext): Promise<bool
       tenantId,
       workspaceId,
       requestedProfileId: llmProfileIdFromPayload(body),
-      requireLlm
+      requireLlm,
+      actor: auth
     });
     if (llmResolution.readiness.status !== "READY" && llmProfileIdFromPayload(body)) {
       return writeJson(response, 409, { error: "LLM_PROFILE_NOT_READY", readiness: llmResolution.readiness });

@@ -14,7 +14,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-if (-not $Version) { $Version = "1.1.7" }
+if (-not $Version) { $Version = "1.1.8" }
 if (-not $Dir) { $Dir = "evopilot-stack" }
 if (-not $Package) { $Package = "create-evopilot" }
 if (-not $ManifestUrl) { $ManifestUrl = "https://raw.githubusercontent.com/yeliang-wang/evopilot/v$Version/installers/manifest.json" }

@@ -113,10 +113,10 @@ EVOPILOT_LLM_API_KEY=<provider-api-key>
 多租户或多项目生产建议把具体模型注册为 LLM Profile，并在项目上绑定默认 profile。这样 WorkBuddy、macOS 终端、CI 和 Dashboard 都能看到同一个服务端事实来源：
 
 ```bash
-evopilot secret set --id LLM_API_KEY_MY_AGENT --kind llm-key --from-env LLM_API_KEY_MY_AGENT --json
-evopilot llm profile set my-agent-llm --provider openai-compatible --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_MY_AGENT --json
+evopilot secret set --id LLM_API_KEY_MY_AGENT --kind llm-key --scope workspace --from-env LLM_API_KEY_MY_AGENT --json
+evopilot llm profile set my-agent-llm --scope workspace --provider-preset custom --provider-name qwen-private --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_MY_AGENT --json
 evopilot llm profile preflight my-agent-llm --json
-evopilot project llm set my-agent --profile my-agent-llm --require-llm-ready --json
+evopilot project llm set my-agent --profile my-agent-llm --json
 ```
 
 Loop 执行时 LLM 解析顺序为：
@@ -125,7 +125,7 @@ Loop 执行时 LLM 解析顺序为：
 run override --llm-profile -> project default LLM -> global environment default LLM
 ```
 
-`target run --require-llm-ready`、`project onboard --require-llm-ready` 或 `project llm set --require-llm-ready` 会在 profile key、provider endpoint、model 或网络不可用时提前停止。不要把 LLM API key 写入 Docker image、Git 仓库、日志或 daily CLI wrapper 命令。
+`target run --require-llm-ready`、`project onboard --require-llm-ready` 和 `project llm set` 会在 profile key、provider endpoint、model 或网络不可用时提前停止。不要把 LLM API key 写入 Docker image、Git 仓库、日志或 daily CLI wrapper 命令。
 
 文件态业务数据迁移、Postgres business store 备份和恢复见 [SaaS 生产发布包](../reference/release-package.md)。生产发布前至少执行：
 

@@ -843,6 +843,8 @@ export interface SecretRecord {
   id: string;
   tenantId: string;
   workspaceId: string;
+  scope?: "workspace" | "user";
+  ownerActor?: string;
   name: string;
   kind: SecretKind;
   status: "ACTIVE" | "REVOKED";
@@ -860,13 +862,18 @@ export interface SecretRecord {
 }
 
 export type LlmProfileProvider = "openai-compatible";
+export type LlmProfileScope = "workspace" | "user";
+export type LlmProviderPreset = "glm" | "kimi" | "gemma" | "custom";
 
 export interface LlmProfileRecord {
   schema: "evopilot-llm-profile/v1";
   id: string;
   tenantId: string;
   workspaceId: string;
+  scope: LlmProfileScope;
+  ownerActor?: string;
   name: string;
+  providerPreset: LlmProviderPreset;
   provider: LlmProfileProvider;
   providerName: string;
   baseUrl: string;

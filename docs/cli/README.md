@@ -24,13 +24,13 @@ Production installation uses the GitHub Release CLI tarball set for the current 
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-contracts-1.1.7.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-client-1.1.7.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-cli-1.1.7.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.8/evopilot-contracts-1.1.8.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.8/evopilot-client-1.1.8.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.8/evopilot-cli-1.1.8.tgz
 evopilot --version
 ```
 
-The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@1.1.7` only after `npm run verify:npm-registry -- --version 1.1.7` passes.
+The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@1.1.8` only after `npm run verify:npm-registry -- --version 1.1.8` passes.
 
 From this repository, use the same CLI package without publishing:
 
@@ -162,7 +162,7 @@ Production metrics are enabled by default. When the API server has `EVOPILOT_DAT
 
 ## Custom LLM Profiles
 
-EvoPilot no longer assumes every project must use the server's global default LLM. A tenant/workspace can register public or private OpenAI-compatible models as server-side LLM profiles, bind one profile as a project default, and optionally override it for a single Goal/Loop run.
+EvoPilot no longer assumes every project must use the server's global default LLM. A workspace administrator can register GLM, Kimi, Gemma, or custom OpenAI-compatible models as workspace LLM profiles and bind one READY profile as a project default. A workspace user can register a user LLM profile for their own run override, but user profiles are not bindable as project defaults.
 
 For GitHub/GitLab enterprise real loops, an explicit READY project default LLM profile or per-run `--llm-profile` is required. The server global default LLM is allowed for local/debug validation, but the server global default LLM is not sufficient for a real remote project because the run must be attributable to the user, tenant, workspace, and project.
 
@@ -176,11 +176,14 @@ export LLM_API_KEY_MY_AGENT="<real-llm-api-key>"
 evopilot secret set \
   --id LLM_API_KEY_MY_AGENT \
   --kind llm-key \
+  --scope workspace \
   --from-env LLM_API_KEY_MY_AGENT \
   --json
 
 evopilot llm profile set my-agent-llm \
-  --provider openai-compatible \
+  --scope workspace \
+  --provider-preset custom \
+  --provider-name qwen-private \
   --base-url https://llm.example.com/v1 \
   --model qwen2.5-coder-32b \
   --api-key-ref LLM_API_KEY_MY_AGENT \
@@ -194,7 +197,6 @@ Bind the project default:
 ```bash
 evopilot project llm set my-agent \
   --profile my-agent-llm \
-  --require-llm-ready \
   --json
 
 evopilot project llm inspect my-agent --json
@@ -228,6 +230,31 @@ run override --llm-profile -> project default LLM binding -> server global defau
 ```
 
 `target run`, `goal run`, and `loop run` preflight the selected LLM by default. If the profile secret cannot be resolved or the provider probe fails, the CLI stops before Loop execution and reports `nextAction=store-llm-secret`, `configure-llm-profile`, or `repair-llm-provider`. `--require-llm-ready` remains useful in setup commands to make the readiness assertion explicit.
+
+User-owned overrides follow the same secret boundary:
+
+```bash
+export LLM_API_KEY_MY_DEBUG="<real-llm-api-key>"
+
+evopilot secret set \
+  --id LLM_API_KEY_MY_DEBUG \
+  --kind llm-key \
+  --scope user \
+  --from-env LLM_API_KEY_MY_DEBUG \
+  --json
+
+evopilot llm profile set my-debug-kimi \
+  --scope user \
+  --provider-preset kimi \
+  --api-key-ref LLM_API_KEY_MY_DEBUG \
+  --json
+
+evopilot target run \
+  --project my-agent \
+  --objective "Run the approved phase plan with my private Kimi profile" \
+  --llm-profile my-debug-kimi \
+  --json
+```
 
 ## Wrapper JSON Contract
 

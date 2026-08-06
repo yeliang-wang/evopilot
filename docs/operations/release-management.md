@@ -65,10 +65,10 @@ PRs that prepare a release should also preserve the uploaded PR artifacts from `
 After the npm package workflow publishes a tag, verify the public registry path:
 
 ```bash
-npm run verify:npm-registry -- --version 1.1.7
+npm run verify:npm-registry -- --version 1.1.8
 ```
 
-For v1.1.7, the public installable path is the GitHub Release tarball package spec recorded in `installers/manifest.json`; public npm registry publication remains a separate layer until the npm workflow publishes and verifies the exact version.
+For v1.1.8, the public installable path is the GitHub Release tarball package spec recorded in `installers/manifest.json`; public npm registry publication remains a separate layer until the npm workflow publishes and verifies the exact version.
 
 ## Tag And Push
 
@@ -125,7 +125,7 @@ Operators can use the tracked runbook script to resolve release metadata, deploy
 
 ```bash
 npm run ecs:immutable-rollout -- \
-  --version 1.1.7 \
+  --version 1.1.8 \
   --host root@8.153.72.80 \
   --apply \
   --json
@@ -136,7 +136,7 @@ For rollback drills, provide both the rollback and forward release versions. The
 ```bash
 npm run ecs:immutable-rollout -- \
   --rollback-version 1.1.2 \
-  --forward-version 1.1.7 \
+  --forward-version 1.1.8 \
   --host root@8.153.72.80 \
   --apply \
   --json
