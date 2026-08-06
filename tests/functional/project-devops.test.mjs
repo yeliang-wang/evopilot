@@ -355,6 +355,106 @@ test("delivery execution uses configured GitHub Actions DevOps by default", asyn
   }
 });
 
+test("delivery execution supports GitHub source with GitLab CI bridge", async () => {
+  const github = await startFakeGitHub();
+  const gitlab = await startFakeGitLab();
+  const codeUpgrader = await startFakeCodeUpgrader();
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-project-devops-bridge-"));
+  const server = createServer({ dataRoot, runtimeMode: "debug" });
+  process.env.EVOPILOT_TEST_GITLAB_BRIDGE_TOKEN = "gitlab-token";
+  await listen(server);
+  const baseUrl = serverUrl(server);
+
+  try {
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "github-source-gitlab-bridge",
+      name: "GitHub Source GitLab Bridge",
+      repository: {
+        provider: "github",
+        baseUrl: github.baseUrl,
+        owner: "org",
+        repo: "repo",
+        defaultBranch: "main",
+        token: "github-token"
+      }
+    });
+    const configured = await post(`${baseUrl}/api/v1/projects/github-source-gitlab-bridge/devops`, {
+      provider: "gitlab-ci",
+      sourceMode: "external-source",
+      workflowProvider: "gitlab",
+      workflowBaseUrl: gitlab.baseUrl,
+      workflowRepo: "group/project",
+      gitlabRef: "main",
+      executionMode: "owned-repository",
+      devopsOwner: "group",
+      tokenRef: "EVOPILOT_TEST_GITLAB_BRIDGE_TOKEN",
+      ci: {
+        requiredStages: ["test"],
+        requiredJobs: ["build"]
+      },
+      cd: {
+        environment: "production",
+        requiredStages: ["deploy"],
+        readyUrl: `${gitlab.baseUrl}/ready`
+      }
+    });
+    assert.equal(configured.data.readiness.status, "READY");
+    assert.equal(configured.data.readiness.sourceMode, "external-source");
+    assert.equal(configured.data.readiness.sourceProvider, "github");
+    assert.equal(configured.data.readiness.workflowProvider, "gitlab");
+
+    await post(`${baseUrl}/api/v1/connectors/code-upgrader`, {
+      id: "default",
+      name: "Test Code Upgrader",
+      baseUrl: codeUpgrader.baseUrl,
+      apiKey: "secret"
+    });
+    const run = await post(`${baseUrl}/api/v1/runs`, {
+      projectId: "github-source-gitlab-bridge",
+      now: "2026-07-19T00:00:00.000Z",
+      events: [{
+        id: "e1",
+        type: "mcp.call",
+        source: "mcp",
+        timestamp: "2026-07-19T00:00:00.000Z",
+        severity: "MEDIUM",
+        message: "GitHub source needs external GitLab CI validation",
+        attributes: { durationMs: 3500 }
+      }],
+      files: ["src/runtime-performance.ts"]
+    });
+    await post(`${baseUrl}/api/v1/reviews/${encodeURIComponent(run.data.reviews[0].id)}/decision`, {
+      action: "accept",
+      actor: "tester",
+      note: "approve bridge delivery"
+    });
+    const upgrade = await post(`${baseUrl}/api/v1/deliveries/${encodeURIComponent(run.data.deliveryPlans[0].id)}/code-upgrade`, {
+      connectorId: "default",
+      proposalMarkdown: "# GitHub source GitLab bridge delivery",
+      validationCommands: ["npm test"]
+    });
+    assert.equal(upgrade.data.codeUpgradeRun.status, "SUCCEEDED");
+
+    const delivery = await post(`${baseUrl}/api/v1/deliveries/${encodeURIComponent(run.data.deliveryPlans[0].id)}/execute`, {});
+    assert.equal(delivery.data.pipelineRun.provider, "gitlab-ci");
+    assert.equal(delivery.data.pipelineRun.status, "SUCCEEDED");
+    assert.equal(delivery.data.pipelineRun.parameters.DEVOPS_SOURCE_MODE, "external-source");
+    assert.equal(delivery.data.pipelineRun.parameters.SOURCE_PROVIDER, "github");
+    assert.equal(delivery.data.pipelineRun.parameters.SOURCE_REPOSITORY, "org/repo");
+    assert.equal(delivery.data.pipelineRun.parameters.PULL_REQUEST_URL, "https://github.example/org/repo/pull/1");
+    assert.equal(gitlab.pipelineTriggers.length, 1);
+    assert.equal(gitlab.pipelineTriggers[0].ref, "main");
+    assert.equal(gitlab.pipelineTriggers[0].variables.SOURCE_REPOSITORY, "org/repo");
+    assert.equal(gitlab.pipelineTriggers[0].variables.COMMIT_SHA, "abc123");
+  } finally {
+    delete process.env.EVOPILOT_TEST_GITLAB_BRIDGE_TOKEN;
+    await close(server);
+    await github.close();
+    await gitlab.close();
+    await codeUpgrader.close();
+  }
+});
+
 async function startFakeGitHub() {
   const server = http.createServer(async (request, response) => {
     if (request.url === "/repos/org/repo/git/trees/main?recursive=1") return json(response, { tree: [{ type: "blob", path: "README.md" }] });
@@ -433,13 +533,28 @@ async function startFakeCodeUpgrader() {
 }
 
 async function startFakeGitLab() {
+  const pipelineTriggers = [];
   const server = http.createServer(async (request, response) => {
     if (request.url?.startsWith("/api/v4/projects/group%2Fproject/repository/tree")) return json(response, [{ type: "blob", path: "README.md" }]);
     if (request.url?.startsWith("/api/v4/projects/group%2Fproject/pipelines?")) return json(response, [{ id: 201, status: "success", ref: "main", web_url: "http://gitlab/pipelines/201" }]);
+    if (request.url === "/api/v4/projects/group%2Fproject/pipeline" && request.method === "POST") {
+      const body = JSON.parse(await readRequestBody(request));
+      pipelineTriggers.push({
+        ref: body.ref,
+        variables: Object.fromEntries((body.variables ?? []).map((item) => [item.key, item.value]))
+      });
+      return json(response, { id: 202, status: "success", ref: body.ref, web_url: "http://gitlab/pipelines/202" });
+    }
     if (request.url === "/api/v4/projects/group%2Fproject/pipelines/201/jobs?per_page=100") {
       return json(response, [
         { id: 1, name: "build", stage: "test", status: "success", web_url: "http://gitlab/jobs/1" },
         { id: 2, name: "deploy", stage: "deploy", status: "success", web_url: "http://gitlab/jobs/2" }
+      ]);
+    }
+    if (request.url === "/api/v4/projects/group%2Fproject/pipelines/202/jobs?per_page=100") {
+      return json(response, [
+        { id: 3, name: "build", stage: "test", status: "success", web_url: "http://gitlab/jobs/3" },
+        { id: 4, name: "deploy", stage: "deploy", status: "success", web_url: "http://gitlab/jobs/4" }
       ]);
     }
     if (request.url === "/ready") return json(response, { status: "READY" });
@@ -447,7 +562,7 @@ async function startFakeGitLab() {
     response.end();
   });
   await listen(server);
-  return { baseUrl: serverUrl(server), close: () => close(server) };
+  return { baseUrl: serverUrl(server), pipelineTriggers, close: () => close(server) };
 }
 
 async function post(url, body) {

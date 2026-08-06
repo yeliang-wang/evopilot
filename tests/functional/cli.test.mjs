@@ -95,6 +95,7 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
   assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
 
   const github = await startFakeGitHubForCli();
+  const gitlab = await startFakeGitLabForCli();
   const llm = await startFakeOpenAiLlmForCli();
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-cli-devops-"));
   const configPath = path.join(dataRoot, "cli-config.json");
@@ -139,6 +140,15 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
 
     const secrets = await runCli(["secret", "list", "--config", configPath, "--json"]);
     assert.ok(secrets.some((secret) => secret.secretRef === "GITHUB_TOKEN_CLI_AGENT"));
+    const gitlabSecret = await runCli([
+      "secret", "set",
+      "--id", "GITLAB_CI_TOKEN_CLI_AGENT",
+      "--kind", "source-token",
+      "--value", "gitlab-token",
+      "--config", configPath,
+      "--json"
+    ]);
+    assert.equal(gitlabSecret.secretRef, "GITLAB_CI_TOKEN_CLI_AGENT");
 
     const plan = await runCli([
       "project", "onboard", "plan", "github",
@@ -180,6 +190,40 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
     assert.equal(plan.commands.some((command) => command.command.includes("--require-source-ready")), false);
     assert.equal(plan.commands.some((command) => command.command.includes("--require-devops-ready")), false);
     assert.equal(plan.commands.some((command) => command.id === "target-run"), false);
+
+    const bridgePlan = await runCli([
+      "project", "onboard", "plan", "github",
+      "--id", "github-source-gitlab-cli",
+      "--base-url", github.baseUrl,
+      "--repo", "org/repo",
+      "--branch", "main",
+      "--token-ref", "GITHUB_TOKEN_CLI_AGENT",
+      "--source-mode", "external-source",
+      "--workflow-provider", "gitlab",
+      "--workflow-base-url", gitlab.baseUrl,
+      "--workflow-repo", "group/project",
+      "--gitlab-ref", "main",
+      "--execution-mode", "owned-repository",
+      "--devops-owner", "group",
+      "--devops-token-ref", "GITLAB_CI_TOKEN_CLI_AGENT",
+      "--ci-required-stage", "test",
+      "--ci-required-job", "build",
+      "--ready-url", `${gitlab.baseUrl}/ready`,
+      "--objective", "Use GitHub as source and GitLab CI as the explicit Loop execution system",
+      "--config", configPath,
+      "--json"
+    ], { status: 2 });
+    assert.equal(bridgePlan.schema, "evopilot-project-onboarding-checklist/v1");
+    assert.equal(bridgePlan.status, "BLOCKED");
+    assert.equal(bridgePlan.nextAction, "configure-llm-profile");
+    assert.equal(bridgePlan.repository.provider, "github");
+    assert.equal(bridgePlan.devops.sourceMode, "external-source");
+    assert.equal(bridgePlan.devops.sourceProvider, "github");
+    assert.equal(bridgePlan.devops.workflowProvider, "gitlab");
+    assert.equal(bridgePlan.devops.devopsOwner, "group");
+    assert.equal(bridgePlan.devops.workflowRepository, "group/project");
+    assert.ok(bridgePlan.steps.some((step) => step.id === "source-credentials" && step.status === "PASS"));
+    assert.ok(bridgePlan.steps.some((step) => step.id === "devops" && step.status === "PASS"));
 
     const forkPlan = await runCli([
       "project", "onboard", "plan", "github",
@@ -452,6 +496,7 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
   } finally {
     await new Promise((resolve) => server.close(resolve));
     await github.close();
+    await gitlab.close();
     await llm.close();
   }
 });
@@ -1267,6 +1312,41 @@ async function startFakeGitHubForCli() {
     if (request.url === "/health") {
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify({ status: "UP" }));
+      return;
+    }
+    response.writeHead(404);
+    response.end();
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  return {
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    close: () => new Promise((resolve) => server.close(resolve))
+  };
+}
+
+async function startFakeGitLabForCli() {
+  const server = http.createServer(async (request, response) => {
+    if (request.url?.startsWith("/api/v4/projects/group%2Fproject/repository/tree")) {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify([{ type: "blob", path: "README.md" }]));
+      return;
+    }
+    if (request.url?.startsWith("/api/v4/projects/group%2Fproject/pipelines?")) {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify([{ id: 201, status: "success", ref: "main", web_url: "http://gitlab/pipelines/201" }]));
+      return;
+    }
+    if (request.url === "/api/v4/projects/group%2Fproject/pipelines/201/jobs?per_page=100") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify([
+        { id: 1, name: "build", stage: "test", status: "success", web_url: "http://gitlab/jobs/1" }
+      ]));
+      return;
+    }
+    if (request.url === "/ready") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ status: "READY" }));
       return;
     }
     response.writeHead(404);

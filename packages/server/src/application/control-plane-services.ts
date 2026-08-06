@@ -134,6 +134,7 @@ import type {
   ProjectDevopsConfiguration,
   ProjectDevopsProvider,
   ProjectDevopsReadiness,
+  ProjectDevopsSourceMode,
   ProjectEvolutionCursor,
   ProjectExecutionMode,
   ProjectHarnessProfileDiff,
@@ -6112,7 +6113,7 @@ export async function buildProjectOnboardingChecklist(args: {
   const devops = projectWithDevops && remoteRepository && !readOnlyPublicMode ? await checkProjectDevopsReadiness(projectWithDevops, args.store) : undefined;
   addStep({
     id: "devops",
-    label: "Repository-native DevOps",
+    label: "Project DevOps",
     status: !remoteRepository || readOnlyPublicMode ? "SKIP" : devops?.status === "READY" ? "PASS" : devops?.status === "OBSERVABLE" ? "WARN" : "FAIL",
     required: remoteRepository && !readOnlyPublicMode,
     evidence: !remoteRepository ? ["local-git project does not use GitHub Actions or GitLab CI"]
@@ -6380,7 +6381,7 @@ export function buildProjectOnboardingCommands(args: {
   if (args.project && remoteRepository && args.devops?.status !== "READY") {
     commands.push({
       id: "repair-devops",
-      title: "Configure repository-native DevOps",
+      title: "Configure project DevOps",
       command: buildProjectDevopsCliCommand(args.project.id, args.draftDevops, args.provider),
       when: "Run when GitHub Actions or GitLab CI contract is missing or blocked."
     });
@@ -6481,9 +6482,18 @@ export function pushRepositoryCliOptions(parts: string[], repository: ProjectRep
 
 export function pushDevopsCliOptions(parts: string[], devops: ProjectDevopsConfiguration | undefined): void {
   if (!devops) return;
+  pushCliOption(parts, "source-mode", devops.sourceMode);
+  if (devops.bridge?.workflowRepository) {
+    pushCliOption(parts, "workflow-provider", devops.bridge.workflowRepository.provider);
+    pushCliOption(parts, "workflow-base-url", devops.bridge.workflowRepository.baseUrl);
+    pushCliOption(parts, "workflow-repo", repositoryDisplayName(devops.bridge.workflowRepository));
+    pushCliOption(parts, "workflow-project-id", devops.bridge.workflowRepository.projectId);
+    pushCliOption(parts, "workflow-branch", devops.bridge.workflowRepository.defaultBranch);
+    pushCliOption(parts, "gitlab-ref", devops.bridge.gitlabRef);
+  }
   pushCliOption(parts, "execution-mode", devops.boundary?.executionMode);
   pushCliOption(parts, "devops-owner", devops.boundary?.owner);
-  pushCliOption(parts, "workflow-repo", repositoryDisplayName(devops.boundary?.workflowRepository));
+  if (!devops.bridge?.workflowRepository) pushCliOption(parts, "workflow-repo", repositoryDisplayName(devops.boundary?.workflowRepository));
   pushCliOption(parts, "devops-token-ref", devops.tokenRef);
   pushCliOption(parts, "credential-principal", devops.boundary?.expectedPrincipal);
   pushCliOption(parts, "ci-workflow", devops.ci.workflow);
@@ -11529,9 +11539,11 @@ export function normalizeProjectDevops(body: any, project: StoredProject): Proje
   const ciSource = source.ci && typeof source.ci === "object" ? source.ci : source;
   const cdSource = source.cd && typeof source.cd === "object" ? source.cd : source;
   const existing = project.devops;
+  const sourceMode = normalizeProjectDevopsSourceMode(source.sourceMode ?? source.devopsSourceMode) ?? existing?.sourceMode ?? "repository-native";
+  const bridge = sourceMode === "external-source" ? normalizeProjectDevopsBridge(source, project, existing) : undefined;
   const ci: ProjectDevopsConfiguration["ci"] = {
     workflow: optionalTrimmedString(ciSource.workflow) ?? optionalTrimmedString(ciSource.ciWorkflow) ?? existing?.ci.workflow,
-    ref: optionalTrimmedString(ciSource.ref) ?? optionalTrimmedString(ciSource.ciRef) ?? optionalTrimmedString(ciSource.branch) ?? existing?.ci.ref,
+    ref: optionalTrimmedString(ciSource.ref) ?? optionalTrimmedString(ciSource.ciRef) ?? optionalTrimmedString(ciSource.branch) ?? bridge?.gitlabRef ?? existing?.ci.ref,
     requiredChecks: normalizeOptionalStringList(ciSource.requiredChecks ?? ciSource.requiredCheck ?? ciSource.ciRequiredChecks ?? ciSource.ciRequiredCheck) ?? existing?.ci.requiredChecks ?? [],
     requiredStages: normalizeOptionalStringList(ciSource.requiredStages ?? ciSource.requiredStage ?? ciSource.ciRequiredStages ?? ciSource.ciRequiredStage) ?? existing?.ci.requiredStages ?? [],
     requiredJobs: normalizeOptionalStringList(ciSource.requiredJobs ?? ciSource.requiredJob ?? ciSource.ciRequiredJobs ?? ciSource.ciRequiredJob) ?? existing?.ci.requiredJobs ?? [],
@@ -11560,8 +11572,10 @@ export function normalizeProjectDevops(body: any, project: StoredProject): Proje
   return {
     provider,
     mode: "scm-native",
+    sourceMode,
+    bridge,
     tokenRef: optionalTrimmedString(source.tokenRef ?? source.devopsTokenRef) ?? existing?.tokenRef,
-    boundary: normalizeProjectDevopsBoundary(source, project, existing),
+    boundary: normalizeProjectDevopsBoundary(source, project, existing, sourceMode, bridge),
     ci,
     cd,
     createdAt: existing?.createdAt ?? now,
@@ -11576,8 +11590,51 @@ export function normalizeProjectDevopsProvider(value: unknown): ProjectDevopsPro
   return undefined;
 }
 
+export function normalizeProjectDevopsSourceMode(value: unknown): ProjectDevopsSourceMode | undefined {
+  const text = String(value ?? "").trim().toLowerCase();
+  if (!text) return undefined;
+  if (text === "repository-native" || text === "native" || text === "scm-native") return "repository-native";
+  if (text === "external-source" || text === "bridge" || text === "github-source-gitlab-ci") return "external-source";
+  return undefined;
+}
+
+export function normalizeProjectDevopsBridge(source: any, project: StoredProject, existing?: ProjectDevopsConfiguration): ProjectDevopsConfiguration["bridge"] | undefined {
+  const bridgeSource = source.bridge && typeof source.bridge === "object" ? source.bridge : {};
+  const workflowProvider = optionalTrimmedString(source.workflowProvider ?? source.workflowRepositoryProvider ?? bridgeSource.workflowProvider ?? bridgeSource.provider) ?? "gitlab";
+  if (workflowProvider !== "gitlab") return undefined;
+  const workflowRepositoryRaw = bridgeSource.workflowRepository ?? source.workflowRepository ?? source.workflowRepo ?? bridgeSource.repository;
+  const workflowRepository = normalizeRepositoryRefInput("gitlab", workflowRepositoryRaw, existing?.bridge?.workflowRepository);
+  const workflowBaseUrl = optionalTrimmedString(source.workflowBaseUrl ?? bridgeSource.baseUrl);
+  const workflowProjectId = optionalTrimmedString(source.workflowProjectId ?? bridgeSource.projectId ?? bridgeSource.repository);
+  const workflowBranch = optionalTrimmedString(source.workflowBranch ?? source.workflowDefaultBranch ?? source.gitlabRef ?? source.ciRef ?? bridgeSource.defaultBranch);
+  const normalizedWorkflowRepository: ProjectRepositoryRef | undefined = workflowRepository || workflowBaseUrl || workflowProjectId || workflowBranch ? {
+    ...(workflowRepository ?? {}),
+    provider: "gitlab",
+    baseUrl: workflowBaseUrl ?? workflowRepository?.baseUrl,
+    projectId: workflowProjectId ?? workflowRepository?.projectId,
+    defaultBranch: workflowBranch ?? workflowRepository?.defaultBranch
+  } : undefined;
+  if (!normalizedWorkflowRepository) return undefined;
+  return {
+    sourceProvider: "github",
+    workflowRepository: normalizedWorkflowRepository,
+    gitlabRef: optionalTrimmedString(source.gitlabRef ?? source.workflowRef ?? source.workflowBranch ?? bridgeSource.gitlabRef ?? bridgeSource.ref) ?? existing?.bridge?.gitlabRef,
+    requiredVariables: normalizeOptionalStringList(source.requiredVariables ?? bridgeSource.requiredVariables) ?? existing?.bridge?.requiredVariables
+  };
+}
+
 export function devopsProviderMatchesRepository(project: StoredProject, devops: ProjectDevopsConfiguration): { ok: boolean; detail?: string } {
   const repositoryProvider = project.repository?.provider;
+  const sourceMode = projectDevopsSourceMode(devops);
+  if (sourceMode === "external-source") {
+    if (repositoryProvider !== "github" || devops.provider !== "gitlab-ci") {
+      return { ok: false, detail: `external-source bridge currently supports GitHub source with GitLab CI only, current provider=${repositoryProvider ?? "missing"}, devops=${devops.provider}.` };
+    }
+    if (devops.bridge?.workflowRepository.provider !== "gitlab" || !devops.bridge.workflowRepository.baseUrl || !devops.bridge.workflowRepository.projectId) {
+      return { ok: false, detail: "external-source bridge requires a GitLab workflowRepository with baseUrl and projectId." };
+    }
+    return { ok: true };
+  }
   if (devops.provider === "github-actions" && repositoryProvider !== "github") {
     return { ok: false, detail: `github-actions requires a GitHub project, current provider=${repositoryProvider ?? "missing"}.` };
   }
@@ -11612,13 +11669,13 @@ export function normalizeProjectClaimBoundary(value: unknown, mode: ProjectExecu
   return claimBoundaryForExecutionMode(mode);
 }
 
-export function normalizeProjectDevopsBoundary(source: any, project: StoredProject, existing?: ProjectDevopsConfiguration): ProjectDevopsConfiguration["boundary"] {
+export function normalizeProjectDevopsBoundary(source: any, project: StoredProject, existing?: ProjectDevopsConfiguration, sourceMode: ProjectDevopsSourceMode = "repository-native", bridge?: ProjectDevopsConfiguration["bridge"]): ProjectDevopsConfiguration["boundary"] {
   const boundarySource = source.boundary && typeof source.boundary === "object" ? source.boundary : {};
   const executionMode = normalizeProjectExecutionMode(
     source.executionMode ?? source.devopsExecutionMode ?? boundarySource.executionMode ?? project.repository?.topology?.executionMode,
     existing?.boundary?.executionMode ?? "owned-repository"
   );
-  const workflowRepository = normalizeRepositoryRefInput(
+  const workflowRepository = sourceMode === "external-source" && bridge?.workflowRepository ? bridge.workflowRepository : normalizeRepositoryRefInput(
     project.repository?.provider,
     source.workflowRepository ?? source.workflowRepo ?? source.workingRepository ?? source.workingRepo ?? boundarySource.workflowRepository,
     project.repository?.topology?.working ?? repositoryRefFromRegistration(project.repository) ?? existing?.boundary?.workflowRepository
@@ -11658,6 +11715,10 @@ export function repositoryRefFromRegistration(repository?: ProjectRepositoryRegi
     repo: repository.repo,
     defaultBranch: repository.defaultBranch
   };
+}
+
+export function projectDevopsSourceMode(devops?: ProjectDevopsConfiguration): ProjectDevopsSourceMode {
+  return devops?.sourceMode ?? "repository-native";
 }
 
 export function normalizeRepositoryRefInput(provider: ProjectRepositoryProvider | undefined, value: unknown, fallback?: ProjectRepositoryRef): ProjectRepositoryRef | undefined {
@@ -11731,7 +11792,7 @@ export function repositoryDisplayName(ref?: ProjectRepositoryRef): string | unde
 export function devopsReadinessContext(project: StoredProject, devops?: ProjectDevopsConfiguration): Pick<ProjectDevopsReadiness, "executionMode" | "repositoryOwner" | "devopsOwner" | "workflowRepository" | "credentialRef" | "credentialPrincipal" | "claimBoundary"> {
   const topology = project.repository?.topology;
   const executionMode = devops?.boundary?.executionMode ?? topology?.executionMode ?? "owned-repository";
-  const workflowRef = devops?.boundary?.workflowRepository ?? topology?.working ?? repositoryRefFromRegistration(project.repository);
+  const workflowRef = devops?.bridge?.workflowRepository ?? devops?.boundary?.workflowRepository ?? topology?.working ?? repositoryRefFromRegistration(project.repository);
   return {
     executionMode,
     repositoryOwner: repositoryNamespaceFromRegistration(project.repository),
@@ -11766,8 +11827,24 @@ export async function checkProjectDevopsReadiness(project: StoredProject, store?
     return projectDevopsReadinessResult(project, "unknown", checks, checkedAt);
   }
   const context = devopsReadinessContext(project, devops);
-  const workflowOwner = repositoryNamespace(devops.boundary?.workflowRepository ?? repository?.topology?.working ?? repositoryRefFromRegistration(repository));
+  const sourceMode = projectDevopsSourceMode(devops);
+  const workflowRef = projectDevopsWorkflowRepository(project, devops);
+  const workflowOwner = repositoryNamespace(workflowRef);
   const hasForkUpstream = Boolean(repository?.topology?.upstream);
+  if (sourceMode === "external-source") {
+    const sourceToken = repository ? resolveCredentialToken(repository, store, project) : undefined;
+    addCheck({
+      id: "bridge-source",
+      status: repository?.provider === "github" && sourceToken ? "PASS" : "FAIL",
+      required: true,
+      evidence: [
+        `sourceProvider=${repository?.provider ?? "missing"}`,
+        sourceToken ? "sourceTokenResolved=true" : "sourceTokenResolved=false",
+        repository?.credentials?.tokenRef ? `sourceTokenRef=${repository.credentials.tokenRef}` : "sourceTokenRef=missing",
+        `workflowRepository=${repositoryDisplayName(workflowRef) ?? "missing"}`
+      ]
+    });
+  }
   addCheck({
     id: "execution-mode",
     status: context.executionMode === "read-only-public" ? "FAIL"
@@ -11777,7 +11854,7 @@ export async function checkProjectDevopsReadiness(project: StoredProject, store?
     evidence: [
       `executionMode=${context.executionMode}`,
       `claimBoundary=${context.claimBoundary}`,
-      context.executionMode === "read-only-public" ? "read-only-public cannot run repository-native DevOps"
+      context.executionMode === "read-only-public" ? "read-only-public cannot run project DevOps"
         : context.executionMode === "fork-validated-pr" ? `upstream=${repositoryDisplayName(repository?.topology?.upstream) ?? "missing"}`
           : "executionModeAccepted=true"
     ]
@@ -11830,7 +11907,7 @@ export async function checkProjectDevopsReadiness(project: StoredProject, store?
   });
   if (repository?.provider === "github" && devops.provider === "github-actions" && token && repository.owner && repository.repo) {
     await appendGitHubDevopsReadinessChecks({ project, devops, token, checks });
-  } else if (repository?.provider === "gitlab" && devops.provider === "gitlab-ci" && token && repository.baseUrl && repository.projectId) {
+  } else if (devops.provider === "gitlab-ci" && token && projectDevopsGitLabWorkflowRepository(project, devops)?.baseUrl && projectDevopsGitLabWorkflowRepository(project, devops)?.projectId) {
     await appendGitLabDevopsReadinessChecks({ project, devops, token, checks });
   } else {
     addCheck({ id: "ci-state", status: "SKIP", required: true, evidence: ["credentials-or-coordinates-missing"] });
@@ -11890,8 +11967,8 @@ export async function appendGitLabDevopsReadinessChecks(args: {
   token: string;
   checks: ProjectDevopsReadiness["checks"];
 }): Promise<void> {
-  const repository = args.project.repository!;
-  const ref = args.devops.ci.ref ?? repository.defaultBranch ?? "main";
+  const repository = projectDevopsGitLabWorkflowRepository(args.project, args.devops)!;
+  const ref = projectDevopsGitLabRef(args.devops, repository);
   const adapter = new GitLabHttpAdapter({ baseUrl: repository.baseUrl!, projectId: repository.projectId!, token: args.token });
   try {
     const pipelines = await adapter.listPipelines(ref);
@@ -12002,12 +12079,18 @@ export function projectDevopsReadinessResult(project: StoredProject, provider: P
       : "BLOCKED";
   const context = devopsReadinessContext(project, devops);
   const scmProvider = project.repository?.provider ?? "unknown";
+  const sourceMode = projectDevopsSourceMode(devops);
+  const missingBridgeDevopsPrincipal = sourceMode === "external-source" && blockers.some((blocker) => blocker.includes("DEVOPS_TOKEN_REQUIRED") || blocker.includes("token-resolution"));
+  const missingBridgeSourcePrincipal = sourceMode === "external-source" && blockers.some((blocker) => blocker.includes("bridge-source"));
   const missingScmPrincipal = (scmProvider === "github" || scmProvider === "gitlab")
     && blockers.some((blocker) => blocker.includes("DEVOPS_TOKEN_REQUIRED") || blocker.includes("token-resolution"));
   return {
     schema: "evopilot-project-devops-readiness/v1",
     projectId: project.id,
     provider,
+    sourceMode,
+    sourceProvider: scmProvider,
+    workflowProvider: projectDevopsWorkflowRepository(project, devops)?.provider ?? "unknown",
     ...context,
     status,
     checks,
@@ -12017,13 +12100,16 @@ export function projectDevopsReadinessResult(project: StoredProject, provider: P
       "github-check-run-readiness",
       "gitlab-ci-pipeline-trigger",
       "gitlab-pipeline-job-readiness",
+      "github-source-gitlab-ci-bridge",
       "devops-owner-boundary-preflight",
       "execution-mode-claim-boundary",
       "health-ready-probe",
       "dashboard-cli-readable-chain"
     ],
     nextAction: status === "READY" ? "run-devops"
-      : missingScmPrincipal ? scmConnectPrincipalNextAction(scmProvider as "github" | "gitlab")
+      : missingBridgeSourcePrincipal ? "connect-github-account"
+        : missingBridgeDevopsPrincipal ? "connect-gitlab-account"
+          : missingScmPrincipal ? scmConnectPrincipalNextAction(scmProvider as "github" | "gitlab")
         : blockers.some((blocker) => blocker.includes("token")) ? "configure-source-credentials"
           : blockers.some((blocker) => blocker.includes("devops-provider") || blocker.includes("devops-owner") || blocker.includes("execution-mode") || blocker.includes("ci-config")) ? "configure-devops"
             : blockers.some((blocker) => blocker.includes("project") || blocker.includes("source-provider")) ? "repair-project"
@@ -12033,8 +12119,26 @@ export function projectDevopsReadinessResult(project: StoredProject, provider: P
 }
 
 export function resolveProjectDevopsToken(project: StoredProject, store?: FileStore): string | undefined {
+  if (projectDevopsSourceMode(project.devops) === "external-source") {
+    return project.devops?.tokenRef ? resolveTokenRef(store, project.devops.tokenRef, project) : undefined;
+  }
   if (project.devops?.tokenRef) return resolveTokenRef(store, project.devops.tokenRef, project);
   return project.repository ? resolveCredentialToken(project.repository, store, project) : undefined;
+}
+
+export function projectDevopsWorkflowRepository(project: StoredProject, devops?: ProjectDevopsConfiguration): ProjectRepositoryRef | undefined {
+  return devops?.bridge?.workflowRepository ?? devops?.boundary?.workflowRepository ?? project.repository?.topology?.working ?? repositoryRefFromRegistration(project.repository);
+}
+
+export function projectDevopsGitLabWorkflowRepository(project: StoredProject, devops: ProjectDevopsConfiguration): ProjectRepositoryRef | undefined {
+  const workflowRepository = projectDevopsWorkflowRepository(project, devops);
+  if (workflowRepository?.provider === "gitlab") return workflowRepository;
+  if (projectDevopsSourceMode(devops) === "repository-native" && project.repository?.provider === "gitlab") return repositoryRefFromRegistration(project.repository);
+  return undefined;
+}
+
+export function projectDevopsGitLabRef(devops: ProjectDevopsConfiguration, workflowRepository: ProjectRepositoryRef): string {
+  return devops.bridge?.gitlabRef ?? devops.ci.ref ?? workflowRepository.defaultBranch ?? "main";
 }
 
 export function normalizeOptionalStringList(value: unknown): string[] | undefined {
@@ -12859,7 +12963,7 @@ export async function triggerNativeDevopsDelivery(args: {
     ...(devops.cd?.deployInputs ?? {}),
     ...(body.parameters && typeof body.parameters === "object" ? body.parameters : {})
   }, codeUpgrade);
-  const ref = String(body.ref ?? body.branch ?? devops.ci.ref ?? codeUpgrade?.artifacts.branchName ?? codeUpgrade?.branchStrategy.upgradeBranch ?? repository.defaultBranch ?? "main").trim();
+  const nativeSourceRef = String(body.ref ?? body.branch ?? devops.ci.ref ?? codeUpgrade?.artifacts.branchName ?? codeUpgrade?.branchStrategy.upgradeBranch ?? repository.defaultBranch ?? "main").trim();
   const now = new Date().toISOString();
   logInfo("devops.pipeline.triggering", {
     actor: auth.actor,
@@ -12867,16 +12971,20 @@ export async function triggerNativeDevopsDelivery(args: {
     metadata: {
       projectId: delivery.projectId,
       provider: devops.provider,
-      ref,
+      sourceMode: projectDevopsSourceMode(devops),
+      ref: nativeSourceRef,
       workflow: devops.ci.workflow,
       deliveryPlanId: delivery.id,
       codeUpgradeRunId: codeUpgrade?.id
     }
   });
   let pipeline: PipelineRun;
+  let pipelineRef = nativeSourceRef;
   if (devops.provider === "github-actions") {
     if (repository.provider !== "github") throw httpError(409, "DEVOPS_PROVIDER_PROJECT_MISMATCH", "github-actions requires a GitHub project.");
     if (!repository.owner || !repository.repo) throw httpError(409, "SOURCE_CLOSURE_GITHUB_COORDINATES_REQUIRED", "GitHub Actions requires owner and repo.");
+    const ref = nativeSourceRef;
+    pipelineRef = ref;
     const adapter = new GitHubHttpAdapter({ apiBaseUrl: repository.baseUrl, owner: repository.owner, repo: repository.repo, token });
     if (devops.ci.workflow) {
       await adapter.triggerWorkflowDispatch(devops.ci.workflow, ref, parameters);
@@ -12908,10 +13016,24 @@ export async function triggerNativeDevopsDelivery(args: {
       now
     });
   } else if (devops.provider === "gitlab-ci") {
-    if (repository.provider !== "gitlab") throw httpError(409, "DEVOPS_PROVIDER_PROJECT_MISMATCH", "gitlab-ci requires a GitLab project.");
-    if (!repository.baseUrl || !repository.projectId) throw httpError(409, "SOURCE_CLOSURE_GITLAB_COORDINATES_REQUIRED", "GitLab CI requires baseUrl and projectId.");
-    const adapter = new GitLabHttpAdapter({ baseUrl: repository.baseUrl, projectId: repository.projectId, token });
-    const triggered = await adapter.triggerPipeline(ref, parameters);
+    const sourceMode = projectDevopsSourceMode(devops);
+    const workflowRepository = projectDevopsGitLabWorkflowRepository(project, devops);
+    if (sourceMode === "repository-native" && repository.provider !== "gitlab") throw httpError(409, "DEVOPS_PROVIDER_PROJECT_MISMATCH", "gitlab-ci requires a GitLab project.");
+    if (sourceMode === "external-source" && repository.provider !== "github") throw httpError(409, "DEVOPS_PROVIDER_PROJECT_MISMATCH", "external-source gitlab-ci requires a GitHub source project.");
+    if (!workflowRepository?.baseUrl || !workflowRepository.projectId) throw httpError(409, "SOURCE_CLOSURE_GITLAB_COORDINATES_REQUIRED", "GitLab CI requires a workflowRepository with baseUrl and projectId.");
+    const ref = String(body.gitlabRef ?? body.workflowRef ?? (sourceMode === "external-source" ? projectDevopsGitLabRef(devops, workflowRepository) : nativeSourceRef)).trim();
+    pipelineRef = ref;
+    const gitlabParameters = sourceMode === "external-source"
+      ? {
+          ...parameters,
+          ...projectDevopsBridgeParameters(project, devops, codeUpgrade),
+          DEVOPS_REF: ref,
+          DEVOPS_PROVIDER: devops.provider,
+          DEVOPS_SOURCE_MODE: sourceMode
+        }
+      : parameters;
+    const adapter = new GitLabHttpAdapter({ baseUrl: workflowRepository.baseUrl, projectId: workflowRepository.projectId, token });
+    const triggered = await adapter.triggerPipeline(ref, gitlabParameters);
     const jobs = await readGitLabJobsForPipeline(adapter, triggered.id);
     const status = jobs.length > 0 ? aggregatePipelineStatuses(jobs.map((job) => gitLabPipelineStatus(job.status))) : gitLabPipelineStatus(triggered.status);
     pipeline = createPipelineRun({
@@ -12930,8 +13052,8 @@ export async function triggerNativeDevopsDelivery(args: {
         status: pipelineStageStatusFromPipelineStatus(gitLabPipelineStatus(job.status)),
         logUrl: job.webUrl
       })),
-      logRef: { url: triggered.webUrl, preview: renderNativePipelineLogPreview("gitlab-ci", status, [`ref=${ref}`, `pipeline=${triggered.id}`, `jobs=${jobs.length}`]) },
-      parameters: { ...parameters, DEVOPS_REF: ref, DEVOPS_PROVIDER: devops.provider },
+      logRef: { url: triggered.webUrl, preview: renderNativePipelineLogPreview("gitlab-ci", status, [`ref=${ref}`, `pipeline=${triggered.id}`, `jobs=${jobs.length}`, `sourceMode=${sourceMode}`]) },
+      parameters: { ...gitlabParameters, DEVOPS_REF: ref, DEVOPS_PROVIDER: devops.provider },
       now
     });
   } else {
@@ -12940,7 +13062,7 @@ export async function triggerNativeDevopsDelivery(args: {
   store.writePipeline(pipeline);
   run.pipelineRuns = [...(run.pipelineRuns ?? []).filter((item) => item.id !== pipeline.id), pipeline];
   store.writeRun(run);
-  store.appendAudit(audit(auth, "devops.pipeline.triggered", pipeline.id, { deliveryId: delivery.id, provider: pipeline.provider, ref }));
+  store.appendAudit(audit(auth, "devops.pipeline.triggered", pipeline.id, { deliveryId: delivery.id, provider: pipeline.provider, ref: pipelineRef }));
   logInfo("devops.pipeline.triggered", {
     actor: auth.actor,
     target: pipeline.id,
@@ -12948,7 +13070,7 @@ export async function triggerNativeDevopsDelivery(args: {
       projectId: pipeline.projectId,
       deliveryPlanId: delivery.id,
       provider: pipeline.provider,
-      ref,
+      ref: pipelineRef,
       queueId: pipeline.queueId,
       buildUrl: pipeline.buildUrl,
       status: pipeline.status
@@ -13024,6 +13146,26 @@ export function normalizeDeliveryParameters(delivery: DeliveryPlan, plan: Evolut
     COMMIT_SHA: codeUpgrade?.artifacts.commitSha,
     MERGE_REQUEST_URL: codeUpgrade?.artifacts.pullRequestUrl,
     ...(parameters && typeof parameters === "object" ? parameters as Record<string, unknown> : {})
+  });
+}
+
+export function projectDevopsBridgeParameters(project: StoredProject, devops: ProjectDevopsConfiguration, codeUpgrade?: CodeUpgradeRun): Record<string, string> {
+  const repository = project.repository;
+  const sourceRepository = repository?.provider === "github" && repository.owner && repository.repo ? `${repository.owner}/${repository.repo}` : undefined;
+  const workflowRepository = repositoryDisplayName(devops.bridge?.workflowRepository);
+  return normalizeStringMap({
+    SOURCE_PROVIDER: repository?.provider,
+    SOURCE_REPOSITORY: sourceRepository,
+    SOURCE_GIT_URL: repository?.gitUrl,
+    SOURCE_BRANCH: codeUpgrade?.branchStrategy.sourceBranch ?? repository?.defaultBranch,
+    SOURCE_DEFAULT_BRANCH: repository?.defaultBranch,
+    UPGRADE_BRANCH: codeUpgrade?.artifacts.branchName ?? codeUpgrade?.branchStrategy.upgradeBranch,
+    COMMIT_SHA: codeUpgrade?.artifacts.commitSha,
+    PULL_REQUEST_URL: codeUpgrade?.artifacts.pullRequestUrl,
+    MERGE_REQUEST_URL: codeUpgrade?.artifacts.pullRequestUrl,
+    WORKFLOW_PROVIDER: devops.bridge?.workflowRepository.provider,
+    WORKFLOW_REPOSITORY: workflowRepository,
+    DEVOPS_SOURCE_MODE: projectDevopsSourceMode(devops)
   });
 }
 

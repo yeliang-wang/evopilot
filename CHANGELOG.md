@@ -8,6 +8,31 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 1.1.7 - 2026-08-06
+
+### Added
+
+- Added explicit GitHub source with GitLab CI bridge mode for connected projects while preserving GitHub-native and GitLab-native DevOps loops.
+- Added `sourceMode`, `bridge.workflowRepository`, `gitlabRef`, `sourceProvider`, and `workflowProvider` evidence to project DevOps configuration and readiness projections.
+- Added CLI bridge flags for `project devops set`, including `--source-mode external-source`, `--workflow-provider`, `--workflow-base-url`, `--workflow-repo`, `--workflow-project-id`, `--workflow-branch`, and `--gitlab-ref`.
+- Added delivery execution coverage that triggers GitLab CI against the bridge workflow project and sends non-secret GitHub source variables such as `SOURCE_REPOSITORY`, `SOURCE_BRANCH`, `UPGRADE_BRANCH`, `COMMIT_SHA`, and `PULL_REQUEST_URL`.
+
+### Changed
+
+- Kept repository-native as the default DevOps source mode so existing GitHub Actions and GitLab CI projects keep their current behavior.
+- Required a separate GitLab `devopsTokenRef` for bridge execution instead of falling back to the GitHub source token.
+- Updated package versions, shared version fallbacks, installer defaults, OpenAPI metadata, Helm metadata, and release validation pointers to `1.1.7`.
+
+### Validation
+
+- `npm run build`
+- `node --test tests/functional/project-devops.test.mjs`
+- `npm run cli:test`
+- `npm run check`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.1.6 - 2026-08-05
 
 ### Added

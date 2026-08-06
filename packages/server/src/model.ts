@@ -174,10 +174,20 @@ export interface ProjectRepositoryCredentials {
 }
 
 export type ProjectDevopsProvider = "github-actions" | "gitlab-ci";
+export type ProjectDevopsSourceMode = "repository-native" | "external-source";
+
+export interface ProjectDevopsBridgeConfiguration {
+  sourceProvider: "github";
+  workflowRepository: ProjectRepositoryRef;
+  gitlabRef?: string;
+  requiredVariables?: string[];
+}
 
 export interface ProjectDevopsConfiguration {
   provider: ProjectDevopsProvider;
   mode: "scm-native";
+  sourceMode?: ProjectDevopsSourceMode;
+  bridge?: ProjectDevopsBridgeConfiguration;
   tokenRef?: string;
   boundary?: {
     executionMode: ProjectExecutionMode;
@@ -577,6 +587,9 @@ export interface ProjectDevopsReadiness {
   schema: "evopilot-project-devops-readiness/v1";
   projectId: string;
   provider: ProjectDevopsProvider | "unknown";
+  sourceMode?: ProjectDevopsSourceMode;
+  sourceProvider?: ProjectRepositoryProvider | "unknown";
+  workflowProvider?: ProjectRepositoryProvider | "unknown";
   executionMode: ProjectExecutionMode;
   repositoryOwner?: string;
   devopsOwner?: string;
@@ -586,7 +599,7 @@ export interface ProjectDevopsReadiness {
   claimBoundary: ProjectClaimBoundary;
   status: "READY" | "OBSERVABLE" | "BLOCKED";
   checks: Array<{
-    id: "project" | "source-provider" | "execution-mode" | "devops-provider" | "devops-owner" | "token-resolution" | "ci-config" | "ci-state" | "cd-config" | "health-ready";
+    id: "project" | "source-provider" | "bridge-source" | "execution-mode" | "devops-provider" | "devops-owner" | "token-resolution" | "ci-config" | "ci-state" | "cd-config" | "health-ready";
     status: "PASS" | "FAIL" | "SKIP";
     evidence: string[];
     required: boolean;

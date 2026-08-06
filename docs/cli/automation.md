@@ -169,7 +169,7 @@ repair-llm-provider
 
 Automation must not pass raw LLM API keys in `target run`, `goal run`, `loop run`, or daily `project onboard` commands. It must report the selected profile id when available and must include `llmUsage.summary.provider`, `llmUsage.summary.model`, and token totals in the final run report.
 
-`project onboard plan` and `project onboard verify` are the onboarding control surface for automation. Both print `evopilot-project-onboarding-checklist/v1`; the checklist contains machine-readable `steps`, `missingInputs`, `blockers`, `commands`, and `nextAction`. `plan` does not mutate project state. `verify` reads persisted project state and should return `READY_TO_RUN` with `nextAction=plan-target` before an agent claims that source writeback, repository-native DevOps, and project LLM readiness are ready for harness profile generation and phase planning.
+`project onboard plan` and `project onboard verify` are the onboarding control surface for automation. Both print `evopilot-project-onboarding-checklist/v1`; the checklist contains machine-readable `steps`, `missingInputs`, `blockers`, `commands`, and `nextAction`. `plan` does not mutate project state. `verify` reads persisted project state and should return `READY_TO_RUN` with `nextAction=plan-target` before an agent claims that source writeback, project DevOps, and project LLM readiness are ready for harness profile generation and phase planning.
 
 For any GitHub/GitLab DevOps flow, automation must parse and persist these fields from onboarding or `project devops preflight`:
 
@@ -318,7 +318,7 @@ max-iterations
 
 Do not approve human gates, merge source, or deploy production changes unless the server state and the user's instruction explicitly allow that operation.
 
-`connect-github-account` and `connect-gitlab-account` mean the project needs a user-owned or organization-owned SCM execution principal before writeback or repository-native DevOps can run. Do not retry the same wrapper command until the operator has connected the account/group and stored the tokenRef on the EvoPilot server or tenant/workspace secret vault.
+`connect-github-account` and `connect-gitlab-account` mean the project needs a user-owned or organization-owned SCM execution principal before writeback or project DevOps can run. Do not retry the same wrapper command until the operator has connected the account/group and stored the tokenRef on the EvoPilot server or tenant/workspace secret vault.
 
 ## Token Rules
 
@@ -388,9 +388,9 @@ evopilot project onboard github \
 
 After `project onboard verify my-agent --json` returns `READY_TO_RUN` and `nextAction=plan-target`, generate or inspect the project harness profile first. Activate the reviewed harness profile, then generate the phase plan with `target plan`, approve it after user review, and continue with `target run`.
 
-## Native DevOps Rules
+## Project DevOps Rules
 
-GitHub projects use GitHub Actions. GitLab projects use GitLab CI.
+GitHub-native projects use GitHub Actions. GitLab-native projects use GitLab CI. GitHub source projects can also use explicit `sourceMode=external-source` bridge mode to trigger a GitLab CI workflow project while keeping GitHub as the source system.
 
 EvoPilot does not provide a default shared DevOps account or generic runner for third-party repositories. For a public upstream, use the operator's fork/account for `fork-validated-pr`, use maintainer credentials for `upstream-authorized`, or stay in `read-only-public`.
 
@@ -409,6 +409,26 @@ evopilot project devops set my-agent \
   --json
 ```
 
+For GitHub source with GitLab CI bridge, automation must keep source and workflow credentials separate:
+
+```bash
+evopilot project devops set my-agent \
+  --provider gitlab-ci \
+  --source-mode external-source \
+  --workflow-provider gitlab \
+  --workflow-base-url https://gitlab.example.com \
+  --workflow-repo platform/agent-ci \
+  --gitlab-ref main \
+  --execution-mode owned-repository \
+  --devops-owner platform \
+  --devops-token-ref GITLAB_CI_TOKEN \
+  --ci-required-stage test \
+  --ci-required-job build \
+  --json
+```
+
+Bridge preflight returns both source and workflow evidence. `connect-github-account` means the GitHub source tokenRef is missing or unresolved. `connect-gitlab-account` means the GitLab CI execution tokenRef is missing or unresolved.
+
 The CLI intentionally rejects ambiguous DevOps setup. If an agent sees a usage error that mentions DevOps ownership, regenerate the command with `--execution-mode` and `--devops-owner`; for public upstream work also include `--upstream-repo` and `--working-repo`.
 
 Before a release wrapper:
@@ -417,7 +437,7 @@ Before a release wrapper:
 evopilot project devops preflight my-agent --json
 ```
 
-If the result is not `READY`, repair the project DevOps configuration before any enterprise real Goal/Loop run. Wrapper commands stop before execution when source writeback, native DevOps, or LLM readiness is blocked; do not run a release wrapper in a weaker mode and then claim end-to-end release readiness.
+If the result is not `READY`, repair the project DevOps configuration before any enterprise real Goal/Loop run. Wrapper commands stop before execution when source writeback, project DevOps, or LLM readiness is blocked; do not run a release wrapper in a weaker mode and then claim end-to-end release readiness.
 
 Claim rules by execution mode:
 

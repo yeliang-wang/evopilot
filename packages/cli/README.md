@@ -10,12 +10,12 @@ Install the current release CLI tarball set:
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.6/evopilot-contracts-1.1.6.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.6/evopilot-client-1.1.6.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.6/evopilot-cli-1.1.6.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-contracts-1.1.7.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-client-1.1.7.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-cli-1.1.7.tgz
 ```
 
-Use `npm install -g @evopilot/cli@1.1.6` only after public npm registry publication has been verified for that exact version.
+Use `npm install -g @evopilot/cli@1.1.7` only after public npm registry publication has been verified for that exact version.
 
 ```bash
 evopilot --server https://evopilot.example.com auth login \
@@ -57,7 +57,7 @@ evopilot target run \
 ```
 
 WorkBuddy, Codex, Claude Code, and digital-human sessions must show the generated Alpha/Beta/RC/GA phase plan to the user or project owner before `target plan approve`. Approval requires `--confirmed-by` and `--confirmation`; AI Agents must not fabricate those values.
-Before Goal/Loop execution, wrapper commands preflight source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness by default. GitHub/GitLab enterprise real loops require an explicit READY project LLM profile or run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
+Before Goal/Loop execution, wrapper commands preflight source writeback, project DevOps readiness, and selected LLM readiness by default. Project DevOps can be GitHub-native, GitLab-native, or explicit GitHub source + GitLab CI bridge. GitHub/GitLab enterprise real loops require an explicit READY project LLM profile or run-level `--llm-profile`; the server global default LLM is not sufficient for user/project attribution.
 
 For a new GitHub project, ask for a checklist before mutating state:
 

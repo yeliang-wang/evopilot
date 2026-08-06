@@ -16,7 +16,7 @@
 | Symptom | Meaning | Action |
 |---|---|---|
 | `target run` exits `2` | Goal did not reach terminal completion | Inspect JSON `result`, `steps`, `nextAction`, and `status.blockers`. |
-| `project onboard` stops at `connect-github-account` or `connect-gitlab-account` | Writable GitHub/GitLab writeback or native DevOps has no resolvable operator-owned execution principal | Connect or create the account/org/group/service principal, fork or authorize the repository when needed, store the server-side tokenRef, then rerun `project onboard plan` and `project preflight`. |
+| `project onboard` stops at `connect-github-account` or `connect-gitlab-account` | Writable GitHub/GitLab writeback or project DevOps has no resolvable operator-owned execution principal | Connect or create the account/org/group/service principal, fork or authorize the repository when needed, store the server-side tokenRef, then rerun `project onboard plan` and `project preflight`. |
 | `project preflight` returns `READ_ONLY` | Public repository can be inspected but cannot be written | Continue only for `read-only-public` analysis; do not claim PR, CI/CD, merge, deploy, or release readiness. |
 | CLI exits with `DevOps ownership is ambiguous` | A GitHub/GitLab DevOps command did not declare who owns CI/CD execution | Add `--execution-mode` and `--devops-owner`; for open-source upstream work also add `--upstream-repo` and `--working-repo`. |
 | `project devops preflight` blocks on `devops-owner` | The declared DevOps owner does not match the workflow repository namespace | Inspect `executionMode`, `devopsOwner`, `workflowRepository`, and `claimBoundary`; repair the project DevOps config before running a target wrapper. |

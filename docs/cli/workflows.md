@@ -1,6 +1,6 @@
 # EvoPilot CLI Workflows
 
-> Scenario-first CLI usage for project onboarding, Goal/Loop execution, source closure, native DevOps, and release decisions.
+> Scenario-first CLI usage for project onboarding, Goal/Loop execution, source closure, project DevOps, and release decisions.
 
 Use `--json` for AI agents and CI. Human-readable output is for operators.
 
@@ -138,7 +138,7 @@ evopilot project preflight my-agent --json
 
 ## 4. Configure Project DevOps
 
-EvoPilot uses repository-native DevOps. GitHub projects use GitHub Actions. GitLab projects use GitLab CI.
+EvoPilot supports three explicit project DevOps chains. GitHub-native and GitLab-native remain repository-native. Bridge mode is available only when the source repository is GitHub and the CI/Loop execution workflow lives in GitLab CI.
 
 GitHub Actions:
 
@@ -171,18 +171,39 @@ evopilot project devops set my-agent \
   --json
 ```
 
+GitHub source with GitLab CI bridge:
+
+```bash
+evopilot project devops set my-agent \
+  --provider gitlab-ci \
+  --source-mode external-source \
+  --workflow-provider gitlab \
+  --workflow-base-url https://gitlab.example.com \
+  --workflow-repo platform/agent-ci \
+  --gitlab-ref main \
+  --execution-mode owned-repository \
+  --devops-owner platform \
+  --devops-token-ref GITLAB_CI_TOKEN \
+  --ci-required-stage test \
+  --ci-required-job build \
+  --json
+```
+
 Verify:
 
 ```bash
 evopilot project devops preflight my-agent --json
 ```
 
-Wrapper run commands check repository-native DevOps readiness by default for GitHub/GitLab projects. `--require-devops-ready` can still be used in onboarding scripts as an explicit assertion, but a real Goal/Loop run stops before execution whenever DevOps readiness is not `READY`.
+Wrapper run commands check project DevOps readiness by default for GitHub/GitLab projects and bridge projects. `--require-devops-ready` can still be used in onboarding scripts as an explicit assertion, but a real Goal/Loop run stops before execution whenever DevOps readiness is not `READY`.
 
 The preflight JSON includes:
 
 ```text
 executionMode
+sourceMode
+sourceProvider
+workflowProvider
 repositoryOwner
 devopsOwner
 workflowRepository
@@ -357,7 +378,7 @@ Human-readable wrapper output includes an `LLM Usage` section. Production HTTP l
 
 ## 8. One Command From New Project To Target
 
-Use `project onboard` when the project is not registered yet. This wrapper registers the project, verifies source credentials, configures repository-native DevOps when CI/CD flags are present, and verifies DevOps readiness. It does not start Goal/Loop execution.
+Use `project onboard` when the project is not registered yet. This wrapper registers the project, verifies source credentials, configures project DevOps when CI/CD flags are present, and verifies DevOps readiness. It does not start Goal/Loop execution.
 
 GitHub:
 

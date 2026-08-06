@@ -666,7 +666,7 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
       projectId,
       status: "SKIP",
       nextAction: "read-only-analysis",
-      blockers: ["read-only-public does not claim repository-native DevOps readiness"]
+      blockers: ["read-only-public does not claim project DevOps readiness"]
     });
   } else {
     const devopsPreflight = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/devops/preflight`, {}, derivedRequestOptions(ctx, "project-onboard-devops-preflight"));
@@ -677,6 +677,9 @@ async function projectOnboard(ctx: RuntimeContext, providerArg?: string): Promis
       httpStatus: devopsPreflight.status,
       requestId: devopsPreflight.requestId,
       provider: field(devopsReadiness, "provider"),
+      sourceMode: field(devopsReadiness, "sourceMode"),
+      sourceProvider: field(devopsReadiness, "sourceProvider"),
+      workflowProvider: field(devopsReadiness, "workflowProvider"),
       status: field(devopsReadiness, "status"),
       nextAction: field(devopsReadiness, "nextAction"),
       blockers: field(devopsReadiness, "blockers")
@@ -912,7 +915,13 @@ function shouldConfigureProjectDevops(args: ParsedArgs, sourceProvider: string):
       "devops-token-ref",
       "devops-owner",
       "devops-namespace",
+      "source-mode",
+      "workflow-provider",
+      "workflow-base-url",
       "workflow-repo",
+      "workflow-project-id",
+      "workflow-branch",
+      "gitlab-ref",
       "credential-principal"
     ]))
   );
@@ -937,17 +946,20 @@ function enforceEnterpriseProjectOnboardingOptions(args: ParsedArgs, sourceProvi
     throw usage(`${command} enterprise real loop requires --token-ref <server-side-token-ref>. Store the GitHub/GitLab token on the EvoPilot server or tenant/workspace secret vault before running real Goal/Loop execution.`);
   }
   if (!stringOption(args, "devops-owner") && !stringOption(args, "devops-namespace")) {
-    throw usage(`${command} enterprise real loop requires --devops-owner <github-owner-or-gitlab-namespace> to declare which account runs repository-native DevOps.`);
+    throw usage(`${command} enterprise real loop requires --devops-owner <github-owner-or-gitlab-namespace> to declare which account runs project DevOps.`);
   }
   if (executionMode === "fork-validated-pr") {
     if (!stringOption(args, "upstream-repo")) throw usage(`${command} --execution-mode fork-validated-pr requires --upstream-repo <owner/repo-or-group/project>.`);
     if (!stringOption(args, "working-repo")) throw usage(`${command} --execution-mode fork-validated-pr requires --working-repo <owner/repo-or-group/project>.`);
   }
   if (!hasCiBoundaryOption(args, sourceProvider)) {
-    const hint = sourceProvider === "github"
+    const bridgeMode = sourceProvider === "github" && stringOption(args, "source-mode") === "external-source";
+    const devopsProvider = stringOption(args, "devops-provider");
+    const ciProvider = bridgeMode || devopsProvider === "gitlab-ci" ? "gitlab" : sourceProvider;
+    const hint = ciProvider === "github"
       ? "--ci-workflow <workflow.yml> and/or --ci-required-check <check>"
       : "--ci-required-stage <stage> and/or --ci-required-job <job>";
-    throw usage(`${command} enterprise real loop requires repository-native CI configuration: ${hint}.`);
+    throw usage(`${command} enterprise real loop requires project CI configuration: ${hint}.`);
   }
   if (executionMode !== "fork-validated-pr" && !hasCdBoundaryOption(args)) {
     throw usage(`${command} enterprise real loop requires CD or production health boundary: --cd-workflow, --deploy-environment, --health-url, --ready-url, --cd-required-stage, or --cd-required-job.`);
@@ -963,10 +975,13 @@ function isRemoteScmProvider(provider: unknown): provider is "github" | "gitlab"
 }
 
 function hasCiBoundaryOption(args: ParsedArgs, sourceProvider: string): boolean {
-  if (sourceProvider === "github") {
+  const bridgeMode = sourceProvider === "github" && stringOption(args, "source-mode") === "external-source";
+  const devopsProvider = stringOption(args, "devops-provider");
+  const ciProvider = bridgeMode || devopsProvider === "gitlab-ci" ? "gitlab" : sourceProvider;
+  if (ciProvider === "github") {
     return hasAnyOption(args, ["ci-workflow", "workflow", "ci-required-check", "required-check"]);
   }
-  if (sourceProvider === "gitlab") {
+  if (ciProvider === "gitlab") {
     return hasAnyOption(args, ["ci-required-stage", "required-stage", "ci-required-job", "required-job"]);
   }
   return false;
@@ -995,7 +1010,7 @@ function enforceProjectDevopsBoundaryOptions(args: ParsedArgs, sourceProvider: s
     throw usage(`${command} DevOps ownership is ambiguous. Add --execution-mode <owned-repository|fork-validated-pr|upstream-authorized|read-only-public> and --devops-owner <github-or-gitlab-account>.`);
   }
   if (!devopsOwner) {
-    throw usage(`${command} requires --devops-owner <github-or-gitlab-account> when configuring repository-native DevOps.`);
+    throw usage(`${command} requires --devops-owner <github-or-gitlab-account> when configuring project DevOps.`);
   }
   if (executionMode === "read-only-public") {
     throw usage(`${command} cannot configure DevOps with --execution-mode read-only-public. Use fork-validated-pr with a working fork, or upstream-authorized with maintainer credentials.`);
@@ -1007,7 +1022,10 @@ function enforceProjectDevopsBoundaryOptions(args: ParsedArgs, sourceProvider: s
 }
 
 function buildProjectDevopsBody(args: ParsedArgs, fallbackProvider?: "github-actions" | "gitlab-ci"): Record<string, unknown> {
-  const provider = stringOption(args, "devops-provider") ?? stringOption(args, "provider") ?? fallbackProvider;
+  const provider = stringOption(args, "devops-provider")
+    ?? (stringOption(args, "source-mode") === "external-source" ? "gitlab-ci" : undefined)
+    ?? stringOption(args, "provider")
+    ?? fallbackProvider;
   if (!provider) throw usage("project devops set requires --provider <github-actions|gitlab-ci>.");
   const cdConfigured = hasAnyOption(args, [
     "cd-workflow",
@@ -1024,12 +1042,28 @@ function buildProjectDevopsBody(args: ParsedArgs, fallbackProvider?: "github-act
   ]);
   return {
     provider,
+    sourceMode: stringOption(args, "source-mode"),
+    workflowProvider: stringOption(args, "workflow-provider"),
+    workflowBaseUrl: stringOption(args, "workflow-base-url"),
+    workflowProjectId: stringOption(args, "workflow-project-id"),
+    workflowBranch: stringOption(args, "workflow-branch"),
+    gitlabRef: stringOption(args, "gitlab-ref"),
     executionMode: stringOption(args, "execution-mode"),
     devopsOwner: stringOption(args, "devops-owner"),
     devopsNamespace: stringOption(args, "devops-namespace"),
     workingRepo: stringOption(args, "working-repo"),
     upstreamRepo: stringOption(args, "upstream-repo"),
     workflowRepo: stringOption(args, "workflow-repo"),
+    bridge: stringOption(args, "source-mode") === "external-source" ? {
+      workflowProvider: stringOption(args, "workflow-provider") ?? "gitlab",
+      workflowRepository: {
+        provider: stringOption(args, "workflow-provider") ?? "gitlab",
+        baseUrl: stringOption(args, "workflow-base-url"),
+        projectId: stringOption(args, "workflow-project-id") ?? stringOption(args, "workflow-repo"),
+        defaultBranch: stringOption(args, "workflow-branch")
+      },
+      gitlabRef: stringOption(args, "gitlab-ref")
+    } : undefined,
     credentialPrincipal: stringOption(args, "credential-principal"),
     claimBoundary: stringOption(args, "claim-boundary"),
     tokenRef: stringOption(args, "devops-token-ref") ?? (fallbackProvider ? undefined : stringOption(args, "token-ref")),
@@ -1842,7 +1876,7 @@ async function targetRun(ctx: RuntimeContext): Promise<number> {
       return finishEnterpriseBlockedGoalRun(ctx, "target run", projectId, targetId ?? defaultProjectReleaseTargetId(projectId), steps, devopsBlock);
     }
   } else {
-    steps.push({ type: "project.devops.preflight", projectId, status: "SKIPPED", nextAction: "use-local-git", blockers: ["local-git project does not use repository-native GitHub/GitLab DevOps"] });
+    steps.push({ type: "project.devops.preflight", projectId, status: "SKIPPED", nextAction: "use-local-git", blockers: ["local-git project does not use GitHub/GitLab project DevOps"] });
   }
   const llmPreflight = await tryLlmReadinessPreflight(ctx, projectId);
   steps.push(llmPreflight);
@@ -2470,6 +2504,9 @@ async function tryProjectDevopsPreflight(ctx: RuntimeContext, projectId: string)
       status: field(readiness, "status") ?? (response.status === 404 ? "NOT_CONFIGURED" : response.ok ? "READY" : "BLOCKED"),
       nextAction: field(readiness, "nextAction"),
       provider: field(readiness, "provider"),
+      sourceMode: field(readiness, "sourceMode"),
+      sourceProvider: field(readiness, "sourceProvider"),
+      workflowProvider: field(readiness, "workflowProvider"),
       executionMode: field(readiness, "executionMode"),
       devopsOwner: field(readiness, "devopsOwner"),
       workflowRepository: field(readiness, "workflowRepository"),
@@ -2551,7 +2588,7 @@ async function appendEnterpriseGoalRunPreflights(ctx: RuntimeContext, steps: Arr
     const devopsBlock = enterpriseDevopsReadinessBlock(steps.find((step) => step.type === "project.devops.preflight"));
     if (devopsBlock) return devopsBlock;
   } else if (!steps.some((step) => step.type === "project.devops.preflight")) {
-    steps.push({ type: "project.devops.preflight", projectId, status: "SKIPPED", nextAction: "use-local-git", blockers: ["local-git project does not use repository-native GitHub/GitLab DevOps"] });
+    steps.push({ type: "project.devops.preflight", projectId, status: "SKIPPED", nextAction: "use-local-git", blockers: ["local-git project does not use GitHub/GitLab project DevOps"] });
   }
 
   if (!steps.some((step) => step.type === "llm.profile.preflight" || step.type === "project.llm.preflight")) {
@@ -2589,7 +2626,7 @@ function enterpriseDevopsReadinessBlock(step: unknown): EnterprisePrerequisiteBl
     status,
     nextAction: String(field(step, "nextAction") ?? "configure-devops"),
     blockers: enterpriseBlockers(step, [`devops=${status}`]),
-    detail: "Enterprise real loop requires repository-native GitHub Actions or GitLab CI readiness before Goal/Loop execution.",
+    detail: "Enterprise real loop requires project DevOps readiness before Goal/Loop execution.",
     errorCode: ENTERPRISE_LOOP_PREREQUISITE_REQUIRED
   };
 }
@@ -4499,7 +4536,7 @@ Global options:
   --timeout <duration>        Wrapper stop boundary, for example 30s, 10m, or 2h
   --until <policy>            Wrapper stop policy: terminal or blocked-or-complete; default is terminal for target/goal/loop run
   --require-source-ready      Explicit source readiness assertion for project onboarding; target/goal/loop run preflights source writeback by default
-  --require-devops-ready      Explicit DevOps readiness assertion for project onboarding; remote target/goal/loop run preflights native DevOps by default
+  --require-devops-ready      Explicit DevOps readiness assertion for project onboarding; remote target/goal/loop run preflights project DevOps by default
   --require-llm-ready         Explicit LLM readiness assertion for onboarding/profile setup; target/goal/loop run preflights selected LLM by default
   --llm-profile <id>          LLM profile for this project onboarding or new Goal/Loop run
   --from-template <id>        Optional admin override for ProjectHarnessProfile generation, or required template id for profile upgrade
@@ -4524,6 +4561,13 @@ Global options:
   --working-repo <repo>       Writable GitHub/GitLab repository where EvoPilot runs source writeback and native CI/CD
   --devops-owner <account>    GitHub owner or GitLab namespace whose CI/CD account executes the project DevOps
   --devops-token-ref <ref>    Server-side secret ref for the CI/CD executor; falls back to source tokenRef when omitted
+  --source-mode <mode>        DevOps source mode: repository-native or external-source
+  --workflow-provider <scm>   External CI workflow provider, currently gitlab for GitHub source bridge
+  --workflow-base-url <url>   GitLab base URL for external-source bridge, for example https://gitlab.example.com
+  --workflow-repo <repo>      Repository/project where CI workflow runs; GitLab project path for bridge mode
+  --workflow-project-id <id>  GitLab project id/path where CI pipeline runs
+  --workflow-branch <branch>  Default GitLab bridge project branch
+  --gitlab-ref <ref>          GitLab pipeline ref for external-source bridge mode
   --credential-principal <id> Optional human-readable principal expected behind the DevOps tokenRef
   --json                      Print JSON response data
   --config <file>             Config path, defaults to ~/.evopilot/config.json
@@ -4540,11 +4584,13 @@ Project DevOps examples:
   evopilot target plan approve <goal-id> --confirmed-by project-owner --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" --json
   evopilot project onboard github --repo org/my-agent --id my-agent --token-ref GITHUB_TOKEN_MY_AGENT --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health --llm-profile qwen-private --json
   evopilot project onboard github --repo apache/skywalking --upstream-repo apache/skywalking --working-repo my-org/skywalking-fork --id skywalking-fork --token-ref GITHUB_TOKEN_SKYWALKING_FORK --execution-mode fork-validated-pr --devops-owner my-org --ci-workflow ci.yml --ci-required-check build --llm-profile qwen-private --json
+  evopilot project devops set my-agent --provider gitlab-ci --source-mode external-source --workflow-provider gitlab --workflow-base-url https://gitlab.example.com --workflow-repo platform/agent-ci --gitlab-ref main --execution-mode owned-repository --devops-owner platform --devops-token-ref GITLAB_CI_TOKEN --ci-required-stage test --ci-required-job build --json
   evopilot secret set --id LLM_API_KEY_QWEN_PRIVATE --kind llm-key --from-env LLM_API_KEY_QWEN_PRIVATE --json
   evopilot llm profile set qwen-private --provider openai-compatible --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_QWEN_PRIVATE --json
   evopilot project llm set my-agent --profile qwen-private --require-llm-ready --json
   evopilot target run --project my-agent --objective "Support tenant-level project onboarding and full lifecycle Goal Loop workflow visibility" --llm-profile qwen-private --json
   evopilot project devops set my-agent --provider github-actions --execution-mode owned-repository --devops-owner org --ci-workflow ci.yml --ci-required-check build --ci-required-check test --cd-workflow deploy-prod.yml --deploy-environment production --health-url https://app.example.com/health
   evopilot project devops set my-agent --provider gitlab-ci --execution-mode owned-repository --devops-owner group --ci-required-stage test --ci-required-job build --cd-required-stage deploy --deploy-environment production --ready-url https://app.example.com/ready
+  evopilot project devops set my-agent --provider gitlab-ci --source-mode external-source --workflow-provider gitlab --workflow-base-url https://gitlab.example.com --workflow-repo platform/agent-ci --gitlab-ref main --execution-mode owned-repository --devops-owner platform --devops-token-ref GITLAB_CI_TOKEN --ci-required-stage test --ci-required-job build
 `);
 }

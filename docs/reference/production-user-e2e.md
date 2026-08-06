@@ -137,5 +137,5 @@ EVOPILOT_REAL_VALIDATION_COMMANDS=npm run check
 
 - 真实 Git 项目和真实 LLM 需要由生产环境配置提供。
 - 代码升级执行器必须由 EvoPilot 产品套件部署为真实进程。
-- 项目 DevOps 必须绑定真实 GitHub Actions 或 GitLab CI；EvoPilot 不托管项目 CI/CD，也不提供其他 CI/CD 连接器。
+- 项目 DevOps 必须绑定真实 GitHub Actions 或 GitLab CI。默认链路是 GitHub-native 或 GitLab-native；当 GitHub 是源码系统且 GitLab 是执行系统时，必须使用显式 `sourceMode=external-source` bridge 配置。EvoPilot 不托管项目 CI/CD，也不提供共享通用 runner。
 - 当前环境如果没有 Docker、无法拉取镜像、无法生成 SBOM 或无法完成漏洞扫描，应返回 `BLOCKED` 或失败，不允许自动降级。

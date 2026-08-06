@@ -15,10 +15,10 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --timeout <duration>        Wrapper stop boundary, for example 30s, 10m, or 2h
 --until <policy>            Wrapper stop policy: terminal or blocked-or-complete; default is terminal for target run, goal run, and loop run
 --require-source-ready      Explicit source readiness assertion for onboarding; target/goal/loop run preflights source writeback by default
---require-devops-ready      Explicit DevOps readiness assertion for onboarding; remote target/goal/loop run preflights native DevOps by default
+--require-devops-ready      Explicit DevOps readiness assertion for onboarding; remote target/goal/loop run preflights project DevOps by default
 --execution-mode <mode>     owned-repository | read-only-public | fork-validated-pr | upstream-authorized
 --upstream-repo <repo>      Public upstream repository for read-only or fork-validated PR mode
---working-repo <repo>       Writable repository where EvoPilot writes code and runs native DevOps
+--working-repo <repo>       Writable repository where EvoPilot writes code and runs project DevOps when repository-native
 --devops-owner <account>    GitHub owner or GitLab namespace whose account runs CI/CD
 --devops-token-ref <ref>    Optional server-side DevOps tokenRef, otherwise source tokenRef is used
 --credential-principal <id> Optional operator-readable principal expected behind the DevOps tokenRef
@@ -173,11 +173,11 @@ evopilot project onboard plan github \
 evopilot project onboard verify my-agent --json
 ```
 
-`project onboard` is the mutating wrapper for a new project. It registers the repository, runs source credential preflight, optionally configures repository-native DevOps, and runs DevOps preflight. It does not start Goal/Loop execution. After the project checklist is `READY_TO_RUN`, the next action is `plan-target`: run `target plan`, show and approve the phase plan, then run `target run`.
+`project onboard` is the mutating wrapper for a new project. It registers the repository, runs source credential preflight, optionally configures project DevOps, and runs DevOps preflight. It does not start Goal/Loop execution. After the project checklist is `READY_TO_RUN`, the next action is `plan-target`: run `target plan`, show and approve the phase plan, then run `target run`.
 
 For GitHub/GitLab enterprise real loop onboarding, `--execution-mode`, `--token-ref`, `--devops-owner` or `--devops-namespace`, repository-native CI, a CD or production health boundary, and an explicit READY project LLM profile or `--llm-profile` are required unless the mode is explicitly `read-only-public`. `read-only-public` is analysis-only and cannot be used for real Goal/Loop execution.
 
-`project onboard` returns a white-box result and next action after registration and preflight. For writable GitHub/GitLab modes it stops before Goal/Loop execution unless source writeback and repository-native DevOps are ready. `--require-source-ready` and `--require-devops-ready` are accepted as explicit assertions for onboarding scripts, but enterprise wrapper runs enforce the same readiness by default.
+`project onboard` returns a white-box result and next action after registration and preflight. For writable GitHub/GitLab modes it stops before Goal/Loop execution unless source writeback and project DevOps are ready. `--require-source-ready` and `--require-devops-ready` are accepted as explicit assertions for onboarding scripts, but enterprise wrapper runs enforce the same readiness by default.
 
 Common onboard options:
 
@@ -228,6 +228,12 @@ Common options:
 --devops-namespace <gitlab-namespace>
 --workflow-repo <owner/repo-or-group/project>
 --devops-token-ref <server-side-devops-secret-ref>
+--source-mode <repository-native|external-source>
+--workflow-provider <gitlab>
+--workflow-base-url <gitlab-base-url>
+--workflow-project-id <gitlab-project-id-or-path>
+--workflow-branch <gitlab-branch>
+--gitlab-ref <gitlab-pipeline-ref>
 --credential-principal <principal>
 --ci-workflow <workflow-file>
 --ci-ref <ref>
@@ -245,7 +251,25 @@ Common options:
 --deploy-timeout-seconds <seconds>
 ```
 
-DevOps configuration requires an explicit execution boundary. The CLI blocks ambiguous commands such as `evopilot project onboard github --repo apache/skywalking --with-devops` because it cannot know whether DevOps should run in the public upstream, a fork, or a maintainer-owned namespace.
+DevOps configuration requires an explicit execution boundary. The CLI blocks ambiguous commands such as `evopilot project onboard github --repo apache/skywalking --with-devops` because it cannot know whether DevOps should run in the public upstream, a fork, a maintainer-owned namespace, or an explicitly configured external CI bridge.
+
+Bridge mode is explicit. Use it only when GitHub is the source repository and GitLab CI is the execution system:
+
+```bash
+evopilot project devops set my-agent \
+  --provider gitlab-ci \
+  --source-mode external-source \
+  --workflow-provider gitlab \
+  --workflow-base-url https://gitlab.example.com \
+  --workflow-repo platform/agent-ci \
+  --gitlab-ref main \
+  --execution-mode owned-repository \
+  --devops-owner platform \
+  --devops-token-ref GITLAB_CI_TOKEN \
+  --ci-required-stage test \
+  --ci-required-job build \
+  --json
+```
 
 Execution modes:
 
@@ -256,7 +280,7 @@ Execution modes:
 | `fork-validated-pr` | The upstream is public or third-party, and EvoPilot works in a writable fork. | Operator-owned fork account/organization/group that runs CI/CD. | `fork-ci-pr` |
 | `upstream-authorized` | A maintainer token can write to and run CI/CD in the upstream. | Upstream maintainer principal. | `upstream-release` |
 
-`project devops preflight` returns `executionMode`, `repositoryOwner`, `devopsOwner`, `workflowRepository`, `credentialRef`, `credentialPrincipal`, and `claimBoundary`. Automation must stop when `status` is not `READY`, and must not claim a stronger result than `claimBoundary`.
+`project devops preflight` returns `sourceMode`, `sourceProvider`, `workflowProvider`, `executionMode`, `repositoryOwner`, `devopsOwner`, `workflowRepository`, `credentialRef`, `credentialPrincipal`, and `claimBoundary`. Automation must stop when `status` is not `READY`, and must not claim a stronger result than `claimBoundary`.
 
 ## Secrets
 
@@ -449,7 +473,7 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 1.1.6 \
+  --target-version 1.1.7 \
   --intent "Add Python exception tracking and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \
@@ -634,7 +658,7 @@ evopilot target decision <target-id> [--project <project-id>]
 
 `--until` does not confirm or skip phases. It only controls wrapper stop behavior. `target run`, `goal run`, and `loop run` default to `--until terminal`; `--until blocked-or-complete` is mainly useful for low-level `loop run` when an agent should stop as soon as the LoopRun becomes `BLOCKED`.
 
-Before Goal/Loop execution, `target run` always checks source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness. Use `--require-source-ready`, `--require-devops-ready`, or `--require-llm-ready` only as explicit assertions for scripts that want the command line to state the contract.
+Before Goal/Loop execution, `target run` always checks source writeback, project DevOps for GitHub/GitLab projects, and selected LLM readiness. Use `--require-source-ready`, `--require-devops-ready`, or `--require-llm-ready` only as explicit assertions for scripts that want the command line to state the contract.
 Use `--llm-profile <id>` to override the project default LLM for this run. If the selected profile is blocked, the wrapper stops before Loop execution and returns `nextAction=store-llm-secret`, `configure-llm-profile`, or `repair-llm-provider`.
 
 The CLI does not accept maturity-template parameters for `target plan`, `target run`, or `project onboard`. GA is the fixed terminal maturity. The server generates the Alpha -> Beta -> RC -> GA phase plan from the business `--objective`, the active maturity standard set, and project release evidence.

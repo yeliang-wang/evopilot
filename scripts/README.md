@@ -33,7 +33,7 @@ The script is safe by default: without `--apply`, it only resolves release metad
 Deploy one release digest:
 
 ```bash
-npm run ecs:immutable-rollout -- --version 1.1.6 --host root@8.153.72.80 --apply --json
+npm run ecs:immutable-rollout -- --version 1.1.7 --host root@8.153.72.80 --apply --json
 ```
 
 Run a rollback and forward drill:
@@ -41,7 +41,7 @@ Run a rollback and forward drill:
 ```bash
 npm run ecs:immutable-rollout -- \
   --rollback-version 1.1.2 \
-  --forward-version 1.1.6 \
+  --forward-version 1.1.7 \
   --host root@8.153.72.80 \
   --apply \
   --json

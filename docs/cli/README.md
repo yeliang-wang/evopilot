@@ -24,13 +24,13 @@ Production installation uses the GitHub Release CLI tarball set for the current 
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.6/evopilot-contracts-1.1.6.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.6/evopilot-client-1.1.6.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.6/evopilot-cli-1.1.6.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-contracts-1.1.7.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-client-1.1.7.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-cli-1.1.7.tgz
 evopilot --version
 ```
 
-The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@1.1.6` only after `npm run verify:npm-registry -- --version 1.1.6` passes.
+The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@1.1.7` only after `npm run verify:npm-registry -- --version 1.1.7` passes.
 
 From this repository, use the same CLI package without publishing:
 
@@ -238,7 +238,7 @@ Wrapper commands return a stable machine-readable envelope:
 | `target run` | `evopilot-cli-goal-run/v1` | One-command release target execution. |
 | `goal run` | `evopilot-cli-goal-run/v1` | Create, resume, or advance a GlobalGoal. |
 | `loop run` | `evopilot-cli-loop-run/v1` | Run or resume one LoopRun. |
-| `project onboard ...` | `evopilot-cli-project-onboard/v1` | Register a new project, preflight it, and configure native DevOps. It does not start Goal/Loop execution. |
+| `project onboard ...` | `evopilot-cli-project-onboard/v1` | Register a new project, preflight it, and configure project DevOps. It does not start Goal/Loop execution. |
 | `project onboard plan` / `verify` | `evopilot-project-onboarding-checklist/v1` | Non-mutating or persisted project readiness checklist. |
 
 Agents should read these paths before claiming success:
@@ -353,7 +353,7 @@ evopilot target run \
   --json
 ```
 
-Before Goal/Loop execution, `target run`, `goal run`, and `loop run` check source writeback, repository-native DevOps for GitHub/GitLab projects, and selected LLM readiness by default. If the plan is not approved, `target run` stops at `PENDING_PLAN_APPROVAL` with `nextAction=approve-plan` and exit code `2`. The console prints a server-governed chain covering project, release target, GlobalGoal, Alpha/Beta/RC/GA phases, GoalTarget, LoopRun, source closure, deploy, release decision, evidence links, blockers, next action, LLM provider/model, command-level token totals, and step-level token usage.
+Before Goal/Loop execution, `target run`, `goal run`, and `loop run` check source writeback, project DevOps readiness, and selected LLM readiness by default. Project DevOps can be GitHub-native, GitLab-native, or explicit GitHub source + GitLab CI bridge. If the plan is not approved, `target run` stops at `PENDING_PLAN_APPROVAL` with `nextAction=approve-plan` and exit code `2`. The console prints a server-governed chain covering project, release target, GlobalGoal, Alpha/Beta/RC/GA phases, GoalTarget, LoopRun, source closure, deploy, release decision, evidence links, blockers, next action, LLM provider/model, command-level token totals, and step-level token usage.
 
 Inspect package gates while the wrapper runs:
 

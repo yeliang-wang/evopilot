@@ -95,7 +95,7 @@ Writable GitHub/GitLab modes require an execution principal owned by the operato
 
 If `nextAction=store-secret`, use the suggested `secret set` command from the checklist only from a trusted shell where the token environment variable is available. If `nextAction=connect-github-account` or `nextAction=connect-gitlab-account`, stop until the operator connects or creates the matching SCM account/group/principal and stores the server-side tokenRef. If `nextAction=configure-llm-profile`, create or repair the project LLM profile before continuing. If `nextAction=register-project`, continue with `project onboard`. If `nextAction=plan-target`, generate or inspect the project harness profile first, activate the reviewed harness definition, then generate the phase plan with `target plan`, approve it only after user confirmation, and continue with `target run`. If `status=BLOCKED`, stop and report `blockers`.
 
-For an already registered project, verify source credentials and native DevOps before invoking a one-command target:
+For an already registered project, verify source credentials and project DevOps before invoking a one-command target:
 
 ```bash
 evopilot project preflight my-agent --json
@@ -173,7 +173,7 @@ When template changes should come from reviewable sources, administrators use th
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 1.1.6 \
+  --target-version 1.1.7 \
   --intent "Add stronger Python exception tracking, observability, and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \
@@ -565,7 +565,7 @@ If the result is still `READ_ONLY`, the tokenRef is stored but the EvoPilot serv
 
 ### Scenario 6: DevOps, CI, CD, And Release Closure
 
-A successful source-to-release loop needs more than a GitHub token. Agents should verify each boundary before claiming an end-to-end result. EvoPilot's production path is repository-native DevOps: GitHub projects use GitHub Actions; GitLab projects use GitLab CI.
+A successful source-to-release loop needs more than a GitHub token. Agents should verify each boundary before claiming an end-to-end result. EvoPilot supports GitHub-native, GitLab-native, and explicit GitHub source with GitLab CI bridge DevOps. Bridge mode keeps GitHub as the source system and uses a separate GitLab CI workflow project as the execution system.
 
 | Boundary | What EvoPilot Uses | How To Check |
 |---|---|---|
@@ -607,6 +607,26 @@ evopilot project devops set my-agent \
   --ready-url https://my-agent.example.com/ready \
   --json
 ```
+
+Configure GitHub source with GitLab CI bridge:
+
+```bash
+evopilot project devops set my-agent \
+  --provider gitlab-ci \
+  --source-mode external-source \
+  --workflow-provider gitlab \
+  --workflow-base-url https://gitlab.example.com \
+  --workflow-repo platform/agent-ci \
+  --gitlab-ref main \
+  --execution-mode owned-repository \
+  --devops-owner platform \
+  --devops-token-ref GITLAB_CI_TOKEN \
+  --ci-required-stage test \
+  --ci-required-job build \
+  --json
+```
+
+For bridge mode, do not reuse the GitHub source token as the GitLab CI trigger token. Store the GitHub source credential and GitLab DevOps credential as separate server-side refs and report both `sourceProvider` and `workflowProvider` from preflight.
 
 Common production checks before an approved one-command target. These checks do not replace mandatory phase-plan review and approval:
 

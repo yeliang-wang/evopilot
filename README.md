@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/GA%20Release-v1.1.6-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v1.1.7-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -18,8 +18,8 @@ It is not an agent runtime, prompt playground, or generic code generator. Agent 
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v1.1.6/evopilot-contracts-1.1.6.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.6/evopilot-client-1.1.6.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.6/evopilot-cli-1.1.6.tgz` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.6/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-contracts-1.1.7.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-client-1.1.7.tgz https://github.com/yeliang-wang/evopilot/releases/download/v1.1.7/evopilot-cli-1.1.7.tgz` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v1.1.7/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer, hosted Cloud trial, and public npm registry packages are not published EvoPilot surfaces yet. The supported public entry points are GitHub Release CLI tarballs, self-host installer, and Helm.
@@ -98,13 +98,13 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## Release Status
 
-The latest published GitHub release is **v1.1.6 GA**, a project LLM usage visibility patch over the original `v1.0.0` GA baseline.
+The latest published GitHub release is **v1.1.7 GA**, a GitHub source + GitLab CI bridge patch over the original `v1.0.0` GA baseline.
 
-v1.1.6 keeps the v1.1.5 control-plane boundary work, then adds project/workspace LLM usage projections so Dashboard and API consumers can see actual provider/model/profile combinations, input/output/total tokens, latest loop token totals, and request IDs from EvoPilot server evidence.
+v1.1.7 keeps GitHub-native and GitLab-native loops unchanged, then adds explicit `sourceMode=external-source` support for projects that keep source in GitHub while running CI/Loop delivery through a GitLab CI workflow project.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/1.1.6.md](docs/releases/1.1.6.md)
+- Latest release notes: [docs/releases/1.1.7.md](docs/releases/1.1.7.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
