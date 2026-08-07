@@ -1,6 +1,6 @@
 schema: evopilot-harness-template/v1
 id: api-gateway-harness
-version: 2.0.0
+version: 2.1.0
 name: API Gateway Harness
 description: Domain baseline for API gateway products.
 scope: platform
@@ -81,16 +81,67 @@ runtimePatterns:
     unit: [make test-unit]
     smoke: [make smoke-gateway]
     functional: [make test-routes, make test-policy, make test-load]
+  domainExecution:
+    requiredActions:
+      - id: declare-gateway-product-boundary
+        phase: alpha
+        description: Declare the evolved target as the owner's API gateway product and record Envoy, Kong, APISIX, or Gateway API as behavior references only.
+        requiredEvidence: [product-scope-declaration, reference-role-declaration]
+        suggestedCommands: [evopilot harness profile inspect --json]
+      - id: map-gateway-control-boundaries
+        phase: alpha
+        description: Map listener, route, upstream, policy, plugin, and protocol boundaries to repository paths and runtime configuration.
+        requiredEvidence: [gateway-boundary-map, route-table]
+        suggestedCommands: [make dump-routes, make config-validate]
+      - id: bind-route-policy-suite
+        phase: beta
+        description: Bind route matching, upstream selection, retry, circuit breaker, rate limit, auth, and protocol checks to project commands.
+        requiredEvidence: [route-table, policy-matrix, traffic-sample]
+        suggestedCommands: [make test-routes, make test-policy]
+      - id: bind-plugin-and-load-suite
+        phase: rc
+        description: Bind plugin lifecycle, hot reload, failure isolation, and load regression checks to project commands.
+        requiredEvidence: [plugin-report, load-summary]
+        suggestedCommands: [make test-plugin, make test-load]
+    moduleBoundaries: [listener, route, upstream, policy, plugin, protocol]
+    evidenceAdapters:
+      - artifact: route-table
+        source: gateway route dump
+        commandGroup: functional
+        requiredFor: [beta, rc, ga]
+        schemaFields: [routeId, listener, match, upstreamId, priority, tenantId]
+      - artifact: policy-matrix
+        source: policy contract command output
+        commandGroup: functional
+        requiredFor: [beta, rc, ga]
+        schemaFields: [policyId, routeId, authn, authz, rateLimit, retry, verdict]
+      - artifact: plugin-report
+        source: plugin lifecycle command output
+        commandGroup: functional
+        requiredFor: [rc, ga]
+        schemaFields: [pluginId, schemaValid, hotReloaded, isolatedFailure, compatibilityProfile]
+      - artifact: load-summary
+        source: load regression command output
+        commandGroup: functional
+        requiredFor: [rc, ga]
+        schemaFields: [scenario, rps, p95Latency, errorRate, baseline, verdict]
+    releaseBlockers:
+      - NO-GO when route-table or policy-matrix is missing before Beta.
+      - NO-GO when plugin-report is missing before RC for a plugin-capable gateway.
+      - NO-GO when load-summary is missing before GA.
+      - NO-GO when Envoy, Kong, APISIX, or Gateway API is treated as the default evolved product instead of a behavior reference.
 validationBaseline:
   requiredCommandGroups: [install, lint, typecheck, unit, smoke, functional]
   requiredBoundaries: [routing, upstream, auth-policy, rate-limit, plugin, protocol, observability]
   contractChecks: [route-contract, policy-contract, plugin-contract, protocol-compatibility, load-regression]
+  requiredActions: [declare-gateway-product-boundary, map-gateway-control-boundaries, bind-route-policy-suite, bind-plugin-and-load-suite]
   commandEvidenceRequired: true
   realBoundaryEvidenceRequired: true
   noMockEvidenceForReleaseClaims: true
 evidenceContract:
   format: json
-  requiredArtifacts: [target-evidence-package, phase-package, goal-completion-report, route-table, policy-matrix, plugin-report]
+  requiredArtifacts: [target-evidence-package, phase-package, goal-completion-report, route-table, policy-matrix, plugin-report, load-summary]
+  evidenceAdaptersRequired: true
 failureTaxonomy:
   categories: [routing, upstream, policy, plugin, protocol, load, observability, governance, unknown]
 diagnosticsBaseline:
@@ -129,6 +180,14 @@ sourceReferences:
     category: github
     rationale: Gateway API route, listener, policy, and conformance model.
 changelog:
+  - version: 2.1.0
+    changedAt: 2026-08-07T08:00:00.000Z
+    changedBy: evopilot
+    summary: Add executable API gateway domain harness contract.
+    changes:
+      - Add project required actions for gateway boundary mapping, route and policy contracts, plugin lifecycle, and load regression.
+      - Add evidence adapter contracts for route tables, policy matrices, plugin reports, and load summaries.
+      - Keep Envoy, Kong, APISIX, and Gateway API as behavior references only.
   - version: 2.0.0
     changedAt: 2026-08-07T00:00:00.000Z
     changedBy: evopilot

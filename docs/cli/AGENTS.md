@@ -58,14 +58,14 @@ evopilot harness profile inspect default --project my-agent --version <harness-v
 evopilot harness profile diff default --project my-agent --version <harness-version> --json
 ```
 
-EvoPilot automatically matches one built-in or administrator-published template from the project context and goal loop target. `--from-template` is only an explicit administrator or advanced override. Fresh installs include Python enterprise, Java DDD service, Node SaaS control-plane, Go middleware, and observability/APM runtime baselines, plus v2 database product, API gateway, enterprise management software, and generic management-software baselines. Domain templates are `@2.0.0`; runtime and broad templates remain `@1.1.0` baselines. `harness template inspect <id> --json` exposes their `sourceReferences[]`, `failureTaxonomy`, `diagnosticsBaseline`, `observabilityBaseline`, and `governanceRules`. Administrator agents that maintain templates should read `harness-templates/public/README.md`, edit the target pack's `README.md`, `template.yaml`, `CHANGELOG.md`, and `examples/`, then use `harness template pack validate <path> --json` and `harness template pack publish <path> --json`.
+EvoPilot automatically matches one built-in or administrator-published template from the project context and goal loop target. `--from-template` is only an explicit administrator or advanced override. Fresh installs include Python enterprise, Java DDD service, Node SaaS control-plane, Go middleware, and observability/APM runtime baselines, plus the v2.1 database product and API gateway domain baselines. Domain templates are `@2.1.0`; existing runtime and broad templates remain `@1.1.0` baselines and are not part of the current database/gateway domain upgrade. `harness template inspect <id> --json` exposes their `sourceReferences[]`, `failureTaxonomy`, `diagnosticsBaseline`, `observabilityBaseline`, and `governanceRules`. Administrator agents that maintain templates should read `harness-templates/public/README.md`, edit the target pack's `README.md`, `template.yaml`, `CHANGELOG.md`, and `examples/`, then use `harness template pack validate <path> --json` and `harness template pack publish <path> --json`.
 
 Administrator agents can also run the server-governed template evolution lifecycle when template changes come from reviewable sources instead of direct pack editing:
 
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 2.0.0 \
+  --target-version 2.1.0 \
   --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \

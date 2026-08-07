@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "2.0.0"
+    "version": "2.1.0"
   },
   "paths": {
     "/health": {
@@ -874,7 +874,7 @@
     "/api/v1/harness/templates": {
       "get": {
         "summary": "列出 HarnessTemplate",
-        "description": "返回平台或租户级 harness 模板。fresh install 内置运行时模板 python-enterprise-harness、java-ddd-service-harness、node-saas-control-plane-harness、go-middleware-harness、observability-apm-harness，以及 v2 领域模板 database-product-harness、api-gateway-harness、enterprise-management-software-harness；generic-management-software-harness 作为广义 fallback。v2 领域模板先定义产品域，再定义 compatibility profiles、architecture profiles 和 runtime profiles。数据库模板用于进化用户自己的数据库产品，PostgreSQL/MySQL 等系统只作为兼容语料或差分 oracle。模板用于生成 ProjectHarnessProfile，不用于选择或跳过 Alpha/Beta/RC/GA 成熟度阶段。",
+        "description": "返回平台或租户级 harness 模板。fresh install 内置运行时模板 python-enterprise-harness、java-ddd-service-harness、node-saas-control-plane-harness、go-middleware-harness、observability-apm-harness，以及 v2.1 领域模板 database-product-harness、api-gateway-harness。当前 v2.1 领域模板只覆盖数据库产品和 API 网关产品；既有运行时和广义软件类型模板仍是 1.1.0 baseline，不属于本次数据库/网关领域升级范围。v2.1 领域模板先定义产品域，再定义 compatibility profiles、architecture profiles、runtime profiles 和 domainExecution。数据库模板用于进化用户自己的数据库产品，PostgreSQL/MySQL 等系统只作为兼容语料或差分 oracle。模板用于生成 ProjectHarnessProfile，不用于选择或跳过 Alpha/Beta/RC/GA 成熟度阶段。",
         "security": [
           {
             "bearerAuth": []

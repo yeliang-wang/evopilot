@@ -8,6 +8,29 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 2.1.0 - 2026-08-07
+
+### Added
+
+- Added explicit `domainExecution` contracts for `database-product-harness` and `api-gateway-harness`, including required project actions, evidence adapters, release blockers, and module-boundary probes.
+- Added generated `ProjectHarnessProfile` fields that tell projects what must be mapped before activation and which domain evidence artifacts must block Beta/RC/GA release decisions.
+- Added validation that domain harness profiles must include required actions, evidence adapters, and release blockers before a generated profile can pass the domain execution gate.
+
+### Changed
+
+- Narrowed the v2 domain HarnessTemplate public set to database products and API gateway products.
+- Removed the enterprise-management public domain template from built-in defaults, registry entries, and public template packs for this release scope.
+- Kept database reference systems such as PostgreSQL and MySQL as compatibility oracles only, not as the evolved product.
+
+### Validation
+
+- `npm run build -w @evopilot/server`
+- `npm run cli:test`
+- `npm run check`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 2.0.0 - 2026-08-07
 
 ### Added

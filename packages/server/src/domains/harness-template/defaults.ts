@@ -12,8 +12,8 @@ export function defaultHarnessTemplates(): HarnessTemplateProfile[] {
 
 const BUILT_IN_HARNESS_TEMPLATE_VERSION = "1.1.0";
 const BUILT_IN_HARNESS_TEMPLATE_UPDATED_AT = "2026-07-31T06:00:00.000Z";
-const DOMAIN_HARNESS_TEMPLATE_VERSION = "2.0.0";
-const DOMAIN_HARNESS_TEMPLATE_UPDATED_AT = "2026-08-07T00:00:00.000Z";
+const DOMAIN_HARNESS_TEMPLATE_VERSION = "2.1.0";
+const DOMAIN_HARNESS_TEMPLATE_UPDATED_AT = "2026-08-07T08:00:00.000Z";
 
 function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "digest"> & { digest?: string }> {
   const createdAt = "2026-07-31T00:00:00.000Z";
@@ -464,6 +464,75 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
           smoke: ["make smoke-sql"],
           functional: ["make test-sql-compat", "make test-recovery", "make test-upgrade"]
         },
+        domainExecution: {
+          requiredActions: [
+            {
+              id: "declare-database-product-boundary",
+              phase: "alpha",
+              description: "Declare that the evolved target is the owner's self-developed database product and record reference databases as compatibility oracles only.",
+              requiredEvidence: ["product-scope-declaration", "reference-role-declaration"],
+              suggestedCommands: ["evopilot harness profile inspect --json"]
+            },
+            {
+              id: "map-engine-module-boundaries",
+              phase: "alpha",
+              description: "Map parser, planner, executor, storage, transaction, replication, and recovery modules to repository paths before goal planning.",
+              requiredEvidence: ["module-boundary-report"],
+              suggestedCommands: ["find . -maxdepth 3 -type d | sort"]
+            },
+            {
+              id: "bind-sql-compatibility-suite",
+              phase: "beta",
+              description: "Bind SQL grammar, dialect, wire-protocol, catalog, error-code, and migration compatibility checks to project commands.",
+              requiredEvidence: ["sql-compatibility-report", "protocol-compatibility-report", "error-code-map"],
+              suggestedCommands: ["make test-sql-compat", "make test-protocol-compat"]
+            },
+            {
+              id: "bind-correctness-and-recovery-suite",
+              phase: "rc",
+              description: "Bind transaction isolation, crash recovery, replication consistency, upgrade, and benchmark regression checks to project commands.",
+              requiredEvidence: ["transaction-isolation-test", "crash-recovery-log", "replication-status", "benchmark-summary"],
+              suggestedCommands: ["make test-recovery", "make test-upgrade", "make benchmark-smoke"]
+            }
+          ],
+          moduleBoundaries: ["parser", "planner", "executor", "storage", "transaction", "replication", "recovery"],
+          evidenceAdapters: [
+            {
+              artifact: "sql-compatibility-report",
+              source: "functional command output",
+              commandGroup: "functional",
+              requiredFor: ["beta", "rc", "ga"],
+              schemaFields: ["compatibilityProfile", "suite", "passed", "failed", "queryId", "sqlState", "referenceProduct"]
+            },
+            {
+              artifact: "differential-oracle-report",
+              source: "compatibility oracle comparison",
+              commandGroup: "functional",
+              requiredFor: ["beta", "rc", "ga"],
+              schemaFields: ["referenceProduct", "corpusDigest", "queryHash", "expected", "actual", "verdict"]
+            },
+            {
+              artifact: "crash-recovery-log",
+              source: "recovery command output",
+              commandGroup: "functional",
+              requiredFor: ["rc", "ga"],
+              schemaFields: ["scenario", "checkpoint", "walOrRedo", "dataLoss", "recovered", "verificationCommand"]
+            },
+            {
+              artifact: "benchmark-summary",
+              source: "benchmark command output",
+              commandGroup: "functional",
+              requiredFor: ["rc", "ga"],
+              schemaFields: ["workload", "baseline", "candidate", "delta", "threshold", "verdict"]
+            }
+          ],
+          releaseBlockers: [
+            "NO-GO when the project boundary makes PostgreSQL or MySQL the default evolved product.",
+            "NO-GO when product-scope-declaration or reference-role-declaration is missing before Beta.",
+            "NO-GO when crash-recovery-log is missing before RC or GA.",
+            "NO-GO when benchmark-summary is missing for performance improvement claims."
+          ]
+        },
         databaseControls: {
           correctness: ["sql-semantics", "transaction-isolation", "mvcc-or-locking", "crash-recovery", "replication-consistency"],
           compatibility: ["postgres-compatible", "mysql-compatible", "ansi-sql", "driver-protocol", "error-code-map"],
@@ -496,10 +565,16 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
         requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke", "functional"],
         requiredBoundaries: ["product-scope", "sql-compatibility", "storage-engine", "query-engine", "transaction-engine", "recovery", "performance", "operations"],
         contractChecks: ["sql-compatibility", "protocol-compatibility", "transaction-isolation", "crash-recovery", "upgrade-compatibility", "benchmark-regression"],
+        requiredActions: ["declare-database-product-boundary", "map-engine-module-boundaries", "bind-sql-compatibility-suite", "bind-correctness-and-recovery-suite"],
         commandEvidenceRequired: true,
         realBoundaryEvidenceRequired: true,
         noMockEvidenceForReleaseClaims: true,
         referenceProductsAreOraclesOnly: true
+      },
+      evidenceContract: {
+        format: "json",
+        requiredArtifacts: ["target-evidence-package", "phase-package", "goal-completion-report", "sql-compatibility-report", "differential-oracle-report", "crash-recovery-log", "benchmark-summary"],
+        evidenceAdaptersRequired: true
       },
       phaseMapping: {
         alpha: ["source-boundary", "database-product-runtime", "database-product-boundary", "sql-compatibility-boundary", "failure-diagnostics"],
@@ -516,11 +591,11 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
         referenceSource("Database engineering practice", undefined, "engineering-practice", "Treat external databases as compatibility corpora and differential oracles while evolving the owner's product boundary.")
       ],
       changelogSummary: "Initial v2 domain harness template for self-developed database products.",
-      upgradeSummary: "Add v2 domain-first database harness semantics.",
+      upgradeSummary: "Add v2.1 executable database domain harness contract.",
       upgradeChanges: [
-        "Define database product, compatibility, architecture, and runtime layers without making PostgreSQL or MySQL the evolution target.",
-        "Add SQL compatibility, storage/query/transaction correctness, recovery, benchmark, and upgrade evidence requirements.",
-        "Record reference databases as compatibility corpora and differential oracles only."
+        "Define project required actions for database product onboarding, module mapping, SQL compatibility, recovery, upgrade, and benchmark evidence.",
+        "Add database evidence adapter contracts for SQL compatibility, differential oracle comparison, crash recovery, and benchmark summaries.",
+        "Keep PostgreSQL and MySQL as compatibility corpora and differential oracles only."
       ],
       createdAt: DOMAIN_HARNESS_TEMPLATE_UPDATED_AT
     }),
@@ -576,6 +651,75 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
           smoke: ["make smoke-gateway"],
           functional: ["make test-routes", "make test-policy", "make test-load"]
         },
+        domainExecution: {
+          requiredActions: [
+            {
+              id: "declare-gateway-product-boundary",
+              phase: "alpha",
+              description: "Declare the evolved target as the owner's API gateway product and record Envoy, Kong, APISIX, or Gateway API as behavior references only.",
+              requiredEvidence: ["product-scope-declaration", "reference-role-declaration"],
+              suggestedCommands: ["evopilot harness profile inspect --json"]
+            },
+            {
+              id: "map-gateway-control-boundaries",
+              phase: "alpha",
+              description: "Map listener, route, upstream, policy, plugin, and protocol boundaries to repository paths and runtime configuration.",
+              requiredEvidence: ["gateway-boundary-map", "route-table"],
+              suggestedCommands: ["make dump-routes", "make config-validate"]
+            },
+            {
+              id: "bind-route-policy-suite",
+              phase: "beta",
+              description: "Bind route matching, upstream selection, retry, circuit breaker, rate limit, auth, and protocol checks to project commands.",
+              requiredEvidence: ["route-table", "policy-matrix", "traffic-sample"],
+              suggestedCommands: ["make test-routes", "make test-policy"]
+            },
+            {
+              id: "bind-plugin-and-load-suite",
+              phase: "rc",
+              description: "Bind plugin lifecycle, hot reload, failure isolation, and load regression checks to project commands.",
+              requiredEvidence: ["plugin-report", "load-summary"],
+              suggestedCommands: ["make test-plugin", "make test-load"]
+            }
+          ],
+          moduleBoundaries: ["listener", "route", "upstream", "policy", "plugin", "protocol"],
+          evidenceAdapters: [
+            {
+              artifact: "route-table",
+              source: "gateway route dump",
+              commandGroup: "functional",
+              requiredFor: ["beta", "rc", "ga"],
+              schemaFields: ["routeId", "listener", "match", "upstreamId", "priority", "tenantId"]
+            },
+            {
+              artifact: "policy-matrix",
+              source: "policy contract command output",
+              commandGroup: "functional",
+              requiredFor: ["beta", "rc", "ga"],
+              schemaFields: ["policyId", "routeId", "authn", "authz", "rateLimit", "retry", "verdict"]
+            },
+            {
+              artifact: "plugin-report",
+              source: "plugin lifecycle command output",
+              commandGroup: "functional",
+              requiredFor: ["rc", "ga"],
+              schemaFields: ["pluginId", "schemaValid", "hotReloaded", "isolatedFailure", "compatibilityProfile"]
+            },
+            {
+              artifact: "load-summary",
+              source: "load regression command output",
+              commandGroup: "functional",
+              requiredFor: ["rc", "ga"],
+              schemaFields: ["scenario", "rps", "p95Latency", "errorRate", "baseline", "verdict"]
+            }
+          ],
+          releaseBlockers: [
+            "NO-GO when route-table or policy-matrix is missing before Beta.",
+            "NO-GO when plugin-report is missing before RC for a plugin-capable gateway.",
+            "NO-GO when load-summary is missing before GA.",
+            "NO-GO when Envoy, Kong, APISIX, or Gateway API is treated as the default evolved product instead of a behavior reference."
+          ]
+        },
         gatewayControls: {
           routing: ["route-match", "rewrite", "upstream-selection", "load-balancing", "traffic-splitting"],
           policy: ["authn", "authz", "rate-limit", "quota", "waf", "circuit-breaker", "retry-timeout"],
@@ -608,9 +752,15 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
         requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke", "functional"],
         requiredBoundaries: ["routing", "upstream", "auth-policy", "rate-limit", "plugin", "protocol", "observability"],
         contractChecks: ["route-contract", "policy-contract", "plugin-contract", "protocol-compatibility", "load-regression"],
+        requiredActions: ["declare-gateway-product-boundary", "map-gateway-control-boundaries", "bind-route-policy-suite", "bind-plugin-and-load-suite"],
         commandEvidenceRequired: true,
         realBoundaryEvidenceRequired: true,
         noMockEvidenceForReleaseClaims: true
+      },
+      evidenceContract: {
+        format: "json",
+        requiredArtifacts: ["target-evidence-package", "phase-package", "goal-completion-report", "route-table", "policy-matrix", "plugin-report", "load-summary"],
+        evidenceAdaptersRequired: true
       },
       phaseMapping: {
         alpha: ["source-boundary", "api-gateway-runtime", "gateway-traffic-boundary", "failure-diagnostics"],
@@ -627,122 +777,11 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
         referenceSource("API gateway engineering practice", undefined, "engineering-practice", "Route/policy/plugin/protocol evidence with load and production diagnostics.")
       ],
       changelogSummary: "Initial v2 domain harness template for API gateway products.",
-      upgradeSummary: "Add v2 domain-first API gateway harness semantics.",
+      upgradeSummary: "Add v2.1 executable API gateway domain harness contract.",
       upgradeChanges: [
-        "Define gateway domain, compatibility, architecture, and runtime layers.",
-        "Add route, upstream, policy, plugin, protocol, load, and traffic observability evidence requirements.",
+        "Define project required actions for gateway boundary mapping, route and policy contracts, plugin lifecycle, and load regression.",
+        "Add gateway evidence adapter contracts for route tables, policy matrices, plugin reports, and load summaries.",
         "Use mature gateway projects as behavior references without making them the evolved product by default."
-      ],
-      createdAt: DOMAIN_HARNESS_TEMPLATE_UPDATED_AT
-    }),
-    builtInHarnessTemplate({
-      id: "enterprise-management-software-harness",
-      name: "Enterprise Management Software Harness",
-      description: "Domain baseline for CRM, ERP, workflow, and enterprise management products: business objects, RBAC, workflow, audit, reporting, integrations, import/export, observability, and release governance.",
-      languageFamily: "generic",
-      version: DOMAIN_HARNESS_TEMPLATE_VERSION,
-      updatedAt: DOMAIN_HARNESS_TEMPLATE_UPDATED_AT,
-      runtimeCapability: {
-        id: "enterprise-management-runtime",
-        name: "Enterprise management runtime harness",
-        boundary: "API/UI/backend job commands are declared with business workflow, permission, audit, report, integration, and data movement evidence.",
-        requiredEvidence: ["api-output", "ui-workflow-proof", "rbac-output", "audit-output", "report-output", "integration-output"]
-      },
-      extraCapabilities: [
-        {
-          id: "enterprise-domain-boundary",
-          name: "Enterprise domain boundary",
-          boundary: "Business objects, workflow states, approvals, permissions, audit events, integrations, and reporting rules are explicit.",
-          requiredEvidence: ["domain-object-map", "workflow-state-machine", "rbac-matrix", "audit-event-sample", "integration-contract"]
-        },
-        {
-          id: "crm-erp-compatibility-boundary",
-          name: "CRM/ERP compatibility boundary",
-          boundary: "CRM, ERP, finance, inventory, customer lifecycle, import/export, and reporting behaviors are represented as selectable compatibility profiles.",
-          requiredEvidence: ["compatibility-profile", "import-export-case", "report-reconciliation", "business-rule-test"]
-        }
-      ],
-      runtimePatterns: {
-        harnessLayer: "domain",
-        domain: "enterprise-management-software",
-        domainLabel: "CRM/ERP/workflow management product",
-        language: "generic",
-        compatibilityProfiles: [
-          { id: "crm", role: "business-domain-profile", scope: ["customer", "lead", "opportunity", "contract", "service-ticket"] },
-          { id: "erp", role: "business-domain-profile", scope: ["order", "inventory", "procurement", "finance", "approval"] },
-          { id: "workflow", role: "business-domain-profile", scope: ["state-machine", "approval", "delegation", "audit", "sla"] }
-        ],
-        architectureProfiles: [
-          { id: "modular-monolith", concerns: ["domain-modules", "transaction-boundary", "reporting", "integration"] },
-          { id: "saas-control-plane", concerns: ["tenant", "workspace", "rbac", "audit", "quota"] },
-          { id: "evented-workflow", concerns: ["business-events", "async-jobs", "approval", "integration"] }
-        ],
-        runtimeProfiles: ["java", "node", "python", "go", "generic"],
-        architectureStyles: ["enterprise-management-software", "crm", "erp", "workflow-system", "backoffice", "business-platform"],
-        defaultCommands: {
-          install: ["make install", "npm ci", "uv sync"],
-          lint: ["make lint"],
-          typecheck: ["make build"],
-          unit: ["make test"],
-          smoke: ["make smoke"],
-          functional: ["make test:functional", "make rbac-test", "make workflow-test"]
-        },
-        businessControls: {
-          permissionModel: ["role permission matrix", "record-level rules", "field-level permission", "segregation of duties", "maker-checker"],
-          workflowModel: ["state machine", "approval transition", "cancel/amend", "reopen", "delegation", "sla"],
-          dataMovement: ["import validation", "export authorization", "bulk operation audit", "report reconciliation"],
-          auditModel: ["who", "what", "when", "where", "before", "after", "reason", "approvalReference"]
-        },
-        exceptionTracking: {
-          handlers: ["business rule violation", "permission denial", "workflow transition denial", "import row failure", "report reconciliation failure"],
-          requiredErrorEnvelope: ["errorCode", "businessObject", "recordId", "actorId", "tenantId", "traceId", "userAction", "supportReference"],
-          exceptionAttributes: ["exception.type", "business.workflow.state", "permission.rule", "record.id", "tenant.id", "integration.id"],
-          regressionTests: ["RBAC denial", "record rule isolation", "approval transition failure", "import partial failure", "report mismatch"]
-        },
-        observability: {
-          instrumentation: ["structured audit log", "business event log", "OpenTelemetry service telemetry", "report reconciliation metrics"],
-          logs: ["tenantId", "workspaceId", "actorId", "role", "businessObject", "recordId", "workflowState", "errorCode"],
-          metrics: ["workflow_transition_count", "approval_latency", "import_failure_rate", "report_reconciliation_delta", "permission_denial_count"],
-          traces: ["API request", "permission check", "workflow transition", "report query", "import/export job", "integration call"],
-          alerts: ["approval_backlog", "audit_gap_detected", "report_reconciliation_failure", "permission_denial_spike", "import_failure_spike"]
-        },
-        diagnostics: {
-          commands: ["make smoke", "make test:functional", "make audit-check", "make report-reconcile", "make rbac-test", "make workflow-test"],
-          artifacts: ["rbac-matrix", "workflow-state-machine", "audit-event-sample", "report-reconciliation", "import-export-proof", "integration-contract"]
-        },
-        service: {
-          healthPath: "/health",
-          readinessTimeoutSeconds: 90
-        }
-      },
-      validationBaseline: {
-        requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke", "functional"],
-        requiredBoundaries: ["business-domain", "rbac", "workflow", "audit", "reporting", "integration", "data-import-export"],
-        contractChecks: ["api-contract", "rbac-matrix", "workflow-state-machine", "audit-trail", "report-reconciliation", "integration-contract"],
-        commandEvidenceRequired: true,
-        realBoundaryEvidenceRequired: true,
-        noMockEvidenceForReleaseClaims: true
-      },
-      phaseMapping: {
-        alpha: ["source-boundary", "enterprise-management-runtime", "enterprise-domain-boundary", "failure-diagnostics"],
-        beta: ["test-and-quality", "crm-erp-compatibility-boundary", "observability", "exception-tracking", "slo-monitoring"],
-        rc: ["enterprise-domain-boundary", "crm-erp-compatibility-boundary", "observability", "slo-monitoring", "operational-runbooks", "release-governance"],
-        ga: ["release-governance", "enterprise-domain-boundary", "crm-erp-compatibility-boundary", "observability", "slo-monitoring", "source-boundary"]
-      },
-      sourceReferences: [
-        referenceSource("ERPNext", "https://github.com/frappe/erpnext", "github", "Enterprise management workflows, roles, document models, reports, and integration behavior reference."),
-        referenceSource("Odoo", "https://github.com/odoo/odoo", "github", "ERP/CRM/business application modularity, permissions, workflow, reporting, and integration reference."),
-        referenceSource("SuiteCRM", "https://github.com/salesagility/SuiteCRM", "github", "CRM account, lead, opportunity, service, role, and workflow behavior reference."),
-        referenceSource("Frappe Framework", "https://github.com/frappe/frappe", "github", "Document model, workflow, permission, audit, report, and extension framework reference."),
-        referenceSource("Microsoft tactical DDD guidance", "https://learn.microsoft.com/en-us/azure/architecture/microservices/model/tactical-domain-driven-design", "official-doc", "Aggregate and domain invariant framing for enterprise business modules."),
-        referenceSource("Enterprise management software practice", undefined, "engineering-practice", "Business object, workflow, RBAC, audit, reporting, import/export, integration, and operator diagnostics.")
-      ],
-      changelogSummary: "Initial v2 domain harness template for enterprise management software products.",
-      upgradeSummary: "Add v2 domain-first enterprise management software harness semantics.",
-      upgradeChanges: [
-        "Define CRM, ERP, workflow, architecture, and runtime layers.",
-        "Add business object, RBAC, workflow, audit, reporting, integration, and import/export evidence requirements.",
-        "Keep ordinary onboarding auto-matched while administrators maintain domain template versions."
       ],
       createdAt: DOMAIN_HARNESS_TEMPLATE_UPDATED_AT
     }),
@@ -843,6 +882,12 @@ function builtInHarnessTemplate(input: {
   extraCapabilities?: HarnessCapabilityDefinition[];
   runtimePatterns: Record<string, unknown>;
   validationBaseline: Record<string, unknown>;
+  evidenceContract?: Record<string, unknown>;
+  failureTaxonomy?: Record<string, unknown>;
+  diagnosticsBaseline?: Record<string, unknown>;
+  observabilityBaseline?: Record<string, unknown>;
+  governanceRules?: Record<string, unknown>;
+  llmDraftPolicy?: Record<string, unknown>;
   phaseMapping: Record<HarnessTemplateMaturityPhase, string[]>;
   sourceReferences: HarnessTemplateSourceReference[];
   changelogSummary: string;
@@ -916,13 +961,13 @@ function builtInHarnessTemplate(input: {
     capabilities,
     runtimePatterns: input.runtimePatterns,
     validationBaseline: input.validationBaseline,
-    evidenceContract: defaultHarnessEvidenceContract(),
-    failureTaxonomy: defaultHarnessFailureTaxonomy(),
-    diagnosticsBaseline: defaultHarnessDiagnosticsBaseline(),
-    observabilityBaseline: defaultHarnessObservabilityBaseline(),
-    governanceRules: defaultHarnessGovernanceRules(),
+    evidenceContract: input.evidenceContract ?? defaultHarnessEvidenceContract(),
+    failureTaxonomy: input.failureTaxonomy ?? defaultHarnessFailureTaxonomy(),
+    diagnosticsBaseline: input.diagnosticsBaseline ?? defaultHarnessDiagnosticsBaseline(),
+    observabilityBaseline: input.observabilityBaseline ?? defaultHarnessObservabilityBaseline(),
+    governanceRules: input.governanceRules ?? defaultHarnessGovernanceRules(),
     phaseMapping: input.phaseMapping,
-    llmDraftPolicy: defaultHarnessLlmDraftPolicy(),
+    llmDraftPolicy: input.llmDraftPolicy ?? defaultHarnessLlmDraftPolicy(),
     sourceReferences: input.sourceReferences,
     changelog: [
       {

@@ -6,15 +6,14 @@ EvoPilot automatically matches one published template when a project is onboarde
 
 ## v2 Template Model
 
-EvoPilot v2 adds domain-first templates alongside the existing runtime/language templates. A domain template defines the product harness first, then records compatibility, architecture, and implementation runtime profiles.
+EvoPilot v2.1 keeps domain-first templates alongside the existing runtime/language templates. A domain template defines the product harness first, then records compatibility, architecture, implementation runtime profiles, project required actions, evidence adapters, and release blockers.
 
 Current domain templates:
 
-- `database-product-harness@2.0.0` for self-developed database products. PostgreSQL, MySQL, and similar systems are compatibility references or differential oracles, not the default evolution target.
-- `api-gateway-harness@2.0.0` for gateway, ingress, traffic proxy, and service-mesh gateway products.
-- `enterprise-management-software-harness@2.0.0` for CRM, ERP, workflow, and enterprise management products.
+- `database-product-harness@2.1.0` for self-developed database products. PostgreSQL, MySQL, and similar systems are compatibility references or differential oracles, not the default evolution target.
+- `api-gateway-harness@2.1.0` for gateway, ingress, traffic proxy, and service-mesh gateway products.
 
-The existing Python, Java, Node, Go, observability, and generic management templates remain useful runtime or broad software-type baselines. Automatic matching gives strong domain signals priority and uses language/runtime signals as a secondary layer.
+The existing Python, Java, Node, Go, observability, and generic management templates remain useful runtime or broad software-type baselines. Automatic matching gives strong database/gateway domain signals priority and uses language/runtime signals as a secondary layer.
 
 ## Pack Shape
 

@@ -42,7 +42,7 @@ Create the run:
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 2.0.0 \
+  --target-version 2.1.0 \
   --intent "Add stronger Python exception tracking, observability, and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \

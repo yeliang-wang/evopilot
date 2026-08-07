@@ -47,6 +47,14 @@ import {
   logInfo,
   logWarn
 } from "../http/server-logging.js";
+import {
+  domainHarnessEvidenceAdapters,
+  domainHarnessReleaseBlockers,
+  domainHarnessRequiredActionIds,
+  domainHarnessRequiredActions,
+  projectDomainHarnessRepoProbe,
+  projectRepositoryFileHints
+} from "./project-harness-domain-execution.js";
 import type {
   AuthContext,
   AuthRole,
@@ -2008,6 +2016,11 @@ export function deterministicProjectHarnessProfileSource(project: StoredProject,
   const templateRuntimePatterns = recordObject(template.runtimePatterns);
   const templateService = recordObject(template.runtimePatterns.service);
   const templateLayers = harnessTemplateLayerMetadata(template);
+  const templateDomainExecution = recordObject(templateRuntimePatterns.domainExecution);
+  const domainRequiredActions = domainHarnessRequiredActions(templateDomainExecution);
+  const domainEvidenceAdapters = domainHarnessEvidenceAdapters(templateDomainExecution);
+  const domainReleaseBlockers = domainHarnessReleaseBlockers(templateDomainExecution);
+  const domainRepoProbe = projectDomainHarnessRepoProbe(project, template);
   const language = projectRuntime?.language ?? template.languageFamily;
   const requiredCommandGroups = normalizeStringList(template.validationBaseline.requiredCommandGroups, ["install", "unit", "smoke"]);
   const templateExceptionTracking = recordObject(template.failureTaxonomy.exceptionTracking);
@@ -2046,6 +2059,8 @@ export function deterministicProjectHarnessProfileSource(project: StoredProject,
     validation: {
       requiredCommandGroups,
       commands: ["installCommands", "lintCommands", "typecheckCommands", "unitCommands", "smokeCommands"],
+      requiredActions: domainHarnessRequiredActionIds(templateDomainExecution),
+      missingModuleBoundaries: domainRepoProbe.missingModuleBoundaries,
       requireExitCode: true,
       requireCommandOutput: true,
       requireTargetEvidencePackage: true,
@@ -2056,10 +2071,13 @@ export function deterministicProjectHarnessProfileSource(project: StoredProject,
       format: "json",
       requiredArtifacts: ["target-evidence-package", "phase-package", "goal-completion-report"],
       requiredEvidence: ["command-output", "exit-code", "runtime-log", "ci-status-or-local-proof", "release-decision", "trace-or-correlation-link", "alert-or-slo-proof"],
+      evidenceAdapters: domainEvidenceAdapters,
       correlationFields: normalizeStringList(template.evidenceContract.correlationFields, ["requestId", "traceId", "spanId", "tenantId", "workspaceId", "projectId", "release"])
     },
     rules: {
       capabilityBoundaryRequired: true,
+      domainHarnessRequiredActions: domainRequiredActions,
+      domainHarnessReleaseBlockers: domainReleaseBlockers,
       profileRevisionSuggestionWhenGapFound: true,
       noSilentActiveProfileMutation: true
     },
@@ -2116,6 +2134,8 @@ export function deterministicProjectHarnessProfileSource(project: StoredProject,
       architectureProfiles: templateLayers.architectureProfiles,
       runtimeProfiles: templateLayers.runtimeProfiles,
       referenceBoundary: templateLayers.referenceBoundary,
+      domainExecution: Object.keys(templateDomainExecution).length > 0 ? templateDomainExecution : undefined,
+      repoProbe: domainRepoProbe,
       referenceProductsAreOraclesOnly: templateRuntimePatterns.referenceBoundary ? true : undefined,
       tenantPolicyRefs: tenantPolicies.map(tenantHarnessPolicyRef)
     }
@@ -2182,9 +2202,9 @@ export function projectHarnessProfileGeneratorPrompt(project: StoredProject, tem
     "  \"template\": { \"templateId\": \"id\", \"version\": \"version\", \"digest\": \"sha256:...\" },",
     "  \"capabilities\": [{ \"id\": \"kebab-case\", \"name\": \"name\", \"boundary\": \"boundary\", \"requiredEvidence\": [\"evidence\"] }],",
     "  \"runtime\": { \"harnessLayer\": \"domain|runtime\", \"domain\": \"optional vertical domain\", \"compatibilityProfiles\": [], \"architectureProfiles\": [], \"runtimeProfiles\": [], \"language\": \"python|node|java|go|generic\", \"installCommands\": [], \"lintCommands\": [], \"typecheckCommands\": [], \"unitCommands\": [], \"smokeCommands\": [], \"functionalCommands\": [] },",
-    "  \"validation\": { \"requiredCommandGroups\": [], \"commands\": [], \"requireExitCode\": true, \"requireCommandOutput\": true },",
-    "  \"evidence\": { \"format\": \"json\", \"requiredArtifacts\": [], \"requiredEvidence\": [] },",
-    "  \"rules\": { \"noSilentActiveProfileMutation\": true },",
+    "  \"validation\": { \"requiredCommandGroups\": [], \"commands\": [], \"requiredActions\": [], \"missingModuleBoundaries\": [], \"requireExitCode\": true, \"requireCommandOutput\": true },",
+    "  \"evidence\": { \"format\": \"json\", \"requiredArtifacts\": [], \"requiredEvidence\": [], \"evidenceAdapters\": [] },",
+    "  \"rules\": { \"domainHarnessRequiredActions\": [], \"domainHarnessReleaseBlockers\": [], \"noSilentActiveProfileMutation\": true },",
     "  \"failureHandling\": { \"categories\": [], \"requiredFields\": [], \"exceptionTracking\": { \"requiredAttributes\": [], \"groupingKeys\": [], \"mustLinkToTrace\": true } },",
     "  \"diagnostics\": { \"requiredSignals\": [], \"commands\": [], \"rootCauseFields\": [], \"runbookRequirements\": { \"criticalAlertsRequireRunbook\": true } },",
     "  \"observability\": { \"requiredSignals\": [], \"healthCheck\": \"/health\", \"structuredLogs\": { \"requiredFields\": [] }, \"metrics\": {}, \"traces\": {}, \"dashboards\": {}, \"alerts\": {}, \"slo\": {} },",
@@ -2571,31 +2591,6 @@ export function harnessTemplateSelectionContextText(project: StoredProject, body
   return fields.join("\n").toLowerCase();
 }
 
-export function projectRepositoryFileHints(project: StoredProject): string[] {
-  const root = project.repository?.provider === "local-git" ? optionalTrimmedString(project.repository.root) : undefined;
-  if (!root) return [];
-  const absoluteRoot = path.resolve(root);
-  if (!fs.existsSync(absoluteRoot) || !fs.statSync(absoluteRoot).isDirectory()) return [];
-  const ignored = new Set([".git", "node_modules", "dist", "build", "target", ".venv", "venv", "__pycache__"]);
-  const results: string[] = [];
-  const visit = (dir: string, depth: number) => {
-    if (depth > 2 || results.length >= 200) return;
-    for (const entry of fs.readdirSync(dir).sort()) {
-      if (ignored.has(entry) || results.length >= 200) continue;
-      const absolute = path.join(dir, entry);
-      const relative = path.relative(absoluteRoot, absolute);
-      results.push(relative);
-      if (fs.statSync(absolute).isDirectory()) visit(absolute, depth + 1);
-    }
-  };
-  try {
-    visit(absoluteRoot, 0);
-  } catch {
-    return [];
-  }
-  return results;
-}
-
 export function detectHarnessTemplateLanguageFromContext(contextText: string): HarnessTemplateProfile["languageFamily"] | undefined {
   if (harnessSelectionTextIncludes(contextText, "pyproject.toml") || harnessSelectionTextIncludes(contextText, "pytest") || harnessSelectionTextIncludes(contextText, "python")) return "python";
   if (harnessSelectionTextIncludes(contextText, "pom.xml") || harnessSelectionTextIncludes(contextText, "build.gradle") || harnessSelectionTextIncludes(contextText, "spring") || harnessSelectionTextIncludes(contextText, "java")) return "java";
@@ -2613,7 +2608,6 @@ export function harnessTemplateBuiltInSignals(templateId: string): string[] {
     "observability-apm-harness": ["observability", "apm", "otel", "opentelemetry", "telemetry", "trace", "metric", "log", "prometheus", "skywalking", "collector", "alert"],
     "database-product-harness": ["database product", "dbms", "sql engine", "storage engine", "query optimizer", "transaction engine", "distributed database", "htap", "mpp", "postgres-compatible", "mysql-compatible", "self-developed database", "自研数据库", "数据库产品", "数据库内核", "sql 兼容", "查询优化器", "存储引擎", "事务引擎"],
     "api-gateway-harness": ["api gateway", "gateway product", "ingress", "traffic proxy", "route matching", "upstream", "rate limit", "auth policy", "plugin", "filter chain", "envoy", "kong", "apisix", "gateway api", "网关", "流量网关"],
-    "enterprise-management-software-harness": ["enterprise management software", "crm", "erp", "workflow system", "business workflow", "approval workflow", "rbac matrix", "audit trail", "report reconciliation", "customer lifecycle", "backoffice", "管理软件", "crm", "erp", "审批流", "业务流程"],
     "generic-management-software-harness": ["management", "admin", "workflow", "approval", "rbac", "report", "import", "export", "integration", "enterprise", "console", "backoffice"]
   };
   return signals[templateId] ?? [];
@@ -2678,27 +2672,6 @@ export function harnessTemplateDomainStrongSignals(templateId: string, domain: s
       "路由匹配",
       "限流",
       "插件生命周期"
-    ],
-    "enterprise-management-software": [
-      "enterprise management software",
-      "crm",
-      "erp",
-      "workflow system",
-      "business workflow",
-      "approval workflow",
-      "rbac matrix",
-      "audit trail",
-      "report reconciliation",
-      "customer lifecycle",
-      "sales opportunity",
-      "inventory approval",
-      "管理软件",
-      "企业管理软件",
-      "业务流程",
-      "审批流",
-      "客户生命周期",
-      "报表对账",
-      "权限矩阵"
     ]
   };
   return uniqueStrings([...(signals[domain] ?? []), ...harnessTemplateBuiltInSignals(templateId)]);
@@ -2939,6 +2912,18 @@ export function validateCompiledProjectHarnessProfile(project: StoredProject, te
     `format=${String(compiled.evidence.format ?? "unspecified")}`,
     `requiredArtifacts=${Array.isArray(compiled.evidence.requiredArtifacts) ? compiled.evidence.requiredArtifacts.join(",") : "none"}`
   ]);
+  const compiledRuntime = recordObject(compiled.runtime);
+  if (compiledRuntime.harnessLayer === "domain") {
+    const requiredActions = Array.isArray(compiled.rules.domainHarnessRequiredActions) ? compiled.rules.domainHarnessRequiredActions : [];
+    const evidenceAdapters = Array.isArray(compiled.evidence.evidenceAdapters) ? compiled.evidence.evidenceAdapters : [];
+    const releaseBlockers = normalizeStringList(compiled.rules.domainHarnessReleaseBlockers, []);
+    add("domain-harness-execution", requiredActions.length > 0 && evidenceAdapters.length > 0 && releaseBlockers.length > 0 ? "PASS" : "FAIL", true, [
+      `domain=${String(compiledRuntime.domain ?? "missing")}`,
+      `requiredActions=${requiredActions.length}`,
+      `evidenceAdapters=${evidenceAdapters.length}`,
+      `releaseBlockers=${releaseBlockers.length}`
+    ]);
+  }
   const governanceWeakening = detectHarnessGovernanceWeakening(template, compiled);
   add("mandatory-governance", governanceWeakening.length === 0 ? "PASS" : "FAIL", true, governanceWeakening.length === 0 ? [
     "targetPlanRequiresApproval=true",

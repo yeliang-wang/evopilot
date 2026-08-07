@@ -5,7 +5,7 @@ name: Database Product Harness Profile
 description: Project-level profile for a self-developed database product.
 template:
   templateId: database-product-harness
-  version: 2.0.0
+  version: 2.1.0
 runtime:
   harnessLayer: domain
   domain: database-product
@@ -28,9 +28,23 @@ runtime:
   functionalCommands: [make test-sql-compat, make test-recovery, make test-upgrade]
 validation:
   requiredCommandGroups: [install, lint, typecheck, unit, smoke, functional]
+  requiredActions: [declare-database-product-boundary, map-engine-module-boundaries, bind-sql-compatibility-suite, bind-correctness-and-recovery-suite]
   contractChecks: [sql-compatibility, protocol-compatibility, transaction-isolation, crash-recovery, upgrade-compatibility]
 evidence:
-  requiredArtifacts: [target-evidence-package, sql-compatibility-report, differential-oracle-report, crash-recovery-log]
+  requiredArtifacts: [target-evidence-package, sql-compatibility-report, differential-oracle-report, crash-recovery-log, benchmark-summary]
+  evidenceAdapters:
+    - artifact: sql-compatibility-report
+      commandGroup: functional
+    - artifact: differential-oracle-report
+      commandGroup: functional
+    - artifact: crash-recovery-log
+      commandGroup: functional
+    - artifact: benchmark-summary
+      commandGroup: functional
+rules:
+  domainHarnessReleaseBlockers:
+    - NO-GO when PostgreSQL or MySQL is treated as the evolved product.
+    - NO-GO when crash-recovery-log is missing before RC or GA.
 governance:
   profileActivationRequiresApproval: true
   promotionRequiresReleaseDecision: true

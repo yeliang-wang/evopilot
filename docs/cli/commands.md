@@ -449,13 +449,12 @@ java-ddd-service-harness@1.1.0
 node-saas-control-plane-harness@1.1.0
 go-middleware-harness@1.1.0
 observability-apm-harness@1.1.0
-database-product-harness@2.0.0
-api-gateway-harness@2.0.0
-enterprise-management-software-harness@2.0.0
+database-product-harness@2.1.0
+api-gateway-harness@2.1.0
 generic-management-software-harness@1.1.0
 ```
 
-Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. The `@2.0.0` domain templates define the product harness first, then compatibility, architecture, and runtime profiles; the `@1.1.0` runtime templates remain language or broad software-type baselines. Inspect `sourceReferences[]` to see that initialization basis. Project onboarding automatically matches one published template from domain signals, project runtime/repository context, and the goal loop target. `--from-template` is an explicit administrator or advanced override, not the normal first-onboarding path.
+Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. The `@2.1.0` domain templates define the product harness first, then compatibility, architecture, and runtime profiles; the `@1.1.0` runtime templates remain language or broad software-type baselines. Inspect `sourceReferences[]` to see that initialization basis. Project onboarding automatically matches one published template from domain signals, project runtime/repository context, and the goal loop target. `--from-template` is an explicit administrator or advanced override, not the normal first-onboarding path.
 
 The recommended administrator editing model is the human-readable template pack directory under `harness-templates/public/<template-id>/`:
 
@@ -481,7 +480,7 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 2.0.0 \
+  --target-version 2.1.0 \
   --intent "Add Python exception tracking and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \

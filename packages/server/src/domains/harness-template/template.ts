@@ -74,6 +74,16 @@ export function validateHarnessTemplateProfile(template: HarnessTemplateProfile)
   for (const [id, value] of sectionChecks) {
     add(id, Object.keys(value).length > 0 ? "PASS" : "FAIL", true, [`keys=${Object.keys(value).join(",") || "none"}`]);
   }
+  const domainContractFailures = validateDomainHarnessTemplateContract(template);
+  if (domainContractFailures.length > 0) {
+    add("domain-execution-contract", "FAIL", true, domainContractFailures);
+  } else if (recordObject(template.runtimePatterns).harnessLayer === "domain") {
+    add("domain-execution-contract", "PASS", true, [
+      `domain=${String(recordObject(template.runtimePatterns).domain ?? "missing")}`,
+      `requiredActions=${Array.isArray(recordObject(recordObject(template.runtimePatterns).domainExecution).requiredActions) ? (recordObject(recordObject(template.runtimePatterns).domainExecution).requiredActions as unknown[]).length : 0}`,
+      `evidenceAdapters=${Array.isArray(recordObject(recordObject(template.runtimePatterns).domainExecution).evidenceAdapters) ? (recordObject(recordObject(template.runtimePatterns).domainExecution).evidenceAdapters as unknown[]).length : 0}`
+    ]);
+  }
   const mappedPhases = HARNESS_TEMPLATE_MATURITY_PHASES.filter((phase) => (template.phaseMapping[phase] ?? []).length > 0);
   add("phase-mapping", mappedPhases.length === HARNESS_TEMPLATE_MATURITY_PHASES.length ? "PASS" : "FAIL", true, [`phases=${mappedPhases.join(",")}`]);
   const currentChangelog = template.changelog.some((entry) => entry.version === template.version && (entry.summary.length > 0 || entry.changes.length > 0));
@@ -90,6 +100,39 @@ export function validateHarnessTemplateProfile(template: HarnessTemplateProfile)
     warnings: checks.filter((check) => check.status === "WARN").map((check) => `${check.id}:${check.evidence.join(";")}`),
     evaluatedAt: new Date().toISOString()
   };
+}
+
+export function validateDomainHarnessTemplateContract(template: HarnessTemplateProfile): string[] {
+  const runtimePatterns = recordObject(template.runtimePatterns);
+  if (runtimePatterns.harnessLayer !== "domain") return [];
+  const domain = optionalTrimmedString(runtimePatterns.domain);
+  const failures: string[] = [];
+  const allowedDomains = new Set(["database-product", "api-gateway"]);
+  if (!domain) failures.push("runtimePatterns.domain is required for domain harness templates");
+  if (domain && !allowedDomains.has(domain)) failures.push(`runtimePatterns.domain=${domain} is outside the v2.1 domain harness scope`);
+  if (!Array.isArray(runtimePatterns.compatibilityProfiles) || runtimePatterns.compatibilityProfiles.length === 0) failures.push("runtimePatterns.compatibilityProfiles must be non-empty");
+  if (!Array.isArray(runtimePatterns.architectureProfiles) || runtimePatterns.architectureProfiles.length === 0) failures.push("runtimePatterns.architectureProfiles must be non-empty");
+  if (!Array.isArray(runtimePatterns.runtimeProfiles) || runtimePatterns.runtimeProfiles.length === 0) failures.push("runtimePatterns.runtimeProfiles must be non-empty");
+  const domainExecution = recordObject(runtimePatterns.domainExecution);
+  const requiredActions = Array.isArray(domainExecution.requiredActions) ? domainExecution.requiredActions : [];
+  const evidenceAdapters = Array.isArray(domainExecution.evidenceAdapters) ? domainExecution.evidenceAdapters : [];
+  const releaseBlockers = Array.isArray(domainExecution.releaseBlockers) ? domainExecution.releaseBlockers : [];
+  if (requiredActions.length === 0) failures.push("runtimePatterns.domainExecution.requiredActions must be non-empty");
+  if (evidenceAdapters.length === 0) failures.push("runtimePatterns.domainExecution.evidenceAdapters must be non-empty");
+  if (releaseBlockers.length === 0) failures.push("runtimePatterns.domainExecution.releaseBlockers must be non-empty");
+  if (domain === "database-product") {
+    const referenceBoundary = recordObject(runtimePatterns.referenceBoundary);
+    const forbiddenRoles = normalizeStringList(referenceBoundary.forbiddenRoles, []);
+    if (!forbiddenRoles.includes("replace the owner's product")) failures.push("database-product harness must forbid replacing the owner's product");
+    if (template.validationBaseline.referenceProductsAreOraclesOnly !== true) failures.push("database-product harness must set validationBaseline.referenceProductsAreOraclesOnly=true");
+  }
+  if (domain === "api-gateway") {
+    const artifacts = normalizeStringList(template.evidenceContract.requiredArtifacts, []);
+    for (const artifact of ["route-table", "policy-matrix", "plugin-report", "load-summary"]) {
+      if (!artifacts.includes(artifact)) failures.push(`api-gateway harness evidenceContract.requiredArtifacts missing ${artifact}`);
+    }
+  }
+  return uniqueStrings(failures);
 }
 
 export function hydrateHarnessTemplateChangelog(value: unknown, fallbackVersion: string, fallbackChangedAt: string): HarnessTemplateChangelogEntry[] {

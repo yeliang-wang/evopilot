@@ -407,11 +407,19 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-builtin-harness-library-"));
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-java-harness-repo-"));
   const dbRepoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-database-product-repo-"));
+  const gatewayRepoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-api-gateway-repo-"));
   const javaAppRepoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-java-app-db-client-repo-"));
   fs.writeFileSync(path.join(repoRoot, "pom.xml"), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>agent</artifactId><version>0.1.0</version></project>\n");
   fs.writeFileSync(path.join(dbRepoRoot, "pom.xml"), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>database</artifactId><version>0.1.0</version></project>\n");
   fs.mkdirSync(path.join(dbRepoRoot, "src"), { recursive: true });
   fs.writeFileSync(path.join(dbRepoRoot, "src", "query_optimizer.java"), "final class QueryOptimizer {}\n");
+  fs.writeFileSync(path.join(gatewayRepoRoot, "go.mod"), "module example.com/gateway\n\ngo 1.22\n");
+  fs.mkdirSync(path.join(gatewayRepoRoot, "internal", "route"), { recursive: true });
+  fs.mkdirSync(path.join(gatewayRepoRoot, "internal", "policy"), { recursive: true });
+  fs.mkdirSync(path.join(gatewayRepoRoot, "internal", "plugin"), { recursive: true });
+  fs.writeFileSync(path.join(gatewayRepoRoot, "internal", "route", "router.go"), "package route\n");
+  fs.writeFileSync(path.join(gatewayRepoRoot, "internal", "policy", "rate_limit.go"), "package policy\n");
+  fs.writeFileSync(path.join(gatewayRepoRoot, "internal", "plugin", "lifecycle.go"), "package plugin\n");
   fs.writeFileSync(path.join(javaAppRepoRoot, "pom.xml"), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>billing-service</artifactId><version>0.1.0</version></project>\n");
 
   const server = createServer({ dataRoot, runtimeMode: "debug" });
@@ -429,7 +437,6 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
       "observability-apm-harness",
       "database-product-harness",
       "api-gateway-harness",
-      "enterprise-management-software-harness",
       "generic-management-software-harness"
     ]));
     assert.ok(templates.data.templates.every((template) => Array.isArray(template.sourceReferences) && template.sourceReferences.length > 0));
@@ -450,15 +457,28 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
 
     const databaseTemplate = templates.data.templates.find((template) => template.id === "database-product-harness");
     assert.equal(databaseTemplate.languageFamily, "generic");
-    assert.equal(databaseTemplate.version, "2.0.0");
+    assert.equal(databaseTemplate.version, "2.1.0");
     assert.equal(databaseTemplate.runtimePatterns.harnessLayer, "domain");
     assert.equal(databaseTemplate.runtimePatterns.domain, "database-product");
     assert.ok(databaseTemplate.runtimePatterns.compatibilityProfiles.some((profile) => profile.id === "postgres-compatible"));
     assert.ok(databaseTemplate.runtimePatterns.compatibilityProfiles.some((profile) => profile.id === "mysql-compatible"));
     assert.ok(databaseTemplate.runtimePatterns.referenceBoundary.allowedRoles.includes("differential oracle"));
+    assert.ok(databaseTemplate.runtimePatterns.domainExecution.requiredActions.some((action) => action.id === "map-engine-module-boundaries"));
+    assert.ok(databaseTemplate.runtimePatterns.domainExecution.evidenceAdapters.some((adapter) => adapter.artifact === "crash-recovery-log"));
     assert.ok(databaseTemplate.validationBaseline.referenceProductsAreOraclesOnly);
+    assert.ok(databaseTemplate.validationBaseline.requiredActions.includes("bind-sql-compatibility-suite"));
+    assert.ok(databaseTemplate.evidenceContract.requiredArtifacts.includes("benchmark-summary"));
     assert.ok(databaseTemplate.capabilities.some((capability) => capability.id === "database-product-boundary"));
     assert.ok(databaseTemplate.sourceReferences.some((reference) => reference.name === "PostgreSQL" && reference.rationale.includes("not the default evolution target")));
+
+    const gatewayTemplate = templates.data.templates.find((template) => template.id === "api-gateway-harness");
+    assert.equal(gatewayTemplate.languageFamily, "generic");
+    assert.equal(gatewayTemplate.version, "2.1.0");
+    assert.equal(gatewayTemplate.runtimePatterns.harnessLayer, "domain");
+    assert.equal(gatewayTemplate.runtimePatterns.domain, "api-gateway");
+    assert.ok(gatewayTemplate.runtimePatterns.domainExecution.requiredActions.some((action) => action.id === "map-gateway-control-boundaries"));
+    assert.ok(gatewayTemplate.runtimePatterns.domainExecution.evidenceAdapters.some((adapter) => adapter.artifact === "load-summary"));
+    assert.ok(gatewayTemplate.evidenceContract.requiredArtifacts.includes("policy-matrix"));
 
     await post(`${baseUrl}/api/v1/projects`, {
       id: "java-ddd-agent",
@@ -515,14 +535,44 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
       goalLoopTarget: "Evolve our self-developed database product with PostgreSQL-compatible SQL behavior, query optimizer regression tests, storage engine recovery, and MySQL-compatible protocol checks"
     });
     assert.equal(generatedDatabase.data.profile.templateRef.templateId, "database-product-harness");
-    assert.equal(generatedDatabase.data.profile.templateRef.version, "2.0.0");
+    assert.equal(generatedDatabase.data.profile.templateRef.version, "2.1.0");
     assert.ok(generatedDatabase.data.profile.generatedBy.evidence.some((item) => item.includes("domain=database-product")));
     assert.equal(generatedDatabase.data.profile.sourceContent.runtime.harnessLayer, "domain");
     assert.equal(generatedDatabase.data.profile.sourceContent.runtime.domain, "database-product");
     assert.ok(generatedDatabase.data.profile.sourceContent.runtime.compatibilityProfiles.some((profile) => profile.id === "postgres-compatible"));
+    assert.ok(generatedDatabase.data.profile.sourceContent.validation.requiredActions.includes("map-engine-module-boundaries"));
+    assert.ok(generatedDatabase.data.profile.sourceContent.evidence.evidenceAdapters.some((adapter) => adapter.artifact === "differential-oracle-report"));
+    assert.ok(generatedDatabase.data.profile.sourceContent.rules.domainHarnessReleaseBlockers.some((blocker) => blocker.includes("PostgreSQL or MySQL")));
+    assert.ok(generatedDatabase.data.profile.sourceContent.metadata.repoProbe.moduleSignals.some((signal) => signal.id === "planner" && signal.matchedPaths.length > 0));
     assert.ok(generatedDatabase.data.profile.sourceContent.metadata.referenceProductsAreOraclesOnly);
     assert.ok(generatedDatabase.data.profile.compiledContent.runtime.referenceBoundary.forbiddenRoles.includes("replace the owner's product"));
     assert.ok(generatedDatabase.data.profile.compiledContent.validation.contractChecks.includes("sql-compatibility"));
+    assert.ok(generatedDatabase.data.profile.compiledContent.rules.domainHarnessRequiredActions.some((action) => action.id === "bind-correctness-and-recovery-suite"));
+
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "edge-gateway-product",
+      name: "Edge Gateway Product",
+      repository: { provider: "local-git", root: gatewayRepoRoot },
+      runtime: {
+        language: "go",
+        unitCommands: ["go test ./..."],
+        smokeCommands: ["make smoke-gateway"]
+      }
+    });
+
+    const generatedGateway = await post(`${baseUrl}/api/v1/projects/edge-gateway-product/harness-profiles/generate`, {
+      profileId: "default",
+      goalLoopTarget: "Evolve our API gateway product with route matching, upstream selection, rate limit policy, plugin lifecycle, Gateway API compatibility, and load regression checks"
+    });
+    assert.equal(generatedGateway.data.profile.templateRef.templateId, "api-gateway-harness");
+    assert.equal(generatedGateway.data.profile.templateRef.version, "2.1.0");
+    assert.ok(generatedGateway.data.profile.generatedBy.evidence.some((item) => item.includes("domain=api-gateway")));
+    assert.equal(generatedGateway.data.profile.sourceContent.runtime.domain, "api-gateway");
+    assert.ok(generatedGateway.data.profile.sourceContent.validation.requiredActions.includes("bind-route-policy-suite"));
+    assert.ok(generatedGateway.data.profile.sourceContent.evidence.evidenceAdapters.some((adapter) => adapter.artifact === "route-table"));
+    assert.ok(generatedGateway.data.profile.sourceContent.rules.domainHarnessReleaseBlockers.some((blocker) => blocker.includes("load-summary")));
+    assert.ok(generatedGateway.data.profile.sourceContent.metadata.repoProbe.moduleSignals.some((signal) => signal.id === "route" && signal.matchedPaths.length > 0));
+    assert.ok(generatedGateway.data.profile.compiledContent.validation.contractChecks.includes("route-contract"));
 
     await post(`${baseUrl}/api/v1/projects`, {
       id: "java-billing-service",

@@ -10,12 +10,12 @@ Install the current release CLI tarball set:
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.0.0/evopilot-contracts-2.0.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.0.0/evopilot-client-2.0.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.0.0/evopilot-cli-2.0.0.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v2.1.0/evopilot-contracts-2.1.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v2.1.0/evopilot-client-2.1.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v2.1.0/evopilot-cli-2.1.0.tgz
 ```
 
-Use `npm install -g @evopilot/cli@2.0.0` only after public npm registry publication has been verified for that exact version.
+Use `npm install -g @evopilot/cli@2.1.0` only after public npm registry publication has been verified for that exact version.
 
 ```bash
 evopilot --server https://evopilot.example.com auth login \
@@ -112,7 +112,7 @@ evopilot target plan --project <project-id> --objective "Enable the requested bu
 
 `ProjectHarnessProfile` is a project-level control-plane definition. It is generated or imported as YAML/JSON, validated by the server, activated explicitly, and then bound into `GoalPlan.projectHarness` by version and digest. If the tenant/workspace has an active `TenantHarnessPolicy`, the compiled profile also includes `policyRefs[]`; activation and goal planning are blocked when the profile was compiled against an older active policy.
 
-Fresh installs include runtime template harnesses such as `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, and `observability-apm-harness`, plus v2 domain templates `database-product-harness`, `api-gateway-harness`, and `enterprise-management-software-harness`. Project onboarding automatically matches a published template from domain signals, project runtime/repository context, and the goal loop target; `--from-template` is only an explicit administrator or advanced override. Inspect `sourceReferences[]` to see the public projects, official specifications, or engineering-practice sources used to initialize a template. The authoritative template format is YAML or JSON; Markdown is documentation only.
+Fresh installs include runtime template harnesses such as `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, and `observability-apm-harness`, plus v2 domain templates `database-product-harness` and `api-gateway-harness`. Project onboarding automatically matches a published template from domain signals, project runtime/repository context, and the goal loop target; `--from-template` is only an explicit administrator or advanced override. Inspect `sourceReferences[]` to see the public projects, official specifications, or engineering-practice sources used to initialize a template. The authoritative template format is YAML or JSON; Markdown is documentation only.
 
 Administrators can publish or replace template harness versions through the separate server-governed administrator CLI channel:
 
