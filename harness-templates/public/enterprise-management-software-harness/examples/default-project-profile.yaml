@@ -1,0 +1,36 @@
+schema: evopilot-project-harness-profile/v1
+profileId: default
+projectId: enterprise-management-product
+name: Enterprise Management Software Harness Profile
+description: Project-level profile for a CRM, ERP, workflow, or enterprise management product.
+template:
+  templateId: enterprise-management-software-harness
+  version: 2.0.0
+runtime:
+  harnessLayer: domain
+  domain: enterprise-management-software
+  language: generic
+  compatibilityProfiles:
+    - id: crm
+      role: business-domain-profile
+    - id: erp
+      role: business-domain-profile
+    - id: workflow
+      role: business-domain-profile
+  architectureProfiles:
+    - id: modular-monolith
+  runtimeProfiles: [java, node, python, go, generic]
+  installCommands: [make install]
+  lintCommands: [make lint]
+  typecheckCommands: [make build]
+  unitCommands: [make test]
+  smokeCommands: [make smoke]
+  functionalCommands: [make test:functional, make rbac-test, make workflow-test]
+validation:
+  requiredCommandGroups: [install, lint, typecheck, unit, smoke, functional]
+  contractChecks: [api-contract, rbac-matrix, workflow-state-machine, audit-trail, report-reconciliation]
+evidence:
+  requiredArtifacts: [target-evidence-package, rbac-matrix, workflow-state-machine, audit-event-sample, report-reconciliation]
+governance:
+  profileActivationRequiresApproval: true
+  promotionRequiresReleaseDecision: true

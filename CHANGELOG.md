@@ -8,6 +8,30 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 2.0.0 - 2026-08-07
+
+### Added
+
+- Added v2 domain-first HarnessTemplate records for `database-product-harness`, `api-gateway-harness`, and `enterprise-management-software-harness`.
+- Added compatibility, architecture, and runtime profile layers to generated `ProjectHarnessProfile` source metadata.
+- Added domain-aware automatic template matching so strong product-domain signals can select a vertical template ahead of a language/runtime template.
+- Added public template packs for the new domain templates under `harness-templates/public/`.
+
+### Changed
+
+- Preserved existing language templates as runtime-layer baselines instead of treating MySQL, PostgreSQL, gateway projects, CRM, or ERP references as the product being evolved.
+- Updated package versions, shared version fallbacks, installer defaults, OpenAPI metadata, Helm metadata, Dashboard image defaults, and release validation pointers to `2.0.0`.
+- Updated CLI, onboarding, schema, API, distribution, and release documentation for the v2 domain-template model.
+
+### Validation
+
+- `npm run build -w @evopilot/server`
+- `npm run cli:test`
+- `npm run check`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 1.1.8 - 2026-08-06
 
 ### Added

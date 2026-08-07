@@ -25,9 +25,38 @@ templates:
     path: observability-apm-harness
     languageFamily: generic
     softwareTypes: [observability-platform, apm, telemetry-pipeline]
+  - id: database-product-harness
+    version: 2.0.0
+    path: database-product-harness
+    languageFamily: generic
+    harnessLayer: domain
+    domain: database-product
+    compatibilityProfiles: [postgres-compatible, mysql-compatible, ansi-sql]
+    architectureProfiles: [single-node, distributed, htap, mpp]
+    runtimeProfiles: [java, go, rust, cpp, generic]
+    softwareTypes: [database-product, dbms, sql-engine, distributed-database, htap, mpp]
+  - id: api-gateway-harness
+    version: 2.0.0
+    path: api-gateway-harness
+    languageFamily: generic
+    harnessLayer: domain
+    domain: api-gateway
+    compatibilityProfiles: [http-gateway, ingress-compatible, envoy-compatible]
+    architectureProfiles: [edge-gateway, service-mesh-gateway, multi-tenant-gateway]
+    runtimeProfiles: [go, rust, java, node, generic]
+    softwareTypes: [api-gateway, ingress-controller, traffic-proxy, service-mesh-gateway]
+  - id: enterprise-management-software-harness
+    version: 2.0.0
+    path: enterprise-management-software-harness
+    languageFamily: generic
+    harnessLayer: domain
+    domain: enterprise-management-software
+    compatibilityProfiles: [crm, erp, workflow]
+    architectureProfiles: [modular-monolith, saas-control-plane, evented-workflow]
+    runtimeProfiles: [java, node, python, go, generic]
+    softwareTypes: [crm, erp, workflow-system, enterprise-management-software, backoffice]
   - id: generic-management-software-harness
     version: 1.1.0
     path: generic-management-software-harness
     languageFamily: generic
     softwareTypes: [management-software, workflow-system, enterprise-admin]
-

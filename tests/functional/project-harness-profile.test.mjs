@@ -406,7 +406,13 @@ test("TenantHarnessPolicy constrains project profiles and goal-plan harness bind
 test("Fresh install exposes multiple built-in HarnessTemplate types and generates non-Python profiles", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-builtin-harness-library-"));
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-java-harness-repo-"));
+  const dbRepoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-database-product-repo-"));
+  const javaAppRepoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-java-app-db-client-repo-"));
   fs.writeFileSync(path.join(repoRoot, "pom.xml"), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>agent</artifactId><version>0.1.0</version></project>\n");
+  fs.writeFileSync(path.join(dbRepoRoot, "pom.xml"), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>database</artifactId><version>0.1.0</version></project>\n");
+  fs.mkdirSync(path.join(dbRepoRoot, "src"), { recursive: true });
+  fs.writeFileSync(path.join(dbRepoRoot, "src", "query_optimizer.java"), "final class QueryOptimizer {}\n");
+  fs.writeFileSync(path.join(javaAppRepoRoot, "pom.xml"), "<project><modelVersion>4.0.0</modelVersion><groupId>test</groupId><artifactId>billing-service</artifactId><version>0.1.0</version></project>\n");
 
   const server = createServer({ dataRoot, runtimeMode: "debug" });
   await listen(server);
@@ -421,6 +427,9 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
       "node-saas-control-plane-harness",
       "go-middleware-harness",
       "observability-apm-harness",
+      "database-product-harness",
+      "api-gateway-harness",
+      "enterprise-management-software-harness",
       "generic-management-software-harness"
     ]));
     assert.ok(templates.data.templates.every((template) => Array.isArray(template.sourceReferences) && template.sourceReferences.length > 0));
@@ -439,6 +448,18 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
     assert.ok(javaTemplate.observabilityBaseline.structuredLogs.requiredFields.includes("traceId"));
     assert.ok(javaTemplate.observabilityBaseline.alerts.required.includes("latency_slo_breach"));
 
+    const databaseTemplate = templates.data.templates.find((template) => template.id === "database-product-harness");
+    assert.equal(databaseTemplate.languageFamily, "generic");
+    assert.equal(databaseTemplate.version, "2.0.0");
+    assert.equal(databaseTemplate.runtimePatterns.harnessLayer, "domain");
+    assert.equal(databaseTemplate.runtimePatterns.domain, "database-product");
+    assert.ok(databaseTemplate.runtimePatterns.compatibilityProfiles.some((profile) => profile.id === "postgres-compatible"));
+    assert.ok(databaseTemplate.runtimePatterns.compatibilityProfiles.some((profile) => profile.id === "mysql-compatible"));
+    assert.ok(databaseTemplate.runtimePatterns.referenceBoundary.allowedRoles.includes("differential oracle"));
+    assert.ok(databaseTemplate.validationBaseline.referenceProductsAreOraclesOnly);
+    assert.ok(databaseTemplate.capabilities.some((capability) => capability.id === "database-product-boundary"));
+    assert.ok(databaseTemplate.sourceReferences.some((reference) => reference.name === "PostgreSQL" && reference.rationale.includes("not the default evolution target")));
+
     await post(`${baseUrl}/api/v1/projects`, {
       id: "java-ddd-agent",
       name: "Java DDD Agent",
@@ -452,7 +473,7 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
 
     const generated = await post(`${baseUrl}/api/v1/projects/java-ddd-agent/harness-profiles/generate`, {
       profileId: "default",
-      goalLoopTarget: "Add customer lifecycle aggregate and release evidence"
+      goalLoopTarget: "Add account aggregate invariants and release evidence"
     });
     assert.equal(generated.data.profile.templateRef.templateId, "java-ddd-service-harness");
     assert.ok(generated.data.profile.generatedBy.evidence.includes("templateSelection=auto-match"));
@@ -477,6 +498,49 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
     assert.equal(evolved.data.profile.templateRef.templateId, "java-ddd-service-harness");
     assert.ok(evolved.data.profile.generatedBy.evidence.includes("templateSelection=previous-active-profile"));
     assert.ok(evolved.data.profile.generatedBy.evidence.includes("previousActiveVersion=1"));
+
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "self-developed-sql-engine",
+      name: "Self Developed SQL Engine",
+      repository: { provider: "local-git", root: dbRepoRoot },
+      runtime: {
+        language: "java",
+        unitCommands: ["./mvnw test"],
+        smokeCommands: ["make smoke-sql"]
+      }
+    });
+
+    const generatedDatabase = await post(`${baseUrl}/api/v1/projects/self-developed-sql-engine/harness-profiles/generate`, {
+      profileId: "default",
+      goalLoopTarget: "Evolve our self-developed database product with PostgreSQL-compatible SQL behavior, query optimizer regression tests, storage engine recovery, and MySQL-compatible protocol checks"
+    });
+    assert.equal(generatedDatabase.data.profile.templateRef.templateId, "database-product-harness");
+    assert.equal(generatedDatabase.data.profile.templateRef.version, "2.0.0");
+    assert.ok(generatedDatabase.data.profile.generatedBy.evidence.some((item) => item.includes("domain=database-product")));
+    assert.equal(generatedDatabase.data.profile.sourceContent.runtime.harnessLayer, "domain");
+    assert.equal(generatedDatabase.data.profile.sourceContent.runtime.domain, "database-product");
+    assert.ok(generatedDatabase.data.profile.sourceContent.runtime.compatibilityProfiles.some((profile) => profile.id === "postgres-compatible"));
+    assert.ok(generatedDatabase.data.profile.sourceContent.metadata.referenceProductsAreOraclesOnly);
+    assert.ok(generatedDatabase.data.profile.compiledContent.runtime.referenceBoundary.forbiddenRoles.includes("replace the owner's product"));
+    assert.ok(generatedDatabase.data.profile.compiledContent.validation.contractChecks.includes("sql-compatibility"));
+
+    await post(`${baseUrl}/api/v1/projects`, {
+      id: "java-billing-service",
+      name: "Java Billing Service",
+      repository: { provider: "local-git", root: javaAppRepoRoot },
+      runtime: {
+        language: "java",
+        unitCommands: ["./mvnw test"],
+        smokeCommands: ["./mvnw verify"]
+      }
+    });
+
+    const generatedJavaDatabaseClient = await post(`${baseUrl}/api/v1/projects/java-billing-service/harness-profiles/generate`, {
+      profileId: "default",
+      goalLoopTarget: "Add MySQL database connection pool and JDBC datasource migration for the billing service"
+    });
+    assert.equal(generatedJavaDatabaseClient.data.profile.templateRef.templateId, "java-ddd-service-harness");
+    assert.ok(generatedJavaDatabaseClient.data.profile.generatedBy.evidence.some((item) => item.includes("runtimeLanguage=java")));
   } finally {
     await close(server);
   }

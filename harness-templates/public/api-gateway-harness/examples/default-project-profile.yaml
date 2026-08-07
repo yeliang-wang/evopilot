@@ -1,0 +1,34 @@
+schema: evopilot-project-harness-profile/v1
+profileId: default
+projectId: api-gateway
+name: API Gateway Harness Profile
+description: Project-level profile for an API gateway product.
+template:
+  templateId: api-gateway-harness
+  version: 2.0.0
+runtime:
+  harnessLayer: domain
+  domain: api-gateway
+  language: generic
+  compatibilityProfiles:
+    - id: http-gateway
+      role: protocol-baseline
+    - id: ingress-compatible
+      role: ecosystem-compatibility
+  architectureProfiles:
+    - id: edge-gateway
+  runtimeProfiles: [go, rust, java, node, generic]
+  installCommands: [make deps]
+  lintCommands: [make lint]
+  typecheckCommands: [make build]
+  unitCommands: [make test-unit]
+  smokeCommands: [make smoke-gateway]
+  functionalCommands: [make test-routes, make test-policy, make test-load]
+validation:
+  requiredCommandGroups: [install, lint, typecheck, unit, smoke, functional]
+  contractChecks: [route-contract, policy-contract, plugin-contract, protocol-compatibility, load-regression]
+evidence:
+  requiredArtifacts: [target-evidence-package, route-table, policy-matrix, plugin-report, load-summary]
+governance:
+  profileActivationRequiresApproval: true
+  promotionRequiresReleaseDecision: true

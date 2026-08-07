@@ -2005,7 +2005,9 @@ export function deterministicProjectHarnessProfileSource(project: StoredProject,
   const goalLoopTarget = optionalTrimmedString(body.goalLoopTarget ?? body.objective ?? body.target ?? body.prompt);
   const projectRuntime = project.runtime;
   const defaultCommands = harnessTemplateDefaultCommands(template);
+  const templateRuntimePatterns = recordObject(template.runtimePatterns);
   const templateService = recordObject(template.runtimePatterns.service);
+  const templateLayers = harnessTemplateLayerMetadata(template);
   const language = projectRuntime?.language ?? template.languageFamily;
   const requiredCommandGroups = normalizeStringList(template.validationBaseline.requiredCommandGroups, ["install", "unit", "smoke"]);
   const templateExceptionTracking = recordObject(template.failureTaxonomy.exceptionTracking);
@@ -2029,6 +2031,7 @@ export function deterministicProjectHarnessProfileSource(project: StoredProject,
     template: harnessTemplateRef(template),
     capabilities: template.capabilities,
     runtime: {
+      ...templateLayers,
       language,
       installCommands: projectRuntime?.installCommands ?? defaultCommands.install,
       lintCommands: defaultCommands.lint,
@@ -2107,9 +2110,32 @@ export function deterministicProjectHarnessProfileSource(project: StoredProject,
       generatedBy: "deterministic-template",
       templateSelectionMode: templateSelection?.mode,
       templateSelectionReasons: templateSelection?.reasons,
+      templateHarnessLayer: templateLayers.harnessLayer,
+      templateDomain: templateLayers.domain,
+      compatibilityProfiles: templateLayers.compatibilityProfiles,
+      architectureProfiles: templateLayers.architectureProfiles,
+      runtimeProfiles: templateLayers.runtimeProfiles,
+      referenceBoundary: templateLayers.referenceBoundary,
+      referenceProductsAreOraclesOnly: templateRuntimePatterns.referenceBoundary ? true : undefined,
       tenantPolicyRefs: tenantPolicies.map(tenantHarnessPolicyRef)
     }
   };
+}
+
+export function harnessTemplateLayerMetadata(template: HarnessTemplateProfile): Record<string, unknown> {
+  const runtimePatterns = recordObject(template.runtimePatterns);
+  const metadata: Record<string, unknown> = {};
+  const harnessLayer = optionalTrimmedString(runtimePatterns.harnessLayer);
+  const domain = optionalTrimmedString(runtimePatterns.domain);
+  const domainLabel = optionalTrimmedString(runtimePatterns.domainLabel);
+  if (harnessLayer) metadata.harnessLayer = harnessLayer;
+  if (domain) metadata.domain = domain;
+  if (domainLabel) metadata.domainLabel = domainLabel;
+  if (Array.isArray(runtimePatterns.compatibilityProfiles)) metadata.compatibilityProfiles = runtimePatterns.compatibilityProfiles;
+  if (Array.isArray(runtimePatterns.architectureProfiles)) metadata.architectureProfiles = runtimePatterns.architectureProfiles;
+  if (Array.isArray(runtimePatterns.runtimeProfiles)) metadata.runtimeProfiles = runtimePatterns.runtimeProfiles;
+  if (isRecord(runtimePatterns.referenceBoundary)) metadata.referenceBoundary = runtimePatterns.referenceBoundary;
+  return metadata;
 }
 
 export function harnessTemplateDefaultCommands(template: HarnessTemplateProfile): Record<"install" | "lint" | "typecheck" | "unit" | "smoke" | "functional", string[]> {
@@ -2155,7 +2181,7 @@ export function projectHarnessProfileGeneratorPrompt(project: StoredProject, tem
     "  \"description\": \"what this profile controls\",",
     "  \"template\": { \"templateId\": \"id\", \"version\": \"version\", \"digest\": \"sha256:...\" },",
     "  \"capabilities\": [{ \"id\": \"kebab-case\", \"name\": \"name\", \"boundary\": \"boundary\", \"requiredEvidence\": [\"evidence\"] }],",
-    "  \"runtime\": { \"language\": \"python|node|java|go|generic\", \"installCommands\": [], \"lintCommands\": [], \"typecheckCommands\": [], \"unitCommands\": [], \"smokeCommands\": [], \"functionalCommands\": [] },",
+    "  \"runtime\": { \"harnessLayer\": \"domain|runtime\", \"domain\": \"optional vertical domain\", \"compatibilityProfiles\": [], \"architectureProfiles\": [], \"runtimeProfiles\": [], \"language\": \"python|node|java|go|generic\", \"installCommands\": [], \"lintCommands\": [], \"typecheckCommands\": [], \"unitCommands\": [], \"smokeCommands\": [], \"functionalCommands\": [] },",
     "  \"validation\": { \"requiredCommandGroups\": [], \"commands\": [], \"requireExitCode\": true, \"requireCommandOutput\": true },",
     "  \"evidence\": { \"format\": \"json\", \"requiredArtifacts\": [], \"requiredEvidence\": [] },",
     "  \"rules\": { \"noSilentActiveProfileMutation\": true },",
@@ -2372,7 +2398,7 @@ export function selectHarnessTemplateForProjectContext(store: FileStore, project
     template: selected.template,
     mode: "auto-match",
     reasons: selected.reasons.length > 0 ? selected.reasons : ["fallback=generic-management-software"],
-    candidateScores: candidates.slice(0, 6).map((candidate) => ({
+    candidateScores: candidates.slice(0, 9).map((candidate) => ({
       templateId: candidate.template.id,
       version: candidate.template.version,
       score: candidate.score,
@@ -2397,6 +2423,11 @@ export function scoreHarnessTemplateForProjectContext(template: HarnessTemplateP
   let score = 0;
   const reasons: string[] = [];
   const runtimeLanguage = project.runtime?.language;
+  const domainScore = scoreHarnessTemplateDomainForProjectContext(template, contextText);
+  if (domainScore.score > 0) {
+    score += domainScore.score;
+    reasons.push(...domainScore.reasons);
+  }
   if (runtimeLanguage && template.languageFamily === runtimeLanguage) {
     score += 120;
     reasons.push(`runtimeLanguage=${runtimeLanguage}`);
@@ -2433,6 +2464,68 @@ export function scoreHarnessTemplateForProjectContext(template: HarnessTemplateP
     reasons.push("fallback=generic-management-software");
   }
   return { score, reasons: uniqueStrings(reasons).slice(0, 12) };
+}
+
+export function scoreHarnessTemplateDomainForProjectContext(template: HarnessTemplateProfile, contextText: string): { score: number; reasons: string[] } {
+  const runtimePatterns = recordObject(template.runtimePatterns);
+  const domain = optionalTrimmedString(runtimePatterns.domain);
+  if (!domain) return { score: 0, reasons: [] };
+  const strongSignals = harnessTemplateDomainStrongSignals(template.id, domain);
+  const matchedStrongSignals = strongSignals.filter((signal) => harnessSelectionTextIncludes(contextText, signal));
+  if (matchedStrongSignals.length > 0) {
+    return {
+      score: 180 + Math.min(matchedStrongSignals.length, 5) * 12,
+      reasons: [`domain=${domain}`, ...matchedStrongSignals.slice(0, 5).map((signal) => `domainSignal=${signal}`)]
+    };
+  }
+
+  if (domain === "database-product") {
+    const negativeApplicationSignals = [
+      "database connection",
+      "database migration",
+      "database datasource",
+      "jdbc datasource",
+      "orm",
+      "crud repository",
+      "connect to mysql",
+      "connect to postgres",
+      "连接mysql",
+      "连接 postgresql",
+      "数据库连接",
+      "数据源"
+    ];
+    if (negativeApplicationSignals.some((signal) => harnessSelectionTextIncludes(contextText, signal))) return { score: 0, reasons: [] };
+    const databaseMentioned = contextHasAnyHarnessSignal(contextText, ["database", "dbms", "sql", "数据库"]);
+    const productCoreMentioned = contextHasAnyHarnessSignal(contextText, [
+      "engine",
+      "kernel",
+      "product",
+      "compatible",
+      "compatibility",
+      "optimizer",
+      "transaction",
+      "storage",
+      "replication",
+      "recovery",
+      "distributed",
+      "htap",
+      "mpp",
+      "内核",
+      "产品",
+      "兼容",
+      "优化器",
+      "事务",
+      "存储",
+      "复制",
+      "恢复",
+      "分布式"
+    ]);
+    if (databaseMentioned && productCoreMentioned) {
+      return { score: 150, reasons: [`domain=${domain}`, "domainComposite=database-product"] };
+    }
+  }
+
+  return { score: 0, reasons: [] };
 }
 
 export function harnessTemplateSelectionContextText(project: StoredProject, body: Record<string, unknown>): string {
@@ -2518,9 +2611,97 @@ export function harnessTemplateBuiltInSignals(templateId: string): string[] {
     "node-saas-control-plane-harness": ["node", "typescript", "javascript", "npm", "pnpm", "package.json", "nestjs", "express", "saas", "tenant", "workspace", "rbac", "control plane", "queue", "worker"],
     "go-middleware-harness": ["go", "golang", "go.mod", "kubernetes", "controller", "middleware", "prometheus", "grpc", "concurrency", "race", "infrastructure", "operator"],
     "observability-apm-harness": ["observability", "apm", "otel", "opentelemetry", "telemetry", "trace", "metric", "log", "prometheus", "skywalking", "collector", "alert"],
+    "database-product-harness": ["database product", "dbms", "sql engine", "storage engine", "query optimizer", "transaction engine", "distributed database", "htap", "mpp", "postgres-compatible", "mysql-compatible", "self-developed database", "自研数据库", "数据库产品", "数据库内核", "sql 兼容", "查询优化器", "存储引擎", "事务引擎"],
+    "api-gateway-harness": ["api gateway", "gateway product", "ingress", "traffic proxy", "route matching", "upstream", "rate limit", "auth policy", "plugin", "filter chain", "envoy", "kong", "apisix", "gateway api", "网关", "流量网关"],
+    "enterprise-management-software-harness": ["enterprise management software", "crm", "erp", "workflow system", "business workflow", "approval workflow", "rbac matrix", "audit trail", "report reconciliation", "customer lifecycle", "backoffice", "管理软件", "crm", "erp", "审批流", "业务流程"],
     "generic-management-software-harness": ["management", "admin", "workflow", "approval", "rbac", "report", "import", "export", "integration", "enterprise", "console", "backoffice"]
   };
   return signals[templateId] ?? [];
+}
+
+export function harnessTemplateDomainStrongSignals(templateId: string, domain: string): string[] {
+  const signals: Record<string, string[]> = {
+    "database-product": [
+      "database product",
+      "database engine",
+      "self-developed database",
+      "self developed database",
+      "own database",
+      "dbms",
+      "sql engine",
+      "storage engine",
+      "query optimizer",
+      "transaction engine",
+      "distributed database",
+      "database kernel",
+      "database compatibility",
+      "postgres-compatible",
+      "postgres compatible",
+      "postgresql-compatible",
+      "postgresql compatible",
+      "mysql-compatible",
+      "mysql compatible",
+      "htap",
+      "mpp",
+      "oltp engine",
+      "crash recovery",
+      "自研数据库",
+      "数据库产品",
+      "数据库内核",
+      "数据库兼容",
+      "sql兼容",
+      "sql 兼容",
+      "查询优化器",
+      "存储引擎",
+      "事务引擎",
+      "分布式数据库"
+    ],
+    "api-gateway": [
+      "api gateway",
+      "gateway product",
+      "gateway api",
+      "ingress controller",
+      "traffic proxy",
+      "route matching",
+      "upstream selection",
+      "rate limit",
+      "auth policy",
+      "plugin lifecycle",
+      "filter chain",
+      "service mesh gateway",
+      "envoy",
+      "kong",
+      "apisix",
+      "网关",
+      "api 网关",
+      "流量网关",
+      "路由匹配",
+      "限流",
+      "插件生命周期"
+    ],
+    "enterprise-management-software": [
+      "enterprise management software",
+      "crm",
+      "erp",
+      "workflow system",
+      "business workflow",
+      "approval workflow",
+      "rbac matrix",
+      "audit trail",
+      "report reconciliation",
+      "customer lifecycle",
+      "sales opportunity",
+      "inventory approval",
+      "管理软件",
+      "企业管理软件",
+      "业务流程",
+      "审批流",
+      "客户生命周期",
+      "报表对账",
+      "权限矩阵"
+    ]
+  };
+  return uniqueStrings([...(signals[domain] ?? []), ...harnessTemplateBuiltInSignals(templateId)]);
 }
 
 export function harnessTemplateIntrinsicSignals(template: HarnessTemplateProfile): string[] {
@@ -2530,12 +2711,38 @@ export function harnessTemplateIntrinsicSignals(template: HarnessTemplateProfile
     template.name,
     template.description,
     template.languageFamily,
+    optionalTrimmedString(runtimePatterns.harnessLayer) ?? "",
+    optionalTrimmedString(runtimePatterns.domain) ?? "",
+    optionalTrimmedString(runtimePatterns.domainLabel) ?? "",
     ...normalizeStringList(runtimePatterns.architectureStyles, []),
     ...normalizeStringList(runtimePatterns.packageManagers, []),
     ...normalizeStringList(runtimePatterns.buildTools, []),
+    ...harnessTemplateProfileSignals(runtimePatterns.compatibilityProfiles),
+    ...harnessTemplateProfileSignals(runtimePatterns.architectureProfiles),
+    ...normalizeStringList(runtimePatterns.runtimeProfiles, []),
     ...template.capabilities.flatMap((capability) => [capability.id, capability.name])
   ];
   return uniqueStrings(values.map((value) => String(value).toLowerCase()).flatMap((value) => value.split(/[,/|]+/)).map((value) => value.trim()).filter((value) => value.length >= 3));
+}
+
+export function harnessTemplateProfileSignals(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (typeof item === "string") return [item];
+    if (!isRecord(item)) return [];
+    return [
+      optionalTrimmedString(item.id),
+      optionalTrimmedString(item.name),
+      optionalTrimmedString(item.role),
+      optionalTrimmedString(item.referenceProduct),
+      ...normalizeStringList(item.scope, []),
+      ...normalizeStringList(item.concerns, [])
+    ].filter((entry): entry is string => Boolean(entry));
+  });
+}
+
+export function contextHasAnyHarnessSignal(contextText: string, signals: string[]): boolean {
+  return signals.some((signal) => harnessSelectionTextIncludes(contextText, signal));
 }
 
 export function harnessSelectionTextIncludes(contextText: string, signal: string): boolean {

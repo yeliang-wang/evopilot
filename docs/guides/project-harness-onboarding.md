@@ -18,10 +18,15 @@ java-ddd-service-harness
 node-saas-control-plane-harness
 go-middleware-harness
 observability-apm-harness
+database-product-harness
+api-gateway-harness
+enterprise-management-software-harness
 generic-management-software-harness
 ```
 
-Each built-in template defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, and `sourceReferences[]`. The built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as versioned template data. Current built-ins ship as `@1.1.0` enterprise harness baselines with structured logs, exception tracking, trace correlation, SLO monitoring, alert routing, operational runbooks, language-specific diagnostics, and release evidence rules. EvoPilot does not dynamically fetch GitHub at runtime.
+Each built-in template defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, and `sourceReferences[]`. EvoPilot v2 separates domain templates from implementation runtime templates. Domain templates such as `database-product-harness@2.0.0`, `api-gateway-harness@2.0.0`, and `enterprise-management-software-harness@2.0.0` define the product harness first, then include compatibility, architecture, and runtime profiles. Language templates such as Python, Java, Node, and Go remain runtime-layer baselines. EvoPilot does not dynamically fetch GitHub at runtime.
+
+For database projects, the domain template evolves the owner's database product. PostgreSQL, MySQL, and similar systems are recorded as compatibility references, corpora, or differential oracles, not as the default product being evolved.
 
 For administrator maintenance, the public templates also exist as human-readable packs under `harness-templates/public/<template-id>/`:
 
@@ -102,7 +107,7 @@ evopilot harness profile generate \
 
 The generated version is `DRAFT`. It is not active and does not control goal planning yet.
 
-For first onboarding, EvoPilot matches the template automatically from runtime language, repository hints, DevOps context, software-type signals, and the goal loop target. It also includes active tenant/workspace policies whose `appliesTo` rules match the project. `generatedBy.evidence[]` reports the template result as `templateSelection=auto-match` and includes selection reasons such as runtime language or matched signals. When policies are active, `generatedBy.evidence[]` also includes `tenantPolicy=<policy>@v<version>`. `--from-template` is only an explicit administrator or advanced override.
+For first onboarding, EvoPilot matches the template automatically from domain signals, runtime language, repository hints, DevOps context, software-type signals, and the goal loop target. Strong product-domain signals select a vertical template first; runtime language then becomes the implementation layer inside the generated profile. It also includes active tenant/workspace policies whose `appliesTo` rules match the project. `generatedBy.evidence[]` reports the template result as `templateSelection=auto-match` and includes selection reasons such as `domain=database-product`, `domainSignal=api gateway`, runtime language, or matched template signals. When policies are active, `generatedBy.evidence[]` also includes `tenantPolicy=<policy>@v<version>`. `--from-template` is only an explicit administrator or advanced override.
 
 For second onboarding or project evolution, EvoPilot reuses the previous active profile's template unless an administrator explicitly overrides it, reads the previous active profile, and produces a diff-aware draft instead of creating an unrelated profile.
 

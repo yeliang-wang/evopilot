@@ -12,6 +12,8 @@ export function defaultHarnessTemplates(): HarnessTemplateProfile[] {
 
 const BUILT_IN_HARNESS_TEMPLATE_VERSION = "1.1.0";
 const BUILT_IN_HARNESS_TEMPLATE_UPDATED_AT = "2026-07-31T06:00:00.000Z";
+const DOMAIN_HARNESS_TEMPLATE_VERSION = "2.0.0";
+const DOMAIN_HARNESS_TEMPLATE_UPDATED_AT = "2026-08-07T00:00:00.000Z";
 
 function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "digest"> & { digest?: string }> {
   const createdAt = "2026-07-31T00:00:00.000Z";
@@ -400,6 +402,351 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
       createdAt
     }),
     builtInHarnessTemplate({
+      id: "database-product-harness",
+      name: "Database Product Harness",
+      description: "Domain baseline for self-developed database products: SQL compatibility, storage/query/transaction engines, distributed architecture, data correctness, performance, recovery, and release governance.",
+      languageFamily: "generic",
+      version: DOMAIN_HARNESS_TEMPLATE_VERSION,
+      updatedAt: DOMAIN_HARNESS_TEMPLATE_UPDATED_AT,
+      runtimeCapability: {
+        id: "database-product-runtime",
+        name: "Database product runtime harness",
+        boundary: "Build, boot, SQL compatibility, storage, transaction, recovery, upgrade, benchmark, and operability commands are declared by the project profile.",
+        requiredEvidence: ["build-output", "sql-compatibility-output", "transaction-output", "recovery-output", "benchmark-output", "upgrade-output"]
+      },
+      extraCapabilities: [
+        {
+          id: "database-product-boundary",
+          name: "Self-developed database product boundary",
+          boundary: "The project being evolved is the owner's database product. PostgreSQL, MySQL, and other databases may be used only as compatibility references, corpora, or differential oracles unless the owner explicitly declares an upstream-fork strategy.",
+          requiredEvidence: ["product-scope-declaration", "reference-role-declaration", "compatibility-corpus", "differential-oracle-report"]
+        },
+        {
+          id: "sql-compatibility-boundary",
+          name: "SQL compatibility boundary",
+          boundary: "SQL grammar, dialect behavior, protocol behavior, type system, transaction isolation, error codes, and migration compatibility are versioned and tested.",
+          requiredEvidence: ["sql-grammar-suite", "dialect-compatibility-report", "protocol-compatibility-report", "error-code-map", "migration-case"]
+        },
+        {
+          id: "database-engine-correctness",
+          name: "Database engine correctness",
+          boundary: "Storage engine, query optimizer, transaction engine, replication, recovery, consistency, and data durability behavior are proven with real boundary evidence.",
+          requiredEvidence: ["storage-engine-test", "optimizer-plan-proof", "transaction-isolation-test", "crash-recovery-test", "replication-consistency-test"]
+        }
+      ],
+      runtimePatterns: {
+        harnessLayer: "domain",
+        domain: "database-product",
+        domainLabel: "Self-developed database product",
+        language: "generic",
+        compatibilityProfiles: [
+          { id: "postgres-compatible", role: "compatibility-oracle", scope: ["sql-dialect", "wire-protocol", "system-catalog", "error-code"], referenceProduct: "PostgreSQL" },
+          { id: "mysql-compatible", role: "compatibility-oracle", scope: ["sql-dialect", "wire-protocol", "type-system", "error-code"], referenceProduct: "MySQL" },
+          { id: "ansi-sql", role: "standards-baseline", scope: ["grammar", "semantics", "conformance"] }
+        ],
+        architectureProfiles: [
+          { id: "single-node", concerns: ["storage-engine", "query-engine", "transaction-engine", "backup-restore"] },
+          { id: "distributed", concerns: ["replication", "sharding", "consensus", "failover", "online-upgrade"] },
+          { id: "htap", concerns: ["oltp", "olap", "column-store", "row-store", "workload-isolation"] },
+          { id: "mpp", concerns: ["planner", "executor", "exchange", "distributed-join", "resource-governance"] }
+        ],
+        runtimeProfiles: ["java", "go", "rust", "cpp", "generic"],
+        referenceBoundary: {
+          allowedRoles: ["compatibility corpus", "differential oracle", "SQL dialect reference", "protocol reference"],
+          forbiddenRoles: ["default evolution target", "silent upstream fork target", "replace the owner's product"]
+        },
+        architectureStyles: ["database-product", "dbms", "sql-engine", "storage-engine", "distributed-database", "htap", "mpp"],
+        defaultCommands: {
+          install: ["make deps", "mvn -q -DskipTests package", "go mod download"],
+          lint: ["make lint"],
+          typecheck: ["make build"],
+          unit: ["make test-unit"],
+          smoke: ["make smoke-sql"],
+          functional: ["make test-sql-compat", "make test-recovery", "make test-upgrade"]
+        },
+        databaseControls: {
+          correctness: ["sql-semantics", "transaction-isolation", "mvcc-or-locking", "crash-recovery", "replication-consistency"],
+          compatibility: ["postgres-compatible", "mysql-compatible", "ansi-sql", "driver-protocol", "error-code-map"],
+          performance: ["oltp-throughput", "query-latency", "planner-regression", "resource-governance", "load-spike"],
+          operations: ["backup-restore", "rolling-upgrade", "failover", "observability", "runbook"]
+        },
+        exceptionTracking: {
+          handlers: ["SQL parser error mapper", "planner/runtime error classifier", "storage corruption guard", "replication failure classifier", "client protocol error mapper"],
+          requiredErrorEnvelope: ["sqlState", "errorCode", "message", "requestId", "traceId", "queryId", "transactionId", "retryable", "compatibilityProfile", "supportReference"],
+          exceptionAttributes: ["exception.type", "sql.state", "db.system", "db.operation", "db.statement.hash", "query.id", "transaction.id", "compatibility.profile"],
+          regressionTests: ["parser error contract", "transaction conflict", "deadlock handling", "crash recovery", "protocol compatibility"]
+        },
+        observability: {
+          instrumentation: ["SQL query tracing", "storage engine metrics", "transaction metrics", "replication metrics", "OpenTelemetry service telemetry"],
+          logs: ["requestId", "traceId", "queryId", "transactionId", "tenantId", "databaseName", "compatibilityProfile", "sqlState", "errorCode"],
+          metrics: ["query_latency", "transaction_abort_rate", "lock_wait_duration", "buffer_cache_hit_ratio", "replication_lag", "checkpoint_duration", "storage_io_latency"],
+          traces: ["client protocol", "parser", "planner", "executor", "storage", "transaction", "replication"],
+          alerts: ["data_correctness_regression", "query_p95_latency", "transaction_abort_spike", "replication_lag_high", "recovery_failure"]
+        },
+        diagnostics: {
+          commands: ["make smoke-sql", "make test-sql-compat", "make test-recovery", "make benchmark-smoke", "make explain-regression"],
+          artifacts: ["sql-compatibility-report", "differential-oracle-report", "explain-plan-diff", "crash-recovery-log", "replication-status", "benchmark-summary"]
+        },
+        service: {
+          healthPath: "/health",
+          readinessTimeoutSeconds: 180
+        }
+      },
+      validationBaseline: {
+        requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke", "functional"],
+        requiredBoundaries: ["product-scope", "sql-compatibility", "storage-engine", "query-engine", "transaction-engine", "recovery", "performance", "operations"],
+        contractChecks: ["sql-compatibility", "protocol-compatibility", "transaction-isolation", "crash-recovery", "upgrade-compatibility", "benchmark-regression"],
+        commandEvidenceRequired: true,
+        realBoundaryEvidenceRequired: true,
+        noMockEvidenceForReleaseClaims: true,
+        referenceProductsAreOraclesOnly: true
+      },
+      phaseMapping: {
+        alpha: ["source-boundary", "database-product-runtime", "database-product-boundary", "sql-compatibility-boundary", "failure-diagnostics"],
+        beta: ["test-and-quality", "database-engine-correctness", "observability", "exception-tracking", "slo-monitoring"],
+        rc: ["database-engine-correctness", "observability", "slo-monitoring", "operational-runbooks", "release-governance", "test-and-quality"],
+        ga: ["release-governance", "database-engine-correctness", "observability", "slo-monitoring", "operational-runbooks", "source-boundary"]
+      },
+      sourceReferences: [
+        referenceSource("PostgreSQL", "https://github.com/postgres/postgres", "github", "Reference database for SQL semantics, PostgreSQL compatibility tests, protocol behavior, and differential oracle use; not the default evolution target."),
+        referenceSource("MySQL Server", "https://github.com/mysql/mysql-server", "github", "Reference database for MySQL dialect, wire protocol, type behavior, and differential oracle use; not the default evolution target."),
+        referenceSource("SQLite", "https://github.com/sqlite/sqlite", "github", "Compact SQL behavior, embedded engine tests, and differential query examples for correctness-focused checks."),
+        referenceSource("CockroachDB", "https://github.com/cockroachdb/cockroach", "github", "Distributed SQL architecture, consistency, replication, recovery, and compatibility-oriented test practice."),
+        referenceSource("TiDB", "https://github.com/pingcap/tidb", "github", "HTAP and MySQL-compatible distributed SQL architecture, planner/executor, transaction, and compatibility references."),
+        referenceSource("Database engineering practice", undefined, "engineering-practice", "Treat external databases as compatibility corpora and differential oracles while evolving the owner's product boundary.")
+      ],
+      changelogSummary: "Initial v2 domain harness template for self-developed database products.",
+      upgradeSummary: "Add v2 domain-first database harness semantics.",
+      upgradeChanges: [
+        "Define database product, compatibility, architecture, and runtime layers without making PostgreSQL or MySQL the evolution target.",
+        "Add SQL compatibility, storage/query/transaction correctness, recovery, benchmark, and upgrade evidence requirements.",
+        "Record reference databases as compatibility corpora and differential oracles only."
+      ],
+      createdAt: DOMAIN_HARNESS_TEMPLATE_UPDATED_AT
+    }),
+    builtInHarnessTemplate({
+      id: "api-gateway-harness",
+      name: "API Gateway Harness",
+      description: "Domain baseline for API gateway products: routing, auth, rate limiting, traffic policy, plugin lifecycle, protocol compatibility, observability, and release governance.",
+      languageFamily: "generic",
+      version: DOMAIN_HARNESS_TEMPLATE_VERSION,
+      updatedAt: DOMAIN_HARNESS_TEMPLATE_UPDATED_AT,
+      runtimeCapability: {
+        id: "api-gateway-runtime",
+        name: "API gateway runtime harness",
+        boundary: "Gateway boot, config validation, route matching, upstream traffic, plugins, policy, protocol, load, and readiness commands are declared by the project profile.",
+        requiredEvidence: ["config-validation-output", "route-contract-output", "policy-output", "plugin-output", "load-output", "traffic-smoke-output"]
+      },
+      extraCapabilities: [
+        {
+          id: "gateway-traffic-boundary",
+          name: "Gateway traffic boundary",
+          boundary: "Inbound listener, route matching, upstream selection, retries, circuit breakers, rate limits, auth, and traffic shadowing are explicit.",
+          requiredEvidence: ["route-table-proof", "upstream-selection-proof", "retry-policy-proof", "rate-limit-proof", "auth-policy-proof"]
+        },
+        {
+          id: "gateway-extension-boundary",
+          name: "Gateway extension boundary",
+          boundary: "Plugin/filter lifecycle, configuration schema, failure isolation, hot reload, and compatibility behavior are governed.",
+          requiredEvidence: ["plugin-contract", "filter-lifecycle-test", "hot-reload-proof", "extension-failure-proof"]
+        }
+      ],
+      runtimePatterns: {
+        harnessLayer: "domain",
+        domain: "api-gateway",
+        domainLabel: "API gateway product",
+        language: "generic",
+        compatibilityProfiles: [
+          { id: "http-gateway", role: "protocol-baseline", scope: ["http1", "http2", "websocket", "grpc"] },
+          { id: "ingress-compatible", role: "ecosystem-compatibility", scope: ["kubernetes-ingress", "gateway-api", "service-discovery"] },
+          { id: "envoy-compatible", role: "behavioral-reference", scope: ["xds", "filter-chain", "traffic-policy"] }
+        ],
+        architectureProfiles: [
+          { id: "edge-gateway", concerns: ["tls", "waf", "auth", "rate-limit", "observability"] },
+          { id: "service-mesh-gateway", concerns: ["xds", "sidecar", "mtls", "traffic-split", "policy"] },
+          { id: "multi-tenant-gateway", concerns: ["tenant-isolation", "plugin-governance", "quota", "audit"] }
+        ],
+        runtimeProfiles: ["go", "rust", "java", "node", "generic"],
+        architectureStyles: ["api-gateway", "ingress-controller", "traffic-proxy", "service-mesh-gateway", "plugin-platform"],
+        defaultCommands: {
+          install: ["make deps", "npm ci", "go mod download"],
+          lint: ["make lint"],
+          typecheck: ["make build"],
+          unit: ["make test-unit"],
+          smoke: ["make smoke-gateway"],
+          functional: ["make test-routes", "make test-policy", "make test-load"]
+        },
+        gatewayControls: {
+          routing: ["route-match", "rewrite", "upstream-selection", "load-balancing", "traffic-splitting"],
+          policy: ["authn", "authz", "rate-limit", "quota", "waf", "circuit-breaker", "retry-timeout"],
+          extensions: ["plugin-schema", "filter-chain", "hot-reload", "sandbox", "compatibility"],
+          protocols: ["http1", "http2", "websocket", "grpc", "tls"]
+        },
+        exceptionTracking: {
+          handlers: ["route miss classifier", "upstream failure classifier", "auth policy denial mapper", "plugin failure isolation", "rate-limit error mapper"],
+          requiredErrorEnvelope: ["errorCode", "routeId", "upstreamId", "requestId", "traceId", "retryable", "policyId", "pluginId", "supportReference"],
+          exceptionAttributes: ["exception.type", "http.route", "gateway.route_id", "gateway.upstream_id", "gateway.policy_id", "gateway.plugin_id"],
+          regressionTests: ["route miss", "upstream timeout", "auth denial", "rate limit exceeded", "plugin panic isolation"]
+        },
+        observability: {
+          instrumentation: ["OpenTelemetry gateway spans", "Prometheus gateway metrics", "structured access logs", "plugin lifecycle logs"],
+          logs: ["requestId", "traceId", "routeId", "upstreamId", "tenantId", "policyId", "pluginId", "status", "errorCode"],
+          metrics: ["gateway_request_rate", "gateway_error_rate", "upstream_latency", "rate_limit_dropped", "circuit_breaker_open", "plugin_error_rate"],
+          traces: ["listener", "route match", "policy", "plugin", "upstream", "retry"],
+          alerts: ["route_error_spike", "upstream_p95_latency", "rate_limit_drop_spike", "plugin_failure_spike", "config_reload_failure"]
+        },
+        diagnostics: {
+          commands: ["make smoke-gateway", "make dump-routes", "make test-policy", "make test-load", "make config-validate"],
+          artifacts: ["route-table", "gateway-config", "policy-matrix", "traffic-sample", "plugin-report", "load-summary"]
+        },
+        service: {
+          healthPath: "/healthz",
+          readinessTimeoutSeconds: 90
+        }
+      },
+      validationBaseline: {
+        requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke", "functional"],
+        requiredBoundaries: ["routing", "upstream", "auth-policy", "rate-limit", "plugin", "protocol", "observability"],
+        contractChecks: ["route-contract", "policy-contract", "plugin-contract", "protocol-compatibility", "load-regression"],
+        commandEvidenceRequired: true,
+        realBoundaryEvidenceRequired: true,
+        noMockEvidenceForReleaseClaims: true
+      },
+      phaseMapping: {
+        alpha: ["source-boundary", "api-gateway-runtime", "gateway-traffic-boundary", "failure-diagnostics"],
+        beta: ["test-and-quality", "gateway-extension-boundary", "observability", "exception-tracking", "slo-monitoring"],
+        rc: ["gateway-traffic-boundary", "gateway-extension-boundary", "observability", "slo-monitoring", "operational-runbooks", "release-governance"],
+        ga: ["release-governance", "gateway-traffic-boundary", "gateway-extension-boundary", "observability", "slo-monitoring", "source-boundary"]
+      },
+      sourceReferences: [
+        referenceSource("Envoy", "https://github.com/envoyproxy/envoy", "github", "Gateway/proxy traffic policy, xDS, filters, observability, and reliability reference."),
+        referenceSource("Kong", "https://github.com/Kong/kong", "github", "API gateway routing, plugins, rate limiting, authentication, and operator experience reference."),
+        referenceSource("Apache APISIX", "https://github.com/apache/apisix", "github", "Dynamic gateway routing, plugin lifecycle, traffic management, and observability reference."),
+        referenceSource("NGINX Gateway Fabric", "https://github.com/nginx/nginx-gateway-fabric", "github", "Kubernetes Gateway API integration and ingress/gateway controller behavior reference."),
+        referenceSource("Kubernetes Gateway API", "https://github.com/kubernetes-sigs/gateway-api", "github", "Gateway API route, listener, policy, and conformance model."),
+        referenceSource("API gateway engineering practice", undefined, "engineering-practice", "Route/policy/plugin/protocol evidence with load and production diagnostics.")
+      ],
+      changelogSummary: "Initial v2 domain harness template for API gateway products.",
+      upgradeSummary: "Add v2 domain-first API gateway harness semantics.",
+      upgradeChanges: [
+        "Define gateway domain, compatibility, architecture, and runtime layers.",
+        "Add route, upstream, policy, plugin, protocol, load, and traffic observability evidence requirements.",
+        "Use mature gateway projects as behavior references without making them the evolved product by default."
+      ],
+      createdAt: DOMAIN_HARNESS_TEMPLATE_UPDATED_AT
+    }),
+    builtInHarnessTemplate({
+      id: "enterprise-management-software-harness",
+      name: "Enterprise Management Software Harness",
+      description: "Domain baseline for CRM, ERP, workflow, and enterprise management products: business objects, RBAC, workflow, audit, reporting, integrations, import/export, observability, and release governance.",
+      languageFamily: "generic",
+      version: DOMAIN_HARNESS_TEMPLATE_VERSION,
+      updatedAt: DOMAIN_HARNESS_TEMPLATE_UPDATED_AT,
+      runtimeCapability: {
+        id: "enterprise-management-runtime",
+        name: "Enterprise management runtime harness",
+        boundary: "API/UI/backend job commands are declared with business workflow, permission, audit, report, integration, and data movement evidence.",
+        requiredEvidence: ["api-output", "ui-workflow-proof", "rbac-output", "audit-output", "report-output", "integration-output"]
+      },
+      extraCapabilities: [
+        {
+          id: "enterprise-domain-boundary",
+          name: "Enterprise domain boundary",
+          boundary: "Business objects, workflow states, approvals, permissions, audit events, integrations, and reporting rules are explicit.",
+          requiredEvidence: ["domain-object-map", "workflow-state-machine", "rbac-matrix", "audit-event-sample", "integration-contract"]
+        },
+        {
+          id: "crm-erp-compatibility-boundary",
+          name: "CRM/ERP compatibility boundary",
+          boundary: "CRM, ERP, finance, inventory, customer lifecycle, import/export, and reporting behaviors are represented as selectable compatibility profiles.",
+          requiredEvidence: ["compatibility-profile", "import-export-case", "report-reconciliation", "business-rule-test"]
+        }
+      ],
+      runtimePatterns: {
+        harnessLayer: "domain",
+        domain: "enterprise-management-software",
+        domainLabel: "CRM/ERP/workflow management product",
+        language: "generic",
+        compatibilityProfiles: [
+          { id: "crm", role: "business-domain-profile", scope: ["customer", "lead", "opportunity", "contract", "service-ticket"] },
+          { id: "erp", role: "business-domain-profile", scope: ["order", "inventory", "procurement", "finance", "approval"] },
+          { id: "workflow", role: "business-domain-profile", scope: ["state-machine", "approval", "delegation", "audit", "sla"] }
+        ],
+        architectureProfiles: [
+          { id: "modular-monolith", concerns: ["domain-modules", "transaction-boundary", "reporting", "integration"] },
+          { id: "saas-control-plane", concerns: ["tenant", "workspace", "rbac", "audit", "quota"] },
+          { id: "evented-workflow", concerns: ["business-events", "async-jobs", "approval", "integration"] }
+        ],
+        runtimeProfiles: ["java", "node", "python", "go", "generic"],
+        architectureStyles: ["enterprise-management-software", "crm", "erp", "workflow-system", "backoffice", "business-platform"],
+        defaultCommands: {
+          install: ["make install", "npm ci", "uv sync"],
+          lint: ["make lint"],
+          typecheck: ["make build"],
+          unit: ["make test"],
+          smoke: ["make smoke"],
+          functional: ["make test:functional", "make rbac-test", "make workflow-test"]
+        },
+        businessControls: {
+          permissionModel: ["role permission matrix", "record-level rules", "field-level permission", "segregation of duties", "maker-checker"],
+          workflowModel: ["state machine", "approval transition", "cancel/amend", "reopen", "delegation", "sla"],
+          dataMovement: ["import validation", "export authorization", "bulk operation audit", "report reconciliation"],
+          auditModel: ["who", "what", "when", "where", "before", "after", "reason", "approvalReference"]
+        },
+        exceptionTracking: {
+          handlers: ["business rule violation", "permission denial", "workflow transition denial", "import row failure", "report reconciliation failure"],
+          requiredErrorEnvelope: ["errorCode", "businessObject", "recordId", "actorId", "tenantId", "traceId", "userAction", "supportReference"],
+          exceptionAttributes: ["exception.type", "business.workflow.state", "permission.rule", "record.id", "tenant.id", "integration.id"],
+          regressionTests: ["RBAC denial", "record rule isolation", "approval transition failure", "import partial failure", "report mismatch"]
+        },
+        observability: {
+          instrumentation: ["structured audit log", "business event log", "OpenTelemetry service telemetry", "report reconciliation metrics"],
+          logs: ["tenantId", "workspaceId", "actorId", "role", "businessObject", "recordId", "workflowState", "errorCode"],
+          metrics: ["workflow_transition_count", "approval_latency", "import_failure_rate", "report_reconciliation_delta", "permission_denial_count"],
+          traces: ["API request", "permission check", "workflow transition", "report query", "import/export job", "integration call"],
+          alerts: ["approval_backlog", "audit_gap_detected", "report_reconciliation_failure", "permission_denial_spike", "import_failure_spike"]
+        },
+        diagnostics: {
+          commands: ["make smoke", "make test:functional", "make audit-check", "make report-reconcile", "make rbac-test", "make workflow-test"],
+          artifacts: ["rbac-matrix", "workflow-state-machine", "audit-event-sample", "report-reconciliation", "import-export-proof", "integration-contract"]
+        },
+        service: {
+          healthPath: "/health",
+          readinessTimeoutSeconds: 90
+        }
+      },
+      validationBaseline: {
+        requiredCommandGroups: ["install", "lint", "typecheck", "unit", "smoke", "functional"],
+        requiredBoundaries: ["business-domain", "rbac", "workflow", "audit", "reporting", "integration", "data-import-export"],
+        contractChecks: ["api-contract", "rbac-matrix", "workflow-state-machine", "audit-trail", "report-reconciliation", "integration-contract"],
+        commandEvidenceRequired: true,
+        realBoundaryEvidenceRequired: true,
+        noMockEvidenceForReleaseClaims: true
+      },
+      phaseMapping: {
+        alpha: ["source-boundary", "enterprise-management-runtime", "enterprise-domain-boundary", "failure-diagnostics"],
+        beta: ["test-and-quality", "crm-erp-compatibility-boundary", "observability", "exception-tracking", "slo-monitoring"],
+        rc: ["enterprise-domain-boundary", "crm-erp-compatibility-boundary", "observability", "slo-monitoring", "operational-runbooks", "release-governance"],
+        ga: ["release-governance", "enterprise-domain-boundary", "crm-erp-compatibility-boundary", "observability", "slo-monitoring", "source-boundary"]
+      },
+      sourceReferences: [
+        referenceSource("ERPNext", "https://github.com/frappe/erpnext", "github", "Enterprise management workflows, roles, document models, reports, and integration behavior reference."),
+        referenceSource("Odoo", "https://github.com/odoo/odoo", "github", "ERP/CRM/business application modularity, permissions, workflow, reporting, and integration reference."),
+        referenceSource("SuiteCRM", "https://github.com/salesagility/SuiteCRM", "github", "CRM account, lead, opportunity, service, role, and workflow behavior reference."),
+        referenceSource("Frappe Framework", "https://github.com/frappe/frappe", "github", "Document model, workflow, permission, audit, report, and extension framework reference."),
+        referenceSource("Microsoft tactical DDD guidance", "https://learn.microsoft.com/en-us/azure/architecture/microservices/model/tactical-domain-driven-design", "official-doc", "Aggregate and domain invariant framing for enterprise business modules."),
+        referenceSource("Enterprise management software practice", undefined, "engineering-practice", "Business object, workflow, RBAC, audit, reporting, import/export, integration, and operator diagnostics.")
+      ],
+      changelogSummary: "Initial v2 domain harness template for enterprise management software products.",
+      upgradeSummary: "Add v2 domain-first enterprise management software harness semantics.",
+      upgradeChanges: [
+        "Define CRM, ERP, workflow, architecture, and runtime layers.",
+        "Add business object, RBAC, workflow, audit, reporting, integration, and import/export evidence requirements.",
+        "Keep ordinary onboarding auto-matched while administrators maintain domain template versions."
+      ],
+      createdAt: DOMAIN_HARNESS_TEMPLATE_UPDATED_AT
+    }),
+    builtInHarnessTemplate({
       id: "generic-management-software-harness",
       name: "Generic Management Software Harness",
       description: "Platform baseline for enterprise management software: users, roles, workflow, audit, reporting, integrations, imports/exports, operations, and release governance.",
@@ -490,6 +837,8 @@ function builtInHarnessTemplate(input: {
   name: string;
   description: string;
   languageFamily: HarnessTemplateProfile["languageFamily"];
+  version?: string;
+  updatedAt?: string;
   runtimeCapability: HarnessCapabilityDefinition;
   extraCapabilities?: HarnessCapabilityDefinition[];
   runtimePatterns: Record<string, unknown>;
@@ -497,8 +846,12 @@ function builtInHarnessTemplate(input: {
   phaseMapping: Record<HarnessTemplateMaturityPhase, string[]>;
   sourceReferences: HarnessTemplateSourceReference[];
   changelogSummary: string;
+  upgradeSummary?: string;
+  upgradeChanges?: string[];
   createdAt: string;
 }): Omit<HarnessTemplateProfile, "digest"> & { digest?: string } {
+  const version = input.version ?? BUILT_IN_HARNESS_TEMPLATE_VERSION;
+  const updatedAt = input.updatedAt ?? BUILT_IN_HARNESS_TEMPLATE_UPDATED_AT;
   const capabilities: HarnessCapabilityDefinition[] = [
     {
       id: "source-boundary",
@@ -554,7 +907,7 @@ function builtInHarnessTemplate(input: {
   return {
     schema: "evopilot-harness-template/v1",
     id: input.id,
-    version: BUILT_IN_HARNESS_TEMPLATE_VERSION,
+    version,
     digest: "",
     name: input.name,
     description: input.description,
@@ -580,11 +933,11 @@ function builtInHarnessTemplate(input: {
         changes: [input.changelogSummary]
       },
       {
-        version: BUILT_IN_HARNESS_TEMPLATE_VERSION,
-        changedAt: BUILT_IN_HARNESS_TEMPLATE_UPDATED_AT,
+        version,
+        changedAt: updatedAt,
         changedBy: "evopilot",
-        summary: "Upgrade built-in template to the enterprise harness knowledge baseline.",
-        changes: [
+        summary: input.upgradeSummary ?? "Upgrade built-in template to the enterprise harness knowledge baseline.",
+        changes: input.upgradeChanges ?? [
           "Add structured observability, exception tracking, SLO monitoring, alert routing, and operational runbook baseline.",
           "Add language or software-type specific telemetry, diagnostics, exception envelope, and evidence rules.",
           "Expand source references to mainstream GitHub projects, official specifications, and enterprise engineering practice."
@@ -592,7 +945,7 @@ function builtInHarnessTemplate(input: {
       }
     ],
     createdAt: input.createdAt,
-    updatedAt: BUILT_IN_HARNESS_TEMPLATE_UPDATED_AT
+    updatedAt
   };
 }
 
