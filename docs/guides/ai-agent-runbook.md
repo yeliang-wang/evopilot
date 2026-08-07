@@ -142,7 +142,7 @@ For GitHub/GitLab enterprise real loops, the selected profile must be explicit t
 
 `target run`, `goal run`, and `loop run` preflight the selected LLM by default. Use `--require-llm-ready` only when an automation script wants the command line to state the LLM readiness assertion explicitly.
 
-Administrator template maintenance is separate from daily project execution. Agents should normally let EvoPilot automatically match an existing template during `harness profile generate`; `--from-template` is only an explicit administrator or advanced override. Fresh installs include runtime templates such as `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, and `observability-apm-harness`, plus v2 domain templates `database-product-harness` and `api-gateway-harness`. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`. Domain templates are `@2.1.0`; runtime and broad templates remain `@1.1.0` baselines.
+Administrator template maintenance is separate from daily project execution. Agents should normally let EvoPilot automatically match an existing template during `harness profile generate`; `--from-template` is only an explicit administrator or advanced override. Fresh installs include runtime templates such as `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, and `observability-apm-harness`, plus v2 domain templates `database-product-harness` and `api-gateway-harness`. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`. Domain templates are `@2.2.0`; runtime and broad templates remain `@1.1.0` baselines.
 
 Administrators can list and inspect published template versions:
 
@@ -177,7 +177,7 @@ When template changes should come from reviewable sources, administrators use th
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 2.1.0 \
+  --target-version 2.2.0 \
   --intent "Add stronger Python exception tracking, observability, and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \
@@ -197,7 +197,7 @@ evopilot harness template evolution publish <evolution-id> --json
 evopilot harness template evolution impact <evolution-id> --refresh --json
 ```
 
-The lifecycle is `CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED`. It stores source snapshots, generated pack files, audit evidence, and an impact report under `<dataRoot>/harness-template-evolutions/<evolutionId>/`. First-stage GitHub sources read README candidates only; binary attachments record digest and warning without semantic extraction. Publishing a template never silently rewrites active project profiles; if `impactReport.staleProfileCount>0`, create reviewed `ProjectHarnessProfile` upgrade drafts for affected projects before using the new template digest in goal planning.
+The lifecycle is `CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED`. It stores source snapshots, generated pack files, audit evidence, and an impact report under `<dataRoot>/harness-template-evolutions/<evolutionId>/`. First-stage GitHub sources read README candidates only; local source-project extraction is bounded to project inventory plus README/docs/architecture/build/CI/test files; DOCX/PPTX/XLSX attachments use local Office XML extraction when available; PDF attachments use best-effort text-object extraction and keep digest/review warnings when no text can be extracted. Production logs are redacted before snapshot persistence. Publishing a template never silently rewrites active project profiles; if `impactReport.staleProfileCount>0`, create reviewed `ProjectHarnessProfile` upgrade drafts for affected projects before using the new template digest in goal planning.
 
 Tenant/workspace policy maintenance is a separate administrator channel. Daily project agents do not choose a private policy manually; they inspect the active policy list for awareness, then let EvoPilot inherit every matching active policy during `harness profile generate`, `validate`, and `apply`.
 

@@ -119,7 +119,7 @@ Continue only when source credentials, DevOps, and LLM readiness are `READY`.
 
 ## Admin: Maintain Template Harness
 
-Project onboarding consumes an already published template, but normal onboarding does not require the operator to choose one manually. Fresh installs include runtime templates `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, and `observability-apm-harness`, plus v2.1 domain templates `database-product-harness` and `api-gateway-harness`. EvoPilot automatically matches one template from product-domain signals, project runtime/repository context, and the goal loop target; `--from-template` is only an explicit administrator or advanced override. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`. Domain templates are `@2.1.0`; existing runtime and broad templates remain `@1.1.0` baselines and are not part of the current database/gateway domain upgrade.
+Project onboarding consumes an already published template, but normal onboarding does not require the operator to choose one manually. Fresh installs include runtime templates `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, and `observability-apm-harness`, plus v2.2 domain templates `database-product-harness` and `api-gateway-harness`. EvoPilot automatically matches one template from product-domain signals, project runtime/repository context, and the goal loop target; `--from-template` is only an explicit administrator or advanced override. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`. Domain templates are `@2.2.0`; existing runtime and broad templates remain `@1.1.0` baselines and are not part of the current database/gateway domain upgrade.
 
 Administrators should edit public templates as readable packs under `harness-templates/public/<template-id>/`:
 
@@ -149,8 +149,11 @@ When template changes should be derived from reviewable sources, use the server-
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 2.1.0 \
+  --target-version 2.2.0 \
   --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
+  --source project=./legacy-cache-service \
+  --source log=./prod-incident.log \
+  --source evopilot-history=evolution-python-agent \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \
   --source runtime-evidence=release-evidence-2026-08-python \
@@ -162,7 +165,7 @@ evopilot harness template evolution advance <evolution-id> --json
 evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
 ```
 
-Stop when the response reaches `status=REVIEW_REQUIRED`. Show `evolution.draft.template`, `evolution.draft.pack`, `evolution.draft.validation`, `evolution.draft.diffFromBase`, `evolution.draft.sourceCoverage`, and `evolution.draft.generatedBy` to the administrator. If approved:
+Stop when the response reaches `status=REVIEW_REQUIRED`. Show `evolution.analysisSummary.domainSignals`, `evolution.analysisSummary.gapClassifications`, `evolution.draft.template`, `evolution.draft.pack`, `evolution.draft.validation`, `evolution.draft.diffFromBase`, `evolution.draft.sourceCoverage`, and `evolution.draft.generatedBy` to the administrator. If approved:
 
 ```bash
 evopilot harness template evolution approve <evolution-id> \

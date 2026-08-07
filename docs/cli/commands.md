@@ -29,7 +29,11 @@ The CLI uses EvoPilot HTTP APIs. Global flags can be used with any command:
 --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
 --path <path>               HarnessTemplate pack directory for pack validate/publish
 --root <path>               HarnessTemplate pack root directory for pack list
---source <kind=value>       HarnessTemplate evolution source: url=, github=, gitlab=, local-pack=, file=, template=, runtime-evidence=, or note=
+--source <kind=value>       HarnessTemplate evolution source: url=, github=, gitlab=, project=, corpus=, log=, evopilot-history=, local-pack=, file=, template=, runtime-evidence=, or note=
+--source-project <path|id>  Historical/local project directory or registered project id used as HarnessTemplate evolution knowledge
+--source-corpus <items>     Comma-separated project directories or ids used as a reusable domain corpus
+--production-log <path|id>  Runtime log source; EvoPilot redacts sensitive values before snapshot persistence
+--evopilot-history <ref>    Project/goal/loop/evidence history source, for example project-id or project-id:loop=<loop-id>
 --runtime-evidence <id>     HarnessTemplate evolution source pointing to runtime evidence or an evidence bundle id
 --file <path>               HarnessTemplate evolution attachment or YAML/JSON file input for commands that accept files
 --local-pack <path>         HarnessTemplate evolution source pack directory
@@ -412,7 +416,7 @@ evopilot harness template pack list harness-templates/public
 evopilot harness template pack validate harness-templates/public/python-enterprise-harness
 evopilot harness template pack publish harness-templates/public/python-enterprise-harness [--force]
 evopilot harness template evolution list
-evopilot harness template evolution create --base-template python-enterprise-harness --target-version <version> --intent <text> --source github=fastapi/fastapi#master
+evopilot harness template evolution create --base-template python-enterprise-harness --target-version <version> --intent <text> --source project=./legacy-service --source log=./prod.log --source github=fastapi/fastapi#master
 evopilot harness template evolution sources <evolution-id> --url https://example.com/harness-notes.md --file ./observability-notes.md --note "Add trace-linked error envelopes."
 evopilot harness template evolution advance <evolution-id> [--llm-profile <id>] [--require-llm]
 evopilot harness template evolution inspect <evolution-id>
@@ -449,12 +453,12 @@ java-ddd-service-harness@1.1.0
 node-saas-control-plane-harness@1.1.0
 go-middleware-harness@1.1.0
 observability-apm-harness@1.1.0
-database-product-harness@2.1.0
-api-gateway-harness@2.1.0
+database-product-harness@2.2.0
+api-gateway-harness@2.2.0
 generic-management-software-harness@1.1.0
 ```
 
-Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. The `@2.1.0` domain templates define the product harness first, then compatibility, architecture, and runtime profiles; the `@1.1.0` runtime templates remain language or broad software-type baselines. Inspect `sourceReferences[]` to see that initialization basis. Project onboarding automatically matches one published template from domain signals, project runtime/repository context, and the goal loop target. `--from-template` is an explicit administrator or advanced override, not the normal first-onboarding path.
+Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. The `@2.2.0` domain templates define the product harness first, then compatibility, architecture, and runtime profiles; the `@1.1.0` runtime templates remain language or broad software-type baselines. Inspect `sourceReferences[]` to see that initialization basis. Project onboarding automatically matches one published template from domain signals, project runtime/repository context, and the goal loop target. `--from-template` is an explicit administrator or advanced override, not the normal first-onboarding path.
 
 The recommended administrator editing model is the human-readable template pack directory under `harness-templates/public/<template-id>/`:
 
@@ -475,13 +479,17 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 
 `pack validate` performs local pack-shape checks and calls the server's non-persistent `POST /api/v1/harness/templates/validate`. `pack publish` repeats server validation before writing the version through the control plane. EvoPilot intentionally does not expose first-stage `compile`, `diff`, or `publish-all` pack commands; use Git for file diffs and add batch publishing later only if CI/admin usage needs it.
 
-`harness template evolution` is the administrator lifecycle for upgrading a public template from reviewable knowledge sources without bypassing the control plane. Sources can be `url=`, `github=owner/repo#ref`, `gitlab=`, `local-pack=`, `file=`, `template=<id>@<version>`, `runtime-evidence=<id>`, or `note=`.
+`harness template evolution` is the administrator lifecycle for upgrading a public template from reviewable knowledge sources without bypassing the control plane. Sources can be `url=`, `github=owner/repo#ref`, `gitlab=`, `project=<path-or-id>`, `corpus=<a,b,c>`, `log=<path-or-id>`, `evopilot-history=<project[:goal=<id>|loop=<id>|evidence=<id>]>`, `local-pack=`, `file=`, `template=<id>@<version>`, `runtime-evidence=<id>`, or `note=`.
 
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 2.1.0 \
+  --target-version 2.2.0 \
   --intent "Add Python exception tracking and AI troubleshooting metadata." \
+  --source project=./legacy-cache-service \
+  --source corpus=./legacy-cache-service,./legacy-scheduler \
+  --source log=./prod-incident.log \
+  --source evopilot-history=evolution-python-agent \
   --source github=fastapi/fastapi#master \
   --source url=https://opentelemetry.io/docs/languages/python/ \
   --file ./workspace-observability-notes.md \
@@ -497,7 +505,9 @@ evopilot harness template evolution advance <evolution-id> --json
 evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
 ```
 
-The lifecycle is `CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED`. `REVIEW_REQUIRED` returns a reviewable `draft` with `pack.readme`, `pack.templateYaml`, `pack.changelog`, `pack.examples`, `validation`, `diffFromBase`, `sourceCoverage`, and `generatedBy`. The first-stage GitHub source collector reads repository README files through `raw.githubusercontent.com`; text, Markdown, YAML, JSON, and similar attachments are semantically extracted, while binary PDF/PPT/DOCX attachments record digest and warning only.
+The lifecycle is `CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED`. `REVIEW_REQUIRED` returns a reviewable `draft` with `pack.readme`, `pack.templateYaml`, `pack.changelog`, `pack.examples`, `validation`, `diffFromBase`, `sourceCoverage`, and `generatedBy`. The first-stage GitHub source collector reads repository README files through `raw.githubusercontent.com`; source-project extraction is bounded to project inventory plus README/docs/architecture/build/CI/test files; DOCX/PPTX/XLSX attachments use local Office XML extraction when `unzip` is available; PDF attachments use best-effort text-object extraction and keep digest/review warnings when no text can be extracted. Production logs are redacted before persistence.
+
+For domain harness upgrades, review `evolution.analysisSummary.domainSignals`, `evolution.analysisSummary.gapClassifications`, and `evolution.draft.sourceCoverage.sources[]`. `knowledgeCategory` tells whether the source came from a project, corpus, log, attachment, EvoPilot history, or template pack. `gapClassification` tells whether the next action belongs to the public HarnessTemplate, a project-level `ProjectHarnessProfile`, tenant policy, EvoPilot Core, or source quality repair. `projectActions` gives the concrete follow-up before a future goal loop target should use the evolved template.
 
 Publishing requires explicit administrator approval:
 

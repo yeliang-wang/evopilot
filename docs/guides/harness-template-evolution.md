@@ -2,7 +2,7 @@
 
 `HarnessTemplateEvolution` is the administrator control-plane lifecycle for upgrading public harness templates from reviewable knowledge sources. It is separate from daily project onboarding and from direct YAML/JSON template publishing.
 
-Use it when an administrator wants EvoPilot to ingest notes, websites, GitHub repositories, existing templates, or local packs, generate a reviewed draft, validate it, publish a new `HarnessTemplate` version, and report which active project profiles are stale.
+Use it when an administrator wants EvoPilot to ingest notes, websites, GitHub repositories, historical source projects, project corpora, attachments, production logs, EvoPilot goal/loop history, existing templates, or local packs, generate a reviewed draft, validate it, publish a new `HarnessTemplate` version, and report which active project profiles are stale.
 
 ## Lifecycle
 
@@ -29,8 +29,12 @@ Supported source inputs:
 | `--source url=https://...` or `--url https://...` | `web-url` | Fetches text or strips HTML; stores HTTP metadata and warnings. |
 | `--source github=owner/repo#ref` or `--github owner/repo#ref` | `github-repo` | Reads repository README candidates from `raw.githubusercontent.com`; full repository crawling is not first-stage behavior. |
 | `--source gitlab=group/project#ref` | `gitlab-repo` | Stores the source; semantic extraction requires provided text or attachment in the first stage. |
+| `--source project=<path-or-id>` or `--source-project <path-or-id>` | `source-project` | Reads a bounded local project inventory and selected README/docs/architecture/build/CI/test files, or reads registered project/profile/history evidence from the server when an id is supplied. |
+| `--source corpus=<a,b,c>` or `--source-corpus <a,b,c>` | `source-corpus` | Combines multiple source projects into one domain corpus snapshot for reusable domain HarnessTemplate evolution. |
+| `--source log=<path-or-id>` or `--production-log <path-or-id>` | `production-log` | Reads runtime logs, redacts tokens/passwords/emails/phones before persistence, and classifies operational gaps for project profile or policy action. |
+| `--source evopilot-history=<project[:loop=<id>|goal=<id>|evidence=<id>]>` or `--evopilot-history <ref>` | `evopilot-history` | Reads EvoPilot project, active `ProjectHarnessProfile`, goal, loop, and release evidence records when available. |
 | `--source local-pack=<path>` or `--local-pack <path>` | `local-pack` | Reads pack `README.md`, `template.yaml`, `CHANGELOG.md`, and examples into one source. |
-| `--file <path>` or `--source file=<path>` | `attachment` | Text-like files are extracted; binary PDF/PPT/DOCX files record digest and warning without semantic extraction. |
+| `--file <path>` or `--source file=<path>` | `attachment` | Text-like files are extracted. DOCX/PPTX/XLSX attachments use local Office XML extraction when `unzip` is available. PDF attachments use best-effort text-object extraction and still keep a digest plus review warning when no text can be extracted. |
 | `--source template=<id>@<version>` or `--existing-template <id>@<version>` | `existing-template` | Reads an existing server-side template version. |
 | `--source runtime-evidence=<id>` or `--runtime-evidence <id>` | `runtime-evidence` | Records a runtime evidence or evidence-bundle reference for review; first-stage semantic extraction requires attached text or notes. |
 | `--note <text>` or `--source note=<text>` | `admin-note` | Stores the administrator note as reviewable source text. |
@@ -42,9 +46,13 @@ Create the run:
 ```bash
 evopilot harness template evolution create \
   --base-template python-enterprise-harness \
-  --target-version 2.1.0 \
+  --target-version 2.2.0 \
   --intent "Add stronger Python exception tracking, observability, and AI troubleshooting metadata." \
   --source github=fastapi/fastapi#master \
+  --source project=./legacy-cache-service \
+  --source corpus=./legacy-cache-service,./legacy-scheduler \
+  --source log=./prod-incident.log \
+  --source evopilot-history=evolution-python-agent \
   --source url=https://opentelemetry.io/docs/languages/python/ \
   --source runtime-evidence=release-evidence-2026-08-python \
   --file ./workspace-observability-notes.md \
@@ -60,7 +68,7 @@ evopilot harness template evolution advance <evolution-id> --json
 evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
 ```
 
-The first advance collects immutable snapshots and digests. The second advance extracts capability/runtime/evidence/failure/observability/governance signals. The third advance generates the draft. If a READY LLM profile exists, EvoPilot can use it to produce structured JSON; without LLM in debug mode, EvoPilot produces a deterministic draft. Production `--require-llm` blocks when no READY LLM profile is available.
+The first advance collects immutable snapshots and digests. Production logs are redacted before snapshot persistence. The second advance extracts capability/runtime/evidence/failure/observability/governance/domain signals plus `gapClassifications`. The third advance generates the draft. If a READY LLM profile exists, EvoPilot can use it to produce structured JSON; without LLM in debug mode, EvoPilot produces a deterministic draft. Production `--require-llm` blocks when no READY LLM profile is available.
 
 Review the draft before approving. Important fields:
 
@@ -75,6 +83,8 @@ evolution.draft.diffFromBase
 evolution.draft.sourceCoverage
 evolution.draft.generatedBy
 ```
+
+`sourceCoverage.sources[]` now includes `knowledgeCategory`, `gapClassification`, `redactionApplied`, and `projectActions`. This is the operational answer to "what does the evolved project need to do next": template-wide gaps publish a new HarnessTemplate; project-profile gaps require reviewed `ProjectHarnessProfile` generation or upgrade; tenant-policy gaps require policy review; EvoPilot-core gaps require extractor/schema/API evolution before broader claims.
 
 Approve and publish only after review:
 

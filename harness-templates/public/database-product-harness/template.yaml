@@ -1,6 +1,6 @@
 schema: evopilot-harness-template/v1
 id: database-product-harness
-version: 2.1.0
+version: 2.2.0
 name: Database Product Harness
 description: Domain baseline for self-developed database products.
 scope: platform
@@ -192,7 +192,7 @@ sourceReferences:
     category: github
     rationale: Distributed SQL consistency, replication, and recovery reference.
 changelog:
-  - version: 2.1.0
+  - version: 2.2.0
     changedAt: 2026-08-07T08:00:00.000Z
     changedBy: evopilot
     summary: Add executable database domain harness contract.

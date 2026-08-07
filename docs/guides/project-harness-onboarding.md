@@ -23,7 +23,7 @@ api-gateway-harness
 generic-management-software-harness
 ```
 
-Each built-in template defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, and `sourceReferences[]`. EvoPilot v2 separates domain templates from implementation runtime templates. Domain templates such as `database-product-harness@2.1.0` and `api-gateway-harness@2.1.0` define the product harness first, then include compatibility, architecture, runtime profiles, required project actions, evidence adapters, release blockers, and repository module probes. Language templates such as Python, Java, Node, and Go remain runtime-layer baselines. EvoPilot does not dynamically fetch GitHub at runtime.
+Each built-in template defines defaults for capabilities, runtime command groups, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, and `sourceReferences[]`. EvoPilot v2 separates domain templates from implementation runtime templates. Domain templates such as `database-product-harness@2.2.0` and `api-gateway-harness@2.2.0` define the product harness first, then include compatibility, architecture, runtime profiles, required project actions, evidence adapters, release blockers, and repository module probes. Language templates such as Python, Java, Node, and Go remain runtime-layer baselines. EvoPilot does not dynamically fetch GitHub at runtime.
 
 For database projects, the domain template evolves the owner's database product. PostgreSQL, MySQL, and similar systems are recorded as compatibility references, corpora, or differential oracles, not as the default product being evolved.
 

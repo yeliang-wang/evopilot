@@ -70,7 +70,28 @@ export type HarnessKnowledgeSourceType =
   | "local-pack"
   | "admin-note"
   | "existing-template"
-  | "runtime-evidence";
+  | "runtime-evidence"
+  | "source-project"
+  | "source-corpus"
+  | "production-log"
+  | "evopilot-history";
+
+export type HarnessKnowledgeCategory =
+  | "external-reference"
+  | "source-project"
+  | "project-corpus"
+  | "attachment"
+  | "runtime-log"
+  | "evopilot-history"
+  | "template-pack"
+  | "admin-note";
+
+export type HarnessGapClassification =
+  | "harness-template"
+  | "project-profile"
+  | "tenant-policy"
+  | "evopilot-core"
+  | "source-quality";
 
 export type HarnessTemplateEvolutionStatus =
   | "CREATED"
@@ -142,7 +163,11 @@ export interface HarnessTemplateDraft {
       type: HarnessKnowledgeSourceType;
       name: string;
       digest: string;
+      knowledgeCategory?: HarnessKnowledgeCategory;
+      gapClassification?: HarnessGapClassification;
+      redactionApplied?: boolean;
       usedFor: string[];
+      projectActions?: string[];
     }>;
   };
   generatedBy: {
@@ -183,6 +208,8 @@ export interface HarnessTemplateEvolutionAnalysis {
   failureSignals: string[];
   observabilitySignals: string[];
   governanceSignals: string[];
+  domainSignals: string[];
+  gapClassifications: HarnessGapClassification[];
   sourceCoverage: string[];
   generatedAt: string;
 }

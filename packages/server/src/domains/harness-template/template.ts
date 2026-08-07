@@ -109,7 +109,7 @@ export function validateDomainHarnessTemplateContract(template: HarnessTemplateP
   const failures: string[] = [];
   const allowedDomains = new Set(["database-product", "api-gateway"]);
   if (!domain) failures.push("runtimePatterns.domain is required for domain harness templates");
-  if (domain && !allowedDomains.has(domain)) failures.push(`runtimePatterns.domain=${domain} is outside the v2.1 domain harness scope`);
+  if (domain && !allowedDomains.has(domain)) failures.push(`runtimePatterns.domain=${domain} is outside the v2 domain harness scope`);
   if (!Array.isArray(runtimePatterns.compatibilityProfiles) || runtimePatterns.compatibilityProfiles.length === 0) failures.push("runtimePatterns.compatibilityProfiles must be non-empty");
   if (!Array.isArray(runtimePatterns.architectureProfiles) || runtimePatterns.architectureProfiles.length === 0) failures.push("runtimePatterns.architectureProfiles must be non-empty");
   if (!Array.isArray(runtimePatterns.runtimeProfiles) || runtimePatterns.runtimeProfiles.length === 0) failures.push("runtimePatterns.runtimeProfiles must be non-empty");

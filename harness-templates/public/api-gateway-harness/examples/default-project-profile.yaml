@@ -5,7 +5,7 @@ name: API Gateway Harness Profile
 description: Project-level profile for an API gateway product.
 template:
   templateId: api-gateway-harness
-  version: 2.1.0
+  version: 2.2.0
 runtime:
   harnessLayer: domain
   domain: api-gateway

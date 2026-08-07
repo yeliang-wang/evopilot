@@ -520,7 +520,9 @@ Use these fields to prove that terminal CLI output, Dashboard state, and product
 
 `harness template evolution` commands are administrator-only lifecycle commands. Automation may collect sources and advance the run, but it must stop at `status=REVIEW_REQUIRED`, `status=BLOCKED`, `nextAction=review-approve-template-evolution`, or any non-empty blocker list.
 
-Allowed source forms are `url=`, `github=`, `gitlab=`, `local-pack=`, `file=`, `template=`, `runtime-evidence=`, and `note=`. The first-stage GitHub collector reads README candidates only; binary attachments record digests and warnings without semantic extraction. Do not claim full repository mining or PDF/PPT/DOCX semantic extraction unless a later server response provides that evidence.
+Allowed source forms are `url=`, `github=`, `gitlab=`, `project=`, `corpus=`, `log=`, `evopilot-history=`, `local-pack=`, `file=`, `template=`, `runtime-evidence=`, and `note=`. The first-stage GitHub collector reads README candidates only. Local `source-project` extraction is bounded to project inventory plus README/docs/architecture/build/CI/test files. DOCX/PPTX/XLSX attachments use local Office XML extraction when available; PDF attachments use best-effort text-object extraction and keep digest/review warnings when no text can be extracted. Production logs are redacted before persistence.
+
+When `draft.sourceCoverage.sources[].gapClassification` is `project-profile`, automation must generate or upgrade a reviewed `ProjectHarnessProfile` before using the new template in a goal loop. `tenant-policy` means stop for policy review. `evopilot-core` means the extractor/schema/API needs product evolution before claiming broad source coverage. HarnessTemplate upgrades are published through the template evolution lifecycle and do not require an EvoPilot binary release unless Core code or API behavior changes.
 
 Before approval, show the administrator:
 

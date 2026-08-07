@@ -4,11 +4,11 @@ import {
   EVOPILOT_CLI_RUNTIME_SCHEMA,
   EVOPILOT_CLI_VERSION_FALLBACK
 } from "@evopilot/contracts";
-import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
+import { harnessTemplateEvolutionSourcesFromArgs as collectHarnessTemplateEvolutionSourcesFromArgs } from "./harness-template-evolution-sources.js";
 import { cliInterfaceBoundaryMetadata, type EvoPilotCliInterfaceBoundaryMetadata } from "../runtime/boundary.js";
 
 interface CliConfig {
@@ -3918,74 +3918,10 @@ function harnessTemplateEvolutionCreatePayload(args: ParsedArgs): Record<string,
 }
 
 function harnessTemplateEvolutionSourcesFromArgs(args: ParsedArgs): Record<string, unknown>[] {
-  const sources: Record<string, unknown>[] = [];
-  for (const source of repeatedOption(args, "source")) {
-    sources.push(parseHarnessTemplateEvolutionSource(source));
-  }
-  for (const file of repeatedOption(args, "file")) {
-    sources.push(harnessTemplateEvolutionSourceFromFile(file));
-  }
-  const localPack = stringOption(args, "local-pack") ?? stringOption(args, "pack");
-  if (localPack) sources.push(harnessTemplateEvolutionSourceFromLocalPack(localPack));
-  const github = stringOption(args, "github") ?? stringOption(args, "github-repo");
-  if (github) sources.push(parseHarnessTemplateEvolutionSource(`github=${github}`));
-  const url = stringOption(args, "url") ?? stringOption(args, "website");
-  if (url) sources.push(parseHarnessTemplateEvolutionSource(`url=${url}`));
-  const template = stringOption(args, "existing-template");
-  if (template) sources.push(parseHarnessTemplateEvolutionSource(`template=${template}`));
-  const runtimeEvidence = stringOption(args, "runtime-evidence") ?? stringOption(args, "evidence");
-  if (runtimeEvidence) sources.push(parseHarnessTemplateEvolutionSource(`runtime-evidence=${runtimeEvidence}`));
-  const note = stringOption(args, "note") ?? stringOption(args, "admin-note");
-  if (note) sources.push({ type: "admin-note", name: "Administrator note", contentText: note });
-  return sources;
-}
-
-function parseHarnessTemplateEvolutionSource(value: string): Record<string, unknown> {
-  const trimmed = value.trim();
-  const separator = trimmed.indexOf("=");
-  const key = separator > 0 ? trimmed.slice(0, separator).trim().toLowerCase() : "";
-  const raw = separator > 0 ? trimmed.slice(separator + 1).trim() : trimmed;
-  if (key === "url" || key === "web" || key === "website" || (!key && /^https?:\/\//i.test(raw))) {
-    return { type: "web-url", name: raw, uri: raw };
-  }
-  if (key === "github" || key === "github-repo") {
-    const [uri, ref] = raw.split("#", 2);
-    return { type: "github-repo", name: raw, uri, ref };
-  }
-  if (key === "gitlab" || key === "gitlab-repo") {
-    const [uri, ref] = raw.split("#", 2);
-    return { type: "gitlab-repo", name: raw, uri, ref };
-  }
-  if (key === "runtime-evidence" || key === "evidence") return { type: "runtime-evidence", name: raw, uri: raw };
-  if (key === "local-pack" || key === "pack") return harnessTemplateEvolutionSourceFromLocalPack(raw);
-  if (key === "file" || key === "attachment") return harnessTemplateEvolutionSourceFromFile(raw);
-  if (key === "template" || key === "existing-template") {
-    const [templateId, version] = raw.split("@", 2);
-    return { type: "existing-template", name: raw, uri: templateId, ref: version, metadata: { templateId, templateVersion: version } };
-  }
-  if (key === "note" || key === "admin-note" || !key) return { type: "admin-note", name: key || "Administrator note", contentText: raw };
-  return { type: "admin-note", name: key, contentText: raw, metadata: { originalType: key } };
-}
-
-function harnessTemplateEvolutionSourceFromFile(file: string): Record<string, unknown> {
-  const absolute = path.resolve(file);
-  if (!fs.existsSync(absolute)) throw usage(`HarnessTemplate evolution source file does not exist: ${absolute}`);
-  if (!fs.statSync(absolute).isFile()) throw usage(`HarnessTemplate evolution source file must be a file: ${absolute}`);
-  const buffer = fs.readFileSync(absolute);
-  const text = isTextLikeFile(absolute) ? buffer.toString("utf8") : undefined;
-  return {
-    type: "attachment",
-    name: path.basename(absolute),
-    fileName: path.basename(absolute),
-    mediaType: mediaTypeFromFile(absolute),
-    contentText: text,
-    contentDigest: digestCliBuffer(buffer),
-    metadata: {
-      path: absolute,
-      byteLength: buffer.byteLength,
-      extractedBy: text ? "cli-text-reader" : "cli-binary-digest-only"
-    }
-  };
+  return collectHarnessTemplateEvolutionSourcesFromArgs(args, {
+    usage,
+    localPackSourceFromPath: harnessTemplateEvolutionSourceFromLocalPack
+  });
 }
 
 function harnessTemplateEvolutionSourceFromLocalPack(packPath: string): Record<string, unknown> {
@@ -4003,30 +3939,6 @@ function harnessTemplateEvolutionSourceFromLocalPack(packPath: string): Record<s
     contentText: parts.join("\n\n"),
     metadata: harnessTemplatePackSummary(pack)
   };
-}
-
-function isTextLikeFile(file: string): boolean {
-  return [".txt", ".md", ".markdown", ".yaml", ".yml", ".json", ".toml", ".xml", ".html", ".htm", ".rst", ".csv", ".tsv", ".log"].includes(path.extname(file).toLowerCase());
-}
-
-function mediaTypeFromFile(file: string): string {
-  const extension = path.extname(file).toLowerCase();
-  const map: Record<string, string> = {
-    ".txt": "text/plain",
-    ".md": "text/markdown",
-    ".markdown": "text/markdown",
-    ".yaml": "application/yaml",
-    ".yml": "application/yaml",
-    ".json": "application/json",
-    ".pdf": "application/pdf",
-    ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation"
-  };
-  return map[extension] ?? "application/octet-stream";
-}
-
-function digestCliBuffer(buffer: Buffer): string {
-  return `sha256:${createHash("sha256").update(buffer).digest("hex")}`;
 }
 
 function nonEmptyFile(file: string): boolean {
@@ -4444,7 +4356,7 @@ Usage:
   evopilot harness template pack validate <path>
   evopilot harness template pack publish <path> [--changelog <text>] [--force]
   evopilot harness template evolution list
-  evopilot harness template evolution create --base-template <id> --intent <text> (--source <kind=value>|--file <path>|--local-pack <path>|--runtime-evidence <id>|--note <text>)
+  evopilot harness template evolution create --base-template <id> --intent <text> (--source <kind=value>|--file <path>|--source-project <path-or-id>|--production-log <path>|--local-pack <path>|--runtime-evidence <id>|--note <text>)
   evopilot harness template evolution advance <evolution-id> [--llm-profile <id>] [--require-llm]
   evopilot harness template evolution inspect <evolution-id>
   evopilot harness template evolution approve <evolution-id> --confirmed-by <admin> --confirmation <text>
@@ -4550,8 +4462,12 @@ Global options:
   --goal-loop-target <text>   Goal loop target used to draft a project-level ProjectHarnessProfile
   --path <path>               HarnessTemplate pack directory for pack validate/publish
   --root <path>               HarnessTemplate pack root directory for pack list
-  --source <kind=value>       HarnessTemplate evolution source: url=, github=, gitlab=, local-pack=, file=, template=, runtime-evidence=, or note=
+  --source <kind=value>       HarnessTemplate evolution source: url=, github=, gitlab=, project=, corpus=, log=, evopilot-history=, local-pack=, file=, template=, runtime-evidence=, or note=
   --file <path>               HarnessTemplate evolution attachment or other file input for commands that accept files
+  --source-project <path|id>  HarnessTemplate evolution source from a historical/local project directory or registered project id
+  --source-corpus <items>     Comma-separated project directories or registered project ids for a domain corpus source
+  --production-log <path|id>  Redacted production/runtime log source for HarnessTemplate evolution
+  --evopilot-history <ref>    EvoPilot project/goal/loop/evidence history source, for example project-id or project-id:loop=<loop-id>
   --local-pack <path>         HarnessTemplate evolution source pack directory
   --runtime-evidence <id>     HarnessTemplate evolution source pointing to runtime evidence or an evidence bundle id
   --intent <text>             HarnessTemplate evolution intent reviewed by administrators

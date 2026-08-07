@@ -1,6 +1,6 @@
 schema: evopilot-harness-template/v1
 id: api-gateway-harness
-version: 2.1.0
+version: 2.2.0
 name: API Gateway Harness
 description: Domain baseline for API gateway products.
 scope: platform
@@ -180,7 +180,7 @@ sourceReferences:
     category: github
     rationale: Gateway API route, listener, policy, and conformance model.
 changelog:
-  - version: 2.1.0
+  - version: 2.2.0
     changedAt: 2026-08-07T08:00:00.000Z
     changedBy: evopilot
     summary: Add executable API gateway domain harness contract.

@@ -26,7 +26,7 @@ templates:
     languageFamily: generic
     softwareTypes: [observability-platform, apm, telemetry-pipeline]
   - id: database-product-harness
-    version: 2.1.0
+    version: 2.2.0
     path: database-product-harness
     languageFamily: generic
     harnessLayer: domain
@@ -36,7 +36,7 @@ templates:
     runtimeProfiles: [java, go, rust, cpp, generic]
     softwareTypes: [database-product, dbms, sql-engine, distributed-database, htap, mpp]
   - id: api-gateway-harness
-    version: 2.1.0
+    version: 2.2.0
     path: api-gateway-harness
     languageFamily: generic
     harnessLayer: domain

@@ -12,7 +12,7 @@ export function defaultHarnessTemplates(): HarnessTemplateProfile[] {
 
 const BUILT_IN_HARNESS_TEMPLATE_VERSION = "1.1.0";
 const BUILT_IN_HARNESS_TEMPLATE_UPDATED_AT = "2026-07-31T06:00:00.000Z";
-const DOMAIN_HARNESS_TEMPLATE_VERSION = "2.1.0";
+const DOMAIN_HARNESS_TEMPLATE_VERSION = "2.2.0";
 const DOMAIN_HARNESS_TEMPLATE_UPDATED_AT = "2026-08-07T08:00:00.000Z";
 
 function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "digest"> & { digest?: string }> {
@@ -591,7 +591,7 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
         referenceSource("Database engineering practice", undefined, "engineering-practice", "Treat external databases as compatibility corpora and differential oracles while evolving the owner's product boundary.")
       ],
       changelogSummary: "Initial v2 domain harness template for self-developed database products.",
-      upgradeSummary: "Add v2.1 executable database domain harness contract.",
+      upgradeSummary: "Add v2.2 Harness Knowledge Factory-ready database domain harness contract.",
       upgradeChanges: [
         "Define project required actions for database product onboarding, module mapping, SQL compatibility, recovery, upgrade, and benchmark evidence.",
         "Add database evidence adapter contracts for SQL compatibility, differential oracle comparison, crash recovery, and benchmark summaries.",
@@ -777,7 +777,7 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
         referenceSource("API gateway engineering practice", undefined, "engineering-practice", "Route/policy/plugin/protocol evidence with load and production diagnostics.")
       ],
       changelogSummary: "Initial v2 domain harness template for API gateway products.",
-      upgradeSummary: "Add v2.1 executable API gateway domain harness contract.",
+      upgradeSummary: "Add v2.2 Harness Knowledge Factory-ready API gateway domain harness contract.",
       upgradeChanges: [
         "Define project required actions for gateway boundary mapping, route and policy contracts, plugin lifecycle, and load regression.",
         "Add gateway evidence adapter contracts for route tables, policy matrices, plugin reports, and load summaries.",

@@ -65,7 +65,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
-- [EvoPilot v2.1.0 Release Notes](releases/2.1.0.md) - domain Harness execution contract for database and gateway templates, CLI/API contract, and Dashboard compatibility notes.
+- [EvoPilot v2.2.0 Release Notes](releases/2.2.0.md) - domain Harness execution contract for database and gateway templates, CLI/API contract, and Dashboard compatibility notes.
 - [EvoPilot v1.1.4 Release Notes](releases/1.1.4.md) - distribution-closure release body, GitHub Release tarball installer defaults, and npm registry publication boundary.
 - [EvoPilot v1.1.3 Release Notes](releases/1.1.3.md) - release target boundary and npm registry verification release body and compatibility notes.
 - [EvoPilot v1.1.0 Release Notes](releases/1.1.0.md) - control-plane runtime boundary release body and compatibility notes.

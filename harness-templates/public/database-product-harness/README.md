@@ -28,4 +28,4 @@ evopilot harness template pack validate harness-templates/public/database-produc
 evopilot harness template pack publish harness-templates/public/database-product-harness --json
 ```
 
-Publishing creates or replaces the control-plane `database-product-harness@2.1.0` version according to server-side RBAC, validation, digesting, persistence, and audit rules.
+Publishing creates or replaces the control-plane `database-product-harness@2.2.0` version according to server-side RBAC, validation, digesting, persistence, and audit rules.

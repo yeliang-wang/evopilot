@@ -3,14 +3,14 @@ fullnameOverride: ""
 
 image:
   repository: ghcr.io/yeliang-wang/evopilot
-  tag: "2.1.0"
+  tag: "2.2.0"
   pullPolicy: IfNotPresent
 
 dashboard:
   enabled: true
   image:
     repository: ghcr.io/yeliang-wang/evopilot-dashboard
-    tag: "2.1.0"
+    tag: "2.2.0"
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP

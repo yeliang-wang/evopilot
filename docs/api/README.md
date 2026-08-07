@@ -460,12 +460,12 @@ java-ddd-service-harness@1.1.0
 node-saas-control-plane-harness@1.1.0
 go-middleware-harness@1.1.0
 observability-apm-harness@1.1.0
-database-product-harness@2.1.0
-api-gateway-harness@2.1.0
+database-product-harness@2.2.0
+api-gateway-harness@2.2.0
 generic-management-software-harness@1.1.0
 ```
 
-这些内置模板不是运行时动态从 GitHub 拉取。EvoPilot 将精选开源项目、官方规范和工程实践固化为本地版本化模板，并在 `sourceReferences[]` 中暴露初始化来源，例如 FastAPI、Spring Boot、Micrometer、Kubernetes、Prometheus、OpenTelemetry、Sentry、Apache SkyWalking、PostgreSQL、MySQL、Envoy 和 Kong。`@2.1.0` 领域模板只覆盖数据库产品和 API 网关产品，先定义产品域，再定义 compatibility profiles、architecture profiles、runtime profiles 和 `domainExecution` 执行契约；既有 `@1.1.0` 运行时和广义软件类型模板继续作为 baseline，不属于本次数据库/网关领域升级范围。数据库领域模板中的 PostgreSQL、MySQL 等系统是兼容性语料或差分 oracle，不是默认进化对象。
+这些内置模板不是运行时动态从 GitHub 拉取。EvoPilot 将精选开源项目、官方规范和工程实践固化为本地版本化模板，并在 `sourceReferences[]` 中暴露初始化来源，例如 FastAPI、Spring Boot、Micrometer、Kubernetes、Prometheus、OpenTelemetry、Sentry、Apache SkyWalking、PostgreSQL、MySQL、Envoy 和 Kong。`@2.2.0` 领域模板只覆盖数据库产品和 API 网关产品，先定义产品域，再定义 compatibility profiles、architecture profiles、runtime profiles 和 `domainExecution` 执行契约；既有 `@1.1.0` 运行时和广义软件类型模板继续作为 baseline，不属于本次数据库/网关领域升级范围。数据库领域模板中的 PostgreSQL、MySQL 等系统是兼容性语料或差分 oracle，不是默认进化对象。
 
 管理员也可以通过 `POST /api/v1/harness/templates` 或独立管理员 CLI 发布新的 template id 或版本，用于表达更多语言、架构范式或软件类型的 harness。推荐的人工维护形态是 `harness-templates/public/<template-id>/` 目录 pack：`README.md` 给人类和 AI Agent 读，`template.yaml` 给服务端解析，`CHANGELOG.md` 记录版本，`examples/` 给项目级 profile 生成参考。CLI 提供收敛后的 pack 入口：`harness template pack list`、`harness template pack validate`、`harness template pack publish`。`pack validate` 和 `pack publish` 会调用 `POST /api/v1/harness/templates/validate` 做非持久化服务端校验；`pack publish` 校验通过后才写入控制面。
 
@@ -482,17 +482,21 @@ CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLI
 ```json
 {
   "baseTemplateId": "python-enterprise-harness",
-  "targetVersion": "2.1.0",
+  "targetVersion": "2.2.0",
   "intent": "Add stronger exception tracking and AI troubleshooting metadata.",
   "sources": [
     { "type": "github-repo", "name": "fastapi/fastapi", "uri": "fastapi/fastapi", "ref": "master" },
     { "type": "web-url", "name": "OpenTelemetry Python", "uri": "https://opentelemetry.io/docs/languages/python/" },
+    { "type": "source-project", "name": "legacy-cache-service", "uri": "/work/legacy-cache-service" },
+    { "type": "source-corpus", "name": "cache and scheduler corpus", "uri": "cache-project,scheduler-project" },
+    { "type": "production-log", "name": "prod-incident.log", "contentText": "redacted by the server before snapshot persistence" },
+    { "type": "evopilot-history", "name": "evolution-python-agent", "uri": "evolution-python-agent" },
     { "type": "admin-note", "name": "Workspace note", "contentText": "Require requestId, traceId, errorCode, and nextAction in error logs." }
   ]
 }
 ```
 
-`POST /sources` 只能在 `CREATED` 状态继续追加 source。`POST /advance` 是分步推进：第一次收集 source snapshots 和 digest，第二次生成 analysis signals，第三次生成 DRAFT。若有 READY LLM profile，可以在 body 中传 `llmProfileId`，或传 `requireLlm=true` 强制没有 READY LLM 时阻断；debug 模式未要求 LLM 时会返回 deterministic draft。`REVIEW_REQUIRED` 返回：
+`POST /sources` 只能在 `CREATED` 状态继续追加 source。`POST /advance` 是分步推进：第一次收集 source snapshots 和 digest，生产日志会先脱敏再持久化；第二次生成 capability/runtime/evidence/failure/observability/governance/domain signals 与 `gapClassifications`；第三次生成 DRAFT。若有 READY LLM profile，可以在 body 中传 `llmProfileId`，或传 `requireLlm=true` 强制没有 READY LLM 时阻断；debug 模式未要求 LLM 时会返回 deterministic draft。`REVIEW_REQUIRED` 返回：
 
 ```text
 evolution.draft.template
@@ -505,6 +509,8 @@ evolution.draft.diffFromBase
 evolution.draft.sourceCoverage
 evolution.draft.generatedBy
 ```
+
+`draft.sourceCoverage.sources[]` 会标明 `knowledgeCategory`、`gapClassification`、`redactionApplied` 和 `projectActions`。管理员据此区分下一步是发布公共 `HarnessTemplate`、升级项目级 `ProjectHarnessProfile`、调整租户策略、修复 source 质量，还是先演进 EvoPilot Core 抽取/API 能力。
 
 LLM 输出只是 draft。`POST /approve` 只接受 `REVIEW_REQUIRED` 且 validation 通过的 run，并要求 `confirmedBy` 与 `confirmation`。`POST /publish` 只接受 `APPROVED`，会再次校验 draft、写入新的 `HarnessTemplate` 版本、记录 audit、生成 `impactReport`。`GET /impact` 返回受影响的 active `ProjectHarnessProfile`；`POST /impact` 会重新计算并持久化 impact。旧 active project profile 不会被静默改写，影响报告只返回 stale 列表和下一步动作。
 
@@ -1251,7 +1257,7 @@ Dashboard 的 Streaming Trace Workbench 使用 `GET /api/v1/loops/{loopId}/trace
     "repositoryProvider": "github",
     "sourceUrl": "https://github.com/yeliang-wang/evopilot.git",
     "sourceBranch": "main",
-    "targetVersion": "2.1.0",
+    "targetVersion": "2.2.0",
     "releaseStrategy": "github-push",
     "requiredGates": ["code-change", "push", "tag", "deploy", "health-ready"],
     "deploymentEnvironment": "production"
@@ -1271,7 +1277,7 @@ POST /api/v1/loops/{loopId}/source-closure/execute
 
 ```json
 {
-  "branchName": "evopilot/workbuddy-2.1.0",
+  "branchName": "evopilot/workbuddy-2.2.0",
   "files": [
     {
       "path": ".evopilot/source-closures/workbuddy.md",
@@ -1279,7 +1285,7 @@ POST /api/v1/loops/{loopId}/source-closure/execute
     }
   ],
   "commitMessage": "EvoPilot source closure for workbuddy",
-  "tagName": "v2.1.0",
+  "tagName": "v2.2.0",
   "createReviewRequest": true,
   "deployConnectorId": "prod-webhook",
   "deployParameters": {

@@ -8,6 +8,27 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 2.2.0 - 2026-08-07
+
+### Added
+
+- Added Harness Knowledge Factory source types for historical projects, project corpora, production logs, and EvoPilot goal/loop history inside the existing `HarnessTemplateEvolution` lifecycle.
+- Added source coverage metadata for knowledge category, gap classification, redaction status, and project actions so administrators can distinguish template-version work from project-profile, tenant-policy, and EvoPilot-core gaps.
+- Added bounded local project/corpus extraction plus Office XML text extraction for DOCX/PPTX/XLSX attachments.
+- Added production log redaction before snapshot persistence and domain signal extraction for database, gateway, cache, scheduler, CRM, messaging, and observability domains.
+
+### Changed
+
+- Kept harness management inside EvoPilot's existing server-governed template evolution control plane instead of adding a separate management plane.
+- Upgraded `database-product-harness` and `api-gateway-harness` public packs to `2.2.0` while preserving runtime/language templates as `1.1.0` baselines.
+- Exposed Knowledge Factory summary fields through the API and CLI so Dashboard and agents can show `sourceTypes`, `domainSignals`, `gapClassifications`, and `sourceCoverage`.
+
+### Validation
+
+- `npm run build`
+- `node --test tests/functional/project-harness-profile.test.mjs`
+- Full release validation is required before publication: `npm run check`, `npm run cli:test`, `npm run release:artifact`, `npm run verify:release-artifact`, and `git diff --check`.
+
 ## 2.1.0 - 2026-08-07
 
 ### Added

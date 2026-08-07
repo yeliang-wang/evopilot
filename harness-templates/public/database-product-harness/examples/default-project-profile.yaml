@@ -5,7 +5,7 @@ name: Database Product Harness Profile
 description: Project-level profile for a self-developed database product.
 template:
   templateId: database-product-harness
-  version: 2.1.0
+  version: 2.2.0
 runtime:
   harnessLayer: domain
   domain: database-product

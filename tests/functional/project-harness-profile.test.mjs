@@ -457,7 +457,7 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
 
     const databaseTemplate = templates.data.templates.find((template) => template.id === "database-product-harness");
     assert.equal(databaseTemplate.languageFamily, "generic");
-    assert.equal(databaseTemplate.version, "2.1.0");
+    assert.equal(databaseTemplate.version, "2.2.0");
     assert.equal(databaseTemplate.runtimePatterns.harnessLayer, "domain");
     assert.equal(databaseTemplate.runtimePatterns.domain, "database-product");
     assert.ok(databaseTemplate.runtimePatterns.compatibilityProfiles.some((profile) => profile.id === "postgres-compatible"));
@@ -473,7 +473,7 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
 
     const gatewayTemplate = templates.data.templates.find((template) => template.id === "api-gateway-harness");
     assert.equal(gatewayTemplate.languageFamily, "generic");
-    assert.equal(gatewayTemplate.version, "2.1.0");
+    assert.equal(gatewayTemplate.version, "2.2.0");
     assert.equal(gatewayTemplate.runtimePatterns.harnessLayer, "domain");
     assert.equal(gatewayTemplate.runtimePatterns.domain, "api-gateway");
     assert.ok(gatewayTemplate.runtimePatterns.domainExecution.requiredActions.some((action) => action.id === "map-gateway-control-boundaries"));
@@ -535,7 +535,7 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
       goalLoopTarget: "Evolve our self-developed database product with PostgreSQL-compatible SQL behavior, query optimizer regression tests, storage engine recovery, and MySQL-compatible protocol checks"
     });
     assert.equal(generatedDatabase.data.profile.templateRef.templateId, "database-product-harness");
-    assert.equal(generatedDatabase.data.profile.templateRef.version, "2.1.0");
+    assert.equal(generatedDatabase.data.profile.templateRef.version, "2.2.0");
     assert.ok(generatedDatabase.data.profile.generatedBy.evidence.some((item) => item.includes("domain=database-product")));
     assert.equal(generatedDatabase.data.profile.sourceContent.runtime.harnessLayer, "domain");
     assert.equal(generatedDatabase.data.profile.sourceContent.runtime.domain, "database-product");
@@ -565,7 +565,7 @@ test("Fresh install exposes multiple built-in HarnessTemplate types and generate
       goalLoopTarget: "Evolve our API gateway product with route matching, upstream selection, rate limit policy, plugin lifecycle, Gateway API compatibility, and load regression checks"
     });
     assert.equal(generatedGateway.data.profile.templateRef.templateId, "api-gateway-harness");
-    assert.equal(generatedGateway.data.profile.templateRef.version, "2.1.0");
+    assert.equal(generatedGateway.data.profile.templateRef.version, "2.2.0");
     assert.ok(generatedGateway.data.profile.generatedBy.evidence.some((item) => item.includes("domain=api-gateway")));
     assert.equal(generatedGateway.data.profile.sourceContent.runtime.domain, "api-gateway");
     assert.ok(generatedGateway.data.profile.sourceContent.validation.requiredActions.includes("bind-route-policy-suite"));
@@ -784,8 +784,18 @@ test("HarnessTemplate evolution CLI creates reviewable drafts, publishes, and re
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-template-evolution-"));
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-template-evolution-repo-"));
   fs.writeFileSync(path.join(repoRoot, "pyproject.toml"), "[project]\nname = \"evolution-python-agent\"\nversion = \"0.1.0\"\n");
+  fs.mkdirSync(path.join(repoRoot, "docs"));
+  fs.writeFileSync(path.join(repoRoot, "README.md"), "# Legacy Cache Scheduler\n\nDistributed cache service with shards, slots, TTL eviction, hot key protection, and scheduler cron DAG jobs.\n");
+  fs.writeFileSync(path.join(repoRoot, "docs", "architecture.md"), "# Architecture\n\nCache nodes use consistent hashing, replication, failover, and worker heartbeat. Scheduler jobs track misfire, retry, idempotency, and leader election.\n");
   fs.mkdirSync(path.join(repoRoot, "tests"));
   fs.writeFileSync(path.join(repoRoot, "tests", "test_smoke.py"), "def test_smoke():\n    assert True\n");
+  const productionLog = path.join(dataRoot, "prod-incident.log");
+  fs.writeFileSync(productionLog, [
+    "2026-08-07T10:00:00Z ERROR requestId=req-123 traceId=trace-abc user=ops@example.com token=raw-secret-token Bearer abc.def.ghi",
+    "Cache timeout during shard failover; retry exhausted; scheduler misfire for daily settlement job."
+  ].join("\n"));
+  const pdfAttachment = path.join(dataRoot, "domain-runbook.pdf");
+  fs.writeFileSync(pdfAttachment, minimalPdfWithText("PDF runbook: Prometheus dashboards, trace correlation, SLO alerts, and retry repair evidence for cache and scheduler operations."));
 
   const server = createServer({ dataRoot, runtimeMode: "debug" });
   await listen(server);
@@ -828,21 +838,38 @@ test("HarnessTemplate evolution CLI creates reviewable drafts, publishes, and re
       "--base-template", "python-enterprise-harness",
       "--target-version", "1.1.1",
       "--intent", "Add reviewable Python exception tracking, observability, and AI troubleshooting metadata from administrator knowledge.",
+      "--source", `project=${repoRoot}`,
+      "--source", `log=${productionLog}`,
+      "--source", "evopilot-history=evolution-python-agent",
+      "--file", pdfAttachment,
       "--note", "Enterprise Python services should map FastAPI exceptions into stable error envelopes, correlate logs with traceId/requestId, expose Prometheus metrics, and keep runbooks for SLO alerts.",
       "--json"
     ]);
     assert.equal(created.status, "CREATED");
     const evolutionId = created.evolution.evolutionId;
-    assert.equal(created.evolution.sources.length, 1);
+    assert.equal(created.evolution.sources.length, 5);
 
     const collected = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "advance", evolutionId, "--json"]);
     assert.equal(collected.status, "SOURCES_COLLECTED");
-    assert.equal(collected.evolution.snapshots.length, 1);
+    assert.equal(collected.evolution.snapshots.length, 5);
     assert.match(collected.evolution.snapshots[0].contentDigest, /^sha256:/);
+    const logSnapshot = collected.evolution.snapshots.find((snapshot) => snapshot.type === "production-log");
+    assert.ok(logSnapshot);
+    assert.equal(logSnapshot.metadata.redaction.applied, true);
+    assert.equal(logSnapshot.extractedText.includes("raw-secret-token"), false);
+    assert.equal(logSnapshot.extractedText.includes("ops@example.com"), false);
+    const pdfSnapshot = collected.evolution.snapshots.find((snapshot) => snapshot.name === "domain-runbook.pdf");
+    assert.ok(pdfSnapshot);
+    assert.equal(pdfSnapshot.type, "attachment");
+    assert.equal(pdfSnapshot.metadata.extractedBy, "cli-pdf-text-reader");
+    assert.match(pdfSnapshot.extractedText, /Prometheus dashboards/);
 
     const analyzed = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "advance", evolutionId, "--json"]);
     assert.equal(analyzed.status, "ANALYZED");
     assert.ok(analyzed.evolution.analysisSummary.observabilitySignals.includes("trace-correlation"));
+    assert.ok(analyzed.evolution.analysisSummary.domainSignals.includes("distributed-cache-domain"));
+    assert.ok(analyzed.evolution.analysisSummary.domainSignals.includes("scheduler-domain"));
+    assert.ok(analyzed.evolution.analysisSummary.gapClassifications.includes("project-profile"));
 
     const drafted = await runCliJson(["--server", baseUrl, "harness", "template", "evolution", "advance", evolutionId, "--json"]);
     assert.equal(drafted.status, "REVIEW_REQUIRED");
@@ -850,6 +877,14 @@ test("HarnessTemplate evolution CLI creates reviewable drafts, publishes, and re
     assert.equal(drafted.evolution.draft.template.version, "1.1.1");
     assert.equal(drafted.evolution.draft.validation.status, "VALIDATED");
     assert.ok(drafted.evolution.draft.diffFromBase.changedSections.includes("sourceReferences"));
+    const sourceCoverage = drafted.evolution.draft.sourceCoverage.sources;
+    assert.ok(sourceCoverage.some((source) => source.type === "source-project" && source.knowledgeCategory === "source-project" && source.usedFor.includes("domain-patterns")));
+    const logCoverage = sourceCoverage.find((source) => source.type === "production-log");
+    assert.ok(logCoverage);
+    assert.equal(logCoverage.redactionApplied, true);
+    assert.equal(logCoverage.gapClassification, "tenant-policy");
+    assert.ok(logCoverage.projectActions.some((action) => action.includes("redacted")));
+    assert.ok(sourceCoverage.some((source) => source.type === "attachment" && source.knowledgeCategory === "attachment" && source.usedFor.includes("observability")));
 
     const approved = await runCliJson([
       "--server", baseUrl,
@@ -999,4 +1034,26 @@ async function runCliText(args) {
   const code = await new Promise((resolve) => child.on("close", resolve));
   assert.equal(code, 0, stderr || stdout);
   return stdout;
+}
+
+function minimalPdfWithText(text) {
+  const escaped = text.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+  const objects = [
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    `<< /Length ${escaped.length + 47} >>\nstream\nBT /F1 12 Tf 72 720 Td (${escaped}) Tj ET\nendstream`,
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
+  ];
+  let body = "%PDF-1.4\n";
+  const offsets = [0];
+  for (let index = 0; index < objects.length; index += 1) {
+    offsets.push(Buffer.byteLength(body, "latin1"));
+    body += `${index + 1} 0 obj\n${objects[index]}\nendobj\n`;
+  }
+  const xrefOffset = Buffer.byteLength(body, "latin1");
+  body += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  body += offsets.slice(1).map((offset) => `${String(offset).padStart(10, "0")} 00000 n \n`).join("");
+  body += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+  return body;
 }

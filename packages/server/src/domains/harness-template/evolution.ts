@@ -7,6 +7,8 @@ import {
   validateHarnessTemplateProfile
 } from "./template.js";
 import type {
+  HarnessGapClassification,
+  HarnessKnowledgeCategory,
   HarnessKnowledgeSnapshot,
   HarnessKnowledgeSource,
   HarnessKnowledgeSourceType,
@@ -43,6 +45,16 @@ export interface HarnessTemplateEvolutionRepository {
   readHarnessTemplate(templateId: string, version?: string): HarnessTemplateProfile | undefined;
   writeHarnessTemplate(template: HarnessTemplateProfile): HarnessTemplateProfile;
   listProjectHarnessTemplateBindings(tenantId: string, workspaceId: string): HarnessTemplateProjectProfileBinding[];
+  readProject?: (projectId: string) => unknown;
+  listGoals?: () => unknown[];
+  readGoal?: (goalId: string) => unknown;
+  listLoops?: () => unknown[];
+  readLoop?: (loopId: string) => unknown;
+  listReleaseEvidenceBundles?: () => unknown[];
+  readReleaseEvidenceBundle?: (bundleId: string) => unknown;
+  listProjectHarnessProfileSummaries?: (projectId: string) => unknown[];
+  listProjectHarnessProfileVersions?: (projectId: string, profileId?: string) => unknown[];
+  readActiveProjectHarnessProfile?: (projectId: string, profileId?: string) => unknown;
 }
 
 export interface HarnessTemplateEvolutionLlmClient {
@@ -130,19 +142,35 @@ export function hydrateHarnessTemplateEvolutionRun(input: unknown): HarnessTempl
 export function hydrateHarnessKnowledgeSource(input: unknown): HarnessKnowledgeSource {
   const record = isRecord(input) ? input : {};
   const now = new Date().toISOString();
-  const contentText = optionalTrimmedString(record.contentText ?? record.text ?? record.content);
+  const type = normalizeHarnessKnowledgeSourceType(record.type);
+  const rawContentText = optionalTrimmedString(record.contentText ?? record.text ?? record.content);
+  const baseMetadata = isRecord(record.metadata) ? record.metadata : {};
+  const redacted = type === "production-log" && rawContentText ? redactHarnessSensitiveText(rawContentText) : undefined;
+  const contentText = redacted?.text ?? rawContentText;
+  const metadata = redacted
+    ? {
+        ...baseMetadata,
+        redaction: {
+          schema: "evopilot-harness-source-redaction/v1",
+          applied: redacted.applied,
+          rules: redacted.rules,
+          originalTextDigest: digestText(rawContentText ?? ""),
+          redactedTextDigest: digestText(contentText ?? "")
+        }
+      }
+    : baseMetadata;
   return {
     schema: "evopilot-harness-knowledge-source/v1",
     sourceId: safeFileName(String(record.sourceId ?? record.id ?? `source-${Date.now()}-${Math.random().toString(16).slice(2)}`)),
-    type: normalizeHarnessKnowledgeSourceType(record.type),
+    type,
     name: optionalTrimmedString(record.name ?? record.title ?? record.fileName ?? record.uri) ?? "Harness knowledge source",
     uri: optionalTrimmedString(record.uri ?? record.url ?? record.repository),
     ref: optionalTrimmedString(record.ref ?? record.branch ?? record.commit ?? record.version),
     fileName: optionalTrimmedString(record.fileName ?? record.filename ?? record.path),
     mediaType: optionalTrimmedString(record.mediaType ?? record.mimeType ?? record.contentType),
     contentText,
-    contentDigest: optionalTrimmedString(record.contentDigest) ?? (contentText ? digestText(contentText) : undefined),
-    metadata: isRecord(record.metadata) ? record.metadata : {},
+    contentDigest: optionalTrimmedString(record.contentDigest) ?? (rawContentText ? digestText(rawContentText) : undefined),
+    metadata,
     createdAt: String(record.createdAt ?? now)
   };
 }
@@ -207,7 +235,11 @@ export function hydrateHarnessTemplateDraft(input: unknown, baseTemplateRef: Har
               type: normalizeHarnessKnowledgeSourceType(source.type),
               name: String(source.name ?? "source"),
               digest: String(source.digest ?? ""),
-              usedFor: normalizeStringList(source.usedFor, [])
+              knowledgeCategory: normalizeHarnessKnowledgeCategory(source.knowledgeCategory),
+              gapClassification: normalizeHarnessGapClassification(source.gapClassification),
+              redactionApplied: typeof source.redactionApplied === "boolean" ? source.redactionApplied : undefined,
+              usedFor: normalizeStringList(source.usedFor, []),
+              projectActions: normalizeStringList(source.projectActions, [])
             };
           })
         : []
@@ -235,6 +267,8 @@ export function hydrateHarnessTemplateAnalysis(input: unknown): HarnessTemplateE
     failureSignals: normalizeStringList(record.failureSignals, []),
     observabilitySignals: normalizeStringList(record.observabilitySignals, []),
     governanceSignals: normalizeStringList(record.governanceSignals, []),
+    domainSignals: normalizeStringList(record.domainSignals, []),
+    gapClassifications: normalizeHarnessGapClassificationList(record.gapClassifications),
     sourceCoverage: normalizeStringList(record.sourceCoverage, []),
     generatedAt: String(record.generatedAt ?? new Date().toISOString())
   };
@@ -285,7 +319,30 @@ export function normalizeHarnessKnowledgeSourceType(value: unknown): HarnessKnow
   if (type === "local-pack" || type === "pack") return "local-pack";
   if (type === "existing-template" || type === "template") return "existing-template";
   if (type === "runtime-evidence" || type === "evidence") return "runtime-evidence";
+  if (type === "source-project" || type === "project" || type === "historical-project" || type === "local-project") return "source-project";
+  if (type === "source-corpus" || type === "corpus" || type === "project-corpus" || type === "domain-corpus") return "source-corpus";
+  if (type === "production-log" || type === "runtime-log" || type === "incident-log" || type === "log") return "production-log";
+  if (type === "evopilot-history" || type === "history" || type === "goal-history" || type === "loop-history" || type === "project-history") return "evopilot-history";
   return "admin-note";
+}
+
+function normalizeHarnessKnowledgeCategory(value: unknown): HarnessKnowledgeCategory | undefined {
+  const category = String(value ?? "").trim().toLowerCase();
+  if (category === "external-reference" || category === "source-project" || category === "project-corpus" || category === "attachment" || category === "runtime-log" || category === "evopilot-history" || category === "template-pack" || category === "admin-note") return category;
+  return undefined;
+}
+
+function normalizeHarnessGapClassification(value: unknown): HarnessGapClassification | undefined {
+  const classification = String(value ?? "").trim().toLowerCase();
+  if (classification === "harness-template" || classification === "project-profile" || classification === "tenant-policy" || classification === "evopilot-core" || classification === "source-quality") return classification;
+  return undefined;
+}
+
+function normalizeHarnessGapClassificationList(value: unknown): HarnessGapClassification[] {
+  const classifications = normalizeStringList(value, [])
+    .map(normalizeHarnessGapClassification)
+    .filter((item): item is HarnessGapClassification => Boolean(item));
+  return uniqueStrings(classifications) as HarnessGapClassification[];
 }
 
 export function createHarnessTemplateEvolutionRun(store: HarnessTemplateEvolutionRepository, auth: HarnessTemplateEvolutionActor, body: Record<string, unknown>): HarnessTemplateEvolutionRun {
@@ -405,6 +462,48 @@ async function collectHarnessKnowledgeSnapshot(store: HarnessTemplateEvolutionRe
     if (template) extractedText = JSON.stringify(template, null, 2);
     else warnings.push(`existing-template-not-found:${templateId}${templateVersion ? `@${templateVersion}` : ""}`);
   }
+  if (!extractedText && source.type === "runtime-evidence") {
+    const evidenceId = optionalTrimmedString(source.metadata.evidenceBundleId ?? source.metadata.bundleId ?? source.uri);
+    const evidence = evidenceId ? store.readReleaseEvidenceBundle?.(evidenceId) : undefined;
+    if (evidence) {
+      extractedText = JSON.stringify({ evidenceBundleId: evidenceId, evidence }, null, 2);
+      metadata = { ...metadata, evidenceBundleId: evidenceId, extractedBy: "server-release-evidence-reader" };
+    } else {
+      warnings.push(`runtime-evidence-not-found-or-not-readable:${evidenceId ?? "unknown"}`);
+    }
+  }
+  if (!extractedText && source.type === "evopilot-history") {
+    const collected = collectEvopilotHistoryText(store, source);
+    extractedText = collected.text;
+    metadata = { ...metadata, ...collected.metadata };
+    warnings.push(...collected.warnings);
+  }
+  if (!extractedText && source.type === "source-project") {
+    const collected = collectRegisteredProjectKnowledgeText(store, source);
+    extractedText = collected.text;
+    metadata = { ...metadata, ...collected.metadata };
+    warnings.push(...collected.warnings);
+  }
+  if (!extractedText && source.type === "source-corpus") {
+    const collected = collectSourceCorpusKnowledgeText(store, source);
+    extractedText = collected.text;
+    metadata = { ...metadata, ...collected.metadata };
+    warnings.push(...collected.warnings);
+  }
+  if (source.type === "production-log" && extractedText) {
+    const redacted = redactHarnessSensitiveText(extractedText);
+    extractedText = redacted.text;
+    metadata = {
+      ...metadata,
+      redaction: {
+        schema: "evopilot-harness-source-redaction/v1",
+        applied: redacted.applied,
+        rules: redacted.rules,
+        originalTextDigest: digestText(source.contentText ?? extractedText),
+        redactedTextDigest: digestText(redacted.text)
+      }
+    };
+  }
   if (!extractedText && source.type === "web-url" && source.uri) {
     const fetched = await fetchHarnessKnowledgeText(source.uri);
     extractedText = fetched.text;
@@ -422,6 +521,9 @@ async function collectHarnessKnowledgeSnapshot(store: HarnessTemplateEvolutionRe
   }
   if (!extractedText && source.type === "attachment") {
     warnings.push("attachment-text-unavailable; first-stage extraction accepts text/markdown/yaml/json content and records binary digests without semantic claims");
+  }
+  if (!extractedText && source.type === "production-log") {
+    warnings.push("production-log-text-unavailable; provide --source log=<file> or contentText so EvoPilot can redact and analyze runtime failure patterns");
   }
   if (!extractedText) {
     extractedText = [
@@ -535,6 +637,194 @@ function normalizeHarnessKnowledgeText(value: string): string {
   return value.replace(/\r\n/g, "\n").replace(/[ \t]+/g, " ").split("\n").map((line) => line.trim()).filter(Boolean).join("\n").slice(0, 120_000);
 }
 
+function redactHarnessSensitiveText(value: string): { text: string; applied: boolean; rules: string[] } {
+  const rules: Array<{ id: string; pattern: RegExp; replacement: string }> = [
+    { id: "private-key-block", pattern: /-----BEGIN [^-]+PRIVATE KEY-----[\s\S]*?-----END [^-]+PRIVATE KEY-----/g, replacement: "[REDACTED_PRIVATE_KEY]" },
+    { id: "bearer-token", pattern: /\b(Bearer)\s+[A-Za-z0-9._~+/=-]+/gi, replacement: "$1 [REDACTED]" },
+    { id: "credential-assignment", pattern: /\b(api[-_ ]?key|token|access_token|refresh_token|password|passwd|secret|client_secret)\s*[:=]\s*["']?[^"'\s,;]+/gi, replacement: "$1=[REDACTED]" },
+    { id: "url-credential", pattern: /:\/\/[^/\s:@]+:[^/\s:@]+@/g, replacement: "://[REDACTED]@" },
+    { id: "email", pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, replacement: "[REDACTED_EMAIL]" },
+    { id: "phone", pattern: /\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)\d{3}[-.\s]?\d{4}\b|\b(?:\+?86[-.\s]?)?1[3-9]\d{9}\b/g, replacement: "[REDACTED_PHONE]" }
+  ];
+  let text = value;
+  const applied: string[] = [];
+  for (const rule of rules) {
+    rule.pattern.lastIndex = 0;
+    if (!rule.pattern.test(text)) continue;
+    rule.pattern.lastIndex = 0;
+    text = text.replace(rule.pattern, rule.replacement);
+    applied.push(rule.id);
+  }
+  return { text, applied: applied.length > 0, rules: applied };
+}
+
+function collectRegisteredProjectKnowledgeText(store: HarnessTemplateEvolutionRepository, source: HarnessKnowledgeSource): { text: string; metadata: Record<string, unknown>; warnings: string[] } {
+  const warnings: string[] = [];
+  const projectId = projectIdFromSource(source);
+  if (!projectId) return { text: "", metadata: {}, warnings: ["source-project-id-missing"] };
+  const project = safeStoreRead(() => store.readProject?.(projectId));
+  if (!project) {
+    return {
+      text: "",
+      metadata: { projectId, extractedBy: "server-project-reader" },
+      warnings: [`source-project-not-found:${projectId}; provide a local source-project path or register the project first`]
+    };
+  }
+  const profileSummaries = safeStoreRead(() => store.listProjectHarnessProfileSummaries?.(projectId)) ?? [];
+  const activeProfile = safeStoreRead(() => store.readActiveProjectHarnessProfile?.(projectId, "default"));
+  const goals = projectScopedRecords(safeStoreRead(() => store.listGoals?.()) ?? [], projectId).slice(-8);
+  const loops = projectScopedRecords(safeStoreRead(() => store.listLoops?.()) ?? [], projectId).slice(-8);
+  const evidenceBundles = projectScopedRecords(safeStoreRead(() => store.listReleaseEvidenceBundles?.()) ?? [], projectId).slice(-5);
+  return {
+    text: safeJsonText({
+      sourceKind: "source-project",
+      project,
+      harnessProfiles: {
+        summaries: profileSummaries,
+        activeProfile
+      },
+      recentGoals: goals,
+      recentLoops: loops,
+      recentReleaseEvidence: evidenceBundles
+    }),
+    metadata: {
+      projectId,
+      extractedBy: "server-project-reader",
+      goalCount: goals.length,
+      loopCount: loops.length,
+      releaseEvidenceCount: evidenceBundles.length,
+      profileSummaryCount: Array.isArray(profileSummaries) ? profileSummaries.length : 0
+    },
+    warnings
+  };
+}
+
+function collectSourceCorpusKnowledgeText(store: HarnessTemplateEvolutionRepository, source: HarnessKnowledgeSource): { text: string; metadata: Record<string, unknown>; warnings: string[] } {
+  const projectIds = corpusProjectIdsFromSource(source);
+  const warnings: string[] = [];
+  const projects = projectIds.map((projectId) => {
+    const collected = collectRegisteredProjectKnowledgeText(store, {
+      ...source,
+      type: "source-project",
+      uri: projectId,
+      metadata: { ...source.metadata, projectId }
+    });
+    warnings.push(...collected.warnings);
+    return {
+      projectId,
+      text: collected.text ? collected.text.slice(0, 30_000) : "",
+      metadata: collected.metadata
+    };
+  });
+  const text = projects.some((project) => project.text)
+    ? safeJsonText({ sourceKind: "source-corpus", corpusName: source.name, projects })
+    : "";
+  return {
+    text,
+    metadata: {
+      extractedBy: "server-source-corpus-reader",
+      projectIds,
+      projectCount: projectIds.length,
+      readableProjectCount: projects.filter((project) => project.text).length
+    },
+    warnings
+  };
+}
+
+function collectEvopilotHistoryText(store: HarnessTemplateEvolutionRepository, source: HarnessKnowledgeSource): { text: string; metadata: Record<string, unknown>; warnings: string[] } {
+  const warnings: string[] = [];
+  const projectId = projectIdFromSource(source);
+  const goalId = optionalTrimmedString(source.metadata.goalId ?? source.metadata.globalGoalId);
+  const loopId = optionalTrimmedString(source.metadata.loopId);
+  const evidenceBundleId = optionalTrimmedString(source.metadata.evidenceBundleId ?? source.metadata.bundleId);
+  const project = projectId ? safeStoreRead(() => store.readProject?.(projectId)) : undefined;
+  const activeProfile = projectId ? safeStoreRead(() => store.readActiveProjectHarnessProfile?.(projectId, "default")) : undefined;
+  const goals = goalId
+    ? [safeStoreRead(() => store.readGoal?.(goalId))].filter(Boolean)
+    : projectId
+      ? projectScopedRecords(safeStoreRead(() => store.listGoals?.()) ?? [], projectId).slice(-8)
+      : [];
+  const loops = loopId
+    ? [safeStoreRead(() => store.readLoop?.(loopId))].filter(Boolean)
+    : projectId
+      ? projectScopedRecords(safeStoreRead(() => store.listLoops?.()) ?? [], projectId).slice(-8)
+      : [];
+  const releaseEvidence = evidenceBundleId
+    ? [safeStoreRead(() => store.readReleaseEvidenceBundle?.(evidenceBundleId))].filter(Boolean)
+    : projectId
+      ? projectScopedRecords(safeStoreRead(() => store.listReleaseEvidenceBundles?.()) ?? [], projectId).slice(-5)
+      : [];
+  if (!project && !goals.length && !loops.length && !releaseEvidence.length && !activeProfile) {
+    warnings.push(`evopilot-history-not-found:${source.uri ?? source.name}`);
+    return {
+      text: "",
+      metadata: { projectId, goalId, loopId, evidenceBundleId, extractedBy: "server-evopilot-history-reader" },
+      warnings
+    };
+  }
+  return {
+    text: safeJsonText({
+      sourceKind: "evopilot-history",
+      project,
+      activeProjectHarnessProfile: activeProfile,
+      goals,
+      loops,
+      releaseEvidence
+    }),
+    metadata: {
+      projectId,
+      goalId,
+      loopId,
+      evidenceBundleId,
+      extractedBy: "server-evopilot-history-reader",
+      goalCount: goals.length,
+      loopCount: loops.length,
+      releaseEvidenceCount: releaseEvidence.length
+    },
+    warnings
+  };
+}
+
+function projectIdFromSource(source: HarnessKnowledgeSource): string | undefined {
+  const explicit = optionalTrimmedString(source.metadata.projectId ?? source.metadata.id);
+  if (explicit) return safeFileName(explicit);
+  const uri = optionalTrimmedString(source.uri);
+  if (!uri) return undefined;
+  if (uri.includes(":")) return safeFileName(uri.split(":", 1)[0]);
+  if (uri.includes("#")) return safeFileName(uri.split("#", 1)[0]);
+  return safeFileName(uri);
+}
+
+function corpusProjectIdsFromSource(source: HarnessKnowledgeSource): string[] {
+  const metadataIds = normalizeStringList(source.metadata.sourceProjects ?? source.metadata.projectIds ?? source.metadata.sourceProjectIds ?? source.metadata.sourceIds, []);
+  const uriIds = optionalTrimmedString(source.uri)?.split(",").map((item) => item.trim()).filter(Boolean) ?? [];
+  return uniqueStrings([...metadataIds, ...uriIds].map(safeFileName).filter(Boolean));
+}
+
+function projectScopedRecords(records: unknown[], projectId: string): unknown[] {
+  return records.filter((record) => {
+    if (!isRecord(record)) return false;
+    const project = isRecord(record.project) ? record.project : {};
+    return String(record.projectId ?? project.id ?? "") === projectId;
+  });
+}
+
+function safeStoreRead<T>(reader: () => T): T | undefined {
+  try {
+    return reader();
+  } catch {
+    return undefined;
+  }
+}
+
+function safeJsonText(value: unknown, limit = 120_000): string {
+  try {
+    return JSON.stringify(value, null, 2).slice(0, limit);
+  } catch {
+    return String(value).slice(0, limit);
+  }
+}
+
 export function analyzeHarnessKnowledgeSnapshots(snapshots: HarnessKnowledgeSnapshot[]): HarnessTemplateEvolutionAnalysis {
   const joined = snapshots.map((snapshot) => `${snapshot.name}\n${snapshot.extractedText}`).join("\n").toLowerCase();
   const has = (pattern: RegExp) => pattern.test(joined);
@@ -570,6 +860,21 @@ export function analyzeHarnessKnowledgeSnapshots(snapshots: HarnessKnowledgeSnap
     has(/security|secret|redact|permission/) ? "security-and-redaction-gate" : undefined,
     has(/rollback|release decision|go\/no-go|go no-go/) ? "release-governance-gate" : undefined
   ].filter((item): item is string => Boolean(item)));
+  const domainSignals = uniqueStrings([
+    has(/database|mysql|postgres|postgresql|sql|transaction|replication|wal|query planner|storage engine|mvcc/) ? "database-product-domain" : undefined,
+    has(/gateway|api gateway|reverse proxy|ingress|routing|rate limit|upstream|load balanc/) ? "api-gateway-domain" : undefined,
+    has(/cache|redis|memcached|shard|slot|eviction|hot key|ttl|consistent hash/) ? "distributed-cache-domain" : undefined,
+    has(/scheduler|cron|dag|job|task queue|misfire|worker heartbeat|leader election/) ? "scheduler-domain" : undefined,
+    has(/crm|customer|opportunity|lead|pipeline|account|sales|workflow/) ? "enterprise-management-software-domain" : undefined,
+    has(/kafka|pulsar|rabbitmq|message queue|consumer group|offset|stream/) ? "messaging-stream-domain" : undefined,
+    has(/observability|opentelemetry|prometheus|grafana|trace|metric|log pipeline/) ? "observability-platform-domain" : undefined
+  ].filter((item): item is string => Boolean(item)));
+  const gapClassifications = uniqueStrings([
+    ...snapshots
+      .map((snapshot) => gapClassificationForHarnessSource(snapshot, { failureSignals, governanceSignals, observabilitySignals, domainSignals }))
+      .filter((item): item is HarnessGapClassification => Boolean(item)),
+    ...snapshots.flatMap(additionalGapClassificationsForHarnessSource)
+  ]) as HarnessGapClassification[];
   return {
     schema: "evopilot-harness-template-analysis/v1",
     capabilitySignals,
@@ -578,6 +883,8 @@ export function analyzeHarnessKnowledgeSnapshots(snapshots: HarnessKnowledgeSnap
     failureSignals,
     observabilitySignals,
     governanceSignals,
+    domainSignals,
+    gapClassifications,
     sourceCoverage: snapshots.map((snapshot) => `${snapshot.sourceId}:${snapshot.contentDigest}`),
     generatedAt: new Date().toISOString()
   };
@@ -686,13 +993,21 @@ function deterministicHarnessTemplateEvolutionDraft(baseTemplate: HarnessTemplat
         evolutionId: run.evolutionId,
         intent: run.intent,
         runtimeSignals: analysis.runtimeSignals,
-        capabilitySignals: analysis.capabilitySignals
+        capabilitySignals: analysis.capabilitySignals,
+        domainSignals: analysis.domainSignals
       }
     }),
     evidenceContract: mergeHarnessRecord(baseTemplate.evidenceContract, {
       templateEvolution: {
         sourceCoverage: analysis.sourceCoverage,
-        requiredReviewEvidence: ["source-snapshot-digest", "draft-validation", "admin-approval", "impact-report"]
+        sourceTypes: uniqueStrings(run.snapshots.map((snapshot) => snapshot.type)),
+        gapClassifications: analysis.gapClassifications,
+        requiredReviewEvidence: ["source-snapshot-digest", "draft-validation", "admin-approval", "impact-report"],
+        projectDryRunEvidence: [
+          "ProjectHarnessProfile DRAFT generated from the published template.",
+          "goal loop target binds the published template digest before execution.",
+          "target evidence package shows source, runtime, validation, observability, and release gates."
+        ]
       }
     }),
     failureTaxonomy: mergeHarnessRecord(baseTemplate.failureTaxonomy, {
@@ -709,7 +1024,8 @@ function deterministicHarnessTemplateEvolutionDraft(baseTemplate: HarnessTemplat
     }),
     governanceRules: mergeHarnessRecord(baseTemplate.governanceRules, {
       templateEvolutionRequiresApproval: true,
-      templateEvolutionRequiresImpactReport: true
+      templateEvolutionRequiresImpactReport: true,
+      templateEvolutionRequiresSourceCoverageReview: true
     }),
     sourceReferences: mergeHarnessSourceReferences(baseTemplate.sourceReferences, sourceReferencesFromSnapshots(run.snapshots)),
     changelog: templateChangelogForEvolution(baseTemplate, run, auth.actor),
@@ -728,7 +1044,11 @@ function renderHarnessTemplateEvolutionDraft(baseTemplate: HarnessTemplateProfil
       type: snapshot.type,
       name: snapshot.name,
       digest: snapshot.contentDigest,
-      usedFor: usedForHarnessSource(snapshot, run.analysisSummary)
+      knowledgeCategory: knowledgeCategoryForHarnessSource(snapshot),
+      gapClassification: gapClassificationForHarnessSource(snapshot, run.analysisSummary),
+      redactionApplied: redactionAppliedForHarnessSource(snapshot),
+      usedFor: usedForHarnessSource(snapshot, run.analysisSummary),
+      projectActions: projectActionsForHarnessSource(snapshot, run.analysisSummary)
     }))
   };
   return {
@@ -799,13 +1119,64 @@ function templateChangelogForEvolution(baseTemplate: HarnessTemplateProfile, run
   ];
 }
 
+function knowledgeCategoryForHarnessSource(snapshot: HarnessKnowledgeSnapshot): HarnessKnowledgeCategory {
+  if (snapshot.type === "source-project") return "source-project";
+  if (snapshot.type === "source-corpus") return "project-corpus";
+  if (snapshot.type === "production-log") return "runtime-log";
+  if (snapshot.type === "evopilot-history" || snapshot.type === "runtime-evidence") return "evopilot-history";
+  if (snapshot.type === "local-pack" || snapshot.type === "existing-template") return "template-pack";
+  if (snapshot.type === "attachment") return "attachment";
+  if (snapshot.type === "admin-note") return "admin-note";
+  return "external-reference";
+}
+
+function gapClassificationForHarnessSource(snapshot: HarnessKnowledgeSnapshot, analysis?: Partial<HarnessTemplateEvolutionAnalysis>): HarnessGapClassification {
+  const text = `${snapshot.name}\n${snapshot.extractedText}\n${snapshot.warnings.join("\n")}`.toLowerCase();
+  if (/extractor|semantic extraction|text-unavailable|not-configured/.test(text)) return "evopilot-core";
+  if (/secret|token|password|permission|rbac|redact|credential/.test(text)) return "tenant-policy";
+  if (snapshot.type === "production-log" && /exception|error|timeout|retry|slow|incident|failover|oom|deadlock/.test(text)) return "project-profile";
+  if (snapshot.type === "runtime-evidence" || snapshot.type === "evopilot-history") return "project-profile";
+  if (snapshot.type === "web-url" || snapshot.type === "github-repo" || snapshot.type === "gitlab-repo") return "source-quality";
+  if ((analysis?.domainSignals ?? []).length > 0) return "harness-template";
+  return "harness-template";
+}
+
+function additionalGapClassificationsForHarnessSource(snapshot: HarnessKnowledgeSnapshot): HarnessGapClassification[] {
+  const text = `${snapshot.name}\n${snapshot.extractedText}\n${snapshot.warnings.join("\n")}`.toLowerCase();
+  const classifications: HarnessGapClassification[] = [];
+  if (snapshot.type === "production-log" && /exception|error|timeout|retry|slow|incident|failover|oom|deadlock/.test(text)) classifications.push("project-profile");
+  if (/secret|token|password|permission|rbac|redact|credential/.test(text)) classifications.push("tenant-policy");
+  return classifications;
+}
+
+function redactionAppliedForHarnessSource(snapshot: HarnessKnowledgeSnapshot): boolean | undefined {
+  const redaction = isRecord(snapshot.metadata.redaction) ? snapshot.metadata.redaction : undefined;
+  return typeof redaction?.applied === "boolean" ? redaction.applied : undefined;
+}
+
 function usedForHarnessSource(snapshot: HarnessKnowledgeSnapshot, analysis?: HarnessTemplateEvolutionAnalysis): string[] {
   const used = ["source-reference", "changelog-evidence", "review-trace"];
   if (analysis?.observabilitySignals.length) used.push("observability");
   if (analysis?.failureSignals.length) used.push("failure-diagnostics");
   if (analysis?.runtimeSignals.length) used.push("runtime-patterns");
+  if (analysis?.domainSignals.length) used.push("domain-patterns");
+  if (analysis?.gapClassifications.length) used.push("gap-classification");
+  if (redactionAppliedForHarnessSource(snapshot)) used.push("redacted-runtime-evidence");
   if (snapshot.warnings.length > 0) used.push("warning-review");
   return uniqueStrings(used);
+}
+
+function projectActionsForHarnessSource(snapshot: HarnessKnowledgeSnapshot, analysis?: HarnessTemplateEvolutionAnalysis): string[] {
+  const classification = gapClassificationForHarnessSource(snapshot, analysis);
+  const actions: string[] = [];
+  if (classification === "harness-template") actions.push("Use the published HarnessTemplate version for future ProjectHarnessProfile drafts in matching domains.");
+  if (classification === "project-profile") actions.push("Generate or upgrade the project ProjectHarnessProfile, review the DRAFT, then explicitly activate before goal loop execution.");
+  if (classification === "tenant-policy") actions.push("Review TenantHarnessPolicy redaction, permission, logging, and approval rules before activating affected project profiles.");
+  if (classification === "evopilot-core") actions.push("Route extractor/schema/API gaps through EvoPilot core evolution before claiming full source semantic coverage.");
+  if (classification === "source-quality") actions.push("Add higher-fidelity project docs, logs, attachments, or history evidence before approving a broad template change.");
+  if (snapshot.type === "production-log") actions.push("Keep production logs redacted and bind requestId/traceId/errorCode fields into diagnostics evidence.");
+  if ((analysis?.domainSignals ?? []).length > 0) actions.push(`Confirm domain match: ${(analysis?.domainSignals ?? []).join(", ")}.`);
+  return uniqueStrings(actions);
 }
 
 function harnessTemplateSourceObject(template: HarnessTemplateProfile): Record<string, unknown> {
@@ -840,7 +1211,11 @@ function renderHarnessTemplateDraftReadme(baseTemplate: HarnessTemplateProfile, 
     "",
     "## Source Coverage",
     "",
-    ...sourceCoverage.sources.map((source) => `- ${source.sourceId}: ${source.name} (${source.type}, ${source.digest})`),
+    ...sourceCoverage.sources.map((source) => `- ${source.sourceId}: ${source.name} (${source.type}, ${source.digest})${source.gapClassification ? `; gap=${source.gapClassification}` : ""}${source.knowledgeCategory ? `; category=${source.knowledgeCategory}` : ""}`),
+    "",
+    "## Project Action Contract",
+    "",
+    ...sourceCoverage.sources.flatMap((source) => (source.projectActions ?? []).map((action) => `- ${source.sourceId}: ${action}`)),
     "",
     "## Review Contract",
     "",
@@ -916,6 +1291,9 @@ function harnessTemplateEvolutionPrompt(baseTemplate: HarnessTemplateProfile, ru
         name: snapshot.name,
         uri: snapshot.uri,
         contentDigest: snapshot.contentDigest,
+        knowledgeCategory: knowledgeCategoryForHarnessSource(snapshot),
+        gapClassification: gapClassificationForHarnessSource(snapshot, run.analysisSummary),
+        redactionApplied: redactionAppliedForHarnessSource(snapshot),
         extractedTextPreview: snapshot.extractedText.slice(0, 4000),
         warnings: snapshot.warnings
       }))
@@ -1022,7 +1400,10 @@ export function harnessTemplateEvolutionLogMetadata(run: HarnessTemplateEvolutio
     sourceCount: run.sources.length,
     snapshotCount: run.snapshots.length,
     sourceIds: run.sources.map((source) => source.sourceId),
+    sourceTypes: uniqueStrings(run.sources.map((source) => source.type)),
     snapshotDigests: run.snapshots.map((snapshot) => snapshot.contentDigest),
+    domainSignals: run.analysisSummary?.domainSignals ?? [],
+    gapClassifications: run.analysisSummary?.gapClassifications ?? [],
     draftVersion: run.draft?.version,
     draftDigest: run.draft?.template.digest,
     validationStatus: run.draft?.validation.status,

@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.2.0
+
+- Mark the database product harness as compatible with Harness Knowledge Factory source coverage, domain signals, and project action classification.
+- Keep database product boundaries unchanged: PostgreSQL, MySQL, and similar systems remain compatibility references or differential oracles only.
+
 ## 2.1.0
 
 - Add executable required actions for database product boundary, engine module mapping, SQL compatibility, recovery, upgrade, and benchmark evidence.

@@ -2486,7 +2486,7 @@ test("Loop source closure executes GitLab source writeback gates", async () => {
           sourceProjectId: "gitlab-source",
           repositoryProvider: "gitlab",
           sourceBranch: "main",
-          targetVersion: "2.1.0",
+          targetVersion: "2.2.0",
           requiredGates: ["code-change", "push", "tag", "deploy", "health-ready"]
         }
       }
@@ -2498,14 +2498,14 @@ test("Loop source closure executes GitLab source writeback gates", async () => {
       token: "admin-token",
       body: {
         files: [{ path: "docs/source-closure.md", content: "closed by EvoPilot GitLab" }],
-        tagName: "v2.1.0"
+        tagName: "v2.2.0"
       }
     });
     assert.equal(executed.status, 200);
     assert.equal(executed.body.data.sourceClosure.closureState, "PROMOTED");
     assert.equal(executed.body.data.sourceClosure.artifacts.commitSha, "gitlab-commit-sha");
     assert.equal(executed.body.data.sourceClosure.artifacts.mergeRequestUrl, "http://gitlab/mr/7");
-    assert.equal(executed.body.data.sourceClosure.artifacts.tag, "v2.1.0");
+    assert.equal(executed.body.data.sourceClosure.artifacts.tag, "v2.2.0");
     assert.equal(executed.body.data.sourceClosure.gateEvidence["health-ready"].status, "PASSED");
     assert.equal(executed.body.data.sourceReleaseRun.provider, "gitlab");
     assert.ok(executed.body.data.sourceReleaseRun.capabilities.includes("gitlab-merge-request"));
@@ -3033,7 +3033,7 @@ function createFakeSourceClosureGitLabServer() {
       return json(response, [{ type: "blob", path: "README.md" }]);
     }
     if (request.url === "/api/v4/projects/group%2Fproject/repository/branches" && request.method === "POST") {
-      return json(response, { name: "evopilot/gitlab-source-loop-2.1.0", web_url: "http://gitlab/branch" });
+      return json(response, { name: "evopilot/gitlab-source-loop-2.2.0", web_url: "http://gitlab/branch" });
     }
     if (request.url === "/api/v4/projects/group%2Fproject/repository/commits" && request.method === "POST") {
       return json(response, { id: "gitlab-commit-sha", short_id: "gitlab-c", web_url: "http://gitlab/commit/gitlab-c" });
@@ -3045,7 +3045,7 @@ function createFakeSourceClosureGitLabServer() {
       return json(response, { id: "mr-7", iid: 7, merge_commit_sha: "gitlab-merge-sha", web_url: "http://gitlab/mr/7" });
     }
     if (request.url === "/api/v4/projects/group%2Fproject/repository/tags" && request.method === "POST") {
-      return json(response, { name: "v2.1.0", target: "gitlab-commit-sha", web_url: "http://gitlab/tag/v2.1.0" });
+      return json(response, { name: "v2.2.0", target: "gitlab-commit-sha", web_url: "http://gitlab/tag/v2.2.0" });
     }
     response.writeHead(404);
     response.end();
