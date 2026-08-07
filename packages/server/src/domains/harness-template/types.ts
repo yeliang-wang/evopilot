@@ -28,6 +28,8 @@ export interface HarnessTemplateSourceReference {
   rationale: string;
 }
 
+export type HarnessTemplateLayer = "runtime" | "domain" | "composite";
+
 export interface HarnessTemplateProfile {
   schema: "evopilot-harness-template/v1";
   id: string;
@@ -37,6 +39,14 @@ export interface HarnessTemplateProfile {
   description: string;
   scope: "platform" | "tenant";
   languageFamily: "python" | "node" | "java" | "go" | "generic";
+  harnessLayer?: HarnessTemplateLayer;
+  domain?: string;
+  baseRuntimeTemplates?: string[];
+  compatibleRuntimeProfiles?: string[];
+  matchSignals?: {
+    include?: string[];
+    exclude?: string[];
+  };
   capabilities: HarnessCapabilityDefinition[];
   runtimePatterns: Record<string, unknown>;
   validationBaseline: Record<string, unknown>;
@@ -214,6 +224,41 @@ export interface HarnessTemplateEvolutionAnalysis {
   generatedAt: string;
 }
 
+export type HarnessTemplateMatchDecision = "EVOLVE_EXISTING" | "CREATE_NEW_FROM_BASE" | "NEEDS_ADMIN_CONFIRMATION";
+
+export interface HarnessTemplateMatchCandidate {
+  templateRef: HarnessTemplateRef;
+  harnessLayer: HarnessTemplateLayer;
+  domain?: string;
+  languageFamily: HarnessTemplateProfile["languageFamily"];
+  score: number;
+  matchedSignals: string[];
+  reasons: string[];
+}
+
+export interface HarnessTemplateMatchReport {
+  schema: "evopilot-harness-template-match-report/v1";
+  decision: HarnessTemplateMatchDecision;
+  confidence: number;
+  baseTemplateRef: HarnessTemplateRef;
+  targetTemplateId: string;
+  targetVersion: string;
+  targetHarnessLayer: HarnessTemplateLayer;
+  targetDomain?: string;
+  languageSignals: string[];
+  runtimeSignals: string[];
+  domainSignals: string[];
+  sourceDigests: string[];
+  candidateTemplates: HarnessTemplateMatchCandidate[];
+  reasons: string[];
+  llmAdjudication: {
+    used: boolean;
+    reason: string;
+  };
+  nextAction: string;
+  generatedAt: string;
+}
+
 export interface HarnessTemplateEvolutionRun {
   schema: "evopilot-harness-template-evolution-run/v1";
   evolutionId: string;
@@ -226,6 +271,7 @@ export interface HarnessTemplateEvolutionRun {
   intent: string;
   sources: HarnessKnowledgeSource[];
   snapshots: HarnessKnowledgeSnapshot[];
+  autoMatch?: HarnessTemplateMatchReport;
   analysisSummary?: HarnessTemplateEvolutionAnalysis;
   draft?: HarnessTemplateDraft;
   review?: {

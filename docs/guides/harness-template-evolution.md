@@ -39,6 +39,33 @@ Supported source inputs:
 | `--source runtime-evidence=<id>` or `--runtime-evidence <id>` | `runtime-evidence` | Records a runtime evidence or evidence-bundle reference for review; first-stage semantic extraction requires attached text or notes. |
 | `--note <text>` or `--source note=<text>` | `admin-note` | Stores the administrator note as reviewable source text. |
 
+## Template Auto-Match
+
+When the administrator starts from a historical project, project corpus, attachment, or production log, EvoPilot can decide whether the material belongs to an existing domain template or should create a new target template from a runtime base.
+
+Preview the decision without persisting a run:
+
+```bash
+evopilot harness template match \
+  --source-project ./legacy-cache-service \
+  --intent "Create or evolve the harness for self-developed distributed cache products." \
+  --json
+```
+
+Create a run with the same server-side matcher:
+
+```bash
+evopilot harness template evolution create \
+  --auto-match \
+  --source-project ./legacy-cache-service \
+  --intent "Create or evolve the harness for self-developed distributed cache products." \
+  --json
+```
+
+The match report is stored as `evolution.autoMatch`. It contains `decision`, `confidence`, `baseTemplateRef`, `targetTemplateId`, `targetVersion`, `targetDomain`, `candidateTemplates[]`, `reasons[]`, source digests, and `nextAction`. For example, a Go distributed-cache source project can produce `decision=CREATE_NEW_FROM_BASE`, `baseTemplateRef=go-middleware-harness@1.1.0`, and `targetTemplateId=distributed-cache-harness@0.1.0`.
+
+Automatic matching does not publish anything. `CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED -> IMPACT_ANALYZED` still applies, and LLM output remains draft-only.
+
 ## Admin Flow
 
 Create the run:

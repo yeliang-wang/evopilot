@@ -63,10 +63,14 @@ EvoPilot automatically matches one built-in or administrator-published template 
 Administrator agents can also run the server-governed template evolution lifecycle when template changes come from reviewable sources instead of direct pack editing:
 
 ```bash
+evopilot harness template match \
+  --source-project ./legacy-cache-service \
+  --intent "Create or evolve the harness for self-developed distributed cache products." \
+  --json
+
 evopilot harness template evolution create \
-  --base-template python-enterprise-harness \
-  --target-version 2.2.0 \
-  --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
+  --auto-match \
+  --intent "Create or evolve the harness for self-developed distributed cache products." \
   --source project=./legacy-cache-service \
   --source log=./prod-incident.log \
   --source evopilot-history=evolution-python-agent \

@@ -1,6 +1,7 @@
 import type {
   HarnessCapabilityDefinition,
   HarnessTemplateChangelogEntry,
+  HarnessTemplateLayer,
   HarnessTemplateMaturityPhase,
   HarnessTemplateProfile,
   HarnessTemplateRef,
@@ -23,6 +24,10 @@ export function hydrateHarnessTemplate(input: unknown): HarnessTemplateProfile {
   const record = isRecord(input) ? input : {};
   const now = new Date().toISOString();
   const phaseMapping = hydrateHarnessPhaseMapping(record.phaseMapping);
+  const runtimePatterns = recordObject(record.runtimePatterns);
+  const harnessLayer = normalizeHarnessTemplateLayer(record.harnessLayer ?? runtimePatterns.harnessLayer, runtimePatterns);
+  const domain = optionalTrimmedString(record.domain ?? runtimePatterns.domain);
+  const compatibleRuntimeProfiles = normalizeStringList(record.compatibleRuntimeProfiles ?? runtimePatterns.runtimeProfiles, []);
   const template: Omit<HarnessTemplateProfile, "digest"> & { digest?: string } = {
     schema: "evopilot-harness-template/v1",
     id: safeFileName(String(record.id ?? "python-enterprise-harness")),
@@ -31,8 +36,13 @@ export function hydrateHarnessTemplate(input: unknown): HarnessTemplateProfile {
     description: String(record.description ?? ""),
     scope: record.scope === "tenant" ? "tenant" : "platform",
     languageFamily: normalizeHarnessLanguageFamily(record.languageFamily),
+    harnessLayer,
+    ...(domain ? { domain } : {}),
+    baseRuntimeTemplates: normalizeStringList(record.baseRuntimeTemplates ?? runtimePatterns.baseRuntimeTemplates, []),
+    compatibleRuntimeProfiles,
+    matchSignals: hydrateHarnessTemplateMatchSignals(record.matchSignals ?? runtimePatterns.matchSignals),
     capabilities: hydrateHarnessCapabilities(record.capabilities),
-    runtimePatterns: recordObject(record.runtimePatterns),
+    runtimePatterns,
     validationBaseline: recordObject(record.validationBaseline),
     evidenceContract: recordObject(record.evidenceContract),
     failureTaxonomy: recordObject(record.failureTaxonomy),
@@ -77,9 +87,9 @@ export function validateHarnessTemplateProfile(template: HarnessTemplateProfile)
   const domainContractFailures = validateDomainHarnessTemplateContract(template);
   if (domainContractFailures.length > 0) {
     add("domain-execution-contract", "FAIL", true, domainContractFailures);
-  } else if (recordObject(template.runtimePatterns).harnessLayer === "domain") {
+  } else if (effectiveHarnessTemplateLayer(template) === "domain") {
     add("domain-execution-contract", "PASS", true, [
-      `domain=${String(recordObject(template.runtimePatterns).domain ?? "missing")}`,
+      `domain=${effectiveHarnessTemplateDomain(template) ?? "missing"}`,
       `requiredActions=${Array.isArray(recordObject(recordObject(template.runtimePatterns).domainExecution).requiredActions) ? (recordObject(recordObject(template.runtimePatterns).domainExecution).requiredActions as unknown[]).length : 0}`,
       `evidenceAdapters=${Array.isArray(recordObject(recordObject(template.runtimePatterns).domainExecution).evidenceAdapters) ? (recordObject(recordObject(template.runtimePatterns).domainExecution).evidenceAdapters as unknown[]).length : 0}`
     ]);
@@ -104,15 +114,15 @@ export function validateHarnessTemplateProfile(template: HarnessTemplateProfile)
 
 export function validateDomainHarnessTemplateContract(template: HarnessTemplateProfile): string[] {
   const runtimePatterns = recordObject(template.runtimePatterns);
-  if (runtimePatterns.harnessLayer !== "domain") return [];
-  const domain = optionalTrimmedString(runtimePatterns.domain);
+  if (effectiveHarnessTemplateLayer(template) !== "domain") return [];
+  const domain = effectiveHarnessTemplateDomain(template);
   const failures: string[] = [];
-  const allowedDomains = new Set(["database-product", "api-gateway"]);
   if (!domain) failures.push("runtimePatterns.domain is required for domain harness templates");
-  if (domain && !allowedDomains.has(domain)) failures.push(`runtimePatterns.domain=${domain} is outside the v2 domain harness scope`);
+  if (domain && safeFileName(domain) !== domain) failures.push(`domain=${domain} must be a safe domain id`);
   if (!Array.isArray(runtimePatterns.compatibilityProfiles) || runtimePatterns.compatibilityProfiles.length === 0) failures.push("runtimePatterns.compatibilityProfiles must be non-empty");
   if (!Array.isArray(runtimePatterns.architectureProfiles) || runtimePatterns.architectureProfiles.length === 0) failures.push("runtimePatterns.architectureProfiles must be non-empty");
-  if (!Array.isArray(runtimePatterns.runtimeProfiles) || runtimePatterns.runtimeProfiles.length === 0) failures.push("runtimePatterns.runtimeProfiles must be non-empty");
+  const runtimeProfiles = Array.isArray(runtimePatterns.runtimeProfiles) ? runtimePatterns.runtimeProfiles : template.compatibleRuntimeProfiles ?? [];
+  if (runtimeProfiles.length === 0) failures.push("runtimePatterns.runtimeProfiles must be non-empty");
   const domainExecution = recordObject(runtimePatterns.domainExecution);
   const requiredActions = Array.isArray(domainExecution.requiredActions) ? domainExecution.requiredActions : [];
   const evidenceAdapters = Array.isArray(domainExecution.evidenceAdapters) ? domainExecution.evidenceAdapters : [];
@@ -133,6 +143,29 @@ export function validateDomainHarnessTemplateContract(template: HarnessTemplateP
     }
   }
   return uniqueStrings(failures);
+}
+
+export function effectiveHarnessTemplateLayer(template: HarnessTemplateProfile): HarnessTemplateLayer {
+  return normalizeHarnessTemplateLayer(template.harnessLayer ?? recordObject(template.runtimePatterns).harnessLayer, template.runtimePatterns);
+}
+
+export function effectiveHarnessTemplateDomain(template: HarnessTemplateProfile): string | undefined {
+  return optionalTrimmedString(template.domain ?? recordObject(template.runtimePatterns).domain);
+}
+
+export function normalizeHarnessTemplateLayer(value: unknown, runtimePatterns: Record<string, unknown> = {}): HarnessTemplateLayer {
+  const layer = String(value ?? "").trim().toLowerCase();
+  if (layer === "domain" || layer === "composite" || layer === "runtime") return layer;
+  if (optionalTrimmedString(runtimePatterns.domain) || isRecord(runtimePatterns.domainExecution)) return "domain";
+  return "runtime";
+}
+
+function hydrateHarnessTemplateMatchSignals(value: unknown): HarnessTemplateProfile["matchSignals"] {
+  const record = isRecord(value) ? value : {};
+  return {
+    include: normalizeStringList(record.include, []),
+    exclude: normalizeStringList(record.exclude, [])
+  };
 }
 
 export function hydrateHarnessTemplateChangelog(value: unknown, fallbackVersion: string, fallbackChangedAt: string): HarnessTemplateChangelogEntry[] {

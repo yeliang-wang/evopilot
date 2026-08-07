@@ -130,6 +130,7 @@ import {
   hydrateHarnessTemplateEvolutionRun,
   impactReportForHarnessTemplate,
   isHarnessTemplateDomainError,
+  matchHarnessTemplateEvolutionSource,
   parseHarnessKnowledgeSources,
   publishHarnessTemplateEvolutionRun,
   validateHarnessTemplateProfile
@@ -702,6 +703,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           isRecord,
           logInfo,
           logWarn,
+          matchHarnessTemplateEvolutionSource,
           optionalTrimmedString,
           parseHarnessKnowledgeSources,
           parseHarnessTemplateApplyPayload,

@@ -1,6 +1,6 @@
 {
   "name": "create-evopilot",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Bootstrap a self-hosted EvoPilot control plane with Docker Compose.",
   "license": "Apache-2.0",
   "type": "module",

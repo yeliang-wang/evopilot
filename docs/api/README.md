@@ -477,21 +477,19 @@ generic-management-software-harness@1.1.0
 CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED -> IMPACT_ANALYZED
 ```
 
-`POST /api/v1/harness/template-evolutions` 创建 run，要求至少一个 source。source 支持：
+`POST /api/v1/harness/template-matches` 可在创建 run 前做服务端匹配预览。它读取同一类 sources，返回 `match.decision`、`confidence`、`baseTemplateRef`、`targetTemplateId`、`targetVersion`、`targetDomain`、`candidateTemplates[]`、`reasons[]` 和 `nextAction`。该接口不持久化、不生成 draft、不发布模板。
+
+`POST /api/v1/harness/template-evolutions` 创建 run，要求至少一个 source。显式 `baseTemplateId` 仍然可用；若传 `autoMatch=true`，或未传 `baseTemplateId` 但提供 `source-project`、`source-corpus`、附件、生产日志、EvoPilot history 或文本 source，EvoPilot 会先生成 `evolution.autoMatch`。高置信度会选择已有领域模板继续进化，或在没有匹配领域模板时从 runtime base 创建新目标模板，例如 `distributed-cache-harness@0.1.0` 继承 `go-middleware-harness@1.1.0`。source 支持：
 
 ```json
 {
-  "baseTemplateId": "python-enterprise-harness",
-  "targetVersion": "2.2.0",
-  "intent": "Add stronger exception tracking and AI troubleshooting metadata.",
+  "autoMatch": true,
+  "intent": "Create or evolve the harness for self-developed distributed cache products.",
   "sources": [
-    { "type": "github-repo", "name": "fastapi/fastapi", "uri": "fastapi/fastapi", "ref": "master" },
-    { "type": "web-url", "name": "OpenTelemetry Python", "uri": "https://opentelemetry.io/docs/languages/python/" },
     { "type": "source-project", "name": "legacy-cache-service", "uri": "/work/legacy-cache-service" },
-    { "type": "source-corpus", "name": "cache and scheduler corpus", "uri": "cache-project,scheduler-project" },
     { "type": "production-log", "name": "prod-incident.log", "contentText": "redacted by the server before snapshot persistence" },
-    { "type": "evopilot-history", "name": "evolution-python-agent", "uri": "evolution-python-agent" },
-    { "type": "admin-note", "name": "Workspace note", "contentText": "Require requestId, traceId, errorCode, and nextAction in error logs." }
+    { "type": "evopilot-history", "name": "cache-platform", "uri": "cache-platform" },
+    { "type": "admin-note", "name": "Workspace note", "contentText": "Require shard, replica, TTL, hot key, failover, and recovery evidence." }
   ]
 }
 ```

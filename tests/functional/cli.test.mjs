@@ -29,6 +29,7 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   assert.match(help, /evopilot logging inspect/);
   assert.match(help, /evopilot logging set --level/);
   assert.match(help, /evopilot harness template list/);
+  assert.match(help, /evopilot harness template match/);
   assert.match(help, /evopilot harness policy list/);
   assert.match(help, /evopilot harness policy activate/);
   assert.match(help, /evopilot harness profile generate/);

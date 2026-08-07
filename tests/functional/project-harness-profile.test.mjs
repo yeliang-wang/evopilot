@@ -976,6 +976,70 @@ test("HarnessTemplate evolution CLI creates reviewable drafts, publishes, and re
   }
 });
 
+test("HarnessTemplate evolution auto-matches source projects to existing or new domain templates", async () => {
+  assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-template-match-"));
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-distributed-cache-repo-"));
+  fs.writeFileSync(path.join(repoRoot, "go.mod"), "module example.com/distributed-cache\n\ngo 1.22\n");
+  fs.writeFileSync(path.join(repoRoot, "README.md"), [
+    "# Distributed Cache Product",
+    "",
+    "A self-developed Redis-compatible distributed cache product with KV store APIs.",
+    "The system owns TTL, LRU eviction, hot key protection, consistent hashing, hash slot migration, shards, replicas, failover, and Raft metadata consensus."
+  ].join("\n"));
+  fs.mkdirSync(path.join(repoRoot, "docs"), { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, "docs", "architecture.md"), [
+    "# Architecture",
+    "",
+    "Cache nodes are grouped into clusters. Slot migration, replica promotion, and failover are part of the product boundary.",
+    "Operational evidence includes benchmark summaries, recovery logs, and shard rebalancing reports."
+  ].join("\n"));
+  fs.mkdirSync(path.join(repoRoot, "cmd", "cache"), { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, "cmd", "cache", "main.go"), "package main\n\nfunc main() {}\n");
+
+  const server = createServer({ dataRoot, runtimeMode: "debug" });
+  await listen(server);
+  const baseUrl = serverUrl(server);
+
+  try {
+    const matched = await runCliJson([
+      "--server", baseUrl,
+      "harness", "template", "match",
+      "--source-project", repoRoot,
+      "--intent", "Create or evolve the harness for self-developed distributed cache products.",
+      "--json"
+    ]);
+    assert.equal(matched.schema, "evopilot-harness-template-match-result/v1");
+    assert.equal(matched.match.decision, "CREATE_NEW_FROM_BASE");
+    assert.ok(matched.match.confidence >= 0.8);
+    assert.equal(matched.match.baseTemplateRef.templateId, "go-middleware-harness");
+    assert.equal(matched.match.targetTemplateId, "distributed-cache-harness");
+    assert.equal(matched.match.targetVersion, "0.1.0");
+    assert.equal(matched.match.targetHarnessLayer, "domain");
+    assert.equal(matched.match.targetDomain, "distributed-cache");
+    assert.ok(matched.match.languageSignals.some((signal) => signal.includes("go.mod")));
+    assert.ok(matched.match.domainSignals.some((signal) => signal.includes("distributed-cache")));
+
+    const created = await runCliJson([
+      "--server", baseUrl,
+      "harness", "template", "evolution", "create",
+      "--source-project", repoRoot,
+      "--intent", "Create or evolve the harness for self-developed distributed cache products.",
+      "--auto-match",
+      "--json"
+    ]);
+    assert.equal(created.status, "CREATED");
+    assert.equal(created.autoMatch.decision, "CREATE_NEW_FROM_BASE");
+    assert.equal(created.evolution.autoMatch.decision, "CREATE_NEW_FROM_BASE");
+    assert.equal(created.evolution.baseTemplateRef.templateId, "go-middleware-harness");
+    assert.equal(created.evolution.targetTemplateId, "distributed-cache-harness");
+    assert.equal(created.evolution.targetVersion, "0.1.0");
+    assert.equal(created.nextAction, "advance-template-evolution");
+  } finally {
+    await close(server);
+  }
+});
+
 async function listen(server) {
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
 }

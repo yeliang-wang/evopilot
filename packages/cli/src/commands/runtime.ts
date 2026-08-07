@@ -208,10 +208,11 @@ export async function runCli(argv: string[]): Promise<number> {
       case "harness:template":
         if (maybeId === "list" || maybeId === undefined) return await harnessTemplateList(ctx);
         if (maybeId === "inspect") return await harnessTemplateInspect(ctx, args.positionals[3]);
+        if (maybeId === "match") return await harnessTemplateMatch(ctx);
         if (maybeId === "pack") return await harnessTemplatePack(ctx, args.positionals[3], args.positionals[4]);
         if (maybeId === "evolution") return await harnessTemplateEvolution(ctx, args.positionals[3], args.positionals[4]);
         if (maybeId === "apply" || maybeId === "update" || maybeId === "upgrade") return await harnessTemplateApply(ctx, maybeId);
-        throw usage("Use: evopilot harness template <list|inspect|apply|update|upgrade|pack|evolution> [template-id] [--version <version>]");
+        throw usage("Use: evopilot harness template <list|inspect|match|apply|update|upgrade|pack|evolution> [template-id] [--version <version>]");
       case "harness:template-evolution":
         return await harnessTemplateEvolution(ctx, maybeId, args.positionals[3]);
       case "harness:policy":
@@ -1530,6 +1531,13 @@ async function harnessTemplateEvolutionCreate(ctx: RuntimeContext): Promise<numb
   const body = harnessTemplateEvolutionCreatePayload(ctx.args);
   const response = await ctx.client.post("/api/v1/harness/template-evolutions", body, requestOptions(ctx));
   printHarnessTemplateEvolutionResult(ctx, "harness template evolution create", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function harnessTemplateMatch(ctx: RuntimeContext): Promise<number> {
+  const body = harnessTemplateMatchPayload(ctx.args);
+  const response = await ctx.client.post("/api/v1/harness/template-matches", body, requestOptions(ctx));
+  printHarnessTemplateMatchResult(ctx, "harness template match", response.data ?? response.body, response.status);
   return response.ok ? 0 : 2;
 }
 
@@ -3913,7 +3921,15 @@ function harnessTemplateEvolutionCreatePayload(args: ParsedArgs): Record<string,
     targetTemplateId: stringOption(args, "target-template") ?? stringOption(args, "target-template-id"),
     targetVersion: stringOption(args, "target-version") ?? stringOption(args, "version"),
     intent: stringOption(args, "intent") ?? stringOption(args, "objective") ?? stringOption(args, "description"),
+    autoMatch: hasFlag(args, "auto-match") || hasFlag(args, "auto") || stringOption(args, "match") === "auto",
     sources
+  };
+}
+
+function harnessTemplateMatchPayload(args: ParsedArgs): Record<string, unknown> {
+  return {
+    intent: stringOption(args, "intent") ?? stringOption(args, "objective") ?? stringOption(args, "description"),
+    sources: harnessTemplateEvolutionSourcesFromArgs(args)
   };
 }
 
@@ -4169,14 +4185,37 @@ function printHarnessTemplateEvolutionResult(ctx: RuntimeContext, command: strin
   const evolution = field(payload, "evolution") ?? payload;
   const draft = field(evolution, "draft");
   const impact = field(payload, "impactReport") ?? field(evolution, "impactReport");
+  const autoMatch = field(payload, "autoMatch") ?? field(evolution, "autoMatch");
   const lines = [
     `${command}: http=${statusCode}`,
     isRecord(evolution) ? `evolution=${field(evolution, "evolutionId")} status=${field(evolution, "status")}` : undefined,
     isRecord(evolution) ? `target=${field(evolution, "targetTemplateId")}@${field(evolution, "targetVersion")}` : undefined,
     isRecord(evolution) ? `sources=${arrayLength(field(evolution, "sources"))} snapshots=${arrayLength(field(evolution, "snapshots"))}` : undefined,
+    isRecord(autoMatch) ? `autoMatch=${field(autoMatch, "decision")} confidence=${field(autoMatch, "confidence")} base=${nestedField(autoMatch, ["baseTemplateRef", "templateId"])}@${nestedField(autoMatch, ["baseTemplateRef", "version"])}` : undefined,
     isRecord(draft) && isRecord(field(draft, "template")) ? `draft=${nestedField(draft, ["template", "id"])}@${nestedField(draft, ["template", "version"])} digest=${nestedField(draft, ["template", "digest"])}` : undefined,
     isRecord(draft) && isRecord(field(draft, "validation")) ? `validation=${nestedField(draft, ["validation", "status"])} blockers=${arrayLength(nestedField(draft, ["validation", "blockers"]))}` : undefined,
     isRecord(impact) ? `impact staleProfiles=${field(impact, "staleProfileCount") ?? 0} affected=${arrayLength(field(impact, "affectedProjectProfiles"))}` : undefined,
+    isRecord(payload) && field(payload, "nextAction") ? `nextAction=${field(payload, "nextAction")}` : undefined,
+    isRecord(payload) && field(payload, "instruction") ? `instruction=${field(payload, "instruction")}` : undefined
+  ].filter(Boolean);
+  process.stdout.write(`${lines.join("\n")}\n`);
+}
+
+function printHarnessTemplateMatchResult(ctx: RuntimeContext, command: string, data: unknown, statusCode: number): void {
+  const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
+  if (ctx.json) {
+    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    return;
+  }
+  const match = field(payload, "match") ?? payload;
+  const base = field(match, "baseTemplateRef");
+  const lines = [
+    `${command}: http=${statusCode}`,
+    isRecord(match) ? `decision=${field(match, "decision")} confidence=${field(match, "confidence")}` : undefined,
+    isRecord(base) ? `base=${field(base, "templateId")}@${field(base, "version")}` : undefined,
+    isRecord(match) ? `target=${field(match, "targetTemplateId")}@${field(match, "targetVersion")}` : undefined,
+    isRecord(match) ? `domain=${field(match, "targetDomain") ?? "n/a"} layer=${field(match, "targetHarnessLayer") ?? "n/a"}` : undefined,
+    isRecord(match) ? `candidates=${arrayLength(field(match, "candidateTemplates"))}` : undefined,
     isRecord(payload) && field(payload, "nextAction") ? `nextAction=${field(payload, "nextAction")}` : undefined,
     isRecord(payload) && field(payload, "instruction") ? `instruction=${field(payload, "instruction")}` : undefined
   ].filter(Boolean);
@@ -4352,11 +4391,12 @@ Usage:
   evopilot logging set --level <debug|info|warn|error> [--include-stack <true|false>]
   evopilot harness template list
   evopilot harness template inspect <template-id> [--version <version>]
+  evopilot harness template match --intent <text> (--source <kind=value>|--file <path>|--source-project <path-or-id>|--production-log <path>|--source-corpus <items>|--note <text>)
   evopilot harness template pack list <root>
   evopilot harness template pack validate <path>
   evopilot harness template pack publish <path> [--changelog <text>] [--force]
   evopilot harness template evolution list
-  evopilot harness template evolution create --base-template <id> --intent <text> (--source <kind=value>|--file <path>|--source-project <path-or-id>|--production-log <path>|--local-pack <path>|--runtime-evidence <id>|--note <text>)
+  evopilot harness template evolution create [--base-template <id>|--auto-match] --intent <text> (--source <kind=value>|--file <path>|--source-project <path-or-id>|--production-log <path>|--local-pack <path>|--runtime-evidence <id>|--note <text>)
   evopilot harness template evolution advance <evolution-id> [--llm-profile <id>] [--require-llm]
   evopilot harness template evolution inspect <evolution-id>
   evopilot harness template evolution approve <evolution-id> --confirmed-by <admin> --confirmation <text>
@@ -4471,6 +4511,7 @@ Global options:
   --local-pack <path>         HarnessTemplate evolution source pack directory
   --runtime-evidence <id>     HarnessTemplate evolution source pointing to runtime evidence or an evidence bundle id
   --intent <text>             HarnessTemplate evolution intent reviewed by administrators
+  --auto-match                Let EvoPilot match an existing domain template or create a new target from a runtime base
   --target-version <version>  HarnessTemplate evolution target template version
   --target-template <id>      HarnessTemplate evolution target template id
   --refresh                   Recompute an impact report

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "2.2.0"
+    "version": "2.3.0"
   },
   "paths": {
     "/health": {
@@ -1038,6 +1038,52 @@
         }
       }
     },
+    "/api/v1/harness/template-matches": {
+      "post": {
+        "summary": "匹配 HarnessTemplateEvolution source",
+        "description": "管理员提交 source-project、source-corpus、attachment、production-log、evopilot-history、repository 或 note 后，EvoPilot 返回服务端 deterministic match report。报告会说明是进化已有领域模板、从 runtime base 新建领域模板，还是需要管理员确认。该接口不持久化 run，不生成 draft，不发布模板。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sources"
+                ],
+                "properties": {
+                  "intent": {
+                    "type": "string"
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "evopilot-harness-template-match-result/v1"
+          },
+          "400": {
+            "description": "缺少 source"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          }
+        }
+      }
+    },
     "/api/v1/harness/template-evolutions": {
       "get": {
         "summary": "列出 HarnessTemplateEvolution",
@@ -1058,7 +1104,7 @@
       },
       "post": {
         "summary": "创建 HarnessTemplateEvolution",
-        "description": "管理员从 reviewable sources 创建模板进化 run。至少需要一个 source、file、local pack、existing template 或 administrator note。创建后不会生成或发布模板，需要通过 advance 分步推进。",
+        "description": "管理员从 reviewable sources 创建模板进化 run。至少需要一个 source、file、local pack、existing template 或 administrator note。baseTemplateId 可显式指定；若传 autoMatch=true 或未指定 baseTemplateId 但提供语义 source，EvoPilot 会先生成 autoMatch report，自动选择进化已有领域模板或从 runtime base 新建目标领域模板。创建后不会生成或发布模板，需要通过 advance 分步推进。",
         "security": [
           {
             "bearerAuth": []
@@ -1071,7 +1117,6 @@
               "schema": {
                 "type": "object",
                 "required": [
-                  "baseTemplateId",
                   "intent",
                   "sources"
                 ],
@@ -1090,6 +1135,10 @@
                   },
                   "targetVersion": {
                     "type": "string"
+                  },
+                  "autoMatch": {
+                    "type": "boolean",
+                    "description": "true 时启用服务端模板自动匹配；匹配报告会写入 evolution.autoMatch。"
                   },
                   "intent": {
                     "type": "string"

@@ -412,6 +412,7 @@ Agents should use `requestId`, `correlation.*`, `event`, `errorCode`, `diagnosis
 evopilot harness template list
 evopilot harness template inspect python-enterprise-harness
 evopilot harness template inspect java-ddd-service-harness
+evopilot harness template match --source-project ./legacy-cache-service --intent "Create or evolve the harness for self-developed distributed cache products."
 evopilot harness template pack list harness-templates/public
 evopilot harness template pack validate harness-templates/public/python-enterprise-harness
 evopilot harness template pack publish harness-templates/public/python-enterprise-harness [--force]
@@ -481,11 +482,17 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 
 `harness template evolution` is the administrator lifecycle for upgrading a public template from reviewable knowledge sources without bypassing the control plane. Sources can be `url=`, `github=owner/repo#ref`, `gitlab=`, `project=<path-or-id>`, `corpus=<a,b,c>`, `log=<path-or-id>`, `evopilot-history=<project[:goal=<id>|loop=<id>|evidence=<id>]>`, `local-pack=`, `file=`, `template=<id>@<version>`, `runtime-evidence=<id>`, or `note=`.
 
+Use `harness template match` when the administrator wants to preview whether a source project should evolve an existing domain template or create a new target template from a runtime base. It is read-only and returns `match.decision`, `confidence`, `baseTemplateRef`, `targetTemplateId`, `targetVersion`, candidate scores, reasons, and `nextAction`.
+
 ```bash
+evopilot harness template match \
+  --source-project ./legacy-cache-service \
+  --intent "Create or evolve the harness for self-developed distributed cache products." \
+  --json
+
 evopilot harness template evolution create \
-  --base-template python-enterprise-harness \
-  --target-version 2.2.0 \
-  --intent "Add Python exception tracking and AI troubleshooting metadata." \
+  --auto-match \
+  --intent "Create or evolve the harness for self-developed distributed cache products." \
   --source project=./legacy-cache-service \
   --source corpus=./legacy-cache-service,./legacy-scheduler \
   --source log=./prod-incident.log \

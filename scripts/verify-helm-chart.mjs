@@ -53,7 +53,7 @@ for (const phrase of [
 const productionValuesYaml = fs.readFileSync(path.join(chartDir, "values.production.example.yaml"), "utf8");
 assert.ok(productionValuesYaml.includes("existingSecret: evopilot-prod-secrets"), "production values must use an existing secret");
 assert.ok(productionValuesYaml.includes(`tag: "${packageJson.version}"`), "production values must pin the EvoPilot release tag");
-assert.ok(productionValuesYaml.includes('tag: "2.2.0"'), "production values must pin the compatible Dashboard tag");
+assert.ok(productionValuesYaml.includes('tag: "2.3.0"'), "production values must pin the compatible Dashboard tag");
 for (const forbidden of ["change-me", "replace-with", "server-side-secret"]) {
   assert.ok(!productionValuesYaml.includes(forbidden), `production values must not include ${forbidden}`);
 }

@@ -1,6 +1,10 @@
 import { stringify as stringifyYaml } from "yaml";
 import { harnessTemplateDomainError } from "./errors.js";
 import {
+  hydrateHarnessTemplateMatchReport,
+  matchHarnessTemplateEvolutionSource
+} from "./matching.js";
+import {
   harnessTemplateRef,
   hydrateHarnessTemplate,
   hydrateHarnessTemplateRef,
@@ -19,6 +23,7 @@ import type {
   HarnessTemplateEvolutionRun,
   HarnessTemplateEvolutionStatus,
   HarnessTemplateImpactReport,
+  HarnessTemplateMatchReport,
   HarnessTemplateProfile,
   HarnessTemplateProjectProfileBinding,
   HarnessTemplateRef,
@@ -42,6 +47,7 @@ const DEFAULT_TENANT_ID = "tenant-production";
 const DEFAULT_WORKSPACE_ID = "workspace-agent-products";
 
 export interface HarnessTemplateEvolutionRepository {
+  listHarnessTemplates(): HarnessTemplateProfile[];
   readHarnessTemplate(templateId: string, version?: string): HarnessTemplateProfile | undefined;
   writeHarnessTemplate(template: HarnessTemplateProfile): HarnessTemplateProfile;
   listProjectHarnessTemplateBindings(tenantId: string, workspaceId: string): HarnessTemplateProjectProfileBinding[];
@@ -105,6 +111,7 @@ export function hydrateHarnessTemplateEvolutionRun(input: unknown): HarnessTempl
   const baseTemplateRef = hydrateHarnessTemplateRef(record.baseTemplateRef);
   const sources = Array.isArray(record.sources) ? record.sources.map(hydrateHarnessKnowledgeSource) : [];
   const snapshots = Array.isArray(record.snapshots) ? record.snapshots.map(hydrateHarnessKnowledgeSnapshot) : [];
+  const autoMatch = isRecord(record.autoMatch) ? hydrateHarnessTemplateMatchReport(record.autoMatch) : undefined;
   const draft = isRecord(record.draft) ? hydrateHarnessTemplateDraft(record.draft, baseTemplateRef) : undefined;
   const review = isRecord(record.review)
     ? {
@@ -126,6 +133,7 @@ export function hydrateHarnessTemplateEvolutionRun(input: unknown): HarnessTempl
     intent: String(record.intent ?? "Evolve HarnessTemplate from administrator-provided knowledge sources."),
     sources,
     snapshots,
+    ...(autoMatch ? { autoMatch } : {}),
     analysisSummary: isRecord(record.analysisSummary) ? hydrateHarnessTemplateAnalysis(record.analysisSummary) : undefined,
     ...(draft ? { draft } : {}),
     ...(review ? { review } : {}),
@@ -346,17 +354,27 @@ function normalizeHarnessGapClassificationList(value: unknown): HarnessGapClassi
 }
 
 export function createHarnessTemplateEvolutionRun(store: HarnessTemplateEvolutionRepository, auth: HarnessTemplateEvolutionActor, body: Record<string, unknown>): HarnessTemplateEvolutionRun {
-  const baseTemplateId = safeFileName(String(body.baseTemplateId ?? body.baseTemplate ?? body.templateId ?? "python-enterprise-harness"));
-  const baseTemplateVersion = optionalTrimmedString(body.baseTemplateVersion ?? body.templateVersion);
-  const baseTemplate = store.readHarnessTemplate(baseTemplateId, baseTemplateVersion);
-  if (!baseTemplate) throw harnessTemplateDomainError(404, "HARNESS_TEMPLATE_NOT_FOUND", `HarnessTemplate ${baseTemplateId}${baseTemplateVersion ? `@${baseTemplateVersion}` : ""} was not found.`);
-  const targetTemplateId = safeFileName(String(body.targetTemplateId ?? body.targetTemplate ?? baseTemplate.id));
-  const targetVersion = optionalTrimmedString(body.targetVersion ?? body.version) ?? incrementSemverPatch(baseTemplate.version);
   const sources = parseHarnessKnowledgeSources(body);
   if (sources.length === 0) {
     throw harnessTemplateDomainError(400, "HARNESS_TEMPLATE_EVOLUTION_SOURCES_REQUIRED", "HarnessTemplate evolution requires at least one source, file, or administrator note.");
   }
+  const explicitBaseTemplateId = optionalTrimmedString(body.baseTemplateId ?? body.baseTemplate ?? body.templateId);
+  const explicitBaseTemplateVersion = optionalTrimmedString(body.baseTemplateVersion ?? body.templateVersion);
+  const shouldAutoMatch = harnessTemplateEvolutionAutoMatchRequested(body) || (!explicitBaseTemplateId && hasHarnessTemplateEvolutionSemanticSources(sources));
+  const intent = optionalTrimmedString(body.intent ?? body.objective ?? body.description);
+  const autoMatch = shouldAutoMatch
+    ? matchHarnessTemplateEvolutionSource(store, { sources, intent })
+    : undefined;
+  const baseTemplateId = safeFileName(String(explicitBaseTemplateId ?? autoMatch?.baseTemplateRef.templateId ?? "python-enterprise-harness"));
+  const baseTemplateVersion = explicitBaseTemplateVersion ?? autoMatch?.baseTemplateRef.version;
+  const baseTemplate = store.readHarnessTemplate(baseTemplateId, baseTemplateVersion);
+  if (!baseTemplate) throw harnessTemplateDomainError(404, "HARNESS_TEMPLATE_NOT_FOUND", `HarnessTemplate ${baseTemplateId}${baseTemplateVersion ? `@${baseTemplateVersion}` : ""} was not found.`);
+  const targetTemplateId = safeFileName(String(body.targetTemplateId ?? body.targetTemplate ?? autoMatch?.targetTemplateId ?? baseTemplate.id));
+  const targetVersion = optionalTrimmedString(body.targetVersion ?? body.version) ?? autoMatch?.targetVersion ?? incrementSemverPatch(baseTemplate.version);
   const now = new Date().toISOString();
+  const warnings = autoMatch?.decision === "NEEDS_ADMIN_CONFIRMATION"
+    ? ["auto-match requires administrator confirmation before advancing or override base/target explicitly"]
+    : [];
   return hydrateHarnessTemplateEvolutionRun({
     evolutionId: body.id ?? body.evolutionId ?? `${targetTemplateId}-${targetVersion}-${Date.now()}`,
     tenantId: auth.tenantId,
@@ -365,15 +383,26 @@ export function createHarnessTemplateEvolutionRun(store: HarnessTemplateEvolutio
     baseTemplateRef: harnessTemplateRef(baseTemplate),
     targetTemplateId,
     targetVersion,
-    intent: optionalTrimmedString(body.intent ?? body.objective ?? body.description) ?? `Evolve ${baseTemplate.id}@${baseTemplate.version} to ${targetVersion}.`,
+    intent: intent ?? `Evolve ${baseTemplate.id}@${baseTemplate.version} to ${targetVersion}.`,
     sources,
     snapshots: [],
+    ...(autoMatch ? { autoMatch } : {}),
     blockers: [],
-    warnings: [],
+    warnings,
     createdBy: auth.actor,
     createdAt: now,
     updatedAt: now
   });
+}
+
+function harnessTemplateEvolutionAutoMatchRequested(body: Record<string, unknown>): boolean {
+  if (body.autoMatch === true || body.autoMatch === "true") return true;
+  const matchMode = optionalTrimmedString(body.matchMode ?? body.match ?? body.templateMatch);
+  return matchMode === "auto" || matchMode === "auto-match";
+}
+
+function hasHarnessTemplateEvolutionSemanticSources(sources: HarnessKnowledgeSource[]): boolean {
+  return sources.some((source) => source.type === "source-project" || source.type === "source-corpus" || source.type === "attachment" || source.type === "production-log" || source.type === "evopilot-history" || Boolean(source.contentText));
 }
 
 export function parseHarnessKnowledgeSources(body: Record<string, unknown>): HarnessKnowledgeSource[] {
@@ -1401,6 +1430,9 @@ export function harnessTemplateEvolutionLogMetadata(run: HarnessTemplateEvolutio
     snapshotCount: run.snapshots.length,
     sourceIds: run.sources.map((source) => source.sourceId),
     sourceTypes: uniqueStrings(run.sources.map((source) => source.type)),
+    autoMatchDecision: run.autoMatch?.decision,
+    autoMatchConfidence: run.autoMatch?.confidence,
+    autoMatchTargetDomain: run.autoMatch?.targetDomain,
     snapshotDigests: run.snapshots.map((snapshot) => snapshot.contentDigest),
     domainSignals: run.analysisSummary?.domainSignals ?? [],
     gapClassifications: run.analysisSummary?.gapClassifications ?? [],

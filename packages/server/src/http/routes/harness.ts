@@ -33,6 +33,7 @@ export async function handleHarnessRoutes(context: HarnessRoutesContext): Promis
     isRecord,
     logInfo,
     logWarn,
+    matchHarnessTemplateEvolutionSource,
     optionalTrimmedString,
     parseHarnessKnowledgeSources,
     parseHarnessTemplateApplyPayload,
@@ -46,6 +47,45 @@ export async function handleHarnessRoutes(context: HarnessRoutesContext): Promis
     validateHarnessTemplateProfile,
     writeJson
   } = context.deps;
+
+  if (request.method === "POST" && url.pathname === "/api/v1/harness/template-matches") {
+    if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+    const body = await readJson(request, options.maxBodyBytes) as Record<string, unknown>;
+    const sources = parseHarnessKnowledgeSources(body);
+    if (sources.length === 0) return writeJson(response, 400, { error: "HARNESS_TEMPLATE_MATCH_SOURCES_REQUIRED", detail: "HarnessTemplate matching requires at least one source, file, or administrator note." });
+    const match = matchHarnessTemplateEvolutionSource(store, {
+      sources,
+      intent: optionalTrimmedString(body.intent ?? body.objective ?? body.description)
+    });
+    logInfo("harness-template.match.completed", {
+      requestId,
+      tenantId: auth.tenantId,
+      workspaceId: auth.workspaceId,
+      actor: auth.actor,
+      role: auth.role,
+      outcome: "success",
+      correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
+      metadata: {
+        decision: match.decision,
+        confidence: match.confidence,
+        baseTemplateId: match.baseTemplateRef.templateId,
+        baseTemplateVersion: match.baseTemplateRef.version,
+        targetTemplateId: match.targetTemplateId,
+        targetVersion: match.targetVersion,
+        targetDomain: match.targetDomain,
+        sourceCount: sources.length,
+        nextAction: match.nextAction
+      }
+    });
+    return writeJson(response, 200, envelope({
+      schema: "evopilot-harness-template-match-result/v1",
+      match,
+      nextAction: match.nextAction,
+      instruction: match.decision === "NEEDS_ADMIN_CONFIRMATION"
+        ? "Review the candidate templates, then create the HarnessTemplateEvolution with an explicit base/target override or rerun with clearer sources."
+        : "Use this match report to create a HarnessTemplateEvolution run, then advance it through source collection, analysis, draft review, approval, publish, and impact."
+    }));
+  }
 
   if (request.method === "GET" && url.pathname === "/api/v1/harness/template-evolutions") {
     if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -64,6 +104,7 @@ export async function handleHarnessRoutes(context: HarnessRoutesContext): Promis
         sourceCount: run.sources.length,
         snapshotCount: run.snapshots.length,
         sourceTypes: [...new Set(run.sources.map((source: any) => source.type))],
+        autoMatch: run.autoMatch,
         domainSignals: run.analysisSummary?.domainSignals ?? [],
         gapClassifications: run.analysisSummary?.gapClassifications ?? [],
         draftVersion: run.draft?.version,
@@ -80,6 +121,9 @@ export async function handleHarnessRoutes(context: HarnessRoutesContext): Promis
     const body = await readJson(request, options.maxBodyBytes) as Record<string, unknown>;
     const run = createHarnessTemplateEvolutionRun(store, auth, body);
     const saved = store.writeHarnessTemplateEvolutionRun(run);
+    const nextAction = saved.autoMatch?.nextAction === "confirm-template-match-or-override"
+      ? "confirm-template-match-or-override"
+      : "advance-template-evolution";
     logInfo("harness-template-evolution.created", {
       requestId,
       tenantId: auth.tenantId,
@@ -88,21 +132,26 @@ export async function handleHarnessRoutes(context: HarnessRoutesContext): Promis
       role: auth.role,
       outcome: "success",
       correlation: requestCorrelation(url, requestId, traceId, parentRequestId),
-      metadata: harnessTemplateEvolutionLogMetadata(saved, { nextAction: "advance-template-evolution" })
+      metadata: harnessTemplateEvolutionLogMetadata(saved, { nextAction })
     });
     store.appendAudit(audit(auth, "harness-template-evolution.created", saved.evolutionId, {
       baseTemplateId: saved.baseTemplateRef.templateId,
       baseTemplateVersion: saved.baseTemplateRef.version,
       targetTemplateId: saved.targetTemplateId,
       targetVersion: saved.targetVersion,
+      autoMatchDecision: saved.autoMatch?.decision,
+      autoMatchConfidence: saved.autoMatch?.confidence,
       sourceCount: saved.sources.length
     }));
     return writeJson(response, 201, envelope({
       schema: "evopilot-harness-template-evolution-create-result/v1",
       status: saved.status,
       evolution: saved,
-      nextAction: "advance-template-evolution",
-      instruction: "HarnessTemplateEvolution is CREATED. Advance it to collect snapshots, analyze sources, and produce a reviewable DRAFT."
+      autoMatch: saved.autoMatch,
+      nextAction,
+      instruction: nextAction === "confirm-template-match-or-override"
+        ? "HarnessTemplateEvolution is CREATED with a low-confidence auto-match. Review evolution.autoMatch before advancing, or create a new run with explicit base/target overrides."
+        : "HarnessTemplateEvolution is CREATED. Advance it to collect snapshots, analyze sources, and produce a reviewable DRAFT."
     }));
   }
   const harnessTemplateEvolutionMatch = url.pathname.match(/^\/api\/v1\/harness\/template-evolutions\/([^/]+)(?:\/(sources|advance|approve|publish|impact))?$/);

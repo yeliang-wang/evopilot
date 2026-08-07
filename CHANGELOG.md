@@ -8,6 +8,25 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 2.3.0 - 2026-08-07
+
+### Added
+
+- Added server-side HarnessTemplate match previews through `POST /api/v1/harness/template-matches`.
+- Added `evopilot harness template match ... --json` and `evopilot harness template evolution create --auto-match ... --json` for source-driven template evolution.
+- Added persisted `evolution.autoMatch` reports with decision, confidence, base template, target template, domain, candidate templates, source digests, reasons, and next action.
+- Added template-layer metadata for runtime, domain, and composite harness records, including domain signals and compatible runtime profile hints.
+
+### Changed
+
+- Kept HarnessTemplate upgrades as independent control-plane records. Future database, gateway, cache, scheduler, or other domain harness revisions do not require an EvoPilot binary release unless schema, API, CLI, matcher, extractor, or Dashboard code changes.
+- Relaxed generic domain-template validation so administrator-published domain harnesses beyond database and API gateway can pass the shared domain execution contract.
+- Updated package versions, installer defaults, OpenAPI metadata, Helm metadata, Dashboard image defaults, and release validation pointers to `2.3.0`.
+
+### Validation
+
+- Full release validation is required before publication: `npm run check`, `npm run cli:test`, `npm run release:artifact`, `npm run verify:release-artifact`, and `git diff --check`.
+
 ## 2.2.0 - 2026-08-07
 
 ### Added
