@@ -4,6 +4,8 @@
 
 Use this file as the agent entrypoint. It gives the shortest safe path first, including ProjectHarnessProfile confirmation, then the atomic fallback commands and the log evidence needed to troubleshoot a production run.
 
+If you need to choose a task before reading this full runbook, start from [AI Agent Scenario Coverage](ai-agent-scenarios.md). It maps the same CLI controls to third-party AI Agent simulation and human operator workflows.
+
 EvoPilot is the system of record. The CLI submits server-governed requests; it does not bypass RBAC, tenant/workspace scope, approval gates, source-closure preflight, release policy, deployment gates, audit records, or final release decisions.
 
 ## Goal And Phase Semantics

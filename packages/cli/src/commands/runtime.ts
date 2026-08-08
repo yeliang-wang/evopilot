@@ -4511,6 +4511,7 @@ Usage:
   evopilot harness template pack publish <path> [--changelog <text>] [--force]
   evopilot harness template evolution list
   evopilot harness template evolution create [--base-template <id>|--auto-match] --intent <text> (--source <kind=value>|--file <path>|--source-project <path-or-id>|--production-log <path>|--local-pack <path>|--runtime-evidence <id>|--note <text>)
+  evopilot harness template evolution sources <evolution-id> (--source <kind=value>|--file <path>|--source-project <path-or-id>|--production-log <path>|--local-pack <path>|--runtime-evidence <id>|--note <text>)
   evopilot harness template evolution advance <evolution-id> [--llm-profile <id>] [--require-llm]
   evopilot harness template evolution inspect <evolution-id>
   evopilot harness template evolution approve <evolution-id> --confirmed-by <admin> --confirmation <text>

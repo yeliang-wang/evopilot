@@ -2,7 +2,7 @@
 
 This is the CLI entry point for WorkBuddy, Codex, Claude Code, CI jobs, and other AI agents.
 
-Read this file first. Then read [quickstart.md](quickstart.md). Use [automation.md](automation.md) for JSON parsing rules, [workflows.md](workflows.md) for scenarios, [commands.md](commands.md) for reference, and [../guides/ai-agent-runbook.md](../guides/ai-agent-runbook.md) for production end-to-end operations.
+Read this file first. Then read [quickstart.md](quickstart.md). Use [automation.md](automation.md) for JSON parsing rules, [workflows.md](workflows.md) for command workflows, [../guides/ai-agent-scenarios.md](../guides/ai-agent-scenarios.md) for end-to-end scenario coverage, [commands.md](commands.md) for reference, and [../guides/ai-agent-runbook.md](../guides/ai-agent-runbook.md) for production operations.
 
 ## Non-Negotiable Rules
 
@@ -22,9 +22,10 @@ Read this file first. Then read [quickstart.md](quickstart.md). Use [automation.
 
 1. [quickstart.md](quickstart.md) - shortest safe flow.
 2. [automation.md](automation.md) - fields to parse and stop conditions.
-3. [workflows.md](workflows.md) - owned repository, forked upstream, GitLab, and low-level loop scenarios.
-4. [commands.md](commands.md) - full command syntax.
-5. [../guides/ai-agent-runbook.md](../guides/ai-agent-runbook.md) - production incident handling and end-to-end runbook.
+3. [workflows.md](workflows.md) - owned repository, forked upstream, GitLab, and low-level loop workflows.
+4. [../guides/ai-agent-scenarios.md](../guides/ai-agent-scenarios.md) - scenario matrix for third-party AI Agent simulation and human operators.
+5. [commands.md](commands.md) - full command syntax.
+6. [../guides/ai-agent-runbook.md](../guides/ai-agent-runbook.md) - production incident handling and end-to-end runbook.
 
 ## Required Environment
 

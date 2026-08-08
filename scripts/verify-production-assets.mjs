@@ -27,6 +27,7 @@ const requiredFiles = [
   "docs/cli/commands.md",
   "docs/cli/automation.md",
   "docs/guides/ai-agent-runbook.md",
+  "docs/guides/ai-agent-scenarios.md",
   "docs/guides/dashboard-integration.md",
   "docs/guides/evidence-ingestion.md",
   "docs/guides/source-to-ga.md",
@@ -233,6 +234,27 @@ assert.match(aiAgentRunbook, /NO-GO/);
 assert.match(aiAgentRunbook, /--json/);
 assert.match(aiAgentRunbook, /Incident Pack/);
 
+const aiAgentScenarios = fs.readFileSync("docs/guides/ai-agent-scenarios.md", "utf8");
+assert.match(aiAgentScenarios, /third-party AI agents that simulate a human operator/);
+assert.match(aiAgentScenarios, /## Coverage Matrix/);
+assert.match(aiAgentScenarios, /First-time owned repository to Goal Loop/);
+assert.match(aiAgentScenarios, /Read-only public repository/);
+assert.match(aiAgentScenarios, /Source-Project HarnessTemplate Evolution/);
+assert.match(aiAgentScenarios, /Attachments, Logs, And EvoPilot History As Harness Sources/);
+assert.match(aiAgentScenarios, /evopilot harness evolve/);
+assert.match(aiAgentScenarios, /--source-project/);
+assert.match(aiAgentScenarios, /evopilot harness template evolution create/);
+assert.match(aiAgentScenarios, /--source evopilot-history/);
+assert.match(aiAgentScenarios, /--file \.\/architecture-review\.pdf/);
+assert.match(aiAgentScenarios, /production logs are redacted before persistence/);
+assert.match(aiAgentScenarios, /nextAction=review-approve-template-evolution/);
+assert.match(aiAgentScenarios, /## Stop Conditions/);
+assert.match(aiAgentScenarios, /PROJECT_HARNESS_PROFILE_POLICY_STALE/);
+assert.match(aiAgentScenarios, /## Final Report Shape/);
+assert.match(aiAgentScenarios, /llmProvider=<provider>/);
+assert.match(aiAgentScenarios, /totalTokens=<n>/);
+assert.match(aiAgentScenarios, /humanReview=<not-needed\|pending\|confirmed>/);
+
 const oldCliManualPath = ["docs/cli-", "manual.md"].join("");
 const oldCliReferencePath = ["docs/cli-", "reference.md"].join("");
 assert.ok(!fs.existsSync(oldCliManualPath), "old root CLI guide must be removed");
@@ -314,6 +336,7 @@ const agentFacingDocFiles = [
   "docs/cli/workflows.md",
   "docs/cli/automation.md",
   "docs/guides/ai-agent-runbook.md",
+  "docs/guides/ai-agent-scenarios.md",
   "docs/guides/user-guide.md",
   "docs/operations/troubleshooting.md"
 ];
@@ -357,7 +380,8 @@ const enterpriseCliDocFiles = [
   "docs/cli/README.md",
   "docs/cli/workflows.md",
   "docs/cli/automation.md",
-  "docs/guides/ai-agent-runbook.md"
+  "docs/guides/ai-agent-runbook.md",
+  "docs/guides/ai-agent-scenarios.md"
 ];
 for (const file of enterpriseCliDocFiles) {
   const content = fs.readFileSync(file, "utf8");
@@ -373,6 +397,7 @@ const cliDocCommandFiles = [
   "docs/cli/workflows.md",
   "docs/cli/automation.md",
   "docs/guides/ai-agent-runbook.md",
+  "docs/guides/ai-agent-scenarios.md",
   "docs/guides/user-guide.md",
   "docs/operations/troubleshooting.md"
 ];

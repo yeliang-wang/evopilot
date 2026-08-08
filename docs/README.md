@@ -20,6 +20,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [CLI Workflows](cli/workflows.md) - one-command Goal/Loop scenarios with plan approval, Alpha/Beta/RC/GA phase packages, project DevOps, and project LLM profile selection.
 - [CLI Commands](cli/commands.md) - atomic command reference.
 - [CLI Automation](cli/automation.md) - WorkBuddy, Codex, Claude Code, and CI usage rules.
+- [AI Agent Scenario Coverage](guides/ai-agent-scenarios.md) - scenario matrix for third-party AI Agent simulation and human operators.
 - [AI Agent Runbook](guides/ai-agent-runbook.md) - end-to-end production operating flow and failure handling.
 - [Public Harness Template Packs](../harness-templates/public/README.md) - human-readable administrator-maintained HarnessTemplate knowledge packs.
 - [HarnessTemplate Evolution](guides/harness-template-evolution.md) - source-to-draft-to-publish CLI/API lifecycle for administrator template upgrades.
@@ -65,6 +66,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
+- [EvoPilot v2.4.1 Release Notes](releases/2.4.1.md) - AI Agent scenario coverage, Harness evolution operating docs, CLI help consistency, and production asset verification notes.
 - [EvoPilot v2.4.0 Release Notes](releases/2.4.0.md) - one-command Harness evolution, source-driven template review drafts, CLI/API contract, and Dashboard compatibility notes.
 - [EvoPilot v2.2.0 Release Notes](releases/2.2.0.md) - Harness Knowledge Factory source coverage and independent template lifecycle release body.
 - [EvoPilot v1.1.4 Release Notes](releases/1.1.4.md) - distribution-closure release body, GitHub Release tarball installer defaults, and npm registry publication boundary.

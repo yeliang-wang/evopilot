@@ -14,7 +14,8 @@ If you are WorkBuddy, Codex, Claude Code, CI, or another AI agent, read these fi
 2. [quickstart.md](quickstart.md) - shortest safe command flow.
 3. [automation.md](automation.md) - JSON fields, parse order, and report format.
 4. [workflows.md](workflows.md) - scenario workflows.
-5. [commands.md](commands.md) - full command reference.
+5. [AI Agent Scenario Coverage](../guides/ai-agent-scenarios.md) - end-to-end scenario matrix for third-party agent simulation and human operators.
+6. [commands.md](commands.md) - full command reference.
 
 For production incident handling and full end-to-end operating steps, read [AI Agent Runbook](../guides/ai-agent-runbook.md).
 
@@ -24,13 +25,13 @@ Production installation uses the GitHub Release CLI tarball set for the current 
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.2.0/evopilot-contracts-2.2.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.2.0/evopilot-client-2.2.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.2.0/evopilot-cli-2.2.0.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-contracts-2.4.1.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-client-2.4.1.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-cli-2.4.1.tgz
 evopilot --version
 ```
 
-The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@2.2.0` only after `npm run verify:npm-registry -- --version 2.2.0` passes.
+The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@2.4.1` only after `npm run verify:npm-registry -- --version 2.4.1` passes.
 
 From this repository, use the same CLI package without publishing:
 

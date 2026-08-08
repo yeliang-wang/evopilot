@@ -4,6 +4,8 @@
 
 This quickstart assumes EvoPilot already runs as a remote API server and the caller has an EvoPilot API token. The CLI does not start EvoPilot locally.
 
+For a task-by-task map that separates third-party AI Agent simulation from human operator review, use [AI Agent Scenario Coverage](../guides/ai-agent-scenarios.md) after this quickstart.
+
 ## 1. Configure The Session
 
 ```bash
