@@ -1,44 +1,44 @@
 {
   "schema": "evopilot-install-manifest/v1",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "generatedAt": "2026-08-08T00:00:00.000Z",
   "repository": "https://github.com/yeliang-wang/evopilot",
   "packages": {
     "create-evopilot": {
-      "version": "2.4.1",
+      "version": "2.4.2",
       "registry": "https://registry.npmjs.org/",
       "registryStatus": "not_published",
-      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/create-evopilot-2.4.1.tgz",
-      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/create-evopilot-2.4.1.tgz",
-      "command": "npx --yes https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/create-evopilot-2.4.1.tgz self-host --init-env",
-      "registryCommand": "npx --yes create-evopilot@2.4.1 self-host --init-env"
+      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/create-evopilot-2.4.2.tgz",
+      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/create-evopilot-2.4.2.tgz",
+      "command": "npx --yes https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/create-evopilot-2.4.2.tgz self-host --init-env",
+      "registryCommand": "npx --yes create-evopilot@2.4.2 self-host --init-env"
     },
     "@evopilot/cli": {
-      "version": "2.4.1",
+      "version": "2.4.2",
       "registry": "https://registry.npmjs.org/",
       "registryStatus": "not_published",
-      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-cli-2.4.1.tgz",
+      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-cli-2.4.2.tgz",
       "dependencyPackageSpecs": [
-        "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-contracts-2.4.1.tgz",
-        "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-client-2.4.1.tgz"
+        "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-contracts-2.4.2.tgz",
+        "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-client-2.4.2.tgz"
       ],
-      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-cli-2.4.1.tgz",
-      "command": "npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-contracts-2.4.1.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-client-2.4.1.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-cli-2.4.1.tgz",
-      "registryCommand": "npm install -g @evopilot/cli@2.4.1"
+      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-cli-2.4.2.tgz",
+      "command": "npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-contracts-2.4.2.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-client-2.4.2.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-cli-2.4.2.tgz",
+      "registryCommand": "npm install -g @evopilot/cli@2.4.2"
     }
   },
   "containers": {
-    "evopilot": "ghcr.io/yeliang-wang/evopilot:2.4.1",
+    "evopilot": "ghcr.io/yeliang-wang/evopilot:2.4.2",
     "evopilot-dashboard": "ghcr.io/yeliang-wang/evopilot-dashboard:2.4.0"
   },
   "installers": {
     "install.sh": {
-      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.4.1/install.sh",
-      "sha256": "379f23bacb6adf903ad07fe4ad784ef29bb8d6d17f9af48aa1a2e34e33920c08"
+      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.4.2/install.sh",
+      "sha256": "cfee4d7eeb4433d59ff72ffa29dddaec396556e8c3447e21b6f72e34e0219106"
     },
     "install.ps1": {
-      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.4.1/install.ps1",
-      "sha256": "d3fbd732e9ea1ed7ee03dedbc49d6e94d2fcaaa5b61d01668eb3206ca43096f9"
+      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.4.2/install.ps1",
+      "sha256": "987a96c6d3da1d514ee5a5f999019ae8e7e906855228807d38cffb36947493bd"
     }
   }
 }

@@ -25,13 +25,13 @@ Production installation uses the GitHub Release CLI tarball set for the current 
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-contracts-2.4.1.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-client-2.4.1.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.4.1/evopilot-cli-2.4.1.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-contracts-2.4.2.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-client-2.4.2.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-cli-2.4.2.tgz
 evopilot --version
 ```
 
-The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@2.4.1` only after `npm run verify:npm-registry -- --version 2.4.1` passes.
+The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@2.4.2` only after `npm run verify:npm-registry -- --version 2.4.2` passes.
 
 From this repository, use the same CLI package without publishing:
 

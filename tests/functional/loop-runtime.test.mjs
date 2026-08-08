@@ -2710,7 +2710,7 @@ test("Loop source closure preflight blocks GitHub writeback without credentials"
       body: {
         targetId: "codex-loop-target-autopilot",
         projectId: "github-public-source",
-        targetVersion: "2.4.1",
+        targetVersion: "2.4.2",
         controlPlaneUrl: baseUrl,
         approveHumanGate: true,
         autoMerge: true,

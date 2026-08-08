@@ -50,7 +50,10 @@ test("remote deploy script uses immutable image without rebuilding", () => {
   });
 
   assert.match(script, /ghcr\.io\/yeliang-wang\/evopilot:1\.1\.2@sha256:aaaaaaaa/);
-  assert.match(script, /docker pull --platform 'linux\/amd64'/);
+  assert.match(script, /EVOPILOT_DEPLOY_IMAGE\\t%s/);
+  assert.match(script, /docker pull 'ghcr\.io\/yeliang-wang\/evopilot@sha256:aaaaaaaa/);
+  assert.match(script, /export EVOPILOT_IMAGE='ghcr\.io\/yeliang-wang\/evopilot@sha256:aaaaaaaa/);
+  assert.doesNotMatch(script, /docker pull --platform/);
   assert.match(script, /compose\.immutable\.yaml/);
   assert.match(script, /up -d --no-build --no-deps/);
   assert.doesNotMatch(script, /up -d --build/);

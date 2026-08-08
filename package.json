@@ -1,6 +1,6 @@
 {
   "name": "evopilot",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "private": true,
   "description": "GA Release V1.0 Loop Engineering and self-evolution control plane for AI agent products.",
   "license": "Apache-2.0",

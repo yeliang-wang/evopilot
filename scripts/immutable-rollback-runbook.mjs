@@ -131,11 +131,13 @@ export function buildRemoteDeployScript(step, options) {
   const services = options.services.map(shellQuote).join(" ");
   const containerNames = options.services.map((service) => `${options.project}-${service}-1`).map(shellQuote).join(" ");
   const expectedVersion = normalizeReleaseVersion(step.version).version;
+  const deployImageRef = digestOnlyImageRef(step.image.immutableRef, step.image.imageDigest);
 
   return `set -eu
 cd ${shellQuote(options.remotePath)}
 printf "EVOPILOT_IMMUTABLE_ROLLOUT_STEP\\t%s\\n" ${shellQuote(step.name)}
 printf "EVOPILOT_IMMUTABLE_IMAGE\\t%s\\n" ${shellQuote(step.image.immutableRef)}
+printf "EVOPILOT_DEPLOY_IMAGE\\t%s\\n" ${shellQuote(deployImageRef)}
 if [ ${shellQuote(options.syncSource ? "1" : "0")} = "1" ]; then
   git fetch --no-tags origin main
   git pull --ff-only --no-tags origin main
@@ -143,9 +145,9 @@ if [ ${shellQuote(options.syncSource ? "1" : "0")} = "1" ]; then
     test "$(git rev-parse HEAD)" = ${shellQuote(options.expectedCommit)}
   fi
 fi
-docker pull --platform ${shellQuote(options.platform)} ${shellQuote(step.image.immutableRef)}
-docker image inspect ${shellQuote(step.image.immutableRef)} --format "image-ready\\t{{.Id}}\\t{{json .RepoDigests}}"
-export EVOPILOT_IMAGE=${shellQuote(step.image.immutableRef)}
+docker pull ${shellQuote(deployImageRef)}
+docker image inspect ${shellQuote(deployImageRef)} --format "image-ready\\t{{.Id}}\\t{{json .RepoDigests}}"
+export EVOPILOT_IMAGE=${shellQuote(deployImageRef)}
 export EVOPILOT_ENV_FILE=${shellQuote(hostEnvFile)}
 export EVOPILOT_HOST_WORKSPACE=${shellQuote(options.remotePath)}
 export EVOPILOT_BASE_URL="http://host.containers.internal:19876"
@@ -275,6 +277,20 @@ function runSsh(host, script) {
 
 function splitList(value) {
   return String(value).split(",").map((item) => item.trim()).filter(Boolean);
+}
+
+function digestOnlyImageRef(immutableRef, imageDigest) {
+  const source = String(immutableRef ?? "");
+  const digest = String(imageDigest ?? "");
+  if (!/^sha256:[a-f0-9]{64}$/.test(digest)) throw new Error(`invalid image digest: ${digest}`);
+  const imageName = source.split("@")[0];
+  const lastSlash = imageName.lastIndexOf("/");
+  const lastColon = imageName.lastIndexOf(":");
+  const repository = lastColon > lastSlash ? imageName.slice(0, lastColon) : imageName;
+  if (!repository || repository === imageName && !source.includes("@")) {
+    throw new Error(`invalid immutable image reference: ${immutableRef}`);
+  }
+  return `${repository}@${digest}`;
 }
 
 function shellQuote(value) {

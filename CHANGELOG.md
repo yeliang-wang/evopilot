@@ -8,6 +8,41 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 2.4.2 - 2026-08-08
+
+### Fixed
+
+- Fixed the release readiness gate by adding the missing changelog coverage for the agent-operated Harness evolution documentation release.
+- Updated the immutable ECS rollout runbook to pull and deploy `repository@sha256:<digest>` references while still recording the GitHub Release `tag@sha256:<digest>` evidence. This avoids Podman hangs seen with `--platform` plus `tag@digest` release indexes.
+
+### Changed
+
+- Updated package versions, installer defaults, OpenAPI metadata, Helm metadata, distribution documentation, and open-source governance pointers to `2.4.2`.
+
+### Validation
+
+- Full release validation is required before publication: `npm run release:ready`, `npm run check`, `npm run cli:test`, `npm run release:artifact`, `npm run verify:release-artifact`, `npm run verify:distribution`, and `git diff --check`.
+
+## 2.4.1 - 2026-08-08
+
+### Added
+
+- Added `docs/guides/ai-agent-scenarios.md` as the task-oriented scenario matrix between CLI quickstart, automation rules, workflows, command reference, and production runbook.
+- Covered owned repositories, writable forks, read-only public repositories, source-project HarnessTemplate evolution, attachment/log/EvoPilot-history template evolution, project profile upgrades, blocker repair, and release verdict inspection.
+- Added `evopilot harness template evolution sources` to CLI help and functional test coverage.
+
+### Changed
+
+- Updated current CLI install documentation to the v2.4.1 GitHub Release tarball set and documented AI Agent final-report fields, stop rules, and human review states.
+
+### Validation
+
+- `npm run check`
+- `npm run cli:test`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
+
 ## 2.4.0 - 2026-08-08
 
 ### Added
