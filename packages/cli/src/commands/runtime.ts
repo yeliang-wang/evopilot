@@ -205,6 +205,8 @@ export async function runCli(argv: string[]): Promise<number> {
         return await loggingInspect(ctx);
       case "logging:set":
         return await loggingSet(ctx);
+      case "harness:evolve":
+        return await harnessEvolve(ctx);
       case "harness:template":
         if (maybeId === "list" || maybeId === undefined) return await harnessTemplateList(ctx);
         if (maybeId === "inspect") return await harnessTemplateInspect(ctx, args.positionals[3]);
@@ -1593,6 +1595,64 @@ async function harnessTemplateEvolutionSources(ctx: RuntimeContext, id?: string)
   const response = await ctx.client.post(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}/sources`, body, requestOptions(ctx));
   printHarnessTemplateEvolutionResult(ctx, "harness template evolution sources", response.data ?? response.body, response.status);
   return response.ok ? 0 : 2;
+}
+
+async function harnessEvolve(ctx: RuntimeContext): Promise<number> {
+  const body = harnessEvolvePayload(ctx.args);
+  const response = await ctx.client.post("/api/v1/harness/template-evolutions/evolve", body, requestOptions(ctx));
+  const result: Record<string, unknown> = {
+    schema: "evopilot-harness-evolve-command-result/v1",
+    command: "harness evolve",
+    status: response.ok ? field(response.data, "status") ?? "FAILED" : "FAILED",
+    workflowResult: response.data ?? response.body,
+    approvals: [],
+    publications: [],
+    impactReports: []
+  };
+  let current = isRecord(response.data) ? response.data : isRecord(response.body) ? response.body : {};
+  let exitCode = response.ok ? 0 : 2;
+  let evolutionId = stringField(current, "evolutionId") ?? stringField(field(current, "evolution"), "evolutionId");
+
+  if (response.ok && (hasFlag(ctx.args, "approve") || hasFlag(ctx.args, "approve-and-publish"))) {
+    if (!evolutionId) throw usage("harness evolve could not resolve the evolutionId required for approval.");
+    const approveResponse = await ctx.client.post(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}/approve`, {
+      confirmedBy: requiredOption(ctx.args, "confirmed-by"),
+      confirmation: requiredOption(ctx.args, "confirmation"),
+      confirmedAt: stringOption(ctx.args, "confirmed-at")
+    }, requestOptions(ctx));
+    const approval = approveResponse.data ?? approveResponse.body;
+    (result.approvals as unknown[]).push(approval);
+    current = isRecord(approval) ? approval : current;
+    result.status = field(current, "status") ?? result.status;
+    if (!approveResponse.ok) exitCode = 2;
+  }
+
+  if (response.ok && exitCode === 0 && (hasFlag(ctx.args, "publish") || hasFlag(ctx.args, "approve-and-publish"))) {
+    if (!evolutionId) {
+      evolutionId = stringField(current, "evolutionId") ?? stringField(field(current, "evolution"), "evolutionId");
+      if (!evolutionId) throw usage("harness evolve could not resolve the evolutionId required for publishing.");
+    }
+    const publishResponse = await ctx.client.post(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}/publish`, { force: hasFlag(ctx.args, "force") }, requestOptions(ctx));
+    const publication = publishResponse.data ?? publishResponse.body;
+    (result.publications as unknown[]).push(publication);
+    current = isRecord(publication) ? publication : current;
+    result.status = field(current, "status") ?? result.status;
+    if (!publishResponse.ok) exitCode = 2;
+  }
+
+  if (response.ok && exitCode === 0 && evolutionId && (hasFlag(ctx.args, "impact") || hasFlag(ctx.args, "refresh-impact"))) {
+    const impactResponse = await ctx.client.post(`/api/v1/harness/template-evolutions/${encodeURIComponent(evolutionId)}/impact`, {}, requestOptions(ctx));
+    const impact = impactResponse.data ?? impactResponse.body;
+    (result.impactReports as unknown[]).push(impact);
+    current = isRecord(impact) ? impact : current;
+    result.status = field(current, "status") ?? result.status;
+    if (!impactResponse.ok) exitCode = 2;
+  }
+
+  const workflowNextAction = field(result.workflowResult, "nextAction");
+  result.nextAction = stringField(current, "nextAction") ?? stringField(field(current, "evolution"), "nextAction") ?? (typeof workflowNextAction === "string" ? workflowNextAction : undefined);
+  printHarnessEvolveResult(ctx, result, response.status);
+  return exitCode;
 }
 
 async function harnessPolicyList(ctx: RuntimeContext): Promise<number> {
@@ -3933,6 +3993,25 @@ function harnessTemplateMatchPayload(args: ParsedArgs): Record<string, unknown> 
   };
 }
 
+function harnessEvolvePayload(args: ParsedArgs): Record<string, unknown> {
+  const resumeEvolutionId = stringOption(args, "resume") ?? stringOption(args, "resume-evolution") ?? stringOption(args, "resume-evolution-id");
+  const sources = harnessTemplateEvolutionSourcesFromArgs(args);
+  return {
+    resumeEvolutionId,
+    id: resumeEvolutionId ? undefined : stringOption(args, "id") ?? stringOption(args, "evolution-id"),
+    baseTemplateId: stringOption(args, "base-template") ?? stringOption(args, "base-template-id") ?? stringOption(args, "template") ?? stringOption(args, "template-id"),
+    baseTemplateVersion: stringOption(args, "base-template-version") ?? stringOption(args, "template-version"),
+    targetTemplateId: stringOption(args, "target-template") ?? stringOption(args, "target-template-id"),
+    targetVersion: stringOption(args, "target-version") ?? stringOption(args, "version"),
+    intent: stringOption(args, "goal") ?? stringOption(args, "intent") ?? stringOption(args, "objective") ?? stringOption(args, "description"),
+    autoMatch: optionalBoolean(args, "auto-match") ?? true,
+    advanceLowConfidence: hasFlag(args, "advance-low-confidence"),
+    llmProfileId: stringOption(args, "llm-profile") ?? stringOption(args, "llm-profile-id"),
+    requireLlm: hasFlag(args, "require-llm"),
+    sources
+  };
+}
+
 function harnessTemplateEvolutionSourcesFromArgs(args: ParsedArgs): Record<string, unknown>[] {
   return collectHarnessTemplateEvolutionSourcesFromArgs(args, {
     usage,
@@ -4222,6 +4301,40 @@ function printHarnessTemplateMatchResult(ctx: RuntimeContext, command: string, d
   process.stdout.write(`${lines.join("\n")}\n`);
 }
 
+function printHarnessEvolveResult(ctx: RuntimeContext, data: unknown, statusCode: number): void {
+  const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
+  if (ctx.json) {
+    process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    return;
+  }
+  const workflowResult = field(payload, "workflowResult") ?? payload;
+  const evolution = field(workflowResult, "evolution") ?? field(payload, "evolution");
+  const autoMatch = field(workflowResult, "autoMatch") ?? field(evolution, "autoMatch");
+  const draft = field(workflowResult, "draft") ?? field(evolution, "draft");
+  const validation = field(workflowResult, "validation") ?? field(draft, "validation");
+  const diff = field(workflowResult, "diffFromBase") ?? field(draft, "diffFromBase");
+  const approvals = field(payload, "approvals");
+  const publications = field(payload, "publications");
+  const impactReports = field(payload, "impactReports");
+  const lines = [
+    `harness evolve: http=${statusCode}`,
+    isRecord(payload) ? `status=${field(payload, "status") ?? field(workflowResult, "status")}` : undefined,
+    isRecord(workflowResult) ? `evolution=${field(workflowResult, "evolutionId")}` : undefined,
+    isRecord(evolution) ? `target=${field(evolution, "targetTemplateId")}@${field(evolution, "targetVersion")}` : undefined,
+    isRecord(evolution) ? `sources=${arrayLength(field(evolution, "sources"))} snapshots=${arrayLength(field(evolution, "snapshots"))}` : undefined,
+    isRecord(autoMatch) ? `autoMatch=${field(autoMatch, "decision")} confidence=${field(autoMatch, "confidence")} base=${nestedField(autoMatch, ["baseTemplateRef", "templateId"])}@${nestedField(autoMatch, ["baseTemplateRef", "version"])}` : undefined,
+    isRecord(draft) && isRecord(field(draft, "template")) ? `draft=${nestedField(draft, ["template", "id"])}@${nestedField(draft, ["template", "version"])} digest=${nestedField(draft, ["template", "digest"])}` : undefined,
+    isRecord(validation) ? `validation=${field(validation, "status")} blockers=${arrayLength(field(validation, "blockers"))}` : undefined,
+    isRecord(diff) ? `diff=${field(diff, "status")} changed=${arrayLength(field(diff, "changedSections"))}` : undefined,
+    Array.isArray(approvals) && approvals.length > 0 ? `approvals=${approvals.length}` : undefined,
+    Array.isArray(publications) && publications.length > 0 ? `publications=${publications.length}` : undefined,
+    Array.isArray(impactReports) && impactReports.length > 0 ? `impactReports=${impactReports.length}` : undefined,
+    isRecord(payload) && field(payload, "nextAction") ? `nextAction=${field(payload, "nextAction")}` : undefined,
+    isRecord(workflowResult) && field(workflowResult, "instruction") ? `instruction=${field(workflowResult, "instruction")}` : undefined
+  ].filter(Boolean);
+  process.stdout.write(`${lines.join("\n")}\n`);
+}
+
 function printHarnessPolicyResult(ctx: RuntimeContext, command: string, data: unknown, statusCode: number): void {
   const payload = isRecord(data) && isRecord(data.data) ? data.data : data;
   if (ctx.json) {
@@ -4389,6 +4502,7 @@ Usage:
   evopilot maturity standards inspect <alpha|beta|rc|ga|standard-id>
   evopilot logging inspect
   evopilot logging set --level <debug|info|warn|error> [--include-stack <true|false>]
+  evopilot harness evolve --source-project <path-or-id> --goal <text> [--resume <evolution-id>] [--approve|--publish|--approve-and-publish]
   evopilot harness template list
   evopilot harness template inspect <template-id> [--version <version>]
   evopilot harness template match --intent <text> (--source <kind=value>|--file <path>|--source-project <path-or-id>|--production-log <path>|--source-corpus <items>|--note <text>)
@@ -4510,8 +4624,14 @@ Global options:
   --evopilot-history <ref>    EvoPilot project/goal/loop/evidence history source, for example project-id or project-id:loop=<loop-id>
   --local-pack <path>         HarnessTemplate evolution source pack directory
   --runtime-evidence <id>     HarnessTemplate evolution source pointing to runtime evidence or an evidence bundle id
+  --goal <text>               One-command Harness evolution goal; alias for --intent in harness evolve
   --intent <text>             HarnessTemplate evolution intent reviewed by administrators
+  --resume <evolution-id>     Resume a HarnessTemplateEvolution run through the one-command harness evolve workflow
   --auto-match                Let EvoPilot match an existing domain template or create a new target from a runtime base
+  --approve                   With harness evolve, approve a REVIEW_REQUIRED run after explicit confirmation
+  --publish                   With harness evolve, publish an APPROVED run
+  --approve-and-publish       With harness evolve, explicitly approve then publish after confirmation
+  --advance-low-confidence    With harness evolve, continue even when auto-match asks for administrator confirmation
   --target-version <version>  HarnessTemplate evolution target template version
   --target-template <id>      HarnessTemplate evolution target template id
   --refresh                   Recompute an impact report

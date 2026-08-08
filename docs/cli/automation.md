@@ -518,7 +518,7 @@ Use these fields to prove that terminal CLI output, Dashboard state, and product
 
 ## HarnessTemplate Evolution Automation
 
-`harness template evolution` commands are administrator-only lifecycle commands. Automation may collect sources and advance the run, but it must stop at `status=REVIEW_REQUIRED`, `status=BLOCKED`, `nextAction=review-approve-template-evolution`, or any non-empty blocker list.
+`harness evolve` is the preferred one-command wrapper for source-driven template evolution. It may collect sources, auto-match, create or resume a run, and advance it to review, but it must stop at `status=REVIEW_REQUIRED`, `status=BLOCKED`, `nextAction=review-approve-template-evolution`, `nextAction=confirm-template-match-or-override`, or any non-empty blocker list. `harness template evolution` commands remain the administrator-only atomic lifecycle for match/create/advance/approve/publish/impact automation.
 
 Allowed source forms are `url=`, `github=`, `gitlab=`, `project=`, `corpus=`, `log=`, `evopilot-history=`, `local-pack=`, `file=`, `template=`, `runtime-evidence=`, and `note=`. The first-stage GitHub collector reads README candidates only. Local `source-project` extraction is bounded to project inventory plus README/docs/architecture/build/CI/test files. DOCX/PPTX/XLSX attachments use local Office XML extraction when available; PDF attachments use best-effort text-object extraction and keep digest/review warnings when no text can be extracted. Production logs are redacted before persistence.
 

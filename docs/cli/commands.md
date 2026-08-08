@@ -410,6 +410,7 @@ Agents should use `requestId`, `correlation.*`, `event`, `errorCode`, `diagnosis
 
 ```bash
 evopilot harness template list
+evopilot harness evolve --source-project ./legacy-cache-service --goal "Create or evolve the harness for self-developed distributed cache products."
 evopilot harness template inspect python-enterprise-harness
 evopilot harness template inspect java-ddd-service-harness
 evopilot harness template match --source-project ./legacy-cache-service --intent "Create or evolve the harness for self-developed distributed cache products."
@@ -481,6 +482,15 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 `pack validate` performs local pack-shape checks and calls the server's non-persistent `POST /api/v1/harness/templates/validate`. `pack publish` repeats server validation before writing the version through the control plane. EvoPilot intentionally does not expose first-stage `compile`, `diff`, or `publish-all` pack commands; use Git for file diffs and add batch publishing later only if CI/admin usage needs it.
 
 `harness template evolution` is the administrator lifecycle for upgrading a public template from reviewable knowledge sources without bypassing the control plane. Sources can be `url=`, `github=owner/repo#ref`, `gitlab=`, `project=<path-or-id>`, `corpus=<a,b,c>`, `log=<path-or-id>`, `evopilot-history=<project[:goal=<id>|loop=<id>|evidence=<id>]>`, `local-pack=`, `file=`, `template=<id>@<version>`, `runtime-evidence=<id>`, or `note=`.
+
+Use `harness evolve` as the ordinary source-project entry. It wraps the server-governed lifecycle, defaults `autoMatch=true`, creates or resumes a `HarnessTemplateEvolution`, advances through source collection, analysis, and draft generation, then stops at `REVIEW_REQUIRED`. It returns `evopilot-harness-evolve-command-result/v1` with the server `evopilot-harness-evolve-result/v1`, `evolutionId`, `autoMatch`, `sourceCoverage`, `validation`, `diffFromBase`, and `nextAction`.
+
+```bash
+evopilot harness evolve \
+  --source-project ./legacy-cache-service \
+  --goal "Create or evolve the harness for self-developed distributed cache products." \
+  --json
+```
 
 Use `harness template match` when the administrator wants to preview whether a source project should evolve an existing domain template or create a new target template from a runtime base. It is read-only and returns `match.decision`, `confidence`, `baseTemplateRef`, `targetTemplateId`, `targetVersion`, candidate scores, reasons, and `nextAction`.
 

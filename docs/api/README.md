@@ -479,6 +479,8 @@ CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLI
 
 `POST /api/v1/harness/template-matches` 可在创建 run 前做服务端匹配预览。它读取同一类 sources，返回 `match.decision`、`confidence`、`baseTemplateRef`、`targetTemplateId`、`targetVersion`、`targetDomain`、`candidateTemplates[]`、`reasons[]` 和 `nextAction`。该接口不持久化、不生成 draft、不发布模板。
 
+`POST /api/v1/harness/template-evolutions/evolve` 是普通管理员的一键入口。它接受同一类 sources，也可传 `resumeEvolutionId` 继续已有 run；服务端默认 `autoMatch=true`，自动创建或恢复 `HarnessTemplateEvolution`，并推进到 `REVIEW_REQUIRED`。返回 schema 为 `evopilot-harness-evolve-result/v1`，包含 `evolutionId`、`autoMatch`、`sourceCoverage`、`validation`、`diffFromBase`、`workflow.steps[]` 和 `nextAction`。该接口默认不会 approve 或 publish；低置信度匹配、`BLOCKED`、校验失败或 lifecycle gate 会停止并要求管理员处理。
+
 `POST /api/v1/harness/template-evolutions` 创建 run，要求至少一个 source。显式 `baseTemplateId` 仍然可用；若传 `autoMatch=true`，或未传 `baseTemplateId` 但提供 `source-project`、`source-corpus`、附件、生产日志、EvoPilot history 或文本 source，EvoPilot 会先生成 `evolution.autoMatch`。高置信度会选择已有领域模板继续进化，或在没有匹配领域模板时从 runtime base 创建新目标模板，例如 `distributed-cache-harness@0.1.0` 继承 `go-middleware-harness@1.1.0`。source 支持：
 
 ```json

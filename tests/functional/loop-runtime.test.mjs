@@ -2054,7 +2054,7 @@ test("Post-merge deploy finalizer reconciles source release state after server r
           sourceProjectId: "evopilot",
           repositoryProvider: "github",
           sourceBranch: "main",
-          targetVersion: "2.3.0",
+          targetVersion: "2.4.0",
           deploymentConnectorId: "ecs-compose",
           requiredGates: ["deploy", "health-ready"]
         }
@@ -2257,7 +2257,7 @@ exit 0
           sourceProjectId: "github-ecs-rollback-source",
           repositoryProvider: "github",
           sourceBranch: "main",
-          targetVersion: "2.3.0",
+          targetVersion: "2.4.0",
           deploymentConnectorId: "ecs-compose-rollback",
           requiredGates: ["code-change", "push", "deploy", "health-ready"]
         }
@@ -2866,7 +2866,7 @@ test("Loop autopilot persists failed GitHub source closure as release-run eviden
       body: {
         targetId: "codex-loop-target-autopilot",
         projectId: "github-source-failure",
-        targetVersion: "2.3.0",
+        targetVersion: "2.4.0",
         controlPlaneUrl: baseUrl,
         approveHumanGate: true,
         autoMerge: true,

@@ -1,4 +1,5 @@
 import http from "node:http";
+import { runHarnessEvolveWorkflow } from "./harness-evolve.js";
 
 interface HarnessRoutesContext {
   request: http.IncomingMessage;
@@ -153,6 +154,13 @@ export async function handleHarnessRoutes(context: HarnessRoutesContext): Promis
         ? "HarnessTemplateEvolution is CREATED with a low-confidence auto-match. Review evolution.autoMatch before advancing, or create a new run with explicit base/target overrides."
         : "HarnessTemplateEvolution is CREATED. Advance it to collect snapshots, analyze sources, and produce a reviewable DRAFT."
     }));
+  }
+  if (request.method === "POST" && url.pathname === "/api/v1/harness/template-evolutions/evolve") {
+    if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+    const body = await readJson(request, options.maxBodyBytes) as Record<string, unknown>;
+    const result = await runHarnessEvolveWorkflow({ auth, body, deps: context.deps, parentRequestId, requestId, store, traceId, url });
+    if ("error" in result) return writeJson(response, result.statusCode, result.error);
+    return writeJson(response, result.statusCode, envelope(result.body));
   }
   const harnessTemplateEvolutionMatch = url.pathname.match(/^\/api\/v1\/harness\/template-evolutions\/([^/]+)(?:\/(sources|advance|approve|publish|impact))?$/);
   if (harnessTemplateEvolutionMatch) {

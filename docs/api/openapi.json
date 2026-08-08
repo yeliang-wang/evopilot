@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "2.3.0"
+    "version": "2.4.0"
   },
   "paths": {
     "/health": {
@@ -1080,6 +1080,78 @@
           },
           "403": {
             "description": "需要管理员角色"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/template-evolutions/evolve": {
+      "post": {
+        "summary": "一键推进 HarnessTemplateEvolution 到 review draft",
+        "description": "普通管理员入口。EvoPilot 根据 source-project、source-corpus、attachment、production-log、evopilot-history 或 note 自动匹配模板，创建或恢复 HarnessTemplateEvolution，并推进到 REVIEW_REQUIRED。该接口默认不会 approve 或 publish；低置信度匹配、BLOCKED、验证失败或 lifecycle gate 会停止并返回 nextAction。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resumeEvolutionId": {
+                    "type": "string"
+                  },
+                  "goal": {
+                    "type": "string"
+                  },
+                  "intent": {
+                    "type": "string"
+                  },
+                  "autoMatch": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "advanceLowConfidence": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "llmProfileId": {
+                    "type": "string"
+                  },
+                  "requireLlm": {
+                    "type": "boolean"
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "evopilot-harness-evolve-result/v1 when resuming"
+          },
+          "201": {
+            "description": "evopilot-harness-evolve-result/v1 when creating"
+          },
+          "400": {
+            "description": "缺少 source"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "404": {
+            "description": "resumeEvolutionId 不存在"
+          },
+          "409": {
+            "description": "生命周期阻断"
           }
         }
       }

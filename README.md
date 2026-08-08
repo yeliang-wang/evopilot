@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/GA%20Release-v2.3.0-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v2.4.0-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -18,8 +18,8 @@ It is not an agent runtime, prompt playground, or generic code generator. Agent 
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/evopilot-contracts-2.3.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/evopilot-client-2.3.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/evopilot-cli-2.3.0.tgz` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.3.0/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/evopilot-contracts-2.4.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/evopilot-client-2.4.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/evopilot-cli-2.4.0.tgz` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.4.0/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer, hosted Cloud trial, and public npm registry packages are not published EvoPilot surfaces yet. The supported public entry points are GitHub Release CLI tarballs, self-host installer, and Helm.
@@ -98,13 +98,13 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## Release Status
 
-The latest published GitHub release is **v2.3.0 GA**, a HarnessTemplate auto-match release over the original `v1.0.0` GA baseline.
+The latest published GitHub release is **v2.4.0 GA**, a one-command Harness evolution release over the original `v1.0.0` GA baseline.
 
-v2.3.0 keeps existing project onboarding, DevOps bridge, LLM profile, database product, API gateway, and Harness Knowledge Factory flows unchanged, then adds server-side template match preview plus `evolution create --auto-match`. EvoPilot can now decide whether source projects, corpora, attachments, production logs, or EvoPilot history should evolve an existing domain template or create a new domain target from a runtime baseline.
+v2.4.0 keeps existing project onboarding, DevOps bridge, LLM profile, database product, API gateway, and Harness Knowledge Factory flows unchanged, then adds `evopilot harness evolve` and `POST /api/v1/harness/template-evolutions/evolve`. EvoPilot can now scan a source project or knowledge source, auto-match the template, create or resume the evolution run, and advance to a reviewable draft without requiring ordinary users to understand every atomic lifecycle command.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/2.3.0.md](docs/releases/2.3.0.md)
+- Latest release notes: [docs/releases/2.4.0.md](docs/releases/2.4.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)

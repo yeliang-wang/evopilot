@@ -8,6 +8,22 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 2.4.0 - 2026-08-08
+
+### Added
+
+- Added `POST /api/v1/harness/template-evolutions/evolve`, a server-governed one-command workflow that auto-matches source material, creates or resumes `HarnessTemplateEvolution`, advances to `REVIEW_REQUIRED`, and returns draft, source coverage, validation, diff, workflow steps, and next action.
+- Added `evopilot harness evolve --source-project <path> --goal <text> --json` as the ordinary source-project Harness evolution CLI entry while preserving match/create/advance/approve/publish/impact atomic commands for administrators and automation.
+
+### Changed
+
+- Updated Dashboard compatibility, OpenAPI metadata, package versions, installer defaults, Helm metadata, and release validation pointers to `2.4.0`.
+- Kept approval and publishing outside the default one-command path. `harness evolve` stops at review gates unless the caller explicitly uses approval/publish flags with administrator confirmation.
+
+### Validation
+
+- Full release validation is required before publication: `npm run check`, `npm run cli:test`, `npm run release:artifact`, `npm run verify:release-artifact`, and `git diff --check`.
+
 ## 2.3.0 - 2026-08-07
 
 ### Added

@@ -147,6 +147,11 @@ The template file must contain `schema: evopilot-harness-template/v1`, `id`, `ve
 When template changes should be derived from reviewable sources, use the server-governed evolution lifecycle instead of editing a pack directly:
 
 ```bash
+evopilot harness evolve \
+  --source-project ./legacy-cache-service \
+  --goal "Create or evolve the harness for self-developed distributed cache products." \
+  --json
+
 evopilot harness template match \
   --source-project ./legacy-cache-service \
   --intent "Create or evolve the harness for self-developed distributed cache products." \

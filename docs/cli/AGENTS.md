@@ -63,6 +63,11 @@ EvoPilot automatically matches one built-in or administrator-published template 
 Administrator agents can also run the server-governed template evolution lifecycle when template changes come from reviewable sources instead of direct pack editing:
 
 ```bash
+evopilot harness evolve \
+  --source-project ./legacy-cache-service \
+  --goal "Create or evolve the harness for self-developed distributed cache products." \
+  --json
+
 evopilot harness template match \
   --source-project ./legacy-cache-service \
   --intent "Create or evolve the harness for self-developed distributed cache products." \

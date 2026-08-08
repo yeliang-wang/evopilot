@@ -1035,6 +1035,26 @@ test("HarnessTemplate evolution auto-matches source projects to existing or new 
     assert.equal(created.evolution.targetTemplateId, "distributed-cache-harness");
     assert.equal(created.evolution.targetVersion, "0.1.0");
     assert.equal(created.nextAction, "advance-template-evolution");
+
+    const evolved = await runCliJson([
+      "--server", baseUrl,
+      "harness", "evolve",
+      "--source-project", repoRoot,
+      "--goal", "Create or evolve the harness for self-developed distributed cache products.",
+      "--json"
+    ]);
+    assert.equal(evolved.schema, "evopilot-harness-evolve-command-result/v1");
+    assert.equal(evolved.workflowResult.schema, "evopilot-harness-evolve-result/v1");
+    assert.equal(evolved.workflowResult.status, "REVIEW_REQUIRED");
+    assert.equal(evolved.workflowResult.nextAction, "review-approve-template-evolution");
+    assert.equal(evolved.workflowResult.evolution.targetTemplateId, "distributed-cache-harness");
+    assert.equal(evolved.workflowResult.evolution.targetVersion, "0.1.0");
+    assert.equal(evolved.workflowResult.autoMatch.decision, "CREATE_NEW_FROM_BASE");
+    assert.equal(evolved.workflowResult.validation.status, "VALIDATED");
+    assert.ok(evolved.workflowResult.workflow.steps.some((step) => step.status === "SOURCES_COLLECTED"));
+    assert.ok(evolved.workflowResult.workflow.steps.some((step) => step.status === "ANALYZED"));
+    assert.ok(evolved.workflowResult.workflow.steps.some((step) => step.status === "REVIEW_REQUIRED"));
+    assert.equal(evolved.publications.length, 0);
   } finally {
     await close(server);
   }

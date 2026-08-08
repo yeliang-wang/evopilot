@@ -43,6 +43,17 @@ Supported source inputs:
 
 When the administrator starts from a historical project, project corpus, attachment, or production log, EvoPilot can decide whether the material belongs to an existing domain template or should create a new target template from a runtime base.
 
+Use the one-command source-project workflow when the administrator wants EvoPilot to scan, match, create, and advance to review in one operation:
+
+```bash
+evopilot harness evolve \
+  --source-project ./legacy-cache-service \
+  --goal "Create or evolve the harness for self-developed distributed cache products." \
+  --json
+```
+
+The command stops at `REVIEW_REQUIRED` by default. It never approves or publishes unless the caller explicitly uses the advanced approval/publish flags with administrator confirmation.
+
 Preview the decision without persisting a run:
 
 ```bash
@@ -52,7 +63,7 @@ evopilot harness template match \
   --json
 ```
 
-Create a run with the same server-side matcher:
+Create a run with the same server-side matcher when automation needs the atomic lifecycle:
 
 ```bash
 evopilot harness template evolution create \

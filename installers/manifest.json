@@ -1,44 +1,44 @@
 {
   "schema": "evopilot-install-manifest/v1",
-  "version": "2.3.0",
-  "generatedAt": "2026-08-07T00:00:00.000Z",
+  "version": "2.4.0",
+  "generatedAt": "2026-08-08T00:00:00.000Z",
   "repository": "https://github.com/yeliang-wang/evopilot",
   "packages": {
     "create-evopilot": {
-      "version": "2.3.0",
+      "version": "2.4.0",
       "registry": "https://registry.npmjs.org/",
       "registryStatus": "not_published",
-      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/create-evopilot-2.3.0.tgz",
-      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/create-evopilot-2.3.0.tgz",
-      "command": "npx --yes https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/create-evopilot-2.3.0.tgz self-host --init-env",
-      "registryCommand": "npx --yes create-evopilot@2.3.0 self-host --init-env"
+      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/create-evopilot-2.4.0.tgz",
+      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/create-evopilot-2.4.0.tgz",
+      "command": "npx --yes https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/create-evopilot-2.4.0.tgz self-host --init-env",
+      "registryCommand": "npx --yes create-evopilot@2.4.0 self-host --init-env"
     },
     "@evopilot/cli": {
-      "version": "2.3.0",
+      "version": "2.4.0",
       "registry": "https://registry.npmjs.org/",
       "registryStatus": "not_published",
-      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/evopilot-cli-2.3.0.tgz",
+      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/evopilot-cli-2.4.0.tgz",
       "dependencyPackageSpecs": [
-        "https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/evopilot-contracts-2.3.0.tgz",
-        "https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/evopilot-client-2.3.0.tgz"
+        "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/evopilot-contracts-2.4.0.tgz",
+        "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/evopilot-client-2.4.0.tgz"
       ],
-      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/evopilot-cli-2.3.0.tgz",
-      "command": "npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/evopilot-contracts-2.3.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/evopilot-client-2.3.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.3.0/evopilot-cli-2.3.0.tgz",
-      "registryCommand": "npm install -g @evopilot/cli@2.3.0"
+      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/evopilot-cli-2.4.0.tgz",
+      "command": "npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/evopilot-contracts-2.4.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/evopilot-client-2.4.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.4.0/evopilot-cli-2.4.0.tgz",
+      "registryCommand": "npm install -g @evopilot/cli@2.4.0"
     }
   },
   "containers": {
-    "evopilot": "ghcr.io/yeliang-wang/evopilot:2.3.0",
-    "evopilot-dashboard": "ghcr.io/yeliang-wang/evopilot-dashboard:2.3.0"
+    "evopilot": "ghcr.io/yeliang-wang/evopilot:2.4.0",
+    "evopilot-dashboard": "ghcr.io/yeliang-wang/evopilot-dashboard:2.4.0"
   },
   "installers": {
     "install.sh": {
-      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.3.0/install.sh",
-      "sha256": "a644b0941082e21c911a0ee8e729fee24759f7e72662ade1238b0514a152163f"
+      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.4.0/install.sh",
+      "sha256": "fbfe59df0f68538abd9361756eb3d4733e5dabba57e2faf467604305156815cd"
     },
     "install.ps1": {
-      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.3.0/install.ps1",
-      "sha256": "47ce21444c8d56fe6da57dd820cace7496a0b439edccbeea1ab9fe568ad4ddb2"
+      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.4.0/install.ps1",
+      "sha256": "795acf1a29203df28ad355ef3c73941212af4930ed1e22fb0bfd4161d241392a"
     }
   }
 }
