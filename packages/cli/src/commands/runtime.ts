@@ -8,6 +8,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { parse as parseYaml } from "yaml";
+import { runHarnessCatalogCommand } from "./harness-catalog.js";
 import { harnessTemplateEvolutionSourcesFromArgs as collectHarnessTemplateEvolutionSourcesFromArgs } from "./harness-template-evolution-sources.js";
 import { cliInterfaceBoundaryMetadata, type EvoPilotCliInterfaceBoundaryMetadata } from "../runtime/boundary.js";
 
@@ -207,6 +208,13 @@ export async function runCli(argv: string[]): Promise<number> {
         return await loggingSet(ctx);
       case "harness:evolve":
         return await harnessEvolve(ctx);
+      case "harness:catalog":
+        return await runHarnessCatalogCommand(ctx, maybeId, args.positionals[3], {
+          requiredOption,
+          requestOptions,
+          stringOption,
+          usage
+        });
       case "harness:template":
         if (maybeId === "list" || maybeId === undefined) return await harnessTemplateList(ctx);
         if (maybeId === "inspect") return await harnessTemplateInspect(ctx, args.positionals[3]);
@@ -4503,6 +4511,10 @@ Usage:
   evopilot logging inspect
   evopilot logging set --level <debug|info|warn|error> [--include-stack <true|false>]
   evopilot harness evolve --source-project <path-or-id> --goal <text> [--resume <evolution-id>] [--approve|--publish|--approve-and-publish]
+  evopilot harness catalog mount --source <published-harness-catalog-path> [--catalog-id <id>] [--name <name>]
+  evopilot harness catalog list
+  evopilot harness catalog inspect <catalog-id>
+  evopilot harness catalog scan <catalog-id>
   evopilot harness template list
   evopilot harness template inspect <template-id> [--version <version>]
   evopilot harness template match --intent <text> (--source <kind=value>|--file <path>|--source-project <path-or-id>|--production-log <path>|--source-corpus <items>|--note <text>)

@@ -1,4 +1,5 @@
 import http from "node:http";
+import { handleHarnessCatalogRoutes } from "./harness-catalog.js";
 import { runHarnessEvolveWorkflow } from "./harness-evolve.js";
 
 interface HarnessRoutesContext {
@@ -87,6 +88,8 @@ export async function handleHarnessRoutes(context: HarnessRoutesContext): Promis
         : "Use this match report to create a HarnessTemplateEvolution run, then advance it through source collection, analysis, draft review, approval, publish, and impact."
     }));
   }
+
+  if (await handleHarnessCatalogRoutes(context)) return true;
 
   if (request.method === "GET" && url.pathname === "/api/v1/harness/template-evolutions") {
     if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });

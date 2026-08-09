@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "2.4.2"
+    "version": "2.5.0"
   },
   "paths": {
     "/health": {
@@ -1038,6 +1038,140 @@
         }
       }
     },
+    "/api/v1/harness/catalogs": {
+      "get": {
+        "summary": "列出 Published Harness Catalog mounts",
+        "description": "列出 EvoPilot 已挂载的外部 Harness Catalog，并动态扫描 CATALOG.md 与 referenced Harness definitions。需要 viewer 或更高角色。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catalog mount、scan、catalog 和 templates 列表"
+          },
+          "403": {
+            "description": "需要只读或更高角色"
+          }
+        }
+      },
+      "post": {
+        "summary": "挂载 Published Harness Catalog",
+        "description": "管理员提供服务端可见的 Catalog source 目录。EvoPilot 保存 mount，读取 CATALOG.md fenced yaml evopilot-harness-catalog block，并加载 entry 指向的 template.yaml/harness.yaml。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "source"
+                ],
+                "properties": {
+                  "source": {
+                    "type": "string",
+                    "description": "服务端可见的 Published Harness Catalog 目录，必须包含 CATALOG.md。"
+                  },
+                  "catalogId": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Catalog 挂载并扫描成功"
+          },
+          "400": {
+            "description": "缺少 source"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "422": {
+            "description": "Catalog 无法读取或校验失败"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/catalogs/{catalogId}": {
+      "get": {
+        "summary": "检查单个 Published Harness Catalog",
+        "description": "动态读取指定 Catalog mount，返回 mount、catalog、templates、scan status、warnings 和 nextAction。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "catalogId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catalog inspect result"
+          },
+          "403": {
+            "description": "需要只读或更高角色"
+          },
+          "404": {
+            "description": "Catalog mount 不存在"
+          }
+        }
+      }
+    },
+    "/api/v1/harness/catalogs/{catalogId}/scan": {
+      "post": {
+        "summary": "重新扫描 Published Harness Catalog",
+        "description": "管理员触发指定 Catalog 的重新扫描。Catalog 新增或修改 Harness 后，下一次 scan/list/generate 会读取新内容。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "catalogId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Catalog 扫描成功"
+          },
+          "403": {
+            "description": "需要管理员角色"
+          },
+          "404": {
+            "description": "Catalog mount 不存在"
+          },
+          "422": {
+            "description": "Catalog 无法读取或校验失败"
+          }
+        }
+      }
+    },
     "/api/v1/harness/template-matches": {
       "post": {
         "summary": "匹配 HarnessTemplateEvolution source",
@@ -1845,7 +1979,7 @@
     "/api/v1/projects/{projectId}/harness-profiles/generate": {
       "post": {
         "summary": "生成 ProjectHarnessProfile DRAFT",
-        "description": "结合项目、自动匹配的 HarnessTemplate、active TenantHarnessPolicy records、goalLoopTarget、可选 LLM 和 previous active profile 生成 DRAFT profile version。首次接入默认自动匹配；二次接入默认复用 previous active profile 的模板并参考历史 active profile；templateId/fromTemplate 仅作为管理员或高级 override。",
+        "description": "结合项目、自动匹配的 HarnessTemplate、active TenantHarnessPolicy records、goalLoopTarget、可选 LLM 和 previous active profile 生成 DRAFT profile version。首次接入默认自动匹配；二次接入默认复用 previous active profile 的模板并参考历史 active profile；templateId/fromTemplate 仅作为管理员或高级 override。若自动匹配到外部 Harness Catalog，profile 会在 templateRef.catalogRef、compiledContent.templateRef.catalogRef、sourceContent.metadata.templateCatalogRef 和 generatedBy.evidence 中保留 catalogId、catalogDigest、entryPath、entryDigest。",
         "security": [
           {
             "bearerAuth": []

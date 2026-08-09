@@ -418,6 +418,11 @@ GET /api/v1/harness/templates
 POST /api/v1/harness/templates/validate
 POST /api/v1/harness/templates
 GET /api/v1/harness/templates/{templateId}
+POST /api/v1/harness/template-matches
+GET /api/v1/harness/catalogs
+POST /api/v1/harness/catalogs
+GET /api/v1/harness/catalogs/{catalogId}
+POST /api/v1/harness/catalogs/{catalogId}/scan
 GET /api/v1/harness/template-evolutions
 POST /api/v1/harness/template-evolutions
 GET /api/v1/harness/template-evolutions/{evolutionId}
@@ -468,6 +473,10 @@ generic-management-software-harness@1.1.0
 这些内置模板不是运行时动态从 GitHub 拉取。EvoPilot 将精选开源项目、官方规范和工程实践固化为本地版本化模板，并在 `sourceReferences[]` 中暴露初始化来源，例如 FastAPI、Spring Boot、Micrometer、Kubernetes、Prometheus、OpenTelemetry、Sentry、Apache SkyWalking、PostgreSQL、MySQL、Envoy 和 Kong。`@2.2.0` 领域模板只覆盖数据库产品和 API 网关产品，先定义产品域，再定义 compatibility profiles、architecture profiles、runtime profiles 和 `domainExecution` 执行契约；既有 `@1.1.0` 运行时和广义软件类型模板继续作为 baseline，不属于本次数据库/网关领域升级范围。数据库领域模板中的 PostgreSQL、MySQL 等系统是兼容性语料或差分 oracle，不是默认进化对象。
 
 管理员也可以通过 `POST /api/v1/harness/templates` 或独立管理员 CLI 发布新的 template id 或版本，用于表达更多语言、架构范式或软件类型的 harness。推荐的人工维护形态是 `harness-templates/public/<template-id>/` 目录 pack：`README.md` 给人类和 AI Agent 读，`template.yaml` 给服务端解析，`CHANGELOG.md` 记录版本，`examples/` 给项目级 profile 生成参考。CLI 提供收敛后的 pack 入口：`harness template pack list`、`harness template pack validate`、`harness template pack publish`。`pack validate` 和 `pack publish` 会调用 `POST /api/v1/harness/templates/validate` 做非持久化服务端校验；`pack publish` 校验通过后才写入控制面。
+
+从 v2.5 开始，EvoPilot 还可以挂载由独立 `evopilot-harness` 项目发布的 Harness Catalog。Catalog 是服务端可见的目录引用，不是浏览器本地读取，也不是把所有 Harness 一次性导入控制面。`POST /api/v1/harness/catalogs` 写入 mount 并立即扫描；`GET /api/v1/harness/catalogs`、`GET /api/v1/harness/catalogs/{catalogId}` 和 `POST /api/v1/harness/catalogs/{catalogId}/scan` 会读取 `CATALOG.md` 中的 fenced `yaml evopilot-harness-catalog` block，并加载 entry 指向的 `template.yaml`/`harness.yaml`。
+
+Catalog 模板和内置模板、控制面持久化模板一起参与 `GET /api/v1/harness/templates` 和项目 `harness-profiles/generate` 自动匹配。若匹配结果来自 Catalog，生成的 profile 会记录 `templateCatalogRef`，`generatedBy.evidence[]` 也会包含 `catalogId`、`catalogDigest`、`catalogEntry` 和 `catalogEntryDigest`。Catalog 后续增长不会静默改写已激活 profile；新模板只会在下一次生成或升级 profile 时被选择。
 
 模板写入要求 `id`、`version` 和当前版本 changelog；建议同时包含 `sourceReferences[]`。服务端计算 `digest` 并按 `<dataRoot>/harness-templates/<templateId>-<version>.json` 持久化。重复写入同一个 `id@version` 默认返回 `HARNESS_TEMPLATE_VERSION_EXISTS`，只有显式 `force=true` 才会替换该版本。已有 active `ProjectHarnessProfile` 不会因为模板更新被静默改写，必须通过 `generate` 或 `upgrade` 生成新的 profile revision 后再 review/activate。
 

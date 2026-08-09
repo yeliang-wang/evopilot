@@ -1,5 +1,6 @@
 import type {
   HarnessCapabilityDefinition,
+  HarnessCatalogRef,
   HarnessTemplateChangelogEntry,
   HarnessTemplateLayer,
   HarnessTemplateMaturityPhase,
@@ -260,10 +261,12 @@ export function normalizeHarnessLanguageFamily(value: unknown): HarnessTemplateP
 
 export function hydrateHarnessTemplateRef(value: unknown): HarnessTemplateRef {
   const record = isRecord(value) ? value : {};
+  const catalogRef = hydrateHarnessCatalogRef(record.catalogRef);
   return {
     templateId: safeFileName(String(record.templateId ?? record.id ?? "python-enterprise-harness")),
     version: String(record.version ?? "1.0.0"),
-    digest: String(record.digest ?? "")
+    digest: String(record.digest ?? ""),
+    ...(catalogRef ? { catalogRef } : {})
   };
 }
 
@@ -271,6 +274,33 @@ export function harnessTemplateRef(template: HarnessTemplateProfile): HarnessTem
   return {
     templateId: template.id,
     version: template.version,
-    digest: template.digest
+    digest: template.digest,
+    ...(template.catalogRef ? { catalogRef: template.catalogRef } : {})
+  };
+}
+
+export function harnessTemplateCatalogEvidence(template: HarnessTemplateProfile): string[] {
+  const catalogRef = template.catalogRef;
+  return catalogRef ? [
+    `catalogId=${catalogRef.catalogId}`,
+    `catalogDigest=${catalogRef.catalogDigest}`,
+    `catalogEntry=${catalogRef.entryPath}`,
+    `catalogEntryDigest=${catalogRef.entryDigest}`
+  ] : [];
+}
+
+export function hydrateHarnessCatalogRef(value: unknown): HarnessCatalogRef | undefined {
+  if (!isRecord(value)) return undefined;
+  const catalogId = optionalTrimmedString(value.catalogId ?? value.id);
+  const catalogDigest = optionalTrimmedString(value.catalogDigest ?? value.digest);
+  const entryPath = optionalTrimmedString(value.entryPath ?? value.templatePath ?? value.path);
+  const entryDigest = optionalTrimmedString(value.entryDigest ?? value.templateDigest);
+  if (!catalogId || !catalogDigest || !entryPath || !entryDigest) return undefined;
+  return {
+    catalogId: safeFileName(catalogId),
+    catalogSource: optionalTrimmedString(value.catalogSource ?? value.source) ?? "",
+    catalogDigest,
+    entryPath,
+    entryDigest
   };
 }

@@ -4,6 +4,15 @@ export interface HarnessTemplateRef {
   templateId: string;
   version: string;
   digest: string;
+  catalogRef?: HarnessCatalogRef;
+}
+
+export interface HarnessCatalogRef {
+  catalogId: string;
+  catalogSource: string;
+  catalogDigest: string;
+  entryPath: string;
+  entryDigest: string;
 }
 
 export interface HarnessCapabilityDefinition {
@@ -35,6 +44,7 @@ export interface HarnessTemplateProfile {
   id: string;
   version: string;
   digest: string;
+  catalogRef?: HarnessCatalogRef;
   name: string;
   description: string;
   scope: "platform" | "tenant";
@@ -61,6 +71,68 @@ export interface HarnessTemplateProfile {
   changelog: HarnessTemplateChangelogEntry[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface HarnessCatalogMount {
+  schema: "evopilot-harness-catalog-mount/v1";
+  catalogId: string;
+  name: string;
+  source: string;
+  status: "ACTIVE" | "DISABLED";
+  mountedBy?: string;
+  mountedAt: string;
+  updatedAt: string;
+  lastReadAt?: string;
+  lastReadStatus?: "READY" | "FAILED";
+  lastReadError?: string;
+  lastReadWarnings?: string[];
+  catalogDigest?: string;
+  templateCount?: number;
+}
+
+export interface PublishedHarnessCatalogEntry {
+  name: string;
+  version: string;
+  layer?: HarnessTemplateLayer;
+  domain?: string;
+  status: "published" | "deprecated" | "draft" | "disabled";
+  path: string;
+  digest?: string;
+  tags: string[];
+  matchSummary?: string;
+}
+
+export interface PublishedHarnessCatalog {
+  schema: "evopilot-published-harness-catalog/v1";
+  catalogVersion: number;
+  catalogId: string;
+  source: string;
+  catalogDigest: string;
+  generatedAt?: string;
+  compatibleEvopilot?: string;
+  entries: PublishedHarnessCatalogEntry[];
+  warnings: string[];
+}
+
+export interface PublishedHarnessTemplate {
+  schema: "evopilot-published-harness-template/v1";
+  catalog: PublishedHarnessCatalog;
+  entry: PublishedHarnessCatalogEntry;
+  template: HarnessTemplateProfile;
+  templatePath: string;
+  warnings: string[];
+}
+
+export interface HarnessCatalogScanResult {
+  schema: "evopilot-harness-catalog-scan-result/v1";
+  mount: HarnessCatalogMount;
+  catalog?: PublishedHarnessCatalog;
+  templates: HarnessTemplateProfile[];
+  entries: PublishedHarnessCatalogEntry[];
+  status: "READY" | "FAILED";
+  warnings: string[];
+  error?: string;
+  scannedAt: string;
 }
 
 export interface HarnessTemplateValidationResult {

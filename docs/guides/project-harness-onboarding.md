@@ -27,6 +27,17 @@ Each built-in template defines defaults for capabilities, runtime command groups
 
 For database projects, the domain template evolves the owner's database product. PostgreSQL, MySQL, and similar systems are recorded as compatibility references, corpora, or differential oracles, not as the default product being evolved.
 
+EvoPilot can also read external Harness definitions from a mounted Published Harness Catalog, usually produced by the independent `evopilot-harness` project:
+
+```bash
+evopilot harness catalog mount \
+  --source /path/to/evopilot-harness/published \
+  --json
+evopilot harness catalog list --json
+```
+
+This is a dynamic read path, not a bulk import. EvoPilot stores the Catalog mount, reads `CATALOG.md` and referenced Harness definitions at use time, and does not need to know how many internal Harnesses `evopilot-harness` manages. When a project draft is generated, EvoPilot chooses from built-in, mounted Catalog, and persisted templates, then records the selected template digest plus `templateCatalogRef` evidence when the winner came from a Catalog.
+
 For administrator maintenance, the public templates also exist as human-readable packs under `harness-templates/public/<template-id>/`:
 
 ```text
@@ -106,7 +117,7 @@ evopilot harness profile generate \
 
 The generated version is `DRAFT`. It is not active and does not control goal planning yet.
 
-For first onboarding, EvoPilot matches the template automatically from domain signals, runtime language, repository hints, DevOps context, software-type signals, and the goal loop target. Strong product-domain signals select a vertical template first; runtime language then becomes the implementation layer inside the generated profile. It also includes active tenant/workspace policies whose `appliesTo` rules match the project. `generatedBy.evidence[]` reports the template result as `templateSelection=auto-match` and includes selection reasons such as `domain=database-product`, `domainSignal=api gateway`, runtime language, or matched template signals. When policies are active, `generatedBy.evidence[]` also includes `tenantPolicy=<policy>@v<version>`. `--from-template` is only an explicit administrator or advanced override.
+For first onboarding, EvoPilot matches the template automatically from domain signals, runtime language, repository hints, DevOps context, software-type signals, template `matchSignals`, mounted Catalog entries, and the goal loop target. Strong product-domain signals select a vertical template first; runtime language then becomes the implementation layer inside the generated profile. It also includes active tenant/workspace policies whose `appliesTo` rules match the project. `generatedBy.evidence[]` reports the template result as `templateSelection=auto-match` and includes selection reasons such as `domain=database-product`, `domainSignal=api gateway`, runtime language, matched template signals, and Catalog evidence when applicable. When policies are active, `generatedBy.evidence[]` also includes `tenantPolicy=<policy>@v<version>`. `--from-template` is only an explicit administrator or advanced override.
 
 For second onboarding or project evolution, EvoPilot reuses the previous active profile's template unless an administrator explicitly overrides it, reads the previous active profile, and produces a diff-aware draft instead of creating an unrelated profile.
 

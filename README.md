@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/GA%20Release-v2.4.2-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v2.5.0-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -18,8 +18,8 @@ It is not an agent runtime, prompt playground, or generic code generator. Agent 
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-contracts-2.4.2.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-client-2.4.2.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.4.2/evopilot-cli-2.4.2.tgz` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.4.2/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v2.5.0/evopilot-contracts-2.5.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.5.0/evopilot-client-2.5.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v2.5.0/evopilot-cli-2.5.0.tgz` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v2.5.0/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer, hosted Cloud trial, and public npm registry packages are not published EvoPilot surfaces yet. The supported public entry points are GitHub Release CLI tarballs, self-host installer, and Helm.
@@ -30,7 +30,7 @@ Desktop installer, hosted Cloud trial, and public npm registry packages are not 
 | --- | --- |
 | Govern product evolution | Alpha -> Beta -> RC -> GA goal planning, human review, phase packages, blockers, and final reports. |
 | Run auditable loops | Durable loop state, executor graphs, checkpoints, replay, worker leases, watchdog recovery, and timeline audit. |
-| Bind project harnesses | Domain-first `HarnessTemplate` records, runtime/language layers, `TenantHarnessPolicy`, and `ProjectHarnessProfile` versions for project-specific validation, evidence, and governance rules. |
+| Bind project harnesses | Built-in and external Catalog `HarnessTemplate` records, domain/runtime layers, `TenantHarnessPolicy`, and `ProjectHarnessProfile` versions for project-specific validation, evidence, and governance rules. |
 | Control source and delivery | Bounded code-upgrader execution, allowed paths, validation commands, source closure, CI/CD delivery, and deploy evidence. |
 | Track LLM usage by project | Server-projected provider/model/profile rows, token totals, latest loop tokens, and request IDs for connected projects and workspaces. |
 | Operate with API, CLI, and Dashboard | API server, agent-safe CLI JSON flows, and the standalone `yeliang-wang/evopilot-dashboard` browser console. |
@@ -98,13 +98,13 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## Release Status
 
-The latest published GitHub release is **v2.4.2 GA**, an agent-operable Harness documentation and CLI consistency release over the original `v1.0.0` GA baseline.
+The latest published GitHub release is **v2.5.0 GA**, the external Harness Catalog compatibility release over the original `v1.0.0` GA baseline.
 
-v2.4.2 keeps the v2.4.0 source-project Harness evolution workflow unchanged, then adds explicit AI Agent scenario coverage for human-simulated operations, attachment/log/history-driven HarnessTemplate evolution, final report fields, stop rules, and production asset verification for those docs.
+v2.5.0 lets EvoPilot mount and dynamically scan a Published Harness Catalog produced by `evopilot-harness`. New project onboarding can auto-match Catalog templates, generate `ProjectHarnessProfile` drafts, and lock the selected template digest plus catalog evidence without importing every Harness into EvoPilot.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/2.4.2.md](docs/releases/2.4.2.md)
+- Latest release notes: [docs/releases/2.5.0.md](docs/releases/2.5.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
@@ -121,6 +121,9 @@ GET /api/v1/release/decisions
 EvoPilot applies Loop Engineering to product evolution. GlobalGoal decomposes one business goal into Alpha -> Beta -> RC -> GA phase targets before each target enters the governed loop runtime.
 
 ```text
+evopilot-harness Published Catalog
+              |
+              v
 HarnessTemplate + TenantHarnessPolicy + ProjectHarnessProfile
                                       |
                                       v

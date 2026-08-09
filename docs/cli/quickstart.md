@@ -135,6 +135,18 @@ evopilot harness template pack publish harness-templates/public/python-enterpris
 
 Each pack contains `README.md`, `template.yaml`, `CHANGELOG.md`, and `examples/default-project-profile.yaml`. The CLI surface is intentionally small: list, validate, and publish. Use Git for file diff/review; `compile`, `diff`, and `publish-all` are not first-stage pack commands.
 
+When reusable Harness definitions are maintained by the independent `evopilot-harness` project, publish a usable Catalog there and mount the published directory in EvoPilot:
+
+```bash
+evopilot harness catalog mount \
+  --source /path/to/evopilot-harness/published \
+  --json
+evopilot harness catalog scan <catalog-id> --json
+evopilot harness catalog list --json
+```
+
+Catalog mounting stores a server-side reference. EvoPilot dynamically reads `CATALOG.md` and the referenced Harness definition files when listing templates or generating a project profile. It does not copy every Harness into the control plane by default.
+
 Administrators can still publish a direct YAML/JSON template file when they do not need the directory pack shape:
 
 ```bash

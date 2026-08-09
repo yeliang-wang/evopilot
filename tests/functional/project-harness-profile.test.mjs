@@ -199,6 +199,191 @@ test("HarnessTemplate pack CLI lists, validates, and publishes human-readable te
   }
 });
 
+test("Published Harness Catalog is mounted dynamically and participates in project auto-match", async () => {
+  assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
+  const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-harness-catalog-"));
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-distributed-cache-"));
+  fs.writeFileSync(path.join(repoRoot, "go.mod"), "module example.com/cache\n\ngo 1.22\n");
+  fs.writeFileSync(path.join(repoRoot, "README.md"), [
+    "# Cache Product",
+    "",
+    "Self-developed distributed cache with redis-compatible protocol, ttl, eviction, hash slot migration, replica failover, and hot key protection."
+  ].join("\n"));
+  const publishedCatalog = path.join(dataRoot, "published-catalog");
+  const catalogTemplateDir = path.join(publishedCatalog, "distributed-cache-harness", "0.1.0");
+  fs.mkdirSync(catalogTemplateDir, { recursive: true });
+  fs.writeFileSync(path.join(catalogTemplateDir, "template.yaml"), [
+    "schema: evopilot-harness-template/v1",
+    "id: distributed-cache-harness",
+    "version: 0.1.0",
+    "name: Distributed Cache Harness",
+    "description: Domain baseline for self-developed distributed cache and key-value storage products.",
+    "scope: platform",
+    "languageFamily: generic",
+    "harnessLayer: domain",
+    "domain: distributed-cache",
+    "compatibleRuntimeProfiles: [go, java, rust, cpp]",
+    "matchSignals:",
+    "  include:",
+    "    - distributed cache",
+    "    - redis-compatible",
+    "    - ttl",
+    "    - eviction",
+    "    - hash slot",
+    "    - hot key",
+    "  exclude:",
+    "    - database product",
+    "capabilities:",
+    "  - id: source-boundary",
+    "    name: Source boundary",
+    "    boundary: Map distributed cache modules before evolution.",
+    "    requiredEvidence: [module-boundary-map]",
+    "  - id: exception-tracking",
+    "    name: Exception tracking",
+    "    boundary: Preserve request and shard context for failures.",
+    "    requiredEvidence: [failure-log]",
+    "  - id: test-and-quality",
+    "    name: Test and quality",
+    "    boundary: Run compatibility, consistency, and failover tests.",
+    "    requiredEvidence: [cache-test-report]",
+    "  - id: failure-diagnostics",
+    "    name: Failure diagnostics",
+    "    boundary: Diagnose split-brain, replica lag, and hot-key incidents.",
+    "    requiredEvidence: [incident-analysis]",
+    "  - id: observability",
+    "    name: Observability",
+    "    boundary: Expose shard, latency, eviction, and replication metrics.",
+    "    requiredEvidence: [metrics-snapshot]",
+    "  - id: slo-monitoring",
+    "    name: SLO monitoring",
+    "    boundary: Track latency, availability, and recovery SLOs.",
+    "    requiredEvidence: [slo-report]",
+    "  - id: operational-runbooks",
+    "    name: Operational runbooks",
+    "    boundary: Keep failover, rebalance, and rollback runbooks.",
+    "    requiredEvidence: [runbook-review]",
+    "  - id: release-governance",
+    "    name: Release governance",
+    "    boundary: Block release without compatibility, consistency, and failover evidence.",
+    "    requiredEvidence: [release-decision]",
+    "runtimePatterns:",
+    "  harnessLayer: domain",
+    "  domain: distributed-cache",
+    "  runtimeProfiles: [go, java, rust, cpp]",
+    "  compatibilityProfiles:",
+    "    - id: redis-compatible",
+    "      role: compatibility-oracle",
+    "    - id: memcached-compatible",
+    "      role: compatibility-oracle",
+    "  architectureProfiles:",
+    "    - id: sharded",
+    "    - id: replicated",
+    "  domainExecution:",
+    "    requiredActions:",
+    "      - declare-cache-product-boundary",
+    "      - map-shard-and-replica-boundaries",
+    "      - bind-compatibility-suite",
+    "    evidenceAdapters:",
+    "      - artifact: redis-compatibility-report",
+    "      - artifact: failover-report",
+    "      - artifact: benchmark-summary",
+    "    releaseBlockers:",
+    "      - missing cache product boundary",
+    "      - missing compatibility report",
+    "      - missing failover evidence",
+    "validationBaseline:",
+    "  commands: [unitCommands, smokeCommands]",
+    "evidenceContract:",
+    "  requiredArtifacts: [redis-compatibility-report, failover-report, benchmark-summary]",
+    "failureTaxonomy:",
+    "  categories: [split-brain, replica-lag, hot-key, eviction-regression]",
+    "diagnosticsBaseline:",
+    "  requiredFields: [requestId, shardId, replicaId]",
+    "observabilityBaseline:",
+    "  metrics: [cache_latency_ms, cache_evictions_total, cache_replica_lag]",
+    "governanceRules:",
+    "  profileActivationRequiresApproval: true",
+    "phaseMapping:",
+    "  alpha: [module-boundary-map]",
+    "  beta: [redis-compatibility-report]",
+    "  rc: [failover-report]",
+    "  ga: [release-decision]",
+    "llmDraftPolicy:",
+    "  requireReview: true",
+    "sourceReferences:",
+    "  - name: Internal distributed cache domain practice",
+    "    category: engineering-practice",
+    "    rationale: Domain harness test fixture.",
+    "changelog:",
+    "  - version: 0.1.0",
+    "    changedAt: 2026-08-09T00:00:00.000Z",
+    "    summary: Initial test fixture.",
+    "    changes: [Add distributed cache domain harness fixture.]"
+  ].join("\n"));
+  fs.writeFileSync(path.join(publishedCatalog, "CATALOG.md"), [
+    "# Harness Catalog",
+    "",
+    "```yaml evopilot-harness-catalog",
+    "catalogVersion: 1",
+    "catalogId: evopilot-public-harness-catalog",
+    "generatedAt: 2026-08-09T00:00:00.000Z",
+    "compatibleEvopilot: \">=2.5.0\"",
+    "entries:",
+    "  - name: distributed-cache-harness",
+    "    version: 0.1.0",
+    "    layer: domain",
+    "    domain: distributed-cache",
+    "    status: published",
+    "    path: ./distributed-cache-harness/0.1.0/template.yaml",
+    "    tags: [distributed-cache, redis-compatible, ttl, eviction, hot-key]",
+    "```",
+    ""
+  ].join("\n"));
+  const server = createServer({ dataRoot, runtimeMode: "debug" });
+  await listen(server);
+  const baseUrl = serverUrl(server);
+
+  try {
+    const mounted = await runCliJson([
+      "--server", baseUrl,
+      "harness", "catalog", "mount",
+      "--source", publishedCatalog,
+      "--catalog-id", "test-harness-catalog",
+      "--json"
+    ]);
+    assert.equal(mounted.scan.status, "READY");
+    assert.ok(mounted.templates.some((template) => template.id === "distributed-cache-harness" && template.catalogRef.catalogId === "evopilot-public-harness-catalog"));
+
+    const project = await post(`${baseUrl}/api/v1/projects`, {
+      id: "cache-product",
+      name: "Cache Product",
+      repository: { provider: "local-git", root: repoRoot },
+      runtime: {
+        language: "go",
+        installCommands: ["go mod download"],
+        unitCommands: ["go test ./..."],
+        smokeCommands: ["go test ./..."]
+      }
+    });
+    assert.equal(project.data.id, "cache-product");
+
+    const generated = await post(`${baseUrl}/api/v1/projects/cache-product/harness-profiles/generate`, {
+      profileId: "default",
+      goalLoopTarget: "把自研分布式缓存产品提升到 GA-ready，需要 Redis-compatible 协议、TTL、淘汰策略、分片、副本、failover 和 benchmark 证据。"
+    });
+    const profile = generated.data.profile;
+    assert.equal(profile.templateRef.templateId, "distributed-cache-harness");
+    assert.equal(profile.templateRef.version, "0.1.0");
+    assert.equal(profile.templateRef.catalogRef.catalogId, "evopilot-public-harness-catalog");
+    assert.equal(profile.compiledContent.templateRef.catalogRef.catalogId, "evopilot-public-harness-catalog");
+    assert.ok(profile.generatedBy.evidence.includes("catalogId=evopilot-public-harness-catalog"));
+    assert.equal(profile.sourceContent.metadata.templateCatalogRef.catalogId, "evopilot-public-harness-catalog");
+    assert.equal(profile.compiledContent.runtime.domain, "distributed-cache");
+  } finally {
+    await close(server);
+  }
+});
+
 test("TenantHarnessPolicy constrains project profiles and goal-plan harness bindings", async () => {
   assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-tenant-harness-policy-"));

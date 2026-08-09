@@ -58,6 +58,7 @@ Use `--json` for AI agents and CI. Human-readable output is for operators and ca
 | `project onboard verify ... --json` | `evopilot-project-onboarding-checklist/v1` | Persisted project readiness, same fields as `plan`, including project LLM readiness |
 | `project onboard ... --json` | `evopilot-cli-project-onboard/v1` | `projectId`, `sourceCredentials`, `devops`, `steps`, `result`, `llmUsage`; onboarding does not start Goal/Loop execution |
 | `logging inspect/set --json` | `evopilot-logging-settings/v1` or `evopilot-logging-settings-update-result/v1` | `level`, `format`, `includeStack`, `source`, `updatedBy`, `updatedAt` |
+| `harness catalog mount/list/inspect/scan ... --json` | `evopilot-harness-catalog-*-v1` | `mount`, `catalog`, `templates`, `catalogDigest`, `entryDigest`, `nextAction` |
 | `harness template pack list/validate/publish ... --json` | `evopilot-harness-template-pack-*-v1` or `evopilot-harness-template-apply-result/v1` | `packs`, `localValidation`, `serverValidation`, `template`, `action`, `digest` |
 | `harness template evolution create/advance/approve/publish/impact ... --json` | `evopilot-harness-template-evolution-*-result/v1` | `evolution`, `status`, `nextAction`, `draft`, `validation`, `sourceCoverage`, `impactReport` |
 | `harness policy apply/activate ... --json` | `evopilot-tenant-harness-policy-*-result/v1` | `policy`, `summary`, `validation`, `compiledDigest`; active policies constrain matching project profiles |
@@ -461,6 +462,17 @@ generic-management-software-harness@1.1.0
 ```
 
 Built-in templates are initialized from selected public projects, official specifications, and long-running enterprise engineering practice, then fixed inside EvoPilot as structured template data. The `@2.2.0` domain templates define the product harness first, then compatibility, architecture, and runtime profiles; the `@1.1.0` runtime templates remain language or broad software-type baselines. Inspect `sourceReferences[]` to see that initialization basis. Project onboarding automatically matches one published template from domain signals, project runtime/repository context, and the goal loop target. `--from-template` is an explicit administrator or advanced override, not the normal first-onboarding path.
+
+External Harness Catalogs extend that candidate set without requiring an EvoPilot binary release. A Catalog is usually produced by `evopilot-harness` and contains a top-level `CATALOG.md` plus versioned Harness definition files. EvoPilot stores only the mount reference and dynamically reads the active Catalog at use time:
+
+```bash
+evopilot harness catalog mount --source /path/to/evopilot-harness/published --json
+evopilot harness catalog list --json
+evopilot harness catalog inspect evopilot-public-harness-catalog --json
+evopilot harness catalog scan evopilot-public-harness-catalog --json
+```
+
+If a Catalog Harness wins auto-match, the generated project profile records the external source in `templateRef.catalogRef`, `compiledContent.templateRef.catalogRef`, `sourceContent.metadata.templateCatalogRef`, and generated evidence with `catalogId`, `catalogDigest`, `catalogEntry`, and `catalogEntryDigest`. Existing active project profiles keep their locked template digest and catalog reference until a reviewed profile generation or upgrade activates a new version.
 
 The recommended administrator editing model is the human-readable template pack directory under `harness-templates/public/<template-id>/`:
 

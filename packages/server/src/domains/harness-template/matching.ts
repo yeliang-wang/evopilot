@@ -242,11 +242,27 @@ export function matchHarnessTemplateEvolutionSource(
   const domainDetections = detectHarnessTemplateMatchDomains(contextText);
   const primaryDomain = domainDetections[0];
   const language = languageDetection.language ?? "generic";
+  const candidates = candidateTemplates(templates, {
+    contextText,
+    primaryDomain,
+    language,
+    languageSignals: languageDetection.signals
+  });
+  const templateDrivenDomain = !primaryDomain
+    ? candidates.find((candidate) => candidate.harnessLayer === "domain" && candidate.score >= 90)
+    : undefined;
+  const templateDrivenDomainTemplate = templateDrivenDomain
+    ? templates.find((template) => template.id === templateDrivenDomain.templateRef.templateId && template.version === templateDrivenDomain.templateRef.version)
+    : undefined;
   const existingDomainTemplate = primaryDomain
     ? latestTemplateForDomainOrId(templates, primaryDomain.profile.domain, primaryDomain.profile.templateId)
-    : undefined;
+    : templateDrivenDomainTemplate;
   const baseTemplate = resolveBaseTemplate(store, primaryDomain?.profile, language);
-  const decision = chooseMatchDecision(primaryDomain, existingDomainTemplate);
+  const decision = primaryDomain
+    ? chooseMatchDecision(primaryDomain, existingDomainTemplate)
+    : existingDomainTemplate
+      ? "EVOLVE_EXISTING"
+      : "NEEDS_ADMIN_CONFIRMATION";
   const selectedExistingRef = existingDomainTemplate ? harnessTemplateRef(existingDomainTemplate) : undefined;
   const baseTemplateRef = decision === "EVOLVE_EXISTING" && selectedExistingRef ? selectedExistingRef : harnessTemplateRef(baseTemplate);
   const targetTemplateId = decision === "EVOLVE_EXISTING" && existingDomainTemplate
@@ -259,12 +275,6 @@ export function matchHarnessTemplateEvolutionSource(
     : incrementSemverPatch((decision === "EVOLVE_EXISTING" && existingDomainTemplate ? existingDomainTemplate : baseTemplate).version);
   const targetLayer = primaryDomain?.profile.layer ?? effectiveHarnessTemplateLayer(existingDomainTemplate ?? baseTemplate);
   const targetDomain = primaryDomain?.profile.domain ?? effectiveHarnessTemplateDomain(existingDomainTemplate ?? baseTemplate);
-  const candidates = candidateTemplates(templates, {
-    contextText,
-    primaryDomain,
-    language,
-    languageSignals: languageDetection.signals
-  });
   const confidence = matchConfidence(decision, primaryDomain, languageDetection.signals, candidates[0]?.score ?? 0);
   const reasons = matchReasons({
     decision,
@@ -272,6 +282,7 @@ export function matchHarnessTemplateEvolutionSource(
     languageSignals: languageDetection.signals,
     baseTemplate,
     existingDomainTemplate,
+    templateDrivenDomain,
     targetTemplateId,
     targetVersion
   });
@@ -289,7 +300,7 @@ export function matchHarnessTemplateEvolutionSource(
     domainSignals: domainDetections.flatMap((detection) => [
       `domain=${detection.profile.domain}`,
       ...detection.matchedSignals.slice(0, 8).map((signal) => `domainSignal=${signal}`)
-    ]),
+    ]).concat(templateDrivenDomain?.domain ? [`domain=${templateDrivenDomain.domain}`, "domainSource=harness-matchSignals"] : []),
     sourceDigests: input.sources.map((source) => source.contentDigest ?? digestText(source.contentText ?? source.uri ?? source.name)),
     candidateTemplates: candidates,
     reasons,
@@ -405,6 +416,11 @@ function candidateTemplates(
         score += 260 + args.primaryDomain.score * 20;
         reasons.push(`domain=${args.primaryDomain.profile.domain}`);
         reasons.push(...args.primaryDomain.matchedSignals.slice(0, 5).map((signal) => `domainSignal=${signal}`));
+      }
+      if (!args.primaryDomain && layer === "domain" && signalMatches.length > 0) {
+        score += 100 + Math.min(signalMatches.length, 8) * 12;
+        reasons.push("domainSource=harness-matchSignals");
+        if (domain) reasons.push(`domain=${domain}`);
       }
       if (template.languageFamily === args.language) {
         score += args.language === "generic" ? 35 : 90;
@@ -533,6 +549,7 @@ function matchReasons(args: {
   languageSignals: string[];
   baseTemplate: HarnessTemplateProfile;
   existingDomainTemplate?: HarnessTemplateProfile;
+  templateDrivenDomain?: HarnessTemplateMatchCandidate;
   targetTemplateId: string;
   targetVersion: string;
 }): string[] {
@@ -544,6 +561,7 @@ function matchReasons(args: {
   }
   reasons.push(...args.languageSignals);
   if (args.existingDomainTemplate) reasons.push(`existingTemplate=${args.existingDomainTemplate.id}@${args.existingDomainTemplate.version}`);
+  if (args.templateDrivenDomain) reasons.push("domainSource=harness-matchSignals");
   reasons.push(`baseTemplate=${args.baseTemplate.id}@${args.baseTemplate.version}`);
   reasons.push(`target=${args.targetTemplateId}@${args.targetVersion}`);
   if (args.decision === "CREATE_NEW_FROM_BASE") reasons.push("newDomainTemplateRequiresAdminReview=true");

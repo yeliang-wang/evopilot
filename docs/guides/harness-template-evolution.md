@@ -4,6 +4,8 @@
 
 Use it when an administrator wants EvoPilot to ingest notes, websites, GitHub repositories, historical source projects, project corpora, attachments, production logs, EvoPilot goal/loop history, existing templates, or local packs, generate a reviewed draft, validate it, publish a new `HarnessTemplate` version, and report which active project profiles are stale.
 
+In v2.5 and later, authoring reusable Harness definitions can happen outside this repository in `evopilot-harness`. That project publishes a usable Harness Catalog; EvoPilot mounts the published directory, dynamically reads `CATALOG.md`, and includes the listed Harness definitions in template matching. Use the in-EvoPilot evolution lifecycle when you need server-side source collection, redaction, draft generation, approval, audit, and project impact. Use `evopilot-harness` when the Harness definition itself should have an independent project and release cadence.
+
 ## Lifecycle
 
 ```mermaid
@@ -76,6 +78,31 @@ evopilot harness template evolution create \
 The match report is stored as `evolution.autoMatch`. It contains `decision`, `confidence`, `baseTemplateRef`, `targetTemplateId`, `targetVersion`, `targetDomain`, `candidateTemplates[]`, `reasons[]`, source digests, and `nextAction`. For example, a Go distributed-cache source project can produce `decision=CREATE_NEW_FROM_BASE`, `baseTemplateRef=go-middleware-harness@1.1.0`, and `targetTemplateId=distributed-cache-harness@0.1.0`.
 
 Automatic matching does not publish anything. `CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED -> IMPACT_ANALYZED` still applies, and LLM output remains draft-only.
+
+## Published Harness Catalogs
+
+`evopilot-harness` publishes a directory with a top-level `CATALOG.md`. EvoPilot parses only the fenced block named `evopilot-harness-catalog`, then loads each published entry's `template.yaml` or `harness.yaml` by relative path.
+
+```text
+published/
+  CATALOG.md
+  database-product-harness/2.2.0/template.yaml
+  api-gateway-harness/2.2.0/template.yaml
+  distributed-cache-harness/0.1.0/template.yaml
+```
+
+Mount the published Catalog from an EvoPilot server-visible path:
+
+```bash
+evopilot harness catalog mount \
+  --source /path/to/evopilot-harness/published \
+  --catalog-id evopilot-public-harness-catalog \
+  --json
+evopilot harness catalog scan evopilot-public-harness-catalog --json
+evopilot harness catalog list --json
+```
+
+Catalog mounts are references, not imports. If `evopilot-harness` publishes more domains later, EvoPilot sees them the next time it scans or lists templates. Project profile generation locks the selected template `digest` and records `templateRef.catalogRef`, `compiledContent.templateRef.catalogRef`, and `sourceContent.metadata.templateCatalogRef` with `catalogId`, `catalogDigest`, `entryPath`, and `entryDigest`, so later Catalog changes do not silently rewrite an active project profile.
 
 ## Admin Flow
 
@@ -153,7 +180,7 @@ Current file-store path:
 <dataRoot>/harness-template-evolutions/<evolutionId>/impact/report.json
 ```
 
-These files are review and evidence artifacts. The published template remains the server-side `HarnessTemplate` control-plane record under `<dataRoot>/harness-templates/<templateId>-<version>.json`.
+These files are review and evidence artifacts. Templates published through the in-EvoPilot lifecycle remain server-side `HarnessTemplate` records under `<dataRoot>/harness-templates/<templateId>-<version>.json`. External Catalog mounts are stored separately under `<dataRoot>/harness-catalogs/<catalogId>.json` and are re-read from their configured source directory.
 
 ## Project Impact
 

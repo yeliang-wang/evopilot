@@ -1,4 +1,5 @@
 export * from "./errors.js";
+export * from "./catalog.js";
 export * from "./evolution.js";
 export * from "./defaults.js";
 export * from "./matching.js";

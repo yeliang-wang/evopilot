@@ -128,8 +128,12 @@ import {
 } from "../../application/control-plane-services.js";
 import {
   defaultHarnessTemplates,
+  hydrateHarnessCatalogMount,
   hydrateHarnessTemplate,
   hydrateHarnessTemplateEvolutionRun,
+  readPublishedHarnessCatalog,
+  type HarnessCatalogMount,
+  type HarnessCatalogScanResult,
   type HarnessTemplateEvolutionRun,
   type HarnessTemplateProfile,
   type HarnessTemplateProjectProfileBinding
@@ -273,6 +277,7 @@ export class FileStore {
     fs.mkdirSync(this.settingsDir, { recursive: true });
     fs.mkdirSync(this.runsDir, { recursive: true });
     fs.mkdirSync(this.projectsDir, { recursive: true });
+    fs.mkdirSync(this.harnessCatalogsDir, { recursive: true });
     fs.mkdirSync(this.harnessTemplatesDir, { recursive: true });
     fs.mkdirSync(this.harnessTemplateEvolutionsDir, { recursive: true });
     fs.mkdirSync(this.tenantHarnessPoliciesDir, { recursive: true });
@@ -353,6 +358,10 @@ export class FileStore {
 
   get harnessTemplatesDir(): string {
     return path.join(this.dataRoot, "harness-templates");
+  }
+
+  get harnessCatalogsDir(): string {
+    return path.join(this.dataRoot, "harness-catalogs");
   }
 
   get harnessTemplateEvolutionsDir(): string {
@@ -1366,26 +1375,69 @@ export class FileStore {
   }
 
   listHarnessTemplates(): HarnessTemplateProfile[] {
-    const persisted = fs.readdirSync(this.harnessTemplatesDir)
-      .filter((file) => file.endsWith(".json"))
-      .sort()
-      .map((file) => hydrateHarnessTemplate(JSON.parse(fs.readFileSync(path.join(this.harnessTemplatesDir, file), "utf8"))));
-    const builtIns = defaultHarnessTemplates();
-    const persistedRefs = new Set(persisted.map((template) => `${template.id}@${template.version}`));
-    return [...builtIns.filter((template) => !persistedRefs.has(`${template.id}@${template.version}`)), ...persisted];
+    return mergeHarnessTemplateSources([
+      ...defaultHarnessTemplates(),
+      ...this.listMountedHarnessCatalogTemplates(),
+      ...this.listPersistedHarnessTemplates()
+    ]);
   }
 
   readHarnessTemplate(templateId: string, version?: string): HarnessTemplateProfile | undefined {
     const id = safeFileName(templateId);
     const requestedVersion = optionalTrimmedString(version);
-    const persisted = fs.readdirSync(this.harnessTemplatesDir)
+    const candidates = this.listHarnessTemplates()
+      .filter((template) => template.id === id && (!requestedVersion || template.version === requestedVersion))
+      .sort((left, right) => compareStoreHarnessTemplateVersions(left.version, right.version));
+    return candidates[candidates.length - 1];
+  }
+
+  listHarnessCatalogMounts(): HarnessCatalogMount[] {
+    if (!fs.existsSync(this.harnessCatalogsDir)) return [];
+    return fs.readdirSync(this.harnessCatalogsDir)
       .filter((file) => file.endsWith(".json"))
       .sort()
-      .map((file) => hydrateHarnessTemplate(JSON.parse(fs.readFileSync(path.join(this.harnessTemplatesDir, file), "utf8"))))
-      .filter((template) => template.id === id && (!requestedVersion || template.version === requestedVersion));
-    if (persisted.length > 0) return persisted[persisted.length - 1];
-    const builtIns = defaultHarnessTemplates().filter((template) => template.id === id && (!requestedVersion || template.version === requestedVersion));
-    return builtIns[builtIns.length - 1];
+      .map((file) => hydrateHarnessCatalogMount(JSON.parse(fs.readFileSync(path.join(this.harnessCatalogsDir, file), "utf8"))));
+  }
+
+  readHarnessCatalogMount(catalogId: string): HarnessCatalogMount | undefined {
+    const file = path.join(this.harnessCatalogsDir, `${safeFileName(catalogId)}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return hydrateHarnessCatalogMount(JSON.parse(fs.readFileSync(file, "utf8")));
+  }
+
+  writeHarnessCatalogMount(mount: HarnessCatalogMount): HarnessCatalogMount {
+    const hydrated = hydrateHarnessCatalogMount(mount);
+    atomicWriteJson(path.join(this.harnessCatalogsDir, `${safeFileName(hydrated.catalogId)}.json`), hydrated);
+    return hydrated;
+  }
+
+  scanHarnessCatalogMount(catalogId: string): HarnessCatalogScanResult | undefined {
+    const mount = this.readHarnessCatalogMount(catalogId);
+    if (!mount) return undefined;
+    const scan = readPublishedHarnessCatalog(mount.source, mount);
+    this.writeHarnessCatalogMount(scan.mount);
+    return scan;
+  }
+
+  listHarnessCatalogScans(): HarnessCatalogScanResult[] {
+    return this.listHarnessCatalogMounts().map((mount) => {
+      const scan = readPublishedHarnessCatalog(mount.source, mount);
+      this.writeHarnessCatalogMount(scan.mount);
+      return scan;
+    });
+  }
+
+  private listPersistedHarnessTemplates(): HarnessTemplateProfile[] {
+    return fs.readdirSync(this.harnessTemplatesDir)
+      .filter((file) => file.endsWith(".json"))
+      .sort()
+      .map((file) => hydrateHarnessTemplate(JSON.parse(fs.readFileSync(path.join(this.harnessTemplatesDir, file), "utf8"))));
+  }
+
+  private listMountedHarnessCatalogTemplates(): HarnessTemplateProfile[] {
+    return this.listHarnessCatalogMounts()
+      .filter((mount) => mount.status === "ACTIVE")
+      .flatMap((mount) => readPublishedHarnessCatalog(mount.source, mount).templates);
   }
 
   writeHarnessTemplate(template: HarnessTemplateProfile): HarnessTemplateProfile {
@@ -4350,4 +4402,25 @@ export class FileStore {
   private ruleFile(id: string): string {
     return path.join(this.rulesDir, `${safeFileName(id)}.md`);
   }
+}
+
+function mergeHarnessTemplateSources(templates: HarnessTemplateProfile[]): HarnessTemplateProfile[] {
+  const merged = new Map<string, HarnessTemplateProfile>();
+  for (const template of templates) {
+    merged.set(`${template.id}@${template.version}`, template);
+  }
+  return [...merged.values()].sort((left, right) => {
+    if (left.id === right.id) return compareStoreHarnessTemplateVersions(left.version, right.version);
+    return left.id.localeCompare(right.id);
+  });
+}
+
+function compareStoreHarnessTemplateVersions(left: string, right: string): number {
+  const leftParts = left.split(/[.-]/).map((part) => Number(part)).map((part) => Number.isFinite(part) ? part : 0);
+  const rightParts = right.split(/[.-]/).map((part) => Number(part)).map((part) => Number.isFinite(part) ? part : 0);
+  for (let index = 0; index < Math.max(leftParts.length, rightParts.length); index += 1) {
+    const diff = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return left.localeCompare(right);
 }

@@ -30,6 +30,8 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { parse as parseYaml } from "yaml";
 import {
+  effectiveHarnessTemplateLayer,
+  harnessTemplateCatalogEvidence,
   harnessTemplateRef,
   hydrateHarnessCapabilities,
   hydrateHarnessPhaseMapping,
@@ -1924,6 +1926,7 @@ export async function generateProjectHarnessProfileDraft(store: FileStore, proje
           ...templateSelection.reasons.map((reason) => `templateSelectionReason=${reason}`),
           `template=${template.id}@${template.version}`,
           `templateDigest=${template.digest}`,
+          ...harnessTemplateCatalogEvidence(template),
           ...tenantPolicies.map((policy) => `tenantPolicy=${policy.policyId}@v${policy.version}`),
           ...tenantPolicies.map((policy) => `tenantPolicyDigest=${policy.compiledDigest}`)
         ]
@@ -1975,11 +1978,12 @@ export async function generateProjectHarnessProfileDraft(store: FileStore, proje
         ...(source.metadata ?? {}),
         generatedFromGoalLoopTarget: optionalTrimmedString(body.goalLoopTarget ?? body.objective),
         previousActiveProfileVersion: previousActive?.version,
-        templateSelectionMode: templateSelection.mode,
-        templateSelectionReasons: templateSelection.reasons,
-        tenantPolicyRefs: tenantPolicies.map(tenantHarnessPolicyRef)
-      }
-    },
+      templateSelectionMode: templateSelection.mode,
+      templateSelectionReasons: templateSelection.reasons,
+      templateCatalogRef: template.catalogRef,
+      tenantPolicyRefs: tenantPolicies.map(tenantHarnessPolicyRef)
+    }
+  },
     sourceFormat: "llm-generated",
     actor,
     status: "DRAFT",
@@ -1998,12 +2002,13 @@ export async function generateProjectHarnessProfileDraft(store: FileStore, proje
         `durationMs=${response.durationMs}`,
         previousActive ? `previousActiveVersion=${previousActive.version}` : "previousActiveVersion=none",
         `templateSelection=${templateSelection.mode}`,
-        ...templateSelection.reasons.map((reason) => `templateSelectionReason=${reason}`),
-        `template=${template.id}@${template.version}`,
-        `templateDigest=${template.digest}`,
-        ...tenantPolicies.map((policy) => `tenantPolicy=${policy.policyId}@v${policy.version}`),
-        ...tenantPolicies.map((policy) => `tenantPolicyDigest=${policy.compiledDigest}`)
-      ]
+          ...templateSelection.reasons.map((reason) => `templateSelectionReason=${reason}`),
+          `template=${template.id}@${template.version}`,
+          `templateDigest=${template.digest}`,
+          ...harnessTemplateCatalogEvidence(template),
+          ...tenantPolicies.map((policy) => `tenantPolicy=${policy.policyId}@v${policy.version}`),
+          ...tenantPolicies.map((policy) => `tenantPolicyDigest=${policy.compiledDigest}`)
+        ]
     }
   });
 }
@@ -2128,6 +2133,7 @@ export function deterministicProjectHarnessProfileSource(project: StoredProject,
       generatedBy: "deterministic-template",
       templateSelectionMode: templateSelection?.mode,
       templateSelectionReasons: templateSelection?.reasons,
+      templateCatalogRef: template.catalogRef,
       templateHarnessLayer: templateLayers.harnessLayer,
       templateDomain: templateLayers.domain,
       compatibilityProfiles: templateLayers.compatibilityProfiles,
@@ -2470,6 +2476,21 @@ export function scoreHarnessTemplateForProjectContext(template: HarnessTemplateP
     }
   }
 
+  const excludedSignals = normalizeStringList(template.matchSignals?.exclude, [])
+    .filter((signal) => harnessSelectionTextIncludes(contextText, signal));
+  if (excludedSignals.length > 0) return { score: 0, reasons: excludedSignals.slice(0, 3).map((signal) => `excludedSignal=${signal}`) };
+
+  const declaredSignals = normalizeStringList(template.matchSignals?.include, []);
+  const matchedDeclaredSignals = declaredSignals.filter((signal) => harnessSelectionTextIncludes(contextText, signal));
+  if (effectiveHarnessTemplateLayer(template) === "domain" && matchedDeclaredSignals.length > 0) {
+    score += 100;
+    reasons.push("domainSource=harness-matchSignals");
+  }
+  for (const signal of matchedDeclaredSignals) {
+    score += effectiveHarnessTemplateLayer(template) === "domain" ? 22 : 14;
+    reasons.push(`matchSignal=${signal}`);
+  }
+
   const intrinsicSignals = harnessTemplateIntrinsicSignals(template).slice(0, 40);
   for (const signal of intrinsicSignals) {
     if (harnessSelectionTextIncludes(contextText, signal)) {
@@ -2693,6 +2714,7 @@ export function harnessTemplateIntrinsicSignals(template: HarnessTemplateProfile
     ...harnessTemplateProfileSignals(runtimePatterns.compatibilityProfiles),
     ...harnessTemplateProfileSignals(runtimePatterns.architectureProfiles),
     ...normalizeStringList(runtimePatterns.runtimeProfiles, []),
+    ...normalizeStringList(template.matchSignals?.include, []),
     ...template.capabilities.flatMap((capability) => [capability.id, capability.name])
   ];
   return uniqueStrings(values.map((value) => String(value).toLowerCase()).flatMap((value) => value.split(/[,/|]+/)).map((value) => value.trim()).filter((value) => value.length >= 3));
@@ -2895,6 +2917,23 @@ export function validateCompiledProjectHarnessProfile(project: StoredProject, te
     `templateVersion=${template.version}`,
     `templateDigest=${template.digest}`
   ]);
+  if (template.catalogRef) {
+    const compiledCatalogRef = compiled.templateRef.catalogRef;
+    add("template-catalog-binding", compiledCatalogRef
+      && compiledCatalogRef.catalogId === template.catalogRef.catalogId
+      && compiledCatalogRef.catalogDigest === template.catalogRef.catalogDigest
+      && compiledCatalogRef.entryPath === template.catalogRef.entryPath
+      && compiledCatalogRef.entryDigest === template.catalogRef.entryDigest
+      ? "PASS"
+      : "FAIL", true, [
+      `catalogId=${template.catalogRef.catalogId}`,
+      `catalogDigest=${template.catalogRef.catalogDigest}`,
+      `catalogEntry=${template.catalogRef.entryPath}`,
+      `compiledCatalogId=${compiledCatalogRef?.catalogId ?? "missing"}`,
+      `compiledCatalogDigest=${compiledCatalogRef?.catalogDigest ?? "missing"}`,
+      `compiledCatalogEntry=${compiledCatalogRef?.entryPath ?? "missing"}`
+    ]);
+  }
   const policyBindingFailures = detectTenantHarnessPolicyBindingFailures(tenantPolicies, compiled);
   add("tenant-harness-policy-binding", policyBindingFailures.length === 0 ? "PASS" : "FAIL", tenantPolicies.length > 0, policyBindingFailures.length === 0 ? [
     tenantPolicies.length > 0
@@ -3113,6 +3152,12 @@ export function projectHarnessPlanBinding(version: ProjectHarnessProfileVersion 
       `compiledDigest=${version.compiledDigest}`,
       `template=${version.templateRef.templateId}@${version.templateRef.version}`,
       `templateDigest=${version.templateRef.digest}`,
+      ...(version.templateRef.catalogRef ? [
+        `catalogId=${version.templateRef.catalogRef.catalogId}`,
+        `catalogDigest=${version.templateRef.catalogRef.catalogDigest}`,
+        `catalogEntry=${version.templateRef.catalogRef.entryPath}`,
+        `catalogEntryDigest=${version.templateRef.catalogRef.entryDigest}`
+      ] : []),
       ...version.policyRefs.map((policy) => `tenantPolicy=${policy.policyId}@v${policy.version}`),
       ...version.policyRefs.map((policy) => `tenantPolicyDigest=${policy.digest}`)
     ],
@@ -3122,17 +3167,12 @@ export function projectHarnessPlanBinding(version: ProjectHarnessProfileVersion 
 
 export function hydrateGoalPlanProjectHarnessBinding(value: unknown): GoalPlanProjectHarnessBinding | undefined {
   if (!isRecord(value)) return undefined;
-  const templateRef = isRecord(value.templateRef) ? value.templateRef : {};
   return {
     schema: "evopilot-goal-plan-project-harness-binding/v1",
     profileId: safeFileName(String(value.profileId ?? "default")),
     version: clampPositiveInteger(value.version, 1),
     status: "ACTIVE",
-    templateRef: {
-      templateId: safeFileName(String(templateRef.templateId ?? templateRef.id ?? "python-enterprise-harness")),
-      version: String(templateRef.version ?? "1.0.0"),
-      digest: String(templateRef.digest ?? "")
-    },
+    templateRef: hydrateHarnessTemplateRef(value.templateRef),
     policyRefs: hydrateTenantHarnessPolicyRefs(value.policyRefs),
     sourceDigest: String(value.sourceDigest ?? ""),
     compiledDigest: String(value.compiledDigest ?? ""),
