@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "3.0.0"
+    "version": "3.1.0"
   },
   "paths": {
     "/api/v1/audit": {
@@ -1446,7 +1446,7 @@
     "/api/v1/harness/catalogs": {
       "get": {
         "summary": "列出已配置的 Published Harness Catalog",
-        "description": "动态读取 EVOPILOT_HARNESS_CATALOG_DIR 或 EVOPILOT_HARNESS_CATALOG_DIRS 指向的服务端目录。EvoPilot 不导入、不挂载、不发布 Harness，只读取每个目录中的 CATALOG.md 和已发布 Harness definition，用于计划阶段自动匹配 selectedHarness。需要 viewer 或更高角色。",
+        "description": "动态读取 EVOPILOT_HARNESS_REGISTRY_CONFIG 指向的 harness-registry.yaml，并解析其中 enabled 的 Catalog roots；如果未配置 Registry，则回退读取 EVOPILOT_HARNESS_CATALOG_DIR 或 EVOPILOT_HARNESS_CATALOG_DIRS 指向的服务端目录。EvoPilot 不导入、不挂载、不发布 Harness，只读取 Registry、每个目录中的 CATALOG.md 和已发布 Harness definition，用于计划阶段自动匹配 selectedHarness。需要 viewer 或更高角色。",
         "security": [
           {
             "bearerAuth": []

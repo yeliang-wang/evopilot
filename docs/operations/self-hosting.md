@@ -11,19 +11,19 @@ Use this guide when you want an external operator, administrator, or AI Agent to
 For the shortest generated stack, use the installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.0.0/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 # Review .env and replace unresolved LLM values before production use.
 docker compose up -d
 ./verify.sh
 ```
 
-The tagged installer resolves `create-evopilot` from the release manifest. In v3.0.0, the default package spec is the GitHub Release tarball because public npm registry packages are not published yet.
+The tagged installer resolves `create-evopilot` from the release manifest. In v3.1.0, the default package spec is the GitHub Release tarball because public npm registry packages are not published yet.
 
 After public npm registry publication and `npm run verify:npm-registry` pass for the exact version, operators may use npm-only bootstrap:
 
 ```bash
-npx create-evopilot@3.0.0 self-host --dir evopilot-stack --init-env
+npx create-evopilot@3.1.0 self-host --dir evopilot-stack --init-env
 ```
 
 Use the manual path below when you need to work from source checkouts.
@@ -63,6 +63,7 @@ EVOPILOT_LLM_BASE_URL=https://llm.example.com/v1
 EVOPILOT_LLM_MODEL_NAME=<model>
 EVOPILOT_LLM_API_KEY=<server-side-secret>
 EVOPILOT_REQUIRE_LLM=true
+EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 ```
 
 Start the control plane:

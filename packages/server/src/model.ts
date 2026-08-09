@@ -18,7 +18,6 @@ import type { LlmTaskClient } from "@evopilot/llm";
 import type {
   HarnessCapabilityDefinition,
   HarnessTemplateChangelogEntry,
-  HarnessTemplateEvolutionRun,
   HarnessTemplateProfile,
   HarnessTemplateProjectProfileBinding,
   HarnessTemplateRef,
@@ -42,6 +41,7 @@ export interface EvoPilotServerOptions {
   autoRegisterProfileProject?: boolean;
   maxBodyBytes?: number;
   proofOpsCoreContractPath?: string;
+  harnessRegistryConfig?: string;
   harnessCatalogDirs?: string[];
 }
 
@@ -1380,6 +1380,7 @@ export interface HarnessTemplateSelection {
     templateId: string;
     version: string;
     score: number;
+    catalogPriority?: number;
     reasons: string[];
   }>;
 }
@@ -1474,6 +1475,10 @@ export interface GoalPlanSelectedHarnessBinding {
   catalogDigest?: string;
   entryPath?: string;
   entryDigest?: string;
+  registryPath?: string;
+  registryDigest?: string;
+  registryCatalogPriority?: number;
+  registryCatalogRelease?: string;
   evidence: string[];
   boundAt: string;
 }

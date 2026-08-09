@@ -32,16 +32,16 @@ Harness lifecycle is outside EvoPilot.
 An administrator publishes Harness definitions with `evopilot-harness`, then configures the EvoPilot server:
 
 ```bash
-EVOPILOT_HARNESS_CATALOG_DIR=/path/to/evopilot-harness/published
+EVOPILOT_HARNESS_REGISTRY_CONFIG=/path/to/evopilot-harness/harness-registry.yaml
 ```
 
-For multiple Catalog directories:
+The Registry can contain multiple Catalog roots. Legacy direct Catalog configuration remains available only when no Registry is configured:
 
 ```bash
 EVOPILOT_HARNESS_CATALOG_DIRS=/path/to/catalog-a:/path/to/catalog-b
 ```
 
-The published directory must contain `CATALOG.md` with an `evopilot-harness-catalog` fenced YAML block. EvoPilot reads that file at use time. The EvoPilot CLI does not import, mount, scan, approve, publish, or evolve Harness definitions.
+Each enabled Catalog root must contain `CATALOG.md` with an `evopilot-harness-catalog` fenced YAML block. EvoPilot reads the Registry and Catalog files at use time. The EvoPilot CLI does not import, mount, scan, approve, publish, or evolve Harness definitions.
 
 Operators can view available Catalogs only through API/Dashboard read-only projections. If no Catalog is configured, goal planning can still create a maturity plan but `plan.selectedHarness` is missing and the operator should stop.
 

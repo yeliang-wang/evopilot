@@ -35,7 +35,6 @@ import {
   harnessTemplateRef,
   hydrateHarnessCapabilities,
   hydrateHarnessPhaseMapping,
-  hydrateHarnessTemplate,
   hydrateHarnessTemplateChangelog,
   hydrateHarnessTemplateRef,
   type HarnessCapabilityDefinition,
@@ -1433,56 +1432,6 @@ export function targetEvidence(target: Pick<LoopOrchestrationTarget, "id" | "lay
   ];
 }
 
-export function parseHarnessTemplateApplyPayload(input: unknown, actor: string): HarnessTemplateProfile {
-  const body = isRecord(input) ? input : {};
-  const source = isRecord(body.templateContent)
-    ? body.templateContent
-    : isRecord(body.template)
-      ? body.template
-      : isRecord(body.sourceContent)
-        ? body.sourceContent
-        : body;
-  const record = isRecord(source) ? source : {};
-  const id = optionalTrimmedString(record.id);
-  const version = optionalTrimmedString(record.version);
-  if (!id || !version) {
-    throw httpError(400, "HARNESS_TEMPLATE_ID_AND_VERSION_REQUIRED", "HarnessTemplate apply requires id and version.");
-  }
-
-  const now = new Date().toISOString();
-  const suppliedChangelog = hydrateHarnessTemplateChangelog(record.changelog, version, String(record.updatedAt ?? now));
-  const cliChanges = normalizeStringList(body.changelog ?? body.changes ?? body.change, []);
-  const changelog = cliChanges.length > 0
-    ? [
-      ...suppliedChangelog,
-      {
-        version,
-        changedAt: now,
-        changedBy: actor,
-        summary: cliChanges[0],
-        changes: cliChanges
-      }
-    ]
-    : suppliedChangelog;
-
-  const hasCurrentVersionChangelog = changelog.some((entry) =>
-    entry.version === version &&
-    (entry.summary.trim().length > 0 || entry.changes.length > 0)
-  );
-  if (!hasCurrentVersionChangelog) {
-    throw httpError(400, "HARNESS_TEMPLATE_CHANGELOG_REQUIRED", "HarnessTemplate apply requires a changelog entry for the template version.");
-  }
-
-  return hydrateHarnessTemplate({
-    ...record,
-    id,
-    version,
-    changelog,
-    createdAt: record.createdAt ?? now,
-    updatedAt: now
-  });
-}
-
 export function recordObject(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
@@ -2409,10 +2358,12 @@ export function selectHarnessTemplateForProjectContext(store: FileStore, project
     return {
       template,
       score: scored.score,
+      catalogPriority: template.catalogRef?.registryCatalogPriority ?? 0,
       reasons: scored.reasons
     };
   }).sort((left, right) => {
     if (right.score !== left.score) return right.score - left.score;
+    if (right.catalogPriority !== left.catalogPriority) return right.catalogPriority - left.catalogPriority;
     if (left.template.id === right.template.id) return compareHarnessTemplateVersions(right.template.version, left.template.version);
     if (left.template.id === "generic-management-software-harness") return -1;
     if (right.template.id === "generic-management-software-harness") return 1;
@@ -2428,6 +2379,7 @@ export function selectHarnessTemplateForProjectContext(store: FileStore, project
       templateId: candidate.template.id,
       version: candidate.template.version,
       score: candidate.score,
+      catalogPriority: candidate.catalogPriority,
       reasons: candidate.reasons
     }))
   };
@@ -3152,6 +3104,10 @@ export function selectedHarnessPlanBinding(selection: HarnessTemplateSelection |
     catalogDigest: catalogRef?.catalogDigest,
     entryPath: catalogRef?.entryPath,
     entryDigest: catalogRef?.entryDigest,
+    registryPath: catalogRef?.registryPath,
+    registryDigest: catalogRef?.registryDigest,
+    registryCatalogPriority: catalogRef?.registryCatalogPriority,
+    registryCatalogRelease: catalogRef?.registryCatalogRelease,
     evidence: [
       `harness=${template.id}@${template.version}`,
       `harnessDigest=${template.digest}`,
@@ -3160,7 +3116,11 @@ export function selectedHarnessPlanBinding(selection: HarnessTemplateSelection |
         `catalogId=${catalogRef.catalogId}`,
         `catalogDigest=${catalogRef.catalogDigest}`,
         `catalogEntry=${catalogRef.entryPath}`,
-        `catalogEntryDigest=${catalogRef.entryDigest}`
+        `catalogEntryDigest=${catalogRef.entryDigest}`,
+        ...(catalogRef.registryPath ? [`registryPath=${catalogRef.registryPath}`] : []),
+        ...(catalogRef.registryDigest ? [`registryDigest=${catalogRef.registryDigest}`] : []),
+        ...(catalogRef.registryCatalogPriority !== undefined ? [`registryCatalogPriority=${catalogRef.registryCatalogPriority}`] : []),
+        ...(catalogRef.registryCatalogRelease ? [`registryCatalogRelease=${catalogRef.registryCatalogRelease}`] : [])
       ] : []),
     ],
     boundAt: now
@@ -3187,6 +3147,10 @@ export function hydrateGoalPlanSelectedHarnessBinding(value: unknown): GoalPlanS
     catalogDigest: optionalTrimmedString(value.catalogDigest) ?? catalogRef?.catalogDigest,
     entryPath: optionalTrimmedString(value.entryPath) ?? catalogRef?.entryPath,
     entryDigest: optionalTrimmedString(value.entryDigest) ?? catalogRef?.entryDigest,
+    registryPath: optionalTrimmedString(value.registryPath) ?? catalogRef?.registryPath,
+    registryDigest: optionalTrimmedString(value.registryDigest) ?? catalogRef?.registryDigest,
+    registryCatalogPriority: typeof value.registryCatalogPriority === "number" ? value.registryCatalogPriority : catalogRef?.registryCatalogPriority,
+    registryCatalogRelease: optionalTrimmedString(value.registryCatalogRelease) ?? catalogRef?.registryCatalogRelease,
     evidence: normalizeStringList(value.evidence, []),
     boundAt: String(value.boundAt ?? new Date().toISOString())
   };
@@ -4550,6 +4514,10 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
         catalogDigest: selectedHarness.catalogDigest,
         entryPath: selectedHarness.entryPath,
         entryDigest: selectedHarness.entryDigest,
+        registryPath: selectedHarness.registryPath,
+        registryDigest: selectedHarness.registryDigest,
+        registryCatalogPriority: selectedHarness.registryCatalogPriority,
+        registryCatalogRelease: selectedHarness.registryCatalogRelease,
         selectionReasons: selectedHarness.selectionReasons,
         nextAction: "review-phase-plan"
       }
@@ -4567,9 +4535,9 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
         releaseTargetId: goal.releaseTargetId
       },
       diagnosis: {
-        summary: "Goal planning could not select a published Harness from the configured Catalog directory.",
-        likelyCause: "EVOPILOT_HARNESS_CATALOG_DIR does not point at a published evopilot-harness Catalog, or the Catalog has no published entries.",
-        recommendedAction: "Publish a Harness with evopilot-harness, place the published directory under the configured template catalog directory, then regenerate the plan.",
+        summary: "Goal planning could not select a published Harness from the configured Registry or Catalog directory.",
+        likelyCause: "EVOPILOT_HARNESS_REGISTRY_CONFIG is invalid or points at no enabled Catalog, or the legacy EVOPILOT_HARNESS_CATALOG_DIR(S) path has no published entries.",
+        recommendedAction: "Publish a usable Harness with evopilot-harness, publish or repair harness-registry.yaml, then regenerate the plan.",
         retriable: false,
         humanActionRequired: true
       },

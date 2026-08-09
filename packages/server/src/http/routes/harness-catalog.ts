@@ -19,16 +19,18 @@ export async function handleHarnessCatalogRoutes(context: HarnessCatalogRoutesCo
 
   if (request.method === "GET" && url.pathname === "/api/v1/harness/catalogs") {
     if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+    const registry = store.readConfiguredHarnessRegistry();
     const scans = store.listHarnessCatalogScans();
     return writeJson(response, 200, envelope({
       schema: "evopilot-harness-catalog-list/v1",
       tenantId: auth.tenantId,
       workspaceId: auth.workspaceId,
+      registry,
       catalogs: scans.map((scan: any) => scan.catalog).filter(Boolean),
       mounts: scans.map((scan: any) => scan.mount),
       scans,
       templates: scans.flatMap((scan: any) => scan.templates ?? []),
-      nextAction: scans.length === 0 ? "mount-published-harness-catalog" : "use-catalog-harness-for-project-auto-match"
+      nextAction: registry?.status === "FAILED" ? "repair-harness-registry-config" : scans.length === 0 ? "mount-published-harness-catalog" : "use-catalog-harness-for-project-auto-match"
     }));
   }
 

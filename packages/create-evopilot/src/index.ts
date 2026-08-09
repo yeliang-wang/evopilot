@@ -6,8 +6,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const EVOPILOT_VERSION = "3.0.0";
-const DASHBOARD_VERSION = "3.0.0";
+const EVOPILOT_VERSION = "3.1.0";
+const DASHBOARD_VERSION = "3.1.0";
 
 type ParsedArgs = {
   command: string | null;

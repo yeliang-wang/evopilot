@@ -39,10 +39,10 @@ npm run cli -- status \
   --json
 ```
 
-For a new project, configure published Harness Catalog directories when the server starts. The directories are produced by `evopilot-harness`; EvoPilot only reads their `CATALOG.md` indexes dynamically.
+For a new project, configure the published Harness Registry when the server starts. The Registry and Catalog directories are produced by `evopilot-harness`; EvoPilot only reads `harness-registry.yaml` and `CATALOG.md` indexes dynamically.
 
 ```bash
-EVOPILOT_HARNESS_CATALOG_DIR=/opt/evopilot-harness/published \
+EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml \
 npm run server
 ```
 

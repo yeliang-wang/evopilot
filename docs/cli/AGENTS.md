@@ -21,10 +21,11 @@ Read this file first. Then read [quickstart.md](quickstart.md). Use [automation.
 EvoPilot v3 is a Harness Catalog consumer only.
 
 - `evopilot-harness` owns Harness lifecycle, evolution, review, versioning, and publication.
-- EvoPilot reads one or more server-configured published Catalog directories through `EVOPILOT_HARNESS_CATALOG_DIR` or `EVOPILOT_HARNESS_CATALOG_DIRS`.
+- EvoPilot reads a server-configured Harness Registry through `EVOPILOT_HARNESS_REGISTRY_CONFIG`, then resolves enabled published Catalog directories.
+- `EVOPILOT_HARNESS_CATALOG_DIR` and `EVOPILOT_HARNESS_CATALOG_DIRS` remain legacy fallbacks only when no Registry is configured.
 - EvoPilot exposes only read-only Catalog projection through API/Dashboard. The EvoPilot CLI does not expose `evopilot harness ...`.
-- During `target plan` or `goal plan`, EvoPilot dynamically reads `CATALOG.md`, auto-matches a `PUBLISHED` Harness, and records `plan.selectedHarness`.
-- If `plan.selectedHarness` is missing, stop and ask an administrator to publish a Harness with `evopilot-harness` or configure the server Catalog directory.
+- During `target plan` or `goal plan`, EvoPilot dynamically reads the Registry and each enabled `CATALOG.md`, auto-matches a `PUBLISHED` Harness, and records `plan.selectedHarness`.
+- If `plan.selectedHarness` is missing, stop and ask an administrator to publish a Harness with `evopilot-harness` or repair the Registry/Catalog configuration.
 
 ## Required Environment
 
@@ -66,6 +67,9 @@ selectedHarness.catalogId
 selectedHarness.catalogDigest
 selectedHarness.entryPath
 selectedHarness.entryDigest
+selectedHarness.registryPath
+selectedHarness.registryDigest
+selectedHarness.registryCatalogPriority
 selectedHarness.selectionReasons
 ```
 
@@ -119,6 +123,8 @@ selectedHarness=<harness-id>@<version>
 selectedHarnessCatalog=<catalog-id>
 selectedHarnessCatalogDigest=<digest-or-missing>
 selectedHarnessEntryDigest=<digest-or-missing>
+selectedHarnessRegistry=<path-or-missing>
+selectedHarnessRegistryDigest=<digest-or-missing>
 goalId=<goal-id>
 activeTargetId=<target-id>
 loopId=<loop-id>

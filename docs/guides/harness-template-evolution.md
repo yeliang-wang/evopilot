@@ -9,8 +9,8 @@ Use `evopilot-harness` for:
 - new Harness creation when no match exists
 - draft pack generation
 - review, approval, validation, version bump, and publication
-- `CATALOG.md` maintenance
+- `CATALOG.md` and `harness-registry.yaml` maintenance
 
-EvoPilot consumes the result only after publication. It reads the configured Catalog directory dynamically and records the selected Harness as `plan.selectedHarness` during goal planning.
+EvoPilot consumes the result only after publication. It reads the configured Harness Registry, follows enabled Catalog roots, reads each `CATALOG.md` dynamically, and records the selected Harness as `plan.selectedHarness` during goal planning.
 
 See [Published Harness Catalog](../architecture/published-harness-catalog.md) and [AI Agent Runbook](ai-agent-runbook.md).

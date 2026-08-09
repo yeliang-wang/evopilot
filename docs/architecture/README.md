@@ -54,6 +54,6 @@ Deep architecture notes remain in:
 - [Continuous Evolution Control Plane](continuous-evolution-control-plane.md)
 - [Package Boundaries](package-boundaries.md)
 - [Published Harness Catalog](published-harness-catalog.md)
-- [Harness Template Domain](harness-template-domain.md)
+- [Harness Template Boundary](harness-template-domain.md)
 - [Loop Runtime](loop-runtime.md)
 - [ProofOps Target Loop Mode](proofops-target-loop-mode.md)

@@ -5,21 +5,21 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/GA%20Release-v3.0.0-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v3.1.0-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
 
 EvoPilot helps teams operate AI-agent products as releasable software. It collects evidence from runtime events, traces, evaluations, CI/CD, source changes, LLM calls, and user feedback; turns that evidence into reviewable evolution opportunities; then governs goal planning, loop execution, source closure, delivery, and product-native `GO` / `NO-GO` release decisions.
 
-It is not an agent runtime, prompt playground, generic code generator, or Harness lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot only reads a configured published Harness Catalog and records the selected Harness evidence in goal plans.
+It is not an agent runtime, prompt playground, generic code generator, or Harness lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot reads a configured Harness Registry and the published Catalog directories it points to, then records selected Harness evidence in goal plans.
 
 ## Start Here
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-contracts-3.0.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-client-3.0.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-cli-3.0.0.tgz` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.0.0/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-contracts-3.1.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-client-3.1.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer, hosted Cloud trial, and public npm registry packages are not published EvoPilot surfaces yet. The supported public entry points are GitHub Release CLI tarballs, self-host installer, Helm, and GHCR images.
@@ -30,7 +30,7 @@ Desktop installer, hosted Cloud trial, and public npm registry packages are not 
 | --- | --- |
 | Govern product evolution | Alpha -> Beta -> RC -> GA goal planning, human review, phase packages, blockers, and final reports. |
 | Run auditable loops | Durable loop state, executor graphs, checkpoints, replay, worker leases, watchdog recovery, and timeline audit. |
-| Consume published Harnesses | Dynamically reads configured `evopilot-harness` Catalog directories, auto-matches a `PUBLISHED` Harness, and stores `selectedHarness` id/version/catalog/entry digests in goal plans. |
+| Consume published Harnesses | Dynamically reads configured `evopilot-harness` Registry/Catalog roots, auto-matches a `PUBLISHED` Harness, and stores `selectedHarness` id/version/registry/catalog/entry digests in goal plans. |
 | Control source and delivery | Bounded code-upgrader execution, allowed paths, validation commands, source closure, CI/CD delivery, and deploy evidence. |
 | Track LLM usage by project | Server-projected provider/model/profile rows, token totals, latest loop tokens, and request IDs for connected projects and workspaces. |
 | Operate with API, CLI, and Dashboard | API server, agent-safe CLI JSON flows, and the standalone `yeliang-wang/evopilot-dashboard` browser console. |
@@ -43,7 +43,7 @@ For local development:
 ```bash
 npm install
 npm run build
-EVOPILOT_HARNESS_CATALOG_DIR=/path/to/evopilot-harness/published npm run server:debug
+EVOPILOT_HARNESS_REGISTRY_CONFIG=/path/to/evopilot-harness/harness-registry.yaml npm run server:debug
 curl http://127.0.0.1:19876/health
 curl http://127.0.0.1:19876/ready
 ```
@@ -60,12 +60,14 @@ To supply Harness definitions, publish them in `evopilot-harness` and point EvoP
 ```bash
 cd ../evopilot-harness
 evopilot-harness evolve --source-project /path/to/source-project --goal "Create or evolve the domain harness." --approve-and-publish --confirmed-by platform-admin --confirmation "Reviewed source coverage and generated pack." --json
+evopilot-harness registry publish --catalog published --registry harness-registry.yaml --json
+evopilot-harness registry validate --registry harness-registry.yaml --json
 
 cd ../evopilot
-EVOPILOT_HARNESS_CATALOG_DIR=../evopilot-harness/published npm run server:debug
+EVOPILOT_HARNESS_REGISTRY_CONFIG=../evopilot-harness/harness-registry.yaml npm run server:debug
 ```
 
-EvoPilot reads `CATALOG.md` at use time. It does not import, mount, approve, publish, or evolve Harness definitions.
+EvoPilot reads `harness-registry.yaml`, then each enabled Catalog's `CATALOG.md`, at use time. It does not import, mount, approve, publish, or evolve Harness definitions.
 
 ## CLI For AI Agents
 
@@ -104,21 +106,21 @@ export EVOPILOT_IMAGE='ghcr.io/yeliang-wang/evopilot@sha256:<digest>'
 docker compose -p evopilot --env-file .env.production -f deploy/ecs/compose.immutable.yaml up -d --no-build
 ```
 
-For production Harness consumption, mount the published catalog directory into the container and set:
+For production Harness consumption, mount the Registry file and published Catalog directory into the container and set:
 
 ```bash
-EVOPILOT_HARNESS_CATALOG_DIR=/opt/evopilot/.evopilot/external-harness-catalogs/evopilot-public-harness-catalog
+EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 ```
 
 ## Release Status
 
-The latest published GitHub release is **v3.0.0 GA**, the Harness boundary release.
+The latest published GitHub release is **v3.1.0 GA**, the multi-Catalog Harness Registry consumer release.
 
-v3.0.0 removes EvoPilot-owned Harness lifecycle CLI/API surfaces. `evopilot-harness` owns lifecycle and publication. EvoPilot consumes published Catalog directories dynamically, auto-matches a Harness during planning, and records `selectedHarness` evidence without importing every Harness definition.
+v3.1.0 keeps EvoPilot's strict read-only Harness boundary and adds `EVOPILOT_HARNESS_REGISTRY_CONFIG`. `evopilot-harness` owns lifecycle and publication. EvoPilot consumes the Registry and published Catalog directories dynamically, auto-matches a Harness during planning, and records `selectedHarness` evidence without importing every Harness definition.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/3.0.0.md](docs/releases/3.0.0.md)
+- Latest release notes: [docs/releases/3.1.0.md](docs/releases/3.1.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
@@ -139,10 +141,13 @@ evopilot-harness
   lifecycle/evolution/review/publish
               |
               v
+Harness Registry with enabled Catalog roots
+              |
+              v
 Published Harness Catalog directory with CATALOG.md
               |
               v
-EvoPilot runtime reads catalog at use time
+EvoPilot runtime reads registry and catalog at use time
               |
               v
 selectedHarness -> GlobalGoal -> GoalTarget -> LoopRun -> Release Decision

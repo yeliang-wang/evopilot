@@ -285,7 +285,9 @@ export function harnessTemplateCatalogEvidence(template: HarnessTemplateProfile)
     `catalogId=${catalogRef.catalogId}`,
     `catalogDigest=${catalogRef.catalogDigest}`,
     `catalogEntry=${catalogRef.entryPath}`,
-    `catalogEntryDigest=${catalogRef.entryDigest}`
+    `catalogEntryDigest=${catalogRef.entryDigest}`,
+    ...(catalogRef.registryPath ? [`registryPath=${catalogRef.registryPath}`] : []),
+    ...(catalogRef.registryDigest ? [`registryDigest=${catalogRef.registryDigest}`] : [])
   ] : [];
 }
 
@@ -301,6 +303,11 @@ export function hydrateHarnessCatalogRef(value: unknown): HarnessCatalogRef | un
     catalogSource: optionalTrimmedString(value.catalogSource ?? value.source) ?? "",
     catalogDigest,
     entryPath,
-    entryDigest
+    entryDigest,
+    registryPath: optionalTrimmedString(value.registryPath),
+    registryDigest: optionalTrimmedString(value.registryDigest),
+    registryCatalogId: optionalTrimmedString(value.registryCatalogId),
+    registryCatalogPriority: typeof value.registryCatalogPriority === "number" ? value.registryCatalogPriority : Number.isFinite(Number(value.registryCatalogPriority)) ? Number(value.registryCatalogPriority) : undefined,
+    registryCatalogRelease: optionalTrimmedString(value.registryCatalogRelease)
   };
 }

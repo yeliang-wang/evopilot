@@ -6,16 +6,15 @@ EvoPilot is the system of record for projects, credentials, LLM profiles, goals,
 
 ## Harness Catalog Precondition
 
-Before using EvoPilot for domain-aware planning, an administrator publishes a usable Harness with `evopilot-harness` and makes the published Catalog directory visible to the EvoPilot server:
+Before using EvoPilot for domain-aware planning, an administrator publishes a usable Harness with `evopilot-harness` and makes the Harness Registry visible to the EvoPilot server:
 
 ```bash
-EVOPILOT_HARNESS_CATALOG_DIR=/opt/evopilot/.evopilot/external-harness-catalogs/evopilot-public-harness-catalog
-EVOPILOT_HARNESS_CATALOG_DIRS=/opt/catalogs/database:/opt/catalogs/gateway
+EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 ```
 
-The directory must contain `CATALOG.md`. EvoPilot reads it dynamically during `target plan` or `goal plan` and records the selected published Harness as `plan.selectedHarness`. EvoPilot does not expose `evopilot harness ...` commands, Harness write APIs, Catalog mutation APIs, or Harness lifecycle activation.
+The Registry must point to enabled Catalog roots, and each root must contain `CATALOG.md`. EvoPilot reads them dynamically during `target plan` or `goal plan` and records the selected published Harness as `plan.selectedHarness`. EvoPilot does not expose `evopilot harness ...` commands, Harness write APIs, Catalog mutation APIs, or Harness lifecycle activation.
 
-If `plan.selectedHarness` is missing, stop and report that no suitable published Harness was available. The remediation is to publish or republish a Harness in `evopilot-harness`, configure the server Catalog directory, and generate a new plan.
+If `plan.selectedHarness` is missing, stop and report that no suitable published Harness was available. The remediation is to publish or republish a Harness in `evopilot-harness`, repair the Registry/Catalog configuration, and generate a new plan.
 
 ## Fast Path
 
@@ -139,7 +138,10 @@ Stop after planning. Show the project owner:
 - `plan.selectedHarness.catalogDigest`
 - `plan.selectedHarness.entryPath`
 - `plan.selectedHarness.entryDigest`
-- `plan.selectedHarness.matchReasons`
+- `plan.selectedHarness.registryPath`
+- `plan.selectedHarness.registryDigest`
+- `plan.selectedHarness.registryCatalogPriority`
+- `plan.selectedHarness.selectionReasons`
 - Alpha -> Beta -> RC -> GA phase plan and editable targets
 
 Approve only after explicit owner confirmation:
@@ -170,7 +172,7 @@ Report these fields for automation handoff:
 
 - `requestId` and correlation ids
 - project id, goal id, target ids, loop ids
-- `selectedHarness` id, version, domain, catalog id, catalog digest, entry path, and entry digest
+- `selectedHarness` id, version, domain, registry path, registry digest, Catalog id, Catalog digest, entry path, and entry digest
 - LLM provider, model, input/output/total tokens, credits, and `llmRequestId`
 - `TargetEvidencePackage` ids and status
 - `PhasePackage` decision status and blockers
@@ -193,7 +195,7 @@ Common blockers:
 
 | Blocker | Meaning | Action |
 |---|---|---|
-| `selectedHarness` missing | No suitable published Harness was available from configured Catalogs. | Publish/configure a Harness in `evopilot-harness`, then regenerate the plan. |
+| `selectedHarness` missing | No suitable published Harness was available from the configured Registry or Catalogs. | Publish/configure a Harness Registry and Catalog in `evopilot-harness`, then regenerate the plan. |
 | `LLM_PROFILE_NOT_READY` | The selected LLM profile cannot preflight. | Repair the server-side secret or provider config. |
 | `SOURCE_CREDENTIAL_TOKEN_REQUIRED` | The server cannot resolve the project source credential. | Store or repair the project tokenRef. |
 | `PENDING_PLAN_APPROVAL` | The phase plan has not been approved. | Show the plan and selected Harness evidence to the owner, then approve with confirmation. |

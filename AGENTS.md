@@ -8,7 +8,7 @@ If your task is to operate EvoPilot through the CLI, start with [docs/cli/AGENTS
 
 - Treat EvoPilot as the system of record for projects, goals, loops, evidence, release decisions, users, tenant/workspace scope, credentials, LLM profiles, and audit.
 - Treat `evopilot-harness` as the system of record for Harness authoring, lifecycle management, evolution, review, versioning, and publication.
-- EvoPilot only consumes published Harness Catalog directories configured with `EVOPILOT_HARNESS_CATALOG_DIR` or `EVOPILOT_HARNESS_CATALOG_DIRS`.
+- EvoPilot only consumes a published Harness Registry configured with `EVOPILOT_HARNESS_REGISTRY_CONFIG`; the Registry points at enabled published Catalog roots. `EVOPILOT_HARNESS_CATALOG_DIR` / `EVOPILOT_HARNESS_CATALOG_DIRS` remain legacy read-only fallbacks.
 - Do not run or document `evopilot harness ...` lifecycle commands. Harness lifecycle CLI belongs in `evopilot-harness`.
 - Use `evopilot ... --json` whenever JSON is available. Do not parse human-readable CLI output for automation.
 - Do not pass raw GitHub, GitLab, LLM, API, deploy, or password secrets in daily `target run`, `goal run`, or `loop run` commands.
@@ -21,9 +21,9 @@ If your task is to operate EvoPilot through the CLI, start with [docs/cli/AGENTS
 ## Coding Rules
 
 - Keep EvoPilot CLI behavior server-governed. The CLI is an HTTP adapter and must not bypass RBAC, tenant/workspace scope, approval gates, source-closure gates, DevOps preflight, release policy, or audit.
-- Keep the Harness boundary strict: EvoPilot may dynamically read a published Catalog and select a `PUBLISHED` Harness for planning, but must not expose Harness template publishing, policy/profile activation, evolution, approval, impact, mount, or scan mutation APIs.
+- Keep the Harness boundary strict: EvoPilot may dynamically read a published Registry/Catalog and select a `PUBLISHED` Harness for planning, but must not expose Harness template publishing, policy/profile activation, evolution, approval, impact, import, mount, or scan mutation APIs.
 - Before changing behavior, inspect the current implementation and tests instead of relying on old documentation.
-- Keep README and docs synchronized with CLI behavior, especially published Catalog consumption, `selectedHarness` plan evidence, phase-plan approval, Alpha/Beta/RC/GA standards, LLM profile selection, token usage visibility, logging controls, and GitHub/GitLab DevOps prerequisites.
+- Keep README and docs synchronized with CLI behavior, especially published Registry/Catalog consumption, `selectedHarness` plan evidence, phase-plan approval, Alpha/Beta/RC/GA standards, LLM profile selection, token usage visibility, logging controls, and GitHub/GitLab DevOps prerequisites.
 - Run targeted validation after edits. For CLI and docs-affecting changes, prefer:
 
 ```bash

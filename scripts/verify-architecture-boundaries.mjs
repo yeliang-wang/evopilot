@@ -80,7 +80,12 @@ mustContain("packages/server/src/http/routes/audit-history.ts", "handleAuditHist
 mustContain("packages/server/src/storage/json-files.ts", "atomicWriteJson", "file storage primitives must live outside the runtime boundary");
 mustContain("packages/server/src/storage/file-store/index.ts", "class FileStore", "file-backed store must live in the storage boundary");
 mustContain("packages/server/src/application/control-plane-services.ts", "buildGoalSnapshot", "control-plane use-case helpers must live in the application boundary");
-mustContain("packages/server/src/domains/harness-template/defaults.ts", "defaultHarnessTemplates", "legacy harness defaults must remain isolated from HTTP routes");
+mustContain("packages/server/src/domains/harness-template/catalog.ts", "readHarnessRegistryConfig", "published Harness Registry consumption must live in the Harness catalog boundary");
+mustContain("packages/server/src/domains/harness-template/catalog.ts", "readPublishedHarnessCatalog", "published Harness Catalog consumption must live in the Harness catalog boundary");
+mustContain("packages/server/src/domains/harness-template/template.ts", "hydrateHarnessTemplate", "published Harness template hydration must live in the Harness template boundary");
+mustNotExist("packages/server/src/domains/harness-template/defaults.ts", "EvoPilot must not ship built-in Harness template defaults after the evopilot-harness split");
+mustNotExist("packages/server/src/domains/harness-template/evolution.ts", "EvoPilot must not own Harness evolution after the evopilot-harness split");
+mustNotExist("packages/server/src/domains/harness-template/matching.ts", "EvoPilot must not own source-to-Harness evolution matching after the evopilot-harness split");
 mustContain("packages/cli/src/commands/runtime.ts", "@evopilot/contracts", "CLI command runtime must consume shared contracts");
 mustContain("packages/cli/src/runtime/boundary.ts", "cliInterfaceBoundaryMetadata", "CLI must expose interface-boundary metadata");
 mustContain("packages/cli/src/index.ts", "./commands/runtime.js", "CLI process entrypoint must delegate command execution to command modules");
@@ -178,6 +183,11 @@ function mustNotContain(relativePath, needle, message) {
   }
   const content = fs.readFileSync(absolute, "utf8");
   if (content.includes(needle)) failures.push(`${message}: ${relativePath} contains ${needle}`);
+}
+
+function mustNotExist(relativePath, message) {
+  const absolute = path.join(root, relativePath);
+  if (fs.existsSync(absolute)) failures.push(`${message}: ${relativePath} exists`);
 }
 
 function mustNotInlineRoutePrefix(relativePath, routePrefix, message) {

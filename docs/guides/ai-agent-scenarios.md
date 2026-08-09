@@ -10,7 +10,7 @@ This matrix is for third-party AI Agents that simulate real human operation thro
 | Existing project repeat target | Agent and human | `project onboard verify`, `target plan`, `target run` | Review changed objective, selected Harness, phase targets, and release gates | New goal id, selected Harness digest, loop id, final report |
 | Third-party public upstream with writable fork | Agent and human | `project onboard plan github`, `project onboard github`, `project devops preflight`, `target plan`, `target run` | Confirm `claimBoundary=fork-ci-pr` before execution | Do not claim upstream merge or production release |
 | Catalog readiness check | Operator | `status --json`, API `GET /api/v1/harness/catalogs` through Dashboard/API client | Stop if Catalog scan is invalid or empty | Catalog id, digest, entries, warnings, nextAction |
-| Harness source evolution | Administrator | Use `evopilot-harness evolve ...`, then publish a usable Harness | Review draft, source coverage, validation, diff, approval confirmation in `evopilot-harness` | Published Catalog directory and updated `CATALOG.md` |
+| Harness source evolution | Administrator | Use `evopilot-harness evolve ...`, then publish a usable Harness and Registry | Review draft, source coverage, validation, diff, approval confirmation in `evopilot-harness` | Updated `harness-registry.yaml`, published Catalog directory, and `CATALOG.md` |
 | Production release decision | Operator | `target run`, `goal run-status`, `goal evidence-matrix`, release decision APIs/CLI | Stop on NO-GO or missing evidence | Release decision status, evidence ids, request ids, LLM usage |
 
 ## First-Time Project Flow
@@ -74,7 +74,7 @@ evopilot target plan \
   --json
 ```
 
-The agent must show `plan.selectedHarness` and the phase plan to the user or project owner. If `selectedHarness` is absent, stop and ask an administrator to publish or configure a usable Harness Catalog through `evopilot-harness`.
+The agent must show `plan.selectedHarness` and the phase plan to the user or project owner. If `selectedHarness` is absent, stop and ask an administrator to publish or configure a usable Harness Registry and Catalog through `evopilot-harness`.
 
 After approval:
 

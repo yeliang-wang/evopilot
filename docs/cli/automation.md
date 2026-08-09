@@ -9,18 +9,18 @@ This guide is for WorkBuddy, Codex, Claude Code, other AI agents, and CI jobs th
 - Treat EvoPilot API responses as authoritative.
 - Stop on `nextAction`, blockers, `NO-GO`, `BLOCKED`, `FAILED`, human approval, timeout, or max-step boundaries.
 - Never pass raw GitHub, GitLab, LLM, deploy, API, or password secrets to daily `target run`, `goal run`, or `loop run` commands.
-- Harness lifecycle is not automated through EvoPilot. Use `evopilot-harness` before this flow to publish a usable Harness Catalog directory.
+- Harness lifecycle is not automated through EvoPilot. Use `evopilot-harness` before this flow to publish a usable Harness Registry and Catalog.
 - Only EvoPilot release decisions can justify release readiness claims.
 
 ## Harness Catalog Precondition
 
-EvoPilot must be started with at least one published Catalog directory when Harness selection is required:
+EvoPilot should be started with a Harness Registry when Harness selection is required:
 
 ```bash
-EVOPILOT_HARNESS_CATALOG_DIR=/path/to/evopilot-harness/published
+EVOPILOT_HARNESS_REGISTRY_CONFIG=/path/to/evopilot-harness/harness-registry.yaml
 ```
 
-The directory must contain `CATALOG.md`. EvoPilot reads it dynamically during planning and returns `plan.selectedHarness`.
+The Registry points at one or more Catalog roots. Each enabled root must contain `CATALOG.md`. EvoPilot reads the Registry and Catalog files dynamically during planning and returns `plan.selectedHarness`.
 
 If `plan.selectedHarness` is missing, stop and report:
 
@@ -93,6 +93,9 @@ selectedHarness.version
 selectedHarness.catalogId
 selectedHarness.catalogDigest
 selectedHarness.entryDigest
+selectedHarness.registryPath
+selectedHarness.registryDigest
+selectedHarness.registryCatalogPriority
 selectedHarness.selectionReasons
 TargetEvidencePackage.status
 PhasePackage.decision.status

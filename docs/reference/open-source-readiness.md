@@ -28,7 +28,7 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 | Self-hosting guide | Present | `docs/operations/self-hosting.md` |
 | Distribution guide | Present | `docs/operations/distribution.md` |
 | Release playbook | Present | `docs/operations/release-management.md` |
-| Release notes | Present | `docs/releases/3.0.0.md` |
+| Release notes | Present | `docs/releases/3.1.0.md` |
 | Immutable release artifacts | Present | `scripts/build-release-artifacts.mjs`, `scripts/verify-release-artifacts.mjs`, `deploy/ecs/compose.immutable.yaml` |
 | Installable distribution | Present | `install.sh`, `install.ps1`, `installers/manifest.json`, GitHub Release package tarball specs, `packages/cli/`, `packages/client/`, `packages/contracts/`, `packages/create-evopilot/`, `charts/evopilot/`, `npm run verify:distribution`, `npm run verify:npm-registry` after npm publication |
 | Open-source maturity report | Present | `docs/reference/open-source-maturity-report.md` |
@@ -37,8 +37,8 @@ EvoPilot is an evidence-driven control plane for AI-agent product evolution. It 
 
 | Capability | Evidence |
 | --- | --- |
-| Harness governance | `docs/reference/project-harness-profile-schema.md`, `harness-templates/public/` |
-| Template lifecycle | `docs/guides/harness-template-evolution.md` |
+| Harness governance | `docs/reference/project-harness-profile-schema.md`, `docs/architecture/published-harness-catalog.md` |
+| Harness lifecycle boundary | `docs/guides/harness-template-evolution.md`, external `evopilot-harness` lifecycle docs |
 | Code structure boundaries | `docs/architecture/package-boundaries.md`, `scripts/verify-architecture-boundaries.mjs` |
 | CLI automation | `docs/cli/AGENTS.md`, `docs/cli/quickstart.md`, `docs/cli/commands.md` |
 | Goal loops | `docs/cli/workflows.md`, `docs/guides/ai-agent-runbook.md` |

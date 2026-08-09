@@ -387,7 +387,12 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
   const llmClient = options.llmClient ?? createLlmClientFromEnv();
   const requireLlm = runtime.requireLlm;
   const tokens = normalizeTokens(options);
-  const store = new FileStore(options.dataRoot, { llmClient, requireLlm, harnessCatalogDirs: options.harnessCatalogDirs });
+  const store = new FileStore(options.dataRoot, {
+    llmClient,
+    requireLlm,
+    harnessRegistryConfig: options.harnessRegistryConfig,
+    harnessCatalogDirs: options.harnessCatalogDirs
+  });
   setActiveLoggingSettings(store.readLoggingSettings());
   store.ensureBootstrapAdmin();
   const users = normalizeUsers(options, tokens, runtime, store);
@@ -1036,11 +1041,12 @@ export function startServerFromEnvironment(): http.Server {
   const port = Number(process.env.EVOPILOT_PORT ?? "19876");
   const host = process.env.EVOPILOT_HOST ?? "127.0.0.1";
   const dashboardRoot = process.env.EVOPILOT_DASHBOARD_ROOT ? path.resolve(process.env.EVOPILOT_DASHBOARD_ROOT) : undefined;
+  const harnessRegistryConfig = process.env.EVOPILOT_HARNESS_REGISTRY_CONFIG ? path.resolve(process.env.EVOPILOT_HARNESS_REGISTRY_CONFIG) : undefined;
   const harnessCatalogDirs = parseHarnessCatalogDirs(process.env.EVOPILOT_HARNESS_CATALOG_DIRS ?? process.env.EVOPILOT_HARNESS_CATALOG_DIR);
   const tokens = parseEnvTokens(process.env.EVOPILOT_TOKENS);
   const users = parseEnvUsers(process.env.EVOPILOT_USERS);
   const apiToken = process.env.EVOPILOT_API_TOKEN;
-  const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens, users, harnessCatalogDirs }).listen(port, host, () => {
+  const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens, users, harnessRegistryConfig, harnessCatalogDirs }).listen(port, host, () => {
     const runtimeMode = process.env.EVOPILOT_RUN_MODE ?? process.env.EVOPILOT_MODE ?? (parseBoolean(process.env.EVOPILOT_DEBUG, false) ? "debug" : "prod");
     logInfo("server.started", {
       metadata: {
@@ -1050,6 +1056,7 @@ export function startServerFromEnvironment(): http.Server {
         runtimeMode,
         dataRoot,
         dashboardRoot,
+        harnessRegistryConfig,
         harnessCatalogDirs,
         authConfigured: Boolean(apiToken || tokens?.length || users?.length),
         loginEnabled: Boolean(users?.length)

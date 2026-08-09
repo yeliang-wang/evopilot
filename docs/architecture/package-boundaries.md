@@ -57,7 +57,8 @@ These files remain deliberately transitional:
 | `packages/server/src/http/server-logging.ts` | structured log settings, redaction, severity/category mapping, and active logging state | HTTP response bodies or business audit persistence |
 | `packages/server/src/http/static-assets.ts` | Dashboard static asset serving for self-hosted deployments | API routing, auth, or release decisions |
 | `packages/server/src/storage/json-files.ts` | Atomic JSON/text writes and filesystem-safe ids for file-backed stores | store aggregates, HTTP status mapping, or domain decisions |
-| `packages/server/src/domains/harness-template/defaults.ts` | Legacy compatibility data used only when older stored records need hydration | HTTP routing, Harness lifecycle management, project-specific activation, or goal planning |
+| `packages/server/src/domains/harness-template/catalog.ts` | Read-only Harness Registry and published Catalog parsing for `evopilot-harness` outputs | local Harness authoring, source evolution, approval, publication, or Catalog mutation |
+| `packages/server/src/domains/harness-template/template.ts` | Published Harness template hydration and evidence helpers | built-in template defaults, source-to-Harness evolution matching, or lifecycle writes |
 | `packages/cli/src/index.ts` | Thin process entrypoint that delegates to command modules | command handlers, HTTP request construction, output formatting, or server decisions |
 | `packages/cli/src/commands/runtime.ts` | Transitional command runtime for parsing, dispatch, HTTP adapter calls, JSON/human output, and stop-rule presentation | direct server storage access or bypasses around server policy gates |
 | `packages/core/src/index.ts` | shared evidence/evolution primitives | smaller domain modules once downstream imports are stable |

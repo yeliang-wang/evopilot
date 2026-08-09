@@ -1,4 +1,4 @@
-# Harness Template Domain
+# Harness Template Boundary
 
 This document is retained as a compatibility pointer for pre-v3 architecture readers.
 

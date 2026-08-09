@@ -1,6 +1,6 @@
 {
   "name": "@evopilot/cli",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Command-line client for operating EvoPilot control-plane APIs from terminals, CI jobs, and AI agents.",
   "license": "Apache-2.0",
   "type": "module",
@@ -40,8 +40,8 @@
     "build": "npm run clean && npm run build -w @evopilot/contracts && npm run build -w @evopilot/client && tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@evopilot/client": "3.0.0",
-    "@evopilot/contracts": "3.0.0",
+    "@evopilot/client": "3.1.0",
+    "@evopilot/contracts": "3.1.0",
     "yaml": "^2.9.0"
   },
   "devDependencies": {

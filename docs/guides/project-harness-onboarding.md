@@ -2,12 +2,12 @@
 
 This page is retained as a compatibility pointer for readers of older EvoPilot guides.
 
-In EvoPilot v3, project onboarding does not create Harness lifecycle records inside EvoPilot. Harness lifecycle management moved to `evopilot-harness`. EvoPilot consumes published Harness Catalog directories and records the selected published Harness in each goal plan.
+In EvoPilot v3, project onboarding does not create Harness lifecycle records inside EvoPilot. Harness lifecycle management moved to `evopilot-harness`. EvoPilot consumes a published Harness Registry and Catalog directories, then records the selected published Harness in each goal plan.
 
 Use the current flow:
 
 1. Publish or update a usable Harness in `evopilot-harness`.
-2. Configure the EvoPilot server with `EVOPILOT_HARNESS_CATALOG_DIR` or `EVOPILOT_HARNESS_CATALOG_DIRS`.
+2. Configure the EvoPilot server with `EVOPILOT_HARNESS_REGISTRY_CONFIG`.
 3. Run project onboarding and readiness preflights.
 4. Run `evopilot target plan --json`.
 5. Review `plan.selectedHarness` and the Alpha/Beta/RC/GA phase plan with the project owner.

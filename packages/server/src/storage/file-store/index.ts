@@ -127,14 +127,13 @@ import {
   workspaceUsage
 } from "../../application/control-plane-services.js";
 import {
-  defaultHarnessTemplates,
   hydrateHarnessCatalogMount,
-  hydrateHarnessTemplate,
-  hydrateHarnessTemplateEvolutionRun,
+  harnessRegistryCatalogMounts,
+  readHarnessRegistryConfig,
   readPublishedHarnessCatalog,
   type HarnessCatalogMount,
   type HarnessCatalogScanResult,
-  type HarnessTemplateEvolutionRun,
+  type HarnessRegistryConfig,
   type HarnessTemplateProfile,
   type HarnessTemplateProjectProfileBinding
 } from "../../domains/harness-template/index.js";
@@ -265,7 +264,7 @@ import { atomicWriteJson, atomicWriteText, safeFileName } from "../json-files.js
 export class FileStore {
   constructor(
     private readonly dataRoot: string,
-    private readonly executionRuntime: { llmClient?: LlmTaskClient; requireLlm?: boolean; harnessCatalogDirs?: string[] } = {}
+    private readonly executionRuntime: { llmClient?: LlmTaskClient; requireLlm?: boolean; harnessCatalogDirs?: string[]; harnessRegistryConfig?: string } = {}
   ) {
     fs.mkdirSync(this.dataRoot, { recursive: true });
     fs.mkdirSync(this.tenantsDir, { recursive: true });
@@ -277,9 +276,6 @@ export class FileStore {
     fs.mkdirSync(this.settingsDir, { recursive: true });
     fs.mkdirSync(this.runsDir, { recursive: true });
     fs.mkdirSync(this.projectsDir, { recursive: true });
-    fs.mkdirSync(this.harnessCatalogsDir, { recursive: true });
-    fs.mkdirSync(this.harnessTemplatesDir, { recursive: true });
-    fs.mkdirSync(this.harnessTemplateEvolutionsDir, { recursive: true });
     fs.mkdirSync(this.tenantHarnessPoliciesDir, { recursive: true });
     fs.mkdirSync(this.projectHarnessProfilesDir, { recursive: true });
     fs.mkdirSync(path.dirname(this.auditFile), { recursive: true });
@@ -354,18 +350,6 @@ export class FileStore {
 
   get projectsDir(): string {
     return path.join(this.dataRoot, "projects");
-  }
-
-  get harnessTemplatesDir(): string {
-    return path.join(this.dataRoot, "harness-templates");
-  }
-
-  get harnessCatalogsDir(): string {
-    return path.join(this.dataRoot, "harness-catalogs");
-  }
-
-  get harnessTemplateEvolutionsDir(): string {
-    return path.join(this.dataRoot, "harness-template-evolutions");
   }
 
   get tenantHarnessPoliciesDir(): string {
@@ -1391,6 +1375,12 @@ export class FileStore {
     return this.configuredHarnessCatalogMounts();
   }
 
+  readConfiguredHarnessRegistry(): HarnessRegistryConfig | undefined {
+    const registryConfig = optionalTrimmedString(this.executionRuntime.harnessRegistryConfig);
+    if (!registryConfig) return undefined;
+    return readHarnessRegistryConfig(registryConfig);
+  }
+
   readHarnessCatalogMount(catalogId: string): HarnessCatalogMount | undefined {
     const id = safeFileName(catalogId);
     for (const mount of this.configuredHarnessCatalogMounts()) {
@@ -1401,27 +1391,14 @@ export class FileStore {
     return undefined;
   }
 
-  writeHarnessCatalogMount(mount: HarnessCatalogMount): HarnessCatalogMount {
-    return hydrateHarnessCatalogMount(mount);
-  }
-
   scanHarnessCatalogMount(catalogId: string): HarnessCatalogScanResult | undefined {
     const mount = this.readHarnessCatalogMount(catalogId);
     if (!mount) return undefined;
-    const scan = readPublishedHarnessCatalog(mount.source, mount);
-    this.writeHarnessCatalogMount(scan.mount);
-    return scan;
+    return readPublishedHarnessCatalog(mount.source, mount);
   }
 
   listHarnessCatalogScans(): HarnessCatalogScanResult[] {
     return this.configuredHarnessCatalogMounts().map((mount) => readPublishedHarnessCatalog(mount.source, mount));
-  }
-
-  private listPersistedHarnessTemplates(): HarnessTemplateProfile[] {
-    return fs.readdirSync(this.harnessTemplatesDir)
-      .filter((file) => file.endsWith(".json"))
-      .sort()
-      .map((file) => hydrateHarnessTemplate(JSON.parse(fs.readFileSync(path.join(this.harnessTemplatesDir, file), "utf8"))));
   }
 
   private listConfiguredHarnessCatalogTemplates(): HarnessTemplateProfile[] {
@@ -1430,6 +1407,10 @@ export class FileStore {
   }
 
   private configuredHarnessCatalogMounts(): HarnessCatalogMount[] {
+    const registryConfig = optionalTrimmedString(this.executionRuntime.harnessRegistryConfig);
+    if (registryConfig) {
+      return harnessRegistryCatalogMounts(registryConfig);
+    }
     return (this.executionRuntime.harnessCatalogDirs ?? [])
       .map((source) => hydrateHarnessCatalogMount({
         catalogId: path.basename(source) || "published-harness-catalog",
@@ -1439,64 +1420,11 @@ export class FileStore {
         mountedBy: "evopilot-runtime-config",
         mountedAt: new Date(0).toISOString(),
         updatedAt: new Date(0).toISOString()
-      }));
-  }
-
-  writeHarnessTemplate(template: HarnessTemplateProfile): HarnessTemplateProfile {
-    const hydrated = hydrateHarnessTemplate(template);
-    atomicWriteJson(path.join(this.harnessTemplatesDir, `${safeFileName(hydrated.id)}-${safeFileName(hydrated.version)}.json`), hydrated);
-    return hydrated;
-  }
-
-  listHarnessTemplateEvolutionRuns(tenantId?: string, workspaceId?: string): HarnessTemplateEvolutionRun[] {
-    if (!fs.existsSync(this.harnessTemplateEvolutionsDir)) return [];
-    return fs.readdirSync(this.harnessTemplateEvolutionsDir)
-      .filter((entry) => fs.statSync(path.join(this.harnessTemplateEvolutionsDir, entry)).isDirectory())
-      .sort()
-      .map((entry) => this.readHarnessTemplateEvolutionRun(entry))
-      .filter((run): run is HarnessTemplateEvolutionRun => Boolean(run))
-      .filter((run) => (!tenantId || run.tenantId === tenantId) && (!workspaceId || run.workspaceId === workspaceId));
-  }
-
-  readHarnessTemplateEvolutionRun(evolutionId: string): HarnessTemplateEvolutionRun | undefined {
-    const file = path.join(this.harnessTemplateEvolutionRoot(evolutionId), "run.json");
-    if (!fs.existsSync(file)) return undefined;
-    return hydrateHarnessTemplateEvolutionRun(JSON.parse(fs.readFileSync(file, "utf8")));
-  }
-
-  writeHarnessTemplateEvolutionRun(run: HarnessTemplateEvolutionRun): HarnessTemplateEvolutionRun {
-    const hydrated = hydrateHarnessTemplateEvolutionRun(run);
-    const root = this.harnessTemplateEvolutionRoot(hydrated.evolutionId);
-    fs.mkdirSync(root, { recursive: true });
-    fs.mkdirSync(path.join(root, "sources"), { recursive: true });
-    fs.mkdirSync(path.join(root, "snapshots"), { recursive: true });
-    fs.mkdirSync(path.join(root, "drafts"), { recursive: true });
-    atomicWriteJson(path.join(root, "run.json"), hydrated);
-    for (const source of hydrated.sources) {
-      atomicWriteJson(path.join(root, "sources", `${safeFileName(source.sourceId)}.json`), source);
-    }
-    for (const snapshot of hydrated.snapshots) {
-      const snapshotDir = path.join(root, "snapshots", safeFileName(snapshot.snapshotId));
-      fs.mkdirSync(snapshotDir, { recursive: true });
-      atomicWriteJson(path.join(snapshotDir, "snapshot.json"), snapshot);
-      atomicWriteText(path.join(snapshotDir, "extracted.txt"), snapshot.extractedText);
-    }
-    if (hydrated.draft) {
-      const draftDir = path.join(root, "drafts", safeFileName(hydrated.draft.draftId));
-      fs.mkdirSync(path.join(draftDir, "examples"), { recursive: true });
-      atomicWriteText(path.join(draftDir, "README.md"), hydrated.draft.pack.readme);
-      atomicWriteText(path.join(draftDir, "template.yaml"), hydrated.draft.pack.templateYaml);
-      atomicWriteText(path.join(draftDir, "CHANGELOG.md"), hydrated.draft.pack.changelog);
-      for (const [file, content] of Object.entries(hydrated.draft.pack.examples)) {
-        atomicWriteText(path.join(draftDir, "examples", safeFileName(file)), content);
-      }
-    }
-    if (hydrated.impactReport) {
-      const impactDir = path.join(root, "impact");
-      fs.mkdirSync(impactDir, { recursive: true });
-      atomicWriteJson(path.join(impactDir, "report.json"), hydrated.impactReport);
-    }
-    return hydrated;
+      }))
+      .sort((left, right) => {
+        if ((right.priority ?? 0) !== (left.priority ?? 0)) return (right.priority ?? 0) - (left.priority ?? 0);
+        return left.catalogId.localeCompare(right.catalogId);
+      });
   }
 
   listProjectHarnessTemplateBindings(tenantId: string, workspaceId: string): HarnessTemplateProjectProfileBinding[] {
@@ -1760,10 +1688,6 @@ export class FileStore {
 
   private projectHarnessProfileVersionsDir(project: StoredProject, profileId: string): string {
     return path.join(this.projectHarnessProfileRoot(project, profileId), "versions");
-  }
-
-  private harnessTemplateEvolutionRoot(evolutionId: string): string {
-    return path.join(this.harnessTemplateEvolutionsDir, safeFileName(evolutionId));
   }
 
   findRunByReviewId(reviewId: string): StoredRun | undefined {

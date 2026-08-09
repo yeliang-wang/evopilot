@@ -77,11 +77,14 @@ plan.selectedHarness.version
 plan.selectedHarness.catalogId
 plan.selectedHarness.catalogDigest
 plan.selectedHarness.entryDigest
+plan.selectedHarness.registryPath
+plan.selectedHarness.registryDigest
+plan.selectedHarness.registryCatalogPriority
 editablePlan.status
 nextAction=approve-plan
 ```
 
-If `selectedHarness` is missing, stop and ask an administrator to publish/configure a Catalog through `evopilot-harness`.
+If `selectedHarness` is missing, stop and ask an administrator to publish/configure a Harness Registry and Catalog through `evopilot-harness`.
 
 ## Approve Plan
 

@@ -64,6 +64,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
+- [EvoPilot v3.1.0 Release Notes](releases/3.1.0.md) - multi-Catalog Harness Registry consumption and `selectedHarness` registry evidence.
 - [EvoPilot v3.0.0 Release Notes](releases/3.0.0.md) - strict external Harness Catalog consumer boundary and `selectedHarness` goal-plan evidence.
 - [EvoPilot v2.4.2 Release Notes](releases/2.4.2.md) - release-readiness closure, immutable ECS digest-only rollout hardening, and current distribution metadata.
 - [EvoPilot v2.4.1 Release Notes](releases/2.4.1.md) - AI Agent scenario coverage, Harness evolution operating docs, CLI help consistency, and production asset verification notes.

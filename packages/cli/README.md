@@ -10,12 +10,12 @@ Install the current release CLI tarball set:
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-contracts-3.0.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-client-3.0.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-cli-3.0.0.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-contracts-3.1.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-client-3.1.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz
 ```
 
-Use `npm install -g @evopilot/cli@3.0.0` only after public npm registry publication has been verified for that exact version.
+Use `npm install -g @evopilot/cli@3.1.0` only after public npm registry publication has been verified for that exact version.
 
 ```bash
 evopilot --server https://evopilot.example.com auth login \
@@ -102,7 +102,7 @@ evopilot project onboard verify <project-id> --json
 evopilot target plan --project <project-id> --objective "Enable the requested business capability and lifecycle evidence" --llm-profile <llm-profile-id> --json
 ```
 
-EvoPilot v3 has no `evopilot harness ...` command group. Harness lifecycle, source evolution, review, approval, versioning, and publication are owned by `evopilot-harness`. The EvoPilot server reads configured published Catalog directories and records the selected published Harness as `plan.selectedHarness` during `target plan` or `goal plan`. Show `selectedHarness` id, version, catalog id, catalog digest, entry path, and entry digest before approving a phase plan.
+EvoPilot v3 has no `evopilot harness ...` command group. Harness lifecycle, source evolution, review, approval, versioning, and publication are owned by `evopilot-harness`. The EvoPilot server reads the configured Harness Registry and enabled published Catalog directories, then records the selected published Harness as `plan.selectedHarness` during `target plan` or `goal plan`. Show `selectedHarness` id, version, registry digest, catalog id, catalog digest, entry path, and entry digest before approving a phase plan.
 
 ## Documentation
 

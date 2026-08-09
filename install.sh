@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${EVOPILOT_INSTALL_VERSION:-3.0.0}"
+VERSION="${EVOPILOT_INSTALL_VERSION:-3.1.0}"
 DIR="${EVOPILOT_INSTALL_DIR:-evopilot-stack}"
 PACKAGE="${EVOPILOT_INSTALL_PACKAGE:-create-evopilot}"
 PACKAGE_SPEC="${EVOPILOT_INSTALL_PACKAGE_SPEC:-}"
@@ -55,7 +55,8 @@ resolve_package_spec() {
     rm -f "$manifest_file"
     fail "could not download release manifest: ${MANIFEST_URL}. Use --skip-manifest only for an explicitly reviewed offline install."
   fi
-  node - "$manifest_file" "$VERSION" "$PACKAGE" <<'NODE'
+  local package_spec
+  if ! package_spec="$(node - "$manifest_file" "$VERSION" "$PACKAGE" <<'NODE'
 const fs = require("node:fs");
 const [manifestPath, version, packageName] = process.argv.slice(2);
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
@@ -71,7 +72,12 @@ if (!manifest.installers?.["install.sh"]?.sha256) {
 }
 console.log(entry.packageSpec || entry.tarballUrl || `${packageName}@${version}`);
 NODE
+  )"; then
+    rm -f "$manifest_file"
+    fail "release manifest validation failed: ${MANIFEST_URL}"
+  fi
   rm -f "$manifest_file"
+  printf '%s\n' "$package_spec"
 }
 
 while [ "$#" -gt 0 ]; do

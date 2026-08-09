@@ -25,13 +25,13 @@ Production installation uses the GitHub Release CLI tarball set for the current 
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-contracts-3.0.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-client-3.0.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-cli-3.0.0.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-contracts-3.1.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-client-3.1.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz
 evopilot --version
 ```
 
-The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@3.0.0` only after `npm run verify:npm-registry -- --version 3.0.0` passes.
+The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@3.1.0` only after `npm run verify:npm-registry -- --version 3.1.0` passes.
 
 From this repository, use the same CLI package without publishing:
 
@@ -69,8 +69,8 @@ Use `--config <file>` or `EVOPILOT_CONFIG` for short-lived agent sessions.
 EvoPilot v3 does not manage Harness lifecycle.
 
 - Publish and evolve Harness definitions in `evopilot-harness`.
-- Configure the EvoPilot server with `EVOPILOT_HARNESS_CATALOG_DIR` or `EVOPILOT_HARNESS_CATALOG_DIRS`.
-- EvoPilot dynamically reads `CATALOG.md` during planning.
+- Configure the EvoPilot server with `EVOPILOT_HARNESS_REGISTRY_CONFIG`.
+- EvoPilot dynamically reads `harness-registry.yaml` and enabled `CATALOG.md` files during planning.
 - `target plan` / `goal plan` returns `plan.selectedHarness` when a published Harness matches the project and objective.
 - The CLI intentionally has no `evopilot harness ...` command group.
 
@@ -144,6 +144,9 @@ plan.selectedHarness.version
 plan.selectedHarness.catalogId
 plan.selectedHarness.catalogDigest
 plan.selectedHarness.entryDigest
+plan.selectedHarness.registryPath
+plan.selectedHarness.registryDigest
+plan.selectedHarness.registryCatalogPriority
 llmUsage.process.responses[]
 llmUsage.server.steps[]
 ```

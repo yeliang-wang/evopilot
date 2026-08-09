@@ -413,23 +413,24 @@ GET /api/v1/projects/{projectId}/onboarding-checklist
 
 ### Published Harness Catalog
 
-`evopilot-harness` owns Harness authoring, lifecycle management, source evolution, review, approval, versioning, and publication. EvoPilot does not expose Harness lifecycle APIs or CLI commands. It only reads published Harness Catalog directories that the server process can see.
+`evopilot-harness` owns Harness authoring, lifecycle management, source evolution, review, approval, versioning, and publication. EvoPilot does not expose Harness lifecycle APIs or CLI commands. It only reads a Harness Registry and the published Harness Catalog directories that the server process can see.
 
 ```http
 GET /api/v1/harness/catalogs
 GET /api/v1/harness/catalogs/{catalogId}
 ```
 
-Configure one or more Catalog directories at server startup:
+Configure the Registry at server startup:
 
 ```bash
-EVOPILOT_HARNESS_CATALOG_DIR=/opt/evopilot/.evopilot/external-harness-catalogs/evopilot-public-harness-catalog
-EVOPILOT_HARNESS_CATALOG_DIRS=/opt/catalogs/database:/opt/catalogs/gateway
+EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 ```
 
-Each configured directory must contain a `CATALOG.md` maintained by `evopilot-harness`. The catalog index has a fenced `yaml evopilot-harness-catalog` block with entries that point to published Harness definition files, for example `harnesses/database-product-harness/template.yaml` or `harnesses/api-gateway-harness/harness.yaml`. EvoPilot reads the index and entry files dynamically when listing catalogs or planning goals. It does not import the catalog into control-plane storage, mutate the catalog, scan on a write endpoint, approve drafts, publish templates, or maintain Harness lifecycle records.
+The Registry lists enabled Catalog roots and priority. Legacy `EVOPILOT_HARNESS_CATALOG_DIR(S)` direct directory configuration is still supported only when no Registry is configured.
 
-The list endpoint returns the current configured catalogs, scan status, warnings, loaded published Harness entries, and digests. If a directory is added, removed, or republished by `evopilot-harness`, EvoPilot observes the change on the next read or goal planning request because the catalog is read dynamically from disk.
+Each enabled directory must contain a `CATALOG.md` maintained by `evopilot-harness`. The catalog index has a fenced `yaml evopilot-harness-catalog` block with entries that point to published Harness definition files, for example `harnesses/database-product-harness/template.yaml` or `harnesses/api-gateway-harness/harness.yaml`. EvoPilot reads the Registry, index, and entry files dynamically when listing catalogs or planning goals. It does not import the catalog into control-plane storage, mutate the catalog, scan on a write endpoint, approve drafts, publish templates, or maintain Harness lifecycle records.
+
+The list endpoint returns the current Registry status, configured catalogs, scan status, warnings, loaded published Harness entries, and digests. If a Registry entry or Catalog directory is added, removed, or republished by `evopilot-harness`, EvoPilot observes the change on the next read or goal planning request because the Registry and Catalogs are read dynamically from disk.
 
 When a goal plan is generated, EvoPilot matches the stored project metadata, source/runtime signals, and goal loop target against the currently published Harness entries. The plan records the selected published Harness as evidence:
 
@@ -443,7 +444,9 @@ When a goal plan is generated, EvoPilot matches the stored project metadata, sou
       "catalogId": "evopilot-public-harness-catalog",
       "catalogDigest": "sha256:...",
       "entryPath": "harnesses/database-product-harness/template.yaml",
-      "entryDigest": "sha256:..."
+      "entryDigest": "sha256:...",
+      "registryPath": "/opt/evopilot-harness/harness-registry.yaml",
+      "registryDigest": "sha256:..."
     },
     "domain": "database",
     "matchScore": 0.91,

@@ -138,7 +138,7 @@ evopilot target plan approve <goal-id> --confirmed-by <user-or-owner> --confirma
 evopilot target run --project <id> --objective <business-goal> [--llm-profile <id>] [--max-steps <n>] [--timeout <duration>] --json
 ```
 
-`target plan` dynamically reads the configured Harness Catalog and returns `selectedHarness` when a published Harness matches the project and objective.
+`target plan` dynamically reads the configured Harness Registry and enabled Catalogs, then returns `selectedHarness` when a published Harness matches the project and objective.
 
 ## Maturity Standards
 

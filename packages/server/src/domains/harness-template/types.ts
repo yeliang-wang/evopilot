@@ -13,6 +13,11 @@ export interface HarnessCatalogRef {
   catalogDigest: string;
   entryPath: string;
   entryDigest: string;
+  registryPath?: string;
+  registryDigest?: string;
+  registryCatalogId?: string;
+  registryCatalogPriority?: number;
+  registryCatalogRelease?: string;
 }
 
 export interface HarnessCapabilityDefinition {
@@ -79,6 +84,13 @@ export interface HarnessCatalogMount {
   name: string;
   source: string;
   status: "ACTIVE" | "DISABLED";
+  priority?: number;
+  registryPath?: string;
+  registryDigest?: string;
+  expectedCatalogDigest?: string;
+  release?: string;
+  owner?: string;
+  description?: string;
   mountedBy?: string;
   mountedAt: string;
   updatedAt: string;
@@ -88,6 +100,33 @@ export interface HarnessCatalogMount {
   lastReadWarnings?: string[];
   catalogDigest?: string;
   templateCount?: number;
+}
+
+export interface HarnessRegistryCatalogRef {
+  id: string;
+  enabled: boolean;
+  priority: number;
+  root: string;
+  resolvedRoot: string;
+  release?: string;
+  expectedCatalogDigest?: string;
+  owner?: string;
+  description?: string;
+  warnings: string[];
+}
+
+export interface HarnessRegistryConfig {
+  schema: "evopilot-harness-registry/v1";
+  status: "READY" | "FAILED";
+  path: string;
+  digest?: string;
+  generatedBy?: string;
+  generatedAt?: string;
+  catalogCount: number;
+  enabledCount: number;
+  catalogs: HarnessRegistryCatalogRef[];
+  warnings: string[];
+  blockers: string[];
 }
 
 export interface PublishedHarnessCatalogEntry {
@@ -108,6 +147,13 @@ export interface PublishedHarnessCatalog {
   catalogId: string;
   source: string;
   catalogDigest: string;
+  priority?: number;
+  registryPath?: string;
+  registryDigest?: string;
+  expectedCatalogDigest?: string;
+  release?: string;
+  owner?: string;
+  description?: string;
   generatedAt?: string;
   compatibleEvopilot?: string;
   entries: PublishedHarnessCatalogEntry[];
@@ -142,229 +188,6 @@ export interface HarnessTemplateValidationResult {
   blockers: string[];
   warnings: string[];
   evaluatedAt: string;
-}
-
-export type HarnessKnowledgeSourceType =
-  | "web-url"
-  | "github-repo"
-  | "gitlab-repo"
-  | "attachment"
-  | "local-pack"
-  | "admin-note"
-  | "existing-template"
-  | "runtime-evidence"
-  | "source-project"
-  | "source-corpus"
-  | "production-log"
-  | "evopilot-history";
-
-export type HarnessKnowledgeCategory =
-  | "external-reference"
-  | "source-project"
-  | "project-corpus"
-  | "attachment"
-  | "runtime-log"
-  | "evopilot-history"
-  | "template-pack"
-  | "admin-note";
-
-export type HarnessGapClassification =
-  | "harness-template"
-  | "project-profile"
-  | "tenant-policy"
-  | "evopilot-core"
-  | "source-quality";
-
-export type HarnessTemplateEvolutionStatus =
-  | "CREATED"
-  | "SOURCES_COLLECTED"
-  | "ANALYZED"
-  | "REVIEW_REQUIRED"
-  | "APPROVED"
-  | "PUBLISHED"
-  | "IMPACT_ANALYZED"
-  | "CLOSED"
-  | "BLOCKED"
-  | "REJECTED"
-  | "SUPERSEDED";
-
-export interface HarnessKnowledgeSource {
-  schema: "evopilot-harness-knowledge-source/v1";
-  sourceId: string;
-  type: HarnessKnowledgeSourceType;
-  name: string;
-  uri?: string;
-  ref?: string;
-  fileName?: string;
-  mediaType?: string;
-  contentText?: string;
-  contentDigest?: string;
-  metadata: Record<string, unknown>;
-  createdAt: string;
-}
-
-export interface HarnessKnowledgeSnapshot {
-  schema: "evopilot-harness-knowledge-snapshot/v1";
-  snapshotId: string;
-  sourceId: string;
-  type: HarnessKnowledgeSourceType;
-  name: string;
-  uri?: string;
-  ref?: string;
-  contentDigest: string;
-  textDigest: string;
-  extractedText: string;
-  extractedTextPreview: string;
-  metadata: Record<string, unknown>;
-  warnings: string[];
-  createdAt: string;
-}
-
-export interface HarnessTemplateDraft {
-  schema: "evopilot-harness-template-draft/v1";
-  draftId: string;
-  version: string;
-  template: HarnessTemplateProfile;
-  pack: {
-    readme: string;
-    templateYaml: string;
-    changelog: string;
-    examples: Record<string, string>;
-  };
-  validation: HarnessTemplateValidationResult;
-  diffFromBase: {
-    baseTemplateRef: HarnessTemplateRef;
-    changedSections: string[];
-    summary: string[];
-  };
-  sourceCoverage: {
-    sourceCount: number;
-    snapshotCount: number;
-    sources: Array<{
-      sourceId: string;
-      type: HarnessKnowledgeSourceType;
-      name: string;
-      digest: string;
-      knowledgeCategory?: HarnessKnowledgeCategory;
-      gapClassification?: HarnessGapClassification;
-      redactionApplied?: boolean;
-      usedFor: string[];
-      projectActions?: string[];
-    }>;
-  };
-  generatedBy: {
-    mode: "llm" | "deterministic-template";
-    actor?: string;
-    llmProfileId?: string;
-    provider?: string;
-    model?: string;
-    requestId?: string;
-    evidence: string[];
-  };
-  createdAt: string;
-}
-
-export interface HarnessTemplateImpactReport {
-  schema: "evopilot-harness-template-impact-report/v1";
-  templateRef: HarnessTemplateRef;
-  affectedProjectProfiles: Array<{
-    tenantId: string;
-    workspaceId: string;
-    projectId: string;
-    profileId: string;
-    activeVersion?: number;
-    activeTemplateVersion?: string;
-    activeTemplateDigest?: string;
-    impact: "MATCHES_TEMPLATE_ID" | "STALE_TEMPLATE_VERSION" | "NO_ACTIVE_PROFILE";
-    nextAction: string;
-  }>;
-  staleProfileCount: number;
-  generatedAt: string;
-}
-
-export interface HarnessTemplateEvolutionAnalysis {
-  schema: "evopilot-harness-template-analysis/v1";
-  capabilitySignals: string[];
-  runtimeSignals: string[];
-  evidenceSignals: string[];
-  failureSignals: string[];
-  observabilitySignals: string[];
-  governanceSignals: string[];
-  domainSignals: string[];
-  gapClassifications: HarnessGapClassification[];
-  sourceCoverage: string[];
-  generatedAt: string;
-}
-
-export type HarnessTemplateMatchDecision = "EVOLVE_EXISTING" | "CREATE_NEW_FROM_BASE" | "NEEDS_ADMIN_CONFIRMATION";
-
-export interface HarnessTemplateMatchCandidate {
-  templateRef: HarnessTemplateRef;
-  harnessLayer: HarnessTemplateLayer;
-  domain?: string;
-  languageFamily: HarnessTemplateProfile["languageFamily"];
-  score: number;
-  matchedSignals: string[];
-  reasons: string[];
-}
-
-export interface HarnessTemplateMatchReport {
-  schema: "evopilot-harness-template-match-report/v1";
-  decision: HarnessTemplateMatchDecision;
-  confidence: number;
-  baseTemplateRef: HarnessTemplateRef;
-  targetTemplateId: string;
-  targetVersion: string;
-  targetHarnessLayer: HarnessTemplateLayer;
-  targetDomain?: string;
-  languageSignals: string[];
-  runtimeSignals: string[];
-  domainSignals: string[];
-  sourceDigests: string[];
-  candidateTemplates: HarnessTemplateMatchCandidate[];
-  reasons: string[];
-  llmAdjudication: {
-    used: boolean;
-    reason: string;
-  };
-  nextAction: string;
-  generatedAt: string;
-}
-
-export interface HarnessTemplateEvolutionRun {
-  schema: "evopilot-harness-template-evolution-run/v1";
-  evolutionId: string;
-  tenantId: string;
-  workspaceId: string;
-  status: HarnessTemplateEvolutionStatus;
-  baseTemplateRef: HarnessTemplateRef;
-  targetTemplateId: string;
-  targetVersion: string;
-  intent: string;
-  sources: HarnessKnowledgeSource[];
-  snapshots: HarnessKnowledgeSnapshot[];
-  autoMatch?: HarnessTemplateMatchReport;
-  analysisSummary?: HarnessTemplateEvolutionAnalysis;
-  draft?: HarnessTemplateDraft;
-  review?: {
-    status: "APPROVED" | "REJECTED";
-    confirmedBy: string;
-    confirmation: string;
-    confirmedAt: string;
-  };
-  publishedTemplateRef?: HarnessTemplateRef;
-  impactReport?: HarnessTemplateImpactReport;
-  blockers: string[];
-  warnings: string[];
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface HarnessTemplateEvolutionActor {
-  tenantId: string;
-  workspaceId: string;
-  actor: string;
 }
 
 export interface HarnessTemplateProjectProfileBinding {
