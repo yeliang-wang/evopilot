@@ -411,185 +411,49 @@ GET /api/v1/projects/{projectId}/onboarding-checklist
 
 `GET /api/v1/projects/{projectId}/onboarding-checklist` 复核已注册项目，会基于持久化项目、source credentials、GitHub Actions/GitLab CI 配置和项目 LLM 绑定生成同一 schema。只有 `READY_TO_RUN` 才表示项目已经具备真实源代码写回、仓库原生 DevOps 和 LLM profile 的前置条件；此时仍必须先进入 `plan-target`，由用户或项目负责人确认 phase plan。`BLOCKED` 或 `WAITING_INPUT` 不能被解释为 GA/RC/alpha 可执行完成。
 
-### ProjectHarnessProfile
+### Published Harness Catalog
+
+`evopilot-harness` owns Harness authoring, lifecycle management, source evolution, review, approval, versioning, and publication. EvoPilot does not expose Harness lifecycle APIs or CLI commands. It only reads published Harness Catalog directories that the server process can see.
 
 ```http
-GET /api/v1/harness/templates
-POST /api/v1/harness/templates/validate
-POST /api/v1/harness/templates
-GET /api/v1/harness/templates/{templateId}
-POST /api/v1/harness/template-matches
 GET /api/v1/harness/catalogs
-POST /api/v1/harness/catalogs
 GET /api/v1/harness/catalogs/{catalogId}
-POST /api/v1/harness/catalogs/{catalogId}/scan
-GET /api/v1/harness/template-evolutions
-POST /api/v1/harness/template-evolutions
-GET /api/v1/harness/template-evolutions/{evolutionId}
-POST /api/v1/harness/template-evolutions/{evolutionId}/sources
-POST /api/v1/harness/template-evolutions/{evolutionId}/advance
-POST /api/v1/harness/template-evolutions/{evolutionId}/approve
-POST /api/v1/harness/template-evolutions/{evolutionId}/publish
-GET /api/v1/harness/template-evolutions/{evolutionId}/impact
-POST /api/v1/harness/template-evolutions/{evolutionId}/impact
-GET /api/v1/harness/policies
-POST /api/v1/harness/policies
-GET /api/v1/harness/policies/{policyId}
-GET /api/v1/harness/policies/{policyId}/versions/{version}
-POST /api/v1/harness/policies/{policyId}/activate
-GET /api/v1/projects/{projectId}/harness-profiles
-POST /api/v1/projects/{projectId}/harness-profiles/generate
-POST /api/v1/projects/{projectId}/harness-profiles/validate
-POST /api/v1/projects/{projectId}/harness-profiles
-GET /api/v1/projects/{projectId}/harness-profiles/{profileId}
-GET /api/v1/projects/{projectId}/harness-profiles/{profileId}/versions/{version}
-GET /api/v1/projects/{projectId}/harness-profiles/{profileId}/explain
-POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/diff
-POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/activate
-POST /api/v1/projects/{projectId}/harness-profiles/{profileId}/upgrade
 ```
 
-`ProjectHarnessProfile` 是项目级长期控制面定义。它不是独立仓库文件的系统记录，也不是 `target plan` 的 maturity template。生产权威记录在 EvoPilot 控制面内，按 `tenant -> workspace -> project -> profile -> version` 隔离。当前文件存储实现的路径形态为：
+Configure one or more Catalog directories at server startup:
 
-```text
-<dataRoot>/project-harness-profiles/<tenantId>/<workspaceId>/<projectId>/<profileId>/versions/v<version>.json
+```bash
+EVOPILOT_HARNESS_CATALOG_DIR=/opt/evopilot/.evopilot/external-harness-catalogs/evopilot-public-harness-catalog
+EVOPILOT_HARNESS_CATALOG_DIRS=/opt/catalogs/database:/opt/catalogs/gateway
 ```
 
-项目仓库里的 `.evopilot/project.harness.yaml` 或 CLI `--file profile.yaml` 只是 import source。服务端会把 source profile 与 `HarnessTemplate` 以及当前 tenant/workspace 下匹配的 active `TenantHarnessPolicy` 合并成 compiled profile，并计算 `sourceDigest` 与 `compiledDigest`。`activate` 只允许激活校验通过的版本，并把同一 profile 的旧 `ACTIVE` 版本标记为 `SUPERSEDED`。
+Each configured directory must contain a `CATALOG.md` maintained by `evopilot-harness`. The catalog index has a fenced `yaml evopilot-harness-catalog` block with entries that point to published Harness definition files, for example `harnesses/database-product-harness/template.yaml` or `harnesses/api-gateway-harness/harness.yaml`. EvoPilot reads the index and entry files dynamically when listing catalogs or planning goals. It does not import the catalog into control-plane storage, mutate the catalog, scan on a write endpoint, approve drafts, publish templates, or maintain Harness lifecycle records.
 
-Fresh install 默认带多套内置 `HarnessTemplate`，覆盖不同语言、架构范式和软件类型：
+The list endpoint returns the current configured catalogs, scan status, warnings, loaded published Harness entries, and digests. If a directory is added, removed, or republished by `evopilot-harness`, EvoPilot observes the change on the next read or goal planning request because the catalog is read dynamically from disk.
 
-```text
-python-enterprise-harness@1.1.0
-java-ddd-service-harness@1.1.0
-node-saas-control-plane-harness@1.1.0
-go-middleware-harness@1.1.0
-observability-apm-harness@1.1.0
-database-product-harness@2.2.0
-api-gateway-harness@2.2.0
-generic-management-software-harness@1.1.0
-```
-
-这些内置模板不是运行时动态从 GitHub 拉取。EvoPilot 将精选开源项目、官方规范和工程实践固化为本地版本化模板，并在 `sourceReferences[]` 中暴露初始化来源，例如 FastAPI、Spring Boot、Micrometer、Kubernetes、Prometheus、OpenTelemetry、Sentry、Apache SkyWalking、PostgreSQL、MySQL、Envoy 和 Kong。`@2.2.0` 领域模板只覆盖数据库产品和 API 网关产品，先定义产品域，再定义 compatibility profiles、architecture profiles、runtime profiles 和 `domainExecution` 执行契约；既有 `@1.1.0` 运行时和广义软件类型模板继续作为 baseline，不属于本次数据库/网关领域升级范围。数据库领域模板中的 PostgreSQL、MySQL 等系统是兼容性语料或差分 oracle，不是默认进化对象。
-
-管理员也可以通过 `POST /api/v1/harness/templates` 或独立管理员 CLI 发布新的 template id 或版本，用于表达更多语言、架构范式或软件类型的 harness。推荐的人工维护形态是 `harness-templates/public/<template-id>/` 目录 pack：`README.md` 给人类和 AI Agent 读，`template.yaml` 给服务端解析，`CHANGELOG.md` 记录版本，`examples/` 给项目级 profile 生成参考。CLI 提供收敛后的 pack 入口：`harness template pack list`、`harness template pack validate`、`harness template pack publish`。`pack validate` 和 `pack publish` 会调用 `POST /api/v1/harness/templates/validate` 做非持久化服务端校验；`pack publish` 校验通过后才写入控制面。
-
-从 v2.5 开始，EvoPilot 还可以挂载由独立 `evopilot-harness` 项目发布的 Harness Catalog。Catalog 是服务端可见的目录引用，不是浏览器本地读取，也不是把所有 Harness 一次性导入控制面。`POST /api/v1/harness/catalogs` 写入 mount 并立即扫描；`GET /api/v1/harness/catalogs`、`GET /api/v1/harness/catalogs/{catalogId}` 和 `POST /api/v1/harness/catalogs/{catalogId}/scan` 会读取 `CATALOG.md` 中的 fenced `yaml evopilot-harness-catalog` block，并加载 entry 指向的 `template.yaml`/`harness.yaml`。
-
-Catalog 模板和内置模板、控制面持久化模板一起参与 `GET /api/v1/harness/templates` 和项目 `harness-profiles/generate` 自动匹配。若匹配结果来自 Catalog，生成的 profile 会记录 `templateCatalogRef`，`generatedBy.evidence[]` 也会包含 `catalogId`、`catalogDigest`、`catalogEntry` 和 `catalogEntryDigest`。Catalog 后续增长不会静默改写已激活 profile；新模板只会在下一次生成或升级 profile 时被选择。
-
-模板写入要求 `id`、`version` 和当前版本 changelog；建议同时包含 `sourceReferences[]`。服务端计算 `digest` 并按 `<dataRoot>/harness-templates/<templateId>-<version>.json` 持久化。重复写入同一个 `id@version` 默认返回 `HARNESS_TEMPLATE_VERSION_EXISTS`，只有显式 `force=true` 才会替换该版本。已有 active `ProjectHarnessProfile` 不会因为模板更新被静默改写，必须通过 `generate` 或 `upgrade` 生成新的 profile revision 后再 review/activate。
-
-`HarnessTemplateEvolution` 是管理员将外部/内部知识材料转成新模板版本的控制面生命周期。它不是普通项目接入命令，也不是让 LLM 直接写入模板。`GET /api/v1/harness/template-evolutions`、`GET /api/v1/harness/template-evolutions/{evolutionId}` 和 `GET /impact` 需要 viewer 权限；`create`、`sources`、`advance`、`approve`、`publish` 和 `POST /impact` refresh 需要 admin 权限。生命周期为：
-
-```text
-CREATED -> SOURCES_COLLECTED -> ANALYZED -> REVIEW_REQUIRED -> APPROVED -> PUBLISHED -> IMPACT_ANALYZED
-```
-
-`POST /api/v1/harness/template-matches` 可在创建 run 前做服务端匹配预览。它读取同一类 sources，返回 `match.decision`、`confidence`、`baseTemplateRef`、`targetTemplateId`、`targetVersion`、`targetDomain`、`candidateTemplates[]`、`reasons[]` 和 `nextAction`。该接口不持久化、不生成 draft、不发布模板。
-
-`POST /api/v1/harness/template-evolutions/evolve` 是普通管理员的一键入口。它接受同一类 sources，也可传 `resumeEvolutionId` 继续已有 run；服务端默认 `autoMatch=true`，自动创建或恢复 `HarnessTemplateEvolution`，并推进到 `REVIEW_REQUIRED`。返回 schema 为 `evopilot-harness-evolve-result/v1`，包含 `evolutionId`、`autoMatch`、`sourceCoverage`、`validation`、`diffFromBase`、`workflow.steps[]` 和 `nextAction`。该接口默认不会 approve 或 publish；低置信度匹配、`BLOCKED`、校验失败或 lifecycle gate 会停止并要求管理员处理。
-
-`POST /api/v1/harness/template-evolutions` 创建 run，要求至少一个 source。显式 `baseTemplateId` 仍然可用；若传 `autoMatch=true`，或未传 `baseTemplateId` 但提供 `source-project`、`source-corpus`、附件、生产日志、EvoPilot history 或文本 source，EvoPilot 会先生成 `evolution.autoMatch`。高置信度会选择已有领域模板继续进化，或在没有匹配领域模板时从 runtime base 创建新目标模板，例如 `distributed-cache-harness@0.1.0` 继承 `go-middleware-harness@1.1.0`。source 支持：
+When a goal plan is generated, EvoPilot matches the stored project metadata, source/runtime signals, and goal loop target against the currently published Harness entries. The plan records the selected published Harness as evidence:
 
 ```json
 {
-  "autoMatch": true,
-  "intent": "Create or evolve the harness for self-developed distributed cache products.",
-  "sources": [
-    { "type": "source-project", "name": "legacy-cache-service", "uri": "/work/legacy-cache-service" },
-    { "type": "production-log", "name": "prod-incident.log", "contentText": "redacted by the server before snapshot persistence" },
-    { "type": "evopilot-history", "name": "cache-platform", "uri": "cache-platform" },
-    { "type": "admin-note", "name": "Workspace note", "contentText": "Require shard, replica, TTL, hot key, failover, and recovery evidence." }
-  ]
+  "selectedHarness": {
+    "schema": "evopilot-goal-plan-selected-harness/v1",
+    "harnessId": "database-product-harness",
+    "version": "1.0.0",
+    "catalogRef": {
+      "catalogId": "evopilot-public-harness-catalog",
+      "catalogDigest": "sha256:...",
+      "entryPath": "harnesses/database-product-harness/template.yaml",
+      "entryDigest": "sha256:..."
+    },
+    "domain": "database",
+    "matchScore": 0.91,
+    "matchReasons": ["goal mentions distributed storage and SQL compatibility", "project runtime exposes database engine signals"],
+    "capabilities": ["storage-engine", "query-compatibility", "replication", "backup-restore", "observability"]
+  }
 }
 ```
 
-`POST /sources` 只能在 `CREATED` 状态继续追加 source。`POST /advance` 是分步推进：第一次收集 source snapshots 和 digest，生产日志会先脱敏再持久化；第二次生成 capability/runtime/evidence/failure/observability/governance/domain signals 与 `gapClassifications`；第三次生成 DRAFT。若有 READY LLM profile，可以在 body 中传 `llmProfileId`，或传 `requireLlm=true` 强制没有 READY LLM 时阻断；debug 模式未要求 LLM 时会返回 deterministic draft。`REVIEW_REQUIRED` 返回：
-
-```text
-evolution.draft.template
-evolution.draft.pack.readme
-evolution.draft.pack.templateYaml
-evolution.draft.pack.changelog
-evolution.draft.pack.examples
-evolution.draft.validation
-evolution.draft.diffFromBase
-evolution.draft.sourceCoverage
-evolution.draft.generatedBy
-```
-
-`draft.sourceCoverage.sources[]` 会标明 `knowledgeCategory`、`gapClassification`、`redactionApplied` 和 `projectActions`。管理员据此区分下一步是发布公共 `HarnessTemplate`、升级项目级 `ProjectHarnessProfile`、调整租户策略、修复 source 质量，还是先演进 EvoPilot Core 抽取/API 能力。
-
-LLM 输出只是 draft。`POST /approve` 只接受 `REVIEW_REQUIRED` 且 validation 通过的 run，并要求 `confirmedBy` 与 `confirmation`。`POST /publish` 只接受 `APPROVED`，会再次校验 draft、写入新的 `HarnessTemplate` 版本、记录 audit、生成 `impactReport`。`GET /impact` 返回受影响的 active `ProjectHarnessProfile`；`POST /impact` 会重新计算并持久化 impact。旧 active project profile 不会被静默改写，影响报告只返回 stale 列表和下一步动作。
-
-当前文件存储实现的路径形态为：
-
-```text
-<dataRoot>/harness-template-evolutions/<evolutionId>/run.json
-<dataRoot>/harness-template-evolutions/<evolutionId>/sources/<sourceId>.json
-<dataRoot>/harness-template-evolutions/<evolutionId>/snapshots/<snapshotId>/snapshot.json
-<dataRoot>/harness-template-evolutions/<evolutionId>/snapshots/<snapshotId>/extracted.txt
-<dataRoot>/harness-template-evolutions/<evolutionId>/drafts/<draftId>/README.md
-<dataRoot>/harness-template-evolutions/<evolutionId>/drafts/<draftId>/template.yaml
-<dataRoot>/harness-template-evolutions/<evolutionId>/drafts/<draftId>/CHANGELOG.md
-<dataRoot>/harness-template-evolutions/<evolutionId>/drafts/<draftId>/examples/default-project-profile.yaml
-<dataRoot>/harness-template-evolutions/<evolutionId>/impact/report.json
-```
-
-日志事件为 `harness-template-evolution.created`、`harness-template-evolution.advanced`、`harness-template-evolution.published`、`harness-template-evolution.impact-analyzed`，均带 `metadata.evolutionId`、`sourceIds`、`snapshotDigests`、`draftDigest`、`validationStatus`、`publishedTemplateDigest`、`staleProfileCount`、`blockers`、`warnings` 和 `nextAction`，用于 AI Agent 根据日志溯源。
-
-`TenantHarnessPolicy` 是私有 tenant/workspace 约束层，用于表达组织级或工作区级的项目 harness 契约。它不是项目接入时由普通操作者选择的模板；管理员通过 `POST /api/v1/harness/policies` 写入版本，通过 `POST /api/v1/harness/policies/{policyId}/activate` 激活，服务端在 `generate`、`validate`、`apply` 时自动把所有匹配的 active policy 合并到项目 profile。
-
-当前文件存储实现的路径形态为：
-
-```text
-<dataRoot>/tenant-harness-policies/<tenantId>/<workspaceId>/<policyId>/versions/v<version>.json
-```
-
-Policy source 使用 `schema: evopilot-tenant-harness-policy/v1`，可以声明 `appliesTo.projectIds`、`appliesTo.languageFamilies`、`appliesTo.templateIds`、`requiredCapabilities`、`evidence`、`failureHandling`、`diagnostics`、`observability`、`governance`、`phaseMapping` 和 `enforcement`。服务端会记录 changelog、`sourceDigest`、`compiledDigest`、validation checks 和 active/superseded 状态。项目 profile 可以增强或细化控制，但不能删除 policy 要求的 capability、evidence、correlation fields、structured log fields、exception attributes、diagnostic signals、observability signals、governance true keys 或 phase mapping。
-
-最终编译链路是：
-
-```text
-HarnessTemplate + active TenantHarnessPolicy records + ProjectHarnessProfile source
-```
-
-如果 active policy 在 profile 激活后升级，旧 active profile 不会被静默改写。后续 profile activation、`target plan` 或 `goal plan` 会返回 `409 PROJECT_HARNESS_PROFILE_POLICY_STALE`，直到用户或管理员重新生成/导入、review 并激活一个绑定当前 `policyRefs[]` 的 profile revision。
-
-项目 profile 可以绑定真实命令并增强规则，但不能关闭模板强制治理门禁，例如 `targetPlanRequiresApproval`、`profileActivationRequiresApproval`、`promotionRequiresReleaseDecision`、`sourceClosureRequired` 和 `noSilentProfileMutation`。
-
-`generate` 会根据项目接入信息、可选 `goalLoopTarget`、自动匹配的 HarnessTemplate、当前项目 runtime/devops/observability 以及已有 active profile 生成新版本。首次接入默认自动匹配；二次接入默认复用 previous active profile 的模板；请求体里的 `templateId/fromTemplate` 只是管理员或高级 override。若配置了可用 LLM，则使用 LLM 生成结构化 JSON；若 debug 模式没有 LLM，则返回 deterministic-template DRAFT；若生产 `requireLlm=true` 且没有 READY LLM，则返回阻断。生成结果永远是 `DRAFT`，用户或管理员必须显式 review/validate/apply/activate。
-
-`validate` 不写入控制面，只返回 `evopilot-project-harness-profile-validation/v1`、compiled digest 和 `diffFromActive`。`POST /harness-profiles` 会写入新的 `VALIDATED` 版本；`activate` 才让它参与后续 goal planning。
-
-当 `GlobalGoal` 生成 phase plan 时，如果项目存在 active profile，`plan.projectHarness` 会包含：
-
-```json
-{
-  "schema": "evopilot-goal-plan-project-harness-binding/v1",
-  "profileId": "default",
-  "version": 1,
-  "templateRef": {
-    "templateId": "python-enterprise-harness",
-    "version": "1.1.0",
-    "digest": "sha256:..."
-  },
-  "policyRefs": [
-    {
-      "policyId": "default",
-      "version": 2,
-      "digest": "sha256:...",
-      "scope": "tenant-workspace"
-    }
-  ],
-  "sourceDigest": "sha256:...",
-  "compiledDigest": "sha256:...",
-  "capabilities": ["source-boundary", "python-runtime", "release-governance"]
-}
-```
-
-这使一次 `GoalTargetPlanSnapshot` 能追溯当时使用的项目 harness 定义。若执行过程中发现 harness gap，EvoPilot 应生成 profile revision suggestion 或新 DRAFT 版本，而不是静默修改 active profile。
+This binding makes the plan reproducible without making EvoPilot the Harness lifecycle system of record. A later Catalog publication does not rewrite an existing plan. A new goal plan will read the latest configured Catalog content and may select a newer Harness version if it better matches the project and target.
 
 ```http
 POST /api/v1/projects/{projectId}/source-credentials
@@ -1020,7 +884,7 @@ GET /api/v1/release/decisions?targetId=github-owner-repo-ga&projectId=github-own
 | Release Candidate | `rc` | 候选发布，要求源码闭环、部署健康、回滚或修复证据。 |
 | GA Release | `ga` | 正式稳定发布，要求完整 Source-to-GA 证据、稳定性和主流 Loop Harness 对齐。 |
 
-这些 profiles 只用于服务端发布证据阈值和 API 级 target 创建。Agent-facing CLI 不暴露成熟度 target template 参数；应使用 `maturity standards list/inspect` 查看 Alpha/Beta/RC/GA 标准，并用 `target plan` / `target run` 处理业务目标。`harness template` 是另一类控制面资源，用于生成项目级 `ProjectHarnessProfile`，不能解释为跳过或选择 Alpha/Beta/RC/GA 阶段。
+这些 profiles 只用于服务端发布证据阈值和 API 级 target 创建。Agent-facing CLI 不暴露成熟度 target template 参数；应使用 `maturity standards list/inspect` 查看 Alpha/Beta/RC/GA 标准，并用 `target plan` / `target run` 处理业务目标。Harness 定义由 `evopilot-harness` 发布；EvoPilot 在规划时只读取 Catalog 并记录 `selectedHarness`，不能解释为跳过或选择 Alpha/Beta/RC/GA 阶段。
 
 默认内置 `ga` 目标：
 

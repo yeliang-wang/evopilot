@@ -36,7 +36,7 @@ See [Package Boundaries](package-boundaries.md) for ownership rules, transitiona
 | Context | Responsibility |
 |---|---|
 | Project | Registered products, source credentials, workspace ownership |
-| Project Harness | Public HarnessTemplate knowledge packs, TenantHarnessPolicy private constraints, ProjectHarnessProfile versions, validation, evidence contracts, diagnostics, observability, and governance |
+| Harness Catalog Consumer | Read-only published Harness Catalog loading, automatic selected-Harness matching, and goal-plan digest evidence |
 | Evidence | Runtime signals, trace/log/eval ingestion, evidence bundles |
 | GlobalGoal | Goal decomposition into GoalTargets, progress, graph, timeline, final report |
 | Loop Runtime | LoopRun execution, worker leases, sandbox proof, trace, events, replay |
@@ -53,7 +53,7 @@ Deep architecture notes remain in:
 
 - [Continuous Evolution Control Plane](continuous-evolution-control-plane.md)
 - [Package Boundaries](package-boundaries.md)
-- [Project Harness Profile](project-harness-profile.md)
+- [Published Harness Catalog](published-harness-catalog.md)
 - [Harness Template Domain](harness-template-domain.md)
 - [Loop Runtime](loop-runtime.md)
 - [ProofOps Target Loop Mode](proofops-target-loop-mode.md)

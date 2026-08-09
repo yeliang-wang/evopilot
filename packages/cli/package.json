@@ -1,6 +1,6 @@
 {
   "name": "@evopilot/cli",
-  "version": "2.5.0",
+  "version": "3.0.0",
   "description": "Command-line client for operating EvoPilot control-plane APIs from terminals, CI jobs, and AI agents.",
   "license": "Apache-2.0",
   "type": "module",
@@ -36,11 +36,12 @@
     "access": "public"
   },
   "scripts": {
-    "build": "npm run build -w @evopilot/contracts && npm run build -w @evopilot/client && tsc -p tsconfig.json"
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "npm run clean && npm run build -w @evopilot/contracts && npm run build -w @evopilot/client && tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@evopilot/client": "2.5.0",
-    "@evopilot/contracts": "2.5.0",
+    "@evopilot/client": "3.0.0",
+    "@evopilot/contracts": "3.0.0",
     "yaml": "^2.9.0"
   },
   "devDependencies": {

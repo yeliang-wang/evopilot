@@ -61,8 +61,8 @@ export function projectDomainHarnessRepoProbe(project: ProjectRepositoryHintSour
     moduleSignals,
     missingModuleBoundaries,
     nextAction: missingModuleBoundaries.length > 0
-      ? "Review ProjectHarnessProfile DRAFT and map missing module boundaries before activation."
-      : "Review generated module signals before activation."
+      ? "Review goal plan selectedHarness evidence and map missing module boundaries before phase-plan approval."
+      : "Review generated module signals before phase-plan approval."
   };
 }
 

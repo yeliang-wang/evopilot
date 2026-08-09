@@ -8,8 +8,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Self-Hosting](operations/self-hosting.md) - run the API server, loop worker, code-upgrader, Postgres, and standalone Dashboard.
 - [Distribution](operations/distribution.md) - GitHub Release CLI tarball, manifest-verified installers, Helm chart entry points, and post-publish npm verification.
 - [Control Plane User Guide](guides/user-guide.md) - operate projects, credentials, goals, loops, releases, and audit through API/CLI semantics.
-- [Project Harness Onboarding](guides/project-harness-onboarding.md) - generate, review, activate, and evolve project-level harness profiles.
-- [HarnessTemplate Evolution](guides/harness-template-evolution.md) - administrator lifecycle for evolving public harness templates from reviewable sources, draft validation, approval, publishing, and project impact.
+- [Published Harness Catalog](architecture/published-harness-catalog.md) - EvoPilot v3 read-only consumption of Harness definitions published by `evopilot-harness`.
 
 ## AI Agents And CLI Automation
 
@@ -22,8 +21,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [CLI Automation](cli/automation.md) - WorkBuddy, Codex, Claude Code, and CI usage rules.
 - [AI Agent Scenario Coverage](guides/ai-agent-scenarios.md) - scenario matrix for third-party AI Agent simulation and human operators.
 - [AI Agent Runbook](guides/ai-agent-runbook.md) - end-to-end production operating flow and failure handling.
-- [Public Harness Template Packs](../harness-templates/public/README.md) - human-readable administrator-maintained HarnessTemplate knowledge packs.
-- [HarnessTemplate Evolution](guides/harness-template-evolution.md) - source-to-draft-to-publish CLI/API lifecycle for administrator template upgrades.
+- [Published Harness Catalog](architecture/published-harness-catalog.md) - Catalog configuration, dynamic reads, and `selectedHarness` evidence.
 
 ## API And Dashboard Integrators
 
@@ -50,23 +48,23 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 ## Repository Operators
 
 - [Engineering Scripts](../scripts/README.md) - production runtime, verification, release, soak, real-boundary E2E, and maintenance script map.
-- [Public Harness Template Packs](../harness-templates/public/README.md) - human-readable administrator-maintained HarnessTemplate knowledge packs.
+- [Selected Harness Binding](reference/selected-harness-binding.md) - evidence fields AI Agents must report after planning.
 
 ## Architects And Reviewers
 
 - [Architecture](architecture/README.md) - architecture entry point.
 - [Continuous Evolution Control Plane](architecture/continuous-evolution-control-plane.md) - product control-plane model.
 - [Package Boundaries](architecture/package-boundaries.md) - TypeScript workspace ownership, transitional hotspots, and verification rules.
-- [Project Harness Profile](architecture/project-harness-profile.md) - project-level harness control-plane profile lifecycle and storage model.
+- [Published Harness Catalog](architecture/published-harness-catalog.md) - split boundary between `evopilot-harness` publication and EvoPilot execution.
 - [Loop Runtime](architecture/loop-runtime.md) - loop execution, continuity, and recovery.
 - [ProofOps Target Loop Mode](architecture/proofops-target-loop-mode.md) - target-loop governance model.
 - [Lifecycle](reference/lifecycle.md) - evidence-to-release lifecycle model.
-- [Project Harness Profile Schema](reference/project-harness-profile-schema.md) - YAML/JSON source format and compiled control-plane contract.
+- [Selected Harness Binding](reference/selected-harness-binding.md) - goal-plan evidence contract for the published Harness selected by EvoPilot.
 - [Product Readiness](reference/product-readiness.md) - GA readiness review.
 - [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
-- [EvoPilot v2.5.0 Release Notes](releases/2.5.0.md) - external Harness Catalog mounts, dynamic template matching, and split `evopilot-harness` compatibility.
+- [EvoPilot v3.0.0 Release Notes](releases/3.0.0.md) - strict external Harness Catalog consumer boundary and `selectedHarness` goal-plan evidence.
 - [EvoPilot v2.4.2 Release Notes](releases/2.4.2.md) - release-readiness closure, immutable ECS digest-only rollout hardening, and current distribution metadata.
 - [EvoPilot v2.4.1 Release Notes](releases/2.4.1.md) - AI Agent scenario coverage, Harness evolution operating docs, CLI help consistency, and production asset verification notes.
 - [EvoPilot v2.4.0 Release Notes](releases/2.4.0.md) - one-command Harness evolution, source-driven template review drafts, CLI/API contract, and Dashboard compatibility notes.
@@ -88,7 +86,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 ## Examples And Comparisons
 
 - [Examples](../examples/README.md) - example index for onboarding, source-to-GA, executor adapters, and GitHub workflows.
-- [Source-To-GA Examples](../examples/source-to-ga/README.md) - end-to-end project onboarding, harness review, goal loop, and release decision scenarios.
+- [Source-To-GA Examples](../examples/source-to-ga/README.md) - end-to-end project onboarding, Harness Catalog selection, goal loop, and release decision scenarios.
 - [Mainstream Loop Harness Alignment](examples/comparisons/mainstream-loop-harness-alignment.md) - alignment notes against mainstream loop-harness patterns.
 
 ## Runtime Artifacts

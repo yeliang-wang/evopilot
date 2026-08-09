@@ -4,8 +4,6 @@
 
 This quickstart assumes EvoPilot already runs as a remote API server and the caller has an EvoPilot API token. The CLI does not start EvoPilot locally.
 
-For a task-by-task map that separates third-party AI Agent simulation from human operator review, use [AI Agent Scenario Coverage](../guides/ai-agent-scenarios.md) after this quickstart.
-
 ## 1. Configure The Session
 
 ```bash
@@ -25,9 +23,29 @@ evopilot status --json
 evopilot logging inspect --json
 ```
 
-Continue only when `status=READY`, `health.status=UP`, `ready.status=READY`, and authenticated `summary` is present. `logging inspect` shows the active EvoPilot log level and stack policy. For normal automation keep the server at `info`; an administrator may temporarily use `evopilot logging set --level debug --json` during diagnosis, then restore `info`.
+Continue only when `status=READY`, `health.status=UP`, `ready.status=READY`, and authenticated `summary` is present.
 
-## 2. Prepare LLM Profile
+## 2. Prepare Harness Catalog
+
+Harness lifecycle is outside EvoPilot.
+
+An administrator publishes Harness definitions with `evopilot-harness`, then configures the EvoPilot server:
+
+```bash
+EVOPILOT_HARNESS_CATALOG_DIR=/path/to/evopilot-harness/published
+```
+
+For multiple Catalog directories:
+
+```bash
+EVOPILOT_HARNESS_CATALOG_DIRS=/path/to/catalog-a:/path/to/catalog-b
+```
+
+The published directory must contain `CATALOG.md` with an `evopilot-harness-catalog` fenced YAML block. EvoPilot reads that file at use time. The EvoPilot CLI does not import, mount, scan, approve, publish, or evolve Harness definitions.
+
+Operators can view available Catalogs only through API/Dashboard read-only projections. If no Catalog is configured, goal planning can still create a maturity plan but `plan.selectedHarness` is missing and the operator should stop.
+
+## 3. Prepare LLM Profile
 
 Store the raw LLM key once in the EvoPilot server-side secret vault:
 
@@ -57,7 +75,7 @@ evopilot llm profile preflight my-agent-llm --json
 
 Continue only when the profile preflight returns `READY`.
 
-## 3. Choose Repository Mode
+## 4. Choose Repository Mode
 
 Use exactly one execution mode:
 
@@ -70,7 +88,7 @@ read-only-public       public inspection only; no real loop or release claim
 
 If no GitHub/GitLab account, organization, group, service account, deploy token, or GitHub App principal exists, use `read-only-public` and stop before real loop execution.
 
-## 4. Onboard Or Verify Project
+## 5. Onboard Or Verify Project
 
 For a new owned GitHub project:
 
@@ -119,176 +137,7 @@ evopilot project llm preflight my-agent --json
 
 Continue only when source credentials, DevOps, and LLM readiness are `READY`.
 
-## Admin: Maintain Template Harness
-
-Project onboarding consumes an already published template, but normal onboarding does not require the operator to choose one manually. Fresh installs include runtime templates `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, and `observability-apm-harness`, plus v2.2 domain templates `database-product-harness` and `api-gateway-harness`. EvoPilot automatically matches one template from product-domain signals, project runtime/repository context, and the goal loop target; `--from-template` is only an explicit administrator or advanced override. These built-ins are initialized from selected public projects, official specifications, and enterprise engineering practice, then fixed inside EvoPilot as structured template data with `sourceReferences[]`. Domain templates are `@2.2.0`; existing runtime and broad templates remain `@1.1.0` baselines and are not part of the current database/gateway domain upgrade.
-
-Administrators should edit public templates as readable packs under `harness-templates/public/<template-id>/`:
-
-```bash
-evopilot harness template list --json
-evopilot harness template inspect python-enterprise-harness --json
-evopilot harness template pack list harness-templates/public --json
-evopilot harness template pack validate harness-templates/public/python-enterprise-harness --json
-evopilot harness template pack publish harness-templates/public/python-enterprise-harness --json
-```
-
-Each pack contains `README.md`, `template.yaml`, `CHANGELOG.md`, and `examples/default-project-profile.yaml`. The CLI surface is intentionally small: list, validate, and publish. Use Git for file diff/review; `compile`, `diff`, and `publish-all` are not first-stage pack commands.
-
-When reusable Harness definitions are maintained by the independent `evopilot-harness` project, publish a usable Catalog there and mount the published directory in EvoPilot:
-
-```bash
-evopilot harness catalog mount \
-  --source /path/to/evopilot-harness/published \
-  --json
-evopilot harness catalog scan <catalog-id> --json
-evopilot harness catalog list --json
-```
-
-Catalog mounting stores a server-side reference. EvoPilot dynamically reads `CATALOG.md` and the referenced Harness definition files when listing templates or generating a project profile. It does not copy every Harness into the control plane by default.
-
-Administrators can still publish a direct YAML/JSON template file when they do not need the directory pack shape:
-
-```bash
-evopilot harness template upgrade \
-  --file ./python-enterprise-harness-1.2.0.yaml \
-  --changelog "Add organization-specific FastAPI service defaults and pytest coverage gates." \
-  --json
-```
-
-The template file must contain `schema: evopilot-harness-template/v1`, `id`, `version`, and the template sections. YAML or JSON is authoritative; Markdown documents the pack for humans and AI agents. The server stores it in the control plane with a computed digest and changelog. Reusing the same `id@version` is rejected unless the administrator passes `--force`. Existing active project profiles are not silently rewritten; use `harness profile generate` or `harness profile upgrade` to create a reviewed project revision.
-
-When template changes should be derived from reviewable sources, use the server-governed evolution lifecycle instead of editing a pack directly:
-
-```bash
-evopilot harness evolve \
-  --source-project ./legacy-cache-service \
-  --goal "Create or evolve the harness for self-developed distributed cache products." \
-  --json
-
-evopilot harness template match \
-  --source-project ./legacy-cache-service \
-  --intent "Create or evolve the harness for self-developed distributed cache products." \
-  --json
-
-evopilot harness template evolution create \
-  --auto-match \
-  --intent "Create or evolve the harness for self-developed distributed cache products." \
-  --source project=./legacy-cache-service \
-  --source log=./prod-incident.log \
-  --source evopilot-history=evolution-python-agent \
-  --json
-
-evopilot harness template evolution create \
-  --base-template python-enterprise-harness \
-  --target-version 2.2.0 \
-  --intent "Add stronger Python exception tracking and AI troubleshooting metadata." \
-  --source project=./legacy-cache-service \
-  --source log=./prod-incident.log \
-  --source evopilot-history=evolution-python-agent \
-  --source github=fastapi/fastapi#master \
-  --source url=https://opentelemetry.io/docs/languages/python/ \
-  --source runtime-evidence=release-evidence-2026-08-python \
-  --file ./workspace-observability-notes.md \
-  --note "Require requestId/traceId/errorCode/nextAction in error logs." \
-  --json
-evopilot harness template evolution advance <evolution-id> --json
-evopilot harness template evolution advance <evolution-id> --json
-evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
-```
-
-Stop when the response reaches `status=REVIEW_REQUIRED`. Show `evolution.analysisSummary.domainSignals`, `evolution.analysisSummary.gapClassifications`, `evolution.draft.template`, `evolution.draft.pack`, `evolution.draft.validation`, `evolution.draft.diffFromBase`, `evolution.draft.sourceCoverage`, and `evolution.draft.generatedBy` to the administrator. If approved:
-
-```bash
-evopilot harness template evolution approve <evolution-id> \
-  --confirmed-by platform-admin \
-  --confirmation "Reviewed draft template, validation, source coverage, and impact." \
-  --json
-evopilot harness template evolution publish <evolution-id> --json
-evopilot harness template evolution impact <evolution-id> --refresh --json
-```
-
-The lifecycle stores source snapshots, generated pack files, validation, audit records, and an impact report. Existing active project profiles keep their previous `templateRef`; stale projects must receive reviewed profile upgrade drafts before new goal planning binds the new template digest. See [../guides/harness-template-evolution.md](../guides/harness-template-evolution.md).
-
-## Admin: Maintain Tenant Harness Policy
-
-`TenantHarnessPolicy` is the private tenant/workspace layer between public templates and project profiles. It is optional for a workspace, but once an administrator activates one, every matching project profile must compile with its `policyRefs` and satisfy its required capabilities, evidence, diagnostics, observability, and governance constraints.
-
-```bash
-evopilot harness policy list --json
-evopilot harness policy apply \
-  --file ./tenant-harness-policy.yaml \
-  --changelog "Add workspace private evidence, logging, and governance requirements." \
-  --json
-evopilot harness policy activate default --version <policy-version> --json
-```
-
-Policy files use `schema: evopilot-tenant-harness-policy/v1`. The server stores versions under tenant/workspace scope, computes source and compiled digests, and blocks `harness profile activate` or `target plan` with `PROJECT_HARNESS_PROFILE_POLICY_STALE` when an active project profile was compiled against an older policy.
-
-## 5. Generate And Confirm Project Harness Profile
-
-Before phase planning, create the project-level harness definition that controls capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, and governance.
-
-```bash
-evopilot harness profile generate \
-  --project my-agent \
-  --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" \
-  --llm-profile my-agent-llm \
-  --json
-```
-
-For a first onboarding, EvoPilot automatically matches a template and generates the DRAFT from that template, any active tenant/workspace policies, the goal loop target, and project context. For a second onboarding or project evolution, EvoPilot first reuses the previous active profile's template unless an administrator explicitly overrides it, then includes the previous active profile in the generation context and returns a diff-aware DRAFT. The response `generatedBy.evidence[]` includes `templateSelection=auto-match`, `templateSelection=previous-active-profile`, or `templateSelection=request-override`, and includes `tenantPolicy=<policy>@v<version>` when a private policy was inherited.
-
-Continue only when the JSON response shows:
-
-```text
-schema=evopilot-project-harness-profile-generate-result/v1
-status=DRAFT
-profile.status=DRAFT
-profile.validation.status=VALIDATED
-profile.version=<harness-version>
-profile.compiledDigest=<digest>
-profile.policyRefs=<active-policy-refs-or-empty>
-```
-
-Stop after generation. Show these fields to the user or project owner:
-
-```text
-profile.sourceContent
-profile.compiledContent
-profile.validation
-profile.diffFromActive
-profile.generatedBy
-profile.sourceDigest
-profile.compiledDigest
-profile.policyRefs
-summary
-```
-
-If the user asks for changes, write the edited source profile to YAML or JSON, then repeat validate/diff/apply:
-
-```bash
-evopilot harness profile validate --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
-evopilot harness profile diff default --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
-evopilot harness profile apply --project my-agent --file /tmp/my-agent-harness-profile.yaml --json
-```
-
-After `apply`, use the returned `profile.version` as `<harness-version>` for activation.
-
-If the generated DRAFT is accepted without edits, review the server diff and activate the reviewed version:
-
-```bash
-evopilot harness profile inspect default --project my-agent --version <harness-version> --json
-evopilot harness profile diff default --project my-agent --version <harness-version> --json
-evopilot harness profile activate default --project my-agent --version <harness-version> --json
-evopilot harness profile explain default --project my-agent --json
-```
-
-Do not activate a profile version until the user or project owner confirms that the DRAFT harness definition is acceptable. After activation, `target plan` and `goal plan` must bind the active profile by version and digest, plus `policyRefs` when tenant/workspace policies are active.
-
-## 6. Generate The Phase Plan
-
-The objective is a business goal, not a maturity label:
+## 6. Plan With Published Harness Auto-Match
 
 ```bash
 evopilot target plan \
@@ -299,88 +148,45 @@ evopilot target plan \
   --json
 ```
 
-EvoPilot always decomposes the objective into:
+Read:
 
 ```text
-Alpha -> Beta -> RC -> GA
+goalId
+phasePlan.phases[]
+phasePlan.targets[]
+editablePlan
+plan.selectedHarness
+llmUsage.summary
+requestId
 ```
 
-Stop after this command. Show `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or project owner.
+Stop after planning. Show the phase plan and `selectedHarness` digest evidence to the project owner. If `selectedHarness` is missing, ask an administrator to publish/configure a Harness Catalog and regenerate the plan.
 
-Also show `plan.projectHarness` or `phasePlan.projectHarness`. It must include the activated harness profile id, version, template reference, `policyRefs`, source digest, compiled digest, and capabilities. If the binding is missing or the server returns `PROJECT_HARNESS_PROFILE_POLICY_STALE`, stop and repair the harness activation before approval.
-
-## 7. Apply User Changes And Approve
-
-Only after the user or project owner confirms:
+## 7. Approve And Run
 
 ```bash
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
 evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
 evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
-
 evopilot target plan approve <goal-id> \
-  --confirmed-by "project-owner" \
+  --confirmed-by project-owner \
   --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
   --json
-```
-
-Do not invent confirmation text.
-
-## 8. Run The Target
-
-```bash
 evopilot target run \
   --project my-agent \
   --objective "Enable tenant onboarding and lifecycle workflow visibility" \
-  --max-steps 20 \
   --llm-profile my-agent-llm \
   --client workbuddy \
   --json
 ```
 
-If the plan is not approved, the wrapper stops with `PENDING_PLAN_APPROVAL` and `nextAction=approve-plan`.
-
-## 9. Inspect Evidence Packages
+## 8. Verify Completion
 
 ```bash
 evopilot goal target-package <goal-id> --target <target-id> --json
-evopilot goal phase-package <goal-id> --phase alpha --json
-evopilot release decisions --project my-agent --target my-agent-ga --json
+evopilot goal phase-package <goal-id> --phase ga --json
+evopilot release decisions --project my-agent --target <target-id> --json
 evopilot audit list --limit 50 --json
 ```
 
-Completion requires:
-
-```text
-TargetEvidencePackage.status=GO
-PhasePackage.decision.status=GO
-releaseDecision.status=GO
-llmUsage.summary.provider is present
-llmUsage.summary.model is present
-llmUsage.summary.totalTokens is present
-```
-
-## 10. Final Agent Report
-
-Report server-derived fields only:
-
-```text
-projectId=<project-id>
-projectHarnessProfile=<profile-id-or-missing>
-projectHarnessVersion=<version-or-missing>
-projectHarnessDigest=<compiled-digest-or-missing>
-goalId=<goal-id>
-activeTargetId=<target-id>
-loopId=<loop-id>
-nextAction=<next-action>
-targetPackage=<GO|NO-GO|PENDING>
-phasePackage=<GO|NO-GO|PENDING>
-releaseDecision=<GO|CONDITIONAL-GO|NO-GO|missing>
-llmProvider=<provider>
-llmModel=<model>
-inputTokens=<n>
-outputTokens=<n>
-totalTokens=<n>
-requestIds=<ids>
-blockers=<blockers>
-```
+Do not call a run complete unless server evidence shows the relevant TargetEvidencePackage, PhasePackage, release decision, request IDs, token usage, and selected Harness digest.

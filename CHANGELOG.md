@@ -8,6 +8,25 @@ This project follows a product-readiness changelog model: release entries should
 
 No unreleased changes yet.
 
+## 3.0.0 - 2026-08-09
+
+### Changed
+
+- Strictly separated Harness lifecycle management from EvoPilot runtime execution.
+- Removed the EvoPilot Harness CLI/API lifecycle surface; EvoPilot now consumes only configured published Harness Catalog directories.
+- Added `selectedHarness` goal-plan evidence with Harness id, version, domain, catalog id, catalog digest, entry path, entry digest, score, and match reasons.
+- Updated CLI, API, architecture, AI Agent, installer, Helm, and release-facing documentation to `3.0.0`.
+
+### Migration
+
+- Publish or evolve Harness definitions in `evopilot-harness`.
+- Configure EvoPilot with `EVOPILOT_HARNESS_CATALOG_DIR` or `EVOPILOT_HARNESS_CATALOG_DIRS`.
+- Regenerate goal plans to bind the latest published Harness digest in `plan.selectedHarness`.
+
+### Validation
+
+- Full release validation is required before publication: `npm run check`, `npm run cli:test`, `node --test tests/functional/harness-catalog-consumer.test.mjs`, `npm run release:artifact`, `npm run verify:release-artifact`, and `git diff --check`.
+
 ## 2.5.0 - 2026-08-09
 
 ### Added

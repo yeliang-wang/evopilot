@@ -12,7 +12,7 @@ It should not claim parity with the most established public AI-agent projects on
 
 | Area | Current State | Evidence |
 | --- | --- | --- |
-| Product kernel | Enterprise control plane for evidence, goals, loops, harness profiles, approvals, source closure, and release decisions. | `README.md`, `docs/architecture/`, `docs/api/openapi.json` |
+| Product kernel | Enterprise control plane for evidence, goals, loops, published Harness Catalog selection, approvals, source closure, and release decisions. | `README.md`, `docs/architecture/`, `docs/api/openapi.json` |
 | Distribution | Docker, Compose, Kubernetes references, Helm chart, GitHub Release CLI tarball set, manifest-backed self-host installer, release docs, immutable release archive, SBOM, provenance, checksum, image digest metadata, npm publish workflow, and public registry verifier for the separate post-publish layer. | `Dockerfile`, `docker-compose.yml`, `deploy/`, `charts/evopilot/`, `packages/create-evopilot/`, `installers/manifest.json`, `.github/workflows/release-artifacts.yml`, `.github/workflows/npm-packages.yml`, `scripts/verify-npm-registry-publication.mjs`, `docs/operations/distribution.md` |
 | Documentation | Reader-oriented docs for users, operators, AI agents, API integrators, and architects. | `docs/README.md`, `AGENTS.md`, `docs/cli/` |
 | Release governance | Product-native release decisions plus public release playbook. | `docs/reference/release-package.md`, `docs/operations/release-management.md` |

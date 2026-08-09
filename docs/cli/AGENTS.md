@@ -10,22 +10,21 @@ Read this file first. Then read [quickstart.md](quickstart.md). Use [automation.
 - Do not parse human-readable output for automation.
 - Do not pass raw GitHub, GitLab, LLM, deploy, API, or password secrets in daily `target run`, `goal run`, or `loop run` commands.
 - Store secrets on the EvoPilot server or tenant/workspace secret vault, then reference them through `tokenRef`, `apiKeyRef`, or an LLM profile id.
-- Do not activate a generated `ProjectHarnessProfile` until the user or project owner has reviewed the DRAFT profile definition.
-- Do not approve or publish a generated `HarnessTemplateEvolution` draft until an administrator has reviewed the source coverage, generated pack, validation, diff, and impact.
 - Do not approve a phase plan until the user or project owner has reviewed it.
 - Do not invent `--confirmed-by` or `--confirmation` values.
 - Use `logging inspect --json` and response `requestId` / `correlation.*` fields for troubleshooting; only an administrator should temporarily raise logging to `debug`, and it should be restored to `info` after diagnosis.
 - Do not claim source writeback, PR/MR, CI/CD, merge, deploy, release readiness, or GA beyond the server-returned `claimBoundary` and release decision.
-- Stop when the server returns a blocker, `nextAction`, `NO-GO`, `BLOCKED`, `FAILED`, human approval, policy review, repair action, timeout, or max-step boundary.
+- Stop when the server returns a blocker, `nextAction`, `NO-GO`, `BLOCKED`, `FAILED`, human approval, repair action, timeout, or max-step boundary.
 
-## Required Reading Order
+## Harness Boundary
 
-1. [quickstart.md](quickstart.md) - shortest safe flow.
-2. [automation.md](automation.md) - fields to parse and stop conditions.
-3. [workflows.md](workflows.md) - owned repository, forked upstream, GitLab, and low-level loop workflows.
-4. [../guides/ai-agent-scenarios.md](../guides/ai-agent-scenarios.md) - scenario matrix for third-party AI Agent simulation and human operators.
-5. [commands.md](commands.md) - full command syntax.
-6. [../guides/ai-agent-runbook.md](../guides/ai-agent-runbook.md) - production incident handling and end-to-end runbook.
+EvoPilot v3 is a Harness Catalog consumer only.
+
+- `evopilot-harness` owns Harness lifecycle, evolution, review, versioning, and publication.
+- EvoPilot reads one or more server-configured published Catalog directories through `EVOPILOT_HARNESS_CATALOG_DIR` or `EVOPILOT_HARNESS_CATALOG_DIRS`.
+- EvoPilot exposes only read-only Catalog projection through API/Dashboard. The EvoPilot CLI does not expose `evopilot harness ...`.
+- During `target plan` or `goal plan`, EvoPilot dynamically reads `CATALOG.md`, auto-matches a `PUBLISHED` Harness, and records `plan.selectedHarness`.
+- If `plan.selectedHarness` is missing, stop and ask an administrator to publish a Harness with `evopilot-harness` or configure the server Catalog directory.
 
 ## Required Environment
 
@@ -39,7 +38,7 @@ export EVOPILOT_CLI_CLIENT="workbuddy"
 export EVOPILOT_CONFIG="$PWD/.evopilot-agent-config.json"
 ```
 
-`EVOPILOT_API_TOKEN` is an EvoPilot API bearer token. It is not a GitHub, GitLab, or LLM token.
+`EVOPILOT_API_TOKEN` is an EvoPilot API bearer token. It is not a GitHub, GitLab, Harness, or LLM token.
 
 ## Safe Command Flow
 
@@ -52,64 +51,25 @@ evopilot project onboard verify my-agent --json
 evopilot project preflight my-agent --json
 evopilot project devops preflight my-agent --json
 evopilot project llm preflight my-agent --json
-evopilot harness template list --json
-evopilot harness policy list --json
-evopilot harness profile generate --project my-agent --goal-loop-target "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --json
-evopilot harness profile inspect default --project my-agent --version <harness-version> --json
-evopilot harness profile diff default --project my-agent --version <harness-version> --json
-```
-
-EvoPilot automatically matches one built-in or administrator-published template from the project context and goal loop target. `--from-template` is only an explicit administrator or advanced override. Fresh installs include Python enterprise, Java DDD service, Node SaaS control-plane, Go middleware, and observability/APM runtime baselines, plus the v2.2 database product and API gateway domain baselines. Domain templates are `@2.2.0`; existing runtime and broad templates remain `@1.1.0` baselines and are not part of the current database/gateway domain upgrade. `harness template inspect <id> --json` exposes their `sourceReferences[]`, `failureTaxonomy`, `diagnosticsBaseline`, `observabilityBaseline`, and `governanceRules`. Administrator agents that maintain templates should read `harness-templates/public/README.md`, edit the target pack's `README.md`, `template.yaml`, `CHANGELOG.md`, and `examples/`, then use `harness template pack validate <path> --json` and `harness template pack publish <path> --json`.
-
-Administrator agents can also run the server-governed template evolution lifecycle when template changes come from reviewable sources instead of direct pack editing:
-
-```bash
-evopilot harness evolve \
-  --source-project ./legacy-cache-service \
-  --goal "Create or evolve the harness for self-developed distributed cache products." \
-  --json
-
-evopilot harness template match \
-  --source-project ./legacy-cache-service \
-  --intent "Create or evolve the harness for self-developed distributed cache products." \
-  --json
-
-evopilot harness template evolution create \
-  --auto-match \
-  --intent "Create or evolve the harness for self-developed distributed cache products." \
-  --source project=./legacy-cache-service \
-  --source log=./prod-incident.log \
-  --source evopilot-history=evolution-python-agent \
-  --source github=fastapi/fastapi#master \
-  --source url=https://opentelemetry.io/docs/languages/python/ \
-  --file ./workspace-observability-notes.md \
-  --note "Require requestId/traceId/errorCode/nextAction in error logs." \
-  --json
-evopilot harness template evolution advance <evolution-id> --json
-evopilot harness template evolution advance <evolution-id> --json
-evopilot harness template evolution advance <evolution-id> --llm-profile platform-harness-llm --json
-```
-
-Stop at `status=REVIEW_REQUIRED`. Show `evolution.analysisSummary.domainSignals`, `evolution.analysisSummary.gapClassifications`, `evolution.draft.template`, `evolution.draft.pack`, `evolution.draft.validation`, `evolution.draft.diffFromBase`, `evolution.draft.sourceCoverage`, and `evolution.draft.generatedBy` to the administrator. Continue only with explicit confirmation:
-
-```bash
-evopilot harness template evolution approve <evolution-id> --confirmed-by <admin> --confirmation <text> --json
-evopilot harness template evolution publish <evolution-id> --json
-evopilot harness template evolution impact <evolution-id> --refresh --json
-```
-
-Template evolution does not silently rewrite active `ProjectHarnessProfile` versions. If `impactReport.staleProfileCount>0`, stop and create reviewed project profile upgrade drafts for affected projects before relying on the new template in goal planning. Full details are in [../guides/harness-template-evolution.md](../guides/harness-template-evolution.md).
-
-Tenant/workspace `TenantHarnessPolicy` records are administrator-managed private constraints. Daily agents do not choose them manually; they should read `harness policy list --json` for awareness and confirm generated profiles include current `profile.policyRefs[]` when policies are active. If profile activation or goal planning returns `PROJECT_HARNESS_PROFILE_POLICY_STALE`, stop and regenerate or reapply the ProjectHarnessProfile against the active policy before continuing.
-
-After `harness profile generate`, stop. Show `profile.sourceContent`, `compiledContent`, `validation`, `diffFromActive`, `generatedBy`, `sourceDigest`, `compiledDigest`, and `policyRefs` to the user or project owner. Report whether `generatedBy.evidence[]` contains `templateSelection=auto-match`, `templateSelection=previous-active-profile`, or `templateSelection=request-override`, and whether it contains `tenantPolicy=<policy>@v<version>`. If the user edits the harness, write the edited YAML/JSON to a file and run `harness profile validate`, `harness profile diff`, and `harness profile apply`; then use the `profile.version` returned by `apply` as `<harness-version>`. Activate only the reviewed version.
-
-```bash
-evopilot harness profile activate default --project my-agent --version <harness-version> --json
 evopilot target plan --project my-agent --objective "Enable tenant onboarding and lifecycle workflow visibility" --llm-profile my-agent-llm --client workbuddy --json
 ```
 
-After `target plan`, stop. Show `plan.projectHarness` or `phasePlan.projectHarness`, including `policyRefs` when present, plus `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or project owner. Continue only after explicit confirmation.
+After `target plan`, stop. Show the returned `phasePlan` and `plan.selectedHarness` to the project owner.
+
+Required Harness fields to report:
+
+```text
+selectedHarness.harnessId
+selectedHarness.version
+selectedHarness.domain
+selectedHarness.catalogId
+selectedHarness.catalogDigest
+selectedHarness.entryPath
+selectedHarness.entryDigest
+selectedHarness.selectionReasons
+```
+
+Continue only after explicit confirmation:
 
 ```bash
 evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
@@ -133,6 +93,8 @@ llmUsage.summary.provider
 llmUsage.summary.model
 llmUsage.summary.totalTokens
 requestId
+selectedHarness.harnessId
+selectedHarness.entryDigest
 ```
 
 Read packages explicitly:
@@ -144,17 +106,6 @@ evopilot release decisions --project <project-id> --target <target-id> --json
 evopilot audit list --limit 50 --json
 ```
 
-## GitHub And GitLab Projects
-
-For enterprise real loops, the operator must provide a GitHub/GitLab execution principal:
-
-- `owned-repository`: the same owner controls source writeback and CI/CD.
-- `fork-validated-pr`: EvoPilot writes and runs CI/CD in an operator-owned fork, then prepares upstream PR evidence.
-- `upstream-authorized`: a maintainer principal can write and run CI/CD in the upstream.
-- `read-only-public`: public inspection only. Do not claim PR, merge, CI/CD, deploy, release readiness, or GA.
-
-If the user has no GitHub/GitLab account, use `read-only-public` and stop before real loop execution.
-
 ## Report Format
 
 In final agent output, report:
@@ -164,9 +115,10 @@ schema=<wrapper-schema>
 status=<server-status>
 nextAction=<server-next-action>
 projectId=<project-id>
-projectHarnessProfile=<profile-id-or-missing>
-projectHarnessVersion=<version-or-missing>
-projectHarnessDigest=<compiled-digest-or-missing>
+selectedHarness=<harness-id>@<version>
+selectedHarnessCatalog=<catalog-id>
+selectedHarnessCatalogDigest=<digest-or-missing>
+selectedHarnessEntryDigest=<digest-or-missing>
 goalId=<goal-id>
 activeTargetId=<target-id>
 loopId=<loop-id>
@@ -178,6 +130,5 @@ llmModel=<model>
 inputTokens=<n>
 outputTokens=<n>
 totalTokens=<n>
-requestIds=<ids>
-blockers=<blockers>
+requestId=<request-id>
 ```

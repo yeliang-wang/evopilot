@@ -35,19 +35,14 @@ import {
   collectProjectCodeContext,
   compileRuleWithLlm,
   createAndStoreRunFromEvidence,
-  createProjectHarnessProfileVersion,
-  createTenantHarnessPolicyVersion,
   currentReleaseDecision,
   defaultEvaluationDatasets,
   devopsProviderMatchesRepository,
   diagnoseProjectRuntime,
-  diffProjectHarnessProfiles,
   discoverSourceReleaseRunRepairCandidates,
   encryptSecretValue,
   executeLoopSourceClosure,
   executorGraphFromLoopOrchestrationRequest,
-  explainProjectHarnessProfile,
-  generateProjectHarnessProfileDraft,
   githubAppInstallationChecks,
   historyView,
   isRecord,
@@ -92,14 +87,7 @@ import {
   normalizeWorkspaceQuotas,
   normalizeWorkspaceStatus,
   optionalTrimmedString,
-  parseHarnessTemplateApplyPayload,
-  parseProjectHarnessProfilePayload,
-  parseTenantHarnessPolicyPayload,
   preflightLoopSourceClosure,
-  projectHarnessLogMetadata,
-  projectHarnessProfileDiffWithoutBase,
-  projectHarnessTemplateSelectionMode,
-  projectHarnessTemplateSelectionReasons,
   projectLlmUsage,
   reconcilePendingSourceReleaseDeployFinalizers,
   refreshCodeUpgradeRun,
@@ -113,28 +101,13 @@ import {
   resolveWorkspace,
   runLoopOrchestrationAutopilot,
   startCodeUpgradeExecution,
-  tenantHarnessPolicyLogMetadata,
   triggerNativeDevopsDelivery,
   updateProjectSourceCredentials,
   validateProjectRepository,
   workflowCanvasContextFromRequest,
   workspaceUsage
 } from "../application/control-plane-services.js";
-import {
-  advanceHarnessTemplateEvolutionRun,
-  approveHarnessTemplateEvolutionRun,
-  createHarnessTemplateEvolutionRun,
-  harnessTemplateEvolutionLogMetadata,
-  harnessTemplateEvolutionNextAction,
-  harnessTemplateRef,
-  hydrateHarnessTemplateEvolutionRun,
-  impactReportForHarnessTemplate,
-  isHarnessTemplateDomainError,
-  matchHarnessTemplateEvolutionSource,
-  parseHarnessKnowledgeSources,
-  publishHarnessTemplateEvolutionRun,
-  validateHarnessTemplateProfile
-} from "../domains/harness-template/index.js";
+import { isHarnessTemplateDomainError } from "../domains/harness-template/index.js";
 import { serverCompositionRootMetadata } from "../http/composition-root.js";
 import {
   HttpError
@@ -175,7 +148,6 @@ import { handleLoopRuntimeRoutes } from "../http/routes/loop-runtime.js";
 import { handleLoopRoutes } from "../http/routes/loops.js";
 import { handleMaturityRoutes } from "../http/routes/maturity.js";
 import { handlePlatformRoute } from "../http/routes/platform.js";
-import { handleProjectHarnessProfileRoutes } from "../http/routes/project-harness-profiles.js";
 import { handleProjectRoutes } from "../http/routes/projects.js";
 import { handleReadModelRoute } from "../http/routes/read-models.js";
 import { handleReleaseEvidenceRoutes } from "../http/routes/release-evidence.js";
@@ -271,7 +243,7 @@ export type {
   GoalPlan,
   GoalPlanApprovalConfirmation,
   GoalPlanPlannerTrace,
-  GoalPlanProjectHarnessBinding,
+  GoalPlanSelectedHarnessBinding,
   GoalPlanStatus,
   GoalRunStatus,
   GoalSnapshot,
@@ -415,7 +387,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
   const llmClient = options.llmClient ?? createLlmClientFromEnv();
   const requireLlm = runtime.requireLlm;
   const tokens = normalizeTokens(options);
-  const store = new FileStore(options.dataRoot, { llmClient, requireLlm });
+  const store = new FileStore(options.dataRoot, { llmClient, requireLlm, harnessCatalogDirs: options.harnessCatalogDirs });
   setActiveLoggingSettings(store.readLoggingSettings());
   store.ensureBootstrapAdmin();
   const users = normalizeUsers(options, tokens, runtime, store);
@@ -687,34 +659,9 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         parentRequestId,
         setRequestErrorCode: (code) => { requestErrorCode = code; },
         deps: {
-          advanceHarnessTemplateEvolutionRun,
-          approveHarnessTemplateEvolutionRun,
-          audit,
-          canAccessScopedResource,
-          createHarnessTemplateEvolutionRun,
-          createTenantHarnessPolicyVersion,
           envelope,
           hasRole,
-          harnessTemplateEvolutionLogMetadata,
-          harnessTemplateEvolutionNextAction,
-          harnessTemplateRef,
-          hydrateHarnessTemplateEvolutionRun,
-          impactReportForHarnessTemplate,
-          isRecord,
-          logInfo,
-          logWarn,
-          matchHarnessTemplateEvolutionSource,
-          optionalTrimmedString,
-          parseHarnessKnowledgeSources,
-          parseHarnessTemplateApplyPayload,
-          parseTenantHarnessPolicyPayload,
-          publishHarnessTemplateEvolutionRun,
-          readJson,
-          requestCorrelation,
-          resolveLoopLlmSelection,
           safeFileName,
-          tenantHarnessPolicyLogMetadata,
-          validateHarnessTemplateProfile,
           writeJson: routeWriteJson
         }
       })) return;
@@ -930,41 +877,6 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           writeJson: routeWriteJson
         }
       })) return;
-      if (await handleProjectHarnessProfileRoutes({
-        request,
-        response,
-        url,
-        auth,
-        store,
-        options,
-        requestId,
-        traceId,
-        parentRequestId,
-        setRequestErrorCode: (code) => { requestErrorCode = code; },
-        deps: {
-          audit,
-          canAccessScopedResource,
-          createProjectHarnessProfileVersion,
-          diffProjectHarnessProfiles,
-          envelope,
-          explainProjectHarnessProfile,
-          generateProjectHarnessProfileDraft,
-          hasRole,
-          harnessTemplateRef,
-          logInfo,
-          logWarn,
-          optionalTrimmedString,
-          parseProjectHarnessProfilePayload,
-          projectHarnessLogMetadata,
-          projectHarnessProfileDiffWithoutBase,
-          projectHarnessTemplateSelectionMode,
-          projectHarnessTemplateSelectionReasons,
-          readJson,
-          requestCorrelation,
-          safeFileName,
-          writeJson: routeWriteJson
-        }
-      })) return;
       if (await handleProjectRoutes({
         request,
         response,
@@ -1124,10 +1036,11 @@ export function startServerFromEnvironment(): http.Server {
   const port = Number(process.env.EVOPILOT_PORT ?? "19876");
   const host = process.env.EVOPILOT_HOST ?? "127.0.0.1";
   const dashboardRoot = process.env.EVOPILOT_DASHBOARD_ROOT ? path.resolve(process.env.EVOPILOT_DASHBOARD_ROOT) : undefined;
+  const harnessCatalogDirs = parseHarnessCatalogDirs(process.env.EVOPILOT_HARNESS_CATALOG_DIRS ?? process.env.EVOPILOT_HARNESS_CATALOG_DIR);
   const tokens = parseEnvTokens(process.env.EVOPILOT_TOKENS);
   const users = parseEnvUsers(process.env.EVOPILOT_USERS);
   const apiToken = process.env.EVOPILOT_API_TOKEN;
-  const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens, users }).listen(port, host, () => {
+  const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens, users, harnessCatalogDirs }).listen(port, host, () => {
     const runtimeMode = process.env.EVOPILOT_RUN_MODE ?? process.env.EVOPILOT_MODE ?? (parseBoolean(process.env.EVOPILOT_DEBUG, false) ? "debug" : "prod");
     logInfo("server.started", {
       metadata: {
@@ -1137,6 +1050,7 @@ export function startServerFromEnvironment(): http.Server {
         runtimeMode,
         dataRoot,
         dashboardRoot,
+        harnessCatalogDirs,
         authConfigured: Boolean(apiToken || tokens?.length || users?.length),
         loginEnabled: Boolean(users?.length)
       }
@@ -1155,6 +1069,19 @@ export function startServerFromEnvironment(): http.Server {
     });
   }
   return server;
+}
+
+function parseHarnessCatalogDirs(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(new RegExp(`[${escapeRegExp(path.delimiter)},]`))
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => path.resolve(entry));
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {

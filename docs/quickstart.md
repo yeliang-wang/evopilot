@@ -39,27 +39,14 @@ npm run cli -- status \
   --json
 ```
 
-For a new project, generate and confirm the project harness profile before phase planning. EvoPilot automatically matches a published template from project context and the goal loop target; normal operators do not choose a template manually.
+For a new project, configure published Harness Catalog directories when the server starts. The directories are produced by `evopilot-harness`; EvoPilot only reads their `CATALOG.md` indexes dynamically.
 
 ```bash
-npm run cli -- harness profile generate \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --project my-agent \
-  --goal-loop-target "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --llm-profile my-agent-llm \
-  --json
-
-# STOP: show the ProjectHarnessProfile DRAFT to the user or project owner; continue only after explicit confirmation.
-npm run cli -- harness profile activate default \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --project my-agent \
-  --version <harness-version> \
-  --json
+EVOPILOT_HARNESS_CATALOG_DIR=/opt/evopilot-harness/published \
+npm run server
 ```
 
-Generate and approve the phase plan before running a project:
+Generate and approve the phase plan before running a project. EvoPilot automatically selects a published Harness from the configured Catalogs and records it as `plan.selectedHarness`; normal operators do not choose or publish Harness definitions from the EvoPilot CLI.
 
 ```bash
 npm run cli -- target plan \
@@ -70,6 +57,7 @@ npm run cli -- target plan \
   --json
 
 # STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
+# Include plan.selectedHarness id/version/catalog/digest in the review summary.
 npm run cli -- target plan approve <goal-id> \
   --server http://127.0.0.1:19876 \
   --token change-me-admin-token \

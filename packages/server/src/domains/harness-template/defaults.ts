@@ -471,7 +471,7 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
               phase: "alpha",
               description: "Declare that the evolved target is the owner's self-developed database product and record reference databases as compatibility oracles only.",
               requiredEvidence: ["product-scope-declaration", "reference-role-declaration"],
-              suggestedCommands: ["evopilot harness profile inspect --json"]
+              suggestedCommands: ["inspect goal plan selectedHarness output"]
             },
             {
               id: "map-engine-module-boundaries",
@@ -658,7 +658,7 @@ function builtInHarnessTemplateInputs(): Array<Omit<HarnessTemplateProfile, "dig
               phase: "alpha",
               description: "Declare the evolved target as the owner's API gateway product and record Envoy, Kong, APISIX, or Gateway API as behavior references only.",
               requiredEvidence: ["product-scope-declaration", "reference-role-declaration"],
-              suggestedCommands: ["evopilot harness profile inspect --json"]
+              suggestedCommands: ["inspect goal plan selectedHarness output"]
             },
             {
               id: "map-gateway-control-boundaries",

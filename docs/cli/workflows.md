@@ -1,574 +1,173 @@
 # EvoPilot CLI Workflows
 
-> Scenario-first CLI usage for project onboarding, Goal/Loop execution, source closure, project DevOps, and release decisions.
+These workflows describe EvoPilot operation after Harness definitions have been published by `evopilot-harness`.
 
-Use `--json` for AI agents and CI. Human-readable output is for operators.
-
-## 1. Inspect The Server
-
-```bash
-evopilot status --json
-evopilot project list --json
-evopilot release current --json
-evopilot worker queue --json
-```
-
-Do not continue to source writeback, deploy, merge, or release actions unless `status --json` confirms an authenticated session.
-If `status --json` exits `2` with `status=UNREACHABLE`, read `diagnosis.recommendedAction`, `server`, `config.path`, `missingConfig`, and `error.message`; do not try project onboarding or Goal/Loop commands until the API Server URL, network, and authentication configuration are repaired.
-
-## 2. Register A GitHub Project
-
-Use a server-side `tokenRef` for real source writeback. The token value must be available to the EvoPilot server process environment or the same tenant/workspace EvoPilot secret vault.
-
-When CI/CD is part of onboarding, declare who owns the DevOps boundary:
-
-```text
---execution-mode owned-repository      same repository owns source and CI/CD
---execution-mode read-only-public      public inspection only; no PR/merge/CI/CD release claim
---execution-mode fork-validated-pr     write and run CI/CD in a fork, then prepare upstream PR evidence
---execution-mode upstream-authorized   maintainer credentials write and run CI/CD in the upstream
-```
-
-`--devops-owner` must match the GitHub owner or GitLab namespace that runs GitHub Actions or GitLab CI.
-
-For third-party open-source repositories, this means the operator must bring a GitHub/GitLab execution principal. Use `fork-validated-pr` when the writable repository is an operator-owned fork, or `upstream-authorized` only when a maintainer principal can write to the upstream. If the user has no GitHub/GitLab account or group, register the repository as `read-only-public` and stop before PR, CI/CD, merge, deploy, or release-readiness claims. EvoPilot does not supply a shared official account or generic runner for other people's upstream projects.
-
-Start with a non-mutating checklist. Agents should parse `status`, `nextAction`, `missingInputs`, `blockers`, and `commands` before attempting registration:
+## Owned Repository
 
 ```bash
 evopilot project onboard plan github \
-  --repo <owner>/<repo> \
+  --repo owner/my-agent \
   --id my-agent \
-  --branch main \
   --token-ref GITHUB_TOKEN_MY_AGENT \
   --execution-mode owned-repository \
-  --devops-owner <owner> \
+  --devops-owner owner \
   --ci-workflow ci.yml \
   --ci-required-check build \
-  --ci-required-check test \
   --cd-workflow deploy-prod.yml \
   --deploy-environment production \
   --health-url https://my-agent.example.com/health \
   --llm-profile my-agent-llm \
-  --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
   --json
-```
 
-Store or rotate the token in EvoPilot's server-side secret vault when the operator wants to avoid editing server environment variables:
-
-```bash
-evopilot secret set \
-  --id GITHUB_TOKEN_MY_AGENT \
-  --kind source-token \
-  --from-env GITHUB_TOKEN_MY_AGENT \
-  --json
-```
-
-```bash
-evopilot project register \
+evopilot project onboard github \
+  --repo owner/my-agent \
   --id my-agent \
-  --name "My Agent" \
-  --provider github \
-  --owner <owner> \
-  --repo-name <repo> \
-  --branch main \
   --token-ref GITHUB_TOKEN_MY_AGENT \
+  --execution-mode owned-repository \
+  --devops-owner owner \
+  --ci-workflow ci.yml \
+  --ci-required-check build \
+  --cd-workflow deploy-prod.yml \
+  --deploy-environment production \
+  --health-url https://my-agent.example.com/health \
+  --llm-profile my-agent-llm \
   --json
 ```
 
-Then verify source credentials:
+Stop if onboarding returns a blocker. When onboarding verification returns `nextAction=plan-target`, continue to `target plan`.
 
-```bash
-evopilot project preflight my-agent --json
-evopilot project onboard verify my-agent --json
-```
-
-`READY` means source writeback can proceed. `READ_ONLY` or `BLOCKED` means the agent must stop and repair credentials before claiming PR, merge, or source-closure readiness.
-
-When the checklist or preflight returns `nextAction=connect-github-account` or `nextAction=connect-gitlab-account`, the blocker is not a retry condition. The operator must connect or create the matching GitHub/GitLab account, organization, group, service account, deploy token, or GitHub App principal, then store the server-side tokenRef before rerunning onboarding.
-
-## 3. Register A GitLab Project
-
-Store or rotate the token first:
+For GitLab:
 
 ```bash
 evopilot project onboard plan gitlab \
-  --base-url https://gitlab.example.com \
-  --project-id group/my-agent \
-  --id my-agent \
-  --branch main \
+  --repo group/my-agent \
+  --id my-agent-gitlab \
   --token-ref GITLAB_TOKEN_MY_AGENT \
   --execution-mode owned-repository \
   --devops-owner group \
   --ci-required-stage test \
-  --ci-required-job build \
-  --cd-required-stage deploy \
-  --deploy-environment production \
-  --ready-url https://my-agent.example.com/ready \
-  --llm-profile my-agent-llm \
-  --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --json
-```
-
-```bash
-evopilot secret set \
-  --id GITLAB_TOKEN_MY_AGENT \
-  --kind source-token \
-  --from-env GITLAB_TOKEN_MY_AGENT \
-  --json
-```
-
-```bash
-evopilot project register \
-  --id my-agent \
-  --name "My Agent" \
-  --provider gitlab \
-  --base-url https://gitlab.example.com \
-  --project-id group/my-agent \
-  --branch main \
-  --token-ref GITLAB_TOKEN_MY_AGENT \
-  --json
-```
-
-Then verify source credentials:
-
-```bash
-evopilot project preflight my-agent --json
-```
-
-## 4. Configure Project DevOps
-
-EvoPilot supports three explicit project DevOps chains. GitHub-native and GitLab-native remain repository-native. Bridge mode is available only when the source repository is GitHub and the CI/Loop execution workflow lives in GitLab CI.
-
-GitHub Actions:
-
-```bash
-evopilot project devops set my-agent \
-  --provider github-actions \
-  --execution-mode owned-repository \
-  --devops-owner <owner> \
-  --ci-workflow ci.yml \
-  --ci-required-check build \
-  --ci-required-check test \
-  --cd-workflow deploy-prod.yml \
-  --deploy-environment production \
-  --health-url https://my-agent.example.com/health \
-  --json
-```
-
-GitLab CI:
-
-```bash
-evopilot project devops set my-agent \
-  --provider gitlab-ci \
-  --execution-mode owned-repository \
-  --devops-owner group \
-  --ci-required-stage test \
-  --ci-required-job build \
-  --cd-required-stage deploy \
-  --deploy-environment production \
-  --ready-url https://my-agent.example.com/ready \
-  --json
-```
-
-GitHub source with GitLab CI bridge:
-
-```bash
-evopilot project devops set my-agent \
-  --provider gitlab-ci \
-  --source-mode external-source \
-  --workflow-provider gitlab \
-  --workflow-base-url https://gitlab.example.com \
-  --workflow-repo platform/agent-ci \
-  --gitlab-ref main \
-  --execution-mode owned-repository \
-  --devops-owner platform \
-  --devops-token-ref GITLAB_CI_TOKEN \
-  --ci-required-stage test \
-  --ci-required-job build \
-  --json
-```
-
-Verify:
-
-```bash
-evopilot project devops preflight my-agent --json
-```
-
-Wrapper run commands check project DevOps readiness by default for GitHub/GitLab projects and bridge projects. `--require-devops-ready` can still be used in onboarding scripts as an explicit assertion, but a real Goal/Loop run stops before execution whenever DevOps readiness is not `READY`.
-
-The preflight JSON includes:
-
-```text
-executionMode
-sourceMode
-sourceProvider
-workflowProvider
-repositoryOwner
-devopsOwner
-workflowRepository
-credentialRef
-credentialPrincipal
-claimBoundary
-```
-
-For `fork-validated-pr`, `claimBoundary=fork-ci-pr`. This means the workflow can prove fork CI and upstream PR readiness, but not upstream release completion.
-
-## 5. Configure A Project LLM
-
-Use this before any GitHub/GitLab enterprise real loop, or when a local project should run with a specific public model, private model, or enterprise OpenAI-compatible endpoint.
-
-For GitHub/GitLab enterprise real loops, the project must have an explicit READY project default LLM profile or the run must pass `--llm-profile`. The server global default LLM is not sufficient for a real remote project because the run must be attributable to the user, tenant, workspace, and project.
-
-Store the API key once in the EvoPilot server-side secret vault:
-
-```bash
-export LLM_API_KEY_MY_AGENT="<real-llm-api-key>"
-
-evopilot secret set \
-  --id LLM_API_KEY_MY_AGENT \
-  --kind llm-key \
-  --scope workspace \
-  --from-env LLM_API_KEY_MY_AGENT \
-  --json
-```
-
-Create and verify the LLM profile:
-
-```bash
-evopilot llm profile set my-agent-llm \
-  --scope workspace \
-  --provider-preset custom \
-  --provider-name qwen-private \
-  --base-url https://llm.example.com/v1 \
-  --model qwen2.5-coder-32b \
-  --api-key-ref LLM_API_KEY_MY_AGENT \
-  --json
-
-evopilot llm profile preflight my-agent-llm --json
-```
-
-Bind it to the project:
-
-```bash
-evopilot project llm set my-agent \
-  --profile my-agent-llm \
-  --json
-```
-
-`project llm preflight` must return `READY` before an agent claims that a custom LLM is usable:
-
-```bash
-evopilot project llm preflight my-agent --json
-```
-
-Resolution order for wrappers is:
-
-```text
-run override --llm-profile -> project default LLM -> server global default LLM
-```
-
-Project defaults must be READY workspace profiles. User profiles can override a single run, but they cannot be bound to the project.
-
-Wrapper run commands preflight the selected LLM by default. Use `--require-llm-ready` only when an onboarding or CI script wants the command line to carry an explicit readiness assertion.
-
-The final fallback is only acceptable for local/debug validation or explicitly non-enterprise runs.
-
-## 6. Generate And Confirm The Project Harness
-
-Before phase planning, generate the project-level `ProjectHarnessProfile`. EvoPilot automatically matches one published `HarnessTemplate` from project context and the goal loop target, then merges active tenant/workspace policies and, for re-onboarding, the previous active profile.
-
-```bash
-evopilot harness profile generate \
-  --project my-agent \
-  --goal-loop-target "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
+  --cd-environment production \
   --llm-profile my-agent-llm \
   --json
 ```
 
-Review the returned DRAFT before activation. Present `profile.sourceContent`, `profile.compiledContent`, `profile.validation`, `profile.diffFromActive`, `profile.generatedBy`, `profile.sourceDigest`, `profile.compiledDigest`, and `profile.policyRefs[]` to the user or project owner.
+Inspect the GA baseline when users ask what the phase ladder means:
 
 ```bash
-evopilot harness profile inspect default --project my-agent --version <harness-version> --json
-evopilot harness profile diff default --project my-agent --version <harness-version> --json
-# STOP: show the ProjectHarnessProfile DRAFT to the user or project owner; continue only after explicit confirmation.
-evopilot harness profile activate default --project my-agent --version <harness-version> --json
+evopilot maturity standards inspect ga --json
 ```
 
-Administrators maintain public template knowledge packs separately with `harness template pack list|validate|publish`; normal project operators should not manually choose a template during onboarding. When a public template should evolve from reviewable sources such as GitHub projects, websites, local packs, attachments, existing templates, or administrator notes, use `harness template evolution create|advance|approve|publish|impact`. Stop at `status=REVIEW_REQUIRED`, show the generated draft pack, validation, source coverage, and diff to the administrator, and publish only after explicit approval. A published template evolution reports stale project profiles but never silently rewrites active `ProjectHarnessProfile` versions.
-
-## 7. One Command To A Release Target
-
-Use `target run` when the project does not already have a project-scoped release target. EvoPilot resolves or creates the target, creates or resumes a GlobalGoal, generates the server plan, then stops for plan approval when the plan has not been confirmed.
-
-The CLI does not invent the phase list. `--objective` is the user's business intent, such as enabling a capability or improving a Dashboard lifecycle workflow. EvoPilot treats GA as the fixed terminal maturity and generates a progressive ladder: Alpha -> Beta -> RC -> GA.
+## Plan With Published Harness
 
 ```bash
 evopilot target plan \
   --project my-agent \
-  --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
+  --objective "Enable tenant onboarding and lifecycle workflow visibility" \
   --llm-profile my-agent-llm \
-  --client workbuddy \
   --json
 ```
 
-Review and adjust the returned plan before execution:
+Expected successful planning fields:
 
-For WorkBuddy or any digital-human flow, this is a hard stop. Present `phasePlan.phases[]`, `phasePlan.targets[]`, and `editablePlan` to the user or project owner, then run the approval command only after confirmation.
+```text
+phasePlan.phases[]
+phasePlan.targets[]
+plan.selectedHarness.harnessId
+plan.selectedHarness.version
+plan.selectedHarness.catalogId
+plan.selectedHarness.catalogDigest
+plan.selectedHarness.entryDigest
+editablePlan.status
+nextAction=approve-plan
+```
+
+If `selectedHarness` is missing, stop and ask an administrator to publish/configure a Catalog through `evopilot-harness`.
+
+## Approve Plan
 
 ```bash
-evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
-evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
-evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
-# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
+evopilot target plan export <goal-id> --format json > /tmp/phase-plan.json
+evopilot target plan diff <goal-id> --file /tmp/phase-plan.json --json
+evopilot target plan apply <goal-id> --file /tmp/phase-plan.json --json
 evopilot target plan approve <goal-id> \
-  --confirmed-by "project-owner" \
+  --confirmed-by project-owner \
   --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
   --json
-evopilot goal phases <goal-id> --json
-evopilot goal target-package <goal-id> --target <target-id> --json
-evopilot goal phase-package <goal-id> --phase alpha --json
 ```
 
-Then resume execution:
+Do not approve without owner review.
+
+## Execute Goal Loop
 
 ```bash
 evopilot target run \
   --project my-agent \
-  --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --max-steps 20 \
+  --objective "Enable tenant onboarding and lifecycle workflow visibility" \
   --llm-profile my-agent-llm \
-  --client workbuddy \
+  --require-devops-ready \
+  --require-llm-ready \
   --json
 ```
 
-The maturity standards behind the generated plan are visible through:
+Stop on `BLOCKED`, `FAILED`, `NO-GO`, or repair `nextAction`.
+
+## Verify Release
 
 ```bash
-evopilot maturity standards list --json
-evopilot maturity standards inspect alpha --json
-evopilot maturity standards inspect beta --json
-evopilot maturity standards inspect rc --json
-evopilot maturity standards inspect ga --json
+evopilot goal target-package <goal-id> --target <target-id> --json
+evopilot goal phase-package <goal-id> --phase ga --json
+evopilot release decisions --project my-agent --target <target-id> --json
+evopilot audit list --limit 50 --json
 ```
 
-The wrapper result includes LLM and token visibility for summary, process, and executor steps:
+The final report must include selected Harness id/version/digests, LLM provider/model/token totals, request IDs, evidence package status, phase package decision, and release decision.
 
-```json
-{
-  "llmUsage": {
-    "client": { "surface": "workbuddy", "command": "target run" },
-    "summary": {
-      "provider": "zhipu",
-      "model": "glm-5.1",
-      "totalTokens": 1500,
-      "inputTokens": 1000,
-      "outputTokens": 500,
-      "creditsConsumed": 1500
-    },
-    "process": {
-      "responses": [
-        { "label": "goal-run-advance-1", "requestId": "..." }
-      ]
-    },
-    "server": {
-      "steps": [
-        { "loopId": "...", "iteration": 1, "nodeId": "plan", "provider": "zhipu", "model": "glm-5.1", "totalTokens": 1500 }
-      ]
-    }
-  }
-}
+## Configure A Project LLM
+
+The server global default LLM is not sufficient for enterprise GitHub/GitLab loops. Store a secret, create a profile, bind it to the project, and preflight the binding:
+
+```bash
+evopilot secret set --id LLM_API_KEY_MY_AGENT --kind llm-key --scope workspace --from-env LLM_API_KEY_MY_AGENT --json
+evopilot llm profile set my-agent-llm --scope workspace --provider-preset custom --provider-name qwen-private --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_MY_AGENT --json
+evopilot project llm set my-agent --profile my-agent-llm --json
+evopilot project llm preflight my-agent --json
 ```
 
-Human-readable wrapper output includes an `LLM Usage` section. Production HTTP logs include the same caller and request-level token delta in `metadata.client` and `metadata.llmUsage`, so an operator can line up CLI `requestId` values with server logs.
+## Unreachable Server
 
-## 8. One Command From New Project To Target
+If the server cannot be reached, `evopilot status --json` returns `status=UNREACHABLE` with `diagnosis.recommendedAction`. This is a server-side bounded read failure, not project evidence.
 
-Use `project onboard` when the project is not registered yet. This wrapper registers the project, verifies source credentials, configures project DevOps when CI/CD flags are present, and verifies DevOps readiness. It does not start Goal/Loop execution.
+## Read-Only Public Repository
 
-GitHub:
+Use:
+
+```bash
+evopilot project onboard plan github \
+  --repo upstream/project \
+  --id upstream-project \
+  --execution-mode read-only-public \
+  --json
+```
+
+Do not claim writeback, CI/CD, deploy, release readiness, or GA in `read-only-public` mode.
+
+## Fork Validated PR
+
+Use `fork-validated-pr` when the operator owns a fork but not the upstream:
 
 ```bash
 evopilot project onboard github \
-  --repo <owner>/<repo> \
-  --id my-agent \
-  --branch main \
-  --token-ref GITHUB_TOKEN_MY_AGENT \
-  --execution-mode owned-repository \
-  --devops-owner <owner> \
-  --ci-workflow ci.yml \
-  --ci-required-check build \
-  --ci-required-check test \
-  --cd-workflow deploy-prod.yml \
-  --deploy-environment production \
-  --health-url https://my-agent.example.com/health \
-  --llm-profile my-agent-llm \
-  --client workbuddy \
-  --json
-```
-
-GitLab:
-
-```bash
-evopilot project onboard gitlab \
-  --base-url https://gitlab.example.com \
-  --project-id group/my-agent \
-  --id my-agent \
-  --branch main \
-  --token-ref GITLAB_TOKEN_MY_AGENT \
-  --execution-mode owned-repository \
-  --devops-owner group \
-  --ci-required-stage test \
-  --ci-required-job build \
-  --cd-required-stage deploy \
-  --deploy-environment production \
-  --ready-url https://my-agent.example.com/ready \
-  --llm-profile my-agent-llm \
-  --client workbuddy \
-  --json
-```
-
-After onboarding, run `project onboard verify my-agent --json`. When the checklist returns `READY_TO_RUN`, it also returns `nextAction=plan-target`; generate and confirm the ProjectHarnessProfile from section 6, then use the `target plan` flow from section 7, approve the phase plan after user confirmation, and only then run `target run` with the user's business objective.
-
-## 9. Public Upstream With A Writable Fork
-
-Use this mode when the target project is an open-source upstream or any repository that the operator does not directly control. EvoPilot writes code and runs CI/CD in the fork. The upstream still owns merge and release authority.
-
-```bash
-evopilot project onboard github \
-  --repo apache/skywalking \
-  --upstream-repo apache/skywalking \
-  --working-repo my-org/skywalking-fork \
-  --id skywalking-fork \
-  --branch main \
-  --token-ref GITHUB_TOKEN_SKYWALKING_FORK \
+  --repo my-org/project-fork \
+  --upstream-repo upstream/project \
+  --working-repo my-org/project-fork \
+  --id project-fork \
+  --token-ref GITHUB_TOKEN_PROJECT_FORK \
   --execution-mode fork-validated-pr \
   --devops-owner my-org \
   --ci-workflow ci.yml \
   --ci-required-check build \
   --llm-profile my-agent-llm \
-  --client workbuddy \
   --json
 ```
 
-Expected DevOps readiness fields:
-
-```json
-{
-  "executionMode": "fork-validated-pr",
-  "devopsOwner": "my-org",
-  "workflowRepository": "my-org/skywalking-fork",
-  "claimBoundary": "fork-ci-pr"
-}
-```
-
-Do not describe this as an upstream release unless the upstream maintainer later authorizes and merges the PR.
-
-## 10. Run Or Resume A GlobalGoal
-
-Use `goal run` when the release target already exists or a previous GlobalGoal should continue. If the command creates a new GlobalGoal and the generated Alpha/Beta/RC/GA plan is not approved yet, it stops with `nextAction=approve-plan`; WorkBuddy must show the plan to the user before approval.
-
-```bash
-evopilot goal run \
-  --project my-agent \
-  --target my-agent-ga \
-  --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --llm-profile my-agent-llm \
-  --max-steps 20 \
-  --client workbuddy \
-  --json
-```
-
-For step-by-step control:
-
-```bash
-evopilot goal create --project my-agent --target my-agent-ga --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" --llm-profile my-agent-llm --json
-evopilot goal plan <goal-id> --json
-evopilot target plan export <goal-id> --format json > /tmp/my-agent-phase-plan.json
-evopilot target plan diff <goal-id> --file /tmp/my-agent-phase-plan.json --json
-evopilot target plan apply <goal-id> --file /tmp/my-agent-phase-plan.json --json
-# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
-evopilot goal approve-plan <goal-id> \
-  --confirmed-by "project-owner" \
-  --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
-  --json
-evopilot goal phases <goal-id> --json
-evopilot goal target-package <goal-id> --target <target-id> --json
-evopilot goal phase-package <goal-id> --phase rc --json
-evopilot goal advance <goal-id> --json
-evopilot goal snapshot <goal-id> --json
-evopilot goal graph <goal-id> --json
-evopilot goal evidence-matrix <goal-id> --json
-```
-
-Use `<target-id>` from `goal targets`, `goal snapshot.activeTarget.id`, or `target run` / `goal run` `status.activeTarget.id`. A target or phase is not passed until the server returns `TargetEvidencePackage.status=GO` and the enclosing `PhasePackage.decision.status=GO`.
-
-## 11. Run One LoopRun
-
-Use `loop run` for a narrower loop target. It is lower-level than the GlobalGoal flow and does not replace `target plan` phase confirmation for a release target. If no `<loop-id>` is supplied, `--project`, `--target`, and `--objective` are required.
-
-```bash
-evopilot loop run \
-  --project my-agent \
-  --target my-agent-rc \
-  --objective "Fix RC release blockers and collect validation evidence" \
-  --llm-profile my-agent-llm \
-  --until blocked-or-complete \
-  --max-iterations 10 \
-  --client workbuddy \
-  --json
-```
-
-All wrapper commands default to `--until terminal`. The `--until blocked-or-complete` value in this example is an explicit narrower policy for a single LoopRun: it stops when the LoopRun becomes `BLOCKED` instead of trying to resume it.
-
-## 12. Source Closure
-
-Always preflight before source writeback:
-
-```bash
-evopilot source-closure preflight <loop-id> --json
-```
-
-Execute a controlled source closure with explicit file content:
-
-```bash
-evopilot source-closure execute <loop-id> \
-  --branch evopilot/source-closure \
-  --message "EvoPilot source closure" \
-  --write-file docs/release-evidence.md:/tmp/release-evidence.md \
-  --json
-```
-
-Release review actions:
-
-```bash
-evopilot source-closure approve-release <loop-id> --json
-evopilot source-closure merge <loop-id> --json
-evopilot source-closure auto-merge <loop-id> --json
-```
-
-Only run merge actions when server-side review and release policy are satisfied.
-
-## 13. Release Decision
-
-Read release decisions from EvoPilot. Do not infer GA from local tests or CI alone.
-
-```bash
-evopilot release current --json
-evopilot release decisions --project my-agent --target my-agent-ga --json
-evopilot target decision my-agent-ga --project my-agent --json
-```
-
-## 14. Repair
-
-Inspect release-run repair candidates:
-
-```bash
-evopilot release-run repair-candidates --json
-evopilot release-run repair <run-id> --execute --json
-evopilot release-run repair-all --execute --json
-evopilot audit list --limit 50 --json
-```
-
-If a wrapper command returns `repair`, `repair-project`, `repair-deploy-target`, or `policy-review`, stop the automation and inspect the referenced IDs before retrying.
-`audit list --limit` is a server-side bounded read. The CLI sends `limit` and `order=desc` to `/api/v1/audit`, so WorkBuddy can inspect recent events without downloading the full production audit log.
+The release claim is bounded to fork CI and PR evidence unless upstream maintainers merge and release.

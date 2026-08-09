@@ -265,7 +265,7 @@ import { atomicWriteJson, atomicWriteText, safeFileName } from "../json-files.js
 export class FileStore {
   constructor(
     private readonly dataRoot: string,
-    private readonly executionRuntime: { llmClient?: LlmTaskClient; requireLlm?: boolean } = {}
+    private readonly executionRuntime: { llmClient?: LlmTaskClient; requireLlm?: boolean; harnessCatalogDirs?: string[] } = {}
   ) {
     fs.mkdirSync(this.dataRoot, { recursive: true });
     fs.mkdirSync(this.tenantsDir, { recursive: true });
@@ -1375,11 +1375,7 @@ export class FileStore {
   }
 
   listHarnessTemplates(): HarnessTemplateProfile[] {
-    return mergeHarnessTemplateSources([
-      ...defaultHarnessTemplates(),
-      ...this.listMountedHarnessCatalogTemplates(),
-      ...this.listPersistedHarnessTemplates()
-    ]);
+    return mergeHarnessTemplateSources(this.listConfiguredHarnessCatalogTemplates());
   }
 
   readHarnessTemplate(templateId: string, version?: string): HarnessTemplateProfile | undefined {
@@ -1392,23 +1388,21 @@ export class FileStore {
   }
 
   listHarnessCatalogMounts(): HarnessCatalogMount[] {
-    if (!fs.existsSync(this.harnessCatalogsDir)) return [];
-    return fs.readdirSync(this.harnessCatalogsDir)
-      .filter((file) => file.endsWith(".json"))
-      .sort()
-      .map((file) => hydrateHarnessCatalogMount(JSON.parse(fs.readFileSync(path.join(this.harnessCatalogsDir, file), "utf8"))));
+    return this.configuredHarnessCatalogMounts();
   }
 
   readHarnessCatalogMount(catalogId: string): HarnessCatalogMount | undefined {
-    const file = path.join(this.harnessCatalogsDir, `${safeFileName(catalogId)}.json`);
-    if (!fs.existsSync(file)) return undefined;
-    return hydrateHarnessCatalogMount(JSON.parse(fs.readFileSync(file, "utf8")));
+    const id = safeFileName(catalogId);
+    for (const mount of this.configuredHarnessCatalogMounts()) {
+      if (mount.catalogId === id) return mount;
+      const scan = readPublishedHarnessCatalog(mount.source, mount);
+      if (scan.mount.catalogId === id) return scan.mount;
+    }
+    return undefined;
   }
 
   writeHarnessCatalogMount(mount: HarnessCatalogMount): HarnessCatalogMount {
-    const hydrated = hydrateHarnessCatalogMount(mount);
-    atomicWriteJson(path.join(this.harnessCatalogsDir, `${safeFileName(hydrated.catalogId)}.json`), hydrated);
-    return hydrated;
+    return hydrateHarnessCatalogMount(mount);
   }
 
   scanHarnessCatalogMount(catalogId: string): HarnessCatalogScanResult | undefined {
@@ -1420,11 +1414,7 @@ export class FileStore {
   }
 
   listHarnessCatalogScans(): HarnessCatalogScanResult[] {
-    return this.listHarnessCatalogMounts().map((mount) => {
-      const scan = readPublishedHarnessCatalog(mount.source, mount);
-      this.writeHarnessCatalogMount(scan.mount);
-      return scan;
-    });
+    return this.configuredHarnessCatalogMounts().map((mount) => readPublishedHarnessCatalog(mount.source, mount));
   }
 
   private listPersistedHarnessTemplates(): HarnessTemplateProfile[] {
@@ -1434,10 +1424,22 @@ export class FileStore {
       .map((file) => hydrateHarnessTemplate(JSON.parse(fs.readFileSync(path.join(this.harnessTemplatesDir, file), "utf8"))));
   }
 
-  private listMountedHarnessCatalogTemplates(): HarnessTemplateProfile[] {
-    return this.listHarnessCatalogMounts()
-      .filter((mount) => mount.status === "ACTIVE")
+  private listConfiguredHarnessCatalogTemplates(): HarnessTemplateProfile[] {
+    return this.configuredHarnessCatalogMounts()
       .flatMap((mount) => readPublishedHarnessCatalog(mount.source, mount).templates);
+  }
+
+  private configuredHarnessCatalogMounts(): HarnessCatalogMount[] {
+    return (this.executionRuntime.harnessCatalogDirs ?? [])
+      .map((source) => hydrateHarnessCatalogMount({
+        catalogId: path.basename(source) || "published-harness-catalog",
+        name: path.basename(source) || "Published Harness Catalog",
+        source: path.resolve(source),
+        status: "ACTIVE",
+        mountedBy: "evopilot-runtime-config",
+        mountedAt: new Date(0).toISOString(),
+        updatedAt: new Date(0).toISOString()
+      }));
   }
 
   writeHarnessTemplate(template: HarnessTemplateProfile): HarnessTemplateProfile {
@@ -2744,7 +2746,7 @@ export class FileStore {
         maturityStandardSetId: DEFAULT_MATURITY_STANDARD_SET_ID,
         standardVersion: DEFAULT_MATURITY_STANDARD_VERSION,
         planner: planned.planner,
-        projectHarness: planned.projectHarness,
+        selectedHarness: planned.selectedHarness,
         summary: `${goal.objective} decomposed into Alpha -> Beta -> RC -> GA maturity phases with ${targets.length} white-box GoalTargets for ${releaseTarget.name}.`,
         targetCount: targets.length,
         requiredTargetCount: targets.filter((target) => target.required).length,
@@ -2762,9 +2764,9 @@ export class FileStore {
           releaseTargetId: goal.releaseTargetId,
           strategy: "ga-maturity-ladder",
           plannerMode: planned.planner.mode,
-          projectHarnessProfileId: planned.projectHarness?.profileId,
-          projectHarnessVersion: planned.projectHarness?.version,
-          projectHarnessDigest: planned.projectHarness?.compiledDigest,
+          selectedHarnessId: planned.selectedHarness?.harnessId,
+          selectedHarnessVersion: planned.selectedHarness?.version,
+          selectedHarnessDigest: planned.selectedHarness?.entryDigest,
           llmProvider: planned.planner.provider,
           llmModel: planned.planner.model,
           llmTokens: planned.planner.totalTokens

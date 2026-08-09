@@ -55,9 +55,8 @@ GlobalGoal adds one product layer above LoopRun for business objectives that sho
 
 ```mermaid
 flowchart TD
-  HarnessTemplate["HarnessTemplate\nlanguage / software-type baseline"] --> HarnessProfile["ProjectHarnessProfile\ncapabilities / runtime / evidence / governance"]
-  TenantPolicy["TenantHarnessPolicy\nprivate tenant/workspace constraints"] --> HarnessProfile
-  HarnessProfile --> GlobalGoal
+  PublishedCatalog["Published Harness Catalog\nprovided by evopilot-harness"] --> SelectedHarness["selectedHarness\nid / version / catalog digest / entry digest"]
+  SelectedHarness --> GlobalGoal
   ReleaseTarget["ReleaseTarget\nstandard profile / thresholds"] --> GlobalGoal["GlobalGoal\nbusiness objective / phase plan / timeline / report"]
   Standards["MaturityStandardSet\nevopilot-default/v1"] --> GlobalGoal
   GlobalGoal --> Alpha["Alpha phase\nsource / bootstrap / architecture"]
@@ -79,19 +78,17 @@ From a DDD perspective:
 | `GoalTarget` entity | Represents one observable sub-target with phase, dependencies, acceptance criteria, required evidence, review capabilities, status, next action, evidence, blocker, and optional `loopId`. |
 | `PhaseTarget` entity | Represents one maturity phase with baseline standards, project-specific additions, package outputs, and GO/NO-GO decision. |
 | `LoopRun` aggregate | Remains the execution substrate. It owns executor graph progress, iterations, sandbox proof, worker lease, approvals, source closure, artifacts, trace, and loop evidence. |
-| `ProjectHarnessProfile` aggregate | Owns the project-level harness definition: capability boundaries, runtime commands, validation, evidence, failure handling, diagnostics, observability, governance, phase mapping, LLM draft policy, template refs, policy refs, version, and digest. It is stored under tenant/workspace/project scope and is activated explicitly. |
-| `HarnessTemplate` profile | Public platform or administrator-published language/software-type baseline inherited by project profiles. EvoPilot automatically matches one published template during project profile generation unless an administrator explicitly overrides it. Administrators maintain human-readable packs under `harness-templates/public/<template-id>/` and publish them through `evopilot harness template pack validate|publish`; direct YAML/JSON `harness template upgrade` remains available. Template changes become effective for projects only through reviewed project profile revisions and do not silently rewrite active project profiles. |
-| `HarnessTemplateEvolution` aggregate | Administrator lifecycle for evolving a public template from reviewable sources. It owns sources, snapshots, analysis signals, generated draft pack, validation, approval, publish transition, audit evidence, impact report, and next action. LLM output is draft-only; publishing requires explicit approval and server-side validation. |
-| `TenantHarnessPolicy` aggregate | Private tenant/workspace constraint layer for organization-specific project contracts. Administrators publish and activate policy versions through `POST /api/v1/harness/policies` or `evopilot harness policy apply|activate`. Active policies are merged into matching project profiles and goal planning blocks stale profiles that do not bind the current policy digest. |
+| `PublishedHarnessCatalog` projection | Read-only projection of `CATALOG.md` files and published Harness entries created by `evopilot-harness`. EvoPilot reads it dynamically; it does not import, approve, publish, or mutate Harness definitions. |
+| `SelectedHarness` plan binding | Goal-plan evidence that records the selected Harness id, version, domain, catalog id, catalog digest, entry path, entry digest, match score, reasons, and capabilities. |
 | `MaturityStandardTemplate` | Versioned standard asset for Alpha, Beta, RC, or GA. The default set is `evopilot-default/v1`; standards can evolve by version without changing CLI semantics. |
 | `ReleaseTarget` profile | Defines project/release thresholds and scenario context. It is not itself a running goal, a phase skip instruction, or a release verdict. |
 | `ReleaseDecision` aggregate | Remains the authoritative `GO` / `CONDITIONAL-GO` / `NO-GO` verdict, exposed through `/api/v1/release/decisions`. |
 
 For project-scoped targets, `ReleaseTarget.templateId` is release profile metadata and a threshold source. A target id such as `my-agent-ga` is only an identity and routing key. The planner always emits the Alpha -> Beta -> RC -> GA ladder for governed GlobalGoals; profile metadata must not be interpreted by CLI or Dashboard as "skip to that level."
 
-For project harnesses, `HarnessTemplate` supplies public defaults, `TenantHarnessPolicy` supplies private tenant/workspace constraints, and `ProjectHarnessProfile` supplies the concrete project control surface for how a project should be built, validated, diagnosed, observed, and governed. `HarnessTemplateEvolution` supplies a governed administrator path for changing the public defaults from source material, but it still publishes only a new template version. Goal planning binds the active profile version, template digest, policy digests, and compiled digest into `GoalPlan.projectHarness`. If a goal exposes a missing harness rule, EvoPilot should propose a new profile revision; it must not mutate the active profile without review and activation.
+For Harness-aware planning, `evopilot-harness` publishes the definitions and Catalog index. EvoPilot reads configured Catalog directories, selects one published Harness for the project and objective, and binds that selection into `GoalPlan.selectedHarness`. If no suitable Harness exists, EvoPilot records the missing selection and the operator should publish or improve the Harness in `evopilot-harness`, then generate a new plan.
 
-The Harness Template lifecycle is implemented as the `packages/server/src/domains/harness-template/` domain module. The server package entrypoint and `packages/server/src/server.ts` compatibility adapter are thin; `packages/server/src/runtime/control-plane-runtime.ts` owns the current HTTP control-plane wiring during migration. Runtime auth/config helpers live in `packages/server/src/runtime/runtime-auth.ts`, and loop executor adapter execution lives in `packages/server/src/runtime/executor-adapters.ts`. The runtime handles HTTP, RBAC, audit/logging, file storage, and LLM profile readiness, then calls domain use cases through repository and LLM ports. Template lifecycle rules should not be reimplemented in CLI, Dashboard, or goal-loop code.
+The EvoPilot server package entrypoint and `packages/server/src/server.ts` compatibility adapter are thin; `packages/server/src/runtime/control-plane-runtime.ts` owns the current HTTP control-plane wiring during migration. Runtime auth/config helpers live in `packages/server/src/runtime/runtime-auth.ts`, and loop executor adapter execution lives in `packages/server/src/runtime/executor-adapters.ts`. Harness lifecycle rules must not be reimplemented in CLI, Dashboard, or goal-loop code.
 
 The shared package boundary is now explicit. `@evopilot/contracts` owns API/CLI/runtime schema names, version constants, stop-rule metadata, and package-boundary metadata. `@evopilot/worker-runtime` owns the loop worker runtime that was previously only a top-level script. `@evopilot/server` owns a thin compatibility adapter, the current control-plane runtime, focused runtime auth/config helpers, executor adapters, HTTP helpers, route modules, and file-storage primitives during migration; `@evopilot/cli` remains an HTTP adapter. The detailed package contract is [Package Boundaries](package-boundaries.md).
 
@@ -119,7 +116,7 @@ The product loop maps to current EvoPilot runtime surfaces:
 | Evidence collection | `POST /api/v1/evidence/events`, OTLP trace/log endpoints, SkyWalking, evaluations, feedback |
 | Opportunity and risk decisions | evidence clustering, dynamic baselines, scorecards, governance policy evaluations, release readiness |
 | Global goal planning | `GlobalGoal` plan generation, GoalTarget dependency graph, snapshot, timeline, evidence matrix, and final report |
-| Project harness control | `HarnessTemplate`, `HarnessTemplateEvolution`, `TenantHarnessPolicy`, `ProjectHarnessProfile` versions, validation, diff, activation, explain mapping, impact reporting, and goal-plan profile/policy digest binding |
+| Harness Catalog consumption | Published Catalog directory loading, read-only Catalog API projection, selected Harness matching, and goal-plan catalog/entry digest binding |
 | Plan review | Markdown opportunity drafts and user-edited evolution plans |
 | Long-running execution | `LoopRun`, executor graphs, loop worker, heartbeat leases, watchdog recovery |
 | Code and delivery actions | code-upgrader runtime, branch/commit evidence, GitHub Actions/GitLab CI project DevOps boundaries |

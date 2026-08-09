@@ -61,14 +61,15 @@ mustContain("packages/server/src/http/routes/auth.ts", "handlePublicAuthRoute", 
 mustContain("packages/server/src/http/routes/settings.ts", "handleSettingsRoute", "settings routes must live in a route module");
 mustContain("packages/server/src/http/routes/read-models.ts", "handleReadModelRoute", "read-model routes must live in a route module");
 mustContain("packages/server/src/http/routes/goals.ts", "handleGoalRoutes", "goal and release decision routes must live in a route module");
-mustContain("packages/server/src/http/routes/harness.ts", "handleHarnessRoutes", "harness template and policy routes must live in a route module");
+mustContain("packages/server/src/http/routes/harness.ts", "handleHarnessRoutes", "harness routes must live in a route module");
+mustContain("packages/server/src/http/routes/harness.ts", "handleHarnessCatalogRoutes", "harness route wrapper must delegate to the read-only catalog route");
+mustContain("packages/server/src/http/routes/harness-catalog.ts", "handleHarnessCatalogRoutes", "published harness catalog routes must live in a route module");
 mustContain("packages/server/src/http/routes/admin.ts", "handleAdminRoutes", "tenant, workspace, user, secret, and integration admin routes must live in a route module");
 mustContain("packages/server/src/http/routes/loop-runtime.ts", "handleLoopRuntimeRoutes", "loop orchestration and runtime routes must live in a route module");
 mustContain("packages/server/src/http/routes/loops.ts", "handleLoopRoutes", "loop lifecycle and worker routes must live in a route module");
 mustContain("packages/server/src/http/routes/target-loops.ts", "handleTargetLoopRoutes", "target-loop and IM command routes must live in a route module");
 mustContain("packages/server/src/http/routes/release-evidence.ts", "handleReleaseEvidenceRoutes", "release evidence and opportunity draft routes must live in a route module");
 mustContain("packages/server/src/http/routes/connectors.ts", "handleConnectorRoutes", "connector routes must live in a route module");
-mustContain("packages/server/src/http/routes/project-harness-profiles.ts", "handleProjectHarnessProfileRoutes", "project harness profile routes must live in a route module");
 mustContain("packages/server/src/http/routes/projects.ts", "handleProjectRoutes", "project, source credential, DevOps, and LLM binding routes must live in a route module");
 mustContain("packages/server/src/http/routes/delivery.ts", "handleDeliveryRoutes", "run, evidence ingest, review, delivery, and scheduling routes must live in a route module");
 mustContain("packages/server/src/http/routes/rules.ts", "handleRuleRoutes", "rule routes must live in a route module");
@@ -79,7 +80,7 @@ mustContain("packages/server/src/http/routes/audit-history.ts", "handleAuditHist
 mustContain("packages/server/src/storage/json-files.ts", "atomicWriteJson", "file storage primitives must live outside the runtime boundary");
 mustContain("packages/server/src/storage/file-store/index.ts", "class FileStore", "file-backed store must live in the storage boundary");
 mustContain("packages/server/src/application/control-plane-services.ts", "buildGoalSnapshot", "control-plane use-case helpers must live in the application boundary");
-mustContain("packages/server/src/domains/harness-template/defaults.ts", "defaultHarnessTemplates", "built-in harness templates must live in the harness-template domain");
+mustContain("packages/server/src/domains/harness-template/defaults.ts", "defaultHarnessTemplates", "legacy harness defaults must remain isolated from HTTP routes");
 mustContain("packages/cli/src/commands/runtime.ts", "@evopilot/contracts", "CLI command runtime must consume shared contracts");
 mustContain("packages/cli/src/runtime/boundary.ts", "cliInterfaceBoundaryMetadata", "CLI must expose interface-boundary metadata");
 mustContain("packages/cli/src/index.ts", "./commands/runtime.js", "CLI process entrypoint must delegate command execution to command modules");
@@ -90,9 +91,7 @@ mustContain("package.json", "verify:architecture", "root check must include arch
 
 for (const routePrefix of [
   "/api/v1/goals",
-  "/api/v1/harness/template-evolutions",
-  "/api/v1/harness/templates",
-  "/api/v1/harness/policies",
+  "/api/v1/harness/catalogs",
   "/api/v1/tenants",
   "/api/v1/users",
   "/api/v1/workspaces",

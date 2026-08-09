@@ -2,8 +2,8 @@ apiVersion: v2
 name: evopilot
 description: EvoPilot control plane, loop worker, code-upgrader, Postgres, and Dashboard.
 type: application
-version: 2.5.0
-appVersion: "2.5.0"
+version: 3.0.0
+appVersion: "3.0.0"
 home: https://github.com/yeliang-wang/evopilot
 sources:
   - https://github.com/yeliang-wang/evopilot

@@ -42,6 +42,7 @@ export interface EvoPilotServerOptions {
   autoRegisterProfileProject?: boolean;
   maxBodyBytes?: number;
   proofOpsCoreContractPath?: string;
+  harnessCatalogDirs?: string[];
 }
 
 export type EvoPilotRuntimeMode = "prod" | "debug";
@@ -1457,18 +1458,22 @@ export interface GoalPlanPlannerTrace {
   generatedAt: string;
 }
 
-export interface GoalPlanProjectHarnessBinding {
-  schema: "evopilot-goal-plan-project-harness-binding/v1";
-  profileId: string;
-  version: number;
-  status: "ACTIVE";
+export interface GoalPlanSelectedHarnessBinding {
+  schema: "evopilot-goal-plan-selected-harness-binding/v1";
+  harnessId: string;
+  version: string;
+  domain?: string;
+  layer?: "runtime" | "domain" | "composite";
+  status: "PUBLISHED";
   templateRef: HarnessTemplateRef;
-  policyRefs: TenantHarnessPolicyRef[];
-  sourceDigest: string;
-  compiledDigest: string;
   capabilities: string[];
-  inheritedSections: string[];
-  overrideSections: string[];
+  selectionMode: "catalog-auto-match";
+  selectionReasons: string[];
+  catalogId?: string;
+  catalogSource?: string;
+  catalogDigest?: string;
+  entryPath?: string;
+  entryDigest?: string;
   evidence: string[];
   boundAt: string;
 }
@@ -1481,7 +1486,7 @@ export interface GoalPlan {
   maturityStandardSetId?: string;
   standardVersion?: string;
   planner?: GoalPlanPlannerTrace;
-  projectHarness?: GoalPlanProjectHarnessBinding;
+  selectedHarness?: GoalPlanSelectedHarnessBinding;
   summary: string;
   targetCount: number;
   requiredTargetCount: number;

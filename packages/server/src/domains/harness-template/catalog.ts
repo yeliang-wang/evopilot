@@ -21,7 +21,7 @@ import {
 } from "./utils.js";
 
 export const EVOPILOT_HARNESS_CATALOG_BLOCK = "evopilot-harness-catalog";
-export const EVOPILOT_HARNESS_CATALOG_COMPAT_VERSION = "2.5.0";
+export const EVOPILOT_HARNESS_CATALOG_COMPAT_VERSION = "3.0.0";
 
 export function hydrateHarnessCatalogMount(input: unknown): HarnessCatalogMount {
   const record = isRecord(input) ? input : {};

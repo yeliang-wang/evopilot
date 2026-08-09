@@ -85,7 +85,7 @@ import type {
   GoalPlan,
   GoalPlanApprovalConfirmation,
   GoalPlanPlannerTrace,
-  GoalPlanProjectHarnessBinding,
+  GoalPlanSelectedHarnessBinding,
   GoalPlanStatus,
   GoalRunStatus,
   GoalSnapshot,
@@ -3132,53 +3132,61 @@ export function diffProjectHarnessProfiles(project: StoredProject, profileId: st
   };
 }
 
-export function projectHarnessPlanBinding(version: ProjectHarnessProfileVersion | undefined, now: string): GoalPlanProjectHarnessBinding | undefined {
-  if (!version || version.status !== "ACTIVE") return undefined;
+export function selectedHarnessPlanBinding(selection: HarnessTemplateSelection | undefined, now: string): GoalPlanSelectedHarnessBinding | undefined {
+  if (!selection) return undefined;
+  const template = selection.template;
+  const catalogRef = template.catalogRef;
   return {
-    schema: "evopilot-goal-plan-project-harness-binding/v1",
-    profileId: version.profileId,
-    version: version.version,
-    status: "ACTIVE",
-    templateRef: version.templateRef,
-    policyRefs: version.policyRefs,
-    sourceDigest: version.sourceDigest,
-    compiledDigest: version.compiledDigest,
-    capabilities: version.compiledContent.capabilities.map((capability) => capability.id),
-    inheritedSections: version.compiledContent.inheritedSections,
-    overrideSections: version.compiledContent.overrideSections,
+    schema: "evopilot-goal-plan-selected-harness-binding/v1",
+    harnessId: template.id,
+    version: template.version,
+    domain: template.domain ?? optionalTrimmedString(recordObject(template.runtimePatterns).domain),
+    layer: template.harnessLayer,
+    status: "PUBLISHED",
+    templateRef: harnessTemplateRef(template),
+    capabilities: template.capabilities.map((capability) => capability.id),
+    selectionMode: "catalog-auto-match",
+    selectionReasons: selection.reasons,
+    catalogId: catalogRef?.catalogId,
+    catalogSource: catalogRef?.catalogSource,
+    catalogDigest: catalogRef?.catalogDigest,
+    entryPath: catalogRef?.entryPath,
+    entryDigest: catalogRef?.entryDigest,
     evidence: [
-      `profile=${version.profileId}`,
-      `version=${version.version}`,
-      `compiledDigest=${version.compiledDigest}`,
-      `template=${version.templateRef.templateId}@${version.templateRef.version}`,
-      `templateDigest=${version.templateRef.digest}`,
-      ...(version.templateRef.catalogRef ? [
-        `catalogId=${version.templateRef.catalogRef.catalogId}`,
-        `catalogDigest=${version.templateRef.catalogRef.catalogDigest}`,
-        `catalogEntry=${version.templateRef.catalogRef.entryPath}`,
-        `catalogEntryDigest=${version.templateRef.catalogRef.entryDigest}`
+      `harness=${template.id}@${template.version}`,
+      `harnessDigest=${template.digest}`,
+      ...selection.reasons.map((reason) => `selectionReason=${reason}`),
+      ...(catalogRef ? [
+        `catalogId=${catalogRef.catalogId}`,
+        `catalogDigest=${catalogRef.catalogDigest}`,
+        `catalogEntry=${catalogRef.entryPath}`,
+        `catalogEntryDigest=${catalogRef.entryDigest}`
       ] : []),
-      ...version.policyRefs.map((policy) => `tenantPolicy=${policy.policyId}@v${policy.version}`),
-      ...version.policyRefs.map((policy) => `tenantPolicyDigest=${policy.digest}`)
     ],
     boundAt: now
   };
 }
 
-export function hydrateGoalPlanProjectHarnessBinding(value: unknown): GoalPlanProjectHarnessBinding | undefined {
+export function hydrateGoalPlanSelectedHarnessBinding(value: unknown): GoalPlanSelectedHarnessBinding | undefined {
   if (!isRecord(value)) return undefined;
+  const templateRef = hydrateHarnessTemplateRef(value.templateRef);
+  const catalogRef = templateRef.catalogRef;
   return {
-    schema: "evopilot-goal-plan-project-harness-binding/v1",
-    profileId: safeFileName(String(value.profileId ?? "default")),
-    version: clampPositiveInteger(value.version, 1),
-    status: "ACTIVE",
-    templateRef: hydrateHarnessTemplateRef(value.templateRef),
-    policyRefs: hydrateTenantHarnessPolicyRefs(value.policyRefs),
-    sourceDigest: String(value.sourceDigest ?? ""),
-    compiledDigest: String(value.compiledDigest ?? ""),
+    schema: "evopilot-goal-plan-selected-harness-binding/v1",
+    harnessId: safeFileName(String(value.harnessId ?? value.templateId ?? templateRef.templateId ?? "harness")),
+    version: String(value.version ?? templateRef.version ?? "0.1.0"),
+    domain: optionalTrimmedString(value.domain),
+    layer: value.layer === "domain" || value.layer === "runtime" || value.layer === "composite" ? value.layer : undefined,
+    status: "PUBLISHED",
+    templateRef,
     capabilities: normalizeStringList(value.capabilities, []),
-    inheritedSections: normalizeStringList(value.inheritedSections, []),
-    overrideSections: normalizeStringList(value.overrideSections, []),
+    selectionMode: "catalog-auto-match",
+    selectionReasons: normalizeStringList(value.selectionReasons, []),
+    catalogId: optionalTrimmedString(value.catalogId) ?? catalogRef?.catalogId,
+    catalogSource: optionalTrimmedString(value.catalogSource) ?? catalogRef?.catalogSource,
+    catalogDigest: optionalTrimmedString(value.catalogDigest) ?? catalogRef?.catalogDigest,
+    entryPath: optionalTrimmedString(value.entryPath) ?? catalogRef?.entryPath,
+    entryDigest: optionalTrimmedString(value.entryDigest) ?? catalogRef?.entryDigest,
     evidence: normalizeStringList(value.evidence, []),
     boundAt: String(value.boundAt ?? new Date().toISOString())
   };
@@ -3422,7 +3430,7 @@ export function hydrateGoalPlan(value: unknown, goalId: string, projectId: strin
     maturityStandardSetId: optionalTrimmedString(value.maturityStandardSetId),
     standardVersion: optionalTrimmedString(value.standardVersion),
     planner: hydrateGoalPlanPlannerTrace(value.planner),
-    projectHarness: hydrateGoalPlanProjectHarnessBinding(value.projectHarness),
+    selectedHarness: hydrateGoalPlanSelectedHarnessBinding(value.selectedHarness ?? value.projectHarness),
     summary: String(value.summary ?? (targets.length > 0 ? `Goal plan has ${targets.length} targets.` : "Goal plan has not been generated.")),
     targetCount: targets.length,
     requiredTargetCount: targets.filter((target) => target.required).length,
@@ -4184,7 +4192,7 @@ export function normalizeAppliedGoalPlan(input: unknown, goal: GlobalGoal, now: 
     terminalMaturity: "ga",
     maturityStandardSetId: DEFAULT_MATURITY_STANDARD_SET_ID,
     standardVersion: DEFAULT_MATURITY_STANDARD_VERSION,
-    projectHarness: hydrateGoalPlanProjectHarnessBinding(root.projectHarness),
+    selectedHarness: hydrateGoalPlanSelectedHarnessBinding(root.selectedHarness ?? root.projectHarness),
     summary: String(root.summary ?? `${goal.objective} adjusted by user and normalized against the Alpha -> Beta -> RC -> GA baseline.`),
     targetCount: targets.length,
     requiredTargetCount: targets.filter((target) => target.required).length,
@@ -4293,9 +4301,9 @@ export function buildGoalSnapshot(store: FileStore, goal: GlobalGoal): GoalSnaps
     `targets=${derivedTargets.length}`,
     `phases=${derivedPlan.phaseTargets.map((phase) => `${phase.phase}:${phase.status}`).join(",")}`,
     `completedTargets=${completedTargets}/${requiredTargets.length}`,
-    goal.plan.projectHarness ? `projectHarnessProfile=${goal.plan.projectHarness.profileId}` : "projectHarnessProfile=missing",
-    goal.plan.projectHarness ? `projectHarnessVersion=${goal.plan.projectHarness.version}` : "projectHarnessVersion=missing",
-    goal.plan.projectHarness ? `projectHarnessDigest=${goal.plan.projectHarness.compiledDigest}` : "projectHarnessDigest=missing",
+    goal.plan.selectedHarness ? `selectedHarness=${goal.plan.selectedHarness.harnessId}@${goal.plan.selectedHarness.version}` : "selectedHarness=missing",
+    goal.plan.selectedHarness?.catalogDigest ? `selectedHarnessCatalogDigest=${goal.plan.selectedHarness.catalogDigest}` : "selectedHarnessCatalogDigest=missing",
+    goal.plan.selectedHarness?.entryDigest ? `selectedHarnessEntryDigest=${goal.plan.selectedHarness.entryDigest}` : "selectedHarnessEntryDigest=missing",
     releaseDecision ? `releaseDecision=${releaseDecision.status}` : "releaseDecision=not-generated"
   ];
   return {
@@ -4511,45 +4519,19 @@ export function buildGoalRunStatusChain(store: FileStore, snapshot: GoalSnapshot
   ];
 }
 
-export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, actor: string, now: string): Promise<{ targets: GoalTarget[]; planner: GoalPlanPlannerTrace; projectHarness?: GoalPlanProjectHarnessBinding }> {
+export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, actor: string, now: string): Promise<{ targets: GoalTarget[]; planner: GoalPlanPlannerTrace; selectedHarness?: GoalPlanSelectedHarnessBinding }> {
   const project = store.readProject(goal.projectId);
-  const projectHarnessProfile = store.readActiveProjectHarnessProfile(goal.projectId);
-  if (project && projectHarnessProfile) {
-    const template = store.readHarnessTemplate(projectHarnessProfile.templateRef.templateId, projectHarnessProfile.templateRef.version);
-    const activePolicies = store.listActiveTenantHarnessPoliciesForProject(project, template);
-    const policyFailures = detectTenantHarnessPolicyBindingFailures(activePolicies, projectHarnessProfile.compiledContent);
-    if (policyFailures.length > 0) {
-      logWarn("goal-plan.project-harness-policy-stale", {
-        tenantId: goal.tenantId,
-        workspaceId: goal.workspaceId,
-        actor,
-        outcome: "blocked",
-        errorCode: "PROJECT_HARNESS_PROFILE_POLICY_STALE",
-        correlation: {
-          goalId: goal.id,
-          projectId: goal.projectId,
-          releaseTargetId: goal.releaseTargetId
-        },
-        diagnosis: {
-          summary: "Active ProjectHarnessProfile does not bind the current TenantHarnessPolicy.",
-          likelyCause: "A tenant/workspace harness policy was activated after this project profile version was compiled.",
-          recommendedAction: "Run harness profile generate or apply a revised ProjectHarnessProfile, review it, and activate the new version before goal planning.",
-          retriable: false,
-          humanActionRequired: true
-        },
-        metadata: projectHarnessLogMetadata(project, projectHarnessProfile, {
-          goalId: goal.id,
-          releaseTargetId: goal.releaseTargetId,
-          policyFailures,
-          nextAction: "regenerate-project-harness-profile"
-        })
-      });
-      throw httpError(409, "PROJECT_HARNESS_PROFILE_POLICY_STALE", `Active ProjectHarnessProfile must be regenerated against active TenantHarnessPolicy before goal planning: ${policyFailures.join("; ")}`);
+  let selectedHarness: GoalPlanSelectedHarnessBinding | undefined;
+  if (project) {
+    try {
+      const selection = selectHarnessTemplateForProjectContext(store, project, { goalLoopTarget: goal.objective, objective: goal.objective });
+      selectedHarness = selectedHarnessPlanBinding(selection, now);
+    } catch (error) {
+      if (!isRecord(error) || error.code !== "HARNESS_TEMPLATE_NOT_FOUND") throw error;
     }
   }
-  const projectHarness = projectHarnessPlanBinding(projectHarnessProfile, now);
-  if (projectHarnessProfile && projectHarness) {
-    logInfo("goal-plan.project-harness-bound", {
+  if (selectedHarness) {
+    logInfo("goal-plan.selected-harness-bound", {
       tenantId: goal.tenantId,
       workspaceId: goal.workspaceId,
       actor,
@@ -4559,35 +4541,35 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
         projectId: goal.projectId,
         releaseTargetId: goal.releaseTargetId
       },
-      metadata: project
-        ? projectHarnessLogMetadata(project, projectHarnessProfile, { goalId: goal.id, releaseTargetId: goal.releaseTargetId, nextAction: "review-phase-plan" })
-        : {
-          projectId: goal.projectId,
-          profileId: projectHarness.profileId,
-          profileVersion: projectHarness.version,
-          compiledDigest: projectHarness.compiledDigest,
-          templateId: projectHarness.templateRef.templateId,
-          templateVersion: projectHarness.templateRef.version,
-          templateDigest: projectHarness.templateRef.digest,
-          nextAction: "review-phase-plan"
-        }
+      metadata: {
+        projectId: goal.projectId,
+        harnessId: selectedHarness.harnessId,
+        harnessVersion: selectedHarness.version,
+        domain: selectedHarness.domain,
+        catalogId: selectedHarness.catalogId,
+        catalogDigest: selectedHarness.catalogDigest,
+        entryPath: selectedHarness.entryPath,
+        entryDigest: selectedHarness.entryDigest,
+        selectionReasons: selectedHarness.selectionReasons,
+        nextAction: "review-phase-plan"
+      }
     });
   } else {
-    logWarn("goal-plan.project-harness-missing", {
+    logWarn("goal-plan.selected-harness-missing", {
       tenantId: goal.tenantId,
       workspaceId: goal.workspaceId,
       actor,
       outcome: "blocked",
-      errorCode: "PROJECT_HARNESS_PROFILE_ACTIVE_MISSING",
+      errorCode: "PUBLISHED_HARNESS_CATALOG_MISSING",
       correlation: {
         goalId: goal.id,
         projectId: goal.projectId,
         releaseTargetId: goal.releaseTargetId
       },
       diagnosis: {
-        summary: "Goal planning has no active ProjectHarnessProfile binding.",
-        likelyCause: "The project has not activated a reviewed harness profile.",
-        recommendedAction: "Run harness profile generate/review/activate before approving the phase plan.",
+        summary: "Goal planning could not select a published Harness from the configured Catalog directory.",
+        likelyCause: "EVOPILOT_HARNESS_CATALOG_DIR does not point at a published evopilot-harness Catalog, or the Catalog has no published entries.",
+        recommendedAction: "Publish a Harness with evopilot-harness, place the published directory under the configured template catalog directory, then regenerate the plan.",
         retriable: false,
         humanActionRequired: true
       },
@@ -4595,7 +4577,7 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
         projectId: goal.projectId,
         goalId: goal.id,
         releaseTargetId: goal.releaseTargetId,
-        nextAction: "activate-project-harness-profile"
+        nextAction: "publish-or-configure-harness-catalog"
       }
     });
   }
@@ -4618,13 +4600,13 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
           "planner=debug-deterministic-no-provider",
           "llmPlanner=false",
           "reason=LLM provider is not configured in debug mode",
-          projectHarness ? `projectHarnessProfile=${projectHarness.profileId}` : "projectHarnessProfile=missing",
-          projectHarness ? `projectHarnessVersion=${projectHarness.version}` : "projectHarnessVersion=missing",
-          projectHarness ? `projectHarnessDigest=${projectHarness.compiledDigest}` : "projectHarnessDigest=missing"
+          selectedHarness ? `selectedHarness=${selectedHarness.harnessId}@${selectedHarness.version}` : "selectedHarness=missing",
+          selectedHarness?.catalogDigest ? `selectedHarnessCatalogDigest=${selectedHarness.catalogDigest}` : "selectedHarnessCatalogDigest=missing",
+          selectedHarness?.entryDigest ? `selectedHarnessEntryDigest=${selectedHarness.entryDigest}` : "selectedHarnessEntryDigest=missing"
         ]
       }),
-      planner: debugDeterministicGoalPlanTrace(goal, llmResolution.selection, now, projectHarness),
-      projectHarness
+      planner: debugDeterministicGoalPlanTrace(goal, llmResolution.selection, now, selectedHarness),
+      selectedHarness
     };
   }
   const startedAt = new Date().toISOString();
@@ -4645,7 +4627,7 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
       actor,
       llmProfileId: llmResolution.selection.profileId ?? "global-default"
     },
-    prompt: goalPlanPlannerPrompt(goal, releaseTarget, project, maturityStandardTemplates(), projectHarnessProfile)
+    prompt: goalPlanPlannerPrompt(goal, releaseTarget, project, maturityStandardTemplates(), selectedHarness)
   });
   if (!response.success) {
     throw httpError(409, "GOAL_PLAN_LLM_FAILED", response.errorMessage ?? response.errorCode ?? "LLM planner failed.");
@@ -4658,12 +4640,12 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
   }
   return {
     targets,
-    planner: llmGoalPlanTrace(response, llmResolution.selection, startedAt, projectHarness),
-    projectHarness
+    planner: llmGoalPlanTrace(response, llmResolution.selection, startedAt, selectedHarness),
+    selectedHarness
   };
 }
 
-export function debugDeterministicGoalPlanTrace(goal: GlobalGoal, selection: LoopLlmSelection, now: string, projectHarness?: GoalPlanProjectHarnessBinding): GoalPlanPlannerTrace {
+export function debugDeterministicGoalPlanTrace(goal: GlobalGoal, selection: LoopLlmSelection, now: string, selectedHarness?: GoalPlanSelectedHarnessBinding): GoalPlanPlannerTrace {
   return {
     schema: "evopilot-goal-plan-planner-trace/v1",
     mode: "debug-deterministic-no-provider",
@@ -4682,15 +4664,15 @@ export function debugDeterministicGoalPlanTrace(goal: GlobalGoal, selection: Loo
       "planner=debug-deterministic-no-provider",
       "llmPlanner=false",
       "debugOnly=true",
-      projectHarness ? `projectHarnessProfile=${projectHarness.profileId}` : "projectHarnessProfile=missing",
-      projectHarness ? `projectHarnessVersion=${projectHarness.version}` : "projectHarnessVersion=missing",
-      projectHarness ? `projectHarnessDigest=${projectHarness.compiledDigest}` : "projectHarnessDigest=missing"
+      selectedHarness ? `selectedHarness=${selectedHarness.harnessId}@${selectedHarness.version}` : "selectedHarness=missing",
+      selectedHarness?.catalogDigest ? `selectedHarnessCatalogDigest=${selectedHarness.catalogDigest}` : "selectedHarnessCatalogDigest=missing",
+      selectedHarness?.entryDigest ? `selectedHarnessEntryDigest=${selectedHarness.entryDigest}` : "selectedHarnessEntryDigest=missing"
     ],
     generatedAt: now
   };
 }
 
-export function llmGoalPlanTrace(response: LlmGenerateResponse, selection: LoopLlmSelection, startedAt: string, projectHarness?: GoalPlanProjectHarnessBinding): GoalPlanPlannerTrace {
+export function llmGoalPlanTrace(response: LlmGenerateResponse, selection: LoopLlmSelection, startedAt: string, selectedHarness?: GoalPlanSelectedHarnessBinding): GoalPlanPlannerTrace {
   const totalTokens = response.usage?.totalTokens ?? 0;
   return {
     schema: "evopilot-goal-plan-planner-trace/v1",
@@ -4715,9 +4697,9 @@ export function llmGoalPlanTrace(response: LlmGenerateResponse, selection: LoopL
       `totalTokens=${totalTokens}`,
       "planner=llm-constrained",
       "guardrail=server-normalized",
-      projectHarness ? `projectHarnessProfile=${projectHarness.profileId}` : "projectHarnessProfile=missing",
-      projectHarness ? `projectHarnessVersion=${projectHarness.version}` : "projectHarnessVersion=missing",
-      projectHarness ? `projectHarnessDigest=${projectHarness.compiledDigest}` : "projectHarnessDigest=missing"
+      selectedHarness ? `selectedHarness=${selectedHarness.harnessId}@${selectedHarness.version}` : "selectedHarness=missing",
+      selectedHarness?.catalogDigest ? `selectedHarnessCatalogDigest=${selectedHarness.catalogDigest}` : "selectedHarnessCatalogDigest=missing",
+      selectedHarness?.entryDigest ? `selectedHarnessEntryDigest=${selectedHarness.entryDigest}` : "selectedHarnessEntryDigest=missing"
     ],
     generatedAt: new Date().toISOString()
   };
@@ -4733,12 +4715,11 @@ export function goalPlanGuardrails(): string[] {
     "Built-in baseline criteria and required evidence cannot be removed.",
     "Architecture/security/testing/docs/ops/release review capabilities are enforced by phase standards.",
     "An active ProjectHarnessProfile may strengthen target capabilities and evidence contracts, but it cannot weaken mandatory governance gates.",
-    "Goal planning must bind the active ProjectHarnessProfile version and digest when one exists."
+    "Goal planning should record the selected published Harness digest when a Catalog match exists."
   ];
 }
 
-export function goalPlanPlannerPrompt(goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, project: StoredProject | undefined, standards: MaturityStandardTemplate[], projectHarnessProfile?: ProjectHarnessProfileVersion): string {
-  const compiledHarness = projectHarnessProfile?.compiledContent;
+export function goalPlanPlannerPrompt(goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, project: StoredProject | undefined, standards: MaturityStandardTemplate[], selectedHarness?: GoalPlanSelectedHarnessBinding): string {
   return [
     "You are EvoPilot's constrained GlobalGoal planner and software architect.",
     "Return only one JSON object. Do not include Markdown.",
@@ -4748,8 +4729,8 @@ export function goalPlanPlannerPrompt(goal: GlobalGoal, releaseTarget: ReleaseTa
     "Each phase must include at least one required target and one package/GO-NO-GO target.",
     "Every target must be independently verifiable through a TargetEvidencePackage.",
     "Use the built-in standards as mandatory baselines; you may add or strengthen, never weaken.",
-    "If an active ProjectHarnessProfile is present, bind targets to its capability boundaries, validation commands, failure handling, diagnostics, observability, and governance rules.",
-    "If the goal exposes missing harness rules, add a target that requests a profile revision suggestion; do not silently mutate the active ProjectHarnessProfile.",
+    "If a selected published Harness is present, align targets to its domain, capabilities, digest, and evidence expectations.",
+    "Do not mutate Harness definitions from EvoPilot. Harness lifecycle and evolution belong to evopilot-harness.",
     "",
     "Output JSON schema:",
     "{",
@@ -4784,27 +4765,8 @@ export function goalPlanPlannerPrompt(goal: GlobalGoal, releaseTarget: ReleaseTa
     `Minimum successful pipelines: ${releaseTarget.minSuccessfulPipelines}`,
     `Active soak required: ${releaseTarget.requireActiveSoak === true}`,
     "",
-    "Active ProjectHarnessProfile:",
-    projectHarnessProfile ? JSON.stringify({
-      profileId: projectHarnessProfile.profileId,
-      version: projectHarnessProfile.version,
-      sourceDigest: projectHarnessProfile.sourceDigest,
-      compiledDigest: projectHarnessProfile.compiledDigest,
-      templateRef: projectHarnessProfile.templateRef,
-      capabilities: compiledHarness?.capabilities.map((capability) => ({
-        id: capability.id,
-        boundary: capability.boundary,
-        requiredEvidence: capability.requiredEvidence
-      })),
-      runtime: compiledHarness?.runtime,
-      validation: compiledHarness?.validation,
-      evidence: compiledHarness?.evidence,
-      failureHandling: compiledHarness?.failureHandling,
-      diagnostics: compiledHarness?.diagnostics,
-      observability: compiledHarness?.observability,
-      governance: compiledHarness?.governance,
-      phaseMapping: compiledHarness?.phaseMapping
-    }, null, 2) : "none",
+    "Selected published Harness:",
+    selectedHarness ? JSON.stringify(selectedHarness, null, 2) : "none",
     "",
     "Mandatory maturity standards:",
     JSON.stringify(standards.map((standard) => ({

@@ -1,8 +1,8 @@
-export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "2.5.0";
+export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "3.0.0";
 export const EVOPILOT_SERVER_VERSION_FALLBACK = "0.1.0";
-export const EVOPILOT_CLI_VERSION_FALLBACK = "2.5.0";
+export const EVOPILOT_CLI_VERSION_FALLBACK = "3.0.0";
 export const EVOPILOT_API_CONTRACT_VERSION = "v1";
-export const EVOPILOT_MINIMUM_CLI_VERSION = "2.5.0";
+export const EVOPILOT_MINIMUM_CLI_VERSION = "3.0.0";
 
 export const EVOPILOT_LOG_SCHEMA = "evopilot-log/v1";
 export const EVOPILOT_CLI_RUNTIME_SCHEMA = "evopilot-cli-runtime/v1";

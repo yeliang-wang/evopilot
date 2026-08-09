@@ -10,12 +10,12 @@ Install the current release CLI tarball set:
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.5.0/evopilot-contracts-2.5.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.5.0/evopilot-client-2.5.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v2.5.0/evopilot-cli-2.5.0.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-contracts-3.0.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-client-3.0.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v3.0.0/evopilot-cli-3.0.0.tgz
 ```
 
-Use `npm install -g @evopilot/cli@2.5.0` only after public npm registry publication has been verified for that exact version.
+Use `npm install -g @evopilot/cli@3.0.0` only after public npm registry publication has been verified for that exact version.
 
 ```bash
 evopilot --server https://evopilot.example.com auth login \
@@ -99,43 +99,10 @@ After registration, verify persisted readiness:
 
 ```bash
 evopilot project onboard verify <project-id> --json
-evopilot harness template list --json
-evopilot harness policy list --json
-evopilot harness profile generate \
-  --project <project-id> \
-  --goal-loop-target "Define the project harness for this project" \
-  --llm-profile <llm-profile-id> \
-  --json
-evopilot harness profile activate default --project <project-id> --version 1 --json
 evopilot target plan --project <project-id> --objective "Enable the requested business capability and lifecycle evidence" --llm-profile <llm-profile-id> --json
 ```
 
-`ProjectHarnessProfile` is a project-level control-plane definition. It is generated or imported as YAML/JSON, validated by the server, activated explicitly, and then bound into `GoalPlan.projectHarness` by version and digest. If the tenant/workspace has an active `TenantHarnessPolicy`, the compiled profile also includes `policyRefs[]`; activation and goal planning are blocked when the profile was compiled against an older active policy.
-
-Fresh installs include runtime template harnesses such as `python-enterprise-harness`, `java-ddd-service-harness`, `node-saas-control-plane-harness`, `go-middleware-harness`, and `observability-apm-harness`, plus v2 domain templates `database-product-harness` and `api-gateway-harness`. Project onboarding automatically matches a published template from domain signals, project runtime/repository context, and the goal loop target; `--from-template` is only an explicit administrator or advanced override. Inspect `sourceReferences[]` to see the public projects, official specifications, or engineering-practice sources used to initialize a template. The authoritative template format is YAML or JSON; Markdown is documentation only.
-
-Administrators can publish or replace template harness versions through the separate server-governed administrator CLI channel:
-
-```bash
-evopilot harness template upgrade \
-  --file <template.yaml> \
-  --changelog "Describe this template version." \
-  --json
-```
-
-The same `id@version` requires `--force`; normal updates should publish a new version and then draft project profile upgrades from it.
-
-Administrators can publish tenant/workspace private constraints through a separate policy channel:
-
-```bash
-evopilot harness policy apply \
-  --file <policy.yaml> \
-  --changelog "Describe this private policy version." \
-  --json
-evopilot harness policy activate default --version <policy-version> --json
-```
-
-Policy source files use `schema: evopilot-tenant-harness-policy/v1` and can require organization-specific capabilities, evidence fields, correlation IDs, structured log fields, exception attributes, diagnostics, observability, governance booleans, and phase mappings for matching project profiles.
+EvoPilot v3 has no `evopilot harness ...` command group. Harness lifecycle, source evolution, review, approval, versioning, and publication are owned by `evopilot-harness`. The EvoPilot server reads configured published Catalog directories and records the selected published Harness as `plan.selectedHarness` during `target plan` or `goal plan`. Show `selectedHarness` id, version, catalog id, catalog digest, entry path, and entry digest before approving a phase plan.
 
 ## Documentation
 
