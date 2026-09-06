@@ -20,6 +20,7 @@ export function validateReleasePipeline(workflows) {
   requireMatch(candidate, /push:\s*false/, "Candidate image build must not publish during controlled Candidate formation");
   requireMatch(candidate, /actions\/upload-artifact@v4/, "Candidate formation must upload a controlled GitHub Actions artifact");
   requireMatch(candidate, /project-candidate-handoff\.mjs build/, "Candidate formation must create the exact handoff after fresh materialization");
+  rejectMatch(candidate, /^ {6}[A-Z][A-Z0-9_]*:\s*\$\{\{\s*runner\./m, "Candidate workflow must not use runner context in job-level env");
   rejectMatch(candidate, /push:\s*true/, "Controlled Candidate formation must not push a public image");
   rejectMatch(candidate, /gh release (?:create|upload|edit)/, "Controlled Candidate formation must not create or mutate a GitHub Release");
   rejectMatch(candidate, /npm publish/, "Controlled Candidate formation must not publish npm packages");

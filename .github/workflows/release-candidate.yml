@@ -142,8 +142,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
-      CANDIDATE_DIR: ${{ runner.temp }}/evopilot-candidate/release
-      HANDOFF_DIR: ${{ runner.temp }}/evopilot-candidate/handoff
       TARGET_FILE: governance/targets/${{ inputs.target_id }}.json
       TARGET_ID: ${{ inputs.target_id }}
       CANDIDATE_COMMIT: ${{ inputs.commit_sha }}
@@ -158,13 +156,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.artifact_name }}
-          path: ${{ env.CANDIDATE_DIR }}
+          path: ${{ runner.temp }}/evopilot-candidate/release
 
       - name: Verify fresh Candidate materialization
+        env:
+          CANDIDATE_DIR: ${{ runner.temp }}/evopilot-candidate/release
         run: node scripts/verify-release-artifacts.mjs "$CANDIDATE_DIR"
 
       - name: Build and verify Candidate handoff
         env:
+          CANDIDATE_DIR: ${{ runner.temp }}/evopilot-candidate/release
+          HANDOFF_DIR: ${{ runner.temp }}/evopilot-candidate/handoff
           TARGET_AUTHORIZATION_DIGEST: ${{ needs.build.outputs.target_authorization_digest }}
           TARGET_REVISION: ${{ needs.build.outputs.target_revision }}
           VERSION: ${{ needs.build.outputs.version }}
@@ -208,7 +210,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: evopilot-${{ needs.build.outputs.version }}-candidate-handoff
-          path: ${{ env.HANDOFF_DIR }}/
+          path: ${{ runner.temp }}/evopilot-candidate/handoff/
           if-no-files-found: error
           retention-days: 30
           compression-level: 0

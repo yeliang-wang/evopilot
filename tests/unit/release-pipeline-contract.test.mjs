@@ -33,3 +33,14 @@ test("release pipeline contract rejects product Lifecycle coupling", () => {
   assert.equal(result.status, "FAIL");
   assert.ok(result.failures.some((failure) => failure.includes("product Lifecycle")));
 });
+
+test("release pipeline contract rejects runner context in Candidate job-level env", () => {
+  const workflows = {
+    candidate: `${fs.readFileSync(".github/workflows/release-candidate.yml", "utf8")}\n    env:\n      CANDIDATE_DIR: \${{ runner.temp }}/candidate\n`,
+    release: fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8"),
+    npm: fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("runner context in job-level env")));
+});
