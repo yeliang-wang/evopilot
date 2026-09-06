@@ -44,3 +44,17 @@ test("release pipeline contract rejects runner context in Candidate job-level en
   assert.equal(result.status, "FAIL");
   assert.ok(result.failures.some((failure) => failure.includes("runner context in job-level env")));
 });
+
+test("release pipeline contract rejects overriding reserved GITHUB_REF_NAME through step env", () => {
+  const candidate = fs.readFileSync(".github/workflows/release-candidate.yml", "utf8")
+    .replace('run: GITHUB_REF_NAME="$RELEASE_TAG" npm run release:artifact', "run: npm run release:artifact")
+    .replace("          EVOPILOT_IMAGE_REF:", "          GITHUB_REF_NAME: ${{ env.RELEASE_TAG }}\n          EVOPILOT_IMAGE_REF:");
+  const workflows = {
+    candidate,
+    release: fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8"),
+    npm: fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("reserved GITHUB_REF_NAME")));
+});

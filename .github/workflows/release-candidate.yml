@@ -117,11 +117,12 @@ jobs:
 
       - name: Build release set once
         env:
-          GITHUB_REF_NAME: ${{ env.RELEASE_TAG }}
           EVOPILOT_IMAGE_REF: ${{ env.IMAGE_REPOSITORY }}:${{ env.VERSION }}
           EVOPILOT_IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
           EVOPILOT_IMAGE_ARCHIVE: ${{ runner.temp }}/evopilot-container-image.tar
-        run: npm run release:artifact
+        # GITHUB_* variables cannot be overridden through workflow env. Bind the
+        # synthetic Candidate tag directly on the artifact-builder process.
+        run: GITHUB_REF_NAME="$RELEASE_TAG" npm run release:artifact
 
       - name: Verify built release set
         run: npm run verify:release-artifact

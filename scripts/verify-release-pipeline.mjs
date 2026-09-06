@@ -14,13 +14,14 @@ export function validateReleasePipeline(workflows) {
   requireMatch(candidate, /commit_sha:/, "Candidate formation must accept an exact commit SHA");
   requireMatch(candidate, /target_id:/, "Candidate formation must bind an approved Target");
   requireMatch(candidate, /npm run check/, "Candidate formation must run the full check");
-  requireMatch(candidate, /npm run release:artifact/, "Candidate formation must build the release set exactly once");
+  requireMatch(candidate, /run:\s*GITHUB_REF_NAME="\$RELEASE_TAG" npm run release:artifact/, "Candidate formation must bind the synthetic Candidate tag directly on the artifact-builder process");
   requireMatch(candidate, /npm run verify:release-artifact/, "Candidate formation must verify the release set");
   requireMatch(candidate, /outputs:\s*type=docker,dest=/, "Candidate formation must export a loadable container archive");
   requireMatch(candidate, /push:\s*false/, "Candidate image build must not publish during controlled Candidate formation");
   requireMatch(candidate, /actions\/upload-artifact@v4/, "Candidate formation must upload a controlled GitHub Actions artifact");
   requireMatch(candidate, /project-candidate-handoff\.mjs build/, "Candidate formation must create the exact handoff after fresh materialization");
   rejectMatch(candidate, /^ {6}[A-Z][A-Z0-9_]*:\s*\$\{\{\s*runner\./m, "Candidate workflow must not use runner context in job-level env");
+  rejectMatch(candidate, /^ {10}GITHUB_REF_NAME:/m, "Candidate workflow must not attempt to override reserved GITHUB_REF_NAME through step env");
   rejectMatch(candidate, /push:\s*true/, "Controlled Candidate formation must not push a public image");
   rejectMatch(candidate, /gh release (?:create|upload|edit)/, "Controlled Candidate formation must not create or mutate a GitHub Release");
   rejectMatch(candidate, /npm publish/, "Controlled Candidate formation must not publish npm packages");
