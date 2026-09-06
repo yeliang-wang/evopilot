@@ -1,0 +1,99 @@
+schema: evopilot-lifecycle-definition/v1alpha1
+metadata:
+  id: datarig-enterprise-internal
+  name: DataRig enterprise-internal delivery reference
+  version: 1.0.0
+  description: A data-driven enterprise delivery example; every environment-specific value is an input.
+  labels:
+    audience: enterprise-internal
+    example: datarig
+imports:
+  - id: common-software-delivery
+    version: 1.0.0
+capabilities:
+  - build.execute
+  - test.execute
+  - goal-loop.execute
+  - release.readiness
+  - release.publish
+inputs:
+  - id: buildProfile
+    type: enum
+    prompt: Which build profile should be used?
+    required: true
+    options: [development, integration, candidate]
+  - id: testSuite
+    type: enum
+    prompt: Which enterprise test suite should be run?
+    required: true
+    default: integration
+    options: [unit, integration, full]
+  - id: artifactChannel
+    type: string
+    prompt: Which internal artifact channel is the target?
+    required: true
+  - id: productionCredential
+    type: secret-ref
+    prompt: Which stored SecretRef may be used for the authorized publication step?
+    description: Enter only a reference such as secret://workspace/internal-release; never paste a credential.
+    required: false
+    visibleWhen:
+      input: buildProfile
+      equals: candidate
+stages:
+  - id: enterprise-build
+    name: Build the bounded candidate
+    needs: [project-validation]
+    action:
+      uses: build.verify@1
+      with:
+        profile: ${inputs.buildProfile}
+    decision:
+      mode: EXTERNAL_SIGNAL
+    retry:
+      maxAttempts: 2
+  - id: enterprise-test
+    name: Run enterprise verification
+    needs: [enterprise-build]
+    action:
+      uses: test.verify@1
+      with:
+        suite: ${inputs.testSuite}
+    decision:
+      mode: EXTERNAL_SIGNAL
+    retry:
+      maxAttempts: 2
+  - id: project-goal-loop
+    name: Execute EvoPilot project Goal Loop
+    needs: [enterprise-test]
+    action:
+      uses: evopilot.goal-loop@1
+      with:
+        objective: Produce an evidence-backed enterprise candidate without publishing it.
+    decision:
+      mode: EXTERNAL_SIGNAL
+    retry:
+      maxAttempts: 2
+  - id: internal-release-readiness
+    name: Prepare internal release evidence
+    needs: [project-goal-loop, evidence]
+    action:
+      uses: release.prepare@1
+      with:
+        channel: ${inputs.artifactChannel}
+    decision:
+      mode: AUTO
+  - id: internal-publication
+    name: Publish to the authorized internal channel
+    needs: [internal-release-readiness]
+    when:
+      input: productionCredential
+      exists: true
+    action:
+      uses: release.publish@1
+      with:
+        channel: ${inputs.artifactChannel}
+    decision:
+      mode: HUMAN
+      authority: publication
+      prompt: Approve the exact digest-bound internal publication action?

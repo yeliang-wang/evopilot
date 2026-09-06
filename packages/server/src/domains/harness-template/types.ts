@@ -116,7 +116,7 @@ export interface HarnessRegistryCatalogRef {
 }
 
 export interface HarnessRegistryConfig {
-  schema: "evopilot-harness-registry/v1";
+  schema: "evopilot-harness-registry/v1" | "evopilot-harness-registry/v2";
   status: "READY" | "FAILED";
   path: string;
   digest?: string;
@@ -139,6 +139,111 @@ export interface PublishedHarnessCatalogEntry {
   digest?: string;
   tags: string[];
   matchSummary?: string;
+}
+
+export type HarnessAssetKindV3 = "HarnessComponent" | "HarnessProfile" | "HarnessBundle";
+
+export interface HarnessAssetRefV3 {
+  id: string;
+  version: string;
+  digest?: string;
+  required?: boolean;
+}
+
+export interface HarnessAssetMetadataV3 {
+  id: string;
+  version: string;
+  name: string;
+  description: string;
+  lifecycle: "draft" | "review" | "approved" | "published" | "deprecated";
+  owner?: string;
+  labels: Record<string, string>;
+}
+
+export interface HarnessAssetProvenanceV3 {
+  sourceDigests: string[];
+  ontologyVersion?: string;
+  policyVersion?: string;
+  advisorRunDigest?: string;
+}
+
+export interface HarnessComponentAssetV3 {
+  apiVersion: "harness.evopilot.io/v3";
+  kind: "HarnessComponent";
+  metadata: HarnessAssetMetadataV3;
+  spec: {
+    capability: string;
+    environment: Record<string, unknown>;
+    actions: Array<Record<string, unknown> & { id: string }>;
+    constraints: string[];
+    evidence: string[];
+    validators: Array<Record<string, unknown> & { id: string }>;
+  };
+  provenance?: HarnessAssetProvenanceV3;
+  catalogRef?: HarnessCatalogRef;
+}
+
+export interface HarnessProfileAssetV3 {
+  apiVersion: "harness.evopilot.io/v3";
+  kind: "HarnessProfile";
+  metadata: HarnessAssetMetadataV3;
+  spec: {
+    classification: { domain: string; role: string; taskClass: string };
+    boundary: { inScope: string[]; outOfScope: string[] };
+    match: { positiveConcepts: string[]; negativeConcepts: string[]; requiredEvidenceKinds: string[] };
+    components: HarnessAssetRefV3[];
+    acceptance: { requiredEvidence: string[]; blockingValidators: string[] };
+    evaluationPackRef?: string;
+  };
+  provenance?: HarnessAssetProvenanceV3;
+  catalogRef?: HarnessCatalogRef;
+}
+
+export interface HarnessBundleAssetV3 {
+  apiVersion: "harness.evopilot.io/v3";
+  kind: "HarnessBundle";
+  metadata: HarnessAssetMetadataV3;
+  spec: {
+    profile: HarnessAssetRefV3 & { digest: string };
+    resolvedComponents: Array<HarnessAssetRefV3 & { digest: string }>;
+    executionPlan: string[];
+    constraints: string[];
+    evidence: string[];
+    validators: string[];
+    exports: Array<{ adapter: string; path: string }>;
+  };
+  provenance?: HarnessAssetProvenanceV3;
+  catalogRef?: HarnessCatalogRef;
+}
+
+export interface PublishedHarnessCatalogEntryV3 {
+  kind: HarnessAssetKindV3;
+  id: string;
+  version: string;
+  lifecycle: HarnessAssetMetadataV3["lifecycle"];
+  assetPath: string;
+  assetDigest: string;
+  classification?: HarnessProfileAssetV3["spec"]["classification"];
+  exportAdapters: string[];
+}
+
+export interface PublishedHarnessCatalogV3 {
+  schema: "evopilot-harness-catalog/v3";
+  catalogId: string;
+  source: string;
+  catalogDigest: string;
+  assetApiVersion: "harness.evopilot.io/v3";
+  generatedAt?: string;
+  generatedBy?: string;
+  priority?: number;
+  registryPath?: string;
+  registryDigest?: string;
+  expectedCatalogDigest?: string;
+  release?: string;
+  owner?: string;
+  description?: string;
+  entries: PublishedHarnessCatalogEntryV3[];
+  warnings: string[];
 }
 
 export interface PublishedHarnessCatalog {
@@ -172,9 +277,13 @@ export interface PublishedHarnessTemplate {
 export interface HarnessCatalogScanResult {
   schema: "evopilot-harness-catalog-scan-result/v1";
   mount: HarnessCatalogMount;
-  catalog?: PublishedHarnessCatalog;
+  catalog?: PublishedHarnessCatalog | PublishedHarnessCatalogV3;
+  format: "legacy-template-v1" | "asset-v3";
   templates: HarnessTemplateProfile[];
-  entries: PublishedHarnessCatalogEntry[];
+  profiles: HarnessProfileAssetV3[];
+  bundles: HarnessBundleAssetV3[];
+  components: HarnessComponentAssetV3[];
+  entries: Array<PublishedHarnessCatalogEntry | PublishedHarnessCatalogEntryV3>;
   status: "READY" | "FAILED";
   warnings: string[];
   error?: string;

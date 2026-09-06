@@ -1,12 +1,14 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
+import path from "node:path";
 
 const requiredFiles = [
   "Dockerfile",
   "docker-compose.yml",
   ".env.example",
   ".github/workflows/ci.yml",
+  ".github/workflows/release-candidate.yml",
   ".github/workflows/release-artifacts.yml",
   ".github/workflows/failure-recovery.yml",
   ".github/workflows/release-ready.yml",
@@ -32,6 +34,7 @@ const requiredFiles = [
   "docs/guides/evidence-ingestion.md",
   "docs/guides/source-to-ga.md",
   "docs/guides/user-guide.md",
+  "docs/guides/open-lifecycle-harness.md",
   "docs/operations/deployment.md",
   "docs/reference/production-user-e2e.md",
   "docs/operations/runtime-management.md",
@@ -41,17 +44,29 @@ const requiredFiles = [
   "docs/reference/product-readiness.md",
   "docs/reference/release-package.md",
   "docs/architecture/loop-runtime.md",
+  "docs/architecture/open-lifecycle-harness.md",
+  "docs/migrations/v3-lifecycle-compatibility.md",
+  "lifecycles/reference/datarig-enterprise-internal.yaml",
+  "lifecycles/reference/evopilot-harness-oss.yaml",
+  "lifecycles/examples/documentation-hotfix.yaml",
+  "lifecycles/compatibility/v3-alpha-beta-rc-ga.yaml",
+  "schemas/lifecycle/lifecycle-definition-v1alpha1.schema.json",
+  "schemas/lifecycle/lifecycle-run-v1alpha1.schema.json",
   "standards/maturity/evopilot-default/v1/alpha.json",
   "standards/maturity/evopilot-default/v1/beta.json",
   "standards/maturity/evopilot-default/v1/rc.json",
   "standards/maturity/evopilot-default/v1/ga.json",
   "scripts/loop-worker.mjs",
   "scripts/loop-soak.mjs",
+  "scripts/run-active-ga-soak.mjs",
   "scripts/failure-recovery-matrix.mjs",
   "scripts/immutable-rollback-runbook.mjs",
   "scripts/release-ready.mjs",
   "scripts/build-release-artifacts.mjs",
+  "scripts/project-candidate-handoff.mjs",
+  "scripts/release-promotion-record.mjs",
   "scripts/verify-release-artifacts.mjs",
+  "scripts/verify-release-pipeline.mjs",
   "scripts/verify-runtime-lock.mjs",
   "tests/failure-recovery/control-plane-failure-recovery.test.mjs",
   "runtimes/runtime-lock.json"
@@ -64,7 +79,12 @@ for (const file of requiredFiles) {
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 assert.match(packageJson.scripts["test:failure-recovery"], /failure-recovery-matrix\.mjs/);
 assert.match(packageJson.scripts["release:ready"], /release-ready\.mjs/);
+assert.equal(packageJson.scripts["release:soak:ga:active"], "node scripts/run-active-ga-soak.mjs");
 assert.match(packageJson.scripts["ecs:immutable-rollout"], /immutable-rollback-runbook\.mjs/);
+
+const activeGaSoakLauncher = fs.readFileSync("scripts/run-active-ga-soak.mjs", "utf8");
+assert.match(activeGaSoakLauncher, /EVOPILOT_GA_SOAK_WORKLOAD_COMMAND/);
+assert.match(activeGaSoakLauncher, /node scripts\/release-matrix-project-loop\.mjs/);
 
 const testMatrix = fs.readFileSync("docs/operations/test-matrix.md", "utf8");
 assert.match(testMatrix, /Failure Recovery Scope/);
@@ -136,6 +156,15 @@ assert.ok(openapi.paths["/api/v1/release/targets"]);
 assert.ok(openapi.paths["/api/v1/release/targets/{targetId}"]);
 assert.ok(openapi.paths["/api/v1/maturity/standards"]);
 assert.ok(openapi.paths["/api/v1/maturity/standards/{phaseOrStandardId}"]);
+assert.ok(openapi.paths["/api/v1/lifecycles"]);
+assert.ok(openapi.paths["/api/v1/lifecycles/resolve"]);
+assert.ok(openapi.paths["/api/v1/lifecycles/resolve-inputs"]);
+assert.ok(openapi.paths["/api/v1/lifecycle-runs"]);
+assert.ok(openapi.paths["/api/v1/lifecycle-runs/{runId}/authorize"]);
+assert.ok(openapi.paths["/api/v1/lifecycle-runs/{runId}/cancel"]);
+assert.ok(openapi.paths["/api/v1/lifecycle-runs/{runId}/advance"]);
+assert.ok(openapi.paths["/api/v1/lifecycle-runs/{runId}/external-result"]);
+assert.ok(openapi.paths["/api/v1/lifecycle-runs/{runId}/feedback"]);
 assert.ok(openapi.paths["/api/v1/release/decisions"]);
 assert.ok(openapi.paths["/api/v1/release/evidence"]);
 assert.ok(openapi.paths["/api/v1/release/evidence/{evidenceId}"]);
@@ -569,7 +598,9 @@ const oldCliDocWords = [
   ["CLI ", "Manual"].join(""),
   ["CLI ", "Reference"].join("")
 ];
-const trackedFiles = execFileSync("git", ["ls-files"], { encoding: "utf8" }).split(/\r?\n/).filter(Boolean);
+const trackedFiles = fs.existsSync(".git")
+  ? execFileSync("git", ["ls-files"], { encoding: "utf8" }).split(/\r?\n/).filter(Boolean)
+  : listPackagedSourceFiles(".");
 const removedCiMatches = [];
 const oldCliDocMatches = [];
 for (const file of trackedFiles) {
@@ -584,3 +615,16 @@ assert.deepEqual(removedCiMatches, [], `removed CI/CD references must be absent 
 assert.deepEqual(oldCliDocMatches, [], `old CLI doc references must be removed from tracked files: ${oldCliDocMatches.join(", ")}`);
 
 console.log("production assets verified");
+
+function listPackagedSourceFiles(directory) {
+  const excluded = new Set([".codex", ".git", ".codex-evidence", ".tmp", "data", "dist", "node_modules", "tmp"]);
+  const files = [];
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    if (excluded.has(entry.name)) continue;
+    const target = path.join(directory, entry.name);
+    if (entry.isSymbolicLink()) continue;
+    if (entry.isDirectory()) files.push(...listPackagedSourceFiles(target));
+    else if (entry.isFile()) files.push(target.replace(/^\.\//, ""));
+  }
+  return files.sort();
+}

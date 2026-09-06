@@ -53,6 +53,7 @@ import {
   goalTimelineEvent,
   groupDatasetsForBatches,
   hydrateGoalPlan,
+  hydrateGoalPlanSelectedHarnessBinding,
   hydrateGoalTimelineEvent,
   hydrateLoopIteration,
   hydrateLoopLlmSelection,
@@ -131,8 +132,12 @@ import {
   harnessRegistryCatalogMounts,
   readHarnessRegistryConfig,
   readPublishedHarnessCatalog,
+  validateImmutableHarnessBundleBindingV3,
   type HarnessCatalogMount,
   type HarnessCatalogScanResult,
+  type HarnessBundleAssetV3,
+  type HarnessComponentAssetV3,
+  type HarnessProfileAssetV3,
   type HarnessRegistryConfig,
   type HarnessTemplateProfile,
   type HarnessTemplateProjectProfileBinding
@@ -1399,6 +1404,24 @@ export class FileStore {
 
   listHarnessCatalogScans(): HarnessCatalogScanResult[] {
     return this.configuredHarnessCatalogMounts().map((mount) => readPublishedHarnessCatalog(mount.source, mount));
+  }
+
+  listPublishedHarnessProfilesV3(): HarnessProfileAssetV3[] {
+    return this.listHarnessCatalogScans()
+      .filter((scan) => scan.status === "READY" && scan.format === "asset-v3")
+      .flatMap((scan) => scan.profiles);
+  }
+
+  listPublishedHarnessBundlesV3(): HarnessBundleAssetV3[] {
+    return this.listHarnessCatalogScans()
+      .filter((scan) => scan.status === "READY" && scan.format === "asset-v3")
+      .flatMap((scan) => scan.bundles);
+  }
+
+  listPublishedHarnessComponentsV3(): HarnessComponentAssetV3[] {
+    return this.listHarnessCatalogScans()
+      .filter((scan) => scan.status === "READY" && scan.format === "asset-v3")
+      .flatMap((scan) => scan.components);
   }
 
   private listConfiguredHarnessCatalogTemplates(): HarnessTemplateProfile[] {
@@ -2975,6 +2998,10 @@ export class FileStore {
 
   createGoalTargetLoop(goal: GlobalGoal, target: GoalTarget, actor: string): LoopRun {
     const project = this.readProject(goal.projectId);
+    const selectedHarness = goal.plan.selectedHarness;
+    const harnessBundleValidation = selectedHarness?.bindingMode === "immutable-bundle"
+      ? validateImmutableHarnessBundleBindingV3({ scans: this.listHarnessCatalogScans(), binding: selectedHarness })
+      : undefined;
     const graph = this.writeExecutorGraph(selfEvolutionExecutorGraph());
     const llmResolution = goal.llm
       ? { selection: goal.llm }
@@ -3023,6 +3050,11 @@ export class FileStore {
         acceptanceCriteria: target.acceptanceCriteria,
         requiredEvidence: target.requiredEvidence,
         reviewCapabilities: target.reviewCapabilities,
+        ...(selectedHarness ? { selectedHarness } : {}),
+        ...(selectedHarness?.bindingMode === "immutable-bundle" ? {
+          harnessBundle: selectedHarness,
+          harnessBundleEvidence: harnessBundleValidation?.evidence ?? []
+        } : {}),
         dashboardGoalCockpit: true,
         createdBy: actor
       },
@@ -3680,6 +3712,10 @@ export class FileStore {
     replayOfIterationId?: string;
     contextPatch?: Record<string, unknown>;
   }): Promise<LoopRun> {
+    const harnessBundleBinding = hydrateGoalPlanSelectedHarnessBinding(args.loop.context.harnessBundle);
+    const harnessBundleValidation = harnessBundleBinding?.bindingMode === "immutable-bundle"
+      ? validateImmutableHarnessBundleBindingV3({ scans: this.listHarnessCatalogScans(), binding: harnessBundleBinding })
+      : undefined;
     const graph = this.readExecutorGraph(args.loop.executorGraphId) ?? defaultExecutorGraph();
     const now = new Date().toISOString();
     const nextIndex = args.loop.currentIteration + 1;
@@ -3732,6 +3768,7 @@ export class FileStore {
         `sourceClosure.requiredGates=${args.loop.sourceClosure.requiredGates.join(",")}`,
         `sourceClosure.targetVersion=${args.loop.sourceClosure.targetVersion ?? "unspecified"}`,
         `sourceClosure.deploymentEnvironment=${args.loop.sourceClosure.deploymentEnvironment ?? "production"}`,
+        ...(harnessBundleValidation?.evidence ?? []),
         ...evaluateLoopSandboxEnforcement(args.loop.sandbox).evidence,
         ...steps.flatMap((step) => step.evidence),
         ...(args.evidence ?? [])

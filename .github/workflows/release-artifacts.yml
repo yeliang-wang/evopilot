@@ -1,64 +1,137 @@
-name: Release Artifacts
+name: Promote Accepted Candidate
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Release tag to build, for example v1.0.4"
+      candidate_run_id:
+        description: "GitHub Actions run id that formed the accepted Candidate"
+        required: true
+        type: string
+      candidate_commit:
+        description: "Exact 40-character Candidate commit"
+        required: true
+        type: string
+      version:
+        description: "Accepted Candidate version without v prefix"
+        required: true
+        type: string
+      target_id:
+        description: "Approved Evolution Target id"
+        required: true
+        type: string
+      candidate_handoff_sha256:
+        description: "sha256 digest of the accepted Candidate handoff"
+        required: true
+        type: string
+      acceptance_digest:
+        description: "sha256 digest of final acceptance evidence"
+        required: true
+        type: string
+      release_authorization_digest:
+        description: "sha256 digest of the separate Release Binding authorization"
         required: true
         type: string
 
 concurrency:
-  group: release-artifacts-${{ inputs.tag || github.ref }}
+  group: promote-accepted-candidate-${{ inputs.version }}
   cancel-in-progress: false
 
 permissions:
+  actions: read
   contents: write
   packages: write
-  id-token: write
 
 jobs:
-  release-artifacts:
-    name: Build and Publish Release Artifacts
+  promote:
+    name: Promote accepted bytes to GitHub Release and GHCR
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
+    environment: release
     env:
+      CANDIDATE_DIR: ${{ runner.temp }}/evopilot-candidate/release
+      HANDOFF_DIR: ${{ runner.temp }}/evopilot-candidate/handoff
       IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/evopilot
+      VERSION: ${{ inputs.version }}
+      RELEASE_TAG: v${{ inputs.version }}
+      CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+      CANDIDATE_COMMIT: ${{ inputs.candidate_commit }}
+      TARGET_ID: ${{ inputs.target_id }}
+      HANDOFF_DIGEST: ${{ inputs.candidate_handoff_sha256 }}
+      ACCEPTANCE_DIGEST: ${{ inputs.acceptance_digest }}
+      RELEASE_AUTHORIZATION_DIGEST: ${{ inputs.release_authorization_digest }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.tag || github.ref }}
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-
-      - name: Install
-        run: npm ci
-
-      - name: Validate release tag
+      - name: Validate immutable bindings
         run: |
           set -euo pipefail
-          VERSION="$(node -p "require('./package.json').version")"
-          TAG="${{ inputs.tag || github.ref_name }}"
-          if [ "$TAG" != "v$VERSION" ]; then
-            echo "::error::Tag $TAG does not match package version $VERSION"
+          [[ "$CANDIDATE_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$CANDIDATE_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]
+          [[ "$TARGET_ID" =~ ^[a-z0-9][a-z0-9.-]*$ ]]
+          [[ "$HANDOFF_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$ACCEPTANCE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$RELEASE_AUTHORIZATION_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+
+      - name: Checkout verifier and release notes from Candidate commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.candidate_commit }}
+          persist-credentials: false
+
+      - name: Validate version and Roadmap release boundary
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./package.json').version")" = "$VERSION"
+          test -f "governance/targets/$TARGET_ID.json"
+          npm run roadmap:release -- "$VERSION"
+          npm run verify:release-pipeline
+
+      - name: Download exact Candidate release set
+        uses: actions/download-artifact@v4
+        with:
+          name: evopilot-${{ inputs.version }}-candidate-release-set
+          path: ${{ env.CANDIDATE_DIR }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Download exact Candidate handoff
+        uses: actions/download-artifact@v4
+        with:
+          name: evopilot-${{ inputs.version }}-candidate-handoff
+          path: ${{ env.HANDOFF_DIR }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Verify accepted Candidate without rebuilding
+        run: |
+          set -euo pipefail
+          HANDOFF="$HANDOFF_DIR/evopilot-$VERSION-project-candidate-handoff.json"
+          node scripts/project-candidate-handoff.mjs verify \
+            --handoff "$HANDOFF" \
+            --handoff-digest "$HANDOFF_DIGEST" \
+            --release-dir "$CANDIDATE_DIR" \
+            --source-checkout "$GITHUB_WORKSPACE" \
+            --version "$VERSION" \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$CANDIDATE_COMMIT" \
+            --run-id "$CANDIDATE_RUN_ID" \
+            --target-id "$TARGET_ID"
+          node scripts/verify-release-artifacts.mjs "$CANDIDATE_DIR"
+
+      - name: Ensure release destination is unused
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::Release $RELEASE_TAG already exists; accepted assets will not be overwritten"
             exit 1
           fi
-          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-          echo "RELEASE_TAG=$TAG" >> "$GITHUB_ENV"
-
-      - name: Check
-        run: npm run check
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+          if git ls-remote --exit-code origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $RELEASE_TAG already exists; force retagging is forbidden"
+            exit 1
+          fi
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -67,47 +140,56 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push immutable image
-        id: image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: |
-            ${{ env.IMAGE_REPOSITORY }}:${{ env.VERSION }}
-            ${{ env.IMAGE_REPOSITORY }}:${{ github.sha }}
-          labels: |
-            org.opencontainers.image.title=EvoPilot
-            org.opencontainers.image.version=${{ env.VERSION }}
-            org.opencontainers.image.revision=${{ github.sha }}
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          provenance: true
-          sbom: true
+      - name: Promote accepted image archive without rebuild
+        run: |
+          set -euo pipefail
+          docker load --input "$CANDIDATE_DIR/evopilot-$VERSION-container-image.tar"
+          docker tag "$IMAGE_REPOSITORY:$VERSION" "$IMAGE_REPOSITORY:$CANDIDATE_COMMIT"
+          docker push "$IMAGE_REPOSITORY:$CANDIDATE_COMMIT"
+          docker push "$IMAGE_REPOSITORY:$VERSION"
 
-      - name: Build release artifacts
-        env:
-          GITHUB_REF_NAME: ${{ env.RELEASE_TAG }}
-          EVOPILOT_IMAGE_REF: ${{ env.IMAGE_REPOSITORY }}:${{ env.VERSION }}
-          EVOPILOT_IMAGE_DIGEST: ${{ steps.image.outputs.digest }}
-        run: npm run release:artifact
-
-      - name: Verify release artifacts
-        run: npm run verify:release-artifact
-
-      - name: Create or update GitHub Release
+      - name: Create draft Release and upload accepted assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          NOTES_FILE="docs/releases/${VERSION}.md"
-          if [ ! -f "$NOTES_FILE" ]; then
-            echo "::error::Missing release notes $NOTES_FILE"
-            exit 1
-          fi
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release edit "$RELEASE_TAG" --title "EvoPilot $RELEASE_TAG" --notes-file "$NOTES_FILE" --draft=false --prerelease=false
-          else
-            gh release create "$RELEASE_TAG" --title "EvoPilot $RELEASE_TAG" --notes-file "$NOTES_FILE" --target "$GITHUB_SHA"
-          fi
-          gh release upload "$RELEASE_TAG" dist/release/* --clobber
+          NOTES_FILE="docs/releases/$VERSION.md"
+          test -f "$NOTES_FILE"
+          PROMOTION_RECORD="$RUNNER_TEMP/evopilot-$VERSION-release-promotion.json"
+          HANDOFF="$HANDOFF_DIR/evopilot-$VERSION-project-candidate-handoff.json"
+          node scripts/release-promotion-record.mjs build \
+            --handoff "$HANDOFF" \
+            --output "$PROMOTION_RECORD" \
+            --version "$VERSION" \
+            --target-id "$TARGET_ID" \
+            --candidate-run-id "$CANDIDATE_RUN_ID" \
+            --candidate-commit "$CANDIDATE_COMMIT" \
+            --handoff-digest "$HANDOFF_DIGEST" \
+            --acceptance-digest "$ACCEPTANCE_DIGEST" \
+            --release-authorization-digest "$RELEASE_AUTHORIZATION_DIGEST" \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow ".github/workflows/release-artifacts.yml" \
+            --promotion-run-id "$GITHUB_RUN_ID" \
+            --promotion-run-attempt "$GITHUB_RUN_ATTEMPT"
+          gh release create "$RELEASE_TAG" \
+            --draft \
+            --title "EvoPilot $RELEASE_TAG" \
+            --notes-file "$NOTES_FILE" \
+            --target "$CANDIDATE_COMMIT"
+          mapfile -t ASSETS < <(find "$CANDIDATE_DIR" -maxdepth 1 -type f -print | sort)
+          gh release upload "$RELEASE_TAG" "${ASSETS[@]}" "$PROMOTION_RECORD"
+          gh release edit "$RELEASE_TAG" --draft=false
+
+      - name: Verify public Release and immutable image
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "false"
+          PUBLIC_DIR="$RUNNER_TEMP/evopilot-public-release"
+          mkdir -p "$PUBLIC_DIR"
+          gh release download "$RELEASE_TAG" --dir "$PUBLIC_DIR"
+          node scripts/verify-release-artifacts.mjs "$PUBLIC_DIR"
+          EXPECTED_IMAGE_DIGEST="$(node -p "require('$CANDIDATE_DIR/evopilot-$VERSION-image-metadata.json').imageDigest")"
+          ACTUAL_IMAGE_DIGEST="$(docker buildx imagetools inspect "$IMAGE_REPOSITORY:$VERSION" | awk '/^Digest:/ {print $2; exit}')"
+          test "$ACTUAL_IMAGE_DIGEST" = "$EXPECTED_IMAGE_DIGEST"

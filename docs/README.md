@@ -9,6 +9,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Distribution](operations/distribution.md) - GitHub Release CLI tarball, manifest-verified installers, Helm chart entry points, and post-publish npm verification.
 - [Control Plane User Guide](guides/user-guide.md) - operate projects, credentials, goals, loops, releases, and audit through API/CLI semantics.
 - [Published Harness Catalog](architecture/published-harness-catalog.md) - EvoPilot v3 read-only consumption of Harness definitions published by `evopilot-harness`.
+- [Open Lifecycle Harness](guides/open-lifecycle-harness.md) - v4 development flow for declarative project lifecycles, interactive inputs, bounded authorization, and Agent-host execution.
 
 ## AI Agents And CLI Automation
 
@@ -52,10 +53,13 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 
 ## Architects And Reviewers
 
+- [Product Roadmap](roadmap/ROADMAP.md) - accepted Agentic Evolution milestones, version direction, and Roadmap Gate change control.
 - [Architecture](architecture/README.md) - architecture entry point.
 - [Continuous Evolution Control Plane](architecture/continuous-evolution-control-plane.md) - product control-plane model.
 - [Package Boundaries](architecture/package-boundaries.md) - TypeScript workspace ownership, transitional hotspots, and verification rules.
 - [Published Harness Catalog](architecture/published-harness-catalog.md) - split boundary between `evopilot-harness` publication and EvoPilot execution.
+- [Open Lifecycle Harness Architecture](architecture/open-lifecycle-harness.md) - v4 lifecycle resources, Action Registry, decision economy, and Goal Loop bridge.
+- [v3 Lifecycle Compatibility](migrations/v3-lifecycle-compatibility.md) - evidence-preserving Alpha/Beta/RC/GA representation and rollback.
 - [Loop Runtime](architecture/loop-runtime.md) - loop execution, continuity, and recovery.
 - [ProofOps Target Loop Mode](architecture/proofops-target-loop-mode.md) - target-loop governance model.
 - [Lifecycle](reference/lifecycle.md) - evidence-to-release lifecycle model.
@@ -64,6 +68,8 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
+- [EvoPilot v4.0.0 Release Candidate Notes](releases/4.0.0.md) - unreleased Open Lifecycle Harness candidate scope, migration, distribution, and required acceptance; not a release announcement.
+- [EvoPilot v3.2.0 Deferred Candidate Notes](releases/3.2.0.md) - unpublished Bundle-consumer closure preserved as inherited v4 acceptance.
 - [EvoPilot v3.1.0 Release Notes](releases/3.1.0.md) - multi-Catalog Harness Registry consumption and `selectedHarness` registry evidence.
 - [EvoPilot v3.0.0 Release Notes](releases/3.0.0.md) - strict external Harness Catalog consumer boundary and `selectedHarness` goal-plan evidence.
 - [EvoPilot v2.4.2 Release Notes](releases/2.4.2.md) - release-readiness closure, immutable ECS digest-only rollout hardening, and current distribution metadata.

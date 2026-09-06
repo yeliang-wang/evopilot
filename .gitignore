@@ -4,5 +4,6 @@ data/
 tmp/
 .tmp/
 .codex/
+.codex-evidence/
 .DS_Store
 npm-debug.log*

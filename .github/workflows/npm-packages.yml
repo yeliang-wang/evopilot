@@ -1,67 +1,164 @@
-name: NPM Packages
+name: Promote Accepted Candidate to npm
 
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: "Release tag to publish packages from, for example v1.0.8"
+      candidate_run_id:
+        description: "GitHub Actions run id that formed the accepted Candidate"
+        required: true
+        type: string
+      candidate_commit:
+        description: "Exact 40-character Candidate commit"
+        required: true
+        type: string
+      version:
+        description: "Accepted Candidate version without v prefix"
+        required: true
+        type: string
+      target_id:
+        description: "Approved Evolution Target id"
+        required: true
+        type: string
+      candidate_handoff_sha256:
+        description: "sha256 digest of the accepted Candidate handoff"
+        required: true
+        type: string
+      acceptance_digest:
+        description: "sha256 digest of final acceptance evidence"
+        required: true
+        type: string
+      release_authorization_digest:
+        description: "sha256 digest of the separate Release Binding authorization"
         required: true
         type: string
 
+concurrency:
+  group: promote-accepted-candidate-npm-${{ inputs.version }}
+  cancel-in-progress: false
+
 permissions:
+  actions: read
   contents: read
   id-token: write
 
 jobs:
   publish:
-    name: Publish npm Packages
+    name: Publish accepted npm tarballs
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    environment: release
+    env:
+      CANDIDATE_DIR: ${{ runner.temp }}/evopilot-candidate/release
+      HANDOFF_DIR: ${{ runner.temp }}/evopilot-candidate/handoff
+      VERSION: ${{ inputs.version }}
+      RELEASE_TAG: v${{ inputs.version }}
+      CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+      CANDIDATE_COMMIT: ${{ inputs.candidate_commit }}
+      TARGET_ID: ${{ inputs.target_id }}
+      HANDOFF_DIGEST: ${{ inputs.candidate_handoff_sha256 }}
+      ACCEPTANCE_DIGEST: ${{ inputs.acceptance_digest }}
+      RELEASE_AUTHORIZATION_DIGEST: ${{ inputs.release_authorization_digest }}
     steps:
-      - name: Checkout
+      - name: Validate immutable bindings
+        run: |
+          set -euo pipefail
+          [[ "$CANDIDATE_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$CANDIDATE_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]
+          [[ "$TARGET_ID" =~ ^[a-z0-9][a-z0-9.-]*$ ]]
+          [[ "$HANDOFF_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$ACCEPTANCE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$RELEASE_AUTHORIZATION_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+
+      - name: Checkout verifier from Candidate commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag }}
+          ref: ${{ inputs.candidate_commit }}
+          persist-credentials: false
 
-      - name: Setup Node
+      - name: Setup Node for npm provenance
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: npm
           registry-url: "https://registry.npmjs.org"
 
-      - name: Install
-        run: npm ci
-
-      - name: Validate tag and package boundary
+      - name: Validate version, Roadmap, and public GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          VERSION="$(node -p "require('./package.json').version")"
-          if [ "${{ inputs.tag }}" != "v$VERSION" ]; then
-            echo "::error::Tag ${{ inputs.tag }} does not match package version $VERSION"
-            exit 1
-          fi
-          npm run verify:distribution
+          test "$(node -p "require('./package.json').version")" = "$VERSION"
+          test -f "governance/targets/$TARGET_ID.json"
+          npm run roadmap:release -- "$VERSION"
+          npm run verify:release-pipeline
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "false"
 
-      - name: Publish contracts
+      - name: Download exact Candidate release set
+        uses: actions/download-artifact@v4
+        with:
+          name: evopilot-${{ inputs.version }}-candidate-release-set
+          path: ${{ env.CANDIDATE_DIR }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Download exact Candidate handoff
+        uses: actions/download-artifact@v4
+        with:
+          name: evopilot-${{ inputs.version }}-candidate-handoff
+          path: ${{ env.HANDOFF_DIR }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Verify accepted Candidate without rebuilding
+        run: |
+          set -euo pipefail
+          HANDOFF="$HANDOFF_DIR/evopilot-$VERSION-project-candidate-handoff.json"
+          node scripts/project-candidate-handoff.mjs verify \
+            --handoff "$HANDOFF" \
+            --handoff-digest "$HANDOFF_DIGEST" \
+            --release-dir "$CANDIDATE_DIR" \
+            --source-checkout "$GITHUB_WORKSPACE" \
+            --version "$VERSION" \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$CANDIDATE_COMMIT" \
+            --run-id "$CANDIDATE_RUN_ID" \
+            --target-id "$TARGET_ID"
+          node scripts/verify-release-artifacts.mjs "$CANDIDATE_DIR"
+
+      - name: Verify GitHub Release promotion binding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RECORD_DIR="$RUNNER_TEMP/evopilot-release-record"
+          mkdir -p "$RECORD_DIR"
+          gh release download "$RELEASE_TAG" --pattern "evopilot-$VERSION-release-promotion.json" --dir "$RECORD_DIR"
+          node scripts/release-promotion-record.mjs verify \
+            --record "$RECORD_DIR/evopilot-$VERSION-release-promotion.json" \
+            --handoff "$HANDOFF_DIR/evopilot-$VERSION-project-candidate-handoff.json" \
+            --version "$VERSION" \
+            --target-id "$TARGET_ID" \
+            --candidate-run-id "$CANDIDATE_RUN_ID" \
+            --candidate-commit "$CANDIDATE_COMMIT" \
+            --handoff-digest "$HANDOFF_DIGEST" \
+            --acceptance-digest "$ACCEPTANCE_DIGEST" \
+            --release-authorization-digest "$RELEASE_AUTHORIZATION_DIGEST" \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow ".github/workflows/release-artifacts.yml"
+
+      - name: Publish accepted tarballs in dependency order
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish -w @evopilot/contracts --access public --provenance
+        run: |
+          set -euo pipefail
+          npm publish "$CANDIDATE_DIR/evopilot-contracts-${VERSION}.tgz" --access public --provenance
+          npm publish "$CANDIDATE_DIR/evopilot-client-${VERSION}.tgz" --access public --provenance
+          npm publish "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz" --access public --provenance
+          npm publish "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz" --access public --provenance
+          npm publish "$CANDIDATE_DIR/evopilot-cli-${VERSION}.tgz" --access public --provenance
+          npm publish "$CANDIDATE_DIR/create-evopilot-${VERSION}.tgz" --access public --provenance
 
-      - name: Publish client
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish -w @evopilot/client --access public --provenance
-
-      - name: Publish CLI
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish -w @evopilot/cli --access public --provenance
-
-      - name: Publish self-host installer
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish -w create-evopilot --access public --provenance
-
-      - name: Verify public npm registry installation
-        run: npm run verify:npm-registry -- --wait --timeout-ms 300000 --interval-ms 15000
+      - name: Verify public npm registry from an empty project
+        run: npm run verify:npm-registry -- --version "$VERSION" --wait --timeout-ms 300000 --interval-ms 15000

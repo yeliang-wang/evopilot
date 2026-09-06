@@ -41,6 +41,7 @@ export function routeGroup(pathname: string): string {
   if (pathname.startsWith("/api/v1/tenants")) return "tenant-control-plane";
   if (pathname.startsWith("/api/v1/workspaces")) return "workspace-control-plane";
   if (pathname.startsWith("/api/v1/settings/logging")) return "logging-control-plane";
+  if (pathname.startsWith("/api/v1/lifecycles") || pathname.startsWith("/api/v1/lifecycle-runs")) return "lifecycle-harness";
   if (pathname.includes("harness")) return "harness-control-plane";
   if (pathname.startsWith("/api/v1/loops") || pathname.includes("loop-")) return "loop-runtime";
   if (pathname.includes("release")) return "release-governance";

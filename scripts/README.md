@@ -15,6 +15,11 @@ These scripts are part of the production service set. They run beside `evopilot-
 
 | Script | npm command | Purpose |
 |---|---|---|
+| `roadmap-gate.mjs` | `npm run roadmap:check`, `npm run roadmap:gate`, `npm run roadmap:release` | Validates the accepted Roadmap, classifies requested product work, and blocks undeclared release lines. |
+| `open-lifecycle-nonfunctional.mjs` | `npm run test:open-lifecycle:nonfunctional` | Emits bounded resource, concurrency, isolation, cancellation, recovery, performance, security, audit, documentation, and packaging evidence for v4 Candidate acceptance. |
+| `project-candidate-handoff.mjs` | invoked by release workflows | Builds and verifies the GitHub Candidate handoff against an exact commit, Target, run, artifact set, and fresh materialization without granting Release authority. |
+| `release-promotion-record.mjs` | invoked by release workflows | Preserves Candidate, acceptance, and separate Release Binding digests as a promotion audit record without entering product Lifecycle state. |
+| `verify-release-pipeline.mjs` | `npm run verify:release-pipeline` | Prevents GA rebuilds, implicit tag-trigger publication, Candidate publication, and coupling between repository release governance and product Lifecycle objects. |
 | `verify-production-assets.mjs` | `npm run verify:production-assets` | Verifies production-facing docs, OpenAPI, runtime assets, deployment references, and required repository assets. |
 | `verify-open-source-governance.mjs` | `npm run verify:oss-governance` | Verifies Apache-2.0 governance files and public repository governance links. |
 | `verify-architecture-boundaries.mjs` | `npm run verify:architecture` | Verifies package-boundary packages, runtime launcher delegation, and contracts wiring. |

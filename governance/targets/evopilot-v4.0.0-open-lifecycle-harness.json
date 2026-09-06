@@ -1,0 +1,439 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-v4.0.0-open-lifecycle-harness",
+  "revision": 3,
+  "status": "APPROVED",
+  "intent": "Implement EvoPilot v4.0.0 as an open declarative Lifecycle Harness platform with human-readable YAML, schema-driven conversational parameter collection, risk-tiered approval minimization, automatic deterministic stages, immutable published HarnessBundle binding, Agent-runtime-neutral execution, and DataRig enterprise-internal plus evopilot-harness open-source reference lifecycles.",
+  "objective": "Let different software and goal types select, resolve, configure, and execute a safe versioned lifecycle without project-specific Engine branches, while asking ordinary users only for unresolved inputs, minimizing human decisions to genuine authority or risk boundaries, and preserving the independent evopilot-harness Asset lifecycle.",
+  "evidence": [
+    {
+      "ref": "conversation:approved-open-lifecycle-harness-roadmap-direction-and-requested-implementation",
+      "authority": "explicit user Roadmap direction and request to begin governed implementation; not approval of this Target revision or release"
+    },
+    {
+      "ref": "conversation:required-approval-simplification-automation-and-interactive-parameter-collection",
+      "authority": "explicit user design requirement; not Target or release authority"
+    },
+    {
+      "ref": "conversation:approved-evopilot-v4.0.0-open-lifecycle-harness-target-revision-1",
+      "authority": "explicit user approval of revision 1 for implementation with release withheld; revision 1 subsequently failed the mandatory inheritance contract and cannot authorize changed revision 2"
+    },
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v32-defer-v40-activate-r1",
+      "authority": "explicit approval of the exact Roadmap version-line transition only; it does not approve Target revision 3, implementation, Candidate formation, acceptance, or release"
+    },
+    {
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/evopilot-v32-defer-v40-activate-roadmap-review-001/roadmap-revision-result.json",
+      "authority": "verified Roadmap transition evidence binding v3.2 DEFERRED inheritance into the current v4.0 IN_PROGRESS line; not Target or release authority"
+    },
+    {
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/evopilot-v4-open-lifecycle-harness-r3-roadmap-review-002/concept-separation-correction.json",
+      "authority": "Codex navigation evidence requiring the installed Suite evolution lifecycle, EvoPilot product Lifecycle Harness, and product reference lifecycles to remain separate; not product authority"
+    },
+    {
+      "ref": "/Users/wangyejing/CodeProjects/Java/datarig",
+      "authority": "enterprise-internal lifecycle reference evidence only"
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot-harness",
+      "authority": "public open-source lifecycle and immutable Harness producer contract evidence only"
+    },
+    {
+      "ref": "https://backstage.io/docs/features/software-templates/writing-templates/",
+      "authority": "external declarative input and registered-action design evidence only"
+    },
+    {
+      "ref": "https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments",
+      "authority": "external protected-environment human-gate evidence only"
+    },
+    {
+      "ref": "https://docs.gitlab.com/ci/environments/protected_environments/",
+      "authority": "external protected-deployment authority evidence only"
+    },
+    {
+      "ref": "https://argoproj.github.io/argo-workflows/walk-through/suspending/",
+      "authority": "external declarative suspension evidence only"
+    },
+    {
+      "ref": "https://github.com/tektoncd/pipeline/blob/main/docs/pipelineruns.md",
+      "authority": "external declarative run, retry, and final-task evidence only"
+    },
+    {
+      "ref": "https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/",
+      "authority": "external resource schema and spec/status separation evidence only"
+    }
+  ],
+  "roadmapBindings": [
+    {
+      "repo": "/Users/wangyejing/project/harness/evopilot",
+      "project": "evopilot",
+      "matchedMilestone": "evopilot-4.0-open-lifecycle-harness",
+      "targetVersion": "4.0.0",
+      "classification": "ALIGNED",
+      "roadmapDigest": "sha256:4c04d45cdb0dd5556a9799433270c94d77055e7d8677015c8dbd14403ed48c6a"
+    }
+  ],
+  "scope": {
+    "include": [
+      "Define and validate LifecycleDefinition, LifecycleRevision, LifecycleCatalog, LifecycleResolver, LifecycleInputBinding, LifecycleBinding, and LifecycleRun v1alpha1 contracts",
+      "Parse human-readable YAML and resolve imports into a canonical immutable graph with explicit schema, resource, cycle, condition, and compatibility limits",
+      "Build a closed versioned Action and Capability Registry and reject arbitrary executable code or unsupported capabilities in Lifecycle YAML",
+      "Separate editable Lifecycle specification from append-only runtime status, attempts, receipts, evidence, decisions, and results",
+      "Define typed input schemas with prompt, description, required/default, options, validation, conditional visibility, source precedence, derivation, sensitivity, review, and SecretRef behavior",
+      "Resolve project facts, Organization defaults, lifecycle defaults, runtime capabilities, deterministic values, user answers, and SecretRefs into an immutable provenance-bearing LifecycleInputBinding",
+      "Generate one-question-at-a-time ordinary-human interaction and a final review from the same schema used by UI, MCP, CLI, API, and CI",
+      "Support headless YAML or JSON parameter submission without semantic drift from conversational collection",
+      "Implement AUTO, POLICY, HUMAN, EXTERNAL_SIGNAL, and DISABLED decision modes",
+      "Automatically run deterministic reversible validation, readiness, build, test, smoke, evaluation, evidence capture, aggregation, safe resume, and safe identical-input retry within authorized scope",
+      "Implement bounded digest-bound plan authorization so unchanged automatic stages do not require repeated human approval",
+      "Require explicit digest-bound human decisions only at missing authority, irreversible or external effects, production or credential authority, project release/publication, exceptions, ambiguity, unresolved risk, or uncertain mutation",
+      "Bind every run to exact lifecycle, input, policy, action, HarnessBundle, runtime, project, Goal/Target, and evidence digests and fail relevant drift closed",
+      "Integrate external Agent runtimes through versioned ExecutorAdapter contracts and expose a host-neutral EvoPilot MCP interaction surface",
+      "Prove that MCP, direct API/SDK, CLI, and CI transports share Engine semantics and cannot infer authority",
+      "Create a DataRig enterprise-internal delivery reference lifecycle with every repository-specific constant represented as discovered or declared input",
+      "Create an evopilot-harness public open-source release reference lifecycle with its genuine publication authority boundaries and no project-name Engine branch",
+      "Create an Alpha/Beta/RC/GA v3 compatibility lifecycle and a documented, evidence-preserving migration and rollback path",
+      "Add AgentTrajectory, Outcome/Process/Safety/Cost RewardContract, governed private dataset, and approved redacted HarnessExecutionFeedbackPackage foundations",
+      "Synchronize architecture, schema, API, CLI, MCP, migration, reference-profile, operating, security, and acceptance documentation"
+    ],
+    "exclude": [
+      "Harness Asset reasoning, authoring, evolution, review, approval, evaluation, publication, Catalog, or Registry mutation in EvoPilot",
+      "Goal Loop or project release execution inside evopilot-harness",
+      "Embedding DataRig or evopilot-harness paths, credentials, environments, approvers, commands, channels, package coordinates, or repository names as privileged Engine behavior",
+      "Arbitrary shell, JavaScript, Python, unbounded expressions, or hidden executable prompts inside Lifecycle YAML",
+      "Raw secret collection or persistence in conversation, Lifecycle YAML, input bindings, evidence, or logs",
+      "Treating parameter entry, readiness, acknowledgement, generic continuation, validation success, or Agent recommendation as approval",
+      "Per-stage human approval where an unchanged bounded authorization and automatic policy already applies",
+      "Automatic production access, credential authority expansion, project release, publication, policy exception, or recovery from an uncertain mutation",
+      "Exclusive dependency on WorkBuddy, Codex, OpenCode, one MCP client, one Agent runtime, or one model provider",
+      "Embedded general-purpose Agent session/tool-loop/runtime or model-training implementation",
+      "Changing or republishing evopilot-harness v4.5.0 artifacts, Target, acceptance, or release",
+      "Changing the current EvoPilot v3.2.0 Bundle Consumer Closure scope or declaring v4.0.0 release authority",
+      "Commit, push, tag, package publication, deployment, or GitHub Release"
+    ]
+  },
+  "designDecisions": {
+    "ownership": "EvoPilot project-execution Lifecycle Harness; evopilot-harness Asset lifecycle unchanged",
+    "definitionModel": "open declarative graph over closed versioned actions and capabilities",
+    "configuration": "human-readable YAML with one schema for conversational and headless entry",
+    "inputAuthority": "parameter collection is non-authorizing and produces an immutable provenance-bearing binding",
+    "secretPolicy": "SecretRef only; raw secrets forbidden in definitions, conversation, bindings, and evidence",
+    "decisionModes": ["AUTO", "POLICY", "HUMAN", "EXTERNAL_SIGNAL", "DISABLED"],
+    "automationDefault": "deterministic reversible work inside unchanged authorized scope is automatic",
+    "humanGatePolicy": "only genuine authority, external-effect, production, release/publication, exception, ambiguity, risk, or uncertain-mutation boundaries",
+    "authorizationEconomy": "one digest-bound decision may authorize an unchanged bounded plan and all declared automatic stages",
+    "runtimeModel": "Agent-runtime-neutral external execution behind versioned adapters",
+    "agentHostModel": "MCP is the normal conversational transport; Engine APIs remain authoritative and direct automation remains supported",
+    "referenceModel": "DataRig and evopilot-harness are data-driven examples and conformance cases, never Engine branches",
+    "compatibility": "Alpha/Beta/RC/GA remains an explicit v3 compatibility profile with evidence-preserving migration",
+    "version": "EvoPilot 4.0.0 major; evopilot-harness version remains independent"
+  },
+  "compatibilityPolicy": {
+    "mode": "INHERIT"
+  },
+  "acceptanceLineage": [
+    {
+      "id": "HIST01",
+      "origin": "EvoPilot v3.2.0 Roadmap acceptance",
+      "criterionDigest": "sha256:8b095b191ac8eec746c5925ff63093ee17ec64c0024bb9d1e6cb5bac143eb036",
+      "evidenceRef": "docs/roadmap/ROADMAP.md#v320-bundle-consumer-closure"
+    },
+    {
+      "id": "HIST02",
+      "origin": "EvoPilot v3.2.0 Roadmap acceptance",
+      "criterionDigest": "sha256:5c2a8567fef4916a10b5dacc9fba8fe683a57664be0fcb236639d5bc443b8c77",
+      "evidenceRef": "docs/roadmap/ROADMAP.md#v320-bundle-consumer-closure"
+    },
+    {
+      "id": "HIST03",
+      "origin": "EvoPilot v3.2.0 Roadmap acceptance",
+      "criterionDigest": "sha256:4595004dbcf45258f187a5e7289753f30abd7c4bd9923bb3ad0631fc5cbb9a45",
+      "evidenceRef": "docs/roadmap/ROADMAP.md#v320-bundle-consumer-closure"
+    },
+    {
+      "id": "HIST04",
+      "origin": "EvoPilot v3.2.0 repository release validation contract",
+      "criterionDigest": "sha256:5fa98868dde8e2c04fa1502daff21198543b88ed1032ae45f345c94a38579790",
+      "evidenceRef": "package.json#check"
+    },
+    {
+      "id": "HIST05",
+      "origin": "EvoPilot v3.2.0 operating and authority compatibility contract",
+      "criterionDigest": "sha256:e86c8e2c5ec1c1cb238c43c78be57ab6d4fa95642f7a8a0a45537396f6bbd783",
+      "evidenceRef": "AGENTS.md#operating-rules"
+    }
+  ],
+  "inheritedAcceptance": [
+    {
+      "id": "HIST01",
+      "origin": "EvoPilot v3.2.0 Roadmap acceptance",
+      "criterion": "Harness Catalog consumer tests pass.",
+      "requiredEvidence": "Existing and v4 Catalog consumer suites against dynamic read-only Catalogs and immutable Bundles",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HIST02",
+      "origin": "EvoPilot v3.2.0 Roadmap acceptance",
+      "criterion": "Architecture boundary verification passes.",
+      "requiredEvidence": "Architecture guard proving EvoPilot owns project execution but no Harness Asset producer capability",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HIST03",
+      "origin": "EvoPilot v3.2.0 Roadmap acceptance",
+      "criterion": "No Harness lifecycle API or CLI exists in EvoPilot.",
+      "requiredEvidence": "API, CLI, source-pattern, and filesystem mutation negatives distinguishing Lifecycle Harness execution from Harness Asset lifecycle",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HIST04",
+      "origin": "EvoPilot v3.2.0 repository release validation contract",
+      "criterion": "The complete EvoPilot v3.2 build, unit, smoke, functional, end-to-end, production-asset, open-source-governance, architecture, distribution, and security gates pass without regression.",
+      "requiredEvidence": "Clean full npm run check plus exact failure evidence for any environment-only blocker",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HIST05",
+      "origin": "EvoPilot v3.2.0 operating and authority compatibility contract",
+      "criterion": "Existing Alpha/Beta/RC/GA plans, Goal Loops, evidence, approvals, release actions, tenant/workspace isolation, and SecretRef behavior remain readable and authoritative.",
+      "requiredEvidence": "Compatibility migration, authorization, tenancy, secret, release-action, and evidence replay matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "regressionImpact": [
+    {
+      "area": "Published Harness Catalog consumption and immutable Bundle closure",
+      "affectedAcceptanceIds": ["HIST01", "HIST03"]
+    },
+    {
+      "area": "Product and architecture ownership boundaries",
+      "affectedAcceptanceIds": ["HIST02"]
+    },
+    {
+      "area": "Complete shipped validation, distribution, and security baseline",
+      "affectedAcceptanceIds": ["HIST04"]
+    },
+    {
+      "area": "Existing execution evidence, authority, isolation, secrets, and v3 lifecycle compatibility",
+      "affectedAcceptanceIds": ["HIST05"]
+    }
+  ],
+  "excludedHistoricalAcceptance": [],
+  "realCaseCoverage": [
+    {
+      "id": "RC01",
+      "scenario": "Run a DataRig enterprise-internal change from fresh onboarding through interactive unresolved input collection, immutable binding, automatic validation and delivery evidence, and the final authorized internal-release decision.",
+      "hosts": ["Codex", "independent-conformant-agent-host"],
+      "startingState": "fresh EvoPilot v4 Workspace, read-only DataRig checkout, published HarnessBundle, no LifecycleRun",
+      "terminalState": "validated internal-release-ready LifecycleRun with publication not executed",
+      "prohibitedEffects": ["raw secret capture", "DataRig-named Engine branch", "unapproved production access", "release execution"],
+      "requiredEvidence": "Candidate-package real-case transcript, input provenance, decision inventory, automatic-stage receipts, run binding digest, and no-project-branch scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RC02",
+      "scenario": "Run the evopilot-harness public open-source lifecycle from a fresh exact source and published Bundle through conversational configuration, deterministic checks, package-ready evidence, and a separate unexecuted publication decision.",
+      "hosts": ["WorkBuddy", "independent-conformant-agent-host"],
+      "startingState": "fresh EvoPilot v4 Workspace, immutable evopilot-harness source revision and Bundle, no LifecycleRun",
+      "terminalState": "validated public-release-ready LifecycleRun stopped before publication",
+      "prohibitedEffects": ["Harness Asset mutation", "evopilot-harness v4.5.0 mutation", "inferred approval", "tag or publication"],
+      "requiredEvidence": "Candidate-package cross-host semantic evidence, exact bindings, approval-minimization trace, boundary sentinels, and package-ready report",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RC03",
+      "scenario": "Author and execute a third materially different documentation or security-hotfix Lifecycle YAML using only registered capabilities and no Engine source change.",
+      "hosts": ["Codex", "direct-cli-api"],
+      "startingState": "fresh EvoPilot v4 Workspace with registered actions but no custom lifecycle",
+      "terminalState": "completed custom LifecycleRun with equivalent conversational and headless result digests",
+      "prohibitedEffects": ["arbitrary YAML code execution", "Engine source modification for the new lifecycle", "transport-specific authority", "raw secret persistence"],
+      "requiredEvidence": "Custom YAML, schema and graph validation, Engine source diff proof, cross-transport result equivalence, and hostile YAML negatives",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RC04",
+      "scenario": "Load existing Alpha/Beta/RC/GA plans and evidence, migrate them to the explicit compatibility lifecycle, resume safely, and roll back the migration representation without changing historical authority.",
+      "hosts": ["Codex", "direct-cli-api"],
+      "startingState": "representative immutable EvoPilot v3.2 plans, Goal Loops, approvals, release actions, and evidence",
+      "terminalState": "v4 compatibility LifecycleBinding with equivalent evidence and authority plus verified rollback",
+      "prohibitedEffects": ["silent evidence reinterpretation", "approval fabrication", "release-state change", "Harness Asset mutation"],
+      "requiredEvidence": "Before/after digests, migration and rollback receipts, authority equivalence assertions, and complete v3 regression replay",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "noRegressionRequired": true,
+  "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
+  "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
+  "noRegression": {
+    "status": "PENDING",
+    "evidenceRefs": []
+  },
+  "acceptance": [
+    {
+      "id": "AC01",
+      "criterion": "Roadmap, ADR, AGENTS, machine contract, and intent/release Gates consistently declare EvoPilot v4.0.0 Open Lifecycle Harness while leaving v3.2.0 closure unchanged.",
+      "requiredEvidence": "Roadmap digest, Gate tests, architecture docs, and diff review",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC02",
+      "criterion": "Lifecycle resource schemas accept valid human-readable YAML, reject unknown or unsafe fields, canonicalize deterministically, detect missing imports and cycles, and produce stable immutable revision digests.",
+      "requiredEvidence": "Schema fixtures, canonicalization goldens, graph positive/negative tests, and digest replay",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC03",
+      "criterion": "Lifecycle YAML can reference only registered versioned actions and capabilities and cannot embed arbitrary executable code or bypass runtime policy.",
+      "requiredEvidence": "Action registry contract tests, hostile YAML corpus, and architecture guard",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC04",
+      "criterion": "One input schema generates equivalent conversational, UI/MCP, CLI/API, and CI validation semantics, asks only unresolved conditionally relevant fields, presents defaults and provenance, and ends with a reviewable immutable input binding.",
+      "requiredEvidence": "Cross-surface golden fixtures and semantic equivalence tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC05",
+      "criterion": "Input collection never advances an authority decision, and raw secrets are rejected or redacted while SecretRef bindings remain usable and auditable.",
+      "requiredEvidence": "Authority negative tests, secret scans, redaction tests, and credential-reference E2E",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC06",
+      "criterion": "Deterministic reversible stages execute automatically inside an unchanged authorized plan without per-stage approval, including validation, readiness, build, test, smoke, evaluation, evidence capture, aggregation, and safe resume.",
+      "requiredEvidence": "Automatic continuation matrix, event log, and no-human-gate assertions",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC07",
+      "criterion": "HUMAN gates appear only for declared genuine authority or risk boundaries, explain the exact object and consequence, bind the current digest, and cannot be satisfied by generic conversation, acknowledgement, readiness, input, or Agent recommendation.",
+      "requiredEvidence": "Decision-justification lint, positive authority tests, and hostile interaction matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC08",
+      "criterion": "One bounded authorization covers unchanged declared automatic stages; only relevant binding drift invalidates the affected decision, while unrelated Catalog growth or status changes do not cause repeated approval.",
+      "requiredEvidence": "Authorization coverage, selective drift, and non-drift regression tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC09",
+      "criterion": "Retries and resumes are idempotent and automatic only when receipts prove no uncertain mutation; unknown external outcomes stop at an explicit recovery decision.",
+      "requiredEvidence": "Crash, timeout, duplicate, receipt, and uncertain-mutation failure matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC10",
+      "criterion": "Every run binds exact lifecycle, input, policy, action, HarnessBundle, runtime, project, Goal/Target, and evidence digests; relevant drift fails closed without silently switching lifecycle or Harness.",
+      "requiredEvidence": "Binding closure tests, tamper matrix, and immutable replay",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC11",
+      "criterion": "DataRig enterprise-internal delivery completes through a generic reference definition with interactive unresolved inputs and maximum safe automation, without a DataRig-named Engine branch or embedded constants.",
+      "requiredEvidence": "Fresh real-case E2E, hard-code scan, parameter provenance, decision count, and evidence closure",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC12",
+      "criterion": "evopilot-harness public open-source release completes through a generic reference definition that preserves immutable Bundle and genuine publication authority without a repository-named Engine branch or changes to v4.5.0.",
+      "requiredEvidence": "Isolated non-publishing E2E through release-ready state, hard-code scan, and boundary assertions",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC13",
+      "criterion": "A third lifecycle materially different from both references is authored as YAML and runs without Engine changes, proving the extension model is open rather than two hard-coded cases.",
+      "requiredEvidence": "Independent lifecycle fixture, unchanged Engine digest or source diff, and full E2E",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC14",
+      "criterion": "Alpha/Beta/RC/GA v3 plans remain readable and migrate to an explicit compatibility lifecycle without loss or silent reinterpretation of evidence, approvals, or release state.",
+      "requiredEvidence": "Migration fixtures, rollback, before/after evidence comparison, and legacy regression suite",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC15",
+      "criterion": "WorkBuddy, Codex, and one independent conformant host use the same MCP interaction semantics, while a direct API/CLI headless run reaches an equivalent authoritative result.",
+      "requiredEvidence": "Cross-host and direct-transport conformance matrix with exact Engine object digests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC16",
+      "criterion": "Agent runtime adapters bind exact capabilities, model/provider, request/result, cost, trajectory, artifacts, and resumable receipts; an unsupported or hostile runtime cannot bypass action, sandbox, evidence, or authority policy.",
+      "requiredEvidence": "OpenCode plus independent-adapter conformance, hostile adapter tests, and trajectory closure",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC17",
+      "criterion": "EvoPilot remains a read-only immutable HarnessBundle consumer, evopilot-harness remains the producer, and feedback export is redacted, approved, immutable, and non-mutating.",
+      "requiredEvidence": "Architecture verification, Catalog filesystem sentinels, consumer tests, and feedback negative cases",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "AC18",
+      "criterion": "Security, resource, concurrency, cancellation, observability, audit, tenant/workspace isolation, failure recovery, performance, documentation, packaging, and no-regression checks pass before candidate acceptance.",
+      "requiredEvidence": "Full check suite, threat-model tests, soak/performance report, docs verification, and release-artifact dry run",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "approvals": {
+    "roadmapDirection": {
+      "decision": "APPROVED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-roadmap-v32-defer-v40-activate-r1",
+      "authorizationDigest": "sha256:b01e921a1bb26a045b68c838c93c0820c62dd01a7df72fd20808be96ef477c2e"
+    },
+    "target": {
+      "decision": "APPROVED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v4.0.0-open-lifecycle-harness-target-revision-3",
+      "authorizationDigest": "sha256:42dcfe34eee1f821a350ec73b25e53a02a9f82912e4a9a749dc36da3e80a45d0"
+    },
+    "implementation": {
+      "decision": "AUTHORIZED_BY_TARGET_APPROVAL",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v4.0.0-open-lifecycle-harness-target-revision-3",
+      "authorizationDigest": "sha256:42dcfe34eee1f821a350ec73b25e53a02a9f82912e4a9a749dc36da3e80a45d0"
+    },
+    "release": {
+      "decision": "NOT_AUTHORIZED",
+      "by": null,
+      "evidenceRef": null
+    }
+  },
+  "release": {
+    "actions": [],
+    "versions": {
+      "evopilot": "4.0.0"
+    }
+  }
+}

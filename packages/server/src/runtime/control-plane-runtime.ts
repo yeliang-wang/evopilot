@@ -108,6 +108,7 @@ import {
   workspaceUsage
 } from "../application/control-plane-services.js";
 import { isHarnessTemplateDomainError } from "../domains/harness-template/index.js";
+import { LifecycleService } from "../domains/lifecycle/index.js";
 import { serverCompositionRootMetadata } from "../http/composition-root.js";
 import {
   HttpError
@@ -146,6 +147,7 @@ import { handleGoalRoutes } from "../http/routes/goals.js";
 import { handleHarnessRoutes } from "../http/routes/harness.js";
 import { handleLoopRuntimeRoutes } from "../http/routes/loop-runtime.js";
 import { handleLoopRoutes } from "../http/routes/loops.js";
+import { handleLifecycleRoutes } from "../http/routes/lifecycles.js";
 import { handleMaturityRoutes } from "../http/routes/maturity.js";
 import { handlePlatformRoute } from "../http/routes/platform.js";
 import { handleProjectRoutes } from "../http/routes/projects.js";
@@ -393,6 +395,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
     harnessRegistryConfig: options.harnessRegistryConfig,
     harnessCatalogDirs: options.harnessCatalogDirs
   });
+  const lifecycleService = new LifecycleService(options.dataRoot, options.lifecycleCatalogDirs?.length ? options.lifecycleCatalogDirs : [path.resolve("lifecycles")]);
   setActiveLoggingSettings(store.readLoggingSettings());
   store.ensureBootstrapAdmin();
   const users = normalizeUsers(options, tokens, runtime, store);
@@ -649,6 +652,23 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           envelope,
           hasRole,
           maturityStandardTemplates,
+          writeJson: routeWriteJson
+        }
+      })) return;
+      if (await handleLifecycleRoutes({
+        request,
+        response,
+        url,
+        auth,
+        store,
+        service: lifecycleService,
+        options,
+        deps: {
+          appendAudit: (record: unknown) => store.appendAudit(record as never),
+          audit,
+          envelope,
+          hasRole,
+          readJson,
           writeJson: routeWriteJson
         }
       })) return;
@@ -1043,10 +1063,11 @@ export function startServerFromEnvironment(): http.Server {
   const dashboardRoot = process.env.EVOPILOT_DASHBOARD_ROOT ? path.resolve(process.env.EVOPILOT_DASHBOARD_ROOT) : undefined;
   const harnessRegistryConfig = process.env.EVOPILOT_HARNESS_REGISTRY_CONFIG ? path.resolve(process.env.EVOPILOT_HARNESS_REGISTRY_CONFIG) : undefined;
   const harnessCatalogDirs = parseHarnessCatalogDirs(process.env.EVOPILOT_HARNESS_CATALOG_DIRS ?? process.env.EVOPILOT_HARNESS_CATALOG_DIR);
+  const lifecycleCatalogDirs = parseHarnessCatalogDirs(process.env.EVOPILOT_LIFECYCLE_CATALOG_DIRS ?? process.env.EVOPILOT_LIFECYCLE_CATALOG_DIR);
   const tokens = parseEnvTokens(process.env.EVOPILOT_TOKENS);
   const users = parseEnvUsers(process.env.EVOPILOT_USERS);
   const apiToken = process.env.EVOPILOT_API_TOKEN;
-  const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens, users, harnessRegistryConfig, harnessCatalogDirs }).listen(port, host, () => {
+  const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens, users, harnessRegistryConfig, harnessCatalogDirs, lifecycleCatalogDirs }).listen(port, host, () => {
     const runtimeMode = process.env.EVOPILOT_RUN_MODE ?? process.env.EVOPILOT_MODE ?? (parseBoolean(process.env.EVOPILOT_DEBUG, false) ? "debug" : "prod");
     logInfo("server.started", {
       metadata: {
@@ -1058,6 +1079,7 @@ export function startServerFromEnvironment(): http.Server {
         dashboardRoot,
         harnessRegistryConfig,
         harnessCatalogDirs,
+        lifecycleCatalogDirs,
         authConfigured: Boolean(apiToken || tokens?.length || users?.length),
         loginEnabled: Boolean(users?.length)
       }

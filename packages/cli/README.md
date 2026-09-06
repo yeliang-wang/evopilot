@@ -102,7 +102,9 @@ evopilot project onboard verify <project-id> --json
 evopilot target plan --project <project-id> --objective "Enable the requested business capability and lifecycle evidence" --llm-profile <llm-profile-id> --json
 ```
 
-EvoPilot v3 has no `evopilot harness ...` command group. Harness lifecycle, source evolution, review, approval, versioning, and publication are owned by `evopilot-harness`. The EvoPilot server reads the configured Harness Registry and enabled published Catalog directories, then records the selected published Harness as `plan.selectedHarness` during `target plan` or `goal plan`. Show `selectedHarness` id, version, registry digest, catalog id, catalog digest, entry path, and entry digest before approving a phase plan.
+EvoPilot v3 has no `evopilot harness ...` command group. Harness Asset lifecycle, source evolution, review, approval, versioning, and publication are owned by `evopilot-harness`. The EvoPilot server reads the configured Harness Registry and enabled published Catalog directories, then records the selected published Harness as `plan.selectedHarness` during `target plan` or `goal plan`. Show `selectedHarness` id, version, registry digest, catalog id, catalog digest, entry path, and entry digest before approving a phase plan.
+
+The v4 development line adds `evopilot lifecycle ...` and `evopilot lifecycle-run ...` for open, YAML-defined project-delivery Lifecycles. These commands consume an immutable published HarnessBundle and do not author or publish Harness assets.
 
 ## Documentation
 

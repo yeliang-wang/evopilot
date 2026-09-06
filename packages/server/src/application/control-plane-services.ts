@@ -31,12 +31,16 @@ import { pathToFileURL } from "node:url";
 import { parse as parseYaml } from "yaml";
 import {
   effectiveHarnessTemplateLayer,
+  applySelectedHarnessBindingToGoalTargets,
   harnessTemplateCatalogEvidence,
   harnessTemplateRef,
   hydrateHarnessCapabilities,
   hydrateHarnessPhaseMapping,
   hydrateHarnessTemplateChangelog,
   hydrateHarnessTemplateRef,
+  immutableHarnessBundlePlanBinding,
+  selectPublishedHarnessBundleV3,
+  type HarnessBundleSelectionV3,
   type HarnessCapabilityDefinition,
   type HarnessTemplateProfile,
   type HarnessTemplateRef
@@ -2385,6 +2389,19 @@ export function selectHarnessTemplateForProjectContext(store: FileStore, project
   };
 }
 
+export function selectHarnessBundleForProjectContextV3(
+  store: FileStore,
+  project: StoredProject,
+  body: Record<string, unknown>
+): HarnessBundleSelectionV3 | undefined {
+  return selectPublishedHarnessBundleV3({
+    profiles: store.listPublishedHarnessProfilesV3(),
+    bundles: store.listPublishedHarnessBundlesV3(),
+    components: store.listPublishedHarnessComponentsV3(),
+    contextText: harnessTemplateSelectionContextText(project, body)
+  });
+}
+
 export function resolveHarnessTemplateForSource(store: FileStore, project: StoredProject, source: ProjectHarnessProfileSource): HarnessTemplateProfile {
   const templateRecord = isRecord(source.template) ? source.template : {};
   const requestedTemplateId = optionalTrimmedString(templateRecord.templateId) ?? optionalTrimmedString(templateRecord.id);
@@ -3090,6 +3107,7 @@ export function selectedHarnessPlanBinding(selection: HarnessTemplateSelection |
   const catalogRef = template.catalogRef;
   return {
     schema: "evopilot-goal-plan-selected-harness-binding/v1",
+    bindingMode: "legacy-template",
     harnessId: template.id,
     version: template.version,
     domain: template.domain ?? optionalTrimmedString(recordObject(template.runtimePatterns).domain),
@@ -3129,10 +3147,48 @@ export function selectedHarnessPlanBinding(selection: HarnessTemplateSelection |
 
 export function hydrateGoalPlanSelectedHarnessBinding(value: unknown): GoalPlanSelectedHarnessBinding | undefined {
   if (!isRecord(value)) return undefined;
+  if (value.schema === "evopilot-goal-plan-selected-harness-binding/v2" || value.bindingMode === "immutable-bundle") {
+    const bundleRef = hydrateImmutableHarnessAssetRef(value.bundleRef, "bundleRef");
+    const profileRef = hydrateImmutableHarnessAssetRef(value.profileRef, "profileRef");
+    const resolvedComponents = Array.isArray(value.resolvedComponents)
+      ? value.resolvedComponents.map((item, index) => hydrateImmutableHarnessAssetRef(item, `resolvedComponents[${index}]`))
+      : [];
+    return {
+      schema: "evopilot-goal-plan-selected-harness-binding/v2",
+      bindingMode: "immutable-bundle",
+      harnessId: safeFileName(String(value.harnessId ?? bundleRef.id)),
+      version: String(value.version ?? bundleRef.version),
+      domain: optionalTrimmedString(value.domain),
+      layer: value.layer === "domain" || value.layer === "runtime" || value.layer === "composite" ? value.layer : undefined,
+      status: "PUBLISHED",
+      bundleRef,
+      profileRef,
+      resolvedComponents,
+      executionPlan: normalizeStringList(value.executionPlan, []),
+      constraints: normalizeStringList(value.constraints, []),
+      requiredEvidence: normalizeStringList(value.requiredEvidence, []),
+      validators: normalizeStringList(value.validators, []),
+      capabilities: normalizeStringList(value.capabilities, []),
+      selectionMode: "catalog-auto-match",
+      selectionReasons: normalizeStringList(value.selectionReasons, []),
+      catalogId: optionalTrimmedString(value.catalogId),
+      catalogSource: optionalTrimmedString(value.catalogSource),
+      catalogDigest: optionalTrimmedString(value.catalogDigest),
+      entryPath: optionalTrimmedString(value.entryPath),
+      entryDigest: optionalTrimmedString(value.entryDigest) ?? bundleRef.digest,
+      registryPath: optionalTrimmedString(value.registryPath),
+      registryDigest: optionalTrimmedString(value.registryDigest),
+      registryCatalogPriority: typeof value.registryCatalogPriority === "number" ? value.registryCatalogPriority : undefined,
+      registryCatalogRelease: optionalTrimmedString(value.registryCatalogRelease),
+      evidence: normalizeStringList(value.evidence, []),
+      boundAt: String(value.boundAt ?? new Date().toISOString())
+    };
+  }
   const templateRef = hydrateHarnessTemplateRef(value.templateRef);
   const catalogRef = templateRef.catalogRef;
   return {
     schema: "evopilot-goal-plan-selected-harness-binding/v1",
+    bindingMode: "legacy-template",
     harnessId: safeFileName(String(value.harnessId ?? value.templateId ?? templateRef.templateId ?? "harness")),
     version: String(value.version ?? templateRef.version ?? "0.1.0"),
     domain: optionalTrimmedString(value.domain),
@@ -3153,6 +3209,18 @@ export function hydrateGoalPlanSelectedHarnessBinding(value: unknown): GoalPlanS
     registryCatalogRelease: optionalTrimmedString(value.registryCatalogRelease) ?? catalogRef?.registryCatalogRelease,
     evidence: normalizeStringList(value.evidence, []),
     boundAt: String(value.boundAt ?? new Date().toISOString())
+  };
+}
+
+function hydrateImmutableHarnessAssetRef(value: unknown, field: string): { id: string; version: string; digest: string; required?: boolean } {
+  const record = isRecord(value) ? value : {};
+  const digest = optionalTrimmedString(record.digest);
+  if (!digest) throw httpError(409, "HARNESS_BUNDLE_BINDING_INVALID", `${field}.digest is required for immutable HarnessBundle binding.`);
+  return {
+    id: safeFileName(String(record.id ?? field)),
+    version: String(record.version ?? "0.0.0"),
+    digest,
+    required: record.required === true
   };
 }
 
@@ -4488,8 +4556,12 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
   let selectedHarness: GoalPlanSelectedHarnessBinding | undefined;
   if (project) {
     try {
-      const selection = selectHarnessTemplateForProjectContext(store, project, { goalLoopTarget: goal.objective, objective: goal.objective });
-      selectedHarness = selectedHarnessPlanBinding(selection, now);
+      const bundleSelection = selectHarnessBundleForProjectContextV3(store, project, { goalLoopTarget: goal.objective, objective: goal.objective });
+      selectedHarness = immutableHarnessBundlePlanBinding(bundleSelection, now);
+      if (!selectedHarness) {
+        const selection = selectHarnessTemplateForProjectContext(store, project, { goalLoopTarget: goal.objective, objective: goal.objective });
+        selectedHarness = selectedHarnessPlanBinding(selection, now);
+      }
     } catch (error) {
       if (!isRecord(error) || error.code !== "HARNESS_TEMPLATE_NOT_FOUND") throw error;
     }
@@ -4562,7 +4634,7 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
       throw httpError(409, "GOAL_PLAN_LLM_REQUIRED", "GlobalGoal phase planning requires a READY LLM profile or production LLM provider.");
     }
     return {
-      targets: goalTargetsFromReleaseTarget(goal, releaseTarget, now, {
+      targets: applySelectedHarnessBindingToGoalTargets(goalTargetsFromReleaseTarget(goal, releaseTarget, now, {
         plannerMode: "debug-deterministic-no-provider",
         plannerEvidence: [
           "planner=debug-deterministic-no-provider",
@@ -4572,7 +4644,7 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
           selectedHarness?.catalogDigest ? `selectedHarnessCatalogDigest=${selectedHarness.catalogDigest}` : "selectedHarnessCatalogDigest=missing",
           selectedHarness?.entryDigest ? `selectedHarnessEntryDigest=${selectedHarness.entryDigest}` : "selectedHarnessEntryDigest=missing"
         ]
-      }),
+      }), selectedHarness),
       planner: debugDeterministicGoalPlanTrace(goal, llmResolution.selection, now, selectedHarness),
       selectedHarness
     };
@@ -4607,7 +4679,7 @@ export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal
     throw httpError(422, "GOAL_PLAN_LLM_OUTPUT_INVALID", error instanceof Error ? error.message : String(error));
   }
   return {
-    targets,
+    targets: applySelectedHarnessBindingToGoalTargets(targets, selectedHarness),
     planner: llmGoalPlanTrace(response, llmResolution.selection, startedAt, selectedHarness),
     selectedHarness
   };

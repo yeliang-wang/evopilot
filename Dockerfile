@@ -9,6 +9,8 @@ COPY docs ./docs
 COPY templates ./templates
 COPY runtimes ./runtimes
 COPY standards ./standards
+COPY lifecycles ./lifecycles
+COPY schemas ./schemas
 RUN npm run build
 
 FROM node:22-alpine AS runtime
@@ -28,6 +30,8 @@ COPY --from=build /app/docs ./docs
 COPY --from=build /app/templates ./templates
 COPY --from=build /app/runtimes ./runtimes
 COPY --from=build /app/standards ./standards
+COPY --from=build /app/lifecycles ./lifecycles
+COPY --from=build /app/schemas ./schemas
 COPY scripts ./scripts
 EXPOSE 19876
 CMD ["npm", "run", "server"]

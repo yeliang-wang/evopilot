@@ -1,5 +1,31 @@
 # EvoPilot API
 
+## Open Lifecycle Harness（v4 开发接口）
+
+该接口执行项目 Lifecycle，不管理或发布 Harness Asset。`POST /api/v1/lifecycle-runs` 必须绑定当前 tenant/workspace 中已注册的项目，以及从只读 Harness Catalog 读取并重新校验的 `published`、不可变 `HarnessBundle`。
+
+```text
+GET  /api/v1/lifecycles
+POST /api/v1/lifecycles/resolve
+POST /api/v1/lifecycles/resolve-inputs
+GET  /api/v1/lifecycle-runs
+POST /api/v1/lifecycle-runs
+GET  /api/v1/lifecycle-runs/{runId}
+POST /api/v1/lifecycle-runs/{runId}/answer
+POST /api/v1/lifecycle-runs/{runId}/finalize-binding
+POST /api/v1/lifecycle-runs/{runId}/authorize
+POST /api/v1/lifecycle-runs/{runId}/advance
+POST /api/v1/lifecycle-runs/{runId}/decision
+POST /api/v1/lifecycle-runs/{runId}/external-result
+POST /api/v1/lifecycle-runs/{runId}/feedback
+```
+
+配置输入与授权完全分离。`resolve-inputs` / `answer` 只生成带来源的 `LifecycleInputBinding`；只有 `authorize` 或 `decision` 中显式提交、且与当前 `bindingDigest` 完全一致的决定才产生权限。自动阶段会连续执行到外部 Agent 请求或真实人工权限边界。`external-result` 的相同 request/receipt 可幂等重放，冲突回执拒绝，`UNCERTAIN` 结果停在 recovery 决策。
+
+MCP 和 CLI 只是同一服务端语义的适配层。第三方 Agent 只能执行 `pendingExecution` 中声明的 action、capabilities、host/provider/model 和 binding digest；不能从对话推导批准。`feedback` 仅创建经过显式批准、严格脱敏、不可变且 `PRIVATE` 的反馈包，不会写入 `evopilot-harness` Catalog。
+
+详细流程见 [Open Lifecycle Harness 操作指南](../guides/open-lifecycle-harness.md)。这些接口属于已批准的 v4.0.0 Target 实施内容，不代表 v4 已发布。
+
 ## LLM 调用与 Credits 观测
 
 所有 JSON API 响应都会附带 `meta.llm`，用于让 Dashboard、WorkBuddy、E2E 测试工具判断当前生产环境是否真的发生过 LLM 调用：
@@ -428,35 +454,34 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 The Registry lists enabled Catalog roots and priority. Legacy `EVOPILOT_HARNESS_CATALOG_DIR(S)` direct directory configuration is still supported only when no Registry is configured.
 
-Each enabled directory must contain a `CATALOG.md` maintained by `evopilot-harness`. The catalog index has a fenced `yaml evopilot-harness-catalog` block with entries that point to published Harness definition files, for example `harnesses/database-product-harness/template.yaml` or `harnesses/api-gateway-harness/harness.yaml`. EvoPilot reads the Registry, index, and entry files dynamically when listing catalogs or planning goals. It does not import the catalog into control-plane storage, mutate the catalog, scan on a write endpoint, approve drafts, publish templates, or maintain Harness lifecycle records.
+Each enabled directory must contain a `CATALOG.md` maintained by `evopilot-harness`. A v3 index uses the fenced `yaml evopilot-harness-catalog-v3` block and points to published `HarnessProfile`, `HarnessBundle`, and `HarnessComponent` assets. EvoPilot verifies Catalog and Asset digests plus the Profile/Component reference closure. The older `yaml evopilot-harness-catalog` Template format remains a read-only compatibility path. EvoPilot does not import the Catalog, mutate it, approve drafts, publish assets, or maintain Harness lifecycle records.
 
 The list endpoint returns the current Registry status, configured catalogs, scan status, warnings, loaded published Harness entries, and digests. If a Registry entry or Catalog directory is added, removed, or republished by `evopilot-harness`, EvoPilot observes the change on the next read or goal planning request because the Registry and Catalogs are read dynamically from disk.
 
-When a goal plan is generated, EvoPilot matches the stored project metadata, source/runtime signals, and goal loop target against the currently published Harness entries. The plan records the selected published Harness as evidence:
+When a goal plan is generated, EvoPilot matches stored project metadata and the goal loop target against published Profile classification, positive concepts, negative concepts, and boundaries, then resolves a published immutable Bundle from the same Catalog:
 
 ```json
 {
   "selectedHarness": {
-    "schema": "evopilot-goal-plan-selected-harness/v1",
-    "harnessId": "database-product-harness",
-    "version": "1.0.0",
-    "catalogRef": {
-      "catalogId": "evopilot-public-harness-catalog",
-      "catalogDigest": "sha256:...",
-      "entryPath": "harnesses/database-product-harness/template.yaml",
-      "entryDigest": "sha256:...",
-      "registryPath": "/opt/evopilot-harness/harness-registry.yaml",
-      "registryDigest": "sha256:..."
-    },
-    "domain": "database",
-    "matchScore": 0.91,
-    "matchReasons": ["goal mentions distributed storage and SQL compatibility", "project runtime exposes database engine signals"],
-    "capabilities": ["storage-engine", "query-compatibility", "replication", "backup-restore", "observability"]
+    "schema": "evopilot-goal-plan-selected-harness-binding/v2",
+    "bindingMode": "immutable-bundle",
+    "harnessId": "database-product",
+    "version": "3.0.0",
+    "bundleRef": { "id": "database-product", "version": "3.0.0", "digest": "sha256:..." },
+    "profileRef": { "id": "database-product", "version": "3.0.0", "digest": "sha256:..." },
+    "resolvedComponents": [
+      { "id": "engineering-validation", "version": "1.0.0", "digest": "sha256:...", "required": true }
+    ],
+    "executionPlan": ["discover-project-commands", "run-approved-validation"],
+    "catalogId": "organization",
+    "catalogDigest": "sha256:...",
+    "entryDigest": "sha256:...",
+    "selectionReasons": ["classification=database-product", "positiveConcept=sql-optimizer"]
   }
 }
 ```
 
-This binding makes the plan reproducible without making EvoPilot the Harness lifecycle system of record. A later Catalog publication does not rewrite an existing plan. A new goal plan will read the latest configured Catalog content and may select a newer Harness version if it better matches the project and target.
+Before Goal Loop creation and every Loop iteration, EvoPilot revalidates the Bundle, Profile, Component digests and immutable execution fields. Unrelated additive Catalog entries are allowed; changing or removing a bound Asset returns `409 HARNESS_BUNDLE_DIGEST_MISMATCH` or `HARNESS_BUNDLE_BINDING_INVALID` before executor work starts. Legacy Template bindings use schema v1 and `bindingMode=legacy-template`; they do not claim v3 Bundle compliance.
 
 ```http
 POST /api/v1/projects/{projectId}/source-credentials

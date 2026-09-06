@@ -32,6 +32,8 @@ const required = [
   `evopilot-contracts-${version}.tgz`,
   `evopilot-client-${version}.tgz`,
   `evopilot-cli-${version}.tgz`,
+  `evopilot-adapter-mcp-${version}.tgz`,
+  `evopilot-adapter-opencode-${version}.tgz`,
   `create-evopilot-${version}.tgz`,
   `${projectName}-${version}-install-manifest.json`,
   "install.sh",
@@ -69,16 +71,29 @@ const sourceListing = execFileSync("tar", ["-tzf", path.join(outDir, `${projectN
 });
 assert.match(sourceListing, /^install\.sh$/m, "source archive must include install.sh");
 assert.match(sourceListing, /^install\.ps1$/m, "source archive must include install.ps1");
+assert.match(sourceListing, /^\.env\.example$/m, "source archive must include the environment template");
+assert.match(sourceListing, /^\.evopilot\/source-closures\//m, "source archive must include checked-in source-closure examples");
 assert.match(sourceListing, /^installers\/manifest\.json$/m, "source archive must include installer manifest");
 assert.match(sourceListing, /^charts\/evopilot\/values\.production\.example\.yaml$/m, "source archive must include production Helm values");
+assert.match(sourceListing, /^evidence\/production-soak\/README\.md$/m, "source archive must include the checked-in production-soak evidence contract");
+assert.match(sourceListing, /^governance\/roadmap\.yaml$/m, "source archive must include the authoritative Roadmap");
+assert.match(sourceListing, /^governance\/targets\/evopilot-v4\.0\.0-open-lifecycle-harness\.json$/m, "source archive must include the approved v4.0.0 Evolution Target");
+assert.match(sourceListing, /^scripts\/run-active-ga-soak\.mjs$/m, "source archive must include the configurable active-soak launcher");
 
 const installManifest = readJson(path.join(outDir, `${projectName}-${version}-install-manifest.json`));
 assert.equal(installManifest.schema, "evopilot-install-manifest/v1");
 assert.equal(installManifest.version, version);
 assert.equal(installManifest.packages?.["create-evopilot"]?.registryStatus, "not_published");
 assert.equal(installManifest.packages?.["@evopilot/cli"]?.registryStatus, "not_published");
+assert.equal(installManifest.packages?.["@evopilot/adapter-mcp"]?.registryStatus, "not_published");
+assert.equal(installManifest.packages?.["@evopilot/adapter-opencode"]?.registryStatus, "not_published");
 assert.match(installManifest.packages?.["create-evopilot"]?.packageSpec || "", new RegExp(`create-evopilot-${escapeRegExp(version)}\\.tgz$`));
 assert.match(installManifest.packages?.["@evopilot/cli"]?.packageSpec || "", new RegExp(`evopilot-cli-${escapeRegExp(version)}\\.tgz$`));
+assert.match(installManifest.packages?.["@evopilot/adapter-mcp"]?.packageSpec || "", new RegExp(`evopilot-adapter-mcp-${escapeRegExp(version)}\\.tgz$`));
+assert.equal(installManifest.packages?.["@evopilot/adapter-mcp"]?.binary, "evopilot-mcp");
+assert.match(installManifest.packages?.["@evopilot/adapter-opencode"]?.packageSpec || "", new RegExp(`evopilot-adapter-opencode-${escapeRegExp(version)}\\.tgz$`));
+assert.equal(installManifest.packages?.["@evopilot/adapter-opencode"]?.runtime?.package, "opencode-ai");
+assert.match(installManifest.packages?.["@evopilot/adapter-opencode"]?.runtime?.version || "", /^\d+\.\d+\.\d+$/);
 assert.deepEqual(installManifest.packages?.["@evopilot/cli"]?.dependencyPackageSpecs || [], [
   `https://github.com/yeliang-wang/evopilot/releases/download/v${version}/evopilot-contracts-${version}.tgz`,
   `https://github.com/yeliang-wang/evopilot/releases/download/v${version}/evopilot-client-${version}.tgz`
@@ -95,6 +110,8 @@ assert.ok(Array.isArray(provenance.artifacts));
 assert.ok(provenance.artifacts.some((artifact) => artifact.name === `${projectName}-${version}-source.tar.gz`));
 assert.ok(provenance.artifacts.some((artifact) => artifact.name === `${projectName}-${version}-helm-chart.tgz`));
 assert.ok(provenance.artifacts.some((artifact) => artifact.name === `evopilot-cli-${version}.tgz`));
+assert.ok(provenance.artifacts.some((artifact) => artifact.name === `evopilot-adapter-mcp-${version}.tgz`));
+assert.ok(provenance.artifacts.some((artifact) => artifact.name === `evopilot-adapter-opencode-${version}.tgz`));
 for (const artifact of provenance.artifacts) {
   const filePath = path.join(outDir, artifact.name);
   assert.ok(fs.existsSync(filePath), `${artifact.name} from provenance must exist`);
@@ -110,6 +127,12 @@ if (fs.existsSync(imageMetadataPath)) {
   assert.equal(imageMetadata.version, version);
   assert.match(imageMetadata.imageDigest || "", /^sha256:[a-f0-9]{64}$/);
   assert.ok(imageMetadata.immutableRef?.includes("@sha256:"), "image metadata must include immutable image ref");
+  if (imageMetadata.candidateArchive) {
+    const archivePath = path.join(outDir, imageMetadata.candidateArchive);
+    assert.ok(fs.existsSync(archivePath), "candidate container image archive must exist");
+    assert.equal(`sha256:${sha256(archivePath)}`, imageMetadata.candidateArchiveSha256, "candidate image archive checksum mismatch");
+    assert.ok(provenance.artifacts.some((artifact) => artifact.name === imageMetadata.candidateArchive), "candidate image archive must be in provenance");
+  }
 }
 
 console.log("Release artifact verification passed.");

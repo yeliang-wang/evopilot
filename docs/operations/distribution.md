@@ -10,7 +10,14 @@ EvoPilot distribution has three supported entry points. These labels match the r
 | Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.sh)"` |
 | Kubernetes | Platform teams running EvoPilot on Kubernetes | `helm install evopilot ./charts/evopilot` |
 
-The CLI and installer are release artifacts. They do not replace server-side RBAC, tenant/workspace scope, approval gates, source closure, release policy, or audit.
+The CLI, stdio MCP adapter, OpenCode runtime adapter, and installer are release artifacts. They do not replace server-side RBAC, tenant/workspace scope, approval gates, source closure, release policy, or audit.
+
+The Open Lifecycle Harness release set also contains `evopilot-adapter-mcp-<version>.tgz`. Install that exact tarball in a third-party Agent host environment to obtain the `evopilot-mcp` executable. Candidate acceptance must use the candidate tarball rather than a source checkout; availability in a candidate does not mean it has been publicly released.
+
+The same release set contains `evopilot-adapter-opencode-<version>.tgz`. The
+adapter does not bundle OpenCode or provider credentials. Candidate acceptance
+binds an exact external `opencode-ai` version and provider/model route, while
+credentials remain in OpenCode's or the Host's configured secret environment.
 
 Desktop installer, hosted Cloud trial, and public npm registry packages are not published EvoPilot distribution surfaces in this version. Do not present them as available install paths until the product ships a signed desktop package, hosted tenant onboarding flow, or exact-version npm package publication verified from the public registry.
 
@@ -112,26 +119,31 @@ npm run verify:distribution
 This command verifies:
 
 - Helm chart structure, version, Service extra ports, and optional `helm lint` plus `helm template` render smoke when Helm is installed.
-- Local release tarballs for `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, and `create-evopilot`.
+- Local release tarballs for `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, `@evopilot/adapter-mcp`, `@evopilot/adapter-opencode`, and `create-evopilot`.
 - Empty-project install smoke for the `evopilot` and `create-evopilot` binaries.
 - Generated self-host stack files and initialized `.env` output.
 
-Release artifacts also include package tarballs, `install.sh`, `install.ps1`, `evopilot-<version>-install-manifest.json`, and `evopilot-<version>-helm-chart.tgz`.
+Release artifacts also include package tarballs (including the installable stdio MCP and OpenCode runtime adapters), `install.sh`, `install.ps1`, `evopilot-<version>-install-manifest.json`, and `evopilot-<version>-helm-chart.tgz`.
 
 After npm publication, verify the public registry path separately:
 
 ```bash
-npm run verify:npm-registry -- --version 3.1.0
+npm run verify:npm-registry -- --version 4.0.0
 ```
 
 This command checks exact-version npm metadata for `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, and `create-evopilot`, installs those packages into an empty project from the public registry, then verifies the `evopilot` and `create-evopilot` binaries.
 
 ## Publishing
 
-npm publication is a separate release action. The repository includes `.github/workflows/npm-packages.yml`, which publishes from an exact release tag with `NPM_TOKEN`, npm provenance enabled, and post-publish public registry verification:
+npm publication is a separate release action after Candidate acceptance and
+the independent Release Binding. `.github/workflows/npm-packages.yml`
+downloads the exact GitHub Actions Candidate run, verifies its handoff, and
+publishes the already accepted tarballs directly with npm provenance. It does
+not check out a tag to rebuild or repack workspaces. Post-publication it runs:
 
 ```bash
 npm run verify:npm-registry -- --wait --timeout-ms 300000 --interval-ms 15000
 ```
 
-Do not publish npm packages from an unverified local checkout.
+Do not publish npm packages from an unverified local checkout or from bytes
+reconstructed after Candidate acceptance.

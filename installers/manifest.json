@@ -1,44 +1,68 @@
 {
   "schema": "evopilot-install-manifest/v1",
-  "version": "3.1.0",
-  "generatedAt": "2026-08-09T00:00:00.000Z",
+  "version": "4.0.0",
+  "generatedAt": "2026-09-06T00:00:00.000Z",
   "repository": "https://github.com/yeliang-wang/evopilot",
   "packages": {
     "create-evopilot": {
-      "version": "3.1.0",
+      "version": "4.0.0",
       "registry": "https://registry.npmjs.org/",
       "registryStatus": "not_published",
-      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/create-evopilot-3.1.0.tgz",
-      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/create-evopilot-3.1.0.tgz",
-      "command": "npx --yes https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/create-evopilot-3.1.0.tgz self-host --init-env",
-      "registryCommand": "npx --yes create-evopilot@3.1.0 self-host --init-env"
+      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/create-evopilot-4.0.0.tgz",
+      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/create-evopilot-4.0.0.tgz",
+      "command": "npx --yes https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/create-evopilot-4.0.0.tgz self-host --init-env",
+      "registryCommand": "npx --yes create-evopilot@4.0.0 self-host --init-env"
     },
     "@evopilot/cli": {
-      "version": "3.1.0",
+      "version": "4.0.0",
       "registry": "https://registry.npmjs.org/",
       "registryStatus": "not_published",
-      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz",
+      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-cli-4.0.0.tgz",
       "dependencyPackageSpecs": [
-        "https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-contracts-3.1.0.tgz",
-        "https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-client-3.1.0.tgz"
+        "https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-contracts-4.0.0.tgz",
+        "https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-client-4.0.0.tgz"
       ],
-      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz",
-      "command": "npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-contracts-3.1.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-client-3.1.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz",
-      "registryCommand": "npm install -g @evopilot/cli@3.1.0"
+      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-cli-4.0.0.tgz",
+      "command": "npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-contracts-4.0.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-client-4.0.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-cli-4.0.0.tgz",
+      "registryCommand": "npm install -g @evopilot/cli@4.0.0"
+    },
+    "@evopilot/adapter-mcp": {
+      "version": "4.0.0",
+      "registry": "https://registry.npmjs.org/",
+      "registryStatus": "not_published",
+      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-adapter-mcp-4.0.0.tgz",
+      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-adapter-mcp-4.0.0.tgz",
+      "command": "npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-adapter-mcp-4.0.0.tgz",
+      "registryCommand": "npm install -g @evopilot/adapter-mcp@4.0.0",
+      "binary": "evopilot-mcp"
+    },
+    "@evopilot/adapter-opencode": {
+      "version": "4.0.0",
+      "registry": "https://registry.npmjs.org/",
+      "registryStatus": "not_published",
+      "packageSpec": "https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-adapter-opencode-4.0.0.tgz",
+      "tarballUrl": "https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-adapter-opencode-4.0.0.tgz",
+      "command": "npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-contracts-4.0.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-adapter-opencode-4.0.0.tgz",
+      "registryCommand": "npm install -g @evopilot/adapter-opencode@4.0.0",
+      "runtime": {
+        "package": "opencode-ai",
+        "version": "1.18.29",
+        "integrity": "sha512-syIDVwlrYTgTOXzZe9SkInJWethbq6l3SNC762UeXyO0a9V0wGfd+U4yACvppwNBnhIsl0j2QPYYCyLpNaSomg=="
+      }
     }
   },
   "containers": {
-    "evopilot": "ghcr.io/yeliang-wang/evopilot:3.1.0",
+    "evopilot": "ghcr.io/yeliang-wang/evopilot:4.0.0",
     "evopilot-dashboard": "ghcr.io/yeliang-wang/evopilot-dashboard:3.1.0"
   },
   "installers": {
     "install.sh": {
-      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.sh",
-      "sha256": "07d545cccbff38e832b1427e82fa88570168d328ef193efea0e3cd81519fdc6f"
+      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh",
+      "sha256": "2f3cca202cf9e06662d7360ca0121b9ae9ff02c8d9142d471cd03fa369810ca9"
     },
     "install.ps1": {
-      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.ps1",
-      "sha256": "9301c1219df1c305e8e195f50271bf9f3a217d63111b749e6523ca127622899e"
+      "url": "https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.ps1",
+      "sha256": "c974f6049c261bef18705da0e9822218843a08c97f6a89b5caa70cdce152cb65"
     }
   }
 }

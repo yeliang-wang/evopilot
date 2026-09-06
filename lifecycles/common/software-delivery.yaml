@@ -1,0 +1,49 @@
+schema: evopilot-lifecycle-definition/v1alpha1
+metadata:
+  id: common-software-delivery
+  name: Common software delivery foundation
+  version: 1.0.0
+  description: Reusable, project-neutral validation and evidence stages.
+capabilities:
+  - project.read
+  - evidence.read
+  - evidence.write
+inputs:
+  - id: projectRoot
+    type: string
+    prompt: Where is the project checkout?
+    description: A workspace-relative or operator-approved absolute project path.
+    required: true
+  - id: verificationProfile
+    type: enum
+    prompt: Which verification depth should be used?
+    required: true
+    default: standard
+    options: [fast, standard, release]
+stages:
+  - id: project-validation
+    name: Validate project binding
+    action:
+      uses: project.validate@1
+      with:
+        strict: true
+    decision:
+      mode: AUTO
+  - id: readiness
+    name: Evaluate readiness
+    needs: [project-validation]
+    action:
+      uses: readiness.evaluate@1
+      with:
+        profile: ${inputs.verificationProfile}
+    decision:
+      mode: AUTO
+  - id: evidence
+    name: Aggregate immutable evidence
+    needs: [readiness]
+    action:
+      uses: evidence.aggregate@1
+      with:
+        format: json
+    decision:
+      mode: AUTO

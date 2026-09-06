@@ -9,7 +9,9 @@ const requiredPackages = [
   ["@evopilot/server", "packages/server"],
   ["@evopilot/worker-runtime", "packages/worker-runtime"],
   ["@evopilot/cli", "packages/cli"],
-  ["@evopilot/client", "packages/client"]
+  ["@evopilot/client", "packages/client"],
+  ["@evopilot/adapter-mcp", "packages/adapter-mcp"],
+  ["@evopilot/adapter-opencode", "packages/adapter-opencode"]
 ];
 
 const failures = [];
@@ -76,6 +78,7 @@ mustContain("packages/server/src/http/routes/rules.ts", "handleRuleRoutes", "rul
 mustContain("packages/server/src/http/routes/evaluation.ts", "handleEvaluationRoutes", "evaluation, insight, batch, and soak routes must live in a route module");
 mustContain("packages/server/src/http/routes/release-targets.ts", "handleReleaseTargetRoutes", "release target routes must live in a route module");
 mustContain("packages/server/src/http/routes/maturity.ts", "handleMaturityRoutes", "maturity standard routes must live in a route module");
+mustContain("packages/server/src/http/routes/lifecycles.ts", "handleLifecycleRoutes", "Open Lifecycle Harness routes must live in a focused route module");
 mustContain("packages/server/src/http/routes/audit-history.ts", "handleAuditHistoryRoutes", "audit and history routes must live in a route module");
 mustContain("packages/server/src/storage/json-files.ts", "atomicWriteJson", "file storage primitives must live outside the runtime boundary");
 mustContain("packages/server/src/storage/file-store/index.ts", "class FileStore", "file-backed store must live in the storage boundary");
@@ -86,6 +89,55 @@ mustContain("packages/server/src/domains/harness-template/template.ts", "hydrate
 mustNotExist("packages/server/src/domains/harness-template/defaults.ts", "EvoPilot must not ship built-in Harness template defaults after the evopilot-harness split");
 mustNotExist("packages/server/src/domains/harness-template/evolution.ts", "EvoPilot must not own Harness evolution after the evopilot-harness split");
 mustNotExist("packages/server/src/domains/harness-template/matching.ts", "EvoPilot must not own source-to-Harness evolution matching after the evopilot-harness split");
+mustContain("packages/contracts/src/index.ts", "EVOPILOT_HARNESS_CONSUMPTION_BOUNDARY", "shared contracts must expose the Harness consumption boundary");
+mustContain("packages/contracts/src/index.ts", "EVOPILOT_LIFECYCLE_HARNESS_BOUNDARY", "shared contracts must expose the project Lifecycle Harness boundary");
+mustContain("packages/contracts/src/index.ts", 'kind: "HarnessBundle"', "v3 execution must require a HarnessBundle");
+mustContain("packages/contracts/src/index.ts", "legacyTemplateConsumptionIsBundleCompliance: false", "legacy template consumption must not claim v3 Bundle compliance");
+mustContain("docs/architecture/adr/0001-evopilot-harness-boundary.md", "Accepted", "the cross-project Harness boundary ADR must remain accepted");
+mustContain("governance/roadmap.yaml", '"roadmapFamily": "evopilot-series-agentic-evolution"', "the accepted EvoPilot Roadmap contract must remain installed");
+mustContain("governance/roadmap.yaml", '"evopilot-must-not-produce-harness"', "the Roadmap must preserve the read-only Harness consumer boundary");
+mustContain("AGENTS.md", "Continue implementation only for `ALIGNED`", "agent instructions must stop Roadmap deviations before implementation");
+mustContain("package.json", '"roadmap:check"', "package scripts must expose static Roadmap validation");
+mustContain("package.json", '"roadmap:release"', "package scripts must expose the release-version Roadmap gate");
+mustContain("AGENTS.md", "v3 execution must bind a published, immutable `HarnessBundle`", "agent instructions must preserve the Bundle execution boundary");
+mustContain("packages/server/src/domains/harness-template/catalog.ts", "EVOPILOT_HARNESS_CATALOG_V3_SCHEMA", "Harness consumer must parse the v3 Catalog contract");
+mustContain("packages/server/src/domains/harness-template/catalog.ts", "validateHarnessAssetReferencesV3", "v3 Catalog reads must verify the Profile and Component reference closure");
+mustContain("packages/server/src/domains/harness-template/bundle.ts", 'bindingMode: "immutable-bundle"', "Harness consumer domain must build an immutable Bundle binding");
+mustContain("packages/server/src/domains/harness-template/bundle.ts", "validateImmutableHarnessBundleBindingV3", "Harness consumer domain must expose immutable Bundle revalidation");
+mustContain("packages/server/src/storage/file-store/index.ts", "harnessBundleValidation", "Goal Loop creation and iteration must retain Bundle validation evidence");
+mustContain("tests/functional/harness-catalog-consumer.test.mjs", "HARNESS_BUNDLE_DIGEST_MISMATCH", "functional tests must prove tampered Bundle closure blocking");
+mustNotMatchInTree("packages/server/src/domains/harness-template", /\b(?:writeFileSync|writeFile|mkdirSync|copyFileSync|renameSync|rmSync|unlinkSync)\b/, "the Harness consumer domain must remain filesystem read-only");
+mustNotMatchInTree("packages/server/src", /\/api\/v1\/harness\/(?:produce|evol(?:ve|ution)|proposals?\/(?:approve|publish)|approve|publish|import|mount|scan)/i, "EvoPilot must not expose Harness lifecycle APIs");
+mustNotMatchInTree("packages/cli/src", /\bevopilot\s+harness\s+(?:produce|evolve|approve|publish|import|mount|scan)\b/i, "EvoPilot CLI must not expose Harness lifecycle commands");
+mustContain("packages/server/src/domains/lifecycle/core.ts", "LIFECYCLE_EXECUTABLE_FIELD_FORBIDDEN", "Lifecycle YAML validation must reject embedded executable fields");
+mustContain("packages/server/src/domains/lifecycle/registry.ts", "LifecycleActionRegistry", "Lifecycle execution must use a closed versioned Action and Capability Registry");
+mustContain("packages/server/src/domains/lifecycle/service.ts", "LIFECYCLE_ACTION_REGISTRY_DRIFT", "Lifecycle execution must fail closed when its Action Registry binding drifts");
+mustContain("packages/server/src/http/routes/lifecycles.ts", "assertPublishedHarnessBundle", "Lifecycle run creation and mutation must revalidate the published immutable HarnessBundle");
+mustContain("packages/adapter-mcp/src/index.ts", "EVOPILOT_LIFECYCLE_MCP_TOOLS", "MCP must expose the same server-governed Lifecycle interaction surface");
+mustContain("packages/adapter-mcp/src/stdio.ts", "serveStdio", "MCP must provide a real Agent-host stdio transport");
+mustContain("packages/adapter-mcp/src/stdio.ts", "EVOPILOT_API_TOKEN", "MCP must obtain credentials from the Host secret environment rather than Lifecycle inputs");
+mustContain("packages/adapter-mcp/src/stdio.ts", "invokeEvoPilot", "MCP tools must delegate to the server-governed HTTP authority");
+mustContain("packages/adapter-mcp/package.json", '"evopilot-mcp"', "MCP must expose an installable executable");
+mustContain("packages/contracts/src/index.ts", "EVOPILOT_AGENT_RUNTIME_PROFILE_SCHEMA", "shared contracts must expose the versioned AgentRuntimeProfile schema");
+mustContain("packages/contracts/src/index.ts", "executeConformantLifecycleAdapter", "all Agent runtime adapters must pass one public result conformance boundary");
+mustContain("packages/adapter-opencode/src/index.ts", "createOpenCodeExecutorAdapter", "OpenCode must have a first-class ExecutorAdapter implementation");
+mustContain("packages/adapter-opencode/src/index.ts", '"--format", "json"', "OpenCode adapter must consume structured JSON events");
+mustContain("packages/adapter-opencode/src/index.ts", "OPENCODE_REQUEST_REUSE_CONFLICT", "OpenCode adapter must fail closed on request-id reuse with changed input");
+mustContain("packages/adapter-opencode/src/index.ts", "HOST_MANAGED_DENY_UNDECLARED", "OpenCode permissions must remain Host-managed and deny undeclared effects");
+mustContain("packages/adapter-opencode/src/index.ts", "shell: false", "OpenCode invocation must not use a shell");
+mustNotContain("packages/adapter-opencode/src/index.ts", '"--auto"', "OpenCode adapter must not auto-approve Host permissions");
+mustNotContain("packages/adapter-opencode/src/index.ts", '"--dangerously-skip-permissions"', "OpenCode adapter must not bypass Host permissions");
+mustNotMatchInTree("packages/adapter-opencode/src", /(?:approve|publish|release)\s*\(/i, "OpenCode adapter must not own approval, publication, or Release operations");
+mustContain("tests/functional/agent-runtime-adapters.test.mjs", "an independent adapter satisfies the same public conformance contract", "AC16 must prove an independent adapter against the public conformance contract");
+mustContain("tests/functional/agent-runtime-adapters.test.mjs", "hostile output", "AC16 must include hostile adapter and uncertain-outcome negatives");
+mustContain("schemas/lifecycle/agent-runtime-profile-v1.schema.json", "evopilot-agent-runtime-profile/v1", "AgentRuntimeProfile must have a machine-readable schema");
+mustContain("schemas/lifecycle/agent-execution-request-v1alpha1.schema.json", "evopilot-agent-execution-request/v1alpha1", "AgentExecutionRequest must have a machine-readable schema");
+mustContain("schemas/lifecycle/agent-execution-result-v1alpha1.schema.json", "evopilot-agent-execution-result/v1alpha1", "AgentExecutionResult must have a machine-readable schema");
+mustContain("scripts/open-lifecycle-nonfunctional.mjs", "evopilot-open-lifecycle-nonfunctional/v1", "AC18 must emit a versioned non-functional evidence report");
+mustContain("docs/operations/test-matrix.md", "EvoPilot v4 Candidate Acceptance", "the test matrix must enumerate AC18 Candidate acceptance evidence");
+mustNotMatchInTree("packages/server/src/domains/lifecycle", /\bdatarig\b/i, "Lifecycle Engine code must not branch on the DataRig reference-project name");
+mustNotMatchInTree("packages/server/src/domains/lifecycle", /\bevopilot-harness-oss\b/i, "Lifecycle Engine code must not branch on the evopilot-harness reference Lifecycle id");
+mustNotMatchInTree("packages/server/src/domains/lifecycle", /domains\/harness-template|domains\/harness-asset/i, "Lifecycle Engine must not acquire Harness Asset producer ownership");
 mustContain("packages/cli/src/commands/runtime.ts", "@evopilot/contracts", "CLI command runtime must consume shared contracts");
 mustContain("packages/cli/src/runtime/boundary.ts", "cliInterfaceBoundaryMetadata", "CLI must expose interface-boundary metadata");
 mustContain("packages/cli/src/index.ts", "./commands/runtime.js", "CLI process entrypoint must delegate command execution to command modules");
@@ -132,6 +184,8 @@ for (const routePrefix of [
   "/api/v1/soak-reports",
   "/api/v1/release/targets",
   "/api/v1/maturity/standards",
+  "/api/v1/lifecycles",
+  "/api/v1/lifecycle-runs",
   "/api/v1/audit",
   "/api/v1/history"
 ]) {
@@ -188,6 +242,30 @@ function mustNotContain(relativePath, needle, message) {
 function mustNotExist(relativePath, message) {
   const absolute = path.join(root, relativePath);
   if (fs.existsSync(absolute)) failures.push(`${message}: ${relativePath} exists`);
+}
+
+function mustNotMatchInTree(relativePath, pattern, message) {
+  const absolute = path.join(root, relativePath);
+  if (!fs.existsSync(absolute)) {
+    failures.push(`${relativePath} is missing`);
+    return;
+  }
+  for (const file of walkSourceFiles(absolute)) {
+    pattern.lastIndex = 0;
+    if (pattern.test(fs.readFileSync(file, "utf8"))) {
+      failures.push(`${message}: ${path.relative(root, file)}`);
+    }
+  }
+}
+
+function walkSourceFiles(directory) {
+  const files = [];
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    const target = path.join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...walkSourceFiles(target));
+    else if (/\.(?:ts|mjs|js)$/.test(entry.name)) files.push(target);
+  }
+  return files;
 }
 
 function mustNotInlineRoutePrefix(relativePath, routePrefix, message) {

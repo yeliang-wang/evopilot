@@ -18,7 +18,7 @@ docker compose up -d
 ./verify.sh
 ```
 
-The tagged installer resolves `create-evopilot` from the release manifest. In v3.1.0, the default package spec is the GitHub Release tarball because public npm registry packages are not published yet.
+The tagged installer resolves `create-evopilot` from the release manifest. In the published v3.1.0 release, the default package spec is the GitHub Release tarball because public npm registry packages are not published yet.
 
 After public npm registry publication and `npm run verify:npm-registry` pass for the exact version, operators may use npm-only bootstrap:
 

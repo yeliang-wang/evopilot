@@ -19,6 +19,8 @@ const packages = [
   "@evopilot/contracts",
   "@evopilot/client",
   "@evopilot/cli",
+  "@evopilot/adapter-mcp",
+  "@evopilot/adapter-opencode",
   "create-evopilot"
 ];
 
@@ -70,14 +72,22 @@ assert.equal(manifest.schema, "evopilot-install-manifest/v1");
 assert.equal(manifest.version, packageJson.version);
 assert.equal(manifest.packages?.["create-evopilot"]?.version, packageJson.version);
 assert.equal(manifest.packages?.["@evopilot/cli"]?.version, packageJson.version);
+assert.equal(manifest.packages?.["@evopilot/adapter-mcp"]?.version, packageJson.version);
+assert.equal(manifest.packages?.["@evopilot/adapter-opencode"]?.version, packageJson.version);
 assert.match(manifest.packages?.["create-evopilot"]?.packageSpec || "", new RegExp(`create-evopilot-${escapeRegExp(packageJson.version)}\\.tgz$`));
 assert.match(manifest.packages?.["@evopilot/cli"]?.packageSpec || "", new RegExp(`evopilot-cli-${escapeRegExp(packageJson.version)}\\.tgz$`));
+assert.match(manifest.packages?.["@evopilot/adapter-mcp"]?.packageSpec || "", new RegExp(`evopilot-adapter-mcp-${escapeRegExp(packageJson.version)}\\.tgz$`));
+assert.match(manifest.packages?.["@evopilot/adapter-opencode"]?.packageSpec || "", new RegExp(`evopilot-adapter-opencode-${escapeRegExp(packageJson.version)}\\.tgz$`));
 assert.deepEqual(manifest.packages?.["@evopilot/cli"]?.dependencyPackageSpecs || [], [
   `https://github.com/yeliang-wang/evopilot/releases/download/v${packageJson.version}/evopilot-contracts-${packageJson.version}.tgz`,
   `https://github.com/yeliang-wang/evopilot/releases/download/v${packageJson.version}/evopilot-client-${packageJson.version}.tgz`
 ]);
 assert.equal(manifest.packages?.["create-evopilot"]?.registryStatus, "not_published");
 assert.equal(manifest.packages?.["@evopilot/cli"]?.registryStatus, "not_published");
+assert.equal(manifest.packages?.["@evopilot/adapter-mcp"]?.registryStatus, "not_published");
+assert.equal(manifest.packages?.["@evopilot/adapter-opencode"]?.registryStatus, "not_published");
+assert.equal(manifest.packages?.["@evopilot/adapter-opencode"]?.runtime?.package, "opencode-ai");
+assert.match(manifest.packages?.["@evopilot/adapter-opencode"]?.runtime?.version || "", /^\d+\.\d+\.\d+$/);
 assert.equal(manifest.containers?.evopilot, `ghcr.io/yeliang-wang/evopilot:${packageJson.version}`);
 assert.equal(manifest.containers?.["evopilot-dashboard"], `ghcr.io/yeliang-wang/evopilot-dashboard:${dashboardVersion}`);
 assert.equal(manifest.installers?.["install.sh"]?.sha256, sha256("install.sh"));
@@ -108,8 +118,10 @@ run("npm", ["install", "--ignore-scripts", ...tarballs], { cwd: installDir, stdi
 const binDir = path.join(installDir, "node_modules", ".bin");
 const evopilotBin = path.join(binDir, process.platform === "win32" ? "evopilot.cmd" : "evopilot");
 const createBin = path.join(binDir, process.platform === "win32" ? "create-evopilot.cmd" : "create-evopilot");
+const mcpBin = path.join(binDir, process.platform === "win32" ? "evopilot-mcp.cmd" : "evopilot-mcp");
 assert.ok(fs.existsSync(evopilotBin), "evopilot bin should be installed");
 assert.ok(fs.existsSync(createBin), "create-evopilot bin should be installed");
+assert.ok(fs.existsSync(mcpBin), "evopilot-mcp bin should be installed");
 
 const help = run(evopilotBin, ["--help"], { cwd: installDir });
 assert.match(help, /EvoPilot CLI|evopilot/i);

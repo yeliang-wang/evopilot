@@ -1,10 +1,10 @@
 # Release Management
 
-> Publish EvoPilot from validated control-plane evidence, not from a local build alone.
+> Build once, accept the exact Candidate, and promote those accepted bytes without rebuilding.
 
 ## Release Policy
 
-EvoPilot release readiness has two layers:
+EvoPilot release readiness has four layers:
 
 | Layer | Purpose | Required Evidence |
 | --- | --- | --- |
@@ -14,6 +14,12 @@ EvoPilot release readiness has two layers:
 | Distribution package | Proves new users can install or deploy without cloning the source tree. | Local package tarballs, GitHub Release package assets, empty-project install smoke, tagged `install.sh` / `install.ps1`, release install manifest, self-host installer output, Helm chart archive, npm publish workflow, and public npm registry install verification after publication. |
 
 Do not claim a public release from `npm run check` alone. `npm run check` proves repository validation. The authoritative product verdict remains EvoPilot release governance.
+
+This repository pipeline governs EvoPilot's own GitHub project release. It is
+not an EvoPilot product `LifecycleDefinition`, `LifecycleRevision`,
+`LifecycleBinding`, or `LifecycleRun`. The external EvoPilot Codex Suite may
+orchestrate the repository's evolution and acceptance, but its state,
+approvals, and versions do not become product Lifecycle state.
 
 ## Versioning
 
@@ -33,9 +39,41 @@ Rules:
 
 Internal architecture-only changes do not automatically require a public release. Publish a patch release when the change alters the installable package graph, runtime launch path, deployment assets, CLI/Dashboard compatibility, or operator validation commands. For example, moving `loop-worker` behind `@evopilot/worker-runtime` is release-worthy once `npm run check`, release artifacts, and the applicable product evidence pass, because operators need the new package boundary and startup behavior documented.
 
-## Release Checklist
+## Release Checklist and Candidate-to-Release Sequence
 
-Before tagging:
+The release pipeline is intentionally ordered as follows:
+
+1. Merge or otherwise select one immutable commit that is inside an approved
+   Evolution Target.
+2. Dispatch `.github/workflows/release-candidate.yml` with that exact commit
+   and Target id. It runs verification, builds the npm tarballs, source
+   archive, Helm chart, installers, SBOM, provenance, checksums, and loadable
+   container archive exactly once, then stores them as an immutable GitHub
+   Actions Artifact.
+3. The handoff job downloads that artifact into a fresh directory outside the
+   checkout, verifies every byte, and emits a digest-bound
+   `evopilot-project-candidate-handoff/v1`. This state is `RC_READY`; it does
+   not authorize release.
+4. Run AC01-AC18, HIST01-HIST05, RC01-RC04, adapter conformance, and active
+   soak from the exact downloaded Candidate packages. A checkout build is not
+   acceptance evidence for this step.
+5. Bind the final acceptance result to the Candidate run, commit, handoff
+   digest, and release-set digest. Obtain a separate Release Binding approval.
+6. After both bindings exist, dispatch `.github/workflows/release-artifacts.yml`
+   and then `.github/workflows/npm-packages.yml`. The protected `release`
+   environment is the sole GitHub human authority boundary. These workflows
+   download the exact Candidate run and promote accepted bytes; neither is
+   permitted to install dependencies, compile, pack, rebuild an image, or
+   overwrite an existing release.
+
+Run this deterministic contract check whenever the workflows change:
+
+```bash
+npm run verify:release-pipeline
+```
+
+The normal pull-request checks and local artifact dry run remain useful before
+Candidate formation, but they are not a substitute for the Candidate artifact:
 
 ```bash
 git status --short --branch
@@ -47,6 +85,7 @@ npm run release:ready
 npm run verify:distribution
 npm run release:artifact
 npm run verify:release-artifact
+npm run verify:release-pipeline
 git diff --check
 ```
 
@@ -65,21 +104,18 @@ PRs that prepare a release should also preserve the uploaded PR artifacts from `
 After the npm package workflow publishes a tag, verify the public registry path:
 
 ```bash
-npm run verify:npm-registry -- --version 3.1.0
+npm run verify:npm-registry -- --version 4.0.0
 ```
 
-For v3.1.0, the public installable path is the GitHub Release tarball package spec recorded in `installers/manifest.json`; public npm registry publication remains a separate layer until the npm workflow publishes and verifies the exact version.
+For v4.0.0, the Candidate installable path is the frozen GitHub Actions artifact set recorded in its Candidate handoff. No public install path exists until the same accepted bytes are separately authorized and promoted to GitHub Release; npm publication remains a further separate action and verification layer.
 
-## Tag And Push
+## Tag Creation
 
-```bash
-git tag -a v1.0.0 -m "EvoPilot v1.0.0"
-git push origin main
-git push origin v1.0.0
-git ls-remote origin refs/heads/main refs/tags/v1.0.0
-```
-
-If the tag already exists, do not retag by force. Create a new patch version after adding the new changelog and release notes.
+Do not push a release tag before Candidate acceptance. The accepted-byte
+promotion workflow creates the tag and draft GitHub Release against the exact
+Candidate commit, uploads the accepted assets without `--clobber`, and only
+then makes the Release public. If the tag or Release already exists, the
+workflow fails closed. Never force-retag; prepare a new version instead.
 
 ## GitHub Release Notes
 
@@ -96,7 +132,8 @@ If `gh` is unavailable, create the GitHub Release manually from the pushed tag a
 
 ## Immutable Release Artifacts
 
-Patch releases publish immutable deployment evidence from `.github/workflows/release-artifacts.yml`.
+`.github/workflows/release-candidate.yml` forms the immutable Candidate set;
+`.github/workflows/release-artifacts.yml` only promotes an accepted set.
 
 Expected assets:
 
@@ -104,10 +141,13 @@ Expected assets:
 - `evopilot-<version>-sbom.spdx.json`
 - `evopilot-<version>-provenance.json`
 - `evopilot-<version>-image-metadata.json`
+- `evopilot-<version>-container-image.tar` (the accepted archive is attached for reproducibility and loaded unchanged for GHCR promotion)
 - `evopilot-<version>-helm-chart.tgz`
 - `evopilot-contracts-<version>.tgz`
 - `evopilot-client-<version>.tgz`
 - `evopilot-cli-<version>.tgz`
+- `evopilot-adapter-mcp-<version>.tgz`
+- `evopilot-adapter-opencode-<version>.tgz`
 - `create-evopilot-<version>.tgz`
 - `install.sh`
 - `install.ps1`
@@ -125,7 +165,7 @@ Operators can use the tracked runbook script to resolve release metadata, deploy
 
 ```bash
 npm run ecs:immutable-rollout -- \
-  --version 3.1.0 \
+  --version 4.0.0 \
   --host root@8.153.72.80 \
   --apply \
   --json
@@ -136,7 +176,7 @@ For rollback drills, provide both the rollback and forward release versions. The
 ```bash
 npm run ecs:immutable-rollout -- \
   --rollback-version 1.1.2 \
-  --forward-version 3.1.0 \
+  --forward-version 4.0.0 \
   --host root@8.153.72.80 \
   --apply \
   --json
@@ -152,22 +192,31 @@ Do not treat a source checkout plus production build as immutable artifact deplo
 
 ## npm Packages
 
-Publish npm packages only after the GitHub release and artifacts are clean for the exact tag.
+Publish npm packages only after the exact Candidate has passed acceptance, a
+separate Release Binding has been approved, and the GitHub Release is public.
 
 The package publish order is:
 
 1. `@evopilot/contracts`
 2. `@evopilot/client`
-3. `@evopilot/cli`
-4. `create-evopilot`
+3. `@evopilot/adapter-mcp`
+4. `@evopilot/adapter-opencode`
+5. `@evopilot/cli`
+6. `create-evopilot`
 
-Use `.github/workflows/npm-packages.yml` with a repository `NPM_TOKEN`. The workflow runs `npm run verify:distribution`, publishes with npm provenance from the requested tag, waits for registry propagation, and then runs:
+Use `.github/workflows/npm-packages.yml` with the protected `release`
+environment and repository `NPM_TOKEN`. The workflow downloads the same
+Candidate run and publishes each accepted `.tgz` file directly with npm
+provenance. It never publishes a workspace from a checkout. It then waits for
+registry propagation and runs:
 
 ```bash
 npm run verify:npm-registry -- --wait --timeout-ms 300000 --interval-ms 15000
 ```
 
-This post-publish verifier checks exact-version npm metadata, installs the four public packages into an empty project from the npm registry, and runs the `evopilot` and `create-evopilot` help commands.
+This post-publish verifier checks exact-version npm metadata, installs all six
+public packages into an empty project, and runs the `evopilot` and
+`create-evopilot` help commands.
 
 ## Rollback
 

@@ -1,0 +1,312 @@
+{
+  "schema": "evopilot-series-roadmap/v1",
+  "roadmapFamily": "evopilot-series-agentic-evolution",
+  "contractVersion": "2.1.0",
+  "project": "evopilot",
+  "updatedAt": "2026-09-06",
+  "ownership": {
+    "owns": [
+      "third-party project onboarding",
+      "project-to-published-Harness matching",
+      "immutable HarnessBundle binding",
+      "open, versioned Lifecycle Harness definition, resolution, immutable run binding, and execution",
+      "goal planning and goal-loop execution through resolved Lifecycle Harnesses",
+      "Agent-runtime-neutral executor selection, dispatch, policy, and evidence normalization",
+      "project execution evidence and trajectories",
+      "project evaluation, release decisions, and audit"
+    ],
+    "mustNotOwn": [
+      "Harness authoring or source-to-Harness production",
+      "Harness lifecycle, approval, or publication",
+      "Harness Catalog or Registry mutation",
+      "general-purpose Agent session runtime, model/tool loop, or coding-agent workspace implementation",
+      "exclusive dependence on one Agent runtime or model provider",
+      "model training implementation"
+    ]
+  },
+  "agentRuntimePolicy": {
+    "mode": "AGENT_RUNTIME_NEUTRAL",
+    "firstClassAdapter": "OpenCode",
+    "exclusiveRuntimeDependency": false,
+    "independentAdapterConformanceRequired": true,
+    "controlPlaneOwns": [
+      "runtime profile and capability references",
+      "executor selection and dispatch policy",
+      "credential references and readiness",
+      "sandbox and allowed-effect policy",
+      "structured request and result contracts",
+      "deterministic output normalization",
+      "provider, model, token, cost, trajectory, artifact, and evidence records",
+      "human approval, source closure, and release authority"
+    ],
+    "executionPlaneOwns": [
+      "prompt and Agent context construction",
+      "Agent session and tool loop",
+      "code reading, editing, and validation repair",
+      "terminal, LSP, MCP, and model-provider execution"
+    ],
+    "directLlmCompatibility": {
+      "allowed": true,
+      "scope": "narrow stateless structured transformations during migration",
+      "defaultProductionCodingExecutor": false,
+      "mustNotOwn": [
+        "general Agent tool loop",
+        "coding workspace",
+        "approval authority",
+        "release or publication authority"
+      ]
+    }
+  },
+  "lifecycleHarnessPolicy": {
+    "mode": "OPEN_DECLARATIVE_LIFECYCLE",
+    "definitionFormat": "human-readable YAML with apiVersion, kind, metadata, and spec",
+    "graphModel": "open stage graph with imports and composition",
+    "executionModel": "closed versioned action and capability registry",
+    "bindingRule": "every run binds one immutable resolved LifecycleRevision plus exact input, policy, action, HarnessBundle, runtime, and project digests",
+    "inputCollection": {
+      "schemaDriven": true,
+      "ordinaryHumanEntry": "question-driven conversation rendered from the same input schema by Codex, WorkBuddy, or another conformant Agent host",
+      "headlessEntry": "the same schema accepts an explicit YAML or JSON parameter document through CLI, API, or CI",
+      "sources": [
+        "project discovery",
+        "organization defaults",
+        "lifecycle defaults",
+        "runtime capability discovery",
+        "interactive user answers",
+        "deterministic derivation",
+        "external SecretRef"
+      ],
+      "rules": [
+        "ask only unresolved relevant inputs and show detected or default values",
+        "input collection is not approval or authority",
+        "raw secrets are never requested or stored in Lifecycle YAML",
+        "the final LifecycleInputBinding is immutable and digest-bound",
+        "one schema drives conversation, UI, MCP, CLI, API, validation, and final review"
+      ]
+    },
+    "decisionModes": ["AUTO", "POLICY", "HUMAN", "EXTERNAL_SIGNAL", "DISABLED"],
+    "automationPolicy": {
+      "default": "AUTO_WHEN_DETERMINISTIC_REVERSIBLE_AND_WITHIN_PREAUTHORIZED_SCOPE",
+      "humanDecisionRequiredFor": [
+        "scope or plan authority not already supplied by an exact user request",
+        "irreversible or externally visible side effects",
+        "production access, credential use, or authority expansion",
+        "project release or publication",
+        "policy exception, material ambiguity, unresolved risk, or uncertain prior mutation"
+      ],
+      "mustAutomate": [
+        "schema and policy validation",
+        "readiness and compatibility checks",
+        "build, test, smoke, evaluation, and evidence capture",
+        "deterministic evidence aggregation and recommendation",
+        "safe resume and identical-input retry where no uncertain mutation exists"
+      ],
+      "continuation": "one digest-bound authorization may cover the unchanged bounded plan and all declared automatic stages; no per-stage approval ceremony",
+      "drift": "only a relevant immutable binding change invalidates the affected authorization"
+    },
+    "separationRules": [
+      "parameters are not decisions",
+      "readiness is not authority",
+      "conversation continuation is not approval",
+      "LifecycleDefinition spec and LifecycleRun status are separate",
+      "Lifecycle YAML cannot embed arbitrary executable shell or programming-language code"
+    ],
+    "referenceProfiles": [
+      "DataRig enterprise-internal delivery lifecycle",
+      "evopilot-harness public open-source release lifecycle",
+      "Alpha/Beta/RC/GA compatibility lifecycle"
+    ]
+  },
+  "intentPolicy": {
+    "capabilityExpansionSignals": ["add", "build", "create", "implement", "introduce", "replace", "upgrade", "新增", "创建", "实现", "引入", "替换", "升级", "公共化", "产品化"]
+  },
+  "versionPolicy": {
+    "publishedBaseline": "3.1.0",
+    "currentWorkingVersion": "4.0.0",
+    "versionsEvolveIndependently": true,
+    "majorRequiredFor": [
+      "incompatible cross-project feedback contract",
+      "incompatible published Harness consumption contract",
+      "replacement of an accepted product boundary",
+      "replacement of the fixed Alpha/Beta/RC/GA execution lifecycle with an open declarative Lifecycle Harness platform"
+    ]
+  },
+  "standingWork": [
+    {
+      "id": "evopilot-maintenance",
+      "description": "Correctness, security, documentation synchronization, dependency maintenance, compatibility, and release repair that does not add an unplanned product capability or change an accepted boundary.",
+      "signals": ["bug fix", "security repair", "documentation synchronization", "dependency maintenance", "compatibility repair", "regression repair", "correctness repair", "缺陷修复", "安全修复", "文档同步", "依赖维护", "兼容性修复", "回归修复", "正确性修复"]
+    },
+    {
+      "id": "evopilot-evolution-governance",
+      "description": "Repository and Codex workflow governance that binds product evolution to reviewed evidence, this Roadmap, an approved Evolution Target, deterministic acceptance, and separately authorized release without changing EvoPilot product behavior or boundaries.",
+      "signals": ["evolution governance", "roadmap governance", "roadmap binding", "evolution target", "conversational orchestrator", "演进治理", "roadmap 绑定", "演进目标", "对话式编排"],
+      "allowsCapabilityExpansion": true
+    }
+  ],
+  "milestones": [
+    {
+      "id": "evopilot-3.2-bundle-consumer-closure",
+      "status": "DEFERRED",
+      "targetVersion": "3.2.0",
+      "releaseLine": "3.2.x",
+      "deferredInto": "evopilot-4.0-open-lifecycle-harness",
+      "standaloneReleaseEligible": false,
+      "reactivationRule": "A standalone v3.2 release requires another explicit Roadmap revision and exact release-line reactivation; the former IN_PROGRESS declaration grants no release eligibility.",
+      "objective": "Preserve the implemented v3 Profile matching and immutable HarnessBundle execution-binding work and carry its guarantees into v4.0 without a standalone v3.2 publication.",
+      "outcomes": [
+        "dynamic published Profile matching",
+        "immutable Bundle/Profile/Component digest closure",
+        "execution-time revalidation before every loop iteration"
+      ],
+      "acceptance": [
+        "Harness Catalog consumer tests pass",
+        "architecture boundary verification passes",
+        "no Harness lifecycle API or CLI exists in EvoPilot"
+      ],
+      "signals": ["immutable bundle", "bundle binding", "profile matching", "digest revalidation", "不可变 bundle", "profile 匹配", "摘要重校验"],
+      "exclusions": ["Harness production", "Harness publication", "model training"]
+    },
+    {
+      "id": "evopilot-4.0-open-lifecycle-harness",
+      "status": "IN_PROGRESS",
+      "targetVersion": "4.0.0",
+      "releaseLine": "4.0.x",
+      "inheritsMilestone": "evopilot-3.2-bundle-consumer-closure",
+      "inheritedAcceptance": [
+        "all v3.2 dynamic published Profile matching behavior remains covered",
+        "immutable HarnessBundle, Profile, Component, execution-plan, and digest closure remains covered",
+        "Bundle closure revalidation before Goal Loop creation and every Loop iteration remains covered",
+        "the read-only Harness consumer boundary and absence of Harness Asset lifecycle API or CLI remain covered",
+        "v3 Alpha/Beta/RC/GA plans, evidence, authority, tenancy, SecretRef behavior, migration, and rollback remain covered"
+      ],
+      "objective": "Replace the fixed Alpha/Beta/RC/GA universal execution model with an open, declarative, human-readable and conversationally configurable Lifecycle Harness platform while retaining immutable published HarnessBundle consumption and an Agent-runtime-neutral execution plane.",
+      "outcomes": [
+        "versioned LifecycleDefinition, LifecycleRevision, LifecycleCatalog, LifecycleResolver, LifecycleBinding, LifecycleInputBinding, and LifecycleRun contracts",
+        "human-readable YAML definitions with open stage graphs, imports, parameters, conditions, policy gates, retries, evidence, rollback, and completion semantics",
+        "closed versioned Action and Capability Registry so declarative openness cannot execute arbitrary code",
+        "schema-driven conversational parameter collection shared by Codex, WorkBuddy, conformant Agent hosts, UI, MCP, CLI, API, and CI",
+        "automatic discovery and prefill from project facts, Organization defaults, runtime capabilities, deterministic derivation, and SecretRef bindings",
+        "risk-tiered AUTO, POLICY, HUMAN, EXTERNAL_SIGNAL, and DISABLED decision modes with deterministic and reversible work automatic by default",
+        "digest-bound batch authorization for unchanged bounded plans rather than repetitive per-stage approvals",
+        "DataRig enterprise-internal and evopilot-harness public open-source reference profiles and conformance cases",
+        "Alpha/Beta/RC/GA retained only as an explicit compatibility profile",
+        "versioned AgentRuntimeProfile and AgentExecutionRequest/Result contracts behind ExecutorAdapter",
+        "OpenCode first-class adapter plus one independent adapter conformance proof",
+        "versioned AgentTrajectory, Outcome/Process/Safety/Cost RewardContract, and approved redacted HarnessExecutionFeedbackPackage"
+      ],
+      "acceptance": [
+        "the same Lifecycle YAML schema is readable and editable by humans and deterministically validated, resolved, canonicalized, and digest-bound by EvoPilot",
+        "a run binds one exact resolved LifecycleRevision, input binding, policy set, action capabilities, immutable HarnessBundle, runtime, project snapshot, and goal or target",
+        "changing lifecycle YAML, parameters, actions, policies, Bundle, runtime, or project bindings cannot silently mutate an active run",
+        "input collection asks only unresolved relevant fields, distinguishes parameters from decisions, never requests raw secrets, and produces a reviewable immutable binding",
+        "CI and API callers can supply the same schema non-interactively without creating a second semantic path",
+        "human decisions remain only for missing authority, irreversible or external effects, production or credential authority, release/publication, exceptions, ambiguity, risk, or uncertain mutations",
+        "deterministic validation, build, test, smoke, evidence capture, aggregation, safe resume, and safe identical-input retry do not require ceremonial human approval",
+        "one authorization can cover all unchanged automatic stages in a bounded plan, and only relevant digest drift invalidates it",
+        "DataRig and evopilot-harness execute as data-driven reference definitions without project-name branches or embedded project constants",
+        "existing Alpha/Beta/RC/GA plans migrate through a documented compatibility adapter with evidence preservation and rollback",
+        "every intelligent execution binds an exact external runtime, adapter, capability set, model evidence, request identity, and resumable result",
+        "Agent output and third-party hosts cannot bypass deterministic normalization, action allowlists, human authority, source closure, or project release decisions",
+        "EvoPilot remains a read-only consumer and cannot author, approve, publish, or mutate evopilot-harness assets",
+        "no model weight training is implemented inside EvoPilot"
+      ],
+      "signals": ["open lifecycle harness", "declarative lifecycle", "lifecycledefinition", "lifecyclerevision", "lifecyclebinding", "lifecyclerun", "lifecycle yaml", "interactive lifecycle parameters", "conversational parameter collection", "risk tiered approval", "approval minimization", "automatic lifecycle stages", "action capability registry", "datarig reference lifecycle", "open source release lifecycle", "alpha beta rc ga compatibility", "agent runtime externalization", "agent runtime adapter", "agentruntimeprofile", "agenttrajectory", "rewardcontract", "feedback package", "开放 lifecycle harness", "声明式生命周期", "生命周期 yaml", "交互式参数采集", "对话式参数填写", "审批简化", "审批自动化", "风险分级审批", "自动化生命周期", "动作能力注册表", "datarig 参考生命周期", "开源发布生命周期", "alpha beta rc ga 兼容"],
+      "exclusions": ["Harness asset authoring or publication", "arbitrary code embedded in Lifecycle YAML", "conversation as approval", "raw secrets in Lifecycle YAML", "exclusive Agent runtime dependency", "embedded general Agent runtime", "Pairwise strategy promotion", "model trainer"]
+    },
+    {
+      "id": "evopilot-4.1-controlled-experiment-loop",
+      "status": "PLANNED",
+      "targetVersion": "4.1.0",
+      "releaseLine": "4.1.x",
+      "objective": "Turn production trajectories into controlled, replayable strategy experiments and promotion decisions.",
+      "outcomes": [
+        "Champion and Challenger rollout cohorts",
+        "Pairwise Evaluation across completion, correctness, safety, cost, and stability",
+        "experiment replay with comparable environment and immutable Bundle closure",
+        "policy promotion, rollback, and human-approval gates"
+      ],
+      "acceptance": [
+        "candidate comparisons use the same task and controlled execution context",
+        "promotion requires private benchmark, bad-case, and regression evidence",
+        "Pairwise results retain judge, ground-truth, uncertainty, and audit evidence",
+        "EvoPilot still does not author or publish Harness assets"
+      ],
+      "signals": ["champion challenger", "pairwise evaluation", "pairwise reward", "candidate rollout", "strategy promotion", "experiment replay", "候选策略", "成对评估", "实验回测", "晋升"],
+      "exclusions": ["model weight updates", "Harness approval or publication"]
+    },
+    {
+      "id": "evopilot-4.2-learning-interop",
+      "status": "PLANNED",
+      "targetVersion": "4.2.0",
+      "releaseLine": "4.2.x",
+      "objective": "Expose governed learning data to external training systems while keeping EvoPilot an evolution control plane rather than a model-training platform.",
+      "outcomes": [
+        "preference and reward dataset export",
+        "external RL Trainer adapter contract",
+        "trained-policy provenance and evaluation re-entry",
+        "cross-round experience retrieval with tenant and project isolation"
+      ],
+      "acceptance": [
+        "training data export is consented, redacted, versioned, and reproducible",
+        "external trainer results cannot bypass EvoPilot evaluation or promotion gates",
+        "provider, model, tokens, cost, dataset, and policy provenance are auditable"
+      ],
+      "signals": ["rl trainer", "training adapter", "preference dataset", "reward dataset", "policy provenance", "external training", "训练适配器", "偏好数据集", "外部训练", "策略溯源"],
+      "exclusions": ["embedded distributed RL training infrastructure"]
+    }
+  ],
+  "transitionPolicies": [
+    {
+      "id": "v3.2-to-v4.0-inherited-transition",
+      "sourceMilestone": "evopilot-3.2-bundle-consumer-closure",
+      "destinationMilestone": "evopilot-4.0-open-lifecycle-harness",
+      "sourceReleaseDisposition": "DEFERRED",
+      "preserveSourceCodeAndEvidence": true,
+      "deleteSourceGuarantees": false,
+      "destinationMustRetestSourceAcceptance": true,
+      "destinationTargetRevisionRequiredAfterRoadmapChange": true
+    }
+  ],
+  "boundaryRules": [
+    {
+      "id": "evopilot-must-not-produce-harness",
+      "classification": "BOUNDARY_CHANGE",
+      "reason": "EvoPilot is a read-only consumer of published Harness assets.",
+      "signals": ["evopilot produce harness", "evopilot evolve harness", "evopilot publish harness", "harness authoring in evopilot", "evopilot 生产 harness", "evopilot 进化 harness", "evopilot 发布 harness", "在 evopilot 中管理 harness 生命周期"]
+    },
+    {
+      "id": "evopilot-must-not-train-models",
+      "classification": "BOUNDARY_CHANGE",
+      "reason": "EvoPilot may export governed learning data but does not implement model training.",
+      "signals": ["train model inside evopilot", "embedded rl trainer", "model weight update in evopilot", "在 evopilot 内训练模型", "evopilot 更新模型权重"]
+    },
+    {
+      "id": "evopilot-must-not-embed-general-agent-runtime",
+      "classification": "BOUNDARY_CHANGE",
+      "reason": "EvoPilot governs external Agent runtimes through versioned adapters and must not become a general Agent session, model/tool-loop, or coding-workspace implementation.",
+      "signals": ["embed general agent runtime in evopilot", "implement agent tool loop inside evopilot", "build coding agent inside evopilot", "evopilot 内置通用 agent 运行时", "evopilot 自研 agent tool loop", "evopilot 自研 coding agent"]
+    },
+    {
+      "id": "evopilot-must-not-lock-exclusive-agent-runtime",
+      "classification": "BOUNDARY_CHANGE",
+      "reason": "OpenCode is the first first-class adapter, not an exclusive product dependency; runtime neutrality requires independent adapter conformance.",
+      "signals": ["require opencode as exclusive runtime", "remove all non-opencode runtimes", "exclusive opencode dependency", "仅允许 opencode", "强制唯一 opencode", "删除所有非 opencode 运行时"]
+    }
+  ],
+  "deviationSignals": ["replace roadmap", "skip milestone", "merge evopilot and evopilot-harness", "change product boundary", "替换 roadmap", "跳过里程碑", "合并 evopilot 和 evopilot-harness", "改变产品边界"],
+  "crossProjectContracts": [
+    {
+      "id": "published-harness-consumption/v3",
+      "status": "ACTIVE",
+      "direction": "evopilot-harness -> evopilot",
+      "rule": "EvoPilot dynamically reads published Registry/Catalog metadata, may match on Profile metadata, and binds an immutable published Bundle for execution."
+    },
+    {
+      "id": "harness-execution-feedback-package/v1",
+      "status": "PLANNED",
+      "direction": "evopilot -> evopilot-harness",
+      "rule": "EvoPilot exports an explicitly approved, redacted, immutable feedback package; evopilot-harness may consume it as Evidence Source but cannot control project execution."
+    }
+  ]
+}

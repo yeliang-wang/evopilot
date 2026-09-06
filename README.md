@@ -12,7 +12,7 @@
 
 EvoPilot helps teams operate AI-agent products as releasable software. It collects evidence from runtime events, traces, evaluations, CI/CD, source changes, LLM calls, and user feedback; turns that evidence into reviewable evolution opportunities; then governs goal planning, loop execution, source closure, delivery, and product-native `GO` / `NO-GO` release decisions.
 
-It is not an agent runtime, prompt playground, generic code generator, or Harness lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot reads a configured Harness Registry and the published Catalog directories it points to, then records selected Harness evidence in goal plans.
+It is not an agent runtime, prompt playground, generic code generator, or Harness Asset lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot reads a configured Harness Registry and the published Catalog directories it points to, then uses an open product-delivery Lifecycle Harness to execute project goals against the selected immutable HarnessBundle.
 
 ## Start Here
 
@@ -28,9 +28,9 @@ Desktop installer, hosted Cloud trial, and public npm registry packages are not 
 
 | Area | What EvoPilot provides |
 | --- | --- |
-| Govern product evolution | Alpha -> Beta -> RC -> GA goal planning, human review, phase packages, blockers, and final reports. |
+| Govern product evolution | Human-readable Lifecycle planning, risk-based authority gates, automatic deterministic stages, evidence closure, and final release decisions; the v3 Alpha/Beta/RC/GA ladder remains available through compatibility data. |
 | Run auditable loops | Durable loop state, executor graphs, checkpoints, replay, worker leases, watchdog recovery, and timeline audit. |
-| Consume published Harnesses | Dynamically reads configured `evopilot-harness` Registry/Catalog roots, auto-matches a `PUBLISHED` Harness, and stores `selectedHarness` id/version/registry/catalog/entry digests in goal plans. |
+| Consume published Harnesses | Dynamically reads configured `evopilot-harness` Registry/Catalog roots, matches published v3 Profiles, binds immutable Bundles, and stores the complete Profile/Component/Bundle digest closure in goal plans. |
 | Control source and delivery | Bounded code-upgrader execution, allowed paths, validation commands, source closure, CI/CD delivery, and deploy evidence. |
 | Track LLM usage by project | Server-projected provider/model/profile rows, token totals, latest loop tokens, and request IDs for connected projects and workspaces. |
 | Operate with API, CLI, and Dashboard | API server, agent-safe CLI JSON flows, and the standalone `yeliang-wang/evopilot-dashboard` browser console. |
@@ -114,13 +114,14 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-The latest published GitHub release is **v3.1.0 GA**, the multi-Catalog Harness Registry consumer release.
+The latest published GitHub release is **v3.1.0 GA**, the multi-Catalog Harness Registry consumer release. The repository's current working line is the unreleased **v4.0.0 Open Lifecycle Harness**; its candidate notes are design and acceptance input, not a release announcement.
 
-v3.1.0 keeps EvoPilot's strict read-only Harness boundary and adds `EVOPILOT_HARNESS_REGISTRY_CONFIG`. `evopilot-harness` owns lifecycle and publication. EvoPilot consumes the Registry and published Catalog directories dynamically, auto-matches a Harness during planning, and records `selectedHarness` evidence without importing every Harness definition.
+The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a standalone v3.2 release. v4.0 keeps EvoPilot's strict read-only Harness-asset boundary while adding open YAML Lifecycle execution for project goals.
 
 Release evidence:
 
-- Latest release notes: [docs/releases/3.1.0.md](docs/releases/3.1.0.md)
+- Latest published release notes: [docs/releases/3.1.0.md](docs/releases/3.1.0.md)
+- Current candidate notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
@@ -134,7 +135,7 @@ GET /api/v1/release/decisions
 
 ## Architecture
 
-EvoPilot applies Loop Engineering to product evolution. GlobalGoal decomposes one business goal into Alpha -> Beta -> RC -> GA phase targets before each target enters the governed loop runtime.
+EvoPilot applies Loop Engineering through a selected, immutable HarnessBundle plus an open Lifecycle definition. The Lifecycle plans and executes project-goal stages; the legacy Alpha -> Beta -> RC -> GA ladder is represented by an explicit v3 compatibility Lifecycle rather than fixed v4 Engine behavior.
 
 ```text
 evopilot-harness
@@ -150,7 +151,7 @@ Published Harness Catalog directory with CATALOG.md
 EvoPilot runtime reads registry and catalog at use time
               |
               v
-selectedHarness -> GlobalGoal -> GoalTarget -> LoopRun -> Release Decision
+selectedHarness -> LifecycleBinding -> GlobalGoal -> GoalTarget -> LoopRun -> Release Decision
                                       |
                                       v
                          Sandbox -> Context -> Harness -> Loop

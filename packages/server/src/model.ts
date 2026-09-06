@@ -17,6 +17,7 @@ import type {
 import type { LlmTaskClient } from "@evopilot/llm";
 import type {
   HarnessCapabilityDefinition,
+  HarnessAssetRefV3,
   HarnessTemplateChangelogEntry,
   HarnessTemplateProfile,
   HarnessTemplateProjectProfileBinding,
@@ -43,6 +44,7 @@ export interface EvoPilotServerOptions {
   proofOpsCoreContractPath?: string;
   harnessRegistryConfig?: string;
   harnessCatalogDirs?: string[];
+  lifecycleCatalogDirs?: string[];
 }
 
 export type EvoPilotRuntimeMode = "prod" | "debug";
@@ -1460,13 +1462,21 @@ export interface GoalPlanPlannerTrace {
 }
 
 export interface GoalPlanSelectedHarnessBinding {
-  schema: "evopilot-goal-plan-selected-harness-binding/v1";
+  schema: "evopilot-goal-plan-selected-harness-binding/v1" | "evopilot-goal-plan-selected-harness-binding/v2";
+  bindingMode: "legacy-template" | "immutable-bundle";
   harnessId: string;
   version: string;
   domain?: string;
   layer?: "runtime" | "domain" | "composite";
   status: "PUBLISHED";
-  templateRef: HarnessTemplateRef;
+  templateRef?: HarnessTemplateRef;
+  bundleRef?: HarnessAssetRefV3 & { digest: string };
+  profileRef?: HarnessAssetRefV3 & { digest: string };
+  resolvedComponents?: Array<HarnessAssetRefV3 & { digest: string }>;
+  executionPlan?: string[];
+  constraints?: string[];
+  requiredEvidence?: string[];
+  validators?: string[];
   capabilities: string[];
   selectionMode: "catalog-auto-match";
   selectionReasons: string[];

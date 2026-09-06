@@ -37,6 +37,7 @@ See [Package Boundaries](package-boundaries.md) for ownership rules, transitiona
 |---|---|
 | Project | Registered products, source credentials, workspace ownership |
 | Harness Catalog Consumer | Read-only published Harness Catalog loading, automatic selected-Harness matching, and goal-plan digest evidence |
+| Lifecycle Harness | Open YAML project lifecycle resolution over a closed Action Registry, immutable run bindings, minimized authority gates, and external Agent receipts |
 | Evidence | Runtime signals, trace/log/eval ingestion, evidence bundles |
 | GlobalGoal | Goal decomposition into GoalTargets, progress, graph, timeline, final report |
 | Loop Runtime | LoopRun execution, worker leases, sandbox proof, trace, events, replay |
@@ -53,6 +54,9 @@ Deep architecture notes remain in:
 
 - [Continuous Evolution Control Plane](continuous-evolution-control-plane.md)
 - [Package Boundaries](package-boundaries.md)
+- [ADR: EvoPilot / evopilot-harness Boundary](adr/0001-evopilot-harness-boundary.md)
+- [ADR: Open Lifecycle Harness](adr/0002-open-lifecycle-harness.md)
+- [Open Lifecycle Harness](open-lifecycle-harness.md)
 - [Published Harness Catalog](published-harness-catalog.md)
 - [Harness Template Boundary](harness-template-domain.md)
 - [Loop Runtime](loop-runtime.md)

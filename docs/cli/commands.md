@@ -32,7 +32,7 @@ The CLI uses EvoPilot HTTP APIs. It is an adapter, not a local state manager.
 --config <file>             Config path, defaults to ~/.evopilot/config.json
 ```
 
-No `evopilot harness ...` commands exist in v3. Use `evopilot-harness` for Harness lifecycle, evolution, review, approval, versioning, and publication.
+No `evopilot harness ...` commands exist in v3. Use `evopilot-harness` for Harness Asset lifecycle, evolution, review, approval, versioning, and publication. The v4 development line adds `lifecycle` and `lifecycle-run` commands for running project-delivery Lifecycles against an exact published HarnessBundle; it does not move Harness Asset ownership into EvoPilot.
 
 ## Output Schemas
 
@@ -139,6 +139,30 @@ evopilot target run --project <id> --objective <business-goal> [--llm-profile <i
 ```
 
 `target plan` dynamically reads the configured Harness Registry and enabled Catalogs, then returns `selectedHarness` when a published Harness matches the project and objective.
+
+## Open Lifecycle Harness (v4 development)
+
+Lifecycle definitions are human-readable YAML data. Starting a run does not authorize it. Answering questions does not imply approval. One exact binding authorization covers the reviewed plan; later human decisions occur only at declared risk or publication boundaries.
+
+```bash
+evopilot lifecycle list --json
+evopilot lifecycle inspect <lifecycle-id> --version <version> --json
+evopilot lifecycle resolve --lifecycle <id> --goal-text <text> --file <labels.yaml|json> --json
+evopilot lifecycle inputs <lifecycle-id> --file <answers.yaml|json> --json
+evopilot lifecycle start --lifecycle <id> --project <id> --file <binding.yaml|json> --goal <goal-id> --json
+evopilot lifecycle-run list --json
+evopilot lifecycle-run inspect <run-id> --json
+evopilot lifecycle-run answer <run-id> --file <answers.yaml|json> --json
+evopilot lifecycle-run finalize-binding <run-id> --file <binding.yaml|json> --json
+evopilot lifecycle-run authorize <run-id> --decision <APPROVED|REJECTED> --binding-digest <sha256> --evidence-ref <ref> --json
+evopilot lifecycle-run advance <run-id> --json
+evopilot lifecycle-run decision <run-id> --stage <id> --decision <APPROVED|REJECTED> --binding-digest <sha256> --evidence-ref <ref> --json
+evopilot lifecycle-run cancel <run-id> --binding-digest <sha256> --evidence-ref <ref> --json
+evopilot lifecycle-run signal <run-id> --request-id <id> --status <SUCCEEDED|FAILED|UNCERTAIN> --receipt-digest <sha256> --file <evidence.yaml|json> --json
+evopilot lifecycle-run feedback <run-id> --binding-digest <sha256> --evidence-ref <human-approval-ref> --json
+```
+
+`signal ... --status UNCERTAIN` stops at a recovery decision; it never silently retries an uncertain external mutation. `feedback` requires separate approval and creates an immutable, strict-redacted, private package without modifying a Harness asset.
 
 ## Maturity Standards
 

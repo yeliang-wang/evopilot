@@ -25,7 +25,9 @@ The server prefers a Registry file from startup configuration:
 EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 ```
 
-`harness-registry.yaml` lists enabled Catalog roots, priority, release, and optional expected Catalog digest. It must not duplicate Harness entries. Each enabled root must contain `CATALOG.md` with a fenced `yaml evopilot-harness-catalog` block. The index is maintained by `evopilot-harness` and points to published Harness definition files under that directory. EvoPilot reads the files dynamically; it does not copy them into control-plane storage.
+`harness-registry.yaml` v2 lists enabled Catalog roots, priority, release, and optional expected Catalog digest. It must not duplicate Harness entries. Each v3 root contains `CATALOG.md` with a fenced `yaml evopilot-harness-catalog-v3` block whose entries point to published `HarnessComponent`, `HarnessProfile`, and `HarnessBundle` assets. EvoPilot verifies the Catalog digest, every Asset digest, and the complete Profile/Component reference closure. It reads these files dynamically and never copies them into control-plane storage.
+
+Registry v1 and `yaml evopilot-harness-catalog` Template Catalogs remain readable as a compatibility path. They produce `bindingMode=legacy-template`; they are not immutable Bundle compliance.
 
 Legacy direct Catalog configuration remains supported only when no Registry is configured:
 
@@ -36,36 +38,42 @@ EVOPILOT_HARNESS_CATALOG_DIRS=/opt/catalogs/database:/opt/catalogs/gateway
 
 ## Goal Planning
 
-When an operator creates a goal plan, EvoPilot loads the current Catalog entries, scores them against the stored project metadata and goal loop target, and writes the selected published Harness into the plan:
+When an operator creates a goal plan, EvoPilot scores published Profile classification, positive concepts, negative concepts, and declared boundaries against stored project metadata and the goal loop target. It then resolves a published Bundle from the same Catalog whose Profile and Component references match the published digests. Registry priority is a tie breaker.
 
 ```json
 {
   "selectedHarness": {
-    "schema": "evopilot-goal-plan-selected-harness/v1",
-    "harnessId": "api-gateway-harness",
-    "version": "1.0.0",
-    "catalogRef": {
-      "catalogId": "evopilot-public-harness-catalog",
-      "catalogDigest": "sha256:...",
-      "entryPath": "harnesses/api-gateway-harness/template.yaml",
-      "entryDigest": "sha256:...",
-      "registryPath": "/opt/evopilot-harness/harness-registry.yaml",
-      "registryDigest": "sha256:..."
-    },
+    "schema": "evopilot-goal-plan-selected-harness-binding/v2",
+    "bindingMode": "immutable-bundle",
+    "harnessId": "api-gateway",
+    "version": "3.0.0",
+    "bundleRef": { "id": "api-gateway", "version": "3.0.0", "digest": "sha256:..." },
+    "profileRef": { "id": "api-gateway", "version": "3.0.0", "digest": "sha256:..." },
+    "resolvedComponents": [
+      { "id": "engineering-validation", "version": "1.0.0", "digest": "sha256:...", "required": true }
+    ],
+    "executionPlan": ["discover-project-commands", "run-approved-validation"],
     "domain": "api-gateway",
-    "matchScore": 0.88,
-    "matchReasons": ["goal mentions routing and traffic policy", "project metadata includes gateway runtime signals"],
-    "capabilities": ["routing", "traffic-policy", "plugin-runtime", "observability", "failure-diagnostics"]
+    "selectionReasons": ["classification=api-gateway", "positiveConcept=route-matching"],
+    "catalogId": "organization",
+    "catalogDigest": "sha256:...",
+    "entryPath": "./assets/bundles/api-gateway/3.0.0/asset.yaml",
+    "entryDigest": "sha256:...",
+    "registryPath": "/opt/evopilot-harness/harness-registry.yaml",
+    "registryDigest": "sha256:..."
   }
 }
 ```
 
-Existing plans are immutable evidence. Republishing a Catalog does not rewrite old plans; the next plan reads the latest Catalog content and may select a newer Harness.
+The Bundle's constraints, required evidence, blocking validators, and execution plan are merged into Harness-layer GoalTargets. Before Goal Loop creation and every Loop iteration, EvoPilot re-reads the Catalog and verifies the immutable Bundle closure. The Loop context and evidence set retain Bundle, Profile, Component, execution-plan, planning Catalog, and current Catalog digests.
+
+Existing plans are immutable evidence. Additive Catalog growth is allowed when all bound Asset digests remain unchanged; EvoPilot does not require the whole current Catalog digest to equal the planning-time digest. Replacing, deleting, or modifying a bound Asset blocks execution.
 
 ## Failure Modes
 
 - No configured Registry or Catalog directory: goal planning continues with a missing-Harness warning and `selectedHarness` absent.
 - Invalid Registry: the Catalog endpoint reports `registry.status=FAILED` and `nextAction=repair-harness-registry-config`.
-- Invalid `CATALOG.md`: the Catalog endpoint reports scan warnings; planning ignores invalid entries.
-- No confident match: planning records the best available evidence and `nextAction` should ask an operator to publish a better Harness from `evopilot-harness`.
+- Invalid v3 `CATALOG.md`, Asset digest, or reference closure: the scan is `FAILED`; malformed assets cannot participate in matching or execution.
+- No positive Profile match: EvoPilot may use a valid legacy Template compatibility path; otherwise `selectedHarness` is absent and the operator must publish a better Profile/Bundle from `evopilot-harness`.
 - Catalog digest changes between plans: each plan records the digest it used, so old evidence remains reproducible.
+- Bound Asset changes before execution: Goal Loop creation or iteration returns `409 HARNESS_BUNDLE_DIGEST_MISMATCH` or `HARNESS_BUNDLE_BINDING_INVALID` and does not run executor nodes.

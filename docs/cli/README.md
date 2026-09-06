@@ -66,7 +66,9 @@ Use `--config <file>` or `EVOPILOT_CONFIG` for short-lived agent sessions.
 
 ## Harness Boundary
 
-EvoPilot v3 does not manage Harness lifecycle.
+EvoPilot v3 does not manage Harness Asset lifecycle.
+
+The v4 development line introduces an Open Lifecycle Harness for executing project-delivery Lifecycles against an exact published HarnessBundle. EvoPilot owns those Lifecycle runs; `evopilot-harness` continues to own Harness Asset authoring, review, approval, publication, Catalog, and Registry. See [Open Lifecycle Harness](../guides/open-lifecycle-harness.md).
 
 - Publish and evolve Harness definitions in `evopilot-harness`.
 - Configure the EvoPilot server with `EVOPILOT_HARNESS_REGISTRY_CONFIG`.

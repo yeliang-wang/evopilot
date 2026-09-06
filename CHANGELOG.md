@@ -6,7 +6,58 @@ This project follows a product-readiness changelog model: release entries should
 
 ## Unreleased
 
-No unreleased changes yet.
+### Candidate: 4.0.0 Open Lifecycle Harness
+
+This entry describes an unreleased candidate. It is not a release announcement and does not imply acceptance or publication.
+
+#### Added
+
+- Added human-readable, schema-validated Lifecycle YAML with typed interactive inputs, risk-based decision points, automation policy, retry, timeout, rollback, and evidence requirements.
+- Added deterministic Lifecycle planning and execution across CLI, API, CI, local MCP, and first-class external Agent runtime adapters.
+- Added a first-class OpenCode adapter with exact runtime/model/capability binding, bounded subprocess execution, normalized evidence-only receipts, durable idempotency, and fail-closed drift handling.
+- Added a public Agent execution contract and independent adapter conformance tests so external Agent integrations do not depend on OpenCode-specific behavior.
+- Added DataRig internal-tool and `evopilot-harness` open-source lifecycle examples without moving Harness authoring or publication authority into EvoPilot.
+
+#### Changed
+
+- Replaced phase-name-driven Alpha/Beta/RC/GA execution semantics with an open Lifecycle Harness; v3 phase packages remain available through an evidence-preserving compatibility mapping.
+- Reduced repeated approval prompts by requiring human decisions only for declared risk, ambiguous input, or external authority boundaries; deterministic low-risk work may be automated by policy.
+
+#### Validation required before release
+
+- All 18 target acceptance criteria, five historical regressions, RC01-RC04, and the no-regression condition must pass against one immutable candidate binding.
+- The AC16 OpenCode and independent-adapter conformance suite and the AC18 functional, failure-recovery, performance, concurrency, isolation, cancellation, recovery, security, observability, documentation, packaging, and soak matrix must pass.
+- A separate release authorization is required after acceptance. No release is authorized by this changelog entry.
+
+## Deferred 3.2.0 closure (inherited by 4.0.0)
+
+This scope was completed as development input but was not published as a standalone v3.2.0 release. Its Bundle-consumer guarantees are preserved as mandatory v4.0.0 acceptance.
+
+### Added
+
+- Added read-only Registry v2 and Catalog v3 consumption for published `HarnessComponent`, `HarnessProfile`, and immutable `HarnessBundle` assets.
+- Added Profile classification, positive/negative concepts, and boundary-aware matching during goal planning.
+- Added immutable Bundle bindings that pin Profile and Component versions, digests, execution plan, constraints, evidence, and validators.
+- Added Bundle closure revalidation before Goal Loop creation and every Loop iteration, with binding and digest mismatch blockers.
+
+### Changed
+
+- Goal Loop context and evidence now retain the complete Bundle, Profile, Component, execution-plan, planning-Catalog, and current-Catalog digest evidence.
+- Legacy Template Catalogs remain readable through `bindingMode=legacy-template` and are not represented as v3 immutable Bundle compliance.
+- EvoPilot remains a read-only Harness consumer; lifecycle, evolution, review, approval, and publication stay in `evopilot-harness`.
+
+### Fixed
+
+- Preserved `asset-v3` format identity when a v3 Catalog scan fails validation instead of reporting the failed scan as a legacy Template Catalog.
+
+### Validation
+
+- `npm run check`
+- `npm run cli:test`
+- `node --test tests/functional/harness-catalog-consumer.test.mjs`
+- `npm run release:artifact`
+- `npm run verify:release-artifact`
+- `git diff --check`
 
 ## 3.0.0 - 2026-08-09
 

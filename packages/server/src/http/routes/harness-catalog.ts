@@ -30,6 +30,9 @@ export async function handleHarnessCatalogRoutes(context: HarnessCatalogRoutesCo
       mounts: scans.map((scan: any) => scan.mount),
       scans,
       templates: scans.flatMap((scan: any) => scan.templates ?? []),
+      profiles: scans.flatMap((scan: any) => scan.profiles ?? []),
+      bundles: scans.flatMap((scan: any) => scan.bundles ?? []),
+      components: scans.flatMap((scan: any) => scan.components ?? []),
       nextAction: registry?.status === "FAILED" ? "repair-harness-registry-config" : scans.length === 0 ? "mount-published-harness-catalog" : "use-catalog-harness-for-project-auto-match"
     }));
   }
@@ -47,6 +50,9 @@ export async function handleHarnessCatalogRoutes(context: HarnessCatalogRoutesCo
       mount: scan.mount,
       catalog: scan.catalog,
       templates: scan.templates,
+      profiles: scan.profiles,
+      bundles: scan.bundles,
+      components: scan.components,
       scan,
       nextAction: scan.status === "FAILED" ? "repair-harness-catalog-source" : "use-catalog-harness-for-project-auto-match"
     }));

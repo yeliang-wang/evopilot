@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/lifecycle/lifecycle-run-v1alpha1.schema.json",
+  "title": "EvoPilot LifecycleRun v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "status", "revision", "inputBinding", "stageAttempts", "decisions", "tenantId", "workspaceId", "projectId", "createdAt", "updatedAt"],
+  "properties": {
+    "schema": { "const": "evopilot-lifecycle-run/v1alpha1" },
+    "id": { "type": "string" },
+    "status": { "enum": ["WAITING_INPUT", "WAITING_BINDING_REVIEW", "WAITING_AUTHORIZATION", "RUNNING", "WAITING_DECISION", "WAITING_EXTERNAL_SIGNAL", "SUCCEEDED", "FAILED", "CANCELLED"] },
+    "binding": { "$ref": "#/$defs/binding" },
+    "revision": { "type": "object" },
+    "inputBinding": { "$ref": "#/$defs/inputBinding" },
+    "planAuthorization": { "$ref": "#/$defs/decision" },
+    "stageAttempts": { "type": "array", "items": { "type": "object" } },
+    "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+    "pendingExecution": { "type": "object" },
+    "currentStageId": { "type": "string" },
+    "tenantId": { "type": "string" },
+    "workspaceId": { "type": "string" },
+    "projectId": { "type": "string" },
+    "goalId": { "type": "string" },
+    "targetId": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "inputBinding": {
+      "type": "object",
+      "required": ["schema", "lifecycleDigest", "digest", "status", "values", "unresolved", "review"],
+      "properties": {
+        "schema": { "const": "evopilot-lifecycle-input-binding/v1alpha1" },
+        "lifecycleDigest": { "$ref": "#/$defs/digest" },
+        "digest": { "$ref": "#/$defs/digest" },
+        "status": { "enum": ["INCOMPLETE", "READY_FOR_REVIEW"] },
+        "values": { "type": "object" },
+        "unresolved": { "type": "array", "items": { "type": "string" } },
+        "review": { "type": "array" },
+        "nextQuestion": { "type": "object" }
+      }
+    },
+    "binding": {
+      "type": "object",
+      "required": ["schema", "digest", "lifecycleRef", "inputBindingDigest", "actionRegistryDigest", "policyDigest", "harnessBundle", "executor", "runtimeDigest", "evidenceDigest", "tenantId", "workspaceId", "projectId", "createdAt"],
+      "properties": {
+        "schema": { "const": "evopilot-lifecycle-binding/v1alpha1" },
+        "digest": { "$ref": "#/$defs/digest" },
+        "lifecycleRef": { "type": "object" },
+        "inputBindingDigest": { "$ref": "#/$defs/digest" },
+        "actionRegistryDigest": { "$ref": "#/$defs/digest" },
+        "policyDigest": { "$ref": "#/$defs/digest" },
+        "harnessBundle": { "type": "object" },
+        "executor": { "type": "object" },
+        "runtimeDigest": { "$ref": "#/$defs/digest" },
+        "evidenceDigest": { "$ref": "#/$defs/digest" },
+        "tenantId": { "type": "string" },
+        "workspaceId": { "type": "string" },
+        "projectId": { "type": "string" },
+        "goalId": { "type": "string" },
+        "targetId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": ["stageId", "authority", "decision", "bindingDigest", "actor", "evidenceRef", "decidedAt"],
+      "properties": {
+        "stageId": { "type": "string" },
+        "authority": { "type": "string" },
+        "decision": { "enum": ["APPROVED", "REJECTED"] },
+        "bindingDigest": { "$ref": "#/$defs/digest" },
+        "actor": { "type": "string" },
+        "evidenceRef": { "type": "string" },
+        "decidedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

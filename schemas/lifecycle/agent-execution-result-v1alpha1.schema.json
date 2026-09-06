@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/lifecycle/agent-execution-result-v1alpha1.schema.json",
+  "title": "EvoPilot AgentExecutionResult v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "requestId", "requestDigest", "status", "receiptDigest", "evidence"],
+  "properties": {
+    "schema": { "const": "evopilot-agent-execution-result/v1alpha1" },
+    "requestId": { "type": "string", "minLength": 1 },
+    "requestDigest": { "$ref": "#/$defs/digest" },
+    "status": { "enum": ["SUCCEEDED", "FAILED", "UNCERTAIN"] },
+    "receiptDigest": { "$ref": "#/$defs/digest" },
+    "evidence": { "type": "array", "items": { "type": "string" } },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "currency"],
+      "properties": {
+        "amount": { "type": "number", "minimum": 0 },
+        "currency": { "type": "string", "minLength": 1 },
+        "inputTokens": { "type": "number", "minimum": 0 },
+        "outputTokens": { "type": "number", "minimum": 0 }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "digest"],
+        "properties": {
+          "ref": { "type": "string", "minLength": 1 },
+          "digest": { "$ref": "#/$defs/digest" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

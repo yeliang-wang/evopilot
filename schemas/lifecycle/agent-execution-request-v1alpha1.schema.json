@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/lifecycle/agent-execution-request-v1alpha1.schema.json",
+  "title": "EvoPilot AgentExecutionRequest v1alpha1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "runId", "stageId", "action", "actionVersion", "bindingDigest", "inputs", "capabilities", "executor"],
+  "properties": {
+    "schema": { "const": "evopilot-agent-execution-request/v1alpha1" },
+    "id": { "type": "string", "minLength": 1 },
+    "runId": { "type": "string", "minLength": 1 },
+    "stageId": { "type": "string", "minLength": 1 },
+    "action": { "type": "string", "minLength": 1 },
+    "actionVersion": { "type": "string", "minLength": 1 },
+    "bindingDigest": { "$ref": "#/$defs/digest" },
+    "inputs": { "type": "object" },
+    "capabilities": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "executor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "provider", "model", "capabilities", "digest"],
+      "properties": {
+        "host": { "type": "string", "minLength": 1 },
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "capabilities": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "digest": { "$ref": "#/$defs/digest" }
+      }
+    }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

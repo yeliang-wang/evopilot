@@ -1,0 +1,46 @@
+schema: evopilot-lifecycle-definition/v1alpha1
+metadata:
+  id: documentation-hotfix
+  name: Documentation hotfix
+  version: 1.0.0
+  description: A materially different lightweight lifecycle added entirely as YAML.
+  labels:
+    class: documentation
+imports:
+  - id: common-software-delivery
+    version: 1.0.0
+capabilities:
+  - agent.execute
+inputs:
+  - id: documentationScope
+    type: string-array
+    prompt: Which documentation paths are in scope?
+    required: true
+  - id: linkCheck
+    type: boolean
+    prompt: Should link validation be included?
+    required: true
+    default: true
+stages:
+  - id: edit-documentation
+    name: Apply the bounded documentation change
+    needs: [project-validation]
+    action:
+      uses: agent.execute@1
+      with:
+        objective: Apply and verify the requested documentation-only change.
+        scope: ${inputs.documentationScope}
+        mode: documentation-hotfix
+    decision:
+      mode: EXTERNAL_SIGNAL
+    retry:
+      maxAttempts: 2
+  - id: documentation-evidence
+    name: Finalize documentation evidence
+    needs: [edit-documentation, evidence]
+    action:
+      uses: readiness.evaluate@1
+      with:
+        profile: documentation
+    decision:
+      mode: AUTO

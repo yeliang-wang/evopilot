@@ -24,7 +24,8 @@ EvoPilot v3 is a Harness Catalog consumer only.
 - EvoPilot reads a server-configured Harness Registry through `EVOPILOT_HARNESS_REGISTRY_CONFIG`, then resolves enabled published Catalog directories.
 - `EVOPILOT_HARNESS_CATALOG_DIR` and `EVOPILOT_HARNESS_CATALOG_DIRS` remain legacy fallbacks only when no Registry is configured.
 - EvoPilot exposes only read-only Catalog projection through API/Dashboard. The EvoPilot CLI does not expose `evopilot harness ...`.
-- During `target plan` or `goal plan`, EvoPilot dynamically reads the Registry and each enabled `CATALOG.md`, auto-matches a `PUBLISHED` Harness, and records `plan.selectedHarness`.
+- During `target plan` or `goal plan`, EvoPilot dynamically reads the Registry and each enabled `CATALOG.md`, matches a published Profile, resolves its immutable published Bundle, and records `plan.selectedHarness`.
+- For `bindingMode=immutable-bundle`, EvoPilot revalidates Bundle, Profile, and Component digests before Goal Loop creation and every iteration. Stop on `HARNESS_BUNDLE_BINDING_INVALID` or `HARNESS_BUNDLE_DIGEST_MISMATCH`.
 - If `plan.selectedHarness` is missing, stop and ask an administrator to publish a Harness with `evopilot-harness` or repair the Registry/Catalog configuration.
 
 ## Required Environment
@@ -62,6 +63,11 @@ Required Harness fields to report:
 ```text
 selectedHarness.harnessId
 selectedHarness.version
+selectedHarness.bindingMode
+selectedHarness.bundleRef
+selectedHarness.profileRef
+selectedHarness.resolvedComponents
+selectedHarness.executionPlan
 selectedHarness.domain
 selectedHarness.catalogId
 selectedHarness.catalogDigest
@@ -120,6 +126,9 @@ status=<server-status>
 nextAction=<server-next-action>
 projectId=<project-id>
 selectedHarness=<harness-id>@<version>
+selectedHarnessBindingMode=<immutable-bundle|legacy-template>
+selectedHarnessBundleDigest=<digest-or-missing>
+selectedHarnessProfileDigest=<digest-or-missing>
 selectedHarnessCatalog=<catalog-id>
 selectedHarnessCatalogDigest=<digest-or-missing>
 selectedHarnessEntryDigest=<digest-or-missing>

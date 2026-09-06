@@ -1,0 +1,77 @@
+schema: evopilot-lifecycle-definition/v1alpha1
+metadata:
+  id: v3-alpha-beta-rc-ga
+  name: EvoPilot v3 Alpha Beta RC GA compatibility lifecycle
+  version: 1.0.0
+  description: Evidence-preserving compatibility representation for existing v3 plans; not the v4 default.
+  labels:
+    compatibility: v3
+imports:
+  - id: common-software-delivery
+    version: 1.0.0
+capabilities:
+  - goal-loop.execute
+  - release.readiness
+  - release.publish
+inputs:
+  - id: releaseTarget
+    type: string
+    prompt: Which existing v3 release target is being resumed?
+    required: true
+stages:
+  - id: alpha
+    name: Alpha compatibility stage
+    needs: [project-validation]
+    action:
+      uses: evopilot.goal-loop@1
+      with:
+        targetId: alpha
+        objective: Replay the existing Alpha target without changing historical evidence or authority.
+    decision:
+      mode: EXTERNAL_SIGNAL
+    retry:
+      maxAttempts: 2
+  - id: beta
+    name: Beta compatibility stage
+    needs: [alpha]
+    action:
+      uses: evopilot.goal-loop@1
+      with:
+        targetId: beta
+        objective: Replay the existing Beta target without changing historical evidence or authority.
+    decision:
+      mode: EXTERNAL_SIGNAL
+    retry:
+      maxAttempts: 2
+  - id: rc
+    name: RC compatibility stage
+    needs: [beta]
+    action:
+      uses: evopilot.goal-loop@1
+      with:
+        targetId: rc
+        objective: Replay the existing RC target without changing historical evidence or authority.
+    decision:
+      mode: EXTERNAL_SIGNAL
+    retry:
+      maxAttempts: 2
+  - id: ga
+    name: GA compatibility stage
+    needs: [rc, evidence]
+    action:
+      uses: release.prepare@1
+      with:
+        channel: ${inputs.releaseTarget}
+    decision:
+      mode: AUTO
+  - id: v3-release-action
+    name: Existing v3 release action
+    needs: [ga]
+    action:
+      uses: release.publish@1
+      with:
+        channel: ${inputs.releaseTarget}
+    decision:
+      mode: HUMAN
+      authority: release
+      prompt: Approve the unchanged existing v3 release action for this exact binding?

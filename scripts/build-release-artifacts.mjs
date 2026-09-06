@@ -114,7 +114,7 @@ function listFiles(dir) {
     .filter((filePath) => fs.statSync(filePath).isFile());
 }
 
-const commit = run("git", ["rev-parse", "HEAD"]);
+const commit = optionalRun("git", ["rev-parse", "HEAD"]);
 const remote = optionalRun("git", ["remote", "get-url", "origin"]);
 const dirty = optionalRun("git", ["status", "--short"]);
 if (dirty && process.env.CI === "true") {
@@ -137,8 +137,13 @@ run("tar", [
   "--exclude", ".tmp",
   "-czf",
   sourceArchivePath,
+  ".dockerignore",
+  ".env.example",
+  ".evopilot",
+  ".gitattributes",
   "AGENTS.md",
   ".github",
+  ".gitignore",
   "CHANGELOG.md",
   "CODE_OF_CONDUCT.md",
   "CONTRIBUTING.md",
@@ -154,8 +159,11 @@ run("tar", [
   "deploy",
   "docker-compose.yml",
   "docs",
+  "evidence",
   "examples",
+  "governance",
   "harness-templates",
+  "lifecycles",
   "llms.txt",
   "octopus.project.json",
   "package-lock.json",
@@ -163,12 +171,13 @@ run("tar", [
   "packages",
   "runtimes",
   "scripts",
+  "schemas",
   "standards",
   "templates",
   "tests"
 ], { stdio: "inherit" });
 
-for (const workspace of ["@evopilot/contracts", "@evopilot/client", "@evopilot/cli", "create-evopilot"]) {
+for (const workspace of ["@evopilot/contracts", "@evopilot/client", "@evopilot/cli", "@evopilot/adapter-mcp", "@evopilot/adapter-opencode", "create-evopilot"]) {
   run("npm", ["pack", "-w", workspace, "--pack-destination", outDir], { stdio: "inherit" });
 }
 
@@ -190,7 +199,20 @@ fs.writeFileSync(sbomPath, `${JSON.stringify(generateSbom(), null, 2)}\n`);
 const imageMetadataPath = path.join(outDir, `${projectName}-${version}-image-metadata.json`);
 const imageDigest = process.env.EVOPILOT_IMAGE_DIGEST || null;
 const imageRef = process.env.EVOPILOT_IMAGE_REF || null;
-if (imageDigest || imageRef) {
+const imageArchiveSource = process.env.EVOPILOT_IMAGE_ARCHIVE || null;
+let imageArchive = null;
+let imageArchiveSha256 = null;
+if (imageArchiveSource) {
+  const source = path.resolve(imageArchiveSource);
+  if (!fs.existsSync(source) || !fs.statSync(source).isFile()) {
+    throw new Error(`EVOPILOT_IMAGE_ARCHIVE does not identify a file: ${source}`);
+  }
+  imageArchive = `${projectName}-${version}-container-image.tar`;
+  const destination = path.join(outDir, imageArchive);
+  fs.copyFileSync(source, destination);
+  imageArchiveSha256 = sha256(destination);
+}
+if (imageDigest || imageRef || imageArchive) {
   fs.writeFileSync(imageMetadataPath, `${JSON.stringify({
     schema: "evopilot-image-metadata/v1",
     project: projectName,
@@ -199,6 +221,8 @@ if (imageDigest || imageRef) {
     imageRef,
     imageDigest,
     immutableRef: imageRef && imageDigest ? `${imageRef}@${imageDigest}` : null,
+    candidateArchive: imageArchive,
+    candidateArchiveSha256: imageArchiveSha256 ? `sha256:${imageArchiveSha256}` : null,
     generatedAt: new Date().toISOString()
   }, null, 2)}\n`);
 }

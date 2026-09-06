@@ -9,7 +9,7 @@ This guide is for WorkBuddy, Codex, Claude Code, other AI agents, and CI jobs th
 - Treat EvoPilot API responses as authoritative.
 - Stop on `nextAction`, blockers, `NO-GO`, `BLOCKED`, `FAILED`, human approval, timeout, or max-step boundaries.
 - Never pass raw GitHub, GitLab, LLM, deploy, API, or password secrets to daily `target run`, `goal run`, or `loop run` commands.
-- Harness lifecycle is not automated through EvoPilot. Use `evopilot-harness` before this flow to publish a usable Harness Registry and Catalog.
+- Harness Asset lifecycle is not automated through EvoPilot. Use `evopilot-harness` before this flow to publish a usable Harness Registry and Catalog. In the v4 development line, EvoPilot may then automate a YAML-defined project Lifecycle until it reaches a declared human, external, or publication boundary.
 - Only EvoPilot release decisions can justify release readiness claims.
 
 ## Harness Catalog Precondition
@@ -90,6 +90,11 @@ llmUsage.summary.outputTokens
 llmUsage.summary.totalTokens
 selectedHarness.harnessId
 selectedHarness.version
+selectedHarness.bindingMode
+selectedHarness.bundleRef
+selectedHarness.profileRef
+selectedHarness.resolvedComponents
+selectedHarness.executionPlan
 selectedHarness.catalogId
 selectedHarness.catalogDigest
 selectedHarness.entryDigest
@@ -101,6 +106,8 @@ TargetEvidencePackage.status
 PhasePackage.decision.status
 releaseDecision.status
 ```
+
+For `bindingMode=immutable-bundle`, stop on `HARNESS_BUNDLE_BINDING_INVALID` or `HARNESS_BUNDLE_DIGEST_MISMATCH`. These errors mean the planned Bundle closure cannot be proven from the current Catalog; executor work has not started. `bindingMode=legacy-template` remains a compatibility result and must not be reported as v3 immutable Bundle execution.
 
 ## Stop Conditions
 

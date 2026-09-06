@@ -1,0 +1,89 @@
+schema: evopilot-lifecycle-definition/v1alpha1
+metadata:
+  id: evopilot-harness-oss
+  name: Open-source Harness product delivery reference
+  version: 1.0.0
+  description: Public OSS delivery example with package readiness separated from publication authority.
+  labels:
+    audience: public-oss
+    example: evopilot-harness
+imports:
+  - id: common-software-delivery
+    version: 1.0.0
+capabilities:
+  - build.execute
+  - test.execute
+  - goal-loop.execute
+  - release.readiness
+  - release.publish
+inputs:
+  - id: candidateVersion
+    type: string
+    prompt: What candidate version is being evaluated?
+    required: true
+    pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$"
+  - id: testSuite
+    type: enum
+    prompt: Which OSS verification suite should run?
+    required: true
+    default: release
+    options: [fast, standard, release]
+  - id: publicationChannel
+    type: enum
+    prompt: Which publication channel would a separately authorized release use?
+    required: true
+    options: [npm, github-release, both]
+stages:
+  - id: oss-build
+    name: Build package candidate
+    needs: [project-validation]
+    action:
+      uses: build.verify@1
+      with:
+        profile: release
+    decision:
+      mode: EXTERNAL_SIGNAL
+    retry:
+      maxAttempts: 2
+  - id: oss-verification
+    name: Run open-source verification
+    needs: [oss-build]
+    action:
+      uses: test.verify@1
+      with:
+        suite: ${inputs.testSuite}
+    decision:
+      mode: EXTERNAL_SIGNAL
+    retry:
+      maxAttempts: 2
+  - id: harness-project-loop
+    name: Execute EvoPilot project Goal Loop
+    needs: [oss-verification]
+    action:
+      uses: evopilot.goal-loop@1
+      with:
+        objective: Produce package-ready OSS evidence while preserving Harness Asset producer boundaries.
+    decision:
+      mode: EXTERNAL_SIGNAL
+    retry:
+      maxAttempts: 2
+  - id: package-readiness
+    name: Aggregate package readiness
+    needs: [harness-project-loop, evidence]
+    action:
+      uses: release.prepare@1
+      with:
+        channel: ${inputs.publicationChannel}
+    decision:
+      mode: AUTO
+  - id: public-publication
+    name: Publish exact accepted bytes
+    needs: [package-readiness]
+    action:
+      uses: release.publish@1
+      with:
+        channel: ${inputs.publicationChannel}
+    decision:
+      mode: HUMAN
+      authority: publication
+      prompt: Approve publication of the exact accepted candidate digest?

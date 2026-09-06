@@ -19,6 +19,8 @@ const packages = [
   { name: "@evopilot/contracts" },
   { name: "@evopilot/client" },
   { name: "@evopilot/cli", bin: "evopilot" },
+  { name: "@evopilot/adapter-mcp", bin: "evopilot-mcp" },
+  { name: "@evopilot/adapter-opencode" },
   { name: "create-evopilot", bin: "create-evopilot" }
 ];
 

@@ -7,6 +7,7 @@ import {
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { parse as parseYaml } from "yaml";
 import { cliInterfaceBoundaryMetadata, type EvoPilotCliInterfaceBoundaryMetadata } from "../runtime/boundary.js";
 
 interface CliConfig {
@@ -196,6 +197,36 @@ export async function runCli(argv: string[]): Promise<number> {
         if (maybeId === "list" || maybeId === undefined) return await maturityStandardsList(ctx);
         if (maybeId === "inspect") return await maturityStandardsInspect(ctx, args.positionals[3]);
         throw usage("Use: evopilot maturity standards <list|inspect> [phase-or-standard-id]");
+      case "lifecycle:list":
+        return await lifecycleList(ctx);
+      case "lifecycle:inspect":
+        return await lifecycleInspect(ctx, maybeId);
+      case "lifecycle:resolve":
+        return await lifecycleResolve(ctx);
+      case "lifecycle:inputs":
+        return await lifecycleInputs(ctx, maybeId);
+      case "lifecycle:start":
+        return await lifecycleStart(ctx);
+      case "lifecycle-run:list":
+        return await lifecycleRunList(ctx);
+      case "lifecycle-run:inspect":
+        return await lifecycleRunInspect(ctx, maybeId);
+      case "lifecycle-run:answer":
+        return await lifecycleRunMutation(ctx, maybeId, "answer");
+      case "lifecycle-run:finalize-binding":
+        return await lifecycleRunMutation(ctx, maybeId, "finalize-binding");
+      case "lifecycle-run:authorize":
+        return await lifecycleRunMutation(ctx, maybeId, "authorize");
+      case "lifecycle-run:decision":
+        return await lifecycleRunMutation(ctx, maybeId, "decision");
+      case "lifecycle-run:cancel":
+        return await lifecycleRunMutation(ctx, maybeId, "cancel");
+      case "lifecycle-run:advance":
+        return await lifecycleRunMutation(ctx, maybeId, "advance");
+      case "lifecycle-run:signal":
+        return await lifecycleRunMutation(ctx, maybeId, "external-result");
+      case "lifecycle-run:feedback":
+        return await lifecycleRunMutation(ctx, maybeId, "feedback");
       case "logging:":
       case "logging:undefined":
         return await loggingInspect(ctx);
@@ -1360,6 +1391,96 @@ async function maturityStandardsInspect(ctx: RuntimeContext, id?: string): Promi
   const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/maturity/standards/${encodeURIComponent(standardId)}`));
   printOutput(ctx, response.data, `standard=${field(response.data, "id")} phase=${field(response.data, "phase")}`);
   return 0;
+}
+
+async function lifecycleList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/lifecycles"));
+  const lifecycles = nestedField(response.data, ["lifecycles"]);
+  printOutput(ctx, response.data, listSummary(lifecycles, "id"));
+  return 0;
+}
+
+async function lifecycleInspect(ctx: RuntimeContext, id?: string): Promise<number> {
+  const lifecycleId = id ?? requiredOption(ctx.args, "id");
+  const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/lifecycles/${encodeURIComponent(lifecycleId)}`, { query: { version: stringOption(ctx.args, "version") } }));
+  printOutput(ctx, response.data, `lifecycle=${nestedField(response.data, ["ref", "id"])}@${nestedField(response.data, ["ref", "version"])} digest=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function lifecycleResolve(ctx: RuntimeContext): Promise<number> {
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  const response = await ctx.client.expectOk(ctx.client.post("/api/v1/lifecycles/resolve", {
+    ...payload,
+    lifecycleId: stringOption(ctx.args, "lifecycle") ?? field(payload, "lifecycleId"),
+    lifecycleVersion: stringOption(ctx.args, "version") ?? field(payload, "lifecycleVersion"),
+    goalText: stringOption(ctx.args, "goal-text") ?? field(payload, "goalText")
+  }, requestOptions(ctx)));
+  printOutput(ctx, response.data, `lifecycle=${nestedField(response.data, ["selection", "lifecycle", "id"])}@${nestedField(response.data, ["selection", "lifecycle", "version"])} mode=${nestedField(response.data, ["selection", "mode"])}`);
+  return 0;
+}
+
+async function lifecycleInputs(ctx: RuntimeContext, id?: string): Promise<number> {
+  const lifecycleId = id ?? requiredOption(ctx.args, "id");
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  const response = await ctx.client.expectOk(ctx.client.post("/api/v1/lifecycles/resolve-inputs", { ...payload, lifecycleId, lifecycleVersion: stringOption(ctx.args, "version") }, requestOptions(ctx)));
+  printOutput(ctx, response.data, `inputs=${field(response.data, "status")} nextQuestion=${nestedField(response.data, ["nextQuestion", "id"]) ?? "none"}`);
+  return 0;
+}
+
+async function lifecycleStart(ctx: RuntimeContext): Promise<number> {
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  const body = {
+    ...payload,
+    lifecycleId: stringOption(ctx.args, "lifecycle") ?? field(payload, "lifecycleId"),
+    lifecycleVersion: stringOption(ctx.args, "version") ?? field(payload, "lifecycleVersion"),
+    projectId: stringOption(ctx.args, "project") ?? field(payload, "projectId"),
+    goalId: stringOption(ctx.args, "goal") ?? field(payload, "goalId"),
+    targetId: stringOption(ctx.args, "target") ?? field(payload, "targetId")
+  };
+  if (!body.lifecycleId || !body.projectId) throw usage("lifecycle start requires --lifecycle and --project, or equivalent fields in --file YAML/JSON.");
+  const response = await ctx.client.expectOk(ctx.client.post("/api/v1/lifecycle-runs", body, requestOptions(ctx)));
+  printOutput(ctx, response.data, `lifecycleRun=${field(response.data, "id")} status=${field(response.data, "status")} nextQuestion=${nestedField(response.data, ["inputBinding", "nextQuestion", "id"]) ?? "none"}`);
+  return 0;
+}
+
+async function lifecycleRunList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/lifecycle-runs"));
+  printOutput(ctx, response.data, listSummary(response.data, "id"));
+  return 0;
+}
+
+async function lifecycleRunInspect(ctx: RuntimeContext, id?: string): Promise<number> {
+  const runId = id ?? requiredOption(ctx.args, "run");
+  const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/lifecycle-runs/${encodeURIComponent(runId)}`));
+  printOutput(ctx, response.data, `lifecycleRun=${runId} status=${field(response.data, "status")} currentStage=${field(response.data, "currentStageId") ?? "none"}`);
+  return 0;
+}
+
+async function lifecycleRunMutation(ctx: RuntimeContext, id: string | undefined, action: string): Promise<number> {
+  const runId = id ?? requiredOption(ctx.args, "run");
+  const payload = action === "advance" ? {} : lifecyclePayloadFromFile(ctx.args);
+  const body = {
+    ...payload,
+    bindingDigest: stringOption(ctx.args, "binding-digest") ?? field(payload, "bindingDigest"),
+    evidenceRef: stringOption(ctx.args, "evidence-ref") ?? field(payload, "evidenceRef"),
+    stageId: stringOption(ctx.args, "stage") ?? field(payload, "stageId"),
+    decision: stringOption(ctx.args, "decision") ?? field(payload, "decision"),
+    requestId: stringOption(ctx.args, "request-id") ?? field(payload, "requestId"),
+    receiptDigest: stringOption(ctx.args, "receipt-digest") ?? field(payload, "receiptDigest"),
+    status: stringOption(ctx.args, "status") ?? field(payload, "status")
+  };
+  const response = await ctx.client.expectOk(ctx.client.post(`/api/v1/lifecycle-runs/${encodeURIComponent(runId)}/${action}`, body, requestOptions(ctx)));
+  printOutput(ctx, response.data, `lifecycleRun=${runId} status=${field(response.data, "status")} currentStage=${field(response.data, "currentStageId") ?? "none"}`);
+  return 0;
+}
+
+function lifecyclePayloadFromFile(args: ParsedArgs): Record<string, unknown> {
+  const file = stringOption(args, "file") ?? stringOption(args, "payload");
+  if (!file) return {};
+  const content = fs.readFileSync(file, "utf8");
+  const parsed = /\.ya?ml$/i.test(file) ? parseYaml(content) : JSON.parse(content);
+  if (!isRecord(parsed)) throw usage(`Payload ${file} must contain a YAML or JSON object.`);
+  return parsed;
 }
 
 async function loggingInspect(ctx: RuntimeContext): Promise<number> {
@@ -3669,6 +3790,21 @@ Usage:
   evopilot llm profile preflight <profile-id>
   evopilot maturity standards list
   evopilot maturity standards inspect <alpha|beta|rc|ga|standard-id>
+  evopilot lifecycle list
+  evopilot lifecycle inspect <lifecycle-id> [--version <version>]
+  evopilot lifecycle resolve [--lifecycle <id>] [--goal-text <text>] [--file <labels.yaml|json>]
+  evopilot lifecycle inputs <lifecycle-id> --file <answers.yaml|json>
+  evopilot lifecycle start --lifecycle <id> --project <id> --file <binding.yaml|json> [--goal <goal-id>]
+  evopilot lifecycle-run list
+  evopilot lifecycle-run inspect <run-id>
+  evopilot lifecycle-run answer <run-id> --file <answers.yaml|json>
+  evopilot lifecycle-run finalize-binding <run-id> --file <binding.yaml|json>
+  evopilot lifecycle-run authorize <run-id> --decision <APPROVED|REJECTED> --binding-digest <sha256> --evidence-ref <ref>
+  evopilot lifecycle-run advance <run-id>
+  evopilot lifecycle-run decision <run-id> --stage <id> --decision <APPROVED|REJECTED> --binding-digest <sha256> --evidence-ref <ref>
+  evopilot lifecycle-run cancel <run-id> --binding-digest <sha256> --evidence-ref <ref>
+  evopilot lifecycle-run signal <run-id> --request-id <id> --status <SUCCEEDED|FAILED|UNCERTAIN> --receipt-digest <sha256> [--file <evidence.yaml|json>]
+  evopilot lifecycle-run feedback <run-id> --binding-digest <sha256> --evidence-ref <human-approval-ref>
   evopilot logging inspect
   evopilot logging set --level <debug|info|warn|error> [--include-stack <true|false>]
   evopilot github-app installation list
