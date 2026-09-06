@@ -19,6 +19,7 @@ export function validateReleasePipeline(workflows) {
   requireMatch(candidate, /outputs:\s*type=docker,dest=/, "Candidate formation must export a loadable container archive");
   requireMatch(candidate, /push:\s*false/, "Candidate image build must not publish during controlled Candidate formation");
   requireMatch(candidate, /actions\/upload-artifact@v4/, "Candidate formation must upload a controlled GitHub Actions artifact");
+  requireMatch(candidate, /artifact_digest:\s*["']sha256:\$\{\{\s*steps\.release_set\.outputs\.artifact-digest\s*\}\}["']/, "Candidate handoff must receive an algorithm-qualified channel artifact digest");
   requireMatch(candidate, /project-candidate-handoff\.mjs build/, "Candidate formation must create the exact handoff after fresh materialization");
   rejectMatch(candidate, /^ {6}[A-Z][A-Z0-9_]*:\s*\$\{\{\s*runner\./m, "Candidate workflow must not use runner context in job-level env");
   rejectMatch(candidate, /^ {10}GITHUB_REF_NAME:/m, "Candidate workflow must not attempt to override reserved GITHUB_REF_NAME through step env");

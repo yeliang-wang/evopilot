@@ -58,3 +58,16 @@ test("release pipeline contract rejects overriding reserved GITHUB_REF_NAME thro
   assert.equal(result.status, "FAIL");
   assert.ok(result.failures.some((failure) => failure.includes("reserved GITHUB_REF_NAME")));
 });
+
+test("release pipeline contract rejects an unqualified Candidate channel artifact digest", () => {
+  const candidate = fs.readFileSync(".github/workflows/release-candidate.yml", "utf8")
+    .replace('artifact_digest: "sha256:${{ steps.release_set.outputs.artifact-digest }}"', "artifact_digest: ${{ steps.release_set.outputs.artifact-digest }}");
+  const workflows = {
+    candidate,
+    release: fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8"),
+    npm: fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("algorithm-qualified channel artifact digest")));
+});

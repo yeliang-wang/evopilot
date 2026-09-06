@@ -29,7 +29,9 @@ jobs:
       target_revision: ${{ steps.boundary.outputs.target_revision }}
       target_authorization_digest: ${{ steps.boundary.outputs.target_authorization_digest }}
       artifact_name: ${{ steps.boundary.outputs.artifact_name }}
-      artifact_digest: ${{ steps.release_set.outputs.artifact-digest }}
+      # upload-artifact exposes the digest body; the handoff contract requires
+      # an algorithm-qualified digest.
+      artifact_digest: "sha256:${{ steps.release_set.outputs.artifact-digest }}"
     env:
       IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/evopilot
       TARGET_FILE: governance/targets/${{ inputs.target_id }}.json
