@@ -5,15 +5,14 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const root = process.cwd();
-const rootPackageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
-const options = parseArgs(process.argv.slice(2));
-const version = options.version ?? rootPackageJson.version;
-const registry = options.registry ?? process.env.npm_config_registry ?? "https://registry.npmjs.org/";
-const wait = options.wait === true;
-const timeoutMs = options.timeoutMs ?? 300_000;
-const intervalMs = options.intervalMs ?? 15_000;
+let version;
+let registry;
+let wait;
+let timeoutMs;
+let intervalMs;
 
 const packages = [
   { name: "@evopilot/contracts" },
@@ -24,19 +23,29 @@ const packages = [
   { name: "create-evopilot", bin: "create-evopilot" }
 ];
 
-try {
-  await retry("npm registry metadata", () => {
-    for (const packageSpec of packages) verifyRegistryMetadata(packageSpec);
-  });
+async function main(args = process.argv.slice(2)) {
+  const rootPackageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
+  const options = parseArgs(args);
+  version = options.version ?? rootPackageJson.version;
+  registry = options.registry ?? process.env.npm_config_registry ?? "https://registry.npmjs.org/";
+  wait = options.wait === true;
+  timeoutMs = options.timeoutMs ?? 300_000;
+  intervalMs = options.intervalMs ?? 15_000;
 
-  await retry("empty-project npm install smoke", () => {
-    verifyEmptyProjectInstall();
-  });
+  try {
+    await retry("npm registry metadata", () => {
+      for (const packageSpec of packages) verifyRegistryMetadata(packageSpec);
+    });
 
-  console.log(`npm registry publication verification passed for ${version}.`);
-} catch (error) {
-  console.error(`npm registry publication verification failed for ${version}: ${errorMessage(error)}`);
-  process.exit(1);
+    await retry("empty-project npm install smoke", () => {
+      verifyEmptyProjectInstall();
+    });
+
+    console.log(`npm registry publication verification passed for ${version}.`);
+  } catch (error) {
+    console.error(`npm registry publication verification failed for ${version}: ${errorMessage(error)}`);
+    process.exitCode = 1;
+  }
 }
 
 function verifyRegistryMetadata(packageSpec) {
@@ -101,13 +110,14 @@ async function retry(label, operation) {
   }
 }
 
-function run(command, args, options = {}) {
+export function run(command, args, options = {}) {
   try {
-    return execFileSync(command, args, {
+    const output = execFileSync(command, args, {
       cwd: options.cwd ?? root,
       encoding: "utf8",
       stdio: options.stdio ?? ["ignore", "pipe", "pipe"]
-    }).trim();
+    });
+    return typeof output === "string" ? output.trim() : "";
   } catch (error) {
     const output = `${error.stdout ?? ""}${error.stderr ?? ""}`.trim();
     const message = compactCommandError(output, error, command, args);
@@ -144,4 +154,8 @@ function sleep(ms) {
 
 function errorMessage(error) {
   return error instanceof Error ? error.message.split(/\r?\n/)[0] : String(error);
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await main();
 }

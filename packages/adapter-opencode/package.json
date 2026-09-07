@@ -10,6 +10,15 @@
     "dist",
     "README.md"
   ],
+  "homepage": "https://github.com/yeliang-wang/evopilot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/yeliang-wang/evopilot.git",
+    "directory": "packages/adapter-opencode"
+  },
+  "bugs": {
+    "url": "https://github.com/yeliang-wang/evopilot/issues"
+  },
   "engines": {
     "node": ">=22"
   },

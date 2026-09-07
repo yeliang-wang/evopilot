@@ -6,20 +6,20 @@ EvoPilot distribution has three supported entry points. These labels match the r
 
 | README CTA | Audience | Command |
 | --- | --- | --- |
-| Install CLI | Operators, CI jobs, and AI agents that already have a server | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-contracts-3.1.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-client-3.1.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz` |
-| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.sh)"` |
+| Install CLI | Operators, CI jobs, and AI agents that already have a server | `npm install -g @evopilot/cli@4.0.0` |
+| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh)"` |
 | Kubernetes | Platform teams running EvoPilot on Kubernetes | `helm install evopilot ./charts/evopilot` |
 
 The CLI, stdio MCP adapter, OpenCode runtime adapter, and installer are release artifacts. They do not replace server-side RBAC, tenant/workspace scope, approval gates, source closure, release policy, or audit.
 
-The Open Lifecycle Harness release set also contains `evopilot-adapter-mcp-<version>.tgz`. Install that exact tarball in a third-party Agent host environment to obtain the `evopilot-mcp` executable. Candidate acceptance must use the candidate tarball rather than a source checkout; availability in a candidate does not mean it has been publicly released.
+The Open Lifecycle Harness release set and public npm registry contain `@evopilot/adapter-mcp@4.0.0`. Install that exact version in a third-party Agent host environment to obtain the `evopilot-mcp` executable. Candidate acceptance still uses the frozen Candidate tarball rather than a source checkout.
 
 The same release set contains `evopilot-adapter-opencode-<version>.tgz`. The
 adapter does not bundle OpenCode or provider credentials. Candidate acceptance
 binds an exact external `opencode-ai` version and provider/model route, while
 credentials remain in OpenCode's or the Host's configured secret environment.
 
-Desktop installer, hosted Cloud trial, and public npm registry packages are not published EvoPilot distribution surfaces in this version. Do not present them as available install paths until the product ships a signed desktop package, hosted tenant onboarding flow, or exact-version npm package publication verified from the public registry.
+Desktop installer and hosted Cloud trial are not published EvoPilot distribution surfaces in this version. All six v4.0.0 npm packages are public and exact-version verified; do not describe any later npm version as available until its own public-registry verification passes.
 
 ## CLI Release Tarballs
 
@@ -27,28 +27,33 @@ Install the CLI from the GitHub Release tarball set when you already have an Evo
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-contracts-3.1.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-client-3.1.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-contracts-4.0.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-client-4.0.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-cli-4.0.0.tgz
 evopilot --help
 evopilot status --server https://evopilot.example.com --json
 ```
 
-The public npm registry install path is a separate post-publish layer. Do not document `npm install -g @evopilot/cli` as available for a release until `npm run verify:npm-registry` passes for that exact version.
+The public npm registry is also verified for v4.0.0:
+
+```bash
+npm install -g @evopilot/cli@4.0.0
+evopilot --help
+```
 
 ## Self-Host Installers
 
-Bootstrap from the tagged POSIX installer. It downloads the release manifest first, verifies the requested package/version boundary, and resolves `create-evopilot` to the GitHub Release tarball while public npm registry packages are not published:
+Bootstrap from the tagged POSIX installer. It downloads the release manifest first, verifies the requested package/version boundary, and resolves `create-evopilot` to the matching GitHub Release tarball by default:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
 
 Windows operators can use the tagged PowerShell entrypoint:
 
 ```powershell
-iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.ps1 -OutFile install.ps1
+iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.ps1 -OutFile install.ps1
 .\install.ps1 -Dir evopilot-stack
 ```
 
@@ -57,8 +62,8 @@ The manifest is published at `installers/manifest.json` in the release tag and a
 After public npm publication, operators may explicitly opt into the registry package spec:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.sh \
-  | EVOPILOT_INSTALL_PACKAGE_SPEC=create-evopilot@3.1.0 bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh \
+  | EVOPILOT_INSTALL_PACKAGE_SPEC=create-evopilot@4.0.0 bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
 
@@ -72,7 +77,7 @@ docker compose up -d
 After `.env` has real LLM settings, the installer can start and verify the stack:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.sh | bash -s -- --dir evopilot-stack --start
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh | bash -s -- --dir evopilot-stack --start
 ```
 
 The generated stack starts:
@@ -131,7 +136,7 @@ After npm publication, verify the public registry path separately:
 npm run verify:npm-registry -- --version 4.0.0
 ```
 
-This command checks exact-version npm metadata for `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, and `create-evopilot`, installs those packages into an empty project from the public registry, then verifies the `evopilot` and `create-evopilot` binaries.
+This command checks exact-version npm metadata for all six packages, installs them into an empty project from the public registry, then verifies the `evopilot` and `create-evopilot` binaries.
 
 ## Publishing
 
@@ -147,3 +152,7 @@ npm run verify:npm-registry -- --wait --timeout-ms 300000 --interval-ms 15000
 
 Do not publish npm packages from an unverified local checkout or from bytes
 reconstructed after Candidate acceptance.
+
+The npm workflow uses the dedicated GitHub `npm` Environment. GitHub Release
+and GHCR promotion continue to use `release`; this keeps deployment history and
+credentials channel-specific without adding a second required-reviewer gate.

@@ -50,7 +50,7 @@ jobs:
     name: Publish accepted npm tarballs
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: release
+    environment: npm
     env:
       VERSION: ${{ inputs.version }}
       RELEASE_TAG: v${{ inputs.version }}
@@ -79,10 +79,10 @@ jobs:
           [[ "$GITHUB_RELEASE_AUTHORIZATION_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           [[ "$NPM_PUBLICATION_AUTHORIZATION_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
 
-      - name: Checkout verifier from Candidate commit
+      - name: Checkout promotion mechanics from workflow commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.candidate_commit }}
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Setup Node for npm provenance
@@ -219,10 +219,20 @@ jobs:
             esac
           }
 
+          adapter_provenance_mode() {
+            if [[ "$VERSION" == "4.0.0" ]]; then
+              echo "approved-v4-adapter-exception"
+            else
+              echo "required"
+            fi
+          }
+
+          ADAPTER_PROVENANCE_MODE="$(adapter_provenance_mode)"
+
           publish_or_verify "@evopilot/contracts" "$CANDIDATE_DIR/evopilot-contracts-${VERSION}.tgz" required
           publish_or_verify "@evopilot/client" "$CANDIDATE_DIR/evopilot-client-${VERSION}.tgz" required
-          publish_or_verify "@evopilot/adapter-mcp" "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz" approved-v4-adapter-exception
-          publish_or_verify "@evopilot/adapter-opencode" "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz" approved-v4-adapter-exception
+          publish_or_verify "@evopilot/adapter-mcp" "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz" "$ADAPTER_PROVENANCE_MODE"
+          publish_or_verify "@evopilot/adapter-opencode" "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz" "$ADAPTER_PROVENANCE_MODE"
           publish_or_verify "@evopilot/cli" "$CANDIDATE_DIR/evopilot-cli-${VERSION}.tgz" required
           publish_or_verify "create-evopilot" "$CANDIDATE_DIR/create-evopilot-${VERSION}.tgz" required
 
@@ -257,10 +267,20 @@ jobs:
             esac
           }
 
+          adapter_provenance_mode() {
+            if [[ "$VERSION" == "4.0.0" ]]; then
+              echo "approved-v4-adapter-exception"
+            else
+              echo "required"
+            fi
+          }
+
+          ADAPTER_PROVENANCE_MODE="$(adapter_provenance_mode)"
+
           verify_public_package "@evopilot/contracts" "$CANDIDATE_DIR/evopilot-contracts-${VERSION}.tgz" required
           verify_public_package "@evopilot/client" "$CANDIDATE_DIR/evopilot-client-${VERSION}.tgz" required
-          verify_public_package "@evopilot/adapter-mcp" "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz" approved-v4-adapter-exception
-          verify_public_package "@evopilot/adapter-opencode" "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz" approved-v4-adapter-exception
+          verify_public_package "@evopilot/adapter-mcp" "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz" "$ADAPTER_PROVENANCE_MODE"
+          verify_public_package "@evopilot/adapter-opencode" "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz" "$ADAPTER_PROVENANCE_MODE"
           verify_public_package "@evopilot/cli" "$CANDIDATE_DIR/evopilot-cli-${VERSION}.tgz" required
           verify_public_package "create-evopilot" "$CANDIDATE_DIR/create-evopilot-${VERSION}.tgz" required
 

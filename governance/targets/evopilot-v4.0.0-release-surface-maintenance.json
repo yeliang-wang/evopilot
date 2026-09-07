@@ -1,0 +1,257 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-v4.0.0-release-surface-maintenance",
+  "revision": 1,
+  "status": "APPROVED",
+  "intent": "EvoPilot release repair, correctness repair, and documentation synchronization: fix the post-publication npm verifier bug, separate the npm GitHub Environment from the GitHub Release and GHCR environment, keep existing release authority without duplicate approval, restore future adapter provenance metadata, and correct stale v4.0.0 public release metadata without changing product capability, boundary, version, or published product bytes.",
+  "objective": "Make EvoPilot's GitHub deployment and release surfaces truthful, channel-specific, and self-verifying while preserving the already accepted and published v4.0.0 artifacts and keeping evopilot-harness unchanged.",
+  "evidence": [
+    {
+      "ref": "conversation:confirmed-align-evopilot-with-evopilot-harness-release-channel-recommendation",
+      "authority": "explicit direction to prepare and execute the governed maintenance change; not approval of this exact Target revision or separate external release actions"
+    },
+    {
+      "ref": "github-actions:yeliang-wang/evopilot/npm-packages/34099631267/attempt-1",
+      "authority": "observed post-publication verifier failure evidence; npm publication itself completed"
+    },
+    {
+      "ref": "https://github.com/yeliang-wang/evopilot/releases/tag/v4.0.0",
+      "authority": "public release-surface evidence showing stale candidate wording"
+    },
+    {
+      "ref": "https://github.com/yeliang-wang/evopilot-harness/deployments",
+      "authority": "comparison evidence for channel-specific GitHub Environments only; does not authorize evopilot-harness mutation or wholesale lifecycle copying"
+    },
+    {
+      "ref": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json",
+      "authority": "completed v4.0.0 product Target and acceptance baseline; this maintenance Target must not reopen or reinterpret it"
+    }
+  ],
+  "roadmapBindings": [
+    {
+      "repo": "/Users/wangyejing/project/harness/evopilot",
+      "project": "evopilot",
+      "matchedMilestone": "evopilot-maintenance",
+      "targetVersion": "4.0.0",
+      "classification": "ALIGNED",
+      "roadmapDigest": "sha256:4c04d45cdb0dd5556a9799433270c94d77055e7d8677015c8dbd14403ed48c6a"
+    }
+  ],
+  "scope": {
+    "include": [
+      "Change the EvoPilot npm publication workflow to use a dedicated GitHub Environment named npm while retaining release for GitHub Release and GHCR promotion",
+      "Enforce the release/npm Environment split in deterministic release-pipeline contract checks and tests",
+      "Make the public npm installation verifier safe when a child process inherits stdio and therefore returns no captured string",
+      "Add repository, bugs, and homepage metadata to both adapter package manifests so a future version can publish normal npm provenance without repeating the v4.0.0 exception",
+      "Synchronize README, distribution operations, release management, and v4.0.0 release notes with the actual published v4.0.0 state",
+      "After separate external-action authorization, create the npm GitHub Environment with a main-only deployment policy and no duplicate required reviewer, configure its NPM_TOKEN secret, and preserve the existing release Environment",
+      "After separate external-action authorization, update only the v4.0.0 GitHub Release body from the verified checked-in release notes without moving the tag or replacing assets",
+      "Run complete local validation and public readback checks, with bounded automatic recovery for deterministic mechanics failures"
+    ],
+    "exclude": [
+      "Any evopilot-harness source, workflow, Roadmap, Target, artifact, Environment, deployment, package, or release mutation",
+      "Any EvoPilot product Lifecycle Harness behavior, API, Engine, schema, runtime, reference lifecycle, Candidate, E2E, acceptance, or product-version change",
+      "Rebuilding, repacking, republishing, deprecating, or changing the integrity of any public EvoPilot v4.0.0 npm package or release asset",
+      "Creating an npm-bootstrap Environment because all six EvoPilot packages already have an established public package history",
+      "Adding a second manual reviewer gate to the npm Environment",
+      "Changing credentials, repository permissions, branch protection, production systems, databases, deployments, tags, GHCR bytes, or npm package bytes outside the separately authorized exact actions",
+      "Force push, tag movement, asset deletion or overwrite, npm publication, new Candidate construction, or release of a new version"
+    ]
+  },
+  "compatibilityPolicy": {
+    "mode": "INHERIT"
+  },
+  "acceptanceLineage": [
+    {
+      "id": "HIST01",
+      "origin": "EvoPilot v4.0.0 accepted Harness Catalog consumer baseline",
+      "criterionDigest": "sha256:8b095b191ac8eec746c5925ff63093ee17ec64c0024bb9d1e6cb5bac143eb036",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#HIST01"
+    },
+    {
+      "id": "HIST02",
+      "origin": "EvoPilot v4.0.0 accepted architecture-boundary baseline",
+      "criterionDigest": "sha256:5c2a8567fef4916a10b5dacc9fba8fe683a57664be0fcb236639d5bc443b8c77",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#HIST02"
+    },
+    {
+      "id": "HIST03",
+      "origin": "EvoPilot v4.0.0 accepted Harness-asset ownership baseline",
+      "criterionDigest": "sha256:4595004dbcf45258f187a5e7289753f30abd7c4bd9923bb3ad0631fc5cbb9a45",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#HIST03"
+    },
+    {
+      "id": "HIST04",
+      "origin": "EvoPilot v4.0.0 repository release-validation baseline",
+      "criterionDigest": "sha256:5fa98868dde8e2c04fa1502daff21198543b88ed1032ae45f345c94a38579790",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#HIST04"
+    },
+    {
+      "id": "HIST05",
+      "origin": "EvoPilot v4.0.0 operating and authority-compatibility baseline",
+      "criterionDigest": "sha256:e86c8e2c5ec1c1cb238c43c78be57ab6d4fa95642f7a8a0a45537396f6bbd783",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#HIST05"
+    }
+  ],
+  "inheritedAcceptance": [
+    {
+      "id": "HIST01",
+      "origin": "EvoPilot v4.0.0 accepted Harness Catalog consumer baseline",
+      "criterion": "Harness Catalog consumer behavior remains unchanged.",
+      "requiredEvidence": "Complete repository check and unchanged product-boundary diff review",
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/local-validation-evidence.json@sha256:9ae4f5b5b189366f3388c2aa4b2a5e2368a4d4ce36594af50e6c5ffb084621e0#HIST01"
+      ]
+    },
+    {
+      "id": "HIST02",
+      "origin": "EvoPilot v4.0.0 accepted architecture-boundary baseline",
+      "criterion": "Architecture boundary verification continues to pass.",
+      "requiredEvidence": "Complete repository check and architecture verification",
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/local-validation-evidence.json@sha256:9ae4f5b5b189366f3388c2aa4b2a5e2368a4d4ce36594af50e6c5ffb084621e0#HIST02"
+      ]
+    },
+    {
+      "id": "HIST03",
+      "origin": "EvoPilot v4.0.0 accepted Harness-asset ownership baseline",
+      "criterion": "EvoPilot remains a read-only Harness consumer and no Harness Asset lifecycle is introduced.",
+      "requiredEvidence": "Complete repository check and scoped diff review",
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/local-validation-evidence.json@sha256:9ae4f5b5b189366f3388c2aa4b2a5e2368a4d4ce36594af50e6c5ffb084621e0#HIST03"
+      ]
+    },
+    {
+      "id": "HIST04",
+      "origin": "EvoPilot v4.0.0 repository release-validation baseline",
+      "criterion": "The complete build, test, architecture, governance, distribution, and security gates pass without regression.",
+      "requiredEvidence": "Clean npm run check, roadmap check, release-pipeline checks, and git diff --check",
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/local-validation-evidence.json@sha256:9ae4f5b5b189366f3388c2aa4b2a5e2368a4d4ce36594af50e6c5ffb084621e0#HIST04"
+      ]
+    },
+    {
+      "id": "HIST05",
+      "origin": "EvoPilot v4.0.0 operating and authority-compatibility baseline",
+      "criterion": "Existing execution evidence, approvals, release actions, isolation, and SecretRef authority remain readable and authoritative.",
+      "requiredEvidence": "Authority tests, release workflow contract tests, and exact public-state readback",
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/local-validation-evidence.json@sha256:9ae4f5b5b189366f3388c2aa4b2a5e2368a4d4ce36594af50e6c5ffb084621e0#HIST05"
+      ]
+    }
+  ],
+  "regressionImpact": [
+    {
+      "area": "Unchanged product and Harness consumer behavior",
+      "affectedAcceptanceIds": ["HIST01", "HIST02", "HIST03"]
+    },
+    {
+      "area": "Release validation, distribution, credentials, and external authority mechanics",
+      "affectedAcceptanceIds": ["HIST04", "HIST05"]
+    }
+  ],
+  "excludedHistoricalAcceptance": [],
+  "realCaseCoverage": [
+    {
+      "id": "RC01",
+      "scenario": "From a clean EvoPilot checkout, validate the channel-split workflows and verifier, then after separate authorization configure the npm Environment and update the existing GitHub Release body, ending with public readbacks and no package publication.",
+      "hosts": ["Codex", "GitHub Actions", "GitHub public API", "npm public registry"],
+      "startingState": "EvoPilot v4.0.0 is already published; the npm workflow uses release, its final verifier is red after successful publication, and public documentation contains stale candidate wording.",
+      "terminalState": "Local checks pass; release and npm Environments are distinct; the v4.0.0 public Release and documentation are truthful; all existing package and asset bytes remain unchanged.",
+      "prohibitedEffects": [
+        "npm publication or package-byte change",
+        "tag movement or release-asset overwrite",
+        "new Candidate or acceptance rerun",
+        "evopilot-harness mutation",
+        "product capability change",
+        "duplicate human reviewer gate"
+      ],
+      "requiredEvidence": "Clean local validation, workflow contract tests, verifier regression test, package metadata assertions, exact public npm integrity readback, GitHub Environment policy readback, GitHub Release body readback, and before/after tag and asset identity",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "noRegressionRequired": true,
+  "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
+  "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
+  "noRegression": {
+    "status": "PASSED",
+    "evidenceRefs": [
+      "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/local-validation-evidence.json@sha256:9ae4f5b5b189366f3388c2aa4b2a5e2368a4d4ce36594af50e6c5ffb084621e0#noRegression"
+    ]
+  },
+  "acceptance": [
+    {
+      "id": "MAINT01",
+      "criterion": "The npm workflow uses only the npm GitHub Environment, the GitHub Release and GHCR workflow uses only release, and deterministic checks reject future channel conflation.",
+      "requiredEvidence": "Workflow diff, release-pipeline verification, and positive and negative contract tests",
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/local-validation-evidence.json@sha256:9ae4f5b5b189366f3388c2aa4b2a5e2368a4d4ce36594af50e6c5ffb084621e0#MAINT01"
+      ]
+    },
+    {
+      "id": "MAINT02",
+      "criterion": "The npm public-registry verifier completes when install and CLI subprocesses inherit stdio, while retaining integrity and executable-entry checks.",
+      "requiredEvidence": "Focused regression test plus fresh temporary public-install verification",
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/local-validation-evidence.json@sha256:9ae4f5b5b189366f3388c2aa4b2a5e2368a4d4ce36594af50e6c5ffb084621e0#MAINT02"
+      ]
+    },
+    {
+      "id": "MAINT03",
+      "criterion": "Both adapter manifests contain repository, bugs, and homepage metadata suitable for future npm provenance, without republishing or changing existing v4.0.0 registry bytes.",
+      "requiredEvidence": "Manifest assertions, pack dry run, public v4.0.0 integrity comparison, and no-publish audit",
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/local-validation-evidence.json@sha256:9ae4f5b5b189366f3388c2aa4b2a5e2368a4d4ce36594af50e6c5ffb084621e0#MAINT03"
+      ]
+    },
+    {
+      "id": "MAINT04",
+      "criterion": "README, distribution operations, release management, and v4.0.0 notes consistently state that v4.0.0 is released and describe the release/npm Environment split accurately.",
+      "requiredEvidence": "Documentation checks, stale-version scan, link validation, and reviewed diff",
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/local-validation-evidence.json@sha256:9ae4f5b5b189366f3388c2aa4b2a5e2368a4d4ce36594af50e6c5ffb084621e0#MAINT04"
+      ]
+    },
+    {
+      "id": "MAINT05",
+      "criterion": "The GitHub repository has an npm Environment limited to main with no duplicate required reviewer and an NPM_TOKEN secret, while the existing release Environment is preserved.",
+      "requiredEvidence": "Authenticated GitHub API readback with secret values redacted",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "MAINT06",
+      "criterion": "The existing v4.0.0 GitHub Release body is generated from the verified final release notes and no tag, release asset, GHCR, or npm bytes are changed.",
+      "requiredEvidence": "Before/after GitHub API identity and body readback plus public package and artifact digest comparison",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "approvals": {
+    "target": {
+      "decision": "APPROVED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v4.0.0-release-surface-maintenance-revision-1",
+      "authorizationDigest": "sha256:399cc13712e9bd22221d99117db1593f98bd98e8b8efd7e739ce1fecc0db906e"
+    },
+    "release": {
+      "decision": "PENDING"
+    }
+  },
+  "release": {
+    "actions": ["commit", "push", "github-release"],
+    "versions": {
+      "evopilot": "4.0.0"
+    }
+  }
+}

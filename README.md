@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/GA%20Release-v3.1.0-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/GA%20Release-v4.0.0-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -18,11 +18,11 @@ It is not an agent runtime, prompt playground, generic code generator, or Harnes
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-contracts-3.1.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-client-3.1.0.tgz https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g @evopilot/cli@4.0.0` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
-Desktop installer, hosted Cloud trial, and public npm registry packages are not published EvoPilot surfaces yet. The supported public entry points are GitHub Release CLI tarballs, self-host installer, Helm, and GHCR images.
+Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet. The supported public entry points are the six exact-version npm packages, GitHub Release tarballs, the self-host installer, Helm, and GHCR images.
 
 ## What You Can Do
 
@@ -114,14 +114,14 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-The latest published GitHub release is **v3.1.0 GA**, the multi-Catalog Harness Registry consumer release. The repository's current working line is the unreleased **v4.0.0 Open Lifecycle Harness**; its candidate notes are design and acceptance input, not a release announcement.
+The latest published GitHub release is **v4.0.0 GA**, the Open Lifecycle Harness release. Its GitHub Release assets, six npm packages, and GHCR image were promoted from the same accepted Candidate bytes and verified through their public distribution channels.
 
 The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a standalone v3.2 release. v4.0 keeps EvoPilot's strict read-only Harness-asset boundary while adding open YAML Lifecycle execution for project goals.
 
 Release evidence:
 
-- Latest published release notes: [docs/releases/3.1.0.md](docs/releases/3.1.0.md)
-- Current candidate notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
+- Latest published release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
+- Previous release notes: [docs/releases/3.1.0.md](docs/releases/3.1.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)

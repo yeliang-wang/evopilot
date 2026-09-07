@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 
 import { validateReleasePipeline, verifyReleasePipeline } from "../../scripts/verify-release-pipeline.mjs";
+import { run as runRegistryCommand } from "../../scripts/verify-npm-registry-publication.mjs";
 
 test("release pipeline forms one Candidate and promotes exact accepted bytes", () => {
   const result = verifyReleasePipeline();
@@ -133,6 +134,56 @@ test("release pipeline contract rejects conflated GitHub and npm authorization d
   const result = validateReleasePipeline(workflows);
   assert.equal(result.status, "FAIL");
   assert.ok(result.failures.some((failure) => failure.includes("original authorization")));
+});
+
+test("release pipeline contract rejects npm promotion through the release environment", () => {
+  const workflows = {
+    candidate: fs.readFileSync(".github/workflows/release-candidate.yml", "utf8"),
+    release: fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8"),
+    npm: fs.readFileSync(".github/workflows/npm-packages.yml", "utf8").replace("environment: npm", "environment: release")
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("dedicated npm environment") || failure.includes("must not reuse")));
+});
+
+test("release pipeline contract rejects GitHub and GHCR promotion through the npm environment", () => {
+  const workflows = {
+    candidate: fs.readFileSync(".github/workflows/release-candidate.yml", "utf8"),
+    release: fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8").replace("environment: release", "environment: npm"),
+    npm: fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("protected release environment") || failure.includes("must not use the npm")));
+});
+
+test("npm registry verifier accepts commands that inherit or ignore stdio", () => {
+  const output = runRegistryCommand(process.execPath, ["-e", "process.stdout.write('not captured')"], {
+    stdio: ["ignore", "ignore", "ignore"]
+  });
+  assert.equal(output, "");
+});
+
+test("release pipeline contract rejects rolling npm mechanics back to Candidate source", () => {
+  const workflows = {
+    candidate: fs.readFileSync(".github/workflows/release-candidate.yml", "utf8"),
+    release: fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8"),
+    npm: fs.readFileSync(".github/workflows/npm-packages.yml", "utf8").replace("ref: ${{ github.sha }}", "ref: ${{ inputs.candidate_commit }}")
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("workflow commit") || failure.includes("roll back")));
+});
+
+test("adapter manifests declare repository metadata for future npm provenance", () => {
+  for (const packageName of ["adapter-mcp", "adapter-opencode"]) {
+    const manifest = JSON.parse(fs.readFileSync(`packages/${packageName}/package.json`, "utf8"));
+    assert.equal(manifest.repository?.url, "git+ssh://git@github.com/yeliang-wang/evopilot.git");
+    assert.equal(manifest.repository?.directory, `packages/${packageName}`);
+    assert.equal(manifest.homepage, "https://github.com/yeliang-wang/evopilot#readme");
+    assert.equal(manifest.bugs?.url, "https://github.com/yeliang-wang/evopilot/issues");
+  }
 });
 
 test("release pipeline contract rejects unsafe partial npm publication recovery", () => {

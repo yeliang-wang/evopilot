@@ -34,7 +34,6 @@ export function validateReleasePipeline(workflows) {
     requireMatch(workflow, /candidate_handoff_sha256:/, `${name} must bind the Candidate handoff digest`);
     requireMatch(workflow, /acceptance_digest:/, `${name} must bind final Candidate acceptance`);
     requireMatch(workflow, /release_authorization_digest:/, `${name} must bind separate release authorization`);
-    requireMatch(workflow, /environment:\s*release/, `${name} must use the protected release environment`);
     requireMatch(workflow, /actions\/download-artifact@v4/, `${name} must download the exact Candidate artifacts`);
     requireMatch(workflow, /run-id:\s*\$\{\{ inputs\.candidate_run_id \}\}/, `${name} must download from the exact Candidate run`);
     requireMatch(workflow, /project-candidate-handoff\.mjs verify/, `${name} must verify the Candidate handoff`);
@@ -43,6 +42,11 @@ export function validateReleasePipeline(workflows) {
       rejectMatch(workflow, forbidden, `${name} must not rebuild or overwrite accepted artifacts (${forbidden.source})`);
     }
   }
+
+  requireMatch(release, /environment:\s*release/, "GitHub/GHCR promotion must use the protected release environment");
+  rejectMatch(release, /environment:\s*npm/, "GitHub/GHCR promotion must not use the npm environment");
+  requireMatch(npm, /environment:\s*npm/, "npm promotion must use the dedicated npm environment");
+  rejectMatch(npm, /environment:\s*release/, "npm promotion must not reuse the release environment");
 
   requireMatch(release, /existing_image_digest:/, "GHCR recovery must bind the exact reconciled digest it may replace");
   requireMatch(release, /oras-project\/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d/, "GHCR promotion must pin the reviewed ORAS setup action");
@@ -74,8 +78,11 @@ export function validateReleasePipeline(workflows) {
   requireMatch(npm, /test "\$actual_integrity" = "\$expected_integrity"/, "npm promotion must reject existing package integrity drift");
   requireMatch(npm, /npm audit signatures/, "npm promotion must verify Registry signatures and provenance after publication");
   requireMatch(npm, /CANDIDATE_DIR=\$RUNNER_TEMP\/evopilot-candidate\/release/, "npm promotion must initialize Candidate paths at runner step runtime");
-  requireLiteral(npm, 'publish_or_verify "@evopilot/adapter-mcp" "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz" approved-v4-adapter-exception', "npm promotion must scope the v4 provenance exception to adapter-mcp");
-  requireLiteral(npm, 'publish_or_verify "@evopilot/adapter-opencode" "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz" approved-v4-adapter-exception', "npm promotion must scope the v4 provenance exception to adapter-opencode");
+  requireMatch(npm, /ref:\s*\$\{\{ github\.sha \}\}/, "npm promotion must use the dispatched workflow commit for recoverable promotion mechanics");
+  rejectMatch(npm, /ref:\s*\$\{\{ inputs\.candidate_commit \}\}/, "npm promotion mechanics must not roll back to the immutable Candidate source");
+  requireMatch(npm, /if \[\[ "\$VERSION" == "4\.0\.0" \]\]; then\s*\n\s*echo "approved-v4-adapter-exception"/, "npm promotion must bind the adapter provenance exception to exactly v4.0.0");
+  requireLiteral(npm, 'publish_or_verify "@evopilot/adapter-mcp" "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz" "$ADAPTER_PROVENANCE_MODE"', "npm promotion must apply the version-bound provenance policy to adapter-mcp");
+  requireLiteral(npm, 'publish_or_verify "@evopilot/adapter-opencode" "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz" "$ADAPTER_PROVENANCE_MODE"', "npm promotion must apply the version-bound provenance policy to adapter-opencode");
   requireLiteral(npm, 'publish_or_verify "@evopilot/contracts" "$CANDIDATE_DIR/evopilot-contracts-${VERSION}.tgz" required', "npm promotion must retain provenance for contracts");
   requireLiteral(npm, 'publish_or_verify "@evopilot/client" "$CANDIDATE_DIR/evopilot-client-${VERSION}.tgz" required', "npm promotion must retain provenance for client");
   requireLiteral(npm, 'publish_or_verify "@evopilot/cli" "$CANDIDATE_DIR/evopilot-cli-${VERSION}.tgz" required', "npm promotion must retain provenance for cli");
@@ -93,8 +100,8 @@ export function validateReleasePipeline(workflows) {
     requireLiteral(npm, packageName, `npm promotion must publish accepted tarball ${packageName}`);
   }
   rejectMatch(npm, /npm publish\s+-w/, "npm promotion must publish tarballs, never workspaces");
-  const exceptionCalls = npm.match(/publish_or_verify[^\n]+approved-v4-adapter-exception/g) ?? [];
-  if (exceptionCalls.length !== 2) failures.push("npm promotion must contain exactly two approved v4 adapter provenance exceptions");
+  const dynamicAdapterCalls = npm.match(/(?:publish_or_verify|verify_public_package)[^\n]+\$ADAPTER_PROVENANCE_MODE/g) ?? [];
+  if (dynamicAdapterCalls.length !== 4) failures.push("npm promotion must apply the version-bound provenance policy to exactly two publish and two verification adapter calls");
 
   for (const [name, workflow] of Object.entries(workflows)) {
     rejectMatch(workflow, /lifecycles\//, `${name} release workflow must not invoke EvoPilot product Lifecycle definitions`);

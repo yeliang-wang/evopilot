@@ -60,10 +60,12 @@ The release pipeline is intentionally ordered as follows:
 5. Bind the final acceptance result to the Candidate run, commit, handoff
    digest, and release-set digest. Obtain a separate Release Binding approval.
 6. After both bindings exist, dispatch `.github/workflows/release-artifacts.yml`
-   and then `.github/workflows/npm-packages.yml`. The protected `release`
-   environment is the sole GitHub human authority boundary. These workflows
-   download the exact Candidate run and promote accepted bytes; neither is
-   permitted to install dependencies, compile, pack, rebuild an image, or
+   and then `.github/workflows/npm-packages.yml`. GitHub Release and GHCR use
+   the protected `release` Environment; npm publication uses the dedicated
+   `npm` Environment. The Environment split records channel-specific deployment
+   history and secrets but does not add a duplicate required-reviewer gate.
+   Both workflows download the exact Candidate run and promote accepted bytes;
+   neither may install dependencies, compile, pack, rebuild an image, or
    overwrite an existing release.
 
 Run this deterministic contract check whenever the workflows change:
@@ -107,7 +109,7 @@ After the npm package workflow publishes a tag, verify the public registry path:
 npm run verify:npm-registry -- --version 4.0.0
 ```
 
-For v4.0.0, the Candidate installable path is the frozen GitHub Actions artifact set recorded in its Candidate handoff. No public install path exists until the same accepted bytes are separately authorized and promoted to GitHub Release; npm publication remains a further separate action and verification layer.
+For v4.0.0, the Candidate installable path was the frozen GitHub Actions artifact set recorded in its Candidate handoff. Those accepted bytes are now public through GitHub Release, GHCR, and six exact-version npm packages. Future versions must repeat the same Candidate, acceptance, promotion, and public-verification sequence.
 
 ## Tag Creation
 
@@ -204,8 +206,10 @@ The package publish order is:
 5. `@evopilot/cli`
 6. `create-evopilot`
 
-Use `.github/workflows/npm-packages.yml` with the protected `release`
-environment and repository `NPM_TOKEN`. The workflow downloads the same
+Use `.github/workflows/npm-packages.yml` with the dedicated `npm` Environment
+and its `NPM_TOKEN` secret. The Environment is limited to `main` and does not
+add a second required reviewer; the separately bound release authorization
+remains the human authority. The workflow downloads the same
 Candidate run and publishes each accepted `.tgz` file directly with npm
 provenance. It never publishes a workspace from a checkout. It then waits for
 registry propagation and runs:
@@ -217,6 +221,11 @@ npm run verify:npm-registry -- --wait --timeout-ms 300000 --interval-ms 15000
 This post-publish verifier checks exact-version npm metadata, installs all six
 public packages into an empty project, and runs the `evopilot` and
 `create-evopilot` help commands.
+
+The workflow checks out promotion mechanics from the exact workflow-dispatch
+commit, while the handoff and tarball checks continue to bind the older
+immutable Candidate commit. This permits reviewed verifier-only recovery after
+Candidate acceptance without rebuilding or substituting product bytes.
 
 ## Rollback
 

@@ -12,6 +12,15 @@
     "dist",
     "README.md"
   ],
+  "homepage": "https://github.com/yeliang-wang/evopilot#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/yeliang-wang/evopilot.git",
+    "directory": "packages/adapter-mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/yeliang-wang/evopilot/issues"
+  },
   "scripts": {
     "build": "npm run build -w @evopilot/contracts && tsc -p tsconfig.json",
     "start": "node dist/stdio.js"
