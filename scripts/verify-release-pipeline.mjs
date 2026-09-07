@@ -43,11 +43,24 @@ export function validateReleasePipeline(workflows) {
     }
   }
 
-  requireMatch(release, /docker load --input/, "GHCR promotion must load the accepted Candidate image archive");
-  requireMatch(release, /docker push/, "GHCR promotion must push only the loaded accepted image");
+  requireMatch(release, /existing_image_digest:/, "GHCR recovery must bind the exact reconciled digest it may replace");
+  requireMatch(release, /oras-project\/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d/, "GHCR promotion must pin the reviewed ORAS setup action");
+  requireMatch(release, /version:\s*1\.3\.3/, "GHCR promotion must pin ORAS 1.3.3");
+  requireMatch(release, /oras resolve --oci-layout/, "GHCR promotion must verify the accepted OCI layout manifest before publication");
+  requireMatch(release, /oras cp --from-oci-layout/, "GHCR promotion must copy the accepted OCI layout without manifest conversion");
+  requireMatch(release, /oras resolve "\$IMAGE_REPOSITORY:\$TAG"/, "GHCR promotion must resolve every public tag after promotion");
+  requireMatch(release, /test "\$ACTUAL_DIGEST" = "\$EXPECTED_IMAGE_DIGEST"/, "GHCR promotion must reject post-promotion digest drift");
+  rejectMatch(release, /docker load --input/, "GHCR promotion must not convert the accepted OCI manifest through docker load");
+  rejectMatch(release, /docker (?:tag|push)/, "GHCR promotion must not convert or republish the accepted OCI manifest through Docker");
   requireMatch(release, /gh release create/, "GitHub promotion must create the Release from accepted artifacts");
+  requireMatch(release, /--verify-tag/, "GitHub promotion must use an exact pre-existing release tag");
+  rejectMatch(release, /--target\s+"?\$CANDIDATE_COMMIT/, "GitHub promotion must not ask GITHUB_TOKEN to create a tag at the Candidate commit");
+  requireMatch(release, /REMOTE_TAG_COMMIT=.*git ls-remote/, "GitHub promotion must resolve the remote release tag before creating a Release");
+  requireMatch(release, /cmp --silent/, "Draft Release recovery must compare existing assets instead of clobbering them");
   requireMatch(release, /gh release upload/, "GitHub promotion must upload accepted artifacts");
   requireMatch(release, /release-promotion-record\.mjs build/, "GitHub promotion must preserve Candidate, acceptance, and Release Binding digests");
+  requireOrder(release, "gh release create", "oras cp --from-oci-layout", "GitHub promotion must create an inspectable draft before changing GHCR tags");
+  requireOrder(release, "oras cp --from-oci-layout", "gh release edit \"$RELEASE_TAG\" --draft=false", "GitHub promotion must publish the Release only after GHCR digest verification");
   rejectMatch(release, /push:\s*\n\s*tags:/, "Release promotion must not be triggered implicitly by a tag push");
   requireMatch(npm, /release-promotion-record\.mjs verify/, "npm promotion must match the public GitHub Release promotion record");
 
@@ -89,6 +102,12 @@ export function validateReleasePipeline(workflows) {
 
   function requireLiteral(text, literal, message) {
     if (!text.includes(literal)) failures.push(message);
+  }
+
+  function requireOrder(text, before, after, message) {
+    const beforeIndex = text.indexOf(before);
+    const afterIndex = text.indexOf(after);
+    if (beforeIndex === -1 || afterIndex === -1 || beforeIndex >= afterIndex) failures.push(message);
   }
 }
 

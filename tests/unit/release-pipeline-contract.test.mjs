@@ -71,3 +71,42 @@ test("release pipeline contract rejects an unqualified Candidate channel artifac
   assert.equal(result.status, "FAIL");
   assert.ok(result.failures.some((failure) => failure.includes("algorithm-qualified channel artifact digest")));
 });
+
+test("release pipeline contract rejects Docker-mediated OCI promotion", () => {
+  const release = fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8")
+    .replace(/oras cp --from-oci-layout[^\n]+/, 'docker load --input "$IMAGE_ARCHIVE"\n          docker push "$IMAGE_REPOSITORY:$VERSION"');
+  const workflows = {
+    candidate: fs.readFileSync(".github/workflows/release-candidate.yml", "utf8"),
+    release,
+    npm: fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("OCI layout") || failure.includes("Docker")));
+});
+
+test("release pipeline contract rejects implicit release-tag creation", () => {
+  const release = fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8")
+    .replace("--verify-tag", '--target "$CANDIDATE_COMMIT"');
+  const workflows = {
+    candidate: fs.readFileSync(".github/workflows/release-candidate.yml", "utf8"),
+    release,
+    npm: fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("pre-existing release tag") || failure.includes("must not ask GITHUB_TOKEN")));
+});
+
+test("release pipeline contract rejects missing post-promotion digest enforcement", () => {
+  const release = fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8")
+    .replace('test "$ACTUAL_DIGEST" = "$EXPECTED_IMAGE_DIGEST"', ": # digest check removed");
+  const workflows = {
+    candidate: fs.readFileSync(".github/workflows/release-candidate.yml", "utf8"),
+    release,
+    npm: fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("digest drift")));
+});

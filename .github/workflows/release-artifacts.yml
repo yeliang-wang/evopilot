@@ -31,6 +31,11 @@ on:
         description: "sha256 digest of the separate Release Binding authorization"
         required: true
         type: string
+      existing_image_digest:
+        description: "Exact reconciled GHCR digest allowed to be replaced; empty requires absent or already exact tags"
+        required: false
+        default: ""
+        type: string
 
 concurrency:
   group: promote-accepted-candidate-${{ inputs.version }}
@@ -59,6 +64,7 @@ jobs:
       HANDOFF_DIGEST: ${{ inputs.candidate_handoff_sha256 }}
       ACCEPTANCE_DIGEST: ${{ inputs.acceptance_digest }}
       RELEASE_AUTHORIZATION_DIGEST: ${{ inputs.release_authorization_digest }}
+      EXISTING_IMAGE_DIGEST: ${{ inputs.existing_image_digest }}
     steps:
       - name: Validate immutable bindings
         run: |
@@ -70,6 +76,7 @@ jobs:
           [[ "$HANDOFF_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           [[ "$ACCEPTANCE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           [[ "$RELEASE_AUTHORIZATION_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ -z "$EXISTING_IMAGE_DIGEST" || "$EXISTING_IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
 
       - name: Checkout verifier and release notes from Candidate commit
         uses: actions/checkout@v4
@@ -103,6 +110,11 @@ jobs:
           repository: ${{ github.repository }}
           run-id: ${{ inputs.candidate_run_id }}
 
+      - name: Set up pinned ORAS
+        uses: oras-project/setup-oras@1d808f7d7f6995cc68b7bf507bfe5c5446e1dc9d
+        with:
+          version: 1.3.3
+
       - name: Verify accepted Candidate without rebuilding
         run: |
           set -euo pipefail
@@ -118,37 +130,27 @@ jobs:
             --run-id "$CANDIDATE_RUN_ID" \
             --target-id "$TARGET_ID"
           node scripts/verify-release-artifacts.mjs "$CANDIDATE_DIR"
+          IMAGE_METADATA="$CANDIDATE_DIR/evopilot-$VERSION-image-metadata.json"
+          IMAGE_ARCHIVE="$CANDIDATE_DIR/evopilot-$VERSION-container-image.tar"
+          EXPECTED_IMAGE_DIGEST="$(node -p "require('$IMAGE_METADATA').imageDigest")"
+          EXPECTED_ARCHIVE_DIGEST="$(node -p "require('$IMAGE_METADATA').candidateArchiveSha256")"
+          ACTUAL_ARCHIVE_DIGEST="sha256:$(sha256sum "$IMAGE_ARCHIVE" | awk '{print $1}')"
+          SOURCE_IMAGE_DIGEST="$(oras resolve --oci-layout "$IMAGE_ARCHIVE:$VERSION")"
+          test "$ACTUAL_ARCHIVE_DIGEST" = "$EXPECTED_ARCHIVE_DIGEST"
+          test "$SOURCE_IMAGE_DIGEST" = "$EXPECTED_IMAGE_DIGEST"
 
-      - name: Ensure release destination is unused
+      - name: Verify exact pre-existing release tag and Release state
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          REMOTE_TAG_COMMIT="$(git ls-remote origin "refs/tags/$RELEASE_TAG" | awk '{print $1}')"
+          test "$REMOTE_TAG_COMMIT" = "$CANDIDATE_COMMIT"
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "::error::Release $RELEASE_TAG already exists; accepted assets will not be overwritten"
-            exit 1
-          fi
-          if git ls-remote --exit-code origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "::error::Tag $RELEASE_TAG already exists; force retagging is forbidden"
-            exit 1
+            test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "true"
           fi
 
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Promote accepted image archive without rebuild
-        run: |
-          set -euo pipefail
-          docker load --input "$CANDIDATE_DIR/evopilot-$VERSION-container-image.tar"
-          docker tag "$IMAGE_REPOSITORY:$VERSION" "$IMAGE_REPOSITORY:$CANDIDATE_COMMIT"
-          docker push "$IMAGE_REPOSITORY:$CANDIDATE_COMMIT"
-          docker push "$IMAGE_REPOSITORY:$VERSION"
-
-      - name: Create draft Release and upload accepted assets
+      - name: Create or reconcile exact draft Release and accepted assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -171,13 +173,108 @@ jobs:
             --workflow ".github/workflows/release-artifacts.yml" \
             --promotion-run-id "$GITHUB_RUN_ID" \
             --promotion-run-attempt "$GITHUB_RUN_ATTEMPT"
-          gh release create "$RELEASE_TAG" \
-            --draft \
-            --title "EvoPilot $RELEASE_TAG" \
-            --notes-file "$NOTES_FILE" \
-            --target "$CANDIDATE_COMMIT"
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --draft \
+              --verify-tag \
+              --title "EvoPilot $RELEASE_TAG" \
+              --notes-file "$NOTES_FILE"
+          fi
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "true"
+          EXISTING_DIR="$RUNNER_TEMP/evopilot-existing-draft"
+          mkdir -p "$EXISTING_DIR"
+          EXISTING_ASSET_COUNT="$(gh release view "$RELEASE_TAG" --json assets --jq '.assets | length')"
+          if [[ "$EXISTING_ASSET_COUNT" -gt 0 ]]; then
+            gh release download "$RELEASE_TAG" --dir "$EXISTING_DIR"
+          fi
           mapfile -t ASSETS < <(find "$CANDIDATE_DIR" -maxdepth 1 -type f -print | sort)
-          gh release upload "$RELEASE_TAG" "${ASSETS[@]}" "$PROMOTION_RECORD"
+          for ASSET in "${ASSETS[@]}"; do
+            NAME="$(basename "$ASSET")"
+            if [[ -f "$EXISTING_DIR/$NAME" ]]; then
+              cmp --silent "$ASSET" "$EXISTING_DIR/$NAME"
+            else
+              gh release upload "$RELEASE_TAG" "$ASSET"
+            fi
+          done
+          PROMOTION_NAME="$(basename "$PROMOTION_RECORD")"
+          if [[ -f "$EXISTING_DIR/$PROMOTION_NAME" ]]; then
+            node scripts/release-promotion-record.mjs verify \
+              --record "$EXISTING_DIR/$PROMOTION_NAME" \
+              --handoff "$HANDOFF" \
+              --version "$VERSION" \
+              --target-id "$TARGET_ID" \
+              --candidate-run-id "$CANDIDATE_RUN_ID" \
+              --candidate-commit "$CANDIDATE_COMMIT" \
+              --handoff-digest "$HANDOFF_DIGEST" \
+              --acceptance-digest "$ACCEPTANCE_DIGEST" \
+              --release-authorization-digest "$RELEASE_AUTHORIZATION_DIGEST" \
+              --repository "$GITHUB_REPOSITORY" \
+              --workflow ".github/workflows/release-artifacts.yml"
+          else
+            gh release upload "$RELEASE_TAG" "$PROMOTION_RECORD"
+          fi
+          VERIFIED_DRAFT_DIR="$RUNNER_TEMP/evopilot-verified-draft"
+          mkdir -p "$VERIFIED_DRAFT_DIR"
+          gh release download "$RELEASE_TAG" --dir "$VERIFIED_DRAFT_DIR"
+          node scripts/verify-release-artifacts.mjs "$VERIFIED_DRAFT_DIR"
+          node scripts/release-promotion-record.mjs verify \
+            --record "$VERIFIED_DRAFT_DIR/$PROMOTION_NAME" \
+            --handoff "$HANDOFF" \
+            --version "$VERSION" \
+            --target-id "$TARGET_ID" \
+            --candidate-run-id "$CANDIDATE_RUN_ID" \
+            --candidate-commit "$CANDIDATE_COMMIT" \
+            --handoff-digest "$HANDOFF_DIGEST" \
+            --acceptance-digest "$ACCEPTANCE_DIGEST" \
+            --release-authorization-digest "$RELEASE_AUTHORIZATION_DIGEST" \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow ".github/workflows/release-artifacts.yml"
+          EXPECTED_NAMES="$RUNNER_TEMP/expected-release-assets.txt"
+          ACTUAL_NAMES="$RUNNER_TEMP/actual-release-assets.txt"
+          { find "$CANDIDATE_DIR" -maxdepth 1 -type f -printf '%f\n'; echo "$PROMOTION_NAME"; } | sort > "$EXPECTED_NAMES"
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | sort > "$ACTUAL_NAMES"
+          diff -u "$EXPECTED_NAMES" "$ACTUAL_NAMES"
+
+      - name: Login to GHCR with ORAS
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | oras login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Reconcile authorized GHCR tag state
+        run: |
+          set -euo pipefail
+          IMAGE_METADATA="$CANDIDATE_DIR/evopilot-$VERSION-image-metadata.json"
+          EXPECTED_IMAGE_DIGEST="$(node -p "require('$IMAGE_METADATA').imageDigest")"
+          for TAG in "$VERSION" "$CANDIDATE_COMMIT"; do
+            if ACTUAL_DIGEST="$(oras resolve "$IMAGE_REPOSITORY:$TAG" 2>/dev/null)"; then
+              if [[ "$ACTUAL_DIGEST" != "$EXPECTED_IMAGE_DIGEST" && "$ACTUAL_DIGEST" != "$EXISTING_IMAGE_DIGEST" ]]; then
+                echo "::error::Unexpected existing GHCR digest for $TAG: $ACTUAL_DIGEST"
+                exit 1
+              fi
+            elif [[ -n "$EXISTING_IMAGE_DIGEST" ]]; then
+              echo "::error::Expected reconciled GHCR tag $TAG is missing"
+              exit 1
+            fi
+          done
+
+      - name: Promote accepted OCI layout without rebuild or manifest conversion
+        run: |
+          set -euo pipefail
+          IMAGE_ARCHIVE="$CANDIDATE_DIR/evopilot-$VERSION-container-image.tar"
+          EXPECTED_IMAGE_DIGEST="$(node -p "require('$CANDIDATE_DIR/evopilot-$VERSION-image-metadata.json').imageDigest")"
+          oras cp --from-oci-layout "$IMAGE_ARCHIVE:$VERSION" "$IMAGE_REPOSITORY:$VERSION,$CANDIDATE_COMMIT"
+          for TAG in "$VERSION" "$CANDIDATE_COMMIT"; do
+            ACTUAL_DIGEST="$(oras resolve "$IMAGE_REPOSITORY:$TAG")"
+            test "$ACTUAL_DIGEST" = "$EXPECTED_IMAGE_DIGEST"
+          done
+
+      - name: Publish verified GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
           gh release edit "$RELEASE_TAG" --draft=false
 
       - name: Verify public Release and immutable image
@@ -191,5 +288,7 @@ jobs:
           gh release download "$RELEASE_TAG" --dir "$PUBLIC_DIR"
           node scripts/verify-release-artifacts.mjs "$PUBLIC_DIR"
           EXPECTED_IMAGE_DIGEST="$(node -p "require('$CANDIDATE_DIR/evopilot-$VERSION-image-metadata.json').imageDigest")"
-          ACTUAL_IMAGE_DIGEST="$(docker buildx imagetools inspect "$IMAGE_REPOSITORY:$VERSION" | awk '/^Digest:/ {print $2; exit}')"
-          test "$ACTUAL_IMAGE_DIGEST" = "$EXPECTED_IMAGE_DIGEST"
+          for TAG in "$VERSION" "$CANDIDATE_COMMIT"; do
+            ACTUAL_IMAGE_DIGEST="$(oras resolve "$IMAGE_REPOSITORY:$TAG")"
+            test "$ACTUAL_IMAGE_DIGEST" = "$EXPECTED_IMAGE_DIGEST"
+          done
