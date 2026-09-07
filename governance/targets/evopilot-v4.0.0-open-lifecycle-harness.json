@@ -2,7 +2,7 @@
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-v4.0.0-open-lifecycle-harness",
   "revision": 3,
-  "status": "APPROVED",
+  "status": "RELEASE_AUTHORIZED",
   "intent": "Implement EvoPilot v4.0.0 as an open declarative Lifecycle Harness platform with human-readable YAML, schema-driven conversational parameter collection, risk-tiered approval minimization, automatic deterministic stages, immutable published HarnessBundle binding, Agent-runtime-neutral execution, and DataRig enterprise-internal plus evopilot-harness open-source reference lifecycles.",
   "objective": "Let different software and goal types select, resolve, configure, and execute a safe versioned lifecycle without project-specific Engine branches, while asking ordinary users only for unresolved inputs, minimizing human decisions to genuine authority or risk boundaries, and preserving the independent evopilot-harness Asset lifecycle.",
   "evidence": [
@@ -169,40 +169,50 @@
       "origin": "EvoPilot v3.2.0 Roadmap acceptance",
       "criterion": "Harness Catalog consumer tests pass.",
       "requiredEvidence": "Existing and v4 Catalog consumer suites against dynamic read-only Catalogs and immutable Bundles",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#HIST01"
+      ]
     },
     {
       "id": "HIST02",
       "origin": "EvoPilot v3.2.0 Roadmap acceptance",
       "criterion": "Architecture boundary verification passes.",
       "requiredEvidence": "Architecture guard proving EvoPilot owns project execution but no Harness Asset producer capability",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#HIST02"
+      ]
     },
     {
       "id": "HIST03",
       "origin": "EvoPilot v3.2.0 Roadmap acceptance",
       "criterion": "No Harness lifecycle API or CLI exists in EvoPilot.",
       "requiredEvidence": "API, CLI, source-pattern, and filesystem mutation negatives distinguishing Lifecycle Harness execution from Harness Asset lifecycle",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#HIST03"
+      ]
     },
     {
       "id": "HIST04",
       "origin": "EvoPilot v3.2.0 repository release validation contract",
       "criterion": "The complete EvoPilot v3.2 build, unit, smoke, functional, end-to-end, production-asset, open-source-governance, architecture, distribution, and security gates pass without regression.",
       "requiredEvidence": "Clean full npm run check plus exact failure evidence for any environment-only blocker",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#HIST04"
+      ]
     },
     {
       "id": "HIST05",
       "origin": "EvoPilot v3.2.0 operating and authority compatibility contract",
       "criterion": "Existing Alpha/Beta/RC/GA plans, Goal Loops, evidence, approvals, release actions, tenant/workspace isolation, and SecretRef behavior remain readable and authoritative.",
       "requiredEvidence": "Compatibility migration, authorization, tenancy, secret, release-action, and evidence replay matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#HIST05"
+      ]
     }
   ],
   "regressionImpact": [
@@ -233,8 +243,11 @@
       "terminalState": "validated internal-release-ready LifecycleRun with publication not executed",
       "prohibitedEffects": ["raw secret capture", "DataRig-named Engine branch", "unapproved production access", "release execution"],
       "requiredEvidence": "Candidate-package real-case transcript, input provenance, decision inventory, automatic-stage receipts, run binding digest, and no-project-branch scan",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/rc01-real-case.json@sha256:a3711f0d964378e83c0ab382fe72681b1453576093ead563031759472b46e499",
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#RC01"
+      ]
     },
     {
       "id": "RC02",
@@ -244,8 +257,12 @@
       "terminalState": "validated public-release-ready LifecycleRun stopped before publication",
       "prohibitedEffects": ["Harness Asset mutation", "evopilot-harness v4.5.0 mutation", "inferred approval", "tag or publication"],
       "requiredEvidence": "Candidate-package cross-host semantic evidence, exact bindings, approval-minimization trace, boundary sentinels, and package-ready report",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/rc02-real-case.json@sha256:450c2bb8a678603e93caa5ce9cba58a668b1425bfe46ef635b03df58c980ae70",
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/rc02-workbuddy-completion-declaration.json@sha256:eac22df00c58448e94424a3220a17bc986ca5765c1e69d274e3db611cc11b71e",
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#RC02"
+      ]
     },
     {
       "id": "RC03",
@@ -255,8 +272,11 @@
       "terminalState": "completed custom LifecycleRun with equivalent conversational and headless result digests",
       "prohibitedEffects": ["arbitrary YAML code execution", "Engine source modification for the new lifecycle", "transport-specific authority", "raw secret persistence"],
       "requiredEvidence": "Custom YAML, schema and graph validation, Engine source diff proof, cross-transport result equivalence, and hostile YAML negatives",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/rc03-real-case.json@sha256:06a940f20f41bdb314b72c2d3187bab10b042c6dac00851aa14e5412c7cbc34d",
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#RC03"
+      ]
     },
     {
       "id": "RC04",
@@ -266,143 +286,184 @@
       "terminalState": "v4 compatibility LifecycleBinding with equivalent evidence and authority plus verified rollback",
       "prohibitedEffects": ["silent evidence reinterpretation", "approval fabrication", "release-state change", "Harness Asset mutation"],
       "requiredEvidence": "Before/after digests, migration and rollback receipts, authority equivalence assertions, and complete v3 regression replay",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/rc04-real-case.json@sha256:2fb9603dd4bb64b0f6abf3898a6215f7fa3808159160e15db5f4bfdebb86ec23",
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#RC04"
+      ]
     }
   ],
   "noRegressionRequired": true,
   "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
   "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
   "noRegression": {
-    "status": "PENDING",
-    "evidenceRefs": []
+    "status": "PASSED",
+    "evidenceRefs": [
+      "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#noRegression"
+    ]
   },
   "acceptance": [
     {
       "id": "AC01",
       "criterion": "Roadmap, ADR, AGENTS, machine contract, and intent/release Gates consistently declare EvoPilot v4.0.0 Open Lifecycle Harness while leaving v3.2.0 closure unchanged.",
       "requiredEvidence": "Roadmap digest, Gate tests, architecture docs, and diff review",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC01"
+      ]
     },
     {
       "id": "AC02",
       "criterion": "Lifecycle resource schemas accept valid human-readable YAML, reject unknown or unsafe fields, canonicalize deterministically, detect missing imports and cycles, and produce stable immutable revision digests.",
       "requiredEvidence": "Schema fixtures, canonicalization goldens, graph positive/negative tests, and digest replay",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC02"
+      ]
     },
     {
       "id": "AC03",
       "criterion": "Lifecycle YAML can reference only registered versioned actions and capabilities and cannot embed arbitrary executable code or bypass runtime policy.",
       "requiredEvidence": "Action registry contract tests, hostile YAML corpus, and architecture guard",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC03"
+      ]
     },
     {
       "id": "AC04",
       "criterion": "One input schema generates equivalent conversational, UI/MCP, CLI/API, and CI validation semantics, asks only unresolved conditionally relevant fields, presents defaults and provenance, and ends with a reviewable immutable input binding.",
       "requiredEvidence": "Cross-surface golden fixtures and semantic equivalence tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC04"
+      ]
     },
     {
       "id": "AC05",
       "criterion": "Input collection never advances an authority decision, and raw secrets are rejected or redacted while SecretRef bindings remain usable and auditable.",
       "requiredEvidence": "Authority negative tests, secret scans, redaction tests, and credential-reference E2E",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC05"
+      ]
     },
     {
       "id": "AC06",
       "criterion": "Deterministic reversible stages execute automatically inside an unchanged authorized plan without per-stage approval, including validation, readiness, build, test, smoke, evaluation, evidence capture, aggregation, and safe resume.",
       "requiredEvidence": "Automatic continuation matrix, event log, and no-human-gate assertions",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC06"
+      ]
     },
     {
       "id": "AC07",
       "criterion": "HUMAN gates appear only for declared genuine authority or risk boundaries, explain the exact object and consequence, bind the current digest, and cannot be satisfied by generic conversation, acknowledgement, readiness, input, or Agent recommendation.",
       "requiredEvidence": "Decision-justification lint, positive authority tests, and hostile interaction matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC07"
+      ]
     },
     {
       "id": "AC08",
       "criterion": "One bounded authorization covers unchanged declared automatic stages; only relevant binding drift invalidates the affected decision, while unrelated Catalog growth or status changes do not cause repeated approval.",
       "requiredEvidence": "Authorization coverage, selective drift, and non-drift regression tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC08"
+      ]
     },
     {
       "id": "AC09",
       "criterion": "Retries and resumes are idempotent and automatic only when receipts prove no uncertain mutation; unknown external outcomes stop at an explicit recovery decision.",
       "requiredEvidence": "Crash, timeout, duplicate, receipt, and uncertain-mutation failure matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC09"
+      ]
     },
     {
       "id": "AC10",
       "criterion": "Every run binds exact lifecycle, input, policy, action, HarnessBundle, runtime, project, Goal/Target, and evidence digests; relevant drift fails closed without silently switching lifecycle or Harness.",
       "requiredEvidence": "Binding closure tests, tamper matrix, and immutable replay",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC10"
+      ]
     },
     {
       "id": "AC11",
       "criterion": "DataRig enterprise-internal delivery completes through a generic reference definition with interactive unresolved inputs and maximum safe automation, without a DataRig-named Engine branch or embedded constants.",
       "requiredEvidence": "Fresh real-case E2E, hard-code scan, parameter provenance, decision count, and evidence closure",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC11"
+      ]
     },
     {
       "id": "AC12",
       "criterion": "evopilot-harness public open-source release completes through a generic reference definition that preserves immutable Bundle and genuine publication authority without a repository-named Engine branch or changes to v4.5.0.",
       "requiredEvidence": "Isolated non-publishing E2E through release-ready state, hard-code scan, and boundary assertions",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC12"
+      ]
     },
     {
       "id": "AC13",
       "criterion": "A third lifecycle materially different from both references is authored as YAML and runs without Engine changes, proving the extension model is open rather than two hard-coded cases.",
       "requiredEvidence": "Independent lifecycle fixture, unchanged Engine digest or source diff, and full E2E",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC13"
+      ]
     },
     {
       "id": "AC14",
       "criterion": "Alpha/Beta/RC/GA v3 plans remain readable and migrate to an explicit compatibility lifecycle without loss or silent reinterpretation of evidence, approvals, or release state.",
       "requiredEvidence": "Migration fixtures, rollback, before/after evidence comparison, and legacy regression suite",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC14"
+      ]
     },
     {
       "id": "AC15",
       "criterion": "WorkBuddy, Codex, and one independent conformant host use the same MCP interaction semantics, while a direct API/CLI headless run reaches an equivalent authoritative result.",
       "requiredEvidence": "Cross-host and direct-transport conformance matrix with exact Engine object digests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC15"
+      ]
     },
     {
       "id": "AC16",
       "criterion": "Agent runtime adapters bind exact capabilities, model/provider, request/result, cost, trajectory, artifacts, and resumable receipts; an unsupported or hostile runtime cannot bypass action, sandbox, evidence, or authority policy.",
       "requiredEvidence": "OpenCode plus independent-adapter conformance, hostile adapter tests, and trajectory closure",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC16"
+      ]
     },
     {
       "id": "AC17",
       "criterion": "EvoPilot remains a read-only immutable HarnessBundle consumer, evopilot-harness remains the producer, and feedback export is redacted, approved, immutable, and non-mutating.",
       "requiredEvidence": "Architecture verification, Catalog filesystem sentinels, consumer tests, and feedback negative cases",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC17"
+      ]
     },
     {
       "id": "AC18",
       "criterion": "Security, resource, concurrency, cancellation, observability, audit, tenant/workspace isolation, failure recovery, performance, documentation, packaging, and no-regression checks pass before candidate acceptance.",
       "requiredEvidence": "Full check suite, threat-model tests, soak/performance report, docs verification, and release-artifact dry run",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-open-lifecycle-harness-r3/acceptance/release-build-34036232640/target-acceptance-aggregate.json@sha256:1c000338a6bd63038dd655b43a4982e061b2bf91b8eeae21987baf728ea0508b#AC18"
+      ]
     }
   ],
   "approvals": {
@@ -425,13 +486,14 @@
       "authorizationDigest": "sha256:42dcfe34eee1f821a350ec73b25e53a02a9f82912e4a9a749dc36da3e80a45d0"
     },
     "release": {
-      "decision": "NOT_AUTHORIZED",
-      "by": null,
-      "evidenceRef": null
+      "decision": "AUTHORIZED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v4.0.0-open-lifecycle-harness-r3-release-binding-1@sha256:b9e843fb1fb872e735e1725471da348e77b0a88f2198617c5bcadcd78ca19fbb",
+      "authorizationDigest": "sha256:bef7e13dbd5069e8617e7e7f3b605e40d6a5df305a5311bbb6ada63263ed3c7e"
     }
   },
   "release": {
-    "actions": [],
+    "actions": ["commit", "github-release", "push", "tag"],
     "versions": {
       "evopilot": "4.0.0"
     }
