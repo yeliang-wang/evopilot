@@ -77,6 +77,8 @@ export function validateReleasePipeline(workflows) {
   requireMatch(npm, /grep -q "E404"/, "npm promotion may publish only after an authoritative Registry not-found result");
   requireMatch(npm, /test "\$actual_integrity" = "\$expected_integrity"/, "npm promotion must reject existing package integrity drift");
   requireMatch(npm, /npm audit signatures/, "npm promotion must verify Registry signatures and provenance after publication");
+  requireMatch(npm, /npm install --ignore-scripts --no-audit --no-fund --registry "\$REGISTRY"/, "npm signature verification must install the registry dependency graph before auditing signatures");
+  rejectMatch(npm, /npm install --package-lock-only/, "npm signature verification must not use a lockfile-only install that leaves no auditable dependency graph");
   requireMatch(npm, /CANDIDATE_DIR=\$RUNNER_TEMP\/evopilot-candidate\/release/, "npm promotion must initialize Candidate paths at runner step runtime");
   requireMatch(npm, /ref:\s*\$\{\{ github\.sha \}\}/, "npm promotion must use the dispatched workflow commit for recoverable promotion mechanics");
   rejectMatch(npm, /ref:\s*\$\{\{ inputs\.candidate_commit \}\}/, "npm promotion mechanics must not roll back to the immutable Candidate source");
