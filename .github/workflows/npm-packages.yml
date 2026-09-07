@@ -27,8 +27,12 @@ on:
         description: "sha256 digest of final acceptance evidence"
         required: true
         type: string
+      github_release_authorization_digest:
+        description: "sha256 digest that authorized the already published GitHub Release"
+        required: true
+        type: string
       release_authorization_digest:
-        description: "sha256 digest of the separate Release Binding authorization"
+        description: "sha256 digest of the separate npm publication authorization"
         required: true
         type: string
 
@@ -57,7 +61,8 @@ jobs:
       TARGET_ID: ${{ inputs.target_id }}
       HANDOFF_DIGEST: ${{ inputs.candidate_handoff_sha256 }}
       ACCEPTANCE_DIGEST: ${{ inputs.acceptance_digest }}
-      RELEASE_AUTHORIZATION_DIGEST: ${{ inputs.release_authorization_digest }}
+      GITHUB_RELEASE_AUTHORIZATION_DIGEST: ${{ inputs.github_release_authorization_digest }}
+      NPM_PUBLICATION_AUTHORIZATION_DIGEST: ${{ inputs.release_authorization_digest }}
     steps:
       - name: Validate immutable bindings
         run: |
@@ -68,7 +73,8 @@ jobs:
           [[ "$TARGET_ID" =~ ^[a-z0-9][a-z0-9.-]*$ ]]
           [[ "$HANDOFF_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           [[ "$ACCEPTANCE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
-          [[ "$RELEASE_AUTHORIZATION_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$GITHUB_RELEASE_AUTHORIZATION_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$NPM_PUBLICATION_AUTHORIZATION_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
 
       - name: Checkout verifier from Candidate commit
         uses: actions/checkout@v4
@@ -92,6 +98,24 @@ jobs:
           npm run roadmap:release -- "$VERSION"
           npm run verify:release-pipeline
           test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "false"
+
+          TARGET_RECORD="$RUNNER_TEMP/evopilot-npm-release-target.json"
+          gh api -X GET "repos/$GITHUB_REPOSITORY/contents/governance/targets/$TARGET_ID.json" \
+            -f ref="$GITHUB_SHA" --jq .content | base64 --decode > "$TARGET_RECORD"
+          node - "$TARGET_RECORD" "$NPM_PUBLICATION_AUTHORIZATION_DIGEST" "$VERSION" <<'NODE'
+          const fs = require("node:fs");
+          const [targetPath, authorizationDigest, version] = process.argv.slice(2);
+          const target = JSON.parse(fs.readFileSync(targetPath, "utf8"));
+          if (target.approvals?.release?.authorizationDigest !== authorizationDigest) {
+            throw new Error("Target npm publication authorization digest mismatch");
+          }
+          if (!target.release?.actions?.includes("npm")) {
+            throw new Error("Target does not authorize npm");
+          }
+          if (target.release?.versions?.evopilot !== version) {
+            throw new Error("Target npm publication version mismatch");
+          }
+          NODE
 
       - name: Download exact Candidate release set
         uses: actions/download-artifact@v4
@@ -144,7 +168,7 @@ jobs:
             --candidate-commit "$CANDIDATE_COMMIT" \
             --handoff-digest "$HANDOFF_DIGEST" \
             --acceptance-digest "$ACCEPTANCE_DIGEST" \
-            --release-authorization-digest "$RELEASE_AUTHORIZATION_DIGEST" \
+            --release-authorization-digest "$GITHUB_RELEASE_AUTHORIZATION_DIGEST" \
             --repository "$GITHUB_REPOSITORY" \
             --workflow ".github/workflows/release-artifacts.yml"
 
@@ -153,12 +177,76 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           set -euo pipefail
-          npm publish "$CANDIDATE_DIR/evopilot-contracts-${VERSION}.tgz" --access public --provenance
-          npm publish "$CANDIDATE_DIR/evopilot-client-${VERSION}.tgz" --access public --provenance
-          npm publish "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz" --access public --provenance
-          npm publish "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz" --access public --provenance
-          npm publish "$CANDIDATE_DIR/evopilot-cli-${VERSION}.tgz" --access public --provenance
-          npm publish "$CANDIDATE_DIR/create-evopilot-${VERSION}.tgz" --access public --provenance
+          REGISTRY="https://registry.npmjs.org/"
+
+          publish_or_verify() {
+            local package_name="$1"
+            local tarball="$2"
+            local expected_integrity
+            local actual_integrity
+            local error_file="$RUNNER_TEMP/npm-view-error.log"
+
+            expected_integrity="sha512-$(openssl dgst -sha512 -binary "$tarball" | openssl base64 -A)"
+            if actual_integrity="$(npm view "${package_name}@${VERSION}" dist.integrity --registry "$REGISTRY" 2>"$error_file")"; then
+              test "$actual_integrity" = "$expected_integrity" || {
+                echo "Existing ${package_name}@${VERSION} integrity does not match the accepted tarball" >&2
+                exit 1
+              }
+              echo "Verified existing ${package_name}@${VERSION}; publication mutation skipped"
+              return
+            fi
+
+            if ! grep -q "E404" "$error_file"; then
+              echo "Registry lookup for ${package_name}@${VERSION} failed without an authoritative not-found result" >&2
+              exit 1
+            fi
+
+            npm publish "$tarball" --access public --provenance --registry "$REGISTRY"
+          }
+
+          publish_or_verify "@evopilot/contracts" "$CANDIDATE_DIR/evopilot-contracts-${VERSION}.tgz"
+          publish_or_verify "@evopilot/client" "$CANDIDATE_DIR/evopilot-client-${VERSION}.tgz"
+          publish_or_verify "@evopilot/adapter-mcp" "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz"
+          publish_or_verify "@evopilot/adapter-opencode" "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz"
+          publish_or_verify "@evopilot/cli" "$CANDIDATE_DIR/evopilot-cli-${VERSION}.tgz"
+          publish_or_verify "create-evopilot" "$CANDIDATE_DIR/create-evopilot-${VERSION}.tgz"
 
       - name: Verify public npm registry from an empty project
-        run: npm run verify:npm-registry -- --version "$VERSION" --wait --timeout-ms 300000 --interval-ms 15000
+        run: |
+          set -euo pipefail
+          REGISTRY="https://registry.npmjs.org/"
+          npm run verify:npm-registry -- --version "$VERSION" --wait --timeout-ms 300000 --interval-ms 15000
+
+          verify_public_package() {
+            local package_name="$1"
+            local tarball="$2"
+            local expected_integrity
+            local actual_integrity
+            local attestation_url
+
+            expected_integrity="sha512-$(openssl dgst -sha512 -binary "$tarball" | openssl base64 -A)"
+            actual_integrity="$(npm view "${package_name}@${VERSION}" dist.integrity --registry "$REGISTRY")"
+            test "$actual_integrity" = "$expected_integrity"
+            attestation_url="$(npm view "${package_name}@${VERSION}" dist.attestations.url --registry "$REGISTRY")"
+            test -n "$attestation_url"
+          }
+
+          verify_public_package "@evopilot/contracts" "$CANDIDATE_DIR/evopilot-contracts-${VERSION}.tgz"
+          verify_public_package "@evopilot/client" "$CANDIDATE_DIR/evopilot-client-${VERSION}.tgz"
+          verify_public_package "@evopilot/adapter-mcp" "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz"
+          verify_public_package "@evopilot/adapter-opencode" "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz"
+          verify_public_package "@evopilot/cli" "$CANDIDATE_DIR/evopilot-cli-${VERSION}.tgz"
+          verify_public_package "create-evopilot" "$CANDIDATE_DIR/create-evopilot-${VERSION}.tgz"
+
+          SIGNATURE_DIR="$RUNNER_TEMP/evopilot-npm-signatures"
+          mkdir -p "$SIGNATURE_DIR"
+          cd "$SIGNATURE_DIR"
+          npm init --yes >/dev/null
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund --registry "$REGISTRY" \
+            "@evopilot/contracts@${VERSION}" \
+            "@evopilot/client@${VERSION}" \
+            "@evopilot/adapter-mcp@${VERSION}" \
+            "@evopilot/adapter-opencode@${VERSION}" \
+            "@evopilot/cli@${VERSION}" \
+            "create-evopilot@${VERSION}"
+          npm audit signatures --registry "$REGISTRY"

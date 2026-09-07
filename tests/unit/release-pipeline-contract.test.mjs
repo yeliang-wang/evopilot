@@ -110,3 +110,33 @@ test("release pipeline contract rejects missing post-promotion digest enforcemen
   assert.equal(result.status, "FAIL");
   assert.ok(result.failures.some((failure) => failure.includes("digest drift")));
 });
+
+test("release pipeline contract rejects conflated GitHub and npm authorization digests", () => {
+  const npm = fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+    .replace('--release-authorization-digest "$GITHUB_RELEASE_AUTHORIZATION_DIGEST"', '--release-authorization-digest "$NPM_PUBLICATION_AUTHORIZATION_DIGEST"');
+  const workflows = {
+    candidate: fs.readFileSync(".github/workflows/release-candidate.yml", "utf8"),
+    release: fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8"),
+    npm
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("original authorization")));
+});
+
+test("release pipeline contract rejects unsafe partial npm publication recovery", () => {
+  const npm = fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+    .replace("publish_or_verify()", "publish_without_reconciliation()")
+    .replace('grep -q "E404"', 'grep -q "ANY_ERROR"')
+    .replaceAll('test "$actual_integrity" = "$expected_integrity"', ": # integrity comparison removed");
+  const workflows = {
+    candidate: fs.readFileSync(".github/workflows/release-candidate.yml", "utf8"),
+    release: fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8"),
+    npm
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("reconcile every exact package")));
+  assert.ok(result.failures.some((failure) => failure.includes("authoritative Registry not-found")));
+  assert.ok(result.failures.some((failure) => failure.includes("integrity drift")));
+});

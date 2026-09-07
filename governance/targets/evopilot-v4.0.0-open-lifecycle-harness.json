@@ -488,12 +488,12 @@
     "release": {
       "decision": "AUTHORIZED",
       "by": "user",
-      "evidenceRef": "conversation:approved-evopilot-v4.0.0-open-lifecycle-harness-r3-release-binding-1@sha256:b9e843fb1fb872e735e1725471da348e77b0a88f2198617c5bcadcd78ca19fbb",
-      "authorizationDigest": "sha256:bef7e13dbd5069e8617e7e7f3b605e40d6a5df305a5311bbb6ada63263ed3c7e"
+      "evidenceRef": "conversation:approved-evopilot-v4.0.0-open-lifecycle-harness-r3-npm-publication-binding-1-revision-2@sha256:315928d4b7e26a01cdcd3f28e6b6bb3282e4a9b0fda4b134d40b76ad703bbebe",
+      "authorizationDigest": "sha256:40ca1a85f5ee8b421634daf9474b7d1da2fa9916b587b87043e77e08c4e70327"
     }
   },
   "release": {
-    "actions": ["commit", "github-release", "push", "tag"],
+    "actions": ["commit", "github-release", "npm", "push", "tag"],
     "versions": {
       "evopilot": "4.0.0"
     }

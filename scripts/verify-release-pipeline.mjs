@@ -63,6 +63,15 @@ export function validateReleasePipeline(workflows) {
   requireOrder(release, "oras cp --from-oci-layout", "gh release edit \"$RELEASE_TAG\" --draft=false", "GitHub promotion must publish the Release only after GHCR digest verification");
   rejectMatch(release, /push:\s*\n\s*tags:/, "Release promotion must not be triggered implicitly by a tag push");
   requireMatch(npm, /release-promotion-record\.mjs verify/, "npm promotion must match the public GitHub Release promotion record");
+  requireMatch(npm, /github_release_authorization_digest:/, "npm promotion must separately bind the prior GitHub Release authorization");
+  requireMatch(npm, /GITHUB_RELEASE_AUTHORIZATION_DIGEST:\s*\$\{\{ inputs\.github_release_authorization_digest \}\}/, "npm promotion must project the prior GitHub Release authorization separately");
+  requireMatch(npm, /NPM_PUBLICATION_AUTHORIZATION_DIGEST:\s*\$\{\{ inputs\.release_authorization_digest \}\}/, "npm promotion must project the npm publication authorization separately");
+  requireMatch(npm, /--release-authorization-digest "\$GITHUB_RELEASE_AUTHORIZATION_DIGEST"/, "npm promotion must verify the public GitHub Release against its original authorization");
+  requireMatch(npm, /authorizationDigest !== NPM_PUBLICATION_AUTHORIZATION_DIGEST|authorizationDigest !== authorizationDigest/, "npm promotion must verify its current publication authorization against the Target");
+  requireMatch(npm, /publish_or_verify\(\)/, "npm promotion must reconcile every exact package version before publication");
+  requireMatch(npm, /grep -q "E404"/, "npm promotion may publish only after an authoritative Registry not-found result");
+  requireMatch(npm, /test "\$actual_integrity" = "\$expected_integrity"/, "npm promotion must reject existing package integrity drift");
+  requireMatch(npm, /npm audit signatures/, "npm promotion must verify Registry signatures and provenance after publication");
 
   for (const packageName of [
     "evopilot-contracts-${VERSION}.tgz",
