@@ -52,8 +52,6 @@ jobs:
     timeout-minutes: 30
     environment: release
     env:
-      CANDIDATE_DIR: ${{ runner.temp }}/evopilot-candidate/release
-      HANDOFF_DIR: ${{ runner.temp }}/evopilot-candidate/handoff
       VERSION: ${{ inputs.version }}
       RELEASE_TAG: v${{ inputs.version }}
       CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
@@ -64,6 +62,11 @@ jobs:
       GITHUB_RELEASE_AUTHORIZATION_DIGEST: ${{ inputs.github_release_authorization_digest }}
       NPM_PUBLICATION_AUTHORIZATION_DIGEST: ${{ inputs.release_authorization_digest }}
     steps:
+      - name: Initialize runner paths
+        run: |
+          echo "CANDIDATE_DIR=$RUNNER_TEMP/evopilot-candidate/release" >> "$GITHUB_ENV"
+          echo "HANDOFF_DIR=$RUNNER_TEMP/evopilot-candidate/handoff" >> "$GITHUB_ENV"
+
       - name: Validate immutable bindings
         run: |
           set -euo pipefail

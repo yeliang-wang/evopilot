@@ -38,6 +38,7 @@ export function validateReleasePipeline(workflows) {
     requireMatch(workflow, /actions\/download-artifact@v4/, `${name} must download the exact Candidate artifacts`);
     requireMatch(workflow, /run-id:\s*\$\{\{ inputs\.candidate_run_id \}\}/, `${name} must download from the exact Candidate run`);
     requireMatch(workflow, /project-candidate-handoff\.mjs verify/, `${name} must verify the Candidate handoff`);
+    rejectMatch(workflow, /^ {6}[A-Z][A-Z0-9_]*:\s*\$\{\{\s*runner\./m, `${name} must not use runner context in job-level env`);
     for (const forbidden of [/npm ci/, /npm run build/, /npm pack/, /npm run release:artifact/, /docker\/build-push-action/, /--clobber/]) {
       rejectMatch(workflow, forbidden, `${name} must not rebuild or overwrite accepted artifacts (${forbidden.source})`);
     }
@@ -72,6 +73,7 @@ export function validateReleasePipeline(workflows) {
   requireMatch(npm, /grep -q "E404"/, "npm promotion may publish only after an authoritative Registry not-found result");
   requireMatch(npm, /test "\$actual_integrity" = "\$expected_integrity"/, "npm promotion must reject existing package integrity drift");
   requireMatch(npm, /npm audit signatures/, "npm promotion must verify Registry signatures and provenance after publication");
+  requireMatch(npm, /CANDIDATE_DIR=\$RUNNER_TEMP\/evopilot-candidate\/release/, "npm promotion must initialize Candidate paths at runner step runtime");
 
   for (const packageName of [
     "evopilot-contracts-${VERSION}.tgz",
