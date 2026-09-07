@@ -2,7 +2,7 @@
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-v4.0.0-release-surface-maintenance",
   "revision": 1,
-  "status": "APPROVED",
+  "status": "RELEASE_AUTHORIZED",
   "intent": "EvoPilot release repair, correctness repair, and documentation synchronization: fix the post-publication npm verifier bug, separate the npm GitHub Environment from the GitHub Release and GHCR environment, keep existing release authority without duplicate approval, restore future adapter provenance metadata, and correct stale v4.0.0 public release metadata without changing product capability, boundary, version, or published product bytes.",
   "objective": "Make EvoPilot's GitHub deployment and release surfaces truthful, channel-specific, and self-verifying while preserving the already accepted and published v4.0.0 artifacts and keeping evopilot-harness unchanged.",
   "evidence": [
@@ -172,8 +172,10 @@
         "duplicate human reviewer gate"
       ],
       "requiredEvidence": "Clean local validation, workflow contract tests, verifier regression test, package metadata assertions, exact public npm integrity readback, GitHub Environment policy readback, GitHub Release body readback, and before/after tag and asset identity",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/external-closure-evidence.json@sha256:8c8a1804c604aab23043911276dd2e21cdd7f7c6f100b74ba01248aa2c8f7ea9#RC01"
+      ]
     }
   ],
   "noRegressionRequired": true,
@@ -226,15 +228,19 @@
       "id": "MAINT05",
       "criterion": "The GitHub repository has an npm Environment limited to main with no duplicate required reviewer and an NPM_TOKEN secret, while the existing release Environment is preserved.",
       "requiredEvidence": "Authenticated GitHub API readback with secret values redacted",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/external-closure-evidence.json@sha256:8c8a1804c604aab23043911276dd2e21cdd7f7c6f100b74ba01248aa2c8f7ea9#MAINT05"
+      ]
     },
     {
       "id": "MAINT06",
       "criterion": "The existing v4.0.0 GitHub Release body is generated from the verified final release notes and no tag, release asset, GHCR, or npm bytes are changed.",
       "requiredEvidence": "Before/after GitHub API identity and body readback plus public package and artifact digest comparison",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/evopilot-v4-release-surface-maintenance-001/external-closure-evidence.json@sha256:8c8a1804c604aab23043911276dd2e21cdd7f7c6f100b74ba01248aa2c8f7ea9#MAINT06"
+      ]
     }
   ],
   "approvals": {
@@ -245,7 +251,10 @@
       "authorizationDigest": "sha256:399cc13712e9bd22221d99117db1593f98bd98e8b8efd7e739ce1fecc0db906e"
     },
     "release": {
-      "decision": "PENDING"
+      "decision": "AUTHORIZED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v4.0.0-release-surface-maintenance-external-closure-1-revision-2@sha256:1df0bc69307eb8b476ccc412354ed43398312ab5cdbbf438fbeab7bb2da5362e",
+      "authorizationDigest": "sha256:6e9558b8a6e5f5d17717ba389e92c25a908fa66cd9b87071ee92c8c52985fa4a"
     }
   },
   "release": {
