@@ -74,6 +74,13 @@ export function validateReleasePipeline(workflows) {
   requireMatch(npm, /test "\$actual_integrity" = "\$expected_integrity"/, "npm promotion must reject existing package integrity drift");
   requireMatch(npm, /npm audit signatures/, "npm promotion must verify Registry signatures and provenance after publication");
   requireMatch(npm, /CANDIDATE_DIR=\$RUNNER_TEMP\/evopilot-candidate\/release/, "npm promotion must initialize Candidate paths at runner step runtime");
+  requireLiteral(npm, 'publish_or_verify "@evopilot/adapter-mcp" "$CANDIDATE_DIR/evopilot-adapter-mcp-${VERSION}.tgz" approved-v4-adapter-exception', "npm promotion must scope the v4 provenance exception to adapter-mcp");
+  requireLiteral(npm, 'publish_or_verify "@evopilot/adapter-opencode" "$CANDIDATE_DIR/evopilot-adapter-opencode-${VERSION}.tgz" approved-v4-adapter-exception', "npm promotion must scope the v4 provenance exception to adapter-opencode");
+  requireLiteral(npm, 'publish_or_verify "@evopilot/contracts" "$CANDIDATE_DIR/evopilot-contracts-${VERSION}.tgz" required', "npm promotion must retain provenance for contracts");
+  requireLiteral(npm, 'publish_or_verify "@evopilot/client" "$CANDIDATE_DIR/evopilot-client-${VERSION}.tgz" required', "npm promotion must retain provenance for client");
+  requireLiteral(npm, 'publish_or_verify "@evopilot/cli" "$CANDIDATE_DIR/evopilot-cli-${VERSION}.tgz" required', "npm promotion must retain provenance for cli");
+  requireLiteral(npm, 'publish_or_verify "create-evopilot" "$CANDIDATE_DIR/create-evopilot-${VERSION}.tgz" required', "npm promotion must retain provenance for create-evopilot");
+  requireMatch(npm, /approved-v4-adapter-exception\)\s*\n\s*npm publish "\$tarball" --access public --provenance=false/, "npm promotion must disable provenance only behind the approved adapter exception mode");
 
   for (const packageName of [
     "evopilot-contracts-${VERSION}.tgz",
@@ -86,6 +93,8 @@ export function validateReleasePipeline(workflows) {
     requireLiteral(npm, packageName, `npm promotion must publish accepted tarball ${packageName}`);
   }
   rejectMatch(npm, /npm publish\s+-w/, "npm promotion must publish tarballs, never workspaces");
+  const exceptionCalls = npm.match(/publish_or_verify[^\n]+approved-v4-adapter-exception/g) ?? [];
+  if (exceptionCalls.length !== 2) failures.push("npm promotion must contain exactly two approved v4 adapter provenance exceptions");
 
   for (const [name, workflow] of Object.entries(workflows)) {
     rejectMatch(workflow, /lifecycles\//, `${name} release workflow must not invoke EvoPilot product Lifecycle definitions`);

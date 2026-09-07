@@ -151,3 +151,16 @@ test("release pipeline contract rejects unsafe partial npm publication recovery"
   assert.ok(result.failures.some((failure) => failure.includes("authoritative Registry not-found")));
   assert.ok(result.failures.some((failure) => failure.includes("integrity drift")));
 });
+
+test("release pipeline contract rejects expanding the v4 provenance exception", () => {
+  const npm = fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+    .replace('publish_or_verify "@evopilot/cli" "$CANDIDATE_DIR/evopilot-cli-${VERSION}.tgz" required', 'publish_or_verify "@evopilot/cli" "$CANDIDATE_DIR/evopilot-cli-${VERSION}.tgz" approved-v4-adapter-exception');
+  const workflows = {
+    candidate: fs.readFileSync(".github/workflows/release-candidate.yml", "utf8"),
+    release: fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8"),
+    npm
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("retain provenance for cli") || failure.includes("exactly two")));
+});
