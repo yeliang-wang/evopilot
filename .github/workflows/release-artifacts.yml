@@ -48,8 +48,8 @@ jobs:
     timeout-minutes: 30
     environment: release
     env:
-      CANDIDATE_DIR: ${{ runner.temp }}/evopilot-candidate/release
-      HANDOFF_DIR: ${{ runner.temp }}/evopilot-candidate/handoff
+      CANDIDATE_DIR: ${{ github.workspace }}/../evopilot-candidate/release
+      HANDOFF_DIR: ${{ github.workspace }}/../evopilot-candidate/handoff
       IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/evopilot
       VERSION: ${{ inputs.version }}
       RELEASE_TAG: v${{ inputs.version }}
