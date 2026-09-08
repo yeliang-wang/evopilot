@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/legacy-suite-snapshot-v1.schema.json",
+  "title": "EvoPilot Legacy Suite Snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "suiteId", "sourceIdentity", "version", "treeDigest", "skillAndRuleInventory", "capturedAt", "comparisonCorpusDigest", "readOnly", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-legacy-suite-snapshot/v1" },
+    "suiteId": { "type": "string", "minLength": 1 },
+    "sourceIdentity": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "treeDigest": { "$ref": "#/$defs/digest" },
+    "skillAndRuleInventory": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "digest"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1 },
+          "digest": { "$ref": "#/$defs/digest" }
+        }
+      }
+    },
+    "capturedAt": { "type": "string", "format": "date-time" },
+    "comparisonCorpusDigest": { "$ref": "#/$defs/digest" },
+    "readOnly": { "const": true },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

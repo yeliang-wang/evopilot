@@ -1,8 +1,8 @@
-export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "4.0.0";
+export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "5.0.0";
 export const EVOPILOT_SERVER_VERSION_FALLBACK = "0.1.0";
-export const EVOPILOT_CLI_VERSION_FALLBACK = "4.0.0";
+export const EVOPILOT_CLI_VERSION_FALLBACK = "5.0.0";
 export const EVOPILOT_API_CONTRACT_VERSION = "v1";
-export const EVOPILOT_MINIMUM_CLI_VERSION = "4.0.0";
+export const EVOPILOT_MINIMUM_CLI_VERSION = "5.0.0";
 
 export const EVOPILOT_LOG_SCHEMA = "evopilot-log/v1";
 export const EVOPILOT_CLI_RUNTIME_SCHEMA = "evopilot-cli-runtime/v1";
@@ -16,6 +16,34 @@ export const EVOPILOT_LIFECYCLE_EXECUTOR_ADAPTER_SCHEMA = "evopilot-lifecycle-ex
 export const EVOPILOT_AGENT_RUNTIME_PROFILE_SCHEMA = "evopilot-agent-runtime-profile/v1";
 export const EVOPILOT_AGENT_EXECUTION_REQUEST_SCHEMA = "evopilot-agent-execution-request/v1alpha1";
 export const EVOPILOT_AGENT_EXECUTION_RESULT_SCHEMA = "evopilot-agent-execution-result/v1alpha1";
+export const EVOPILOT_EVOLUTION_PROJECT_DEFINITION_SCHEMA = "evopilot-evolution-project-definition/v1";
+export const EVOPILOT_HARNESS_MATCH_RESULT_SCHEMA = "evopilot-harness-match-result/v1";
+export const EVOPILOT_HARNESS_EXECUTION_BINDING_SCHEMA = "evopilot-harness-execution-binding/v1";
+export const EVOPILOT_HARNESS_LIFECYCLE_COMPOSITION_SCHEMA = "evopilot-harness-lifecycle-composition/v1";
+export const EVOPILOT_RECOVERY_DECISION_SCHEMA = "evopilot-recovery-decision/v1";
+export const EVOPILOT_AUTOMATION_RULE_SCHEMA = "evopilot-automation-rule/v1";
+export const EVOPILOT_HUMAN_INTERACTION_PROTOCOL_SCHEMA = "evopilot-human-interaction-protocol/v1";
+export const EVOPILOT_AGENT_HOST_PROFILE_SCHEMA = "evopilot-agent-host-profile/v1";
+export const EVOPILOT_EXECUTION_RUNTIME_PROFILE_SCHEMA = "evopilot-execution-runtime-profile/v1";
+export const EVOPILOT_LEGACY_SUITE_SNAPSHOT_SCHEMA = "evopilot-legacy-suite-snapshot/v1";
+export const EVOPILOT_LEGACY_SUITE_SNAPSHOT_COMPARISON_SCHEMA = "evopilot-legacy-suite-snapshot-comparison/v1";
+export const EVOPILOT_LEGACY_SUITE_ISOLATION_PROOF_SCHEMA = "evopilot-legacy-suite-isolation-proof/v1";
+export const EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION = "1.0";
+
+export const EVOPILOT_HARNESS_GUIDED_RUNTIME_BOUNDARY = {
+  schema: "evopilot-harness-guided-runtime-boundary/v1",
+  runtimeVersion: "5.0.0",
+  invariant: "Every Goal Target Loop binds one eligible published immutable HarnessBundle plus one resolved declarative Lifecycle.",
+  harnessOwnership: "evopilot-harness",
+  runtimeOwnership: "evopilot",
+  expertOwnership: "independently-versioned-package",
+  legacySuiteFallback: false,
+  preReleaseLegacySuiteDisposition: "ACTIVE_AND_INDEPENDENT",
+  candidateLegacySuiteEnvironment: "LEGACY_SUITES_ABSENT",
+  realLegacySuiteCutover: "POST_RELEASE_SEPARATE_TARGET_AND_AUTHORIZATION",
+  hostRuntimeConflation: false,
+  humanAuthority: ["ambiguous-or-unknown-choice", "irreversible-external-effect", "acceptance-verdict", "release-publication"]
+} as const;
 
 export const EVOPILOT_CLI_PACKAGE_NAME = "@evopilot/cli";
 
@@ -75,7 +103,11 @@ export const EVOPILOT_PACKAGE_BOUNDARIES: readonly EvoPilotPackageBoundary[] = [
     owns: [
       "evidence models",
       "evolution opportunities",
-      "release report primitives"
+      "release report primitives",
+      "Project and GoalTarget Harness matching",
+      "Harness plus Lifecycle composition",
+      "immutable execution binding revalidation",
+      "bounded recovery and Automation Rule semantics"
     ],
     mustNotOwn: [
       "HTTP routing",
@@ -97,6 +129,8 @@ export const EVOPILOT_PACKAGE_BOUNDARIES: readonly EvoPilotPackageBoundary[] = [
       "executor adapters",
       "release target helpers",
       "Open Lifecycle Harness domain and persistence",
+      "Governed Evolution Runtime persistence and API",
+      "Automation Registry persistence",
       "RBAC enforcement",
       "tenant/workspace scoped API orchestration"
     ],
@@ -177,8 +211,70 @@ export const EVOPILOT_PACKAGE_BOUNDARIES: readonly EvoPilotPackageBoundary[] = [
       "automatic permission approval",
       "Harness Asset mutation"
     ]
+  },
+  {
+    packageName: "@evopilot/evolution-expert",
+    path: "packages/evolution-expert",
+    layer: "adapter",
+    owns: [
+      "Agent-neutral conversational Expert Core",
+      "intent routing and progressive disclosure",
+      "schema-driven question and deterministic result rendering",
+      "installed-version help and side-effect-free tutorials",
+      "generated Codex, WorkBuddy, generic Agent, and generic MCP adapters"
+    ],
+    mustNotOwn: [
+      "Runtime domain truth",
+      "Harness selection, authoring, mutation, approval, or publication",
+      "credentials, approval identity, or durable canonical state",
+      "Host-specific Lifecycle, authority, or recovery semantics",
+      "general coding Agent model or tool loop"
+    ]
   }
 ] as const;
+
+export interface EvoPilotHumanInteractionMessageV1 {
+  schema: typeof EVOPILOT_HUMAN_INTERACTION_PROTOCOL_SCHEMA;
+  protocolVersion: typeof EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION;
+  interactionId: string;
+  sessionDigest: string;
+  kind: "HELP" | "QUESTION" | "PLAN" | "PROGRESS" | "DECISION" | "RECOVERY" | "EVIDENCE" | "RESULT" | "COMPATIBILITY_ERROR";
+  authority: "NONE" | "EXACT_HUMAN_DECISION";
+  title: string;
+  summary: string;
+  details: string[];
+  options?: Array<{ id: string; label: string; consequence: string }>;
+  inputSchema?: Record<string, unknown>;
+  nextAction?: string;
+  objectRefs: Array<{ kind: string; id: string; digest?: string }>;
+  digest: string;
+}
+
+export interface EvoPilotEvolutionExpertCompatibilityV1 {
+  schema: "evopilot-evolution-expert-compatibility/v1";
+  expertVersion: string;
+  engineProtocolRange: string;
+  expertProtocolVersion: typeof EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION;
+  coreDigest: string;
+  adapterId: string;
+  adapterDigest: string;
+  requiredHostCapabilities: string[];
+  conformanceStatus: "CONFORMANT" | "INCOMPATIBLE" | "UNVERIFIED";
+}
+
+export interface EvoPilotEvolutionExpertAdapterManifestV1 {
+  schema: "evopilot-evolution-expert-adapter/v1";
+  id: string;
+  host: "codex" | "workbuddy" | "generic-agent" | "generic-mcp" | string;
+  version: string;
+  coreDigest: string;
+  protocolVersion: typeof EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION;
+  requiredCapabilities: string[];
+  interactionModes: Array<"skill" | "mcp" | "cli" | "api">;
+  instructions: string[];
+  prohibitedSemantics: string[];
+  digest: string;
+}
 
 export interface EvoPilotAgentRuntimeProfileV1 {
   schema: typeof EVOPILOT_AGENT_RUNTIME_PROFILE_SCHEMA;

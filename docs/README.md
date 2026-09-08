@@ -10,6 +10,8 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Control Plane User Guide](guides/user-guide.md) - operate projects, credentials, goals, loops, releases, and audit through API/CLI semantics.
 - [Published Harness Catalog](architecture/published-harness-catalog.md) - EvoPilot v3 read-only consumption of Harness definitions published by `evopilot-harness`.
 - [Open Lifecycle Harness](guides/open-lifecycle-harness.md) - v4 development flow for declarative project lifecycles, interactive inputs, bounded authorization, and Agent-host execution.
+- [Project Definitions](guides/project-definitions.md) - v5 project-neutral declarative onboarding and immutable adjustment.
+- [Evolution Expert](guides/evolution-expert.md) - optional conversational guide for Codex, WorkBuddy, generic Agents, and MCP Hosts.
 
 ## AI Agents And CLI Automation
 
@@ -59,6 +61,9 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Package Boundaries](architecture/package-boundaries.md) - TypeScript workspace ownership, transitional hotspots, and verification rules.
 - [Published Harness Catalog](architecture/published-harness-catalog.md) - split boundary between `evopilot-harness` publication and EvoPilot execution.
 - [Open Lifecycle Harness Architecture](architecture/open-lifecycle-harness.md) - v4 lifecycle resources, Action Registry, decision economy, and Goal Loop bridge.
+- [Harness-Guided Governed Evolution Runtime](architecture/harness-guided-governed-evolution-runtime.md) - v5 mandatory Harness binding, Lifecycle composition, recovery, and Host/runtime separation.
+- [ADR 0003](architecture/adr/0003-harness-guided-governed-evolution-runtime.md) - accepted v5 architecture decision and product boundaries.
+- [Legacy Codex Suite Transition](guides/legacy-suite-transition.md) - read-only pre-release snapshots, isolated independence proof, selective rerun, and separately authorized post-release Cutover.
 - [v3 Lifecycle Compatibility](migrations/v3-lifecycle-compatibility.md) - evidence-preserving Alpha/Beta/RC/GA representation and rollback.
 - [Loop Runtime](architecture/loop-runtime.md) - loop execution, continuity, and recovery.
 - [ProofOps Target Loop Mode](architecture/proofops-target-loop-mode.md) - target-loop governance model.

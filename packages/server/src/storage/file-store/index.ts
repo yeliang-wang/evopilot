@@ -2999,9 +2999,8 @@ export class FileStore {
   createGoalTargetLoop(goal: GlobalGoal, target: GoalTarget, actor: string): LoopRun {
     const project = this.readProject(goal.projectId);
     const selectedHarness = goal.plan.selectedHarness;
-    const harnessBundleValidation = selectedHarness?.bindingMode === "immutable-bundle"
-      ? validateImmutableHarnessBundleBindingV3({ scans: this.listHarnessCatalogScans(), binding: selectedHarness })
-      : undefined;
+    if (!selectedHarness || selectedHarness.bindingMode !== "immutable-bundle") throw httpError(409, "HARNESS_BUNDLE_REQUIRED", "Every Goal Target Loop requires an exact published immutable HarnessBundle binding.");
+    const harnessBundleValidation = validateImmutableHarnessBundleBindingV3({ scans: this.listHarnessCatalogScans(), binding: selectedHarness });
     const graph = this.writeExecutorGraph(selfEvolutionExecutorGraph());
     const llmResolution = goal.llm
       ? { selection: goal.llm }
@@ -3713,6 +3712,10 @@ export class FileStore {
     contextPatch?: Record<string, unknown>;
   }): Promise<LoopRun> {
     const harnessBundleBinding = hydrateGoalPlanSelectedHarnessBinding(args.loop.context.harnessBundle);
+    const isGoalTargetLoop = typeof args.loop.context.globalGoalId === "string" && typeof args.loop.context.goalTargetId === "string";
+    if (isGoalTargetLoop && (!harnessBundleBinding || harnessBundleBinding.bindingMode !== "immutable-bundle")) {
+      throw httpError(409, "HARNESS_BUNDLE_REQUIRED", "Goal Target Loop iteration cannot execute without its exact immutable HarnessBundle binding.");
+    }
     const harnessBundleValidation = harnessBundleBinding?.bindingMode === "immutable-bundle"
       ? validateImmutableHarnessBundleBindingV3({ scans: this.listHarnessCatalogScans(), binding: harnessBundleBinding })
       : undefined;

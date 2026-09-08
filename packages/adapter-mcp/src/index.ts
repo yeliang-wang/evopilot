@@ -21,6 +21,17 @@ export interface EvoPilotLifecycleMcpTool {
 }
 
 export const EVOPILOT_LIFECYCLE_MCP_TOOLS: EvoPilotLifecycleMcpTool[] = [
+  { name: "evopilot_project_definition_list", description: "List versioned declarative EvolutionProjectDefinitions.", method: "GET", path: "/api/v1/evolution-project-definitions", authority: "NONE" },
+  { name: "evopilot_project_definition_inspect", description: "Inspect one exact declarative project definition.", method: "GET", path: "/api/v1/evolution-project-definitions/{projectDefinitionId}", authority: "NONE" },
+  { name: "evopilot_project_definition_register", description: "Register one immutable human-reviewable project definition; configuration is not approval.", method: "POST", path: "/api/v1/evolution-project-definitions", authority: "NONE" },
+  { name: "evopilot_governed_evolution_plan", description: "Resolve Project plus GoalTarget to one published HarnessBundle, compose its open Lifecycle, and create an immutable HarnessExecutionBinding.", method: "POST", path: "/api/v1/governed-evolution/plan", authority: "NONE" },
+  { name: "evopilot_governed_evolution_revalidate", description: "Revalidate an exact HarnessExecutionBinding before start, resume, retry, or Loop iteration.", method: "POST", path: "/api/v1/governed-evolution/revalidate", authority: "NONE" },
+  { name: "evopilot_recovery_decide", description: "Classify a failure and return the bounded automatic or human recovery boundary.", method: "POST", path: "/api/v1/governed-evolution/recovery/decide", authority: "NONE" },
+  { name: "evopilot_automation_registry_inspect", description: "Inspect Automation Registry proposals and active, revoked, or expired rules.", method: "GET", path: "/api/v1/automation-registry", authority: "NONE" },
+  { name: "evopilot_automation_rule_propose", description: "Create an inspectable immutable proposal for one reusable safe recovery rule.", method: "POST", path: "/api/v1/automation-registry/proposals", authority: "NONE" },
+  { name: "evopilot_automation_rule_activate", description: "Activate one exact Automation Registry proposal after the user's digest-bound decision.", method: "POST", path: "/api/v1/automation-registry/{ruleId}/activate", authority: "EXACT_BINDING_DECISION" },
+  { name: "evopilot_automation_rule_revoke", description: "Revoke an Automation Registry rule with exact human evidence.", method: "POST", path: "/api/v1/automation-registry/{ruleId}/revoke", authority: "EXACT_BINDING_DECISION" },
+  { name: "evopilot_interaction_render", description: "Render a Runtime-owned Human Interaction Protocol object for any compatible Expert or headless client.", method: "POST", path: "/api/v1/interactions/render", authority: "NONE" },
   { name: "evopilot_lifecycle_list", description: "List available human-readable Lifecycle definitions.", method: "GET", path: "/api/v1/lifecycles", authority: "NONE" },
   { name: "evopilot_lifecycle_inspect", description: "Inspect one exact Lifecycle revision and its digest.", method: "GET", path: "/api/v1/lifecycles/{lifecycleId}", authority: "NONE" },
   { name: "evopilot_lifecycle_resolve", description: "Resolve an explicit or metadata-matched Lifecycle without project-specific Engine branches.", method: "POST", path: "/api/v1/lifecycles/resolve", authority: "NONE" },

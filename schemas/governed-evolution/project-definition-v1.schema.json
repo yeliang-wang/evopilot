@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/project-definition-v1.schema.json",
+  "title": "EvoPilot Evolution Project Definition v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "metadata", "spec"],
+  "properties": {
+    "schema": { "const": "evopilot-evolution-project-definition/v1" },
+    "metadata": {
+      "type": "object", "additionalProperties": false, "required": ["id", "name", "version", "labels"],
+      "properties": { "id": { "type": "string", "minLength": 1 }, "name": { "type": "string", "minLength": 1 }, "version": { "type": "string", "minLength": 1 }, "labels": { "type": "object", "additionalProperties": { "type": "string" } } }
+    },
+    "spec": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source", "ecosystem", "delivery", "environment", "policyRefs", "lifecycleRefs", "secretRefs", "hostPreferences", "runtimePreferences", "evidenceSources"],
+      "properties": {
+        "source": { "type": "object", "required": ["provider", "repository", "defaultBranch", "mode"], "properties": { "provider": { "enum": ["github", "gitlab", "local-git"] }, "repository": { "type": "string", "minLength": 1 }, "defaultBranch": { "type": "string", "minLength": 1 }, "mode": { "enum": ["owned", "read-only", "fork"] }, "credentialRef": { "type": "string", "pattern": "^(secret|env|vault)://" } }, "additionalProperties": false },
+        "ecosystem": { "$ref": "#/$defs/stringArrays" },
+        "delivery": { "type": "object", "required": ["model", "ciProvider", "candidateBeforeAcceptance", "noRebuildPromotion", "channels"], "properties": { "model": { "enum": ["open-source", "enterprise-internal", "private-service", "library", "documentation"] }, "ciProvider": { "type": "string" }, "candidateBeforeAcceptance": { "const": true }, "noRebuildPromotion": { "const": true }, "channels": { "type": "array", "items": { "type": "string" } } }, "additionalProperties": false },
+        "environment": { "type": "object", "required": ["development", "acceptance"], "properties": { "development": { "type": "string" }, "acceptance": { "type": "string" }, "production": { "type": "string" } }, "additionalProperties": false },
+        "policyRefs": { "$ref": "#/$defs/strings" }, "lifecycleRefs": { "$ref": "#/$defs/strings" }, "secretRefs": { "type": "array", "items": { "type": "string", "pattern": "^(secret|env|vault)://" } }, "hostPreferences": { "$ref": "#/$defs/strings" }, "runtimePreferences": { "$ref": "#/$defs/strings" }, "evidenceSources": { "$ref": "#/$defs/strings" }
+      }
+    },
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  },
+  "$defs": {
+    "strings": { "type": "array", "items": { "type": "string" } },
+    "stringArrays": { "type": "object", "required": ["languages", "packageManagers", "frameworks"], "properties": { "languages": { "$ref": "#/$defs/strings" }, "packageManagers": { "$ref": "#/$defs/strings" }, "frameworks": { "$ref": "#/$defs/strings" } }, "additionalProperties": false }
+  }
+}

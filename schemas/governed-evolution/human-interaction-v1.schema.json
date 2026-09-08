@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/human-interaction-v1.schema.json",
+  "type": "object",
+  "required": ["schema", "protocolVersion", "interactionId", "sessionDigest", "kind", "authority", "title", "summary", "details", "objectRefs", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-human-interaction-protocol/v1" }, "protocolVersion": { "const": "1.0" },
+    "kind": { "enum": ["HELP", "QUESTION", "PLAN", "PROGRESS", "DECISION", "RECOVERY", "EVIDENCE", "RESULT", "COMPATIBILITY_ERROR"] },
+    "authority": { "enum": ["NONE", "EXACT_HUMAN_DECISION"] },
+    "interactionId": { "type": "string" }, "sessionDigest": { "$ref": "#/$defs/digest" }, "title": { "type": "string" }, "summary": { "type": "string" }, "details": { "type": "array", "items": { "type": "string" } }, "options": { "type": "array" }, "inputSchema": { "type": "object" }, "nextAction": { "type": "string" }, "objectRefs": { "type": "array" }, "digest": { "$ref": "#/$defs/digest" }
+  },
+  "additionalProperties": false,
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

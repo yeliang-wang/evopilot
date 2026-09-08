@@ -8,6 +8,10 @@ capabilities:
   - project.read
   - evidence.read
   - evidence.write
+obligations:
+  requiredEvidence: [project-binding, immutable-evidence-aggregate]
+  validators: [project-binding-freshness]
+  constraints: [no-implicit-authority]
 inputs:
   - id: projectRoot
     type: string

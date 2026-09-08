@@ -1,3 +1,5 @@
+export * from "./governed-evolution.js";
+
 export type EvidenceSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
 export type EvidenceSource =

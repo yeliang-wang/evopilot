@@ -79,6 +79,19 @@ mustContain("packages/server/src/http/routes/evaluation.ts", "handleEvaluationRo
 mustContain("packages/server/src/http/routes/release-targets.ts", "handleReleaseTargetRoutes", "release target routes must live in a route module");
 mustContain("packages/server/src/http/routes/maturity.ts", "handleMaturityRoutes", "maturity standard routes must live in a route module");
 mustContain("packages/server/src/http/routes/lifecycles.ts", "handleLifecycleRoutes", "Open Lifecycle Harness routes must live in a focused route module");
+mustContain("packages/server/src/http/routes/governed-evolution.ts", "handleGovernedEvolutionRoutes", "Harness-Guided Governed Evolution routes must live in a focused route module");
+mustContain("packages/server/src/domains/governed-evolution/service.ts", "class GovernedEvolutionService", "Governed Evolution persistence and application orchestration must live in its domain boundary");
+mustContain("packages/core/src/governed-evolution.ts", "createHarnessExecutionBinding", "the Runtime domain must expose an immutable Harness execution binding");
+mustContain("packages/core/src/governed-evolution.ts", "revalidateHarnessExecutionBinding", "the Runtime domain must revalidate the exact binding closure");
+mustContain("packages/core/src/governed-evolution.ts", "assertNoLegacySuiteFallback", "v5 must fail closed on legacy Suite invocation or hidden fallback");
+mustContain("packages/core/src/governed-evolution.ts", "compareLegacySuiteSnapshots", "v5 must stale affected comparison evidence on legacy Suite snapshot drift");
+mustContain("packages/core/src/governed-evolution.ts", "createLegacySuiteIsolationProof", "v5 must prove Candidate independence without mutating real installed Suites");
+mustContain("packages/evolution-expert/src/index.ts", "EVOLUTION_EXPERT_CORE", "the independent Expert package must have one immutable Core");
+mustContain("packages/evolution-expert/scripts/generate-adapters.mjs", "generic-mcp", "Expert Host adapters must be generated from one Core");
+mustContain("packages/contracts/src/index.ts", "EVOPILOT_HARNESS_GUIDED_RUNTIME_BOUNDARY", "shared contracts must expose the v5 Runtime boundary");
+mustContain("governance/legacy-suite-transition.json", "NO_RUNTIME_FALLBACK", "legacy Suite transition must explicitly forbid Runtime fallback");
+mustContain("governance/legacy-suite-transition.json", "ACTIVE_AND_INDEPENDENT", "legacy Suites must remain independently active before v5 release");
+mustContain("governance/legacy-suite-transition.json", "AFTER_PUBLIC_V5_RELEASE_AND_VERIFIED_INSTALLATION", "real legacy Suite Cutover must remain post-release");
 mustContain("packages/server/src/http/routes/audit-history.ts", "handleAuditHistoryRoutes", "audit and history routes must live in a route module");
 mustContain("packages/server/src/storage/json-files.ts", "atomicWriteJson", "file storage primitives must live outside the runtime boundary");
 mustContain("packages/server/src/storage/file-store/index.ts", "class FileStore", "file-backed store must live in the storage boundary");
@@ -186,6 +199,10 @@ for (const routePrefix of [
   "/api/v1/maturity/standards",
   "/api/v1/lifecycles",
   "/api/v1/lifecycle-runs",
+  "/api/v1/evolution-project-definitions",
+  "/api/v1/governed-evolution",
+  "/api/v1/automation-registry",
+  "/api/v1/interactions",
   "/api/v1/audit",
   "/api/v1/history"
 ]) {

@@ -1,6 +1,6 @@
 {
   "name": "evopilot",
-  "version": "4.0.0",
+  "version": "5.0.0",
   "private": true,
   "description": "GA Release V1.0 Loop Engineering and self-evolution control plane for AI agent products.",
   "license": "Apache-2.0",
@@ -28,7 +28,7 @@
     "store:postgres:backup": "npm run build && node scripts/postgres-business-store.mjs backup",
     "store:postgres:restore": "npm run build && node scripts/postgres-business-store.mjs restore",
     "self-loop": "node scripts/evopilot-self-loop.mjs",
-    "check": "npm run roadmap:check && npm run build && npm test && npm run test:open-lifecycle:nonfunctional && npm run verify:production-assets && npm run verify:oss-governance && npm run verify:architecture && npm run verify:distribution && npm run audit:security",
+    "check": "npm run roadmap:check && npm run build && npm test && npm run test:open-lifecycle:nonfunctional && npm run verify:v5 && npm run verify:production-assets && npm run verify:oss-governance && npm run verify:architecture && npm run verify:distribution && npm run audit:security",
     "test": "npm run test:unit && npm run test:smoke && npm run test:functional && npm run test:e2e",
     "test:unit": "npm run build && node --test tests/unit/*.test.mjs",
     "test:smoke": "npm run build && node --test tests/smoke/*.test.mjs",
@@ -53,6 +53,7 @@
     "verify:production-assets": "node scripts/verify-production-assets.mjs",
     "verify:oss-governance": "node scripts/verify-open-source-governance.mjs",
     "verify:architecture": "node scripts/verify-architecture-boundaries.mjs",
+    "verify:v5": "npm run build -w @evopilot/core && npm run build -w @evopilot/evolution-expert && node packages/evolution-expert/scripts/generate-adapters.mjs --check && node scripts/verify-v5-governed-evolution.mjs",
     "verify:runtime-lock": "node scripts/verify-runtime-lock.mjs",
     "verify:runtime-lock:strict": "EVOPILOT_REQUIRE_RUNTIME_LOCK=1 node scripts/verify-runtime-lock.mjs",
     "audit:security": "npm audit --audit-level=high"

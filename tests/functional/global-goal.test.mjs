@@ -4,11 +4,14 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { createServer } from "../../packages/server/dist/index.js";
+import { createSoftwareDeliveryHarnessRegistry } from "../helpers/v5-harness-catalog.mjs";
 
 test("GlobalGoal API creates a white-box goal shell with dashboard projections", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-global-goal-"));
+  const harnessRegistryConfig = createSoftwareDeliveryHarnessRegistry(dataRoot);
   const server = createServer({
     dataRoot,
+    harnessRegistryConfig,
     runtimeMode: "debug",
     tokens: [
       { name: "viewer", token: "viewer-token", role: "viewer" },
@@ -249,9 +252,11 @@ test("GlobalGoal API creates a white-box goal shell with dashboard projections",
 
 test("GlobalGoal planner uses LLM output under Alpha/Beta/RC/GA standard guardrails", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-global-goal-llm-planner-"));
+  const harnessRegistryConfig = createSoftwareDeliveryHarnessRegistry(dataRoot);
   const llmCalls = [];
   const server = createServer({
     dataRoot,
+    harnessRegistryConfig,
     runtimeMode: "debug",
     requireLlm: true,
     llmClient: {
@@ -347,8 +352,10 @@ test("GlobalGoal planner uses LLM output under Alpha/Beta/RC/GA standard guardra
 
 test("GlobalGoal planner always expands business objectives through Alpha, Beta, RC, and GA", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-global-goal-template-"));
+  const harnessRegistryConfig = createSoftwareDeliveryHarnessRegistry(dataRoot);
   const server = createServer({
     dataRoot,
+    harnessRegistryConfig,
     runtimeMode: "debug",
     tokens: [
       { name: "viewer", token: "viewer-token", role: "viewer" },
@@ -361,6 +368,20 @@ test("GlobalGoal planner always expands business objectives through Alpha, Beta,
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
   try {
+    const projectRoot = path.join(dataRoot, "workbuddy-template-repo");
+    fs.mkdirSync(projectRoot, { recursive: true });
+    fs.writeFileSync(path.join(projectRoot, "README.md"), "# WorkBuddy\n\nTenant workflow project.\n");
+    const project = await jsonFetch(`${baseUrl}/api/v1/projects`, {
+      method: "POST",
+      token: "admin-token",
+      body: {
+        id: "workbuddy",
+        name: "WorkBuddy",
+        repository: { provider: "local-git", root: projectRoot, defaultBranch: "main" }
+      }
+    });
+    assert.equal(project.status, 201);
+
     const betaTarget = await jsonFetch(`${baseUrl}/api/v1/release/targets`, {
       method: "POST",
       token: "admin-token",

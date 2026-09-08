@@ -1,0 +1,24 @@
+schema: evopilot-evolution-project-definition/v1
+metadata:
+  id: datarig
+  name: DataRig
+  version: 1.0.0
+  labels:
+    delivery: enterprise-internal
+    domain: data-platform
+spec:
+  source: { provider: gitlab, repository: enterprise/datarig, defaultBranch: main, mode: owned, credentialRef: secret://gitlab/datarig }
+  ecosystem: { languages: [java, typescript], packageManagers: [maven, npm], frameworks: [] }
+  delivery:
+    model: enterprise-internal
+    ciProvider: gitlab-ci
+    candidateBeforeAcceptance: true
+    noRebuildPromotion: true
+    channels: [internal-maven, internal-container-registry]
+  environment: { development: local, acceptance: isolated-real-database, production: enterprise }
+  policyRefs: [policy://enterprise/internal-release/v1]
+  lifecycleRefs: [lifecycle://datarig-enterprise-internal/1.0.0]
+  secretRefs: [secret://gitlab/datarig, secret://database/datarig-acceptance]
+  hostPreferences: [codex, workbuddy]
+  runtimePreferences: [enterprise-runner]
+  evidenceSources: [gitlab-ci, isolated-database-e2e]

@@ -2,9 +2,40 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "4.0.0"
+    "version": "5.0.0"
   },
   "paths": {
+    "/api/v1/evolution-project-definitions": {
+      "get": { "summary": "List immutable Evolution Project Definitions", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Project Definition list" } } },
+      "post": { "summary": "Register an immutable Evolution Project Definition", "description": "Accepts declarative project facts and SecretRefs; the same id/version cannot be overwritten.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Normalized digest-bound Project Definition" } } }
+    },
+    "/api/v1/evolution-project-definitions/{projectDefinitionId}": {
+      "get": { "summary": "Inspect an exact Evolution Project Definition", "description": "The optional version query selects a prior immutable definition for evidence-preserving rollback; omission resolves the latest version in the authenticated tenant/workspace.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "projectDefinitionId", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "version", "in": "query", "required": false, "schema": { "type": "string" } }], "responses": { "200": { "description": "Exact Project Definition" }, "404": { "description": "Definition not found in scope" } } }
+    },
+    "/api/v1/governed-evolution/plan": {
+      "post": { "summary": "Resolve and bind a Harness-guided governed evolution plan", "description": "Deterministically matches a published HarnessBundle, composes it with an open Lifecycle without weakening obligations, and persists the exact execution binding.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Harness-guided plan and immutable binding" }, "409": { "description": "Ambiguous/abstained match or composition conflict" } } }
+    },
+    "/api/v1/governed-evolution/revalidate": {
+      "post": { "summary": "Revalidate an exact Harness execution binding", "description": "Required at start, resume, retry, and every Loop iteration.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Binding is current" }, "409": { "description": "Bound object drift" } } }
+    },
+    "/api/v1/governed-evolution/recovery/decide": {
+      "post": { "summary": "Classify bounded automatic recovery", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Automatic repair/retry/resume, rule proposal, human decision, or fail" } } }
+    },
+    "/api/v1/automation-registry": {
+      "get": { "summary": "List Automation Rule proposals and current rules", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Registry projection" } } }
+    },
+    "/api/v1/automation-registry/proposals": {
+      "post": { "summary": "Create a complete reusable Automation Rule proposal", "description": "Proposal creation is not activation; one exact human approval is required before future automatic reuse.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Immutable rule proposal" } } }
+    },
+    "/api/v1/automation-registry/{ruleId}/activate": {
+      "post": { "summary": "Activate an exact Automation Rule proposal", "description": "Requires the exact proposal digest and human evidence reference. Activation remains tenant/workspace scoped and cannot automate authority-required or uncertain mutations.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "ruleId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Activated rule revision" } } }
+    },
+    "/api/v1/automation-registry/{ruleId}/revoke": {
+      "post": { "summary": "Revoke an Automation Rule", "description": "Creates a new auditable revoked revision in the authenticated tenant/workspace.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "ruleId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Revoked rule revision" } } }
+    },
+    "/api/v1/interactions/render": {
+      "post": { "summary": "Render one Host-neutral Human Interaction Protocol message", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound interaction object" } } }
+    },
     "/api/v1/lifecycles": {
       "get": {
         "summary": "List Open Lifecycle Harness definitions",

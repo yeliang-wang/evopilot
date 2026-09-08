@@ -16,6 +16,10 @@ capabilities:
   - goal-loop.execute
   - release.readiness
   - release.publish
+obligations:
+  requiredEvidence: [candidate-integrity, isolated-install, enterprise-e2e]
+  validators: [candidate-digest, no-rebuild-promotion]
+  constraints: [candidate-before-acceptance, internal-channels-only]
 inputs:
   - id: buildProfile
     type: enum

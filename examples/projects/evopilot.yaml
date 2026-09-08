@@ -1,0 +1,24 @@
+schema: evopilot-evolution-project-definition/v1
+metadata:
+  id: evopilot
+  name: EvoPilot
+  version: 1.0.0
+  labels:
+    delivery: public-oss
+    domain: agentic-evolution
+spec:
+  source: { provider: github, repository: yeliang-wang/evopilot, defaultBranch: main, mode: owned, credentialRef: secret://github/evopilot }
+  ecosystem: { languages: [typescript], packageManagers: [npm], frameworks: [] }
+  delivery:
+    model: open-source
+    ciProvider: github-actions
+    candidateBeforeAcceptance: true
+    noRebuildPromotion: true
+    channels: [github-release, npm, ghcr]
+  environment: { development: local, acceptance: isolated-rc }
+  policyRefs: [policy://oss/public-release/v1]
+  lifecycleRefs: [lifecycle://evopilot-oss/1.0.0]
+  secretRefs: [secret://github/evopilot, secret://npm/evopilot]
+  hostPreferences: [codex, workbuddy]
+  runtimePreferences: [local, github-actions]
+  evidenceSources: [github-actions, public-registry]

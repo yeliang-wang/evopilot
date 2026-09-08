@@ -77,6 +77,18 @@ evopilot project credentials set <project-id> [options]
 
 `project onboard plan` is a non-mutating checklist. `project onboard` registers the project and configures source/DevOps/LLM readiness, but it does not start Goal/Loop execution.
 
+## Project Definitions (v5 development)
+
+Project Definitions are immutable, declarative project aggregates. YAML is the human-editable form; registration normalizes the declaration and records its canonical digest. Use an explicit `--version` to inspect or roll back to an earlier definition without rewriting history.
+
+```bash
+evopilot project-definition list --json
+evopilot project-definition inspect <project-id> [--version <version>] --json
+evopilot project-definition register --file <definition.yaml|json> --json
+```
+
+See [Project Definitions](../guides/project-definitions.md) for the schema, reference declarations, and versioning rules.
+
 ## Project DevOps
 
 ```bash
@@ -163,6 +175,22 @@ evopilot lifecycle-run feedback <run-id> --binding-digest <sha256> --evidence-re
 ```
 
 `signal ... --status UNCERTAIN` stops at a recovery decision; it never silently retries an uncertain external mutation. `feedback` requires separate approval and creates an immutable, strict-redacted, private package without modifying a Harness asset.
+
+## Governed Evolution Runtime (v5 development)
+
+These commands use the same tenant/workspace-scoped HTTP API as MCP and other Agent adapters. Planning binds an immutable Project Definition and published HarnessBundle. Recovery applies deterministic policy; it cannot manufacture authority, retry an uncertain external mutation without a receipt, or turn conversation into approval.
+
+```bash
+evopilot evolution plan --file <plan-request.yaml|json> --json
+evopilot evolution revalidate --file <revalidation.yaml|json> --json
+evopilot evolution recover --file <recovery-context.yaml|json> --json
+evopilot automation list --json
+evopilot automation propose --file <rule-proposal.yaml|json> --json
+evopilot automation activate <rule-id> --file <exact-decision.json> --json
+evopilot automation revoke <rule-id> --file <exact-decision.json> --json
+```
+
+Automation proposals remain inactive until an exact decision activates them. An active rule is constrained by failure class, signature, scope, reversibility, external-effect policy, and the server-derived authority boundary.
 
 ## Maturity Standards
 

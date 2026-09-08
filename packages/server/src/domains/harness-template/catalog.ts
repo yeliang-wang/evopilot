@@ -34,7 +34,7 @@ export const EVOPILOT_HARNESS_CATALOG_V3_SCHEMA = "evopilot-harness-catalog/v3";
 export const EVOPILOT_HARNESS_ASSET_V3_API_VERSION = "harness.evopilot.io/v3";
 export const EVOPILOT_HARNESS_REGISTRY_SCHEMA = "evopilot-harness-registry/v1";
 export const EVOPILOT_HARNESS_REGISTRY_V2_SCHEMA = "evopilot-harness-registry/v2";
-export const EVOPILOT_HARNESS_CATALOG_COMPAT_VERSION = "4.0.0";
+export const EVOPILOT_HARNESS_CATALOG_COMPAT_VERSION = "5.0.0";
 
 export function hydrateHarnessCatalogMount(input: unknown): HarnessCatalogMount {
   const record = isRecord(input) ? input : {};

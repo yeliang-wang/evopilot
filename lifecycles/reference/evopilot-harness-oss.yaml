@@ -16,6 +16,10 @@ capabilities:
   - goal-loop.execute
   - release.readiness
   - release.publish
+obligations:
+  requiredEvidence: [candidate-integrity, isolated-install, agent-host-acceptance, public-install]
+  validators: [candidate-digest, no-rebuild-promotion]
+  constraints: [candidate-before-acceptance, exact-bytes-promotion]
 inputs:
   - id: candidateVersion
     type: string

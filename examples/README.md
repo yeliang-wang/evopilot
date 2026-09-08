@@ -11,6 +11,7 @@ These examples show how external users and AI Agents should evaluate EvoPilot wi
 | `executor-adapters/` | Executor adapter contracts and evidence boundaries. |
 | `simple-agent-project/profile.yaml` | Small project profile example. |
 | `source-to-ga/` | End-to-end onboarding, harness review, goal loop, evidence, and release decision scenarios. |
+| `projects/` | v5 declarative instances for DataRig, EvoPilot, evopilot-harness, and a generic new project. |
 
 ## Rules
 

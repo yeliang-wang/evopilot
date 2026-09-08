@@ -4553,18 +4553,17 @@ export function buildGoalRunStatusChain(store: FileStore, snapshot: GoalSnapshot
 
 export async function generateGoalPlanTargets(store: FileStore, goal: GlobalGoal, releaseTarget: ReleaseTargetProfile, actor: string, now: string): Promise<{ targets: GoalTarget[]; planner: GoalPlanPlannerTrace; selectedHarness?: GoalPlanSelectedHarnessBinding }> {
   const project = store.readProject(goal.projectId);
+  if (!project) throw httpError(404, "GOAL_PLAN_PROJECT_NOT_FOUND", `Project ${goal.projectId} is required for Harness-guided planning.`);
   let selectedHarness: GoalPlanSelectedHarnessBinding | undefined;
-  if (project) {
-    try {
-      const bundleSelection = selectHarnessBundleForProjectContextV3(store, project, { goalLoopTarget: goal.objective, objective: goal.objective });
-      selectedHarness = immutableHarnessBundlePlanBinding(bundleSelection, now);
-      if (!selectedHarness) {
-        const selection = selectHarnessTemplateForProjectContext(store, project, { goalLoopTarget: goal.objective, objective: goal.objective });
-        selectedHarness = selectedHarnessPlanBinding(selection, now);
-      }
-    } catch (error) {
-      if (!isRecord(error) || error.code !== "HARNESS_TEMPLATE_NOT_FOUND") throw error;
+  try {
+    const bundleSelection = selectHarnessBundleForProjectContextV3(store, project, { goalLoopTarget: goal.objective, objective: goal.objective });
+    selectedHarness = immutableHarnessBundlePlanBinding(bundleSelection, now);
+    if (!selectedHarness) {
+      const legacySelection = selectHarnessTemplateForProjectContext(store, project, { goalLoopTarget: goal.objective, objective: goal.objective });
+      selectedHarness = selectedHarnessPlanBinding(legacySelection, now);
     }
+  } catch (error) {
+    if (!isRecord(error) || error.code !== "HARNESS_TEMPLATE_NOT_FOUND") throw error;
   }
   if (selectedHarness) {
     logInfo("goal-plan.selected-harness-bound", {

@@ -1,0 +1,62 @@
+{
+  "schema": "evopilot-legacy-suite-transition/v1",
+  "targetVersion": "5.0.0",
+  "runtimePolicy": "NO_RUNTIME_FALLBACK",
+  "legacySuites": [
+    "evopilot-codex-suite",
+    "datarig-codex-suite"
+  ],
+  "preRelease": {
+    "installedSuiteDisposition": "ACTIVE_AND_INDEPENDENT",
+    "comparisonMode": "READ_ONLY",
+    "snapshotPolicy": "LATE_BOUND_EXACT",
+    "snapshotBindings": [
+      "sourceIdentity",
+      "version",
+      "treeDigest",
+      "skillAndRuleInventory",
+      "capturedAt",
+      "comparisonCorpusDigest"
+    ],
+    "snapshotDriftPolicy": "STALE_AND_SELECTIVE_RERUN",
+    "candidateEnvironment": "LEGACY_SUITES_ABSENT",
+    "realInstalledSuiteMutationAllowed": false,
+    "prohibitedEffects": [
+      "disable",
+      "move",
+      "delete",
+      "uninstall",
+      "archive",
+      "prevent-independent-evolution"
+    ],
+    "requiredEvidence": [
+      "late-bound-exact-suite-snapshots",
+      "snapshot-drift-selective-rerun",
+      "isolated-suite-absence",
+      "zero-legacy-invocation",
+      "zero-hidden-fallback",
+      "three-reference-projects",
+      "unknown-project-onboarding",
+      "headless-operation",
+      "real-installed-suite-non-mutation"
+    ]
+  },
+  "replacement": {
+    "runtime": "EvoPilot Harness-Guided Governed Evolution Runtime",
+    "humanEntry": "EvoPilot Evolution Expert",
+    "transports": [
+      "MCP",
+      "CLI",
+      "HTTP API",
+      "CI"
+    ]
+  },
+  "postRelease": {
+    "milestone": "evopilot-post-v5.0.0-legacy-suite-cutover",
+    "timing": "AFTER_PUBLIC_V5_RELEASE_AND_VERIFIED_INSTALLATION",
+    "releaseBlockerForV5": false,
+    "requiresSeparateEvolutionTarget": true,
+    "requiresSeparateHumanAuthorization": true,
+    "rollback": "SEPARATELY_AUTHORIZED_BREAK_GLASS_WITHOUT_HIDDEN_FALLBACK"
+  }
+}

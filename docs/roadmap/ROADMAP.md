@@ -2,268 +2,560 @@
 
 ## Status And Authority
 
-This Roadmap is the human-readable product plan for EvoPilot. The machine-readable authority is [`governance/roadmap.yaml`](../../governance/roadmap.yaml). The accepted [EvoPilot / evopilot-harness boundary ADR](../architecture/adr/0001-evopilot-harness-boundary.md) remains a harder constraint than a milestone.
+This Roadmap is the human-readable product plan for EvoPilot. The
+machine-readable authority is [`governance/roadmap.yaml`](../../governance/roadmap.yaml).
+The accepted [EvoPilot / evopilot-harness boundary](../architecture/adr/0001-evopilot-harness-boundary.md)
+and [Open Lifecycle Harness](../architecture/adr/0002-open-lifecycle-harness.md)
+decisions remain inherited constraints until the v5 replacement ADR is reviewed
+and accepted.
 
-Every feature, architecture, contract, version, and release task must pass the Roadmap Gate before implementation. `ALIGNED` work may continue. `UNPLANNED`, `DEVIATION`, `BOUNDARY_CHANGE`, and `UNKNOWN` work must stop for user review. A boundary change additionally requires a replacement ADR, migration and compatibility analysis, Roadmap revision, and explicit approval.
+Every product feature, architecture, contract, version, and release task must
+pass the deterministic Roadmap Gate. `ALIGNED` work may proceed to Target
+review. `UNPLANNED`, `DEVIATION`, `BOUNDARY_CHANGE`, and `UNKNOWN` work stops
+for explicit user review. A boundary change additionally requires a replacement
+ADR, migration and compatibility analysis, executable guard updates, a formal
+Roadmap revision, and explicit approval.
 
-In Codex, `$evopilot-evolution-orchestrator` is the conversational entry for user goals and external triggers such as issues, benchmarks, articles, papers, and reports. It may coordinate evidence research, but this Roadmap, accepted ADRs, the deterministic Gate, and explicit user decisions remain authoritative. External evidence, LLMs, and Subagents never approve a Roadmap change, implementation, or release.
+In Codex, `$evopilot-evolution-orchestrator` remains the conversational entry
+for repository evolution. It is not the EvoPilot product Lifecycle Runtime or
+the independently distributed Evolution Expert. External evidence, LLMs, Agent
+Hosts, and Agent Runtimes never approve a Roadmap change, Evolution Target,
+Acceptance, Harness publication, or Release.
 
-The Roadmap does not force EvoPilot and `evopilot-harness` to release together or use the same version. Engine, Harness Asset, Ontology, Policy, Evaluation, Catalog, and consumer versions remain independent.
-
-The published EvoPilot baseline remains `v3.1.0`. The current working version
-is `v4.0.0`; the unpublished `v3.2.0` line is deferred into v4 as inherited
-acceptance rather than treated as completed or released. This scheduling
-revision supersedes only ADR 0002's earlier statement that v3.2 was the current
-completion target; its architecture, compatibility, and ownership decisions
-remain accepted and unchanged.
+The published EvoPilot baseline is `v4.0.0`. The current Runtime working version
+is `v5.0.0`. The first independently versioned Evolution Expert working version
+is `v1.0.0`. Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset,
+Ontology, Policy, Evaluation, and Catalog versions evolve independently.
 
 ## Product Direction
 
-EvoPilot is the control plane that onboards third-party projects, selects a published Harness, binds an immutable `HarnessBundle`, resolves an execution `Lifecycle Harness`, executes Goal Loops, captures evidence, evaluates outcomes, and governs project release decisions.
-
-Its next evolution is an **Agentic Evolution Control Plane**:
+EvoPilot v5 is a **Harness-Guided Governed Evolution Runtime**:
 
 ```text
-Goal + immutable HarnessBundle + resolved Lifecycle Harness
-  -> controlled execution trajectory
-  -> outcome/process/safety/cost evaluation
-  -> replay and candidate comparison
-  -> approved strategy promotion or rollback
-  -> redacted feedback package for external asset or training systems
+EvolutionProjectDefinition
+  + user Goal and exact GoalTarget
+  + published immutable HarnessBundle
+  + resolved open Lifecycle and Policy
+  + qualified Host, Runtime, Provider, Environment, and Authority
+    -> HarnessExecutionBinding
+    -> TargetPlan
+    -> durable LoopRun iterations
+    -> Evidence and deterministic decisions
+    -> recovery or Target completion
+    -> Acceptance
+    -> separately authorized Release
 ```
 
-EvoPilot will not become a Harness producer or a model-training implementation.
+The primary invariant is:
 
-## Open Lifecycle Harness
+> No supported project Goal Target Loop executes without one exact eligible
+> published immutable `HarnessBundle` binding and one exact resolved Lifecycle
+> binding. Lifecycle strengthens and orchestrates Harness-guided execution; it
+> never replaces, weakens, authors, or publishes the Harness definition.
 
-Approved direction as of 2026-09-05: EvoPilot v4 replaces the assumption that
-every project progresses through Alpha, Beta, RC, and GA with an open,
-versioned execution-lifecycle platform. Alpha/Beta/RC/GA remains available only
-as a compatibility profile. The word *Lifecycle* here means how EvoPilot runs a
-project Goal or Target; it does not mean the independently governed Harness
-Asset lifecycle owned by `evopilot-harness`.
+This preserves EvoPilot's existing product center. v5 strengthens and
+generalizes project declarations, open Lifecycle composition, automation,
+recovery, Agent integration, human interaction, acceptance, and release around
+the retained Harness-guided Goal/Target/Loop core. EvoPilot does not become a
+Harness-independent workflow engine, Harness producer, general coding Agent,
+or model-training system.
 
-Each `LifecycleDefinition` is human-readable YAML with an `apiVersion`, `kind`,
-`metadata`, and `spec`. A definition may declare typed inputs, stages,
-dependencies, bounded conditions, evidence requirements, retry and recovery,
-decision modes, rollback, and completion. Definitions may be composed and
-extended, but they reference a closed, versioned Action and Capability Registry;
-YAML cannot carry arbitrary shell or programming-language code. Resolution
-produces one immutable `LifecycleRevision`, and every run binds that revision,
-its inputs and policies, an immutable published `HarnessBundle`, project and
-Goal/Target snapshots, and the selected external Agent runtime.
+## Four Independent Lifecycle Planes
 
-### Inputs are conversational, not hard-coded
+The word *lifecycle* has four distinct meanings in this product family:
 
-Lifecycle inputs are declared once as a schema containing type, prompt,
-description, requirement, default, options, validation, conditional visibility,
-source, sensitivity, and review behavior. The same schema drives WorkBuddy,
-Codex, another conformant Agent host, UI, MCP, CLI, API, and CI:
+1. **Repository evolution lifecycle** governs changes to EvoPilot source through
+   this Roadmap, an approved Evolution Target, acceptance, and a separate
+   Release authorization. A Codex Suite may assist that repository work, but it
+   is not the EvoPilot product Lifecycle.
+2. **EvoPilot product Lifecycle** executes a user project's Goals and Targets
+   through Harness-guided Loops from product-owned definitions and durable
+   runtime state.
+3. **Harness Asset lifecycle** is owned independently by `evopilot-harness`:
+   evidence ingestion, reasoning, authoring, review, approval, evaluation,
+   Catalog, Registry, and publication. EvoPilot is a dynamic read-only consumer.
+4. **Evolution Expert lifecycle** independently versions, accepts, publishes,
+   upgrades, and rolls back the optional ordinary-human Skill distribution.
 
-- EvoPilot first discovers project facts, Organization defaults, lifecycle
-  defaults, runtime capabilities, and deterministic derived values.
-- The ordinary human flow asks one unresolved relevant question at a time,
-  proposes detected/default values, and presents a final review summary.
-- Headless callers provide an explicit YAML or JSON input document governed by
-  the same schema and semantics.
-- Raw secrets are never requested. The user selects or creates an external
-  `SecretRef`; only the reference enters the binding.
-- Collecting or editing a parameter is not approval. The completed
-  `LifecycleInputBinding` is immutable and digest-bound.
+These planes may exchange immutable evidence and compatibility metadata. They
+never share canonical state, authority, semantic versions, or automatic future
+evolution.
 
-DataRig's enterprise-internal delivery parameters and `evopilot-harness`'s
-public open-source release parameters become two reference definitions and
-conformance cases. Their repository names, paths, environments, channels,
-approvers, policies, and release constants must not become branches in the
-generic Engine.
+## Domain Model And Project Neutrality
 
-### Human decisions are exceptional
+`EvolutionProjectDefinition` is the aggregate root for a registered project. It
+is human-readable YAML with a published schema, canonical form, version, digest,
+semantic diff, compatibility result, impact preview, migration result, and
+rollback point. It composes:
 
-The decision modes are `AUTO`, `POLICY`, `HUMAN`, `EXTERNAL_SIGNAL`, and
-`DISABLED`. Deterministic, reversible work within an already authorized scope is
-automatic by default. Schema checks, readiness, compatibility, build, test,
-smoke, evaluation, evidence capture, deterministic aggregation, safe resume,
-and identical-input retry without an uncertain mutation must not require a
-ceremonial approval.
+- `SoftwareArchetype`
+- `CapabilityPack`
+- `LifecycleModule`
+- `PolicyPack`
+- `ProviderBinding`
+- `EnvironmentBinding`
+- `SecretRef`
+- `HumanAuthorityRole`
 
-A human decision remains only when EvoPilot lacks exact scope/plan authority,
-an operation is irreversible or externally visible, production or credential
-authority expands, a project release/publication is requested, a policy
-exception or material ambiguity exists, risk is unresolved, or the outcome of a
-prior mutation is uncertain. One digest-bound authorization may cover the
-unchanged bounded plan and all of its automatic stages; only relevant binding
-drift invalidates that authority. Readiness, input collection, a chat message
-such as “continue”, and an Agent recommendation are never authority by
-themselves.
+DataRig, EvoPilot, and `evopilot-harness` are non-privileged reference
+declarations rather than Engine branches. Repository paths, build commands,
+package coordinates, environments, channels, approvers, credentials, and
+release constants are discovered facts, typed inputs, approved defaults, or
+external references. A materially different project must onboard and complete
+a representative Goal with zero project-specific Engine source change.
 
-## Agent Runtime Externalization
+Active runs bind an immutable resolved project definition. A later definition
+revision affects future runs only unless an explicit governed migration is
+approved. Project types must not use `HarnessProfile`, `HarnessBundle`, or other
+names that collide with assets owned by `evopilot-harness`.
 
-Approved direction as of 2026-09-02: EvoPilot remains an Agent-runtime-neutral
-governance and execution control plane. It must not grow a second product center
-that reimplements a general Agent session runtime, model/tool loop, coding-agent
-workspace, or model-provider product.
+## Published Harness Consumption And Immutable Binding
 
-The target operating shape is:
+`evopilot-harness` publishes Harness assets. EvoPilot dynamically and read-only
+reads the configured Registry and enabled Catalog roots at planning and
+revalidation time. It never imports, copies, edits, approves, signs, publishes,
+or mutates Harness assets, Catalogs, or the Registry.
+
+### Selection
+
+For an exact project and GoalTarget, EvoPilot:
+
+1. validates Registry and Catalog status and digests;
+2. derives matching context from the versioned project definition and exact
+   GoalTarget rather than a repository-name branch;
+3. evaluates published `HarnessProfile` classification, positive concepts,
+   negative concepts, boundaries, capabilities, compatibility, and Catalog
+   priority;
+4. returns ranked candidates, selection reasons, rejected alternatives,
+   uncertainty, ambiguity, and abstention evidence;
+5. resolves one eligible published immutable `HarnessBundle` and its required
+   `HarnessComponent` closure; and
+6. composes a compatible open Lifecycle around that Harness contract.
+
+If multiple candidates remain semantically ambiguous, EvoPilot presents exact
+alternatives and requires one project-meaning decision. If no candidate is
+eligible, it abstains before execution and may route an explicitly approved,
+private, redacted Harness-gap feedback package. It never falls back silently to
+a generic Harness.
+
+### HarnessExecutionBinding
+
+The v5 combined binding records:
+
+- project definition, Goal, and Target references and digests;
+- Registry reference and digest;
+- Catalog id, planning digest, priority, entry path, and entry digest;
+- Profile id, version, and digest;
+- Bundle id, version, and digest;
+- required Component ids, versions, digests, and flags;
+- execution plan, constraints, required evidence, validators, and capabilities;
+- selection reasons, rejected alternatives, uncertainty, and decision evidence;
+- Lifecycle id, version, source digest, resolved digest, and import closure;
+- Policy, Provider, Environment, Host, Runtime, and authority bindings.
+
+The binding is immutable for the GoalTarget and LoopRun. Before Loop creation,
+start, resume, retry, and every iteration, EvoPilot re-reads and validates the
+bound Harness and Lifecycle closure. A changed, removed, unpublished, invalid,
+or incompatible bound asset blocks before the next executor mutation.
+Unrelated additive Catalog growth is accepted when the complete bound asset
+closure is unchanged. A newly published Harness version applies only to a new
+plan or explicit governed migration; it never rewrites an existing plan or run.
+
+### Composition And Conflict
+
+Composition takes the intersection of permitted effects and the union of
+required obligations. Priority is:
+
+1. non-bypassable safety and current authority;
+2. tenant, workspace, project, credential, environment, and provider
+   restrictions;
+3. published Harness constraints, validators, evidence, and capabilities;
+4. resolved Lifecycle orchestration, automation, recovery, Candidate,
+   acceptance, Release, and rollback rules; and
+5. qualified Runtime and Host capabilities.
+
+Lifecycle may sequence or add Harness work. It cannot remove Harness-required
+evidence, disable a mandatory validator, expand a forbidden capability, or
+reinterpret a Harness boundary. Harness defines professional execution
+semantics but cannot grant source, credential, database, production,
+acceptance, publication, or Release authority. An irreconcilable conflict
+produces a deterministic report and blocks before mutation.
+
+## Open Lifecycle Around The Harness Core
+
+Each `LifecycleDefinition` is human-readable YAML with `apiVersion`, `kind`,
+`metadata`, and `spec`. Definitions declare typed inputs, stage dependencies,
+imports, bounded conditions, evidence requirements, retry, recovery, decisions,
+Candidate construction, acceptance, Release, rollback, and completion. They
+reference a closed versioned Action and Capability Registry; YAML cannot embed
+arbitrary shell, code, raw secrets, host-specific executables, or hidden
+authority.
+
+Resolution produces one immutable `LifecycleRevision`. Every run binds the
+revision, its input and policy closure, the complete `HarnessExecutionBinding`,
+and the qualified Agent Runtime.
+
+The decision modes are:
+
+- `AUTO`
+- `POLICY`
+- `HUMAN`
+- `EXTERNAL_SIGNAL`
+- `DISABLED`
+
+Inputs are resolved from project discovery, Organization and Lifecycle defaults,
+Harness requirements, Runtime capability discovery, deterministic derivation,
+interactive answers, and external `SecretRef` values. The same schema drives
+Evolution Expert, UI, MCP, CLI, API, and CI. EvoPilot discovers and validates
+before asking and asks only unresolved relevant questions. Parameter capture is
+not authority.
+
+Deterministic, reversible, bounded work within current authority is automatic by
+default. This includes validation, build, test, smoke, evaluation, soak
+orchestration, evidence capture and aggregation, repository hygiene, approved
+workflow-mechanics repair, receipt reconciliation, duplicate suppression, safe
+resume, and safe identical-input retry. A human remains necessary only for
+product or project meaning, authority expansion, credentials, production or
+database access, destructive or externally visible effects, Acceptance,
+publication, Release, an irreducible ambiguity, exhausted recovery, or the
+one-time activation of a reusable automation class.
+
+## Recovery And Automation Learning
+
+The Recovery Controller classifies, reconciles, repairs, retries, resumes,
+verifies, and performs declared rollback automatically when the action is
+deterministic, bounded, safe, and authorized.
+
+When a new technical failure class reaches a human stop, EvoPilot evaluates
+whether it can become an Automation Registry rule. A proposal binds exact match
+conditions, action, verification, retry budget, rollback, authority, expiry, and
+suspension behavior. One explicit decision may activate the rule. Later exact
+matches execute automatically. Verification failure or drift suspends it.
+
+Recovery never expands authority, repeats an uncertain mutation, hides changed
+state, or converts business ambiguity into a technical repair.
+
+## Agent Hosts And Agent Runtimes
+
+EvoPilot remains Host-neutral and Runtime-neutral:
 
 ```text
-Goal + immutable HarnessBundle + resolved Lifecycle Harness
-  -> EvoPilot policy, context, evidence, budget, approval, and release control
-  -> versioned AgentRuntimeAdapter / ExecutorAdapter contract
-  -> OpenCode, OpenHands/ACP, Codex, Claude Code, or another qualified Agent runtime
-  -> normalized execution result, trajectory, usage, artifacts, and evidence
-  -> EvoPilot deterministic validation and continuation/release decision
+Human -> Codex / WorkBuddy / another Host
+  -> Evolution Expert or another conformant client
+  -> MCP / HTTP
+  -> EvoPilot Runtime and HarnessExecutionBinding
+  -> AgentRuntimeAdapter / ExecutorAdapter
+  -> Codex, OpenCode, or another qualified Runtime
+  -> normalized result, trajectory, usage, artifacts, and evidence
 ```
 
-- OpenCode is the first planned first-class coding Agent adapter and may become a
-  default executor only after comparative acceptance. It is not an exclusive
-  product dependency or the owner of EvoPilot state.
-- At least one independent Agent adapter must pass the same conformance contract
-  before runtime-neutral support is claimed.
-- Prompt construction, Agent tool loops, code editing, validation repair, and
-  Agent-session internals belong behind the external runtime adapter boundary.
-- EvoPilot retains runtime selection and dispatch, capability and health
-  preflight, credential references, sandbox policy, structured output contracts,
-  deterministic normalization, usage/cost accounting, trajectory and evidence,
-  human gates, source closure, and release authority.
-- A bounded direct-LLM adapter may remain during migration and for narrow,
-  stateless structured transformations. It is not the default production coding
-  executor and must not own a general tool loop, code workspace, approval, or
-  publication authority.
-- Existing direct-LLM and built-in code-upgrader behavior must migrate through
-  explicit compatibility and rollback plans; removing or silently reinterpreting
-  historical evidence is prohibited.
+A Host carries conversation and current user decisions. A Runtime performs
+bounded source work. One external product may implement either or both roles,
+but each role is qualified independently. OpenCode remains the first
+first-class coding Runtime adapter. Codex becomes an official Host and, when
+its execution transport passes capability and conformance requirements, an
+official Runtime. At least one independent Host and Runtime must pass the same
+contracts before neutrality is claimed.
+
+The Runtime may execute only the exact `pendingExecution` action and capability
+intersection permitted by the combined binding. Agent output cannot bypass
+normalization, Harness validators, Lifecycle policy, human authority, source
+closure, acceptance, or project Release decisions.
+
+## Independently Versioned Evolution Expert
+
+`@evopilot/evolution-expert` is the proposed official Agent-neutral Skill
+distribution. Its first working version is `1.0.0`; it is not embedded into or
+lockstep-versioned with EvoPilot Runtime `5.0.0`.
+
+The initial source may be co-located as an independent EvoPilot workspace so
+protocol and official integration changes are reviewed together. It retains a
+separate package version, changelog, tag namespace, Candidate workflow,
+Acceptance Binding, Release authorization, public artifact, upgrade, and
+rollback. It may move to a separate repository later without changing the
+public protocol.
+
+The package contains one Agent-neutral Core plus generated Codex, WorkBuddy,
+generic Agent, and generic MCP adapters. Host formats may differ, but every
+Adapter binds the same Core digest and contains no Host-specific Lifecycle,
+Harness-selection, approval, or recovery semantics. Compatibility binds the
+Expert version, Runtime protocol range, Expert protocol version, Core digest,
+Adapter identity and digest, required Host capabilities, and conformance status.
+
+The Expert guides first use, learning, tutorials, project registration and
+adjustment, Harness selection explanation, Goal evolution, inspection,
+recovery, resume, acceptance, and Release preparation. It asks the Runtime to
+select and bind a Harness, presents the exact result and alternatives, and may
+explain a conflict or abstention. It cannot choose, fabricate, edit, approve,
+publish, or override a Harness, validator, evidence requirement, digest,
+authority, or Runtime decision.
+
+Natural language is the ordinary-human entry. Supported journeys cannot require
+memorized slash commands, CLI commands, MCP tool names, digests, or approval
+tokens. The Runtime owns durable session state. After restart or Host transfer,
+the Expert reloads and reconciles current Runtime state instead of trusting chat
+history. CLI, HTTP API, and CI remain complete when Expert or one Adapter is
+absent or incompatible.
+
+## Reference Instances
+
+- **DataRig** proves enterprise-internal GitLab, Maven, authorized database, and
+  internal promotion behavior expressed only through declarations.
+- **EvoPilot** proves GitHub open-source private Candidate, isolated acceptance,
+  GitHub Release, npm, GHCR, installer, and Deployment closure.
+- **evopilot-harness** proves independent Harness-producer evolution, npm
+  distribution, and real third-party Host acceptance without crossing Harness
+  Asset authority.
+- **Unknown project** proves onboarding and Goal completion through declaration
+  and composition with zero Engine source change.
+
+## Acceptance Portfolio
+
+The v5 Runtime and Expert Targets must expand the complete inherited v4
+acceptance into:
+
+- `FUNC01`–`FUNC21`: Project Definition, Lifecycle, recovery, providers,
+  Hosts/Runtimes, Expert protocol, independent Expert lifecycle, dynamic Harness
+  matching, immutable combined binding, composition, and Catalog evolution.
+- `CAP01`–`CAP16`: project, Host, Runtime, provider, version, and deployment
+  neutrality; authority and isolation; bounded recovery; legacy independence;
+  novice usability; graceful degraded mode; Harness-guided invariance; and
+  strict read-only monotonic composition.
+- `DOC01`–`DOC13`: README, installation, concepts, DDD architecture, integration,
+  CLI/API/MCP/schema references, migration, tutorials, Expert lifecycle, Adapter
+  development, and the Harness-guided Goal Target Loop guide.
+- `E2E01`–`E2E13`: exact real journeys listed below.
+
+Every criterion maps to deterministic evidence and at least one real journey or
+declared machine variant. Equivalent variants are generated and aggregated
+automatically instead of creating repeated human gates. Screenshots,
+source-checkout runs, unit tests, prose claims, and partial aggregates cannot
+substitute for their required evidence class. Release readiness requires 100%
+PASS, complete inherited acceptance, complete impact closure, and
+`NO_REGRESSION`.
+
+### Required End-To-End Journeys
+
+1. `E2E01` — novice clean install, capability discovery, installed-version help,
+   and side-effect-free tutorial in Codex and WorkBuddy.
+2. `E2E02` — unknown project discovery, typed onboarding, reviewed YAML
+   registration, and first governed Goal with zero Engine source diff.
+3. `E2E03` — existing project definition adjustment, semantic impact preview,
+   active-run stability, migration, and rollback.
+4. `E2E04` — DataRig enterprise-internal GitLab, Maven, database-authorized, and
+   internal-promotion reference with the DataRig Codex Suite absent from the
+   isolated Candidate environment while its real installed Suite remains active
+   and untouched.
+5. `E2E05` — EvoPilot GitHub open-source self-evolution from Roadmap through
+   exact Candidate, isolated acceptance, no-rebuild Release, npm, GHCR,
+   installer, and terminal Deployments.
+6. `E2E06` — `evopilot-harness` producer evolution and real Host acceptance
+   without EvoPilot writing Harness assets.
+7. `E2E07` — deterministic repair, new Automation Registry rule, crash, timeout,
+   disconnect, duplicate event, restart, resume, and Host transfer without
+   duplicate mutation or stale authority.
+8. `E2E08` — exact private RC before counted E2E, installed-package acceptance,
+   separate Release authorization, accepted-byte promotion without rebuild, and
+   complete public verification.
+9. `E2E09` — read-only shadow comparison against late-bound exact EvoPilot and
+   DataRig Codex Suite snapshots, followed by isolated Candidate runs where both
+   Suites are absent; fresh start, failure, resume, upgrade, and rollback must
+   prove zero invocation and no hidden fallback without mutating the real
+   installed Suites.
+10. `E2E10` — Evolution Expert upgrade and rollback against the same Runtime
+    without changing Runtime bytes or version.
+11. `E2E11` — add and qualify a new third-party Host Adapter, bind the same Core
+    digest, complete representative journeys, and make zero Engine source change.
+12. `E2E12` — Expert absent, unavailable, or incompatible while CLI, API, and CI
+    complete a headless journey with a precise compatibility diagnosis and no
+    legacy fallback.
+13. `E2E13` — configure a read-only Registry, match Project plus GoalTarget to a
+    published Profile, bind the exact Bundle and Component closure, compose an
+    open Lifecycle, execute multiple Loop iterations, collect Harness-required
+    evidence, and reach the Target or a precise safe blocker. Variants must prove
+    tamper blocking, removed-asset blocking, additive Catalog growth, new-version
+    isolation, deterministic abstention, explicit ambiguity, composition
+    conflict, authority non-escalation, cross-Host equivalence, and zero Harness
+    writes.
+
+## Legacy Suite Transition
+
+The active EvoPilot Codex Suite and DataRig Codex Suite are independently owned,
+independently evolving migration inputs, not v5 product components. Their
+supported replacement is:
+
+```text
+EvoPilot Runtime
+  + compatible independently installed Evolution Expert
+  + generated Host Adapter
+  + declarative project and Lifecycle resources
+```
+
+Before v5 release, comparison is read-only and binds late exact snapshots of
+each Suite: source identity, version, tree digest, Skill/rule inventory,
+capture time, and corpus digest. Snapshot drift makes only the affected parity
+evidence stale and triggers a fresh snapshot plus selective rerun. Counted v5
+Candidate E2E uses an isolated environment in which both Suites are absent and
+must record `legacySuiteInvocationCount=0` with no hidden fallback. This proves
+that the Suites are technically unnecessary; it does not disable, move, delete,
+uninstall, archive, or constrain either real installed Suite.
+
+Actual default switching, archival, and retirement are post-release operations.
+They may begin only after v5 is publicly released, its exact accepted bytes are
+verified through installation, required project resources are migrated, current
+Suite comparisons are complete, and an observation period succeeds with a
+recoverable rollback path. The work requires a separate Cutover Target and a
+separate explicit human authorization. Any break-glass rollback is separately
+authorized, audited, and never an automatic fallback. This post-release Cutover
+is not a v5 release blocker.
+
+## Candidate, Acceptance, And Release Topology
+
+Runtime and Evolution Expert have independent Targets, commits, Candidates,
+Acceptance Bindings, release authorizations, tags, artifacts, release notes, and
+public verification. Cross-product acceptance binds exact Runtime Candidate,
+Expert Candidate, Core and Adapter digests, protocol and Host versions, Registry
+and Catalog digests, and `HarnessExecutionBinding`; it does not merge authority
+or version numbers.
+
+The ordered program topology is:
+
+```text
+Roadmap revision approved
+  -> Runtime Target and Expert Target separately approved
+  -> implementation and local verification
+  -> exact commits frozen
+  -> one private Runtime Candidate and one private Expert Candidate
+  -> official handoffs downloaded and verified
+  -> exact pair installed outside source checkout
+  -> functional, capability, documentation, Adapter, real-Host, and E2E acceptance
+  -> inherited acceptance and NO_REGRESSION closure
+  -> separate Runtime and Expert Release authorizations
+  -> accepted bytes promoted without rebuild
+  -> public install, compatibility, registry, and terminal Deployment verification
+```
+
+Candidate formation always precedes counted E2E. A source-checkout run or rebuilt
+substitute is not Candidate acceptance. Acceptance never implies Release
+authority.
 
 ## Versioned Milestones
 
 ### v3.2.0: Bundle Consumer Closure
 
-Status: `DEFERRED INTO v4.0.0`
+Status: `DEFERRED INTO COMPLETED v4.0.0`
 
-- Preserve the already implemented Profile matching and immutable Bundle binding.
-- Revalidate Bundle, Profile, Component, digest, and execution closure before execution and each iteration.
-- Preserve the read-only Harness consumer boundary.
-
-This milestone is neither complete nor released. It is not eligible for a
-standalone v3.2 publication unless a future explicit Roadmap revision
-reactivates it. Its implementation, documentation, compatibility knowledge,
-and acceptance guarantees remain mandatory inherited evidence for v4.0; they
-are not discarded or silently treated as passed.
+The line was not released independently. Its Profile matching, immutable
+Bundle/Profile/Component closure, per-iteration revalidation, and read-only
+consumer guarantees were inherited and released through v4. They remain
+mandatory v5 regression evidence.
 
 ### v4.0.0: Open Lifecycle Harness
 
+Status: `COMPLETE`
+
+The public v4.0.0 baseline delivered open Lifecycle contracts, schema-driven
+input, risk-tiered decisions, Agent Runtime adapters, trajectory evidence, and
+feedback-package foundations while retaining Harness-guided execution. All v4
+product, API, CLI, evidence, authority, tenancy, security, migration,
+distribution, acceptance, and public-release guarantees are inherited by v5.
+
+### v5.0.0: Harness-Guided Governed Evolution Runtime
+
 Status: `IN_PROGRESS`
 
-v4.0 is the current working line. In addition to the Open Lifecycle Harness
-scope below, it must retain and retest v3.2 dynamic published Profile matching,
-immutable Bundle/Profile/Component closure, per-iteration digest revalidation,
-the read-only Harness consumer boundary, and v3 evidence, authority, tenancy,
-`SecretRef`, migration, and rollback compatibility.
+v5 delivers the DDD project model, first-class published Harness consumption
+and combined execution binding, open project-neutral Lifecycle composition,
+bounded recovery and automation learning, stable Human Interaction Protocol,
+official Codex support, multi-Host and Runtime conformance, four reference
+projects, independent Expert integration, isolated legacy Suite independence
+proof, post-release Cutover readiness, and the full
+`FUNC01`–`FUNC21`, `CAP01`–`CAP16`, `DOC01`–`DOC13`, and `E2E01`–`E2E13`
+portfolio.
 
-- Add versioned `LifecycleDefinition`, `LifecycleRevision`, `LifecycleCatalog`,
-  `LifecycleResolver`, `LifecycleBinding`, `LifecycleInputBinding`, and
-  `LifecycleRun` contracts.
-- Resolve human-readable YAML into a canonical immutable stage graph that binds
-  one exact published `HarnessBundle`, project and Goal/Target snapshots,
-  policies, inputs, actions, and runtime capabilities.
-- Provide an open composition model over a closed Action and Capability
-  Registry, bounded conditions, deterministic validation, and fail-closed
-  unsupported-capability handling.
-- Generate interactive parameter collection from each Lifecycle input schema;
-  prefill discoverable values, ask only unresolved relevant questions, use
-  `SecretRef` for secrets, and produce one reviewable immutable input binding.
-- Apply risk-tiered decision modes and automate deterministic reversible stages
-  by default. Preserve human decisions only at genuine authority, external
-  effect, production, release/publication, exception, ambiguity, risk, or
-  uncertain-mutation boundaries.
-- Permit one digest-bound authorization to cover all unchanged automatic work in
-  the reviewed plan instead of requiring repeated approvals.
-- Ship DataRig enterprise-internal delivery and `evopilot-harness` public
-  open-source release as reference profiles/conformance cases; retain
-  Alpha/Beta/RC/GA only as a compatibility profile.
-- Introduce versioned Agent-runtime profiles, execution request/result contracts,
-  capability negotiation, resumable correlation, and normalized evidence behind
-  the existing `ExecutorAdapter` boundary.
-- Add OpenCode as the first first-class coding Agent adapter and prove at least
-  one independent adapter against the same conformance suite.
-- Externalize production planning, coding, tool-loop, and validation-repair work
-  from the control-plane core while retaining a bounded direct-LLM compatibility
-  adapter for narrow stateless transformations during migration.
-- Add a versioned `AgentTrajectory`, Outcome/Process/Safety/Cost
-  `RewardContract`, governed private datasets, and an approved, redacted,
-  immutable `HarnessExecutionFeedbackPackage`.
+### Evolution Expert v1.0.0
 
-Exit criteria include two project-neutral real-case profiles, schema-equivalent
-conversational and headless input, proof that deterministic work does not stop
-for ceremonial approval, proof that irreversible authority cannot be inferred,
-complete trajectory provenance, deterministic Ground Truth authority where
-available, feedback-package approval and integrity closure, no embedded model
-training, no arbitrary YAML execution, no production coding path that bypasses
-an exact Agent runtime/Executor binding, and unchanged Harness Asset authority.
+Status: `IN_PROGRESS`, independent companion product
 
-This is a major release because it replaces the externally visible fixed
-execution-lifecycle model and its configuration contract. It does not force an
-`evopilot-harness` major release.
+The first Expert release delivers one Agent-neutral Core, Codex and WorkBuddy
+Adapters, generic Host and MCP guidance, schema-driven onboarding and project
+adjustment, Harness and Lifecycle explanation, installed-version help,
+side-effect-free tutorials, Runtime-owned resume, independent upgrade and
+rollback, and a third-party Host Adapter conformance kit.
 
-### v4.1.0: Controlled Experiment Loop
+### Post-v5.0.0: Legacy Suite Cutover
+
+Status: `PLANNED`, not a v5 release blocker
+
+After v5 public release and verified installation, a separately approved
+Cutover Target may switch explicitly approved projects and Hosts to v5 as the
+default, verify zero legacy invocation on real paths, create digest-inventoried
+recoverable archives, rehearse separately authorized rollback, and close after
+an observation period. Until then, EvoPilot and DataRig Codex Suites remain
+installed, active, independently owned, and free to evolve.
+
+### v5.1.0: Controlled Experiment Loop
 
 Status: `PLANNED`
 
-- Run Champion/Challenger candidates in comparable contexts.
-- Evaluate candidate trajectories pairwise across completion, correctness, safety, cost, and stability.
-- Replay experiments and retain judge, Ground Truth, uncertainty, and audit evidence.
-- Promote or roll back a strategy only after benchmark, Bad Case, regression, and human gates pass.
+Run comparable Champion/Challenger strategies over Harness-guided trajectories,
+evaluate outcome/process/safety/cost, replay controlled evidence, and promote or
+roll back only after benchmark, bad-case, regression, and human gates.
 
-### v4.2.0: Learning Interoperability
+### v5.2.0: Learning Interoperability
 
 Status: `PLANNED`
 
-- Export governed preference and reward datasets.
-- Integrate external RL Trainer systems through adapters.
-- Re-enter trained policies through provenance, evaluation, and promotion gates.
-- Build isolated cross-round experience retrieval.
-
-EvoPilot remains the governance and execution control plane. Distributed model training stays external.
+Export consented, redacted, reproducible preference and reward datasets to
+external Trainer systems and re-enter trained policies through provenance,
+evaluation, and promotion gates. Distributed model training remains external.
 
 ## Cross-Project Feedback
 
-The planned feedback path is deliberately offline and reviewable:
+The feedback path remains offline and reviewable:
 
 ```text
-EvoPilot Goal Loop
-  -> HarnessExecutionFeedbackPackage
-  -> redaction + integrity digest + explicit approval
+EvoPilot Harness-guided Loop
+  -> private HarnessExecutionFeedbackPackage
+  -> redaction + integrity + explicit approval
   -> evopilot-harness reads it as Evidence Source
   -> Proposal + Evaluation + Review + human approval
   -> new published Harness version
-  -> a future EvoPilot plan may select the new immutable Bundle
+  -> a new EvoPilot plan may select that immutable version
 ```
 
-The package does not allow EvoPilot to mutate a Harness or allow `evopilot-harness` to execute an EvoPilot project.
+Feedback never allows EvoPilot to mutate Harness assets or
+`evopilot-harness` to execute a project Loop.
 
-## Standing Work
+## Standing Work And Change Control
 
-Bug fixes, security repairs, documentation synchronization, dependency maintenance, compatibility work, and regressions are continuously allowed when they do not add an unplanned product capability or change an accepted boundary.
+Correctness, security, documentation synchronization, dependency maintenance,
+compatibility, and regression repair remain standing work when they do not add
+an undeclared product capability or cross a boundary. Repository and Codex
+workflow governance is standing work only when it does not change product
+semantics, versions, milestones, or authority.
 
-Codex workflow governance is also standing work when it only binds evolution to reviewed evidence, this Roadmap, an approved `evopilot-evolution-target/v1`, deterministic acceptance, and separately authorized release. It must not change EvoPilot product behavior, milestones, versions, or boundaries under the label of governance.
+1. Start EvoPilot-series evolution through `$evopilot-evolution-orchestrator`.
+2. Run `npm run roadmap:gate -- --intent "<requested change>" --json` before
+   product implementation.
+3. Proceed to Target review only for `ALIGNED`.
+4. Require an approved `evopilot-evolution-target/v1` bound to the current
+   Roadmap digest, milestone, version, inherited acceptance, scope, exclusions,
+   regression impact, real cases, Candidate topology, and Release evidence.
+5. Rerun the binding gate after Roadmap or scope drift and before implementation,
+   acceptance closure, and Release.
+6. A one-task exception cannot revise this Roadmap or authorize a Release.
+7. Boundary change requires a replacement ADR and formal Roadmap revision.
+8. Implementation approval and Acceptance never imply Release authorization.
 
-## Change Control
+Runtime release gates use:
 
-`DEFERRED` is a non-terminal scheduling state. It is not `COMPLETE`, does not
-mean released, and does not make the deferred version eligible for release.
-Reactivation requires another explicit Roadmap revision. When a deferred
-milestone is absorbed by an active milestone, its code, evidence, and
-acceptance guarantees remain inherited unless a later approved compatibility
-decision explicitly says otherwise.
+```bash
+npm run roadmap:release -- <runtime-version>
+```
 
-1. Start EvoPilot-series evolution through `$evopilot-evolution-orchestrator` and produce a reviewed evidence brief when external material is involved.
-2. Run `npm run roadmap:gate -- --intent "<requested change>" --json` before implementation.
-3. Continue to Target Review only when the result is `ALIGNED`.
-4. For `UNPLANNED` or `DEVIATION`, present the classification, reason, affected milestones, version impact, alternatives, and a versioned Roadmap Revision Proposal; wait for explicit user confirmation.
-5. Bind implementation to an approved `evopilot-evolution-target/v1` containing the current Roadmap digest, matched milestone or standing work, scope, exclusions, target version, acceptance, and evidence requirements.
-6. Rerun the binding gate after Roadmap or scope changes and before implementation, acceptance closure, and release.
-7. A one-task exception does not rewrite this Roadmap and cannot authorize a release containing an unplanned product capability.
-8. A permanent change updates this document, `governance/roadmap.yaml`, applicable ADRs, executable gates, compatibility notes, and the EvoPilot-series memory.
-9. `BOUNDARY_CHANGE` cannot use a one-task exception. It requires a replacement ADR and formal Roadmap revision before implementation.
-10. Implementation approval and acceptance never imply release authorization. The user must separately authorize exact repositories, versions, and publication actions.
+Evolution Expert release gates use:
 
-Release tags must target a version or release line declared by the machine Roadmap and pass `npm run roadmap:release -- <version>`.
+```bash
+npm run roadmap:release -- <expert-version> --release-product evopilot-evolution-expert
+```

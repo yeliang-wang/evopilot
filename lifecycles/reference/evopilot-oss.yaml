@@ -1,0 +1,44 @@
+schema: evopilot-lifecycle-definition/v1alpha1
+metadata:
+  id: evopilot-oss
+  name: EvoPilot open-source delivery reference
+  version: 1.0.0
+  description: GitHub, Candidate-first acceptance, and no-rebuild public promotion reference.
+  labels: { audience: public-oss, example: evopilot }
+imports:
+  - { id: common-software-delivery, version: 1.0.0 }
+capabilities: [build.execute, test.execute, goal-loop.execute, release.readiness, release.publish]
+obligations:
+  requiredEvidence: [candidate-integrity, isolated-install, e2e-acceptance, public-install]
+  validators: [candidate-digest, no-rebuild-promotion]
+  constraints: [github-only-publication, candidate-before-acceptance, exact-bytes-promotion]
+inputs:
+  - { id: candidateVersion, type: string, prompt: What version is being evaluated?, required: true, pattern: "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$" }
+  - { id: publicationChannel, type: enum, prompt: Which separately authorized public channel is in scope?, required: true, options: [github-release, npm, ghcr, all] }
+stages:
+  - id: candidate-build
+    name: Build immutable Candidate
+    action: { uses: build.verify@1, with: { profile: release } }
+    decision: { mode: EXTERNAL_SIGNAL }
+    retry: { maxAttempts: 2 }
+  - id: candidate-acceptance
+    name: Verify isolated Candidate bytes
+    needs: [candidate-build]
+    action: { uses: test.verify@1, with: { suite: release } }
+    decision: { mode: EXTERNAL_SIGNAL }
+    retry: { maxAttempts: 2 }
+  - id: project-goal-loop
+    name: Execute Harness-guided Goal Loop
+    needs: [candidate-acceptance]
+    action: { uses: evopilot.goal-loop@1, with: { objective: Produce accepted OSS evidence without publishing. } }
+    decision: { mode: EXTERNAL_SIGNAL }
+  - id: release-readiness
+    name: Bind exact accepted bytes
+    needs: [project-goal-loop, evidence]
+    action: { uses: release.prepare@1, with: { channel: "${inputs.publicationChannel}" } }
+    decision: { mode: AUTO }
+  - id: publication
+    name: Publish exact accepted bytes
+    needs: [release-readiness]
+    action: { uses: release.publish@1, with: { channel: "${inputs.publicationChannel}" } }
+    decision: { mode: HUMAN, authority: publication, prompt: Approve publication of this exact digest-bound Candidate? }

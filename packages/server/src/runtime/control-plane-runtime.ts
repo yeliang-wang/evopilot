@@ -108,6 +108,7 @@ import {
   workspaceUsage
 } from "../application/control-plane-services.js";
 import { isHarnessTemplateDomainError } from "../domains/harness-template/index.js";
+import { GovernedEvolutionService } from "../domains/governed-evolution/index.js";
 import { LifecycleService } from "../domains/lifecycle/index.js";
 import { serverCompositionRootMetadata } from "../http/composition-root.js";
 import {
@@ -144,6 +145,7 @@ import { handleConnectorRoutes } from "../http/routes/connectors.js";
 import { handleDeliveryRoutes } from "../http/routes/delivery.js";
 import { handleEvaluationRoutes } from "../http/routes/evaluation.js";
 import { handleGoalRoutes } from "../http/routes/goals.js";
+import { handleGovernedEvolutionRoutes } from "../http/routes/governed-evolution.js";
 import { handleHarnessRoutes } from "../http/routes/harness.js";
 import { handleLoopRuntimeRoutes } from "../http/routes/loop-runtime.js";
 import { handleLoopRoutes } from "../http/routes/loops.js";
@@ -396,6 +398,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
     harnessCatalogDirs: options.harnessCatalogDirs
   });
   const lifecycleService = new LifecycleService(options.dataRoot, options.lifecycleCatalogDirs?.length ? options.lifecycleCatalogDirs : [path.resolve("lifecycles")]);
+  const governedEvolutionService = new GovernedEvolutionService(options.dataRoot);
   setActiveLoggingSettings(store.readLoggingSettings());
   store.ensureBootstrapAdmin();
   const users = normalizeUsers(options, tokens, runtime, store);
@@ -662,6 +665,24 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         auth,
         store,
         service: lifecycleService,
+        options,
+        deps: {
+          appendAudit: (record: unknown) => store.appendAudit(record as never),
+          audit,
+          envelope,
+          hasRole,
+          readJson,
+          writeJson: routeWriteJson
+        }
+      })) return;
+      if (await handleGovernedEvolutionRoutes({
+        request,
+        response,
+        url,
+        auth,
+        store,
+        service: governedEvolutionService,
+        lifecycleService,
         options,
         deps: {
           appendAudit: (record: unknown) => store.appendAudit(record as never),

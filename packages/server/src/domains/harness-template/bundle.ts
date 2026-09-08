@@ -1,4 +1,5 @@
 import type { GoalPlanSelectedHarnessBinding, GoalTarget } from "../../model.js";
+import type { PublishedHarnessCandidate } from "@evopilot/core";
 import { harnessTemplateDomainError } from "./errors.js";
 import type {
   HarnessBundleAssetV3,
@@ -22,13 +23,61 @@ export interface HarnessBundleSelectionV3 {
   }>;
 }
 
+export function publishedHarnessCandidatesV5(input: {
+  profiles: HarnessProfileAssetV3[];
+  bundles: HarnessBundleAssetV3[];
+  components: HarnessComponentAssetV3[];
+}): PublishedHarnessCandidate[] {
+  return input.bundles.map((bundle) => {
+    const profile = input.profiles.find((candidate) => candidate.metadata.id === bundle.spec.profile.id
+      && candidate.metadata.version === bundle.spec.profile.version
+      && candidate.catalogRef?.entryDigest === bundle.spec.profile.digest
+      && candidate.catalogRef?.catalogId === bundle.catalogRef?.catalogId);
+    const components = bundle.spec.resolvedComponents.map((ref) => input.components.find((candidate) => candidate.metadata.id === ref.id
+      && candidate.metadata.version === ref.version
+      && candidate.catalogRef?.entryDigest === ref.digest
+      && candidate.catalogRef?.catalogId === bundle.catalogRef?.catalogId));
+    const complete = components.every(Boolean);
+    const resolved = components.filter((component): component is HarnessComponentAssetV3 => Boolean(component));
+    return {
+      profile: {
+        id: profile?.metadata.id ?? bundle.spec.profile.id,
+        version: profile?.metadata.version ?? bundle.spec.profile.version,
+        digest: profile?.catalogRef?.entryDigest ?? bundle.spec.profile.digest,
+        catalogId: bundle.catalogRef?.catalogId ?? "missing",
+        catalogDigest: bundle.catalogRef?.catalogDigest ?? "missing",
+        domains: profile ? [profile.spec.classification.domain] : [],
+        taskClasses: profile ? [profile.spec.classification.taskClass] : [],
+        positiveConcepts: profile?.spec.match.positiveConcepts ?? [],
+        negativeConcepts: uniqueStrings([...(profile?.spec.match.negativeConcepts ?? []), ...(profile?.spec.boundary.outOfScope ?? [])]),
+        requiredProjectLabels: Object.fromEntries(Object.entries(profile?.metadata.labels ?? {}).filter(([key]) => key.startsWith("project.required.")).map(([key, value]) => [key.slice("project.required.".length), value]))
+      },
+      bundle: {
+        id: bundle.metadata.id,
+        version: bundle.metadata.version,
+        digest: bundle.catalogRef?.entryDigest ?? "missing",
+        profileDigest: bundle.spec.profile.digest,
+        componentDigests: bundle.spec.resolvedComponents.map((ref) => ref.digest),
+        requiredEvidence: uniqueStrings([...(profile?.spec.acceptance.requiredEvidence ?? []), ...bundle.spec.evidence, ...resolved.flatMap((component) => component.spec.evidence)]),
+        validators: uniqueStrings([...(profile?.spec.acceptance.blockingValidators ?? []), ...bundle.spec.validators, ...resolved.flatMap((component) => component.spec.validators.map((validator) => validator.id))]),
+        constraints: uniqueStrings([...bundle.spec.constraints, ...resolved.flatMap((component) => component.spec.constraints)]),
+        capabilities: uniqueStrings(resolved.map((component) => component.spec.capability)),
+        permissions: uniqueStrings(resolved.flatMap((component) => component.spec.actions.map((action) => action.id)))
+      },
+      published: bundle.metadata.lifecycle === "published" && profile?.metadata.lifecycle === "published",
+      eligible: Boolean(profile && complete && bundle.catalogRef?.entryDigest && bundle.catalogRef?.catalogDigest),
+      priority: bundle.catalogRef?.registryCatalogPriority ?? 0
+    };
+  });
+}
+
 export function selectPublishedHarnessBundleV3(input: {
   profiles: HarnessProfileAssetV3[];
   bundles: HarnessBundleAssetV3[];
   components: HarnessComponentAssetV3[];
   contextText: string;
 }): HarnessBundleSelectionV3 | undefined {
-  const candidates = input.profiles.map((profile) => {
+  const allCandidates = input.profiles.map((profile) => {
     const scored = scorePublishedHarnessProfileV3(profile, input.contextText);
     const profileDigest = profile.catalogRef?.entryDigest;
     const bundle = input.bundles
@@ -51,7 +100,8 @@ export function selectPublishedHarnessBundleV3(input: {
       catalogPriority: bundle?.catalogRef?.registryCatalogPriority ?? profile.catalogRef?.registryCatalogPriority ?? 0,
       reasons: bundle ? scored.reasons : [...scored.reasons, "bundle=missing"]
     };
-  }).filter((candidate) => candidate.bundle && candidate.score > 0)
+  });
+  const candidates = allCandidates.filter((candidate) => candidate.bundle && candidate.score > 0)
     .sort((left, right) => {
       if (right.score !== left.score) return right.score - left.score;
       if (right.catalogPriority !== left.catalogPriority) return right.catalogPriority - left.catalogPriority;
@@ -62,12 +112,16 @@ export function selectPublishedHarnessBundleV3(input: {
     });
   const selected = candidates[0];
   if (!selected?.bundle) return undefined;
+  const runnerUp = candidates[1];
+  if (runnerUp && runnerUp.score === selected.score && runnerUp.catalogPriority === selected.catalogPriority) {
+    throw harnessTemplateDomainError(409, "HARNESS_PROFILE_MATCH_AMBIGUOUS", `HarnessProfiles ${selected.profile.metadata.id}@${selected.profile.metadata.version} and ${runnerUp.profile.metadata.id}@${runnerUp.profile.metadata.version} are tied at score=${selected.score}; refine the Project Definition or GoalTarget.`);
+  }
   return {
     profile: selected.profile,
     bundle: selected.bundle,
     components: selected.components,
     reasons: selected.reasons.length > 0 ? selected.reasons : ["profileMatch=classification"],
-    candidateScores: candidates.slice(0, 12).map((candidate) => ({
+    candidateScores: allCandidates.sort((left, right) => right.score - left.score || right.catalogPriority - left.catalogPriority || left.profile.metadata.id.localeCompare(right.profile.metadata.id)).slice(0, 12).map((candidate) => ({
       profileId: candidate.profile.metadata.id,
       version: candidate.profile.metadata.version,
       score: candidate.score,
@@ -153,6 +207,7 @@ export function immutableHarnessBundlePlanBinding(
     capabilities: uniqueStrings(components.map((component) => component.spec.capability)),
     selectionMode: "catalog-auto-match",
     selectionReasons: selection.reasons,
+    selectionCandidates: selection.candidateScores.map((candidate) => ({ ...candidate, selected: candidate.profileId === profile.metadata.id && candidate.version === profile.metadata.version })),
     catalogId: catalogRef?.catalogId,
     catalogSource: catalogRef?.catalogSource,
     catalogDigest: catalogRef?.catalogDigest,

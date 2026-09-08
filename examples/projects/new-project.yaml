@@ -1,0 +1,17 @@
+schema: evopilot-evolution-project-definition/v1
+metadata:
+  id: replace-me
+  name: Replace Me
+  version: 1.0.0
+  labels: { delivery: public-oss, domain: replace-me }
+spec:
+  source: { provider: github, repository: organization/repository, defaultBranch: main, mode: owned, credentialRef: secret://github/replace-me }
+  ecosystem: { languages: [replace-me], packageManagers: [], frameworks: [] }
+  delivery: { model: open-source, ciProvider: github-actions, candidateBeforeAcceptance: true, noRebuildPromotion: true, channels: [github-release] }
+  environment: { development: local, acceptance: isolated-rc }
+  policyRefs: [policy://oss/public-release/v1]
+  lifecycleRefs: [lifecycle://replace-me/1.0.0]
+  secretRefs: [secret://github/replace-me]
+  hostPreferences: [generic-mcp]
+  runtimePreferences: [local]
+  evidenceSources: [github-actions]

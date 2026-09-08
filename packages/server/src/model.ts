@@ -1480,6 +1480,7 @@ export interface GoalPlanSelectedHarnessBinding {
   capabilities: string[];
   selectionMode: "catalog-auto-match";
   selectionReasons: string[];
+  selectionCandidates?: Array<{ profileId: string; version: string; score: number; catalogPriority: number; reasons: string[]; selected: boolean }>;
   catalogId?: string;
   catalogSource?: string;
   catalogDigest?: string;

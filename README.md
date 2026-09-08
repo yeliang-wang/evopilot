@@ -14,6 +14,21 @@ EvoPilot helps teams operate AI-agent products as releasable software. It collec
 
 It is not an agent runtime, prompt playground, generic code generator, or Harness Asset lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot reads a configured Harness Registry and the published Catalog directories it points to, then uses an open product-delivery Lifecycle Harness to execute project goals against the selected immutable HarnessBundle.
 
+## v5 Development Line
+
+The repository is implementing EvoPilot **v5.0.0 Harness-Guided Governed Evolution Runtime**; v4.0.0 remains the latest public release. v5 keeps `Goal -> Loop -> Target` as the product core and makes its binding explicit:
+
+```text
+Project Definition + GoalTarget -> published HarnessProfile -> immutable HarnessBundle
+                                      + open Lifecycle -> governed Goal Target Loop
+```
+
+DataRig, EvoPilot, evopilot-harness, and future projects use the same declarative Project Definition aggregate. There are no project-name branches. Harness obligations cannot be weakened by Lifecycle configuration, and the exact binding is revalidated at start, resume, retry, and every Loop iteration.
+
+The optional [EvoPilot Evolution Expert](docs/guides/evolution-expert.md) is independently versioned and provides one generated conversational adapter for Codex, WorkBuddy, generic Agents, and generic MCP Hosts. It guides and explains; Runtime remains authoritative and fully operable through MCP, CLI, HTTP API, and CI without the Expert.
+
+The existing EvoPilot and DataRig Codex Suites remain active and independently evolving throughout v5 development and release acceptance. v5 uses late-bound read-only snapshots for comparison and proves independence only in isolated Candidate environments where both Suites are absent. Real default switching or retirement is a separate, explicitly authorized post-release [Cutover](docs/guides/legacy-suite-transition.md), not a v5 release gate.
+
 ## Start Here
 
 | Entry | Use when | Command |
@@ -30,6 +45,8 @@ Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet
 | --- | --- |
 | Govern product evolution | Human-readable Lifecycle planning, risk-based authority gates, automatic deterministic stages, evidence closure, and final release decisions; the v3 Alpha/Beta/RC/GA ladder remains available through compatibility data. |
 | Run auditable loops | Durable loop state, executor graphs, checkpoints, replay, worker leases, watchdog recovery, and timeline audit. |
+| Onboard any project declaratively | Immutable human-readable Project Definitions, schema-driven questions, versioned adjustment, and no project-specific Runtime branches. |
+| Recover and learn safely | Bounded automatic repair/retry/resume plus an Automation Registry where one reviewed proposal can automate future equivalent safe failures. |
 | Consume published Harnesses | Dynamically reads configured `evopilot-harness` Registry/Catalog roots, matches published v3 Profiles, binds immutable Bundles, and stores the complete Profile/Component/Bundle digest closure in goal plans. |
 | Control source and delivery | Bounded code-upgrader execution, allowed paths, validation commands, source closure, CI/CD delivery, and deploy evidence. |
 | Track LLM usage by project | Server-projected provider/model/profile rows, token totals, latest loop tokens, and request IDs for connected projects and workspaces. |
@@ -192,6 +209,7 @@ Repository map:
 | `packages/create-evopilot/` | Self-host package used by the release installer to generate a complete Compose stack. |
 | `packages/server/` | HTTP control-plane runtime, thin compatibility adapter, RBAC, tenant/workspace scope, audit, and server-side modules. |
 | `packages/worker-runtime/` | Loop worker runtime package used by `scripts/loop-worker.mjs`. |
+| `packages/evolution-expert/` | Independently versioned optional conversational Core and generated Host adapters. |
 | `packages/adapter-*` | Source, DevOps, MCP, and code-upgrader connector adapters. |
 | `charts/evopilot/` | Helm chart for API, worker, code-upgrader, Postgres, Dashboard, and Ingress. |
 | `deploy/` | Docker Compose, ECS, and Kubernetes deployment assets. |

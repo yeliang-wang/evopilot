@@ -6,6 +6,7 @@ import path from "node:path";
 import { execFileSync, spawn } from "node:child_process";
 import test from "node:test";
 import { createServer } from "../../packages/server/dist/index.js";
+import { createSoftwareDeliveryHarnessRegistry } from "../helpers/v5-harness-catalog.mjs";
 
 const cliPath = path.resolve("packages/cli/dist/index.js");
 const cliPackage = JSON.parse(fs.readFileSync(path.resolve("packages/cli/package.json"), "utf8"));
@@ -18,6 +19,10 @@ test("EvoPilot CLI exposes distribution metadata without a server", async () => 
   assert.match(help, /evopilot config show/);
   assert.match(help, /evopilot auth token/);
   assert.match(help, /evopilot project list/);
+  assert.match(help, /evopilot project-definition register/);
+  assert.match(help, /evopilot evolution plan/);
+  assert.match(help, /evopilot evolution revalidate/);
+  assert.match(help, /evopilot automation propose/);
   assert.match(help, /evopilot project onboard plan/);
   assert.match(help, /evopilot project onboard/);
   assert.match(help, /evopilot project onboard verify/);
@@ -682,6 +687,7 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
   assert.ok(fs.existsSync(cliPath), "CLI must be built before functional tests run");
 
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-cli-data-"));
+  const harnessRegistryConfig = createSoftwareDeliveryHarnessRegistry(dataRoot);
   const configPath = path.join(dataRoot, "cli-config.json");
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-cli-repo-"));
   createGitRepository(repoRoot);
@@ -690,6 +696,7 @@ test("EvoPilot CLI drives the atomic Source-to-GA control-plane path", async () 
 
   const server = createServer({
     dataRoot,
+    harnessRegistryConfig,
     runtimeMode: "debug",
     llmClient: {
       async generate(request) {

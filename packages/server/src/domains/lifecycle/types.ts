@@ -69,6 +69,15 @@ export interface LifecycleDefinition {
   metadata: LifecycleMetadata;
   imports?: LifecycleImportRef[];
   capabilities?: string[];
+  obligations?: {
+    requiredEvidence?: string[];
+    validators?: string[];
+    constraints?: string[];
+    requestedPermissions?: string[];
+    disabledHarnessEvidence?: string[];
+    disabledHarnessValidators?: string[];
+    weakenedHarnessConstraints?: string[];
+  };
   inputs?: LifecycleInputDefinition[];
   stages: LifecycleStageDefinition[];
 }

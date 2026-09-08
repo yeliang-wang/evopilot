@@ -1,0 +1,24 @@
+schema: evopilot-evolution-project-definition/v1
+metadata:
+  id: evopilot-harness
+  name: EvoPilot Harness
+  version: 1.0.0
+  labels:
+    delivery: public-oss
+    domain: harness-product
+spec:
+  source: { provider: github, repository: yeliang-wang/evopilot-harness, defaultBranch: main, mode: owned, credentialRef: secret://github/evopilot-harness }
+  ecosystem: { languages: [typescript], packageManagers: [npm], frameworks: [] }
+  delivery:
+    model: open-source
+    ciProvider: github-actions
+    candidateBeforeAcceptance: true
+    noRebuildPromotion: true
+    channels: [github-release, npm, ghcr]
+  environment: { development: local, acceptance: isolated-rc }
+  policyRefs: [policy://oss/public-release/v1]
+  lifecycleRefs: [lifecycle://evopilot-harness-oss/1.0.0]
+  secretRefs: [secret://github/evopilot-harness, secret://npm/evopilot-harness]
+  hostPreferences: [codex, workbuddy]
+  runtimePreferences: [local, github-actions]
+  evidenceSources: [github-actions, agent-host-acceptance, public-registry]

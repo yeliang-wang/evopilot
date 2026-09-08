@@ -139,6 +139,7 @@ export async function handleGoalRoutes(context: GoalRoutesContext): Promise<bool
       maturityStandardSetId: snapshot.goal.maturityStandardSetId ?? DEFAULT_MATURITY_STANDARD_SET_ID,
       status: snapshot.goal.plan.status,
       editablePlan: snapshot.goal.plan.editablePlan,
+      selectedHarness: snapshot.goal.plan.selectedHarness,
       phases: snapshot.phases,
       targets: snapshot.goal.plan.targets,
       nextAction: snapshot.nextAction

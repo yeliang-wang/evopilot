@@ -1,5 +1,38 @@
 # EvoPilot API
 
+## Harness-Guided Governed Evolution Runtime（v5 开发接口）
+
+```text
+GET  /api/v1/evolution-project-definitions
+POST /api/v1/evolution-project-definitions
+GET  /api/v1/evolution-project-definitions/{id}?version=...
+POST /api/v1/governed-evolution/plan
+POST /api/v1/governed-evolution/revalidate
+POST /api/v1/governed-evolution/recovery/decide
+GET  /api/v1/automation-registry
+POST /api/v1/automation-registry/proposals
+POST /api/v1/automation-registry/{id}/activate
+POST /api/v1/automation-registry/{id}/revoke
+POST /api/v1/interactions/render
+```
+
+`plan` 采用 `ProjectDefinition + GoalTarget` 确定性匹配已发布的不可变 `HarnessBundle`，再与开放 Lifecycle 单调组合。匹配歧义、无匹配或 Lifecycle 弱化 Harness 时失败关闭。生成的 binding 在 start、resume、retry 和每次 Loop iteration 前重验。
+
+Recovery 默认自动处理可逆 mechanics、相同输入安全重试和 receipt 恢复。未知但可安全复用的情形先生成完整 Automation Rule proposal；只有一次与 proposal digest 精确绑定的人工决定能激活后续自动化。不可逆权限与结果不确定的外部 mutation 不能学习成自动规则。
+
+Evolution Expert、MCP、CLI 和其他 Agent adapter 只投影这些 Runtime 语义，不持有权威状态或批准能力。上述内容处于已批准 v5.0.0 Target 的实现阶段，不代表 v5 已发布。
+
+对应的无 Expert CLI 入口使用同一 HTTP 语义：
+
+```text
+evopilot project-definition <list|inspect|register>
+evopilot evolution <plan|revalidate|recover> --file <request.yaml|json>
+evopilot automation <list|propose|activate|revoke>
+```
+
+Project Definition、执行 binding、Automation proposal/rule 都按认证的 tenant/workspace 隔离。`evolution plan` 可在请求中指定 `projectDefinitionVersion`，从而显式重用旧的不可变声明；不指定时选择最新版本。Project Definition id 必须与 GoalTarget projectId 相同，防止跨项目绑定。
+`authorityDigest` 由服务端根据当前认证的 tenant、workspace、actor 与 role 生成，客户端提交的同名字段不会授予或扩大权限。
+
 ## Open Lifecycle Harness（v4 开发接口）
 
 该接口执行项目 Lifecycle，不管理或发布 Harness Asset。`POST /api/v1/lifecycle-runs` 必须绑定当前 tenant/workspace 中已注册的项目，以及从只读 Harness Catalog 读取并重新校验的 `published`、不可变 `HarnessBundle`。

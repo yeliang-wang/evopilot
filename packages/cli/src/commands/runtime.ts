@@ -172,6 +172,12 @@ export async function runCli(argv: string[]): Promise<number> {
         return await projectPreflight(ctx, maybeId);
       case "project:list":
         return await projectList(ctx);
+      case "project-definition:list":
+        return await evolutionProjectDefinitionList(ctx);
+      case "project-definition:inspect":
+        return await evolutionProjectDefinitionInspect(ctx, maybeId);
+      case "project-definition:register":
+        return await evolutionProjectDefinitionRegister(ctx);
       case "project:credentials":
         if (maybeId !== "set") throw usage("Use: evopilot project credentials set <project-id> [options]");
         return await projectCredentialsSet(ctx, args.positionals[3]);
@@ -227,6 +233,20 @@ export async function runCli(argv: string[]): Promise<number> {
         return await lifecycleRunMutation(ctx, maybeId, "external-result");
       case "lifecycle-run:feedback":
         return await lifecycleRunMutation(ctx, maybeId, "feedback");
+      case "evolution:plan":
+        return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/plan", "plan");
+      case "evolution:revalidate":
+        return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/revalidate", "revalidate");
+      case "evolution:recover":
+        return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/recovery/decide", "recover");
+      case "automation:list":
+        return await automationRegistryList(ctx);
+      case "automation:propose":
+        return await governedEvolutionMutation(ctx, "/api/v1/automation-registry/proposals", "automation-propose");
+      case "automation:activate":
+        return await automationRegistryMutation(ctx, maybeId, "activate");
+      case "automation:revoke":
+        return await automationRegistryMutation(ctx, maybeId, "revoke");
       case "logging:":
       case "logging:undefined":
         return await loggingInspect(ctx);
@@ -1481,6 +1501,49 @@ function lifecyclePayloadFromFile(args: ParsedArgs): Record<string, unknown> {
   const parsed = /\.ya?ml$/i.test(file) ? parseYaml(content) : JSON.parse(content);
   if (!isRecord(parsed)) throw usage(`Payload ${file} must contain a YAML or JSON object.`);
   return parsed;
+}
+
+async function evolutionProjectDefinitionList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/evolution-project-definitions"));
+  printOutput(ctx, response.data, listSummary(field(response.data, "items"), "metadata.id"));
+  return 0;
+}
+
+async function evolutionProjectDefinitionInspect(ctx: RuntimeContext, id?: string): Promise<number> {
+  const projectDefinitionId = id ?? requiredOption(ctx.args, "id");
+  const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/evolution-project-definitions/${encodeURIComponent(projectDefinitionId)}`, { query: { version: stringOption(ctx.args, "version") } }));
+  printOutput(ctx, response.data, `projectDefinition=${nestedField(response.data, ["metadata", "id"])}@${nestedField(response.data, ["metadata", "version"])} digest=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function evolutionProjectDefinitionRegister(ctx: RuntimeContext): Promise<number> {
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  if (Object.keys(payload).length === 0) throw usage("project-definition register requires --file <definition.yaml|json>.");
+  const response = await ctx.client.expectOk(ctx.client.post("/api/v1/evolution-project-definitions", payload, requestOptions(ctx)));
+  printOutput(ctx, response.data, `projectDefinition=${nestedField(response.data, ["metadata", "id"])}@${nestedField(response.data, ["metadata", "version"])} digest=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function governedEvolutionMutation(ctx: RuntimeContext, path: string, command: string): Promise<number> {
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  if (Object.keys(payload).length === 0) throw usage(`evolution ${command} requires --file <payload.yaml|json>.`);
+  const response = await ctx.client.expectOk(ctx.client.post(path, payload, requestOptions(ctx)));
+  printOutput(ctx, response.data, `command=${command} status=${field(response.data, "status") ?? field(response.data, "action") ?? "OK"} digest=${field(response.data, "digest") ?? nestedField(response.data, ["binding", "digest"]) ?? "-"}`);
+  return 0;
+}
+
+async function automationRegistryList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/automation-registry"));
+  printOutput(ctx, response.data, `proposals=${arrayLength(field(response.data, "proposals"))} rules=${arrayLength(field(response.data, "rules"))}`);
+  return 0;
+}
+
+async function automationRegistryMutation(ctx: RuntimeContext, id: string | undefined, action: "activate" | "revoke"): Promise<number> {
+  const ruleId = id ?? requiredOption(ctx.args, "id");
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  const response = await ctx.client.expectOk(ctx.client.post(`/api/v1/automation-registry/${encodeURIComponent(ruleId)}/${action}`, payload, requestOptions(ctx)));
+  printOutput(ctx, response.data, `automationRule=${field(response.data, "id")} revision=${field(response.data, "revision")} status=${field(response.data, "status")}`);
+  return 0;
 }
 
 async function loggingInspect(ctx: RuntimeContext): Promise<number> {
@@ -3772,6 +3835,9 @@ Usage:
   evopilot project onboard verify <project-id>
   evopilot project list
   evopilot project preflight <project-id>
+  evopilot project-definition list
+  evopilot project-definition inspect <project-id> [--version <version>]
+  evopilot project-definition register --file <definition.yaml|json>
   evopilot project credentials set <project-id> [--token-ref <env>]
   evopilot project devops set <project-id> --provider <github-actions|gitlab-ci> [options]
   evopilot project devops inspect <project-id>
@@ -3805,6 +3871,13 @@ Usage:
   evopilot lifecycle-run cancel <run-id> --binding-digest <sha256> --evidence-ref <ref>
   evopilot lifecycle-run signal <run-id> --request-id <id> --status <SUCCEEDED|FAILED|UNCERTAIN> --receipt-digest <sha256> [--file <evidence.yaml|json>]
   evopilot lifecycle-run feedback <run-id> --binding-digest <sha256> --evidence-ref <human-approval-ref>
+  evopilot evolution plan --file <plan-request.yaml|json>
+  evopilot evolution revalidate --file <revalidation.yaml|json>
+  evopilot evolution recover --file <recovery-context.yaml|json>
+  evopilot automation list
+  evopilot automation propose --file <rule-proposal.yaml|json>
+  evopilot automation activate <rule-id> --file <exact-decision.json>
+  evopilot automation revoke <rule-id> --file <exact-decision.json>
   evopilot logging inspect
   evopilot logging set --level <debug|info|warn|error> [--include-stack <true|false>]
   evopilot github-app installation list

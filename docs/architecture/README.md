@@ -38,6 +38,8 @@ See [Package Boundaries](package-boundaries.md) for ownership rules, transitiona
 | Project | Registered products, source credentials, workspace ownership |
 | Harness Catalog Consumer | Read-only published Harness Catalog loading, automatic selected-Harness matching, and goal-plan digest evidence |
 | Lifecycle Harness | Open YAML project lifecycle resolution over a closed Action Registry, immutable run bindings, minimized authority gates, and external Agent receipts |
+| Governed Evolution Runtime | Declarative Project definitions, deterministic Harness matching, monotonic Harness/Lifecycle composition, exact Loop binding, and Automation Registry recovery |
+| Evolution Expert Adapter | Optional independently versioned conversational guidance over Runtime APIs; no canonical state or authority |
 | Evidence | Runtime signals, trace/log/eval ingestion, evidence bundles |
 | GlobalGoal | Goal decomposition into GoalTargets, progress, graph, timeline, final report |
 | Loop Runtime | LoopRun execution, worker leases, sandbox proof, trace, events, replay |
@@ -56,6 +58,8 @@ Deep architecture notes remain in:
 - [Package Boundaries](package-boundaries.md)
 - [ADR: EvoPilot / evopilot-harness Boundary](adr/0001-evopilot-harness-boundary.md)
 - [ADR: Open Lifecycle Harness](adr/0002-open-lifecycle-harness.md)
+- [ADR: Harness-Guided Governed Evolution Runtime](adr/0003-harness-guided-governed-evolution-runtime.md)
+- [Harness-Guided Governed Evolution Runtime](harness-guided-governed-evolution-runtime.md)
 - [Open Lifecycle Harness](open-lifecycle-harness.md)
 - [Published Harness Catalog](published-harness-catalog.md)
 - [Harness Template Boundary](harness-template-domain.md)

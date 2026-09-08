@@ -16,7 +16,7 @@ import {
   type LifecycleVisibilityCondition
 } from "./types.js";
 
-const ROOT_KEYS = new Set(["schema", "metadata", "imports", "capabilities", "inputs", "stages"]);
+const ROOT_KEYS = new Set(["schema", "metadata", "imports", "capabilities", "obligations", "inputs", "stages"]);
 const METADATA_KEYS = new Set(["id", "name", "version", "description", "labels"]);
 const IMPORT_KEYS = new Set(["id", "version"]);
 const INPUT_KEYS = new Set(["id", "type", "prompt", "description", "required", "default", "options", "pattern", "minimum", "maximum", "visibleWhen", "sensitive", "review"]);
@@ -25,6 +25,7 @@ const STAGE_KEYS = new Set(["id", "name", "needs", "when", "action", "capabiliti
 const ACTION_KEYS = new Set(["uses", "with"]);
 const DECISION_KEYS = new Set(["mode", "authority", "prompt"]);
 const RETRY_KEYS = new Set(["maxAttempts"]);
+const OBLIGATION_KEYS = new Set(["requiredEvidence", "validators", "constraints", "requestedPermissions", "disabledHarnessEvidence", "disabledHarnessValidators", "weakenedHarnessConstraints"]);
 const FORBIDDEN_EXECUTABLE_KEYS = new Set(["run", "script", "shell", "command", "exec", "javascript", "python", "code", "password", "token", "secret", "apikey", "api-key", "privatekey", "private-key", "credential"]);
 const INPUT_TYPES = new Set(["string", "integer", "number", "boolean", "enum", "string-array", "secret-ref"]);
 const DECISION_MODES = new Set(["AUTO", "POLICY", "HUMAN", "EXTERNAL_SIGNAL", "DISABLED"]);
@@ -70,11 +71,18 @@ export function parseLifecycleYaml(source: LifecycleSource, registry = new Lifec
   for (const stage of stages) validateCondition(stage.when, inputIds, `stage ${stage.id}`);
   const capabilities = Array.isArray(value.capabilities) ? stringArray(value.capabilities, "capabilities") : [];
   registry.validateCapabilities(capabilities);
+  let obligations: LifecycleDefinition["obligations"];
+  if (value.obligations !== undefined) {
+    assertObject(value.obligations, "obligations");
+    rejectUnknown(value.obligations, OBLIGATION_KEYS, "obligations");
+    obligations = Object.fromEntries(Object.entries(value.obligations).map(([key, child]) => [key, stringArray(child, `obligations.${key}`)]));
+  }
   return {
     schema: LIFECYCLE_DEFINITION_SCHEMA,
     metadata: value.metadata as unknown as LifecycleDefinition["metadata"],
     ...(imports.length > 0 ? { imports: imports as unknown as LifecycleDefinition["imports"] } : {}),
     ...(capabilities.length > 0 ? { capabilities } : {}),
+    ...(obligations ? { obligations } : {}),
     ...(inputs.length > 0 ? { inputs } : {}),
     stages
   };
@@ -238,10 +246,23 @@ function mergeDefinitions(root: LifecycleDefinition, imports: LifecycleDefinitio
   const stages = [...imports.flatMap((item) => item.stages), ...root.stages];
   uniqueIds(inputs, "input");
   uniqueIds(stages, "stage");
+  const obligations = [
+    ...imports.map((item) => item.obligations ?? {}),
+    root.obligations ?? {}
+  ].reduce<NonNullable<LifecycleDefinition["obligations"]>>((result, item) => ({
+    requiredEvidence: unique([...(result.requiredEvidence ?? []), ...(item.requiredEvidence ?? [])]),
+    validators: unique([...(result.validators ?? []), ...(item.validators ?? [])]),
+    constraints: unique([...(result.constraints ?? []), ...(item.constraints ?? [])]),
+    requestedPermissions: unique([...(result.requestedPermissions ?? []), ...(item.requestedPermissions ?? [])]),
+    disabledHarnessEvidence: unique([...(result.disabledHarnessEvidence ?? []), ...(item.disabledHarnessEvidence ?? [])]),
+    disabledHarnessValidators: unique([...(result.disabledHarnessValidators ?? []), ...(item.disabledHarnessValidators ?? [])]),
+    weakenedHarnessConstraints: unique([...(result.weakenedHarnessConstraints ?? []), ...(item.weakenedHarnessConstraints ?? [])])
+  }), {});
   return {
     ...root,
     imports: root.imports,
     capabilities: unique([...imports.flatMap((item) => item.capabilities ?? []), ...(root.capabilities ?? [])]),
+    obligations,
     inputs,
     stages
   };
