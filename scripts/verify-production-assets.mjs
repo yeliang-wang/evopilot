@@ -9,6 +9,7 @@ const requiredFiles = [
   ".env.example",
   ".github/workflows/ci.yml",
   ".github/workflows/release-candidate.yml",
+  ".github/workflows/evolution-expert-release-candidate.yml",
   ".github/workflows/release-artifacts.yml",
   ".github/workflows/failure-recovery.yml",
   ".github/workflows/release-ready.yml",
@@ -63,7 +64,9 @@ const requiredFiles = [
   "scripts/immutable-rollback-runbook.mjs",
   "scripts/release-ready.mjs",
   "scripts/build-release-artifacts.mjs",
+  "scripts/build-evolution-expert-release-artifacts.mjs",
   "scripts/project-candidate-handoff.mjs",
+  "scripts/verify-evolution-expert-release-artifacts.mjs",
   "scripts/release-promotion-record.mjs",
   "scripts/verify-release-artifacts.mjs",
   "scripts/verify-release-pipeline.mjs",
@@ -79,6 +82,8 @@ for (const file of requiredFiles) {
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 assert.match(packageJson.scripts["test:failure-recovery"], /failure-recovery-matrix\.mjs/);
 assert.match(packageJson.scripts["release:ready"], /release-ready\.mjs/);
+assert.match(packageJson.scripts["evolution-expert:release:artifact"], /build-evolution-expert-release-artifacts\.mjs/);
+assert.match(packageJson.scripts["verify:evolution-expert-release-artifact"], /verify-evolution-expert-release-artifacts\.mjs/);
 assert.equal(packageJson.scripts["release:soak:ga:active"], "node scripts/run-active-ga-soak.mjs");
 assert.match(packageJson.scripts["ecs:immutable-rollout"], /immutable-rollback-runbook\.mjs/);
 

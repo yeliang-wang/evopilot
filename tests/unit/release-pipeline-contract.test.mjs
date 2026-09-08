@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-import { validateReleasePipeline, verifyReleasePipeline } from "../../scripts/verify-release-pipeline.mjs";
+import { validateEvolutionExpertCandidate, validateReleasePipeline, verifyReleasePipeline } from "../../scripts/verify-release-pipeline.mjs";
 import { run as runRegistryCommand } from "../../scripts/verify-npm-registry-publication.mjs";
 
 test("release pipeline forms one Candidate and promotes exact accepted bytes", () => {
@@ -11,6 +11,18 @@ test("release pipeline forms one Candidate and promotes exact accepted bytes", (
   assert.equal(result.invariants.candidateBuiltOnce, true);
   assert.equal(result.invariants.acceptedBytesPromotedWithoutRebuild, true);
   assert.equal(result.invariants.productLifecycleBoundaryPreserved, true);
+  assert.equal(result.invariants.expertCandidateIndependent, true);
+  assert.equal(result.releaseUnits.evolutionExpert, "PASS");
+});
+
+test("Evolution Expert Candidate pipeline binds its independent version and never publishes", () => {
+  const workflow = fs.readFileSync(".github/workflows/evolution-expert-release-candidate.yml", "utf8");
+  const result = validateEvolutionExpertCandidate(workflow);
+  assert.equal(result.status, "PASS", JSON.stringify(result.failures));
+
+  const unsafe = validateEvolutionExpertCandidate(`${workflow}\n      - run: npm publish\n`);
+  assert.equal(unsafe.status, "FAIL");
+  assert.ok(unsafe.failures.some((failure) => failure.includes("must not publish")));
 });
 
 test("release pipeline contract rejects a GA rebuild", () => {

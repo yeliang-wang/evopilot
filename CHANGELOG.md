@@ -6,28 +6,37 @@ This project follows a product-readiness changelog model: release entries should
 
 ## Unreleased
 
-### Candidate: 4.0.0 Open Lifecycle Harness
+### Candidate: 5.0.0 Harness-Guided Governed Evolution Runtime
 
 This entry describes an unreleased candidate. It is not a release announcement and does not imply acceptance or publication.
 
 #### Added
 
-- Added human-readable, schema-validated Lifecycle YAML with typed interactive inputs, risk-based decision points, automation policy, retry, timeout, rollback, and evidence requirements.
-- Added deterministic Lifecycle planning and execution across CLI, API, CI, local MCP, and first-class external Agent runtime adapters.
-- Added a first-class OpenCode adapter with exact runtime/model/capability binding, bounded subprocess execution, normalized evidence-only receipts, durable idempotency, and fail-closed drift handling.
-- Added a public Agent execution contract and independent adapter conformance tests so external Agent integrations do not depend on OpenCode-specific behavior.
-- Added DataRig internal-tool and `evopilot-harness` open-source lifecycle examples without moving Harness authoring or publication authority into EvoPilot.
+- Added Harness-guided Goal Target Loops that require an exact eligible published immutable HarnessBundle and revalidate its closure before start, resume, retry, and each Loop iteration.
+- Added declarative, project-neutral Project Definitions and open Lifecycle composition with typed human interaction, bounded recovery, inspectable Automation Registry rules, and tenant/workspace isolation.
+- Added Runtime-owned Human Interaction Protocol surfaces for Codex, WorkBuddy, generic Agent, MCP, CLI, API, and CI clients without transferring product truth or authority.
+- Added the independently versioned `@evopilot/evolution-expert@1.0.0` package with generated Host adapters, tutorials, documentation routing, and Runtime-state resume.
+- Added separate private Runtime and Evolution Expert Candidate construction, verification, immutable handoff, and compatibility binding.
 
 #### Changed
 
-- Replaced phase-name-driven Alpha/Beta/RC/GA execution semantics with an open Lifecycle Harness; v3 phase packages remain available through an evidence-preserving compatibility mapping.
-- Reduced repeated approval prompts by requiring human decisions only for declared risk, ambiguous input, or external authority boundaries; deterministic low-risk work may be automated by policy.
+- Generalized DataRig, EvoPilot, `evopilot-harness`, and unknown projects as declarative reference definitions instead of repository-named Engine branches.
+- Kept the real EvoPilot and DataRig Codex Suites active and independently evolving before v5 release; isolated Candidate acceptance must prove zero legacy invocation without modifying those installed Suites.
+- Kept Evolution Expert Candidate, acceptance, version, release authorization, upgrade, rollback, and uninstall independent from Runtime while binding explicit compatibility.
 
 #### Validation required before release
 
-- All 18 target acceptance criteria, five historical regressions, RC01-RC04, and the no-regression condition must pass against one immutable candidate binding.
-- The AC16 OpenCode and independent-adapter conformance suite and the AC18 functional, failure-recovery, performance, concurrency, isolation, cancellation, recovery, security, observability, documentation, packaging, and soak matrix must pass.
-- A separate release authorization is required after acceptance. No release is authorized by this changelog entry.
+- Build the Runtime 5.0.0 and Evolution Expert 1.0.0 Candidate sets once from the same exact source commit through their independent workflows and verify both immutable handoffs.
+- Install both exact Candidates outside the source checkout and complete every Runtime and Expert functional, capability, inherited, no-regression, and real-case requirement.
+- Complete real Codex, designated-human WorkBuddy, and independent Host ranges without invoking or mutating the installed legacy Codex Suites.
+- Obtain separate release authorization after acceptance. No Candidate build, Host operation, publication, Suite Cutover, or release is authorized by this changelog entry.
+
+## 4.0.0 - 2026-09-07
+
+### Added
+
+- Released the Open Lifecycle Harness, schema-validated Lifecycle YAML, typed interactive inputs, risk-based decisions, bounded recovery, and deterministic CLI/API/CI/MCP/Agent execution.
+- Released first-class OpenCode and independent Agent adapter conformance while preserving EvoPilot as a read-only consumer of published immutable Harness Bundles.
 
 ## Deferred 3.2.0 closure (inherited by 4.0.0)
 

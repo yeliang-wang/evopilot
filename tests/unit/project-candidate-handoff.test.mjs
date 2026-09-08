@@ -95,3 +95,81 @@ test("Candidate handoff binds exact GitHub build and fresh artifact bytes withou
   assert.equal(tampered.classification, "BLOCKED");
   assert.ok(tampered.failures.some((failure) => failure.includes("digest mismatch")));
 });
+
+test("Candidate handoff supports an independently versioned Expert release unit", () => {
+  const temp = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-expert-candidate-handoff-"));
+  const releaseDir = path.join(temp, "fresh", "release");
+  const sourceCheckout = path.join(temp, "source");
+  fs.mkdirSync(releaseDir, { recursive: true });
+  fs.mkdirSync(sourceCheckout, { recursive: true });
+  const version = "1.0.0";
+  const commit = "e".repeat(40);
+  const runId = "987654";
+  const targetId = "evopilot-evolution-expert-v1.0.0";
+  const targetAuthorizationDigest = `sha256:${"f".repeat(64)}`;
+  const targetPath = path.join(temp, "target.json");
+  fs.writeFileSync(targetPath, JSON.stringify({
+    schema: "evopilot-evolution-target/v1",
+    id: targetId,
+    revision: 2,
+    status: "APPROVED",
+    approvals: { target: { authorizationDigest: targetAuthorizationDigest } }
+  }));
+
+  const files = {
+    [`evopilot-evolution-expert-${version}.tgz`]: "npm",
+    [`evopilot-evolution-expert-${version}-sbom.spdx.json`]: "{}",
+    "SHA256SUMS": "checksums"
+  };
+  for (const [name, content] of Object.entries(files)) fs.writeFileSync(path.join(releaseDir, name), content);
+  fs.writeFileSync(path.join(releaseDir, `evopilot-evolution-expert-${version}-provenance.json`), JSON.stringify({
+    releaseUnit: "evolution-expert",
+    version,
+    commit,
+    github: { runId }
+  }));
+
+  const requiredKinds = "npm-package,sbom,provenance,checksums";
+  const handoff = buildHandoff({
+    releaseDir,
+    sourceCheckout,
+    targetPath,
+    targetId,
+    targetRevision: "2",
+    targetAuthorizationDigest,
+    releaseUnit: "evolution-expert",
+    artifactPrefix: "evopilot-evolution-expert",
+    requiredKinds,
+    version,
+    commit,
+    repository: "owner/evopilot",
+    runId,
+    runAttempt: "1",
+    workflow: ".github/workflows/evolution-expert-release-candidate.yml",
+    workflowDigest: `sha256:${"a".repeat(64)}`,
+    ref: "refs/heads/main",
+    artifactName: `evopilot-evolution-expert-${version}-candidate-release-set`,
+    channelArtifactDigest: `sha256:${"b".repeat(64)}`,
+    retentionDays: "30",
+    createdAt: "2099-01-01T00:00:00.000Z"
+  });
+  const handoffPath = path.join(temp, "handoff.json");
+  fs.writeFileSync(handoffPath, JSON.stringify(handoff));
+  const result = verifyHandoff(handoff, {
+    releaseDir,
+    sourceCheckout,
+    handoffPath,
+    handoffDigest: fileDigest(handoffPath),
+    releaseUnit: "evolution-expert",
+    requiredKinds,
+    version,
+    repository: "owner/evopilot",
+    commit,
+    runId,
+    targetId
+  });
+
+  assert.equal(result.classification, "PASS", JSON.stringify(result.failures));
+  assert.equal(handoff.releaseUnit, "evolution-expert");
+  assert.deepEqual(handoff.requiredArtifactKinds, ["checksums", "npm-package", "provenance", "sbom"]);
+});

@@ -50,10 +50,18 @@ The release pipeline is intentionally ordered as follows:
    archive, Helm chart, installers, SBOM, provenance, checksums, and loadable
    container archive exactly once, then stores them as an immutable GitHub
    Actions Artifact.
+   When the release includes the independently versioned Evolution Expert,
+   dispatch `.github/workflows/evolution-expert-release-candidate.yml` with
+   the same exact commit and the approved Expert Target. It builds only the
+   Expert npm tarball, SPDX SBOM, provenance, and checksums under the Expert's
+   own version and artifact namespace.
 3. The handoff job downloads that artifact into a fresh directory outside the
    checkout, verifies every byte, and emits a digest-bound
    `evopilot-project-candidate-handoff/v1`. This state is `RC_READY`; it does
    not authorize release.
+   Runtime and Expert produce separate handoffs. A joint Host campaign binds
+   both exact handoffs and the declared compatibility pair; neither handoff
+   grants authority to the other release unit.
 4. Run AC01-AC18, HIST01-HIST05, RC01-RC04, adapter conformance, and active
    soak from the exact downloaded Candidate packages. A checkout build is not
    acceptance evidence for this step.
@@ -87,6 +95,8 @@ npm run release:ready
 npm run verify:distribution
 npm run release:artifact
 npm run verify:release-artifact
+npm run evolution-expert:release:artifact
+npm run verify:evolution-expert-release-artifact
 npm run verify:release-pipeline
 git diff --check
 ```
@@ -136,6 +146,18 @@ If `gh` is unavailable, create the GitHub Release manually from the pushed tag a
 
 `.github/workflows/release-candidate.yml` forms the immutable Candidate set;
 `.github/workflows/release-artifacts.yml` only promotes an accepted set.
+
+`.github/workflows/evolution-expert-release-candidate.yml` independently forms
+the `@evopilot/evolution-expert` Candidate set. It validates the Expert Target
+and package version rather than the Runtime version, uses the
+`evolution-expert-v<version>` tag namespace, and never publishes. Its expected
+files are:
+
+- `evopilot-evolution-expert-<version>.tgz`
+- `evopilot-evolution-expert-<version>-sbom.spdx.json`
+- `evopilot-evolution-expert-<version>-provenance.json`
+- `SHA256SUMS`
+- a separately uploaded `evopilot-evolution-expert-<version>-project-candidate-handoff.json`
 
 Expected assets:
 

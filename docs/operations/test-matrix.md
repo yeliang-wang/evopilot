@@ -12,6 +12,7 @@
 | Production E2E | `npm run test:e2e:production` | Validates production-compatible runtime paths. |
 | GA active soak | `npm run release:soak:ga:active` | Proves the GA release target with active workload, not health-only uptime. |
 | Release artifacts | `npm run release:artifact && npm run verify:release-artifact` | Builds and verifies source archive, SPDX SBOM, provenance, image metadata, and checksums. |
+| Evolution Expert artifacts | `npm run evolution-expert:release:artifact && npm run verify:evolution-expert-release-artifact` | Builds and verifies the independent Expert npm Candidate, SPDX SBOM, provenance, checksums, and package identity. |
 | Release pipeline contract | `npm run verify:release-pipeline` | Proves Candidate build-once, exact cross-run handoff, accepted-byte promotion, and separation from product Lifecycle objects. |
 | Agent adapter conformance | `npm run test:agent-adapters` | Proves the first-class OpenCode adapter and one independent adapter use the same request/result contract and fail closed on hostile or uncertain execution. |
 | Open Lifecycle non-functional | `npm run test:open-lifecycle:nonfunctional` | Emits resource, concurrency, cancellation, isolation, recovery, performance, security, observability/audit, documentation, and packaging evidence. |
@@ -66,6 +67,7 @@ It verifies:
 - `docs/releases/<version>.md` exists and mentions the current version.
 - Test-matrix docs, failure recovery scripts, release readiness scripts, and failure-recovery tests exist.
 - Package scripts include `check`, `cli:test`, `test:failure-recovery`, `release:ready`, `release:artifact`, `verify:release-artifact`, `verify:release-pipeline`, `test:e2e:production`, and `release:soak:ga:active`.
+- Evolution Expert readiness includes its own changelog, artifact builder, verifier, private Candidate workflow, independent version binding, and immutable handoff.
 - CI workflows exist for failure recovery, release readiness, Candidate formation, accepted-byte promotion, npm promotion, and PR artifacts.
 - PR artifacts workflow runs repository checks, failure recovery, release artifact build, release artifact verification, and uploads artifacts.
 - `git diff --check` passes.
@@ -81,6 +83,7 @@ The readiness report is written to `dist/test-matrix/release-ready.json`.
 | `.github/workflows/release-ready.yml` | push to `main`, pull request | Release readiness JSON. |
 | `.github/workflows/pr-artifacts.yml` | pull request | Full check, failure recovery, release readiness, release artifacts, verification output, uploaded review artifacts. |
 | `.github/workflows/release-candidate.yml` | manual dispatch with exact commit and Target | Builds once, uploads immutable controlled RC assets, then fresh-downloads and binds the Candidate handoff. |
+| `.github/workflows/evolution-expert-release-candidate.yml` | manual dispatch with the same exact commit and approved Expert Target | Builds only the independently versioned Expert Candidate set, fresh-downloads it, and binds a separate immutable handoff without publication. |
 | `.github/workflows/release-artifacts.yml` | manual dispatch after acceptance and Release Binding | Promotes accepted assets to a new GitHub Release and the accepted image archive to GHCR without rebuild. |
 | `.github/workflows/npm-packages.yml` | manual dispatch after public GitHub Release | Publishes the exact accepted `.tgz` files and verifies clean public installation. |
 
@@ -97,6 +100,8 @@ npm run test:failure-recovery
 npm run release:ready
 npm run release:artifact
 npm run verify:release-artifact
+npm run evolution-expert:release:artifact
+npm run verify:evolution-expert-release-artifact
 npm run verify:release-pipeline
 git diff --check
 ```

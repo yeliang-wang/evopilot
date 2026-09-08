@@ -1,0 +1,192 @@
+name: Evolution Expert Release Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: "Exact 40-character commit to build once"
+        required: true
+        type: string
+      target_id:
+        description: "Approved Evolution Expert Target id"
+        required: true
+        type: string
+
+concurrency:
+  group: evolution-expert-release-candidate-${{ inputs.commit_sha }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build immutable Evolution Expert Candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      version: ${{ steps.boundary.outputs.version }}
+      target_revision: ${{ steps.boundary.outputs.target_revision }}
+      target_authorization_digest: ${{ steps.boundary.outputs.target_authorization_digest }}
+      artifact_name: ${{ steps.boundary.outputs.artifact_name }}
+      artifact_digest: "sha256:${{ steps.release_set.outputs.artifact-digest }}"
+    env:
+      TARGET_FILE: governance/targets/${{ inputs.target_id }}.json
+      TARGET_ID: ${{ inputs.target_id }}
+      CANDIDATE_COMMIT: ${{ inputs.commit_sha }}
+    steps:
+      - name: Validate exact inputs
+        run: |
+          set -euo pipefail
+          if ! [[ "$CANDIDATE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::commit_sha must be an exact 40-character lowercase Git commit"
+            exit 1
+          fi
+          if ! [[ "$TARGET_ID" =~ ^evopilot-evolution-expert-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::target_id must use the versioned Evolution Expert Target namespace"
+            exit 1
+          fi
+
+      - name: Checkout exact Candidate commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          persist-credentials: false
+
+      - name: Bind independent Expert version and approved Target
+        id: boundary
+        run: |
+          set -euo pipefail
+          test "$GITHUB_SHA" = "$CANDIDATE_COMMIT"
+          test -f "$TARGET_FILE"
+          VERSION="$(node -p "require('./packages/evolution-expert/package.json').version")"
+          test "$TARGET_ID" = "evopilot-evolution-expert-v$VERSION"
+          TARGET_STATUS="$(node -p "require('./$TARGET_FILE').status")"
+          TARGET_VERSION="$(node -p "require('./$TARGET_FILE').roadmapBindings[0].targetVersion")"
+          TARGET_REVISION="$(node -p "require('./$TARGET_FILE').revision")"
+          TARGET_AUTHORIZATION_DIGEST="$(node -p "require('./$TARGET_FILE').approvals.target.authorizationDigest")"
+          test "$TARGET_STATUS" = "APPROVED"
+          test "$TARGET_VERSION" = "$VERSION"
+          test -n "$TARGET_AUTHORIZATION_DIGEST"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "target_revision=$TARGET_REVISION" >> "$GITHUB_OUTPUT"
+          echo "target_authorization_digest=$TARGET_AUTHORIZATION_DIGEST" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=evopilot-evolution-expert-$VERSION-candidate-release-set" >> "$GITHUB_OUTPUT"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "EVOPILOT_EXPERT_TAG=evolution-expert-v$VERSION" >> "$GITHUB_ENV"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install frozen dependencies
+        run: npm ci
+
+      - name: Full repository verification
+        run: npm run check
+
+      - name: Candidate readiness and release-pipeline contract
+        run: |
+          npm run release:ready
+          npm run verify:release-pipeline
+
+      - name: Build and verify Expert release set once
+        run: |
+          npm run evolution-expert:release:artifact
+          npm run verify:evolution-expert-release-artifact
+
+      - name: Upload controlled Expert Candidate release set
+        id: release_set
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.boundary.outputs.artifact_name }}
+          path: dist/evolution-expert-release/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+  handoff:
+    name: Fresh-materialize and bind Expert Candidate handoff
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TARGET_FILE: governance/targets/${{ inputs.target_id }}.json
+      TARGET_ID: ${{ inputs.target_id }}
+      CANDIDATE_COMMIT: ${{ inputs.commit_sha }}
+    steps:
+      - name: Checkout verifier from exact Candidate commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.commit_sha }}
+          persist-credentials: false
+
+      - name: Download exact Expert Candidate outside checkout
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.artifact_name }}
+          path: ${{ runner.temp }}/evopilot-evolution-expert-candidate/release
+
+      - name: Verify fresh Expert Candidate materialization
+        env:
+          CANDIDATE_DIR: ${{ runner.temp }}/evopilot-evolution-expert-candidate/release
+        run: node scripts/verify-evolution-expert-release-artifacts.mjs "$CANDIDATE_DIR"
+
+      - name: Build and verify Expert Candidate handoff
+        env:
+          CANDIDATE_DIR: ${{ runner.temp }}/evopilot-evolution-expert-candidate/release
+          HANDOFF_DIR: ${{ runner.temp }}/evopilot-evolution-expert-candidate/handoff
+          TARGET_AUTHORIZATION_DIGEST: ${{ needs.build.outputs.target_authorization_digest }}
+          TARGET_REVISION: ${{ needs.build.outputs.target_revision }}
+          VERSION: ${{ needs.build.outputs.version }}
+          CHANNEL_ARTIFACT_DIGEST: ${{ needs.build.outputs.artifact_digest }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$HANDOFF_DIR"
+          WORKFLOW_DIGEST="sha256:$(sha256sum .github/workflows/evolution-expert-release-candidate.yml | cut -d' ' -f1)"
+          HANDOFF="$HANDOFF_DIR/evopilot-evolution-expert-$VERSION-project-candidate-handoff.json"
+          node scripts/project-candidate-handoff.mjs build \
+            --release-dir "$CANDIDATE_DIR" \
+            --source-checkout "$GITHUB_WORKSPACE" \
+            --output "$HANDOFF" \
+            --target-path "$TARGET_FILE" \
+            --target-id "$TARGET_ID" \
+            --target-revision "$TARGET_REVISION" \
+            --target-authorization-digest "$TARGET_AUTHORIZATION_DIGEST" \
+            --release-unit evolution-expert \
+            --artifact-prefix evopilot-evolution-expert \
+            --required-kinds npm-package,sbom,provenance,checksums \
+            --version "$VERSION" \
+            --commit "$CANDIDATE_COMMIT" \
+            --repository "$GITHUB_REPOSITORY" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --workflow ".github/workflows/evolution-expert-release-candidate.yml" \
+            --workflow-digest "$WORKFLOW_DIGEST" \
+            --ref "$GITHUB_REF" \
+            --artifact-name "${{ needs.build.outputs.artifact_name }}" \
+            --channel-artifact-digest "$CHANNEL_ARTIFACT_DIGEST" \
+            --retention-days 30
+          node scripts/project-candidate-handoff.mjs verify \
+            --handoff "$HANDOFF" \
+            --release-dir "$CANDIDATE_DIR" \
+            --source-checkout "$GITHUB_WORKSPACE" \
+            --release-unit evolution-expert \
+            --required-kinds npm-package,sbom,provenance,checksums \
+            --version "$VERSION" \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$CANDIDATE_COMMIT" \
+            --run-id "$GITHUB_RUN_ID" \
+            --target-id "$TARGET_ID"
+          sha256sum "$HANDOFF"
+
+      - name: Upload Expert Candidate handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: evopilot-evolution-expert-${{ needs.build.outputs.version }}-candidate-handoff
+          path: ${{ runner.temp }}/evopilot-evolution-expert-candidate/handoff/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0

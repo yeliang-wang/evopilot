@@ -140,12 +140,76 @@ export function validateReleasePipeline(workflows) {
   }
 }
 
+export function validateEvolutionExpertCandidate(candidate) {
+  const failures = [];
+
+  requireMatch(/workflow_dispatch:/, "Expert Candidate formation must be an explicit workflow dispatch");
+  requireMatch(/commit_sha:/, "Expert Candidate formation must accept an exact commit SHA");
+  requireMatch(/target_id:/, "Expert Candidate formation must bind the approved Expert Target");
+  requireMatch(/\^evopilot-evolution-expert-v\[0-9\]\+\\\.\[0-9\]\+\\\.\[0-9\]\+\$/, "Expert Candidate formation must reject a Target outside the versioned Expert namespace");
+  requireMatch(/test "\$TARGET_ID" = "evopilot-evolution-expert-v\$VERSION"/, "Expert Candidate formation must bind the Target id to the independent Expert package version");
+  requireMatch(/packages\/evolution-expert\/package\.json/, "Expert Candidate formation must bind the independent Expert package version");
+  requireMatch(/npm run check/, "Expert Candidate formation must run the full repository check");
+  requireMatch(/npm run release:ready/, "Expert Candidate formation must pass repository release readiness");
+  requireMatch(/npm run verify:release-pipeline/, "Expert Candidate formation must pass the combined release-pipeline contract");
+  requireMatch(/npm run evolution-expert:release:artifact/, "Expert Candidate formation must build the Expert release set");
+  requireMatch(/npm run verify:evolution-expert-release-artifact/, "Expert Candidate formation must verify the Expert release set");
+  requireMatch(/actions\/upload-artifact@v4/, "Expert Candidate formation must upload a controlled artifact");
+  requireMatch(/artifact_digest:\s*["']sha256:\$\{\{\s*steps\.release_set\.outputs\.artifact-digest\s*\}\}["']/, "Expert Candidate handoff must receive an algorithm-qualified channel digest");
+  requireMatch(/project-candidate-handoff\.mjs build/, "Expert Candidate formation must build the exact handoff after fresh materialization");
+  requireMatch(/project-candidate-handoff\.mjs verify/, "Expert Candidate formation must verify the exact handoff");
+  requireMatch(/--release-unit evolution-expert/, "Expert Candidate handoff must identify the independent release unit");
+  requireMatch(/--artifact-prefix evopilot-evolution-expert/, "Expert Candidate handoff must use its independent artifact namespace");
+  requireMatch(/--required-kinds npm-package,sbom,provenance,checksums/, "Expert Candidate handoff must require its complete package release set");
+  requireMatch(/retention-days:\s*30/, "Expert Candidate channel must declare bounded retention");
+  rejectMatch(/npm publish/, "Expert Candidate formation must not publish npm packages");
+  rejectMatch(/gh release (?:create|upload|edit)/, "Expert Candidate formation must not mutate GitHub Releases");
+  rejectMatch(/push:\s*true/, "Expert Candidate formation must not publish an image");
+  rejectMatch(/lifecycles\//, "Expert Candidate workflow must not invoke EvoPilot product Lifecycle definitions");
+  rejectMatch(/Lifecycle(?:Definition|Revision|Binding|Run)/, "Expert Candidate workflow must remain separate from product Lifecycle objects");
+
+  return {
+    schema: "evopilot-evolution-expert-candidate-pipeline-result/v1",
+    status: failures.length === 0 ? "PASS" : "FAIL",
+    failures,
+    invariants: {
+      independentVersionBound: failures.every((item) => !item.includes("independent Expert package version")),
+      completeCandidateHandoff: failures.every((item) => !item.includes("handoff") && !item.includes("release set")),
+      noPublication: failures.every((item) => !item.includes("must not"))
+    }
+  };
+
+  function requireMatch(pattern, message) {
+    if (!pattern.test(candidate)) failures.push(message);
+  }
+
+  function rejectMatch(pattern, message) {
+    if (pattern.test(candidate)) failures.push(message);
+  }
+}
+
 export function verifyReleasePipeline(rootDir = path.resolve(import.meta.dirname, "..")) {
-  return validateReleasePipeline({
+  const runtime = validateReleasePipeline({
     candidate: fs.readFileSync(path.join(rootDir, ".github/workflows/release-candidate.yml"), "utf8"),
     release: fs.readFileSync(path.join(rootDir, ".github/workflows/release-artifacts.yml"), "utf8"),
     npm: fs.readFileSync(path.join(rootDir, ".github/workflows/npm-packages.yml"), "utf8")
   });
+  const expert = validateEvolutionExpertCandidate(
+    fs.readFileSync(path.join(rootDir, ".github/workflows/evolution-expert-release-candidate.yml"), "utf8")
+  );
+  return {
+    ...runtime,
+    status: runtime.status === "PASS" && expert.status === "PASS" ? "PASS" : "FAIL",
+    failures: [...runtime.failures, ...expert.failures],
+    invariants: {
+      ...runtime.invariants,
+      expertCandidateIndependent: expert.status === "PASS"
+    },
+    releaseUnits: {
+      runtime: runtime.status,
+      evolutionExpert: expert.status
+    }
+  };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

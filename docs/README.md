@@ -73,7 +73,8 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
-- [EvoPilot v4.0.0 Release Candidate Notes](releases/4.0.0.md) - unreleased Open Lifecycle Harness candidate scope, migration, distribution, and required acceptance; not a release announcement.
+- [EvoPilot v5.0.0 Pre-release Notes](releases/5.0.0.md) - Harness-guided Runtime scope, independent Evolution Expert Candidate boundary, migration, and required acceptance; not a release announcement.
+- [EvoPilot v4.0.0 Release Notes](releases/4.0.0.md) - released Open Lifecycle Harness capabilities, distribution, migration, and completed acceptance.
 - [EvoPilot v3.2.0 Deferred Candidate Notes](releases/3.2.0.md) - unpublished Bundle-consumer closure preserved as inherited v4 acceptance.
 - [EvoPilot v3.1.0 Release Notes](releases/3.1.0.md) - multi-Catalog Harness Registry consumption and `selectedHarness` registry evidence.
 - [EvoPilot v3.0.0 Release Notes](releases/3.0.0.md) - strict external Harness Catalog consumer boundary and `selectedHarness` goal-plan evidence.

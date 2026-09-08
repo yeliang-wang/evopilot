@@ -7,6 +7,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const HANDOFF_SCHEMA = "evopilot-project-candidate-handoff/v1";
+const RUNTIME_REQUIRED_ARTIFACT_KINDS = [
+  "source-archive",
+  "npm-package",
+  "helm-chart",
+  "sbom",
+  "provenance",
+  "checksums",
+  "container-image-archive"
+];
 
 export function canonicalize(value) {
   if (Array.isArray(value)) return value.map(canonicalize);
@@ -30,7 +39,10 @@ export function buildHandoff(options) {
   assert.equal(isWithin(releaseDir, sourceCheckout), false, "Candidate release set must be fresh-materialized outside the source checkout");
   const targetPath = path.resolve(options.targetPath);
   const target = readJson(targetPath);
-  const provenance = readJson(path.join(releaseDir, `evopilot-${options.version}-provenance.json`));
+  const releaseUnit = options.releaseUnit ?? "runtime";
+  const artifactPrefix = options.artifactPrefix ?? "evopilot";
+  const requiredArtifactKinds = parseRequiredArtifactKinds(options.requiredKinds);
+  const provenance = readJson(path.join(releaseDir, `${artifactPrefix}-${options.version}-provenance.json`));
 
   assert.equal(target.schema, "evopilot-evolution-target/v1", "Target schema must be evopilot-evolution-target/v1");
   assert.equal(target.status, "APPROVED", "Target must remain APPROVED");
@@ -40,6 +52,7 @@ export function buildHandoff(options) {
   assert.equal(provenance.version, options.version, "release provenance version mismatch");
   assert.equal(provenance.commit, options.commit, "release provenance commit mismatch");
   assert.equal(provenance.github?.runId, options.runId, "release provenance run id mismatch");
+  assert.equal(provenance.releaseUnit ?? "runtime", releaseUnit, "release provenance unit mismatch");
 
   const names = fs.readdirSync(releaseDir)
     .filter((name) => fs.statSync(path.join(releaseDir, name)).isFile())
@@ -72,6 +85,8 @@ export function buildHandoff(options) {
   return {
     schema: HANDOFF_SCHEMA,
     project: "evopilot",
+    releaseUnit,
+    requiredArtifactKinds,
     target: {
       id: target.id,
       revision: target.revision,
@@ -126,6 +141,8 @@ export function verifyHandoff(handoff, options) {
   check(isWithin(releaseDir, sourceCheckout) === false, "Candidate artifacts must be outside the source checkout");
   check(handoff?.schema === HANDOFF_SCHEMA, `schema must be ${HANDOFF_SCHEMA}`);
   check(handoff?.project === "evopilot", "project must be evopilot");
+  const expectedReleaseUnit = options.releaseUnit ?? "runtime";
+  check((handoff?.releaseUnit ?? "runtime") === expectedReleaseUnit, "Candidate release unit mismatch");
   check(handoff?.status === "RC_READY", "status must be RC_READY");
   check(handoff?.authority?.grantsRelease === false, "Candidate handoff must not grant release authority");
   check(handoff?.candidateChannel?.class === "GITHUB_ACTIONS_ARTIFACT", "Candidate channel must be GitHub Actions Artifact");
@@ -160,7 +177,12 @@ export function verifyHandoff(handoff, options) {
       check(fileDigest(filePath) === artifact.sha256, `Candidate artifact digest mismatch: ${artifact.name}`);
     }
   }
-  for (const requiredKind of ["source-archive", "npm-package", "helm-chart", "sbom", "provenance", "checksums", "container-image-archive"]) {
+  const expectedRequiredKinds = parseRequiredArtifactKinds(options.requiredKinds);
+  const recordedRequiredKinds = Array.isArray(handoff?.requiredArtifactKinds)
+    ? [...handoff.requiredArtifactKinds].sort()
+    : [...RUNTIME_REQUIRED_ARTIFACT_KINDS].sort();
+  check(JSON.stringify(recordedRequiredKinds) === JSON.stringify([...expectedRequiredKinds].sort()), "Candidate required artifact kinds mismatch");
+  for (const requiredKind of expectedRequiredKinds) {
     check(artifacts.some((artifact) => artifact.kind === requiredKind), `Candidate release set missing kind: ${requiredKind}`);
   }
   const material = artifacts
@@ -184,6 +206,14 @@ export function verifyHandoff(handoff, options) {
   function check(condition, message) {
     if (!condition) failures.push(message);
   }
+}
+
+function parseRequiredArtifactKinds(value) {
+  if (value == null || value === "") return [...RUNTIME_REQUIRED_ARTIFACT_KINDS];
+  const kinds = Array.isArray(value) ? value : String(value).split(",");
+  const normalized = [...new Set(kinds.map((kind) => String(kind).trim()).filter(Boolean))].sort();
+  assert.ok(normalized.length > 0, "requiredKinds must contain at least one artifact kind");
+  return normalized;
 }
 
 function artifactKind(name) {
