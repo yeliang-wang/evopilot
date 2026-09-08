@@ -13,6 +13,8 @@ test("one immutable Expert Core generates conformant Host-neutral adapters", () 
 });
 
 test("Expert routes onboarding, recovery, status, and tutorial without owning Runtime state", () => {
+  assert.equal(routeExpertIntent("我是第一次使用 EvoPilot，请告诉我从哪里开始").intent, "help");
+  assert.equal(routeExpertIntent("I am new to EvoPilot; where should I start?").intent, "help");
   assert.equal(routeExpertIntent("帮我注册一个新项目").intent, "project-onboard");
   assert.equal(routeExpertIntent("这个错误可以自动恢复吗").intent, "recovery");
   assert.equal(routeExpertIntent("现在进度如何").intent, "status");

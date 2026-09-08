@@ -104,7 +104,7 @@ export function routeExpertIntent(text: string): { intent: ExpertIntent; confide
     ["evidence", /evidence|proof|证据/],
     ["status", /status|progress|next|状态|进度|下一步/],
     ["goal-run", /goal|target|loop|执行目标|运行/],
-    ["help", /help|how|what|帮助|怎么|是什么/]
+    ["help", /help|how|what|where (?:do|should) i start|getting started|first[- ]time|new to evopilot|帮助|怎么|是什么|从哪里开始|如何开始|第一次(?:使用|接触)|初次(?:使用|接触)/]
   ];
   for (const [intent, pattern] of patterns) if (pattern.test(normalized)) return { intent, confidence: 0.95 };
   return { intent: "unknown", confidence: 0 };
