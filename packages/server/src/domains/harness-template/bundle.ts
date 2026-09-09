@@ -46,6 +46,7 @@ export function publishedHarnessCandidatesV5(input: {
         digest: profile?.catalogRef?.entryDigest ?? bundle.spec.profile.digest,
         catalogId: bundle.catalogRef?.catalogId ?? "missing",
         catalogDigest: bundle.catalogRef?.catalogDigest ?? "missing",
+        registryDigest: bundle.catalogRef?.registryDigest ?? "missing",
         domains: profile ? [profile.spec.classification.domain] : [],
         taskClasses: profile ? [profile.spec.classification.taskClass] : [],
         positiveConcepts: profile?.spec.match.positiveConcepts ?? [],
@@ -65,7 +66,7 @@ export function publishedHarnessCandidatesV5(input: {
         permissions: uniqueStrings(resolved.flatMap((component) => component.spec.actions.map((action) => action.id)))
       },
       published: bundle.metadata.lifecycle === "published" && profile?.metadata.lifecycle === "published",
-      eligible: Boolean(profile && complete && bundle.catalogRef?.entryDigest && bundle.catalogRef?.catalogDigest),
+      eligible: Boolean(profile && complete && bundle.catalogRef?.entryDigest && bundle.catalogRef?.catalogDigest && bundle.catalogRef?.registryDigest),
       priority: bundle.catalogRef?.registryCatalogPriority ?? 0
     };
   });

@@ -5,8 +5,8 @@ description: Generated workbuddy adapter for the independently versioned EvoPilo
 
 # EvoPilot Evolution Expert — workbuddy
 
-- Adapter: `evopilot-evolution-expert-workbuddy@1.0.0`
-- Core: `sha256:17a2c0a00a471437af67bb233c71bef1bc8bb733471b6c2b13c99fb15e096875`
+- Adapter: `evopilot-evolution-expert-workbuddy@1.0.1`
+- Core: `sha256:fef38c4295b751b15bd7274871ea5548d88d8d02cc8c999609858617411a930c`
 - Protocol: `1.0`
 
 ## Required behavior
@@ -28,4 +28,11 @@ description: Generated workbuddy adapter for the independently versioned EvoPilo
 - host-specific-lifecycle
 - automatic-publication
 
-Use EvoPilot MCP or its CLI/API transport. This generated adapter never grants authority and never stores canonical Runtime state.
+## First-run commands
+
+- Version and compatibility: `evopilot-expert version` then `evopilot-expert doctor workbuddy 5.0.1`.
+- Side-effect-free tutorial: `evopilot-expert tutorial`.
+- Natural-language routing: `evopilot-expert plan "help me register a project"`.
+- Runtime operations use EvoPilot MCP or its CLI/API transport and resume from Runtime-owned state.
+
+This generated adapter never grants authority and never stores canonical Runtime state. Install, upgrade, rollback, verification, and removal are documented in the packaged README.

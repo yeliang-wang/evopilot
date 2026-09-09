@@ -31,9 +31,14 @@ for (const host of ["codex", "workbuddy", "generic-agent", "generic-mcp"]) {
 
 for (const relative of [
   "schemas/governed-evolution/project-definition-v1.schema.json",
+  "schemas/governed-evolution/harness-execution-binding-v1.schema.json",
+  "schemas/governed-evolution/criterion-evidence-v1.schema.json",
+  "schemas/governed-evolution/completion-report-v1.schema.json",
   "schemas/governed-evolution/human-interaction-v1.schema.json",
   "schemas/governed-evolution/legacy-suite-snapshot-v1.schema.json",
-  "governance/legacy-suite-transition.json"
+  "governance/legacy-suite-transition.json",
+  "governance/acceptance/v5-completion-contract.json",
+  "governance/acceptance/runtime-5.0.1-expert-1.0.1-cross-acceptance-map.json"
 ]) {
   try { JSON.parse(fs.readFileSync(path.join(root, relative), "utf8")); } catch (error) { failures.push(`${relative}: invalid JSON`); }
 }
@@ -65,6 +70,31 @@ try {
 const targetLoop = fs.readFileSync(path.join(root, "packages/server/src/storage/file-store/index.ts"), "utf8");
 for (const invariant of ["HARNESS_BUNDLE_REQUIRED", "validateImmutableHarnessBundleBindingV3", "loop-iteration"]) {
   if (!targetLoop.includes(invariant)) failures.push(`Goal Loop invariant missing: ${invariant}`);
+}
+
+const lifecycle = fs.readFileSync(path.join(root, "packages/server/src/domains/lifecycle/service.ts"), "utf8");
+for (const invariant of ["HARNESS_EXECUTION_BINDING_REQUIRED", "configureGovernanceHooks", "loop-iteration", "AUTO_RETRY", "suspendRule"]) {
+  if (!lifecycle.includes(invariant)) failures.push(`executed Lifecycle invariant missing: ${invariant}`);
+}
+const governedRoutes = fs.readFileSync(path.join(root, "packages/server/src/http/routes/governed-evolution.ts"), "utf8");
+for (const route of ["/api/v1/evolution-project-definitions/discover", "/diff", "activate|rollback", "/api/v1/governed-evolution/runs"]) {
+  if (!governedRoutes.includes(route)) failures.push(`governed route missing: ${route}`);
+}
+for (const invariant of ["registryDigest", "currentState", "HARNESS_EXECUTION_BINDING_DRIFT"]) {
+  if (!fs.readFileSync(path.join(root, "packages/server/src/domains/governed-evolution/service.ts"), "utf8").includes(invariant)) failures.push(`live immutable closure invariant missing: ${invariant}`);
+}
+for (const relative of [
+  "docs/architecture/adr/0004-v5-completion-recovery.md",
+  "docs/operations/completion-assurance.md",
+  "docs/releases/5.0.1.md",
+  "docs/releases/evolution-expert-1.0.1.md",
+  "packages/evolution-expert/host-adapter-kit/README.md"
+]) {
+  if (!fs.existsSync(path.join(root, relative))) failures.push(`v5 completion deliverable missing: ${relative}`);
+}
+const criterionValidator = fs.readFileSync(path.join(root, "scripts/run-v5-criterion-validator.mjs"), "utf8");
+for (const invariant of ["createCriterionEvidence", "CRITERION_EVIDENCE_BINDING_MISMATCH", "CRITERION_EXACT_CANDIDATE_PAIR_REQUIRED", "CRITERION_GENERIC_EVIDENCE_FORBIDDEN"]) {
+  if (!criterionValidator.includes(invariant)) failures.push(`criterion validator invariant missing: ${invariant}`);
 }
 
 if (failures.length) {

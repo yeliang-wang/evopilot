@@ -2,8 +2,8 @@
   "schema": "evopilot-evolution-expert-adapter/v1",
   "id": "evopilot-evolution-expert-generic-mcp",
   "host": "generic-mcp",
-  "version": "1.0.0",
-  "coreDigest": "sha256:17a2c0a00a471437af67bb233c71bef1bc8bb733471b6c2b13c99fb15e096875",
+  "version": "1.0.1",
+  "coreDigest": "sha256:fef38c4295b751b15bd7274871ea5548d88d8d02cc8c999609858617411a930c",
   "protocolVersion": "1.0",
   "requiredCapabilities": [
     "structured-tool-results",
@@ -30,5 +30,5 @@
     "host-specific-lifecycle",
     "automatic-publication"
   ],
-  "digest": "sha256:d39a026ffd4f4ae654aae1d5717466f969f51846d5318cb0544127909b1dfe8b"
+  "digest": "sha256:3864bdda10307ffa343520bad36c974c70a0674628989f303d2ced59b9546c29"
 }

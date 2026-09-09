@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "5.0.0"
+    "version": "5.0.1"
   },
   "paths": {
     "/api/v1/evolution-project-definitions": {
@@ -12,8 +12,23 @@
     "/api/v1/evolution-project-definitions/{projectDefinitionId}": {
       "get": { "summary": "Inspect an exact Evolution Project Definition", "description": "The optional version query selects a prior immutable definition for evidence-preserving rollback; omission resolves the latest version in the authenticated tenant/workspace.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "projectDefinitionId", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "version", "in": "query", "required": false, "schema": { "type": "string" } }], "responses": { "200": { "description": "Exact Project Definition" }, "404": { "description": "Definition not found in scope" } } }
     },
+    "/api/v1/evolution-project-definitions/discover": {
+      "post": { "summary": "Discover project facts and unresolved typed questions", "description": "Side-effect-free discovery. Detected values retain provenance; secrets are represented only by references.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Discovery result and next unresolved questions" } } }
+    },
+    "/api/v1/evolution-project-definitions/{projectDefinitionId}/diff": {
+      "get": { "summary": "Compare two immutable Project Definition versions", "description": "Returns field-level semantic changes, compatibility impact, affected bindings, and migration requirements.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "projectDefinitionId", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "from", "in": "query", "required": true, "schema": { "type": "string" } }, { "name": "to", "in": "query", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Digest-bound semantic impact" } } }
+    },
+    "/api/v1/evolution-project-definitions/{projectDefinitionId}/activate": {
+      "post": { "summary": "Activate one immutable Project Definition version", "description": "Requires actor and evidence; existing runs remain bound to their original definition digest.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "projectDefinitionId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Auditable active-version record" } } }
+    },
+    "/api/v1/evolution-project-definitions/{projectDefinitionId}/rollback": {
+      "post": { "summary": "Roll back the active Project Definition pointer", "description": "Selects a prior immutable version without rewriting either definition or any active run binding.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "projectDefinitionId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Auditable rollback record" } } }
+    },
     "/api/v1/governed-evolution/plan": {
       "post": { "summary": "Resolve and bind a Harness-guided governed evolution plan", "description": "Deterministically matches a published HarnessBundle, composes it with an open Lifecycle without weakening obligations, and persists the exact execution binding.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Harness-guided plan and immutable binding" }, "409": { "description": "Ambiguous/abstained match or composition conflict" } } }
+    },
+    "/api/v1/governed-evolution/runs": {
+      "post": { "summary": "Start an actual Lifecycle run from an exact HarnessExecutionBinding", "description": "The binding is mandatory and revalidated against immutable Project, GoalTarget, Registry/Catalog, Profile/Bundle/Components, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence identities before start.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Lifecycle run with start-boundary evidence" }, "409": { "description": "Binding or published-asset drift" } } }
     },
     "/api/v1/governed-evolution/revalidate": {
       "post": { "summary": "Revalidate an exact Harness execution binding", "description": "Required at start, resume, retry, and every Loop iteration.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Binding is current" }, "409": { "description": "Bound object drift" } } }

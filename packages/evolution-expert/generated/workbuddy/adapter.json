@@ -2,8 +2,8 @@
   "schema": "evopilot-evolution-expert-adapter/v1",
   "id": "evopilot-evolution-expert-workbuddy",
   "host": "workbuddy",
-  "version": "1.0.0",
-  "coreDigest": "sha256:17a2c0a00a471437af67bb233c71bef1bc8bb733471b6c2b13c99fb15e096875",
+  "version": "1.0.1",
+  "coreDigest": "sha256:fef38c4295b751b15bd7274871ea5548d88d8d02cc8c999609858617411a930c",
   "protocolVersion": "1.0",
   "requiredCapabilities": [
     "structured-tool-results",
@@ -31,5 +31,5 @@
     "host-specific-lifecycle",
     "automatic-publication"
   ],
-  "digest": "sha256:05849e35ae0c422157f8dacecc27c353404fbf9a25a7baf800775b0c47e56e6c"
+  "digest": "sha256:325cef0a943708677d2f88d85eafaf31351f2c769ae3bfecab13243c168654b3"
 }

@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import type { RecoveryContext, RecoveryDecision } from "@evopilot/core";
 import { FileLifecycleCatalog } from "./catalog.js";
 import { conditionMatches, interpolateLifecycleValue, resolveLifecycleInputs } from "./core.js";
 import { LifecycleActionRegistry, stableJson } from "./registry.js";
@@ -18,11 +19,35 @@ import {
   type LifecycleStartRequest
 } from "./types.js";
 
+export interface LifecycleGovernanceHooks {
+  verifyBoundary(input: {
+    bindingDigest: string;
+    checkpoint: "start" | "resume" | "retry" | "loop-iteration";
+    projectId: string;
+    goalId?: string;
+    targetId?: string;
+    lifecycleDigest: string;
+    policyDigest: string;
+    providerDigest?: string;
+    environmentDigest?: string;
+    authorityDigest?: string;
+    runtimeDigest: string;
+    evidenceDigest: string;
+    harnessBundle: { id: string; version: string; digest: string; catalogId?: string };
+    hostDigest: string;
+    tenantId: string;
+    workspaceId: string;
+  }): { bindingDigest: string; evidence: string[] };
+  decideRecovery(input: RecoveryContext & { tenantId: string; workspaceId: string }): RecoveryDecision;
+  suspendRule?(rule: { id: string; revision: number; digest: string }, evidenceRef: string, scope: { tenantId: string; workspaceId: string }): void;
+}
+
 export class LifecycleService {
   readonly catalog: FileLifecycleCatalog;
   readonly registry: LifecycleActionRegistry;
   private readonly runsDir: string;
   private readonly feedbackDir: string;
+  private governanceHooks?: LifecycleGovernanceHooks;
 
   constructor(dataRoot: string, catalogRoots: string[]) {
     this.registry = new LifecycleActionRegistry();
@@ -31,6 +56,10 @@ export class LifecycleService {
     this.feedbackDir = path.join(dataRoot, "lifecycle-feedback");
     fs.mkdirSync(this.runsDir, { recursive: true });
     fs.mkdirSync(this.feedbackDir, { recursive: true });
+  }
+
+  configureGovernanceHooks(hooks: LifecycleGovernanceHooks): void {
+    this.governanceHooks = hooks;
   }
 
   resolveInputs(lifecycleId: string, lifecycleVersion: string | undefined, sources: LifecycleInputSources) {
@@ -63,9 +92,11 @@ export class LifecycleService {
       createdAt: now,
       updatedAt: now
     };
-    const run = inputBinding.status === "READY_FOR_REVIEW"
+    let run = inputBinding.status === "READY_FOR_REVIEW"
       ? { ...base, binding: buildBinding(base, input) }
       : base;
+    if ((run.goalId || run.targetId) && this.governanceHooks && !run.binding?.harnessExecutionBindingDigest) throw new Error("HARNESS_EXECUTION_BINDING_REQUIRED");
+    if (run.binding?.harnessExecutionBindingDigest) run = this.withBoundaryEvidence(run, "start");
     return this.write(run);
   }
 
@@ -91,8 +122,12 @@ export class LifecycleService {
           ...updatedBase,
           binding: buildBinding(updatedBase, {
             policyDigest: run.binding.policyDigest,
+            providerDigest: run.binding.providerDigest,
+            environmentDigest: run.binding.environmentDigest,
+            authorityDigest: run.binding.authorityDigest,
             runtimeDigest: run.binding.runtimeDigest,
             evidenceDigest: run.binding.evidenceDigest,
+            harnessExecutionBindingDigest: run.binding.harnessExecutionBindingDigest,
             harnessBundle: run.binding.harnessBundle,
             executor: run.binding.executor
           })
@@ -101,10 +136,13 @@ export class LifecycleService {
     return this.write(updated);
   }
 
-  finalizeBinding(id: string, input: Pick<LifecycleStartRequest, "policyDigest" | "runtimeDigest" | "evidenceDigest" | "harnessBundle" | "executor">): LifecycleRun {
+  finalizeBinding(id: string, input: Pick<LifecycleStartRequest, "policyDigest" | "providerDigest" | "environmentDigest" | "authorityDigest" | "runtimeDigest" | "evidenceDigest" | "harnessBundle" | "executor" | "harnessExecutionBindingDigest">): LifecycleRun {
     const run = this.require(id);
     if (run.inputBinding.status !== "READY_FOR_REVIEW") throw new Error("LIFECYCLE_INPUTS_INCOMPLETE");
-    return this.write({ ...run, binding: buildBinding(run, input), status: "WAITING_AUTHORIZATION", updatedAt: new Date().toISOString() });
+    let updated: LifecycleRun = { ...run, binding: buildBinding(run, input), status: "WAITING_AUTHORIZATION", updatedAt: new Date().toISOString() };
+    if ((updated.goalId || updated.targetId) && this.governanceHooks && !updated.binding?.harnessExecutionBindingDigest) throw new Error("HARNESS_EXECUTION_BINDING_REQUIRED");
+    if (updated.binding?.harnessExecutionBindingDigest) updated = this.withBoundaryEvidence(updated, "start");
+    return this.write(updated);
   }
 
   authorizePlan(id: string, decision: "APPROVED" | "REJECTED", actor: string, evidenceRef: string, bindingDigest: string): LifecycleRun {
@@ -172,7 +210,7 @@ export class LifecycleService {
   }
 
   advance(id: string): LifecycleRun {
-    const run = this.require(id);
+    let run = this.require(id);
     this.assertRunIntegrity(run);
     if (run.status === "WAITING_INPUT" || run.status === "WAITING_BINDING_REVIEW" || run.status === "WAITING_AUTHORIZATION" || run.status === "WAITING_DECISION" || run.status === "WAITING_EXTERNAL_SIGNAL") return run;
     if (run.status !== "RUNNING") return run;
@@ -188,6 +226,18 @@ export class LifecycleService {
     }
     const binding = run.binding;
     if (!binding) throw new Error("LIFECYCLE_BINDING_REQUIRED");
+    const priorAttempts = run.stageAttempts.filter((attempt) => attempt.stageId === stage.id);
+    const checkpoints: Array<"retry" | "loop-iteration"> = [];
+    if (priorAttempts.some((attempt) => attempt.status === "FAILED")) checkpoints.push("retry");
+    if (stage.action.uses.replace(/@[^@]+$/, "") === "evopilot.goal-loop") checkpoints.push("loop-iteration");
+    let guardedRun = run;
+    if (binding.harnessExecutionBindingDigest) {
+      for (const checkpoint of checkpoints) guardedRun = this.withBoundaryEvidence(guardedRun, checkpoint);
+    }
+    if (guardedRun !== run) {
+      run = guardedRun;
+      this.write(run);
+    }
     const existingDecision = run.decisions.find((decision) => decision.stageId === stage.id && decision.decision === "APPROVED" && decision.bindingDigest === binding.digest);
     if (stage.decision.mode === "HUMAN" && !existingDecision) {
       return this.write({ ...run, status: "WAITING_DECISION", currentStageId: stage.id, updatedAt: new Date().toISOString() });
@@ -196,7 +246,6 @@ export class LifecycleService {
     if (action.execution === "EXTERNAL_ADAPTER") {
       const missingCapabilities = (stage.capabilities ?? action.capabilities).filter((capability) => !binding.executor.capabilities.includes(capability));
       if (missingCapabilities.length > 0) throw new Error(`LIFECYCLE_EXECUTOR_CAPABILITY_MISMATCH: ${missingCapabilities.join(", ")}`);
-      const priorAttempts = run.stageAttempts.filter((attempt) => attempt.stageId === stage.id);
       if (priorAttempts.length >= (stage.retry?.maxAttempts ?? 1)) {
         return this.write({ ...run, status: "FAILED", currentStageId: stage.id, updatedAt: new Date().toISOString() });
       }
@@ -234,6 +283,10 @@ export class LifecycleService {
 
   advanceUntilBoundary(id: string): LifecycleRun {
     let run = this.require(id);
+    if (run.binding?.harnessExecutionBindingDigest) {
+      run = this.withBoundaryEvidence(run, "resume");
+      this.write(run);
+    }
     const limit = run.revision.definition.stages.length + 1;
     for (let index = 0; index < limit && run.status === "RUNNING"; index += 1) {
       const attempts = run.stageAttempts.length;
@@ -257,7 +310,7 @@ export class LifecycleService {
     if (run.status !== "WAITING_EXTERNAL_SIGNAL" || run.pendingExecution?.id !== requestId) throw new Error("LIFECYCLE_EXTERNAL_SIGNAL_NOT_PENDING");
     const now = new Date().toISOString();
     const evidence = (result.evidence ?? []).map(redactEvidence);
-    const attempt: LifecycleStageAttempt = {
+    let attempt: LifecycleStageAttempt = {
       stageId: run.pendingExecution.stageId,
       attempt: run.stageAttempts.filter((candidate) => candidate.stageId === run.pendingExecution?.stageId).length + 1,
       status: status === "SUCCEEDED" ? "SUCCEEDED" : "FAILED",
@@ -290,13 +343,55 @@ export class LifecycleService {
       evidence,
       recordedAt: now
     };
+    let nextStatus: LifecycleRun["status"] = status === "SUCCEEDED" ? "RUNNING" : status === "UNCERTAIN" ? "WAITING_DECISION" : "FAILED";
+    let pendingDecisionAuthority: LifecycleRun["pendingDecisionAuthority"] = status === "UNCERTAIN" ? "recovery" : undefined;
+    let recoveryHistory = run.recoveryHistory ?? [];
+    if (status !== "SUCCEEDED") {
+      const previousRecovery = recoveryHistory.at(-1);
+      const previousRule = previousRecovery?.stageId === attempt.stageId && ["AUTO_REPAIR", "AUTO_RETRY"].includes(previousRecovery.action)
+        ? previousRecovery.ruleRef
+        : undefined;
+      if (previousRule && this.governanceHooks?.suspendRule) this.governanceHooks.suspendRule(previousRule, `lifecycle://${run.id}/${requestId}/failed`, { tenantId: run.tenantId, workspaceId: run.workspaceId });
+      const failure = result.failure ?? { class: status === "UNCERTAIN" ? "UNCERTAIN_MUTATION" as const : "UNKNOWN" as const, signature: `${run.pendingExecution.action}:${status.toLowerCase()}`, identicalInputs: true, reversible: false, externalEffect: true };
+      const decision = this.governanceHooks?.decideRecovery({
+        failureClass: failure.class,
+        failureSignature: failure.signature,
+        bindingDigest: run.binding?.harnessExecutionBindingDigest ?? run.pendingExecution.bindingDigest,
+        attempt: attempt.attempt,
+        maxAttempts: run.revision.definition.stages.find((item) => item.id === attempt.stageId)?.retry?.maxAttempts ?? 1,
+        mutationReceipt: failure.mutationReceipt,
+        identicalInputs: failure.identicalInputs,
+        reversible: failure.reversible,
+        externalEffect: failure.externalEffect,
+        projectId: run.projectId,
+        lifecycleId: run.revision.ref.id,
+        actionId: run.pendingExecution.action,
+        hostId: run.pendingExecution.executor.host,
+        tenantId: run.tenantId,
+        workspaceId: run.workspaceId
+      });
+      if (decision) {
+        recoveryHistory = [...recoveryHistory, { requestId, stageId: attempt.stageId, failureClass: failure.class, failureSignature: failure.signature, action: decision.action, humanRequired: decision.humanRequired, decisionDigest: decision.digest, ruleRef: decision.ruleRef, proposalRef: decision.proposalRef, recordedAt: now }];
+        if (["AUTO_REPAIR", "AUTO_RETRY", "RESUME_FROM_RECEIPT"].includes(decision.action)) nextStatus = "RUNNING";
+        if (decision.action === "RESUME_FROM_RECEIPT" && failure.mutationReceipt) {
+          attempt = {
+            ...attempt,
+            status: "SUCCEEDED",
+            receiptDigest: failure.mutationReceipt,
+            evidence: [...attempt.evidence, `reconciledMutationReceipt=${failure.mutationReceipt}`, `recoveryDecision=${decision.digest}`]
+          };
+        }
+        if (["PROPOSE_AUTOMATION_RULE", "HUMAN_DECISION"].includes(decision.action)) { nextStatus = "WAITING_DECISION"; pendingDecisionAuthority = "recovery"; }
+      }
+    }
     return this.write({
       ...run,
-      status: status === "SUCCEEDED" ? "RUNNING" : status === "UNCERTAIN" ? "WAITING_DECISION" : "FAILED",
+      status: nextStatus,
       stageAttempts: [...run.stageAttempts, attempt],
       trajectory: [...run.trajectory, trajectory],
+      recoveryHistory,
       pendingExecution: undefined,
-      pendingDecisionAuthority: status === "UNCERTAIN" ? "recovery" : undefined,
+      pendingDecisionAuthority,
       updatedAt: now
     });
   }
@@ -383,10 +478,14 @@ export class LifecycleService {
         inputBindingDigest: run.binding.inputBindingDigest,
         actionRegistryDigest: run.binding.actionRegistryDigest,
         policyDigest: run.binding.policyDigest,
+        providerDigest: run.binding.providerDigest,
+        environmentDigest: run.binding.environmentDigest,
+        authorityDigest: run.binding.authorityDigest,
         harnessBundle: run.binding.harnessBundle,
         executor: run.binding.executor,
         runtimeDigest: run.binding.runtimeDigest,
         evidenceDigest: run.binding.evidenceDigest,
+        harnessExecutionBindingDigest: run.binding.harnessExecutionBindingDigest,
         tenantId: run.binding.tenantId,
         workspaceId: run.binding.workspaceId,
         projectId: run.binding.projectId,
@@ -404,23 +503,53 @@ export class LifecycleService {
     fs.renameSync(temporary, target);
     return run;
   }
+
+  private withBoundaryEvidence(run: LifecycleRun, checkpoint: "start" | "resume" | "retry" | "loop-iteration"): LifecycleRun {
+    if (!run.binding?.harnessExecutionBindingDigest) return run;
+    if (!this.governanceHooks) throw new Error("HARNESS_EXECUTION_BINDING_GUARD_UNAVAILABLE");
+    const result = this.governanceHooks.verifyBoundary({
+      bindingDigest: run.binding.harnessExecutionBindingDigest,
+      checkpoint,
+      projectId: run.projectId,
+      goalId: run.goalId,
+      targetId: run.targetId,
+      lifecycleDigest: run.binding.lifecycleRef.digest,
+      policyDigest: run.binding.policyDigest,
+      providerDigest: run.binding.providerDigest,
+      environmentDigest: run.binding.environmentDigest,
+      authorityDigest: run.binding.authorityDigest,
+      runtimeDigest: run.binding.runtimeDigest,
+      evidenceDigest: run.binding.evidenceDigest,
+      harnessBundle: run.binding.harnessBundle,
+      hostDigest: run.binding.executor.digest,
+      tenantId: run.tenantId,
+      workspaceId: run.workspaceId
+    });
+    return { ...run, boundaryEvidence: [...(run.boundaryEvidence ?? []), { checkpoint, bindingDigest: result.bindingDigest, evidence: result.evidence, checkedAt: new Date().toISOString() }] };
+  }
 }
 
-function buildBinding(run: LifecycleRun, input: Pick<LifecycleStartRequest, "policyDigest" | "runtimeDigest" | "evidenceDigest" | "harnessBundle" | "executor">): LifecycleBinding {
+function buildBinding(run: LifecycleRun, input: Pick<LifecycleStartRequest, "policyDigest" | "providerDigest" | "environmentDigest" | "authorityDigest" | "runtimeDigest" | "evidenceDigest" | "harnessBundle" | "executor" | "harnessExecutionBindingDigest">): LifecycleBinding {
   validateDigest("policyDigest", input.policyDigest);
   validateDigest("runtimeDigest", input.runtimeDigest);
   validateDigest("harnessBundle.digest", input.harnessBundle.digest);
   if (input.evidenceDigest) validateDigest("evidenceDigest", input.evidenceDigest);
+  if (input.harnessExecutionBindingDigest) validateDigest("harnessExecutionBindingDigest", input.harnessExecutionBindingDigest);
+  for (const [name, value] of Object.entries({ providerDigest: input.providerDigest, environmentDigest: input.environmentDigest, authorityDigest: input.authorityDigest })) if (value) validateDigest(name, value);
   const createdAt = new Date().toISOString();
   const material = {
     lifecycleRef: { ...run.revision.ref, digest: run.revision.digest },
     inputBindingDigest: run.inputBinding.digest,
     actionRegistryDigest: new LifecycleActionRegistry().digest,
     policyDigest: input.policyDigest,
+    providerDigest: input.providerDigest,
+    environmentDigest: input.environmentDigest,
+    authorityDigest: input.authorityDigest,
     harnessBundle: input.harnessBundle,
     executor: normalizeExecutor(input.executor),
     runtimeDigest: input.runtimeDigest,
     evidenceDigest: input.evidenceDigest ?? digest([]),
+    harnessExecutionBindingDigest: input.harnessExecutionBindingDigest,
     tenantId: run.tenantId,
     workspaceId: run.workspaceId,
     projectId: run.projectId,

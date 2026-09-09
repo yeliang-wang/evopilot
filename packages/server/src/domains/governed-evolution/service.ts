@@ -6,6 +6,8 @@ import {
   createHarnessExecutionBinding,
   createHumanInteractionMessage,
   decideRecovery,
+  discoverEvolutionProject,
+  compareEvolutionProjectDefinitions,
   normalizeEvolutionProjectDefinition,
   proposeAutomationRule,
   resolvePublishedHarness,
@@ -61,13 +63,17 @@ export class GovernedEvolutionService {
   private readonly bindingsDir: string;
   private readonly proposalDir: string;
   private readonly rulesDir: string;
+  private readonly activeDefinitionsDir: string;
+  private readonly recoveryEventsDir: string;
 
   constructor(dataRoot: string) {
     this.projectDefinitionsDir = path.join(dataRoot, "evolution-project-definitions");
     this.bindingsDir = path.join(dataRoot, "harness-execution-bindings");
     this.proposalDir = path.join(dataRoot, "automation-registry", "proposals");
     this.rulesDir = path.join(dataRoot, "automation-registry", "rules");
-    for (const directory of [this.projectDefinitionsDir, this.bindingsDir, this.proposalDir, this.rulesDir]) fs.mkdirSync(directory, { recursive: true });
+    this.activeDefinitionsDir = path.join(dataRoot, "evolution-project-definitions-active");
+    this.recoveryEventsDir = path.join(dataRoot, "automation-registry", "recovery-events");
+    for (const directory of [this.projectDefinitionsDir, this.bindingsDir, this.proposalDir, this.rulesDir, this.activeDefinitionsDir, this.recoveryEventsDir]) fs.mkdirSync(directory, { recursive: true });
   }
 
   registerProjectDefinition(input: Omit<EvolutionProjectDefinition, "digest"> & { digest?: string }, scope?: GovernedEvolutionScope): EvolutionProjectDefinition {
@@ -79,7 +85,13 @@ export class GovernedEvolutionService {
       throw new Error("EVOLUTION_PROJECT_VERSION_IMMUTABLE_CONFLICT");
     }
     this.atomicWrite(target, definition);
+    const activePath = path.join(this.scopedDirectory(this.activeDefinitionsDir, scope), `${safeSegment(definition.metadata.id)}.json`);
+    if (!fs.existsSync(activePath)) this.writeActiveProjectDefinition(definition, scope, "initial-registration");
     return definition;
+  }
+
+  discoverProject(input: Record<string, unknown>) {
+    return discoverEvolutionProject(input);
   }
 
   listProjectDefinitions(scope?: GovernedEvolutionScope): EvolutionProjectDefinition[] {
@@ -90,7 +102,31 @@ export class GovernedEvolutionService {
     const safeId = safeSegment(id);
     const candidates = this.listProjectDefinitions(scope).filter((item) => item.metadata.id === safeId);
     if (version) return candidates.find((item) => item.metadata.version === version);
+    const activePath = path.join(this.scopedDirectory(this.activeDefinitionsDir, scope), `${safeId}.json`);
+    if (fs.existsSync(activePath)) {
+      const active = this.readJson<{ version: string; definitionDigest: string }>(activePath);
+      const selected = candidates.find((item) => item.metadata.version === active.version && item.digest === active.definitionDigest);
+      if (!selected) throw new Error(`EVOLUTION_PROJECT_ACTIVE_DEFINITION_DRIFT: ${id}`);
+      return selected;
+    }
     return candidates.sort((left, right) => compareVersions(right.metadata.version, left.metadata.version))[0];
+  }
+
+  compareProjectDefinitionVersions(id: string, fromVersion: string, toVersion: string, scope?: GovernedEvolutionScope) {
+    const from = this.readProjectDefinition(id, fromVersion, scope);
+    const to = this.readProjectDefinition(id, toVersion, scope);
+    if (!from || !to) throw new Error(`EVOLUTION_PROJECT_DEFINITION_NOT_FOUND: ${id}`);
+    const affectedBindings = this.readAll<HarnessExecutionBinding>(this.scopedDirectory(this.bindingsDir, scope))
+      .filter((binding) => binding.projectDefinitionRef.id === id && binding.projectDefinitionRef.version === fromVersion)
+      .map((binding) => binding.digest);
+    return compareEvolutionProjectDefinitions(from, to, affectedBindings);
+  }
+
+  activateProjectDefinitionVersion(id: string, version: string, actor: string, evidenceRef: string, scope?: GovernedEvolutionScope, mode: "activate" | "rollback" = "activate") {
+    if (!actor.trim() || !evidenceRef.trim()) throw new Error("EVOLUTION_PROJECT_ACTIVATION_EVIDENCE_REQUIRED");
+    const definition = this.readProjectDefinition(id, version, scope);
+    if (!definition) throw new Error(`EVOLUTION_PROJECT_DEFINITION_NOT_FOUND: ${id}@${version}`);
+    return this.writeActiveProjectDefinition(definition, scope, mode === "rollback" ? "explicit-rollback" : "explicit-activation", actor, evidenceRef);
   }
 
   plan(input: GovernedEvolutionPlanInput, scope?: GovernedEvolutionScope): GovernedEvolutionPlan {
@@ -144,6 +180,68 @@ export class GovernedEvolutionService {
     return revalidateHarnessExecutionBinding(binding, current);
   }
 
+  assertLifecycleBoundary(input: {
+    bindingDigest: string;
+    checkpoint: "start" | "resume" | "retry" | "loop-iteration";
+    projectId: string;
+    goalId?: string;
+    targetId?: string;
+    lifecycleDigest: string;
+    policyDigest: string;
+    providerDigest?: string;
+    environmentDigest?: string;
+    authorityDigest?: string;
+    runtimeDigest: string;
+    evidenceDigest: string;
+    harnessBundle: { id: string; version: string; digest: string; catalogId?: string };
+    hostDigest: string;
+    currentState?: HarnessExecutionCurrentState;
+  }, scope?: GovernedEvolutionScope) {
+    const binding = this.readBinding(input.bindingDigest, scope);
+    if (!binding) throw new Error(`HARNESS_EXECUTION_BINDING_NOT_FOUND: ${input.bindingDigest}`);
+    if (canonicalDigest({ ...binding, digest: undefined }) !== binding.digest) throw new Error("HARNESS_EXECUTION_BINDING_DIGEST_DRIFT");
+    const drift: string[] = [];
+    compareBoundary("projectId", binding.projectDefinitionRef.id, input.projectId, drift);
+    compareBoundary("goalId", binding.goalTargetRef.goalId, input.goalId, drift);
+    compareBoundary("targetId", binding.goalTargetRef.targetId, input.targetId, drift);
+    compareBoundary("lifecycleDigest", binding.lifecycleRef.digest, input.lifecycleDigest, drift);
+    compareBoundary("policyDigest", binding.policyDigest, input.policyDigest, drift);
+    compareBoundary("providerDigest", binding.providerDigest, input.providerDigest, drift);
+    compareBoundary("environmentDigest", binding.environmentDigest, input.environmentDigest, drift);
+    compareBoundary("authorityDigest", binding.authorityDigest, input.authorityDigest, drift);
+    compareBoundary("runtimeDigest", binding.runtimeDigest, input.runtimeDigest, drift);
+    compareBoundary("evidenceDigest", binding.evidenceDigest, input.evidenceDigest, drift);
+    compareBoundary("hostDigest", binding.hostDigest, input.hostDigest, drift);
+    compareBoundary("bundleId", binding.bundleRef.id, input.harnessBundle.id, drift);
+    compareBoundary("bundleVersion", binding.bundleRef.version, input.harnessBundle.version, drift);
+    compareBoundary("bundleDigest", binding.bundleRef.digest, input.harnessBundle.digest, drift);
+    if (input.harnessBundle.catalogId) compareBoundary("catalogId", binding.catalogId, input.harnessBundle.catalogId, drift);
+    const definition = this.readProjectDefinition(binding.projectDefinitionRef.id, binding.projectDefinitionRef.version, scope);
+    compareBoundary("projectDefinitionDigest", binding.projectDefinitionDigest, definition?.digest, drift);
+    if (input.currentState) {
+      const current = revalidateHarnessExecutionBinding(binding, input.currentState);
+      drift.push(...current.drift.map((item) => `current.${item}`));
+    }
+    if (drift.length) throw new Error(`HARNESS_EXECUTION_BINDING_DRIFT: ${drift.join(",")}`);
+    return {
+      schema: "evopilot-harness-execution-boundary-check/v1" as const,
+      status: "VALID" as const,
+      checkpoint: input.checkpoint,
+      bindingDigest: binding.digest,
+      closure: input.currentState ? "LIVE_IMMUTABLE_CLOSURE" as const : "BOUND_RECORD" as const,
+      evidence: [
+        `checkpoint=${input.checkpoint}`,
+        `binding=${binding.digest}`,
+        `registry=${binding.registryDigest}`,
+        `catalog=${binding.catalogDigest}`,
+        `profile=${binding.profileRef.digest}`,
+        `bundle=${binding.bundleRef.digest}`,
+        `components=${canonicalDigest(binding.bundleRef.componentDigests)}`
+      ],
+      digest: canonicalDigest({ checkpoint: input.checkpoint, bindingDigest: binding.digest, currentState: input.currentState })
+    };
+  }
+
   decideRecovery(input: RecoveryContext, scope?: GovernedEvolutionScope): RecoveryDecision {
     const active = this.listAutomationRules(scope).find((rule) => automationRuleApplies(rule, {
       failureSignature: input.failureSignature,
@@ -167,9 +265,29 @@ export class GovernedEvolutionService {
         remainingBudget: Math.max(0, Math.min(active.maxAttempts, input.maxAttempts) - input.attempt),
         bindingDigest: input.bindingDigest
       };
-      return { ...material, digest: canonicalDigest(material) };
+      const decision = { ...material, ruleRef: { id: active.id, revision: active.revision, digest: active.digest }, digest: canonicalDigest({ ...material, ruleRef: { id: active.id, revision: active.revision, digest: active.digest } }) };
+      this.recordRecoveryDecision(input, decision, scope);
+      return decision;
     }
-    return decideRecovery(input);
+    let decision = decideRecovery(input);
+    if (decision.action === "PROPOSE_AUTOMATION_RULE") {
+      const scopeBinding = { projectId: input.projectId, lifecycleId: input.lifecycleId, actionId: input.actionId, hostId: input.hostId };
+      const proposalIdentity = canonicalDigest({ failureSignature: input.failureSignature, failureClass: input.failureClass, scope: scopeBinding, bindingDigest: input.bindingDigest });
+      const proposal = this.createAutomationProposal({
+        id: `learned-${proposalIdentity.slice("sha256:".length, "sha256:".length + 16)}`,
+        failureSignature: input.failureSignature,
+        failureClass: input.failureClass,
+        scope: scopeBinding,
+        strategy: input.mutationReceipt ? "RESUME_FROM_RECEIPT" : "REPAIR_THEN_RETRY",
+        maxAttempts: Math.max(1, Math.min(5, input.maxAttempts)),
+        preconditions: ["exact-binding", "identical-inputs", "reversible", "no-external-effect"],
+        prohibitedEffects: ["authority-change", "credential-change", "publication", "production-access", "database-access", "irreversible-external-effect"]
+      }, scope);
+      const material = { ...decision, proposalRef: { id: proposal.id, digest: proposal.digest }, digest: undefined };
+      decision = { ...material, digest: canonicalDigest(material) };
+    }
+    this.recordRecoveryDecision(input, decision, scope);
+    return decision;
   }
 
   createAutomationProposal(input: Omit<AutomationRuleProposal, "schema" | "digest">, scope?: GovernedEvolutionScope): AutomationRuleProposal {
@@ -209,6 +327,17 @@ export class GovernedEvolutionService {
     return next;
   }
 
+  suspendAutomationRule(id: string, revision: number, failureEvidenceRef: string, scope?: GovernedEvolutionScope): AutomationRule {
+    if (!failureEvidenceRef.trim()) throw new Error("AUTOMATION_RULE_SUSPENSION_EVIDENCE_REQUIRED");
+    const current = this.listAutomationRules(scope).find((rule) => rule.id === id && rule.revision === revision);
+    if (!current) throw new Error(`AUTOMATION_RULE_NOT_FOUND: ${id}@${revision}`);
+    if (current.status === "SUSPENDED") return current;
+    const material = { ...current, status: "SUSPENDED" as const, revision: current.revision + 1, approvedBy: "runtime-recovery-controller", approvalEvidenceRef: failureEvidenceRef, approvedAt: new Date().toISOString() };
+    const next = { ...material, digest: canonicalDigest({ ...material, digest: undefined }) };
+    this.atomicWrite(path.join(this.scopedDirectory(this.rulesDir, scope), `${safeSegment(next.id)}-v${next.revision}.json`), next);
+    return next;
+  }
+
   listAutomationProposals(scope?: GovernedEvolutionScope): AutomationRuleProposal[] {
     return this.readAll<AutomationRuleProposal>(this.scopedDirectory(this.proposalDir, scope));
   }
@@ -227,6 +356,18 @@ export class GovernedEvolutionService {
   private writeBinding(binding: HarnessExecutionBinding, scope?: GovernedEvolutionScope): void {
     const target = path.join(this.scopedDirectory(this.bindingsDir, scope), `${binding.digest.slice("sha256:".length)}.json`);
     if (!fs.existsSync(target)) this.atomicWrite(target, binding);
+  }
+
+  private writeActiveProjectDefinition(definition: EvolutionProjectDefinition, scope: GovernedEvolutionScope | undefined, reason: string, actor = "runtime", evidenceRef = "registration"): { schema: "evopilot-evolution-project-activation/v1"; projectId: string; version: string; definitionDigest: string; reason: string; actor: string; evidenceRef: string; activatedAt: string; digest: string } {
+    const material = { schema: "evopilot-evolution-project-activation/v1" as const, projectId: definition.metadata.id, version: definition.metadata.version, definitionDigest: definition.digest, reason, actor, evidenceRef, activatedAt: new Date().toISOString() };
+    const record = { ...material, digest: canonicalDigest(material) };
+    this.atomicWrite(path.join(this.scopedDirectory(this.activeDefinitionsDir, scope), `${safeSegment(definition.metadata.id)}.json`), record);
+    return record;
+  }
+
+  private recordRecoveryDecision(context: RecoveryContext, decision: RecoveryDecision, scope?: GovernedEvolutionScope): void {
+    const material = { schema: "evopilot-recovery-event/v1", id: randomUUID(), context, decision, recordedAt: new Date().toISOString() };
+    this.atomicWrite(path.join(this.scopedDirectory(this.recoveryEventsDir, scope), `${material.id}.json`), { ...material, digest: canonicalDigest(material) });
   }
 
   private projectDefinitionPath(id: string, version: string, scope?: GovernedEvolutionScope): string {
@@ -259,6 +400,10 @@ function safeSegment(value: string): string {
   const result = String(value).trim().replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
   if (!result) throw new Error("GOVERNED_EVOLUTION_ID_INVALID");
   return result;
+}
+
+function compareBoundary(field: string, expected: string | undefined, actual: string | undefined, drift: string[]): void {
+  if (expected !== actual) drift.push(`${field}:expected=${expected ?? "missing"};actual=${actual ?? "missing"}`);
 }
 
 function compareVersions(left: string, right: string): number {

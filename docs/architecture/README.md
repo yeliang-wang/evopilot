@@ -59,6 +59,7 @@ Deep architecture notes remain in:
 - [ADR: EvoPilot / evopilot-harness Boundary](adr/0001-evopilot-harness-boundary.md)
 - [ADR: Open Lifecycle Harness](adr/0002-open-lifecycle-harness.md)
 - [ADR: Harness-Guided Governed Evolution Runtime](adr/0003-harness-guided-governed-evolution-runtime.md)
+- [ADR: Executable v5 Completion Recovery](adr/0004-v5-completion-recovery.md)
 - [Harness-Guided Governed Evolution Runtime](harness-guided-governed-evolution-runtime.md)
 - [Open Lifecycle Harness](open-lifecycle-harness.md)
 - [Published Harness Catalog](published-harness-catalog.md)

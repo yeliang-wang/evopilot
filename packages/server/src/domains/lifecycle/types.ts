@@ -149,10 +149,14 @@ export interface LifecycleBinding {
   inputBindingDigest: string;
   actionRegistryDigest: string;
   policyDigest: string;
+  providerDigest?: string;
+  environmentDigest?: string;
+  authorityDigest?: string;
   harnessBundle: LifecycleHarnessBundleBinding;
   executor: LifecycleExecutorBinding;
   runtimeDigest: string;
   evidenceDigest: string;
+  harnessExecutionBindingDigest?: string;
   tenantId: string;
   workspaceId: string;
   projectId: string;
@@ -252,6 +256,19 @@ export interface LifecycleRun {
   trajectory: LifecycleAgentTrajectoryEntry[];
   pendingExecution?: LifecycleAgentExecutionRequest;
   pendingDecisionAuthority?: "stage" | "recovery";
+  boundaryEvidence?: Array<{ checkpoint: "start" | "resume" | "retry" | "loop-iteration"; bindingDigest: string; evidence: string[]; checkedAt: string }>;
+  recoveryHistory?: Array<{
+    requestId: string;
+    stageId: string;
+    failureClass: "DETERMINISTIC_MECHANICS" | "TRANSIENT" | "EXTERNAL_SAFE_RETRY" | "UNKNOWN" | "UNCERTAIN_MUTATION" | "AUTHORITY_REQUIRED";
+    failureSignature: string;
+    action: "AUTO_REPAIR" | "AUTO_RETRY" | "RESUME_FROM_RECEIPT" | "PROPOSE_AUTOMATION_RULE" | "HUMAN_DECISION" | "FAIL";
+    humanRequired: boolean;
+    decisionDigest: string;
+    ruleRef?: { id: string; revision: number; digest: string };
+    proposalRef?: { id: string; digest: string };
+    recordedAt: string;
+  }>;
   currentStageId?: string;
   tenantId: string;
   workspaceId: string;
@@ -280,8 +297,12 @@ export interface LifecycleStartRequest extends LifecycleInputSources {
   goalId?: string;
   targetId?: string;
   policyDigest: string;
+  providerDigest?: string;
+  environmentDigest?: string;
+  authorityDigest?: string;
   runtimeDigest: string;
   evidenceDigest?: string;
+  harnessExecutionBindingDigest?: string;
   harnessBundle: LifecycleHarnessBundleBinding;
   executor: LifecycleExecutorBinding;
 }
@@ -293,4 +314,12 @@ export interface LifecycleExternalResult {
   evidence?: string[];
   cost?: { amount?: number; currency?: string; inputTokens?: number; outputTokens?: number };
   artifacts?: Array<{ ref: string; digest: string }>;
+  failure?: {
+    class: "DETERMINISTIC_MECHANICS" | "TRANSIENT" | "EXTERNAL_SAFE_RETRY" | "UNKNOWN" | "UNCERTAIN_MUTATION" | "AUTHORITY_REQUIRED";
+    signature: string;
+    identicalInputs: boolean;
+    reversible: boolean;
+    externalEffect: boolean;
+    mutationReceipt?: string;
+  };
 }

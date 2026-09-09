@@ -178,6 +178,13 @@ export async function runCli(argv: string[]): Promise<number> {
         return await evolutionProjectDefinitionInspect(ctx, maybeId);
       case "project-definition:register":
         return await evolutionProjectDefinitionRegister(ctx);
+      case "project-definition:discover":
+        return await governedEvolutionMutation(ctx, "/api/v1/evolution-project-definitions/discover", "project-discover");
+      case "project-definition:diff":
+        return await evolutionProjectDefinitionDiff(ctx, maybeId);
+      case "project-definition:activate":
+      case "project-definition:rollback":
+        return await evolutionProjectDefinitionActivation(ctx, maybeId, action as "activate" | "rollback");
       case "project:credentials":
         if (maybeId !== "set") throw usage("Use: evopilot project credentials set <project-id> [options]");
         return await projectCredentialsSet(ctx, args.positionals[3]);
@@ -235,6 +242,8 @@ export async function runCli(argv: string[]): Promise<number> {
         return await lifecycleRunMutation(ctx, maybeId, "feedback");
       case "evolution:plan":
         return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/plan", "plan");
+      case "evolution:run":
+        return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/runs", "run");
       case "evolution:revalidate":
         return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/revalidate", "revalidate");
       case "evolution:recover":
@@ -1521,6 +1530,24 @@ async function evolutionProjectDefinitionRegister(ctx: RuntimeContext): Promise<
   if (Object.keys(payload).length === 0) throw usage("project-definition register requires --file <definition.yaml|json>.");
   const response = await ctx.client.expectOk(ctx.client.post("/api/v1/evolution-project-definitions", payload, requestOptions(ctx)));
   printOutput(ctx, response.data, `projectDefinition=${nestedField(response.data, ["metadata", "id"])}@${nestedField(response.data, ["metadata", "version"])} digest=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function evolutionProjectDefinitionDiff(ctx: RuntimeContext, id?: string): Promise<number> {
+  const projectDefinitionId = id ?? requiredOption(ctx.args, "id");
+  const from = requiredOption(ctx.args, "from");
+  const to = requiredOption(ctx.args, "to");
+  const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/evolution-project-definitions/${encodeURIComponent(projectDefinitionId)}/diff`, { query: { from, to } }));
+  printOutput(ctx, response.data, `projectDefinition=${projectDefinitionId} from=${from} to=${to} compatibility=${field(response.data, "compatibility")} digest=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function evolutionProjectDefinitionActivation(ctx: RuntimeContext, id: string | undefined, action: "activate" | "rollback"): Promise<number> {
+  const projectDefinitionId = id ?? requiredOption(ctx.args, "id");
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  const body = { ...payload, version: stringOption(ctx.args, "version") ?? field(payload, "version"), evidenceRef: stringOption(ctx.args, "evidence-ref") ?? field(payload, "evidenceRef") };
+  const response = await ctx.client.expectOk(ctx.client.post(`/api/v1/evolution-project-definitions/${encodeURIComponent(projectDefinitionId)}/${action}`, body, requestOptions(ctx)));
+  printOutput(ctx, response.data, `projectDefinition=${projectDefinitionId}@${field(response.data, "version")} activation=${field(response.data, "digest")}`);
   return 0;
 }
 
@@ -3838,6 +3865,10 @@ Usage:
   evopilot project-definition list
   evopilot project-definition inspect <project-id> [--version <version>]
   evopilot project-definition register --file <definition.yaml|json>
+  evopilot project-definition discover --file <detected-facts.yaml|json>
+  evopilot project-definition diff <project-id> --from <version> --to <version>
+  evopilot project-definition activate <project-id> --version <version> --evidence-ref <ref>
+  evopilot project-definition rollback <project-id> --version <version> --evidence-ref <ref>
   evopilot project credentials set <project-id> [--token-ref <env>]
   evopilot project devops set <project-id> --provider <github-actions|gitlab-ci> [options]
   evopilot project devops inspect <project-id>
@@ -3872,6 +3903,7 @@ Usage:
   evopilot lifecycle-run signal <run-id> --request-id <id> --status <SUCCEEDED|FAILED|UNCERTAIN> --receipt-digest <sha256> [--file <evidence.yaml|json>]
   evopilot lifecycle-run feedback <run-id> --binding-digest <sha256> --evidence-ref <human-approval-ref>
   evopilot evolution plan --file <plan-request.yaml|json>
+  evopilot evolution run --file <exact-binding-run-request.yaml|json>
   evopilot evolution revalidate --file <revalidation.yaml|json>
   evopilot evolution recover --file <recovery-context.yaml|json>
   evopilot automation list

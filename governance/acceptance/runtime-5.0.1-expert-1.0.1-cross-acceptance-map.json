@@ -1,0 +1,154 @@
+{
+  "schema": "evopilot-runtime-expert-completion-cross-acceptance-map/v1",
+  "id": "evopilot-runtime-5.0.1-expert-1.0.1-completion-cross-acceptance-r1",
+  "status": "PROPOSED",
+  "authority": "Target and acceptance planning evidence only. This mapping does not approve either Target, implementation, commit, Candidate construction, Host operation, acceptance, Suite mutation, Cutover, publication, or Release.",
+  "roadmapDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+  "runtimeTarget": {
+    "id": "evopilot-v5.0.1-harness-guided-completion-recovery",
+    "revision": 1,
+    "path": "/Users/wangyejing/.codex/evolution-runs/evopilot/506b7ebc8b9a/evopilot-v5.0.1-harness-guided-completion-recovery-target-r1.json",
+    "fileDigest": "sha256:fd3b97da08d4775e3181d62a40005755953a04b68e912e5e53009bd8510d3969",
+    "targetAuthorizationDigest": "sha256:8e5d454136f6a02f8fc3d3a4e4c65371ccf8fe48fd5fa67a2108764c9c42d67b"
+  },
+  "expertTarget": {
+    "id": "evopilot-evolution-expert-v1.0.1-completion-recovery",
+    "revision": 1,
+    "path": "/Users/wangyejing/.codex/evolution-runs/evopilot/506b7ebc8b9a/evopilot-evolution-expert-v1.0.1-completion-recovery-target-r1.json",
+    "fileDigest": "sha256:6b6bd0d54451ea8200cdae943f32b4811c42afc0128bde9dd72c5c09499f7a2c",
+    "targetAuthorizationDigest": "sha256:530ef883e67a0045cbd56b0ecec80e4902bf07332483a271399c7c6de1aa4501"
+  },
+  "sourceInventories": [
+    {
+      "id": "accepted-roadmap",
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/roadmap.yaml",
+      "digest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+      "coverage": "EVERY_ACCEPTED_V5_AND_EXPERT_CLAUSE"
+    },
+    {
+      "id": "runtime-v5-target-r2",
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json",
+      "digest": "sha256:1960d6de16168f9b99d24f762aae1724576429fb894c630fd0d2959a227be7e5",
+      "coverage": "ALL_50_CURRENT_18_INHERITED_AND_13_E2E"
+    },
+    {
+      "id": "expert-v1-target-r2",
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.0.json",
+      "digest": "sha256:0c6a3c755e078c7b57388923e07bf60eaf87c461514263e8a1dd4a1ecd907f7d",
+      "coverage": "ALL_18_CURRENT_8_INHERITED_AND_8_E2E"
+    },
+    {
+      "id": "explicit-user-corrections-and-audited-gaps",
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/b90d2fc29ff5/local-assurance-manifest.json",
+      "digest": "sha256:740bf478dab869f5eee11b42e4ba30a5b6a194880d904b68d3ece55a58b1f9b7",
+      "coverage": "ALL_DECISIONS_CHECKS_SCENARIOS_AND_GAPS"
+    }
+  ],
+  "sourceInventoryRule": "Every item in every bound source inventory must appear in the executable traceability matrix. A source-level reference is not a PASS; each item still requires successor criteria, deliverables, independent validators, concrete evidence, and terminal E2E where user-observable.",
+  "explicitRequirementMapping": [
+    {
+      "requirementId": "original-v5-scheme-100-percent",
+      "runtimeAcceptanceIds": ["TRACE01", "TRACE02", "TRACE03", "TRACE04", "TRACE05", "TRACE06"],
+      "expertAcceptanceIds": ["TRACE01", "TRACE02", "TRACE03", "TRACE04", "TRACE05", "TRACE06"],
+      "terminalJourneys": ["E2E08", "EXE2E05"]
+    },
+    {
+      "requirementId": "repair-in-a-successor-release",
+      "runtimeAcceptanceIds": ["FUNC21", "CAP13", "TRACE06"],
+      "expertAcceptanceIds": ["EXCAP05", "TRACE06"],
+      "terminalJourneys": ["E2E08", "EXE2E05"]
+    },
+    {
+      "requirementId": "criterion-specific-acceptance",
+      "runtimeAcceptanceIds": ["TRACE03", "TRACE05", "TRACE06"],
+      "expertAcceptanceIds": ["TRACE03", "TRACE05", "TRACE06"],
+      "terminalJourneys": ["E2E08", "EXE2E05"]
+    },
+    {
+      "requirementId": "binding-in-core-loop",
+      "runtimeAcceptanceIds": ["FUNC05", "FUNC06", "FUNC07", "FUNC08", "FUNC09", "FUNC10", "CAP02", "CAP03"],
+      "expertAcceptanceIds": ["EXFUNC05", "EXFUNC06"],
+      "terminalJourneys": ["E2E13", "EXE2E03"]
+    },
+    {
+      "requirementId": "recovery-runtime-closure",
+      "runtimeAcceptanceIds": ["FUNC13", "FUNC14", "FUNC15", "CAP05", "CAP06"],
+      "expertAcceptanceIds": ["EXFUNC08", "EXFUNC09"],
+      "terminalJourneys": ["E2E07", "EXE2E04"]
+    },
+    {
+      "requirementId": "expert-host-lifecycle",
+      "runtimeAcceptanceIds": ["FUNC16", "FUNC17", "FUNC19", "CAP07", "CAP08", "CAP09", "CAP10", "CAP14"],
+      "expertAcceptanceIds": ["EXFUNC01", "EXFUNC02", "EXFUNC09", "EXFUNC10", "EXFUNC11", "EXFUNC12", "EXCAP01", "EXCAP02", "EXCAP05", "EXCAP06"],
+      "terminalJourneys": ["E2E01", "E2E10", "E2E11", "E2E12", "EXE2E01", "EXE2E05", "EXE2E06", "EXE2E07"]
+    },
+    {
+      "requirementId": "project-onboarding-and-contracts",
+      "runtimeAcceptanceIds": ["FUNC01", "FUNC02", "FUNC11", "FUNC12", "CAP01", "CAP04", "DOC04", "DOC09"],
+      "expertAcceptanceIds": ["EXFUNC03", "EXFUNC04"],
+      "terminalJourneys": ["E2E02", "E2E03", "EXE2E02"]
+    },
+    {
+      "requirementId": "docs-and-real-e2e",
+      "runtimeAcceptanceIds": ["DOC01", "DOC02", "DOC03", "DOC04", "DOC05", "DOC06", "DOC07", "DOC08", "DOC09", "DOC10", "DOC11", "DOC12", "DOC13", "TRACE04"],
+      "expertAcceptanceIds": ["EXCAP06", "TRACE04"],
+      "terminalJourneys": ["E2E01-E2E13", "EXE2E01-EXE2E08"]
+    },
+    {
+      "requirementId": "no-suite-cutover",
+      "runtimeAcceptanceIds": ["FUNC20", "CAP12", "DOC12"],
+      "expertAcceptanceIds": ["EXCAP03", "EXCAP04"],
+      "terminalJourneys": ["E2E09", "EXE2E08"]
+    }
+  ],
+  "traceAcceptanceMapping": [
+    {"id": "TRACE01", "runtimeJourney": "E2E08", "expertJourney": "EXE2E05", "closure": "EXACT_INVENTORY_DIGEST_BOUND"},
+    {"id": "TRACE02", "runtimeJourney": "E2E13", "expertJourney": "EXE2E08", "closure": "ZERO_UNMAPPED_AND_ZERO_SILENT_EXCLUSIONS"},
+    {"id": "TRACE03", "runtimeJourney": "E2E08", "expertJourney": "EXE2E05", "closure": "INDEPENDENT_VALIDATORS_AND_CRITERION_EVIDENCE"},
+    {"id": "TRACE04", "runtimeJourney": "E2E01", "expertJourney": "EXE2E01", "closure": "EVERY_OBSERVABLE_REQUIREMENT_HAS_TERMINAL_E2E"},
+    {"id": "TRACE05", "runtimeJourney": "E2E08", "expertJourney": "EXE2E05", "closure": "FAIL_CLOSED_ON_EVERY_INCOMPLETE_CLASS"},
+    {"id": "TRACE06", "runtimeJourney": "E2E08", "expertJourney": "EXE2E05", "closure": "TOTAL_EQUALS_PASSED_AND_NO_REGRESSION"}
+  ],
+  "journeyMapping": [
+    {"runtimeE2E": "E2E01", "expertCases": ["EXE2E01"], "closure": "EXACT_PAIR_NOVICE_INSTALL_HELP_TUTORIAL"},
+    {"runtimeE2E": "E2E02", "expertCases": ["EXE2E02", "EXE2E03"], "closure": "RUNTIME_AUTHORITATIVE_PROJECT_ONBOARDING"},
+    {"runtimeE2E": "E2E03", "expertCases": ["EXE2E02"], "closure": "RUNTIME_AUTHORITATIVE_ADJUSTMENT_AND_ROLLBACK"},
+    {"runtimeE2E": "E2E04", "expertCases": ["EXE2E08"], "closure": "DATARIG_DECLARATIVE_REFERENCE_WITH_REAL_SUITE_UNTOUCHED"},
+    {"runtimeE2E": "E2E05", "expertCases": ["EXE2E03", "EXE2E04"], "closure": "EVOPILOT_GITHUB_PUBLIC_TERMINAL_CLOSURE"},
+    {"runtimeE2E": "E2E06", "expertCases": ["EXE2E03", "EXE2E08"], "closure": "HARNESS_PRODUCER_BOUNDARY_READ_ONLY"},
+    {"runtimeE2E": "E2E07", "expertCases": ["EXE2E04"], "closure": "RECOVERY_LEARNING_RESTART_RESUME_HOST_TRANSFER"},
+    {"runtimeE2E": "E2E08", "expertCases": ["EXE2E05"], "closure": "INDEPENDENT_CANDIDATES_ACCEPTANCE_AND_RELEASE_AUTHORITY"},
+    {"runtimeE2E": "E2E09", "expertCases": ["EXE2E08"], "closure": "ISOLATED_CANDIDATE_ZERO_LEGACY_INVOCATION_REAL_SUITES_ACTIVE_UNTOUCHED"},
+    {"runtimeE2E": "E2E10", "expertCases": ["EXE2E05"], "closure": "EXPERT_UPGRADE_ROLLBACK_RUNTIME_BYTES_UNCHANGED"},
+    {"runtimeE2E": "E2E11", "expertCases": ["EXE2E06"], "closure": "NEW_HOST_ADAPTER_ZERO_ENGINE_DIFF"},
+    {"runtimeE2E": "E2E12", "expertCases": ["EXE2E07"], "closure": "HEADLESS_RUNTIME_COMPLETE_WITHOUT_EXPERT"},
+    {"runtimeE2E": "E2E13", "expertCases": ["EXE2E03"], "closure": "PUBLISHED_HARNESS_GUIDED_LOOP_AND_OPEN_LIFECYCLE"}
+  ],
+  "exactPairBindingRequiredForCountedEvidence": [
+    "Runtime 5.0.1 Candidate identity, source commit, artifact and package digests",
+    "Expert 1.0.1 Candidate identity, package, Core and adapter digests",
+    "Runtime Human Interaction Protocol and Expert protocol versions",
+    "Host identities, versions, declared capabilities, conformance, and designated-human WorkBuddy boundary",
+    "Harness Registry, Catalog, Profile, Bundle, Component and HarnessExecutionBinding digests",
+    "Project Definition, GoalTarget, Lifecycle, Policy, Provider, Environment, authority and evidence digests",
+    "isolated installation outside source workspaces with both legacy Suites absent",
+    "fresh criterion-specific evidence and terminal-state receipts",
+    "separate Runtime Target, Expert Target, acceptance, and Release decisions"
+  ],
+  "completionFormula": {
+    "requirementsCoveragePercent": 100,
+    "currentAcceptancePercent": 100,
+    "inheritedAcceptancePercent": 100,
+    "realCaseCoveragePercent": 100,
+    "impactClosurePercent": 100,
+    "failed": 0,
+    "pending": 0,
+    "stale": 0,
+    "generic": 0,
+    "unmapped": 0,
+    "exactInstalledCandidatePair": "VERIFIED",
+    "noRegression": "PASSED"
+  },
+  "failurePolicy": "Any missing, partial, failed, pending, stale, generic, warning-only, unmapped, wrong-Candidate, non-terminal, or unauthorized human-substitution item keeps both the relevant product and the overall campaign INCOMPLETE and returns the exact affected scope to implementation or evidence collection.",
+  "suiteBoundary": "No EvoPilot Codex Suite or DataRig Codex Suite file, installed Skill, Registry, default, archive, or lifecycle state may be changed under these Targets. Suite acceptance hardening and later Cutover remain separately governed work."
+}

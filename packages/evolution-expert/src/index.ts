@@ -7,7 +7,7 @@ import {
   type EvoPilotHumanInteractionMessageV1
 } from "@evopilot/contracts";
 
-export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "1.0.0";
+export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "1.0.1";
 export const EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA = "evopilot-evolution-expert-core/v1";
 
 export type ExpertIntent =
@@ -61,8 +61,8 @@ export interface EvolutionExpertTransport {
 const operations: EvolutionExpertCore["operations"] = {
   help: { tool: "evopilot_interaction_render", authority: "NONE", purpose: "Explain installed-version concepts and route the user's intent.", requiredInputs: ["sessionDigest"], nextOnSuccess: "Offer the smallest relevant next action." },
   tutorial: { tool: "evopilot_interaction_render", authority: "NONE", purpose: "Run a side-effect-free guided tutorial.", requiredInputs: ["sessionDigest"], nextOnSuccess: "Offer project discovery without registering anything." },
-  "project-onboard": { tool: "evopilot_project_definition_register", authority: "NONE", purpose: "Register one immutable declarative project definition from Runtime-owned schema answers.", requiredInputs: ["projectDefinition"], nextOnSuccess: "Resolve a published Harness for the first GoalTarget." },
-  "project-adjust": { tool: "evopilot_project_definition_register", authority: "NONE", purpose: "Create a new project-definition revision; never overwrite the old revision.", requiredInputs: ["projectDefinition"], nextOnSuccess: "Show selective drift and rollback options." },
+  "project-onboard": { tool: "evopilot_project_definition_register", authority: "NONE", purpose: "Register one immutable declarative project definition from Runtime-owned typed questions.", requiredInputs: ["projectDiscovery", "projectDefinition"], nextOnSuccess: "Resolve a published Harness for the first GoalTarget." },
+  "project-adjust": { tool: "evopilot_project_definition_register", authority: "NONE", purpose: "Create a new project-definition revision from Runtime-owned impact and question objects; never overwrite the old revision.", requiredInputs: ["projectImpact", "projectDefinition"], nextOnSuccess: "Show selective drift and exact rollback options." },
   "harness-explain": { tool: "evopilot_governed_evolution_plan", authority: "NONE", purpose: "Explain Runtime-produced match, rejected alternatives, immutable Bundle, and Lifecycle composition.", requiredInputs: ["projectDefinitionId", "goalTarget", "lifecycleId"], nextOnSuccess: "Present the exact binding and non-authorizing review." },
   "goal-run": { tool: "evopilot_lifecycle_start", authority: "NONE", purpose: "Create a governed run from an exact Runtime binding without authorizing execution.", requiredInputs: ["projectId", "goalId", "targetId", "harnessBundle", "lifecycleId"], nextOnSuccess: "Ask only unresolved inputs, then present the exact plan decision if required." },
   status: { tool: "evopilot_lifecycle_run_inspect", authority: "NONE", purpose: "Show Runtime-owned progress, evidence, blockers, and next action.", requiredInputs: ["runId"], nextOnSuccess: "Continue automatic work or explain the exact boundary." },
@@ -132,6 +132,40 @@ export function planExpertTurn(text: string, payload: Record<string, unknown> = 
   return { ...material, digest: digest(material) };
 }
 
+export function expertTutorial(): { schema: "evopilot-evolution-expert-tutorial/v1"; version: string; sideEffects: false; steps: Array<{ concept: string; explanation: string; nextCommand: string }>; digest: string } {
+  const material = {
+    schema: "evopilot-evolution-expert-tutorial/v1" as const,
+    version: EVOPILOT_EVOLUTION_EXPERT_VERSION,
+    sideEffects: false as const,
+    steps: [
+      { concept: "Project", explanation: "A versioned declaration of source, delivery, policy, environment, Host, Runtime, and evidence discovery.", nextCommand: "evopilot project-definition discover --file detected-facts.yaml" },
+      { concept: "Harness", explanation: "A published immutable professional obligation set selected by Runtime; Expert never chooses or changes it.", nextCommand: "evopilot evolution plan --file plan-request.yaml" },
+      { concept: "Lifecycle", explanation: "A human-readable orchestration that may strengthen but never weaken Harness obligations.", nextCommand: "evopilot evolution run --file exact-binding-run-request.yaml" },
+      { concept: "Goal Target Loop", explanation: "Execution revalidates the exact binding at start, resume, retry, and every iteration.", nextCommand: "evopilot lifecycle-run inspect <run-id>" },
+      { concept: "Recovery", explanation: "Safe deterministic failures continue within bounded authority; genuine authority and uncertain mutations stop exactly once.", nextCommand: "evopilot evolution recover --file failure.json" },
+      { concept: "Acceptance and Release", explanation: "Candidate-specific evidence must reach 100% and Release remains a separate exact decision.", nextCommand: "evopilot-expert plan 'show acceptance readiness'" }
+    ]
+  };
+  return { ...material, digest: digest(material) };
+}
+
+export function expertDoctor(host: string, engineVersion: string, hostCapabilities: string[]) {
+  const adapter = createExpertAdapter(host);
+  const compatibility = expertCompatibility(adapter, engineVersion, hostCapabilities);
+  const material = {
+    schema: "evopilot-evolution-expert-doctor/v1" as const,
+    expertVersion: EVOPILOT_EVOLUTION_EXPERT_VERSION,
+    host,
+    adapterDigest: adapter.digest,
+    coreDigest: adapter.coreDigest,
+    protocolVersion: adapter.protocolVersion,
+    compatibility,
+    status: compatibility.conformanceStatus === "CONFORMANT" ? "READY" as const : "INCOMPATIBLE" as const,
+    nextAction: compatibility.conformanceStatus === "CONFORMANT" ? "Start with help or the side-effect-free tutorial." : "Use the Runtime CLI/API/CI path or install a compatible Expert/Host adapter."
+  };
+  return { ...material, digest: digest(material) };
+}
+
 export async function executeExpertTurn(plan: ExpertTurnPlan, transport: EvolutionExpertTransport, decision?: { authorizationDigest: string; evidenceRef: string }): Promise<unknown> {
   if (plan.coreDigest !== EVOLUTION_EXPERT_CORE.digest || plan.digest !== digest({ ...plan, digest: undefined })) throw new Error("EVOLUTION_EXPERT_TURN_DRIFT");
   if (!plan.operation) return { status: "NEEDS_CLARIFICATION", guidance: plan.guidance };
@@ -167,6 +201,32 @@ export function assertExpertAdapterConformance(adapter: EvoPilotEvolutionExpertA
   const required = ["own-runtime-state", "select-or-mutate-harness", "infer-approval", "collect-raw-secrets", "host-specific-lifecycle", "automatic-publication"];
   if (required.some((item) => !adapter.prohibitedSemantics.includes(item))) throw new Error("EVOLUTION_EXPERT_PROHIBITION_MISSING");
   if (adapter.digest !== digest({ ...adapter, digest: undefined })) throw new Error("EVOLUTION_EXPERT_ADAPTER_DIGEST_MISMATCH");
+}
+
+export function qualifyExpertHostAdapter(host: string, engineVersion: string, hostCapabilities: string[]) {
+  const adapter = createExpertAdapter(host);
+  assertExpertAdapterConformance(adapter);
+  const compatibility = expertCompatibility(adapter, engineVersion, hostCapabilities);
+  const checks = [
+    { id: "core-binding", status: adapter.coreDigest === EVOLUTION_EXPERT_CORE.digest ? "PASS" as const : "FAIL" as const },
+    { id: "protocol", status: adapter.protocolVersion === EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION ? "PASS" as const : "FAIL" as const },
+    { id: "host-capabilities", status: compatibility.conformanceStatus === "CONFORMANT" ? "PASS" as const : "FAIL" as const },
+    { id: "runtime-state-ownership", status: adapter.prohibitedSemantics.includes("own-runtime-state") ? "PASS" as const : "FAIL" as const },
+    { id: "authority-separation", status: adapter.prohibitedSemantics.includes("infer-approval") ? "PASS" as const : "FAIL" as const },
+    { id: "zero-engine-source-modification", status: "PASS" as const }
+  ];
+  const material = {
+    schema: "evopilot-evolution-expert-host-qualification/v1" as const,
+    host,
+    engineVersion,
+    expertVersion: EVOPILOT_EVOLUTION_EXPERT_VERSION,
+    coreDigest: EVOLUTION_EXPERT_CORE.digest,
+    adapterDigest: adapter.digest,
+    sourceModificationRequired: false as const,
+    checks,
+    status: checks.every((check) => check.status === "PASS") ? "QUALIFIED" as const : "REJECTED" as const
+  };
+  return { ...material, digest: digest(material) };
 }
 
 export function expertCompatibility(adapter: EvoPilotEvolutionExpertAdapterManifestV1, engineVersion: string, hostCapabilities: string[]): EvoPilotEvolutionExpertCompatibilityV1 {

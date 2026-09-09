@@ -62,8 +62,12 @@ export async function handleLifecycleRoutes(context: LifecycleRoutesContext): Pr
         goalId: optionalString(body.goalId),
         targetId: optionalString(body.targetId),
         policyDigest: String(body.policyDigest ?? ""),
+        providerDigest: optionalString(body.providerDigest),
+        environmentDigest: optionalString(body.environmentDigest),
+        authorityDigest: optionalString(body.authorityDigest),
         runtimeDigest: String(body.runtimeDigest ?? ""),
         evidenceDigest: optionalString(body.evidenceDigest),
+        harnessExecutionBindingDigest: optionalString(body.harnessExecutionBindingDigest),
         harnessBundle: body.harnessBundle,
         executor: body.executor,
         ...inputSources(body)
@@ -91,7 +95,7 @@ export async function handleLifecycleRoutes(context: LifecycleRoutesContext): Pr
       if (action === "answer") run = service.answer(id, record(body.answers), inputSources(body));
       else if (action === "finalize-binding") {
         assertPublishedHarnessBundle(store, body.harnessBundle);
-        run = service.finalizeBinding(id, { policyDigest: String(body.policyDigest ?? ""), runtimeDigest: String(body.runtimeDigest ?? ""), evidenceDigest: optionalString(body.evidenceDigest), harnessBundle: body.harnessBundle, executor: body.executor });
+        run = service.finalizeBinding(id, { policyDigest: String(body.policyDigest ?? ""), providerDigest: optionalString(body.providerDigest), environmentDigest: optionalString(body.environmentDigest), authorityDigest: optionalString(body.authorityDigest), runtimeDigest: String(body.runtimeDigest ?? ""), evidenceDigest: optionalString(body.evidenceDigest), harnessExecutionBindingDigest: optionalString(body.harnessExecutionBindingDigest), harnessBundle: body.harnessBundle, executor: body.executor });
       }
       else if (action === "authorize") run = service.authorizePlan(id, decision(body.decision), auth.actor, String(body.evidenceRef ?? ""), String(body.bindingDigest ?? ""));
       else if (action === "decision") run = service.decide(id, String(body.stageId ?? ""), decision(body.decision), auth.actor, String(body.evidenceRef ?? ""), String(body.bindingDigest ?? ""));
@@ -102,7 +106,15 @@ export async function handleLifecycleRoutes(context: LifecycleRoutesContext): Pr
         receiptDigest: String(body.receiptDigest ?? ""),
         evidence: stringList(body.evidence),
         cost: record(body.cost) as any,
-        artifacts: Array.isArray(body.artifacts) ? body.artifacts : []
+        artifacts: Array.isArray(body.artifacts) ? body.artifacts : [],
+        failure: body.failure ? {
+          class: recoveryFailureClass(body.failure.class),
+          signature: String(body.failure.signature ?? ""),
+          identicalInputs: body.failure.identicalInputs === true,
+          reversible: body.failure.reversible === true,
+          externalEffect: body.failure.externalEffect === true,
+          mutationReceipt: optionalString(body.failure.mutationReceipt)
+        } : undefined
       });
       else if (action === "feedback") {
         const feedback = service.createFeedbackPackage(id, { bindingDigest: String(body.bindingDigest ?? ""), actor: auth.actor, evidenceRef: String(body.evidenceRef ?? "") });
@@ -190,4 +202,9 @@ function decision(value: unknown): "APPROVED" | "REJECTED" {
 function resultStatus(value: unknown): "SUCCEEDED" | "FAILED" | "UNCERTAIN" {
   if (value !== "SUCCEEDED" && value !== "FAILED" && value !== "UNCERTAIN") throw new Error("LIFECYCLE_EXTERNAL_RESULT_INVALID");
   return value;
+}
+
+function recoveryFailureClass(value: unknown): "DETERMINISTIC_MECHANICS" | "TRANSIENT" | "EXTERNAL_SAFE_RETRY" | "UNKNOWN" | "UNCERTAIN_MUTATION" | "AUTHORITY_REQUIRED" {
+  if (!["DETERMINISTIC_MECHANICS", "TRANSIENT", "EXTERNAL_SAFE_RETRY", "UNKNOWN", "UNCERTAIN_MUTATION", "AUTHORITY_REQUIRED"].includes(String(value))) throw new Error("LIFECYCLE_RECOVERY_FAILURE_CLASS_INVALID");
+  return String(value) as "DETERMINISTIC_MECHANICS" | "TRANSIENT" | "EXTERNAL_SAFE_RETRY" | "UNKNOWN" | "UNCERTAIN_MUTATION" | "AUTHORITY_REQUIRED";
 }

@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/criterion-evidence-v1.schema.json",
+  "title": "Criterion Evidence v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "targetId", "criterionId", "validatorId", "status", "evidenceClass", "evidenceRefs", "evidenceDigest", "candidateDigests", "generic", "recordedAt", "recordDigest"],
+  "properties": {
+    "schema": { "const": "evopilot-criterion-evidence/v1" },
+    "id": { "type": "string", "minLength": 1 },
+    "targetId": { "type": "string", "minLength": 1 },
+    "criterionId": { "type": "string", "minLength": 1 },
+    "validatorId": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["PASS", "FAIL", "PENDING", "STALE", "WARNING"] },
+    "evidenceClass": { "enum": ["MACHINE", "DESIGNATED_HUMAN"] },
+    "evidenceRefs": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "evidenceDigest": { "$ref": "#/$defs/digest" },
+    "candidateDigests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["runtime", "expert"],
+      "properties": { "runtime": { "$ref": "#/$defs/digest" }, "expert": { "$ref": "#/$defs/digest" } }
+    },
+    "designatedHuman": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "actor", "authorityRef", "declarationDigest"],
+      "properties": {
+        "host": { "type": "string", "minLength": 1 },
+        "actor": { "type": "string", "minLength": 1 },
+        "authorityRef": { "type": "string", "minLength": 1 },
+        "declarationDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "generic": { "const": false },
+    "recordedAt": { "type": "string", "format": "date-time" },
+    "recordDigest": { "$ref": "#/$defs/digest" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "evidenceClass": { "const": "DESIGNATED_HUMAN" } } },
+      "then": { "required": ["designatedHuman"] },
+      "else": { "not": { "required": ["designatedHuman"] } }
+    }
+  ],
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

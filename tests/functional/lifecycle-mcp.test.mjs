@@ -48,9 +48,13 @@ test("installed-style stdio MCP exposes the complete lifecycle surface and deleg
   try {
     await client.connect(transport);
     const listing = await client.listTools();
-    assert.equal(listing.tools.length, 26);
+    assert.equal(listing.tools.length, 30);
     assert.ok(listing.tools.some((tool) => tool.name === "evopilot_project_definition_register"));
+    assert.ok(listing.tools.some((tool) => tool.name === "evopilot_project_definition_discover"));
+    assert.ok(listing.tools.some((tool) => tool.name === "evopilot_project_definition_diff"));
+    assert.ok(listing.tools.some((tool) => tool.name === "evopilot_project_definition_activate"));
     assert.ok(listing.tools.some((tool) => tool.name === "evopilot_governed_evolution_plan"));
+    assert.ok(listing.tools.some((tool) => tool.name === "evopilot_governed_evolution_run"));
     assert.ok(listing.tools.some((tool) => tool.name === "evopilot_recovery_decide"));
     assert.ok(listing.tools.some((tool) => tool.name === "evopilot_interaction_render"));
     assert.ok(listing.tools.some((tool) => tool.name === "evopilot_lifecycle_finalize_binding"));

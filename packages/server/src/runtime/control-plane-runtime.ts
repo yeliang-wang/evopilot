@@ -1,5 +1,6 @@
 import {
   applyReviewDecision,
+  composeHarnessAndLifecycle,
   createReleaseReport,
   defaultTriggerRules,
   evidenceEventsFromAgentSignals,
@@ -7,7 +8,9 @@ import {
   evidenceEventsFromFeedback,
   evidenceEventsFromOtlpLogs,
   evidenceEventsFromOtlpTraces,
-  evidenceEventsFromSkyWalking
+  evidenceEventsFromSkyWalking,
+  type HarnessExecutionBinding,
+  type HarnessExecutionCurrentState
 } from "@evopilot/core";
 import { createLlmClientFromEnv } from "@evopilot/llm";
 import { domainforgeFabricProfile } from "@evopilot/profile-domainforge-fabric";
@@ -107,7 +110,7 @@ import {
   workflowCanvasContextFromRequest,
   workspaceUsage
 } from "../application/control-plane-services.js";
-import { isHarnessTemplateDomainError } from "../domains/harness-template/index.js";
+import { isHarnessTemplateDomainError, publishedHarnessCandidatesV5 } from "../domains/harness-template/index.js";
 import { GovernedEvolutionService } from "../domains/governed-evolution/index.js";
 import { LifecycleService } from "../domains/lifecycle/index.js";
 import { serverCompositionRootMetadata } from "../http/composition-root.js";
@@ -399,6 +402,18 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
   });
   const lifecycleService = new LifecycleService(options.dataRoot, options.lifecycleCatalogDirs?.length ? options.lifecycleCatalogDirs : [path.resolve("lifecycles")]);
   const governedEvolutionService = new GovernedEvolutionService(options.dataRoot);
+  lifecycleService.configureGovernanceHooks({
+    verifyBoundary: ({ tenantId, workspaceId, ...input }) => {
+      const scope = { tenantId, workspaceId };
+      const binding = governedEvolutionService.readBinding(input.bindingDigest, scope);
+      return governedEvolutionService.assertLifecycleBoundary({
+        ...input,
+        ...(binding ? { currentState: liveHarnessExecutionState(binding, store, lifecycleService, governedEvolutionService, scope) } : {})
+      }, scope);
+    },
+    decideRecovery: ({ tenantId, workspaceId, ...input }) => governedEvolutionService.decideRecovery(input, { tenantId, workspaceId }),
+    suspendRule: (rule, evidenceRef, scope) => { governedEvolutionService.suspendAutomationRule(rule.id, rule.revision, evidenceRef, scope); }
+  });
   setActiveLoggingSettings(store.readLoggingSettings());
   store.ensureBootstrapAdmin();
   const users = normalizeUsers(options, tokens, runtime, store);
@@ -1119,6 +1134,55 @@ export function startServerFromEnvironment(): http.Server {
     });
   }
   return server;
+}
+
+function liveHarnessExecutionState(
+  binding: HarnessExecutionBinding,
+  store: FileStore,
+  lifecycleService: LifecycleService,
+  governedEvolutionService: GovernedEvolutionService,
+  scope: { tenantId: string; workspaceId: string }
+): HarnessExecutionCurrentState {
+  const scans = store.listHarnessCatalogScans().filter((scan) => scan.status === "READY" && scan.format === "asset-v3" && scan.catalog);
+  const candidates = publishedHarnessCandidatesV5({
+    profiles: store.listPublishedHarnessProfilesV3(),
+    bundles: store.listPublishedHarnessBundlesV3(),
+    components: store.listPublishedHarnessComponentsV3()
+  });
+  const candidate = candidates.find((item) => item.bundle.id === binding.bundleRef.id && item.bundle.version === binding.bundleRef.version);
+  const lifecycle = lifecycleService.catalog.resolve(binding.lifecycleRef.id, binding.lifecycleRef.version);
+  const obligations = lifecycle.definition.obligations ?? {};
+  const composition = candidate ? composeHarnessAndLifecycle(candidate.bundle, {
+    lifecycleId: lifecycle.ref.id,
+    lifecycleVersion: lifecycle.ref.version,
+    lifecycleDigest: lifecycle.digest,
+    requiredEvidence: obligations.requiredEvidence ?? [],
+    validators: obligations.validators ?? [],
+    constraints: obligations.constraints ?? [],
+    capabilities: lifecycle.definition.capabilities ?? [],
+    requestedPermissions: obligations.requestedPermissions ?? [],
+    disabledHarnessEvidence: obligations.disabledHarnessEvidence,
+    disabledHarnessValidators: obligations.disabledHarnessValidators,
+    weakenedHarnessConstraints: obligations.weakenedHarnessConstraints
+  }) : undefined;
+  const definition = governedEvolutionService.readProjectDefinition(binding.projectDefinitionRef.id, binding.projectDefinitionRef.version, scope);
+  return {
+    projectDefinitionDigest: definition?.digest ?? "missing",
+    goalTargetDigest: binding.goalTargetDigest,
+    registryDigest: candidate?.profile.registryDigest ?? "missing",
+    catalogDigests: Object.fromEntries(scans.map((scan) => [scan.catalog!.catalogId, scan.catalog!.catalogDigest])),
+    profiles: candidates.map((item) => ({ id: item.profile.id, version: item.profile.version, digest: item.profile.digest })),
+    bundles: candidates.map((item) => ({ id: item.bundle.id, version: item.bundle.version, digest: item.bundle.digest, componentDigests: item.bundle.componentDigests })),
+    lifecycleDigest: lifecycle.digest,
+    compositionDigest: composition?.digest ?? "missing",
+    policyDigest: binding.policyDigest,
+    providerDigest: binding.providerDigest,
+    environmentDigest: binding.environmentDigest,
+    hostDigest: binding.hostDigest,
+    runtimeDigest: binding.runtimeDigest,
+    authorityDigest: binding.authorityDigest,
+    evidenceDigest: binding.evidenceDigest
+  };
 }
 
 function parseHarnessCatalogDirs(value: string | undefined): string[] {

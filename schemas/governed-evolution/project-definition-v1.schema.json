@@ -19,12 +19,29 @@
         "ecosystem": { "$ref": "#/$defs/stringArrays" },
         "delivery": { "type": "object", "required": ["model", "ciProvider", "candidateBeforeAcceptance", "noRebuildPromotion", "channels"], "properties": { "model": { "enum": ["open-source", "enterprise-internal", "private-service", "library", "documentation"] }, "ciProvider": { "type": "string" }, "candidateBeforeAcceptance": { "const": true }, "noRebuildPromotion": { "const": true }, "channels": { "type": "array", "items": { "type": "string" } } }, "additionalProperties": false },
         "environment": { "type": "object", "required": ["development", "acceptance"], "properties": { "development": { "type": "string" }, "acceptance": { "type": "string" }, "production": { "type": "string" } }, "additionalProperties": false },
-        "policyRefs": { "$ref": "#/$defs/strings" }, "lifecycleRefs": { "$ref": "#/$defs/strings" }, "secretRefs": { "type": "array", "items": { "type": "string", "pattern": "^(secret|env|vault)://" } }, "hostPreferences": { "$ref": "#/$defs/strings" }, "runtimePreferences": { "$ref": "#/$defs/strings" }, "evidenceSources": { "$ref": "#/$defs/strings" }
+        "policyRefs": { "$ref": "#/$defs/strings" }, "lifecycleRefs": { "$ref": "#/$defs/strings" }, "secretRefs": { "type": "array", "items": { "type": "string", "pattern": "^(secret|env|vault)://" } }, "hostPreferences": { "$ref": "#/$defs/strings" }, "runtimePreferences": { "$ref": "#/$defs/strings" }, "evidenceSources": { "$ref": "#/$defs/strings" },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["apiVersion", "kind", "metadata", "spec"],
+            "properties": {
+              "apiVersion": { "type": "string", "minLength": 1 },
+              "kind": { "type": "string", "minLength": 1 },
+              "metadata": { "type": "object", "additionalProperties": false, "required": ["id", "version"], "properties": { "id": { "type": "string", "minLength": 1 }, "version": { "type": "string", "minLength": 1 } } },
+              "spec": { "type": "object" },
+              "capabilityRefs": { "$ref": "#/$defs/strings" },
+              "digest": { "$ref": "#/$defs/digest" }
+            }
+          }
+        }
       }
     },
     "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
   },
   "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
     "strings": { "type": "array", "items": { "type": "string" } },
     "stringArrays": { "type": "object", "required": ["languages", "packageManagers", "frameworks"], "properties": { "languages": { "$ref": "#/$defs/strings" }, "packageManagers": { "$ref": "#/$defs/strings" }, "frameworks": { "$ref": "#/$defs/strings" } }, "additionalProperties": false }
   }

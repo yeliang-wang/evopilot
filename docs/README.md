@@ -12,6 +12,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Open Lifecycle Harness](guides/open-lifecycle-harness.md) - v4 development flow for declarative project lifecycles, interactive inputs, bounded authorization, and Agent-host execution.
 - [Project Definitions](guides/project-definitions.md) - v5 project-neutral declarative onboarding and immutable adjustment.
 - [Evolution Expert](guides/evolution-expert.md) - optional conversational guide for Codex, WorkBuddy, generic Agents, and MCP Hosts.
+- [v5 Completion Assurance](operations/completion-assurance.md) - criterion-specific evidence, exact Candidate binding, impact closure, and 100% hard-gate semantics.
 
 ## AI Agents And CLI Automation
 
@@ -73,7 +74,9 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
-- [EvoPilot v5.0.0 Pre-release Notes](releases/5.0.0.md) - Harness-guided Runtime scope, independent Evolution Expert Candidate boundary, migration, and required acceptance; not a release announcement.
+- [EvoPilot v5.0.1 Completion-Recovery Notes](releases/5.0.1.md) - unreleased criterion-specific closure plan; Candidate, acceptance, and publication remain pending.
+- [Evolution Expert v1.0.1 Completion-Recovery Notes](releases/evolution-expert-1.0.1.md) - unreleased independently versioned Expert implementation and later acceptance boundary.
+- [EvoPilot v5.0.0 Release Notes](releases/5.0.0.md) - published Harness-guided Runtime baseline and historical release facts; not proof of later-audited full-scheme completion.
 - [EvoPilot v4.0.0 Release Notes](releases/4.0.0.md) - released Open Lifecycle Harness capabilities, distribution, migration, and completed acceptance.
 - [EvoPilot v3.2.0 Deferred Candidate Notes](releases/3.2.0.md) - unpublished Bundle-consumer closure preserved as inherited v4 acceptance.
 - [EvoPilot v3.1.0 Release Notes](releases/3.1.0.md) - multi-Catalog Harness Registry consumption and `selectedHarness` registry evidence.

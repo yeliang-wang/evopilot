@@ -1,6 +1,6 @@
 {
   "name": "@evopilot/evolution-expert",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Independent Agent-neutral interactive expert for EvoPilot Harness-guided governed evolution.",
   "license": "Apache-2.0",
   "type": "module",
@@ -12,6 +12,7 @@
   "files": [
     "dist",
     "generated",
+    "host-adapter-kit",
     "skill",
     "CHANGELOG.md",
     "README.md"
@@ -44,7 +45,7 @@
     "check:generated": "node scripts/generate-adapters.mjs --check"
   },
   "dependencies": {
-    "@evopilot/contracts": "5.0.0"
+    "@evopilot/contracts": "5.0.1"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

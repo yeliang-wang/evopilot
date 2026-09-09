@@ -6,9 +6,27 @@ This project follows a product-readiness changelog model: release entries should
 
 ## Unreleased
 
-### Candidate: 5.0.0 Harness-Guided Governed Evolution Runtime
+### 5.0.1 Harness-Guided Completion Recovery
 
-This entry describes an unreleased candidate. It is not a release announcement and does not imply acceptance or publication.
+This entry describes an implementation line. It does not imply Candidate
+formation, acceptance, publication, or Release.
+
+#### Added
+
+- Added an executable 149-requirement/195-criterion completion contract with exact Candidate-pair, impact-closure, and NO_REGRESSION gates.
+- Added real Lifecycle enforcement of HarnessExecutionBinding at start, resume, retry, and every Goal Loop iteration.
+- Added Runtime-bound recovery classification, bounded automatic continuation, learned-rule suspension, project discovery, semantic impact, activation, and rollback.
+- Added Evolution Expert 1.0.1 installed-version doctor/tutorial flows and a third-party Host Adapter qualification kit.
+
+#### Fixed
+
+- Prevented published version numbers, aggregate evidence, generic PASS projection, warnings, or human declarations from being treated as original-scheme completion.
+- Closed README, architecture, operations, API, CLI, Expert, migration, acceptance, and unreleased release-note gaps.
+
+## 5.0.0 - 2026-09-08
+
+This public release is a historical artifact. It does not by itself prove the
+later-audited original-scheme completion criteria now governed by 5.0.1.
 
 #### Added
 
@@ -24,7 +42,7 @@ This entry describes an unreleased candidate. It is not a release announcement a
 - Kept the real EvoPilot and DataRig Codex Suites active and independently evolving before v5 release; isolated Candidate acceptance must prove zero legacy invocation without modifying those installed Suites.
 - Kept Evolution Expert Candidate, acceptance, version, release authorization, upgrade, rollback, and uninstall independent from Runtime while binding explicit compatibility.
 
-#### Validation required before release
+#### Historical release validation
 
 - Build the Runtime 5.0.0 and Evolution Expert 1.0.0 Candidate sets once from the same exact source commit through their independent workflows and verify both immutable handoffs.
 - Install both exact Candidates outside the source checkout and complete every Runtime and Expert functional, capability, inherited, no-regression, and real-case requirement.

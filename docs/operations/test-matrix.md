@@ -16,6 +16,19 @@
 | Release pipeline contract | `npm run verify:release-pipeline` | Proves Candidate build-once, exact cross-run handoff, accepted-byte promotion, and separation from product Lifecycle objects. |
 | Agent adapter conformance | `npm run test:agent-adapters` | Proves the first-class OpenCode adapter and one independent adapter use the same request/result contract and fail closed on hostile or uncertain execution. |
 | Open Lifecycle non-functional | `npm run test:open-lifecycle:nonfunctional` | Emits resource, concurrency, cancellation, isolation, recovery, performance, security, observability/audit, documentation, and packaging evidence. |
+| v5 completion contract | `npm run verify:v5:completion` | Verifies the 149-requirement/195-criterion map and reports exact pending/failed/stale/warning/generic/unmapped counts without claiming Candidate completion. |
+
+## v5.0.1 completion recovery
+
+Local implementation validation may prove code, schema, documentation, and
+deterministic guard behavior, but it cannot mark Candidate-bound criteria PASS.
+The release campaign must use an exact Runtime 5.0.1 plus Expert 1.0.1 pair,
+run every mapped validator from the isolated installed artifacts, and invoke
+the completion verifier with `--require-complete`. A valid local result before
+Candidate authorization is `INCOMPLETE` with pending criteria and zero silent
+exclusions.
+
+See [v5 Completion Assurance](completion-assurance.md) for the exact formula.
 
 ## EvoPilot v4 Candidate Acceptance
 

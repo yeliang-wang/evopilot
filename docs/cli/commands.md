@@ -32,7 +32,7 @@ The CLI uses EvoPilot HTTP APIs. It is an adapter, not a local state manager.
 --config <file>             Config path, defaults to ~/.evopilot/config.json
 ```
 
-No `evopilot harness ...` commands exist in v3. Use `evopilot-harness` for Harness Asset lifecycle, evolution, review, approval, versioning, and publication. The v4 development line adds `lifecycle` and `lifecycle-run` commands for running project-delivery Lifecycles against an exact published HarnessBundle; it does not move Harness Asset ownership into EvoPilot.
+No `evopilot harness ...` authoring or publication commands exist in EvoPilot Runtime. Use `evopilot-harness` for Harness Asset lifecycle, evolution, review, approval, versioning, and publication. Runtime provides `lifecycle`, `lifecycle-run`, `project-definition`, and `evolution` commands for running project-delivery Lifecycles against an exact published HarnessBundle; it does not move Harness Asset ownership into EvoPilot.
 
 ## Output Schemas
 
@@ -84,7 +84,15 @@ Project Definitions are immutable, declarative project aggregates. YAML is the h
 ```bash
 evopilot project-definition list --json
 evopilot project-definition inspect <project-id> [--version <version>] --json
+evopilot project-definition discover --file <detected-facts.yaml|json> --json
 evopilot project-definition register --file <definition.yaml|json> --json
+evopilot project-definition diff <project-id> --from <version> --to <version> --json
+evopilot project-definition activate <project-id> --version <version> --evidence-ref <ref> --json
+evopilot project-definition rollback <project-id> --version <version> --evidence-ref <ref> --json
+evopilot evolution plan --file <plan-request.yaml|json> --json
+evopilot evolution run --file <exact-binding-run-request.yaml|json> --json
+evopilot evolution revalidate --file <current-state.yaml|json> --json
+evopilot evolution recover --file <failure.yaml|json> --json
 ```
 
 See [Project Definitions](../guides/project-definitions.md) for the schema, reference declarations, and versioning rules.

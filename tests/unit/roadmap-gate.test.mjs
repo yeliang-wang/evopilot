@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 
@@ -10,6 +12,42 @@ test("Roadmap Gate validates the contract and declared package version", () => {
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.body.classification, "ALIGNED");
   assert.equal(result.body.intent, "static-roadmap-contract-validation");
+});
+
+test("Roadmap Gate binds the complete original v5 scheme and TRACE01-TRACE06", () => {
+  const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
+  const assurance = roadmap.acceptancePortfolio.completionAssurance;
+  assert.equal(roadmap.acceptancePortfolio.completion, 6);
+  assert.equal(roadmap.acceptancePortfolio.completionIds, "TRACE01-TRACE06");
+  assert.equal(assurance.originalSchemeCoveragePercent, 100);
+  assert.deepEqual(assurance.requiredAcceptanceIds, ["TRACE01", "TRACE02", "TRACE03", "TRACE04", "TRACE05", "TRACE06"]);
+  assert.equal(assurance.bulkPassProjectionAllowed, false);
+  assert.equal(assurance.silentExclusionAllowed, false);
+  assert.equal(assurance.warningCountsAsPass, false);
+  assert.equal(assurance.humanDeclarationSubstitutesForMachineEvidence, false);
+});
+
+test("Roadmap Gate rejects incomplete, generic, or weakened completion assurance", () => {
+  for (const [name, mutate, pattern] of [
+    ["99 percent coverage", (roadmap) => { roadmap.acceptancePortfolio.completionAssurance.originalSchemeCoveragePercent = 99; }, /100 percent/],
+    ["bulk PASS", (roadmap) => { roadmap.acceptancePortfolio.completionAssurance.bulkPassProjectionAllowed = true; }, /bulk PASS/],
+    ["missing validator", (roadmap) => { roadmap.acceptancePortfolio.completionAssurance.requiresTraceability = roadmap.acceptancePortfolio.completionAssurance.requiresTraceability.filter((item) => item !== "independent executable validator"); }, /independent executable validator/],
+    ["old cutover timing", (roadmap) => { roadmap.legacySuiteTransition.postRelease.timing = "AFTER_PUBLIC_V5_RELEASE_AND_VERIFIED_INSTALLATION"; }, /completion successors/]
+  ]) {
+    const result = runWithRoadmap(mutate);
+    assert.equal(result.status, 1, `${name}: ${result.stderr}`);
+    assert.equal(result.body.classification, "INVALID");
+    assert.match(result.body.errors.join(" "), pattern);
+  }
+});
+
+test("Roadmap Gate rejects a COMPLETE completion successor without exact closure evidence", () => {
+  const result = runWithRoadmap((roadmap) => {
+    roadmap.milestones.find((milestone) => milestone.id === "evopilot-5.0-harness-guided-governed-evolution-runtime").status = "COMPLETE";
+  });
+  assert.equal(result.status, 1, result.stderr);
+  assert.equal(result.body.classification, "INVALID");
+  assert.match(result.body.errors.join(" "), /COMPLETE requires a completion report/);
 });
 
 test("Roadmap Gate preserves AgentTrajectory work inside the completed v4 foundation", () => {
@@ -124,10 +162,18 @@ test("Roadmap Gate permits declared releases and rejects undeclared release line
   assert.equal(runtimeV5.body.classification, "ALIGNED");
   assert.ok(runtimeV5.body.matchedMilestones.includes("evopilot-5.0-harness-guided-governed-evolution-runtime"));
 
+  const runtimeV501 = run(["--release-version", "5.0.1"]);
+  assert.equal(runtimeV501.status, 0, runtimeV501.stderr);
+  assert.equal(runtimeV501.body.classification, "ALIGNED");
+
   const expert = run(["--release-product", "evopilot-evolution-expert", "--release-version", "1.0.0"]);
   assert.equal(expert.status, 0, expert.stderr);
   assert.equal(expert.body.classification, "ALIGNED");
   assert.ok(expert.body.matchedMilestones.includes("evopilot-evolution-expert-1.0"));
+
+  const expert101 = run(["--release-product", "evopilot-evolution-expert", "--release-version", "1.0.1"]);
+  assert.equal(expert101.status, 0, expert101.stderr);
+  assert.equal(expert101.body.classification, "ALIGNED");
 
   const expertAsRuntime = run(["--release-version", "1.0.0"]);
   assert.equal(expertAsRuntime.status, 2);
@@ -155,4 +201,22 @@ test("Roadmap Gate requires explicit reactivation for a standalone deferred v3.2
 function run(args) {
   const result = spawnSync(process.execPath, ["scripts/roadmap-gate.mjs", ...args, "--json"], { cwd: root, encoding: "utf8" });
   return { ...result, body: JSON.parse(result.stdout) };
+}
+
+function runWithRoadmap(mutate) {
+  const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
+  mutate(roadmap);
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-roadmap-gate-"));
+  const contractPath = path.join(tempDirectory, "roadmap.json");
+  fs.writeFileSync(contractPath, `${JSON.stringify(roadmap, null, 2)}\n`);
+  try {
+    const result = spawnSync(process.execPath, ["scripts/roadmap-gate.mjs", "--json"], {
+      cwd: root,
+      encoding: "utf8",
+      env: { ...process.env, EVOPILOT_ROADMAP_CONTRACT: contractPath }
+    });
+    return { ...result, body: JSON.parse(result.stdout) };
+  } finally {
+    fs.rmSync(tempDirectory, { recursive: true, force: true });
+  }
 }

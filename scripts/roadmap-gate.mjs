@@ -3,7 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = path.resolve(import.meta.dirname, "..");
-const contractPath = path.join(root, "governance/roadmap.yaml");
+const contractPath = process.env.EVOPILOT_ROADMAP_CONTRACT
+  ? path.resolve(process.env.EVOPILOT_ROADMAP_CONTRACT)
+  : path.join(root, "governance/roadmap.yaml");
 const args = process.argv.slice(2);
 const json = args.includes("--json");
 const intent = option("--intent");
@@ -62,6 +64,7 @@ function validateRoadmap(value) {
   required(semver(value?.versionPolicy?.currentWorkingVersion), "currentWorkingVersion must be SemVer");
   required(value?.versionPolicy?.runtimeProduct === "evopilot-runtime", "versionPolicy.runtimeProduct must be evopilot-runtime");
   required(value?.evolutionExpertPolicy?.product === "evopilot-evolution-expert", "evolutionExpertPolicy.product must be evopilot-evolution-expert");
+  required(semver(value?.evolutionExpertPolicy?.publishedBaseline), "evolutionExpertPolicy.publishedBaseline must be SemVer");
   required(semver(value?.evolutionExpertPolicy?.currentWorkingVersion), "evolutionExpertPolicy.currentWorkingVersion must be SemVer");
   required(value?.evolutionExpertPolicy?.lockstepWithRuntime === false, "Evolution Expert must not be version-locked to the Runtime");
   required(value?.harnessGuidedExecutionPolicy?.requiredForGoalTargetLoop === true, "Harness-guided execution must be required for Goal Target Loops");
@@ -73,6 +76,24 @@ function validateRoadmap(value) {
   required(value?.acceptancePortfolio?.capability === 16, "v5 acceptancePortfolio.capability must be 16");
   required(value?.acceptancePortfolio?.documentation === 13, "v5 acceptancePortfolio.documentation must be 13");
   required(value?.acceptancePortfolio?.endToEnd === 13, "v5 acceptancePortfolio.endToEnd must be 13");
+  required(value?.acceptancePortfolio?.completion === 6, "v5 acceptancePortfolio.completion must be 6");
+  required(value?.acceptancePortfolio?.completionIds === "TRACE01-TRACE06", "v5 acceptancePortfolio.completionIds must be TRACE01-TRACE06");
+  const completionAssurance = value?.acceptancePortfolio?.completionAssurance;
+  required(completionAssurance?.schema === "evopilot-approved-scheme-completeness/v1", "completion assurance schema is invalid");
+  required(completionAssurance?.required === true, "completion assurance must be required");
+  required(completionAssurance?.originalSchemeCoveragePercent === 100, "original v5 scheme coverage must be 100 percent");
+  required(arrayEquals(completionAssurance?.requiredAcceptanceIds, ["TRACE01", "TRACE02", "TRACE03", "TRACE04", "TRACE05", "TRACE06"]), "completion assurance must require TRACE01-TRACE06");
+  for (const binding of ["accepted v5 Roadmap revisions", "Runtime v5.0.0 Target revision 2", "Evolution Expert v1.0.0 Target revision 2", "explicit user corrections and requirements", "audited acceptance, Runtime, Expert, project, contract, documentation, public-truth, governance, and reference gaps"]) {
+    required(completionAssurance?.binds?.includes(binding), `completion assurance is missing inventory binding: ${binding}`);
+  }
+  for (const link of ["requirement", "successor Target criterion", "implementation deliverable", "independent executable validator", "concrete evidence", "terminal E2E when user-observable"]) {
+    required(completionAssurance?.requiresTraceability?.includes(link), `completion assurance is missing traceability link: ${link}`);
+  }
+  required(completionAssurance?.bulkPassProjectionAllowed === false, "bulk PASS projection must be forbidden");
+  required(completionAssurance?.silentExclusionAllowed === false, "silent exclusions must be forbidden");
+  required(completionAssurance?.warningCountsAsPass === false, "warnings must not count as PASS");
+  required(completionAssurance?.humanDeclarationSubstitutesForMachineEvidence === false, "human declaration must not replace required machine evidence");
+  required(completionAssurance?.completeWhen === "TOTAL_EQUALS_PASSED_AND_FAILED_PENDING_STALE_GENERIC_UNMAPPED_ARE_ZERO_AND_NO_REGRESSION_PASSED", "completion formula must fail closed on every incomplete evidence class");
   const suiteTransition = value?.legacySuiteTransition;
   required(suiteTransition?.preRelease?.installedSuiteDisposition === "ACTIVE_AND_INDEPENDENT", "legacy Suites must remain active and independent before v5 release");
   required(suiteTransition?.preRelease?.shadowComparisonMode === "READ_ONLY", "pre-release legacy Suite comparison must be read-only");
@@ -80,7 +101,7 @@ function validateRoadmap(value) {
   required(suiteTransition?.preRelease?.snapshotDriftPolicy === "STALE_AND_SELECTIVE_RERUN", "legacy Suite snapshot drift must stale affected evidence and require selective rerun");
   required(suiteTransition?.preRelease?.candidateEnvironment === "LEGACY_SUITES_ABSENT", "v5 Candidate independence must be proven with legacy Suites absent from the isolated environment");
   required(suiteTransition?.preRelease?.realInstalledSuiteMutationAllowed === false, "v5 release acceptance must not mutate real installed legacy Suites");
-  required(suiteTransition?.postRelease?.timing === "AFTER_PUBLIC_V5_RELEASE_AND_VERIFIED_INSTALLATION", "legacy Suite Cutover must occur only after v5 release and installation verification");
+  required(suiteTransition?.postRelease?.timing === "AFTER_PUBLIC_COMPLETION_SUCCESSORS_AND_VERIFIED_INSTALLATION", "legacy Suite Cutover must occur only after the public completion successors and installation verification");
   required(suiteTransition?.postRelease?.releaseBlockerForV5 === false, "post-release legacy Suite Cutover must not block the v5 release");
   required(suiteTransition?.postRelease?.requiresSeparateEvolutionTarget === true, "post-release legacy Suite Cutover requires a separate Evolution Target");
   required(suiteTransition?.postRelease?.requiresSeparateHumanAuthorization === true, "post-release legacy Suite Cutover requires separate human authorization");
@@ -101,11 +122,16 @@ function validateRoadmap(value) {
   required(currentMilestones.length === 1, "Runtime currentWorkingVersion must match exactly one IN_PROGRESS Runtime milestone");
   const currentExpertMilestones = milestones.filter((milestone) => milestone.product === value?.evolutionExpertPolicy?.product && milestone.status === "IN_PROGRESS" && milestone.targetVersion === value?.evolutionExpertPolicy?.currentWorkingVersion);
   required(currentExpertMilestones.length === 1, "Evolution Expert currentWorkingVersion must match exactly one IN_PROGRESS Expert milestone");
+  const runtimeCompletion = milestones.find((milestone) => milestone.id === "evopilot-5.0-harness-guided-governed-evolution-runtime");
+  const expertCompletion = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-1.0");
+  validateCompletionSuccessor(runtimeCompletion, "5.0.0", "5.0.1", "Runtime");
+  validateCompletionSuccessor(expertCompletion, "1.0.0", "1.0.1", "Evolution Expert");
   const cutoverMilestone = milestones.find((milestone) => milestone.id === suiteTransition?.postRelease?.milestone);
   required(cutoverMilestone?.status === "PLANNED", "post-release legacy Suite Cutover milestone must be PLANNED");
   required(cutoverMilestone?.standaloneReleaseEligible === false, "post-release legacy Suite Cutover must not create another release line");
   required(cutoverMilestone?.releaseBlockerForV5 === false, "post-release legacy Suite Cutover milestone must not block v5 release");
-  required(cutoverMilestone?.timing === "AFTER_PUBLIC_V5_RELEASE_AND_VERIFIED_INSTALLATION", "post-release legacy Suite Cutover milestone timing is invalid");
+  required(cutoverMilestone?.timing === "AFTER_PUBLIC_COMPLETION_SUCCESSORS_AND_VERIFIED_INSTALLATION", "post-release legacy Suite Cutover milestone timing is invalid");
+  required(cutoverMilestone?.targetVersion === value?.versionPolicy?.currentWorkingVersion, "post-release legacy Suite Cutover must bind the Runtime completion successor");
   for (const milestone of milestones.filter((item) => item.status === "DEFERRED")) {
     const destination = milestones.find((item) => item.id === milestone.deferredInto);
     required(typeof milestone.deferredInto === "string" && destination != null, `DEFERRED milestone must name a declared deferredInto milestone: ${milestone.id}`);
@@ -131,6 +157,22 @@ function validateRoadmap(value) {
 
   function required(condition, message) {
     if (!condition) failures.push(message);
+  }
+
+  function validateCompletionSuccessor(milestone, predecessorVersion, successorVersion, label) {
+    required(milestone?.targetVersion === successorVersion, `${label} completion successor must target ${successorVersion}`);
+    required(milestone?.publishedPredecessor?.version === predecessorVersion, `${label} published predecessor must be ${predecessorVersion}`);
+    required(milestone?.publishedPredecessor?.state === "PUBLISHED_DISTRIBUTION_REMEDIATION_REQUIRED", `${label} predecessor state must preserve the completion-remediation finding`);
+    required(milestone?.publishedPredecessor?.immutable === true, `${label} published predecessor must remain immutable`);
+    required(milestone?.publishedPredecessor?.acceptanceEvidenceDisposition === "HISTORICAL_PROCESS_EVIDENCE_NOT_COMPLETION_PROOF", `${label} predecessor evidence must not count as completion proof`);
+    if (milestone?.status === "COMPLETE") {
+      const report = milestone?.completionEvidence;
+      required(report?.schema === "evopilot-approved-scheme-completion-report/v1", `${label} COMPLETE requires a completion report`);
+      required(report?.total === report?.passed && report?.total > 0, `${label} COMPLETE requires total == passed > 0`);
+      for (const key of ["failed", "pending", "stale", "generic", "unmapped"]) required(report?.[key] === 0, `${label} COMPLETE requires ${key}=0`);
+      required(report?.noRegression === "PASSED", `${label} COMPLETE requires NO_REGRESSION PASSED`);
+      required(report?.exactInstalledCandidatePair === "VERIFIED", `${label} COMPLETE requires the exact installed Candidate pair VERIFIED`);
+    }
   }
 }
 
@@ -169,7 +211,8 @@ function classifyRelease(version, product, value) {
   if (!semver(version)) return { classification: "UNKNOWN", matchedMilestones: [], reasons: [`Release version is not SemVer: ${version}`] };
   const knownProducts = new Set([value.versionPolicy.runtimeProduct, value.evolutionExpertPolicy.product]);
   if (!knownProducts.has(product)) return { classification: "UNKNOWN", matchedMilestones: [], reasons: [`Unknown release product: ${product}`] };
-  const exactBaseline = product === value.versionPolicy.runtimeProduct && [value.versionPolicy.publishedBaseline, value.versionPolicy.currentWorkingVersion].includes(version);
+  const versionPolicy = product === value.versionPolicy.runtimeProduct ? value.versionPolicy : value.evolutionExpertPolicy;
+  const exactBaseline = [versionPolicy.publishedBaseline, versionPolicy.currentWorkingVersion].includes(version);
   const matchingMilestones = value.milestones.filter((milestone) => milestone.product === product && (version === milestone.targetVersion || inReleaseLine(version, milestone.releaseLine)));
   const matchedMilestones = matchingMilestones.map((milestone) => milestone.id);
   const eligibleMilestones = matchingMilestones.filter((milestone) => milestone.status !== "DEFERRED" && milestone.standaloneReleaseEligible !== false);
@@ -215,6 +258,10 @@ function normalize(value) {
 
 function semver(value) {
   return /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(String(value ?? ""));
+}
+
+function arrayEquals(actual, expected) {
+  return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
 }
 
 function inReleaseLine(version, line) {

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/completion-report-v1.schema.json",
+  "title": "Approved Scheme Completion Report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "status", "inventoryDigest", "traceDigest", "counts", "candidatePairVerified", "impactClosure", "noRegression", "failures", "criterionResults", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-approved-scheme-completion-report/v1" },
+    "status": { "enum": ["COMPLETE", "INCOMPLETE"] },
+    "inventoryDigest": { "$ref": "#/$defs/digest" },
+    "traceDigest": { "$ref": "#/$defs/digest" },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "passed", "failed", "pending", "stale", "warning", "generic", "unmapped"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 }, "passed": { "type": "integer", "minimum": 0 }, "failed": { "type": "integer", "minimum": 0 }, "pending": { "type": "integer", "minimum": 0 }, "stale": { "type": "integer", "minimum": 0 }, "warning": { "type": "integer", "minimum": 0 }, "generic": { "type": "integer", "minimum": 0 }, "unmapped": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "candidatePairVerified": { "type": "boolean" },
+    "impactClosure": { "enum": ["PASS", "FAIL", "PENDING"] },
+    "noRegression": { "enum": ["PASS", "FAIL", "PENDING"] },
+    "failures": { "type": "array", "items": { "type": "string" } },
+    "criterionResults": { "type": "array", "items": { "type": "object", "required": ["targetId", "criterionId", "status"], "properties": { "targetId": { "type": "string" }, "criterionId": { "type": "string" }, "status": { "enum": ["PASS", "FAIL", "PENDING", "STALE", "WARNING", "UNMAPPED"] }, "evidenceId": { "type": "string" } }, "additionalProperties": false } },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

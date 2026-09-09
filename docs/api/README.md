@@ -5,8 +5,13 @@
 ```text
 GET  /api/v1/evolution-project-definitions
 POST /api/v1/evolution-project-definitions
+POST /api/v1/evolution-project-definitions/discover
 GET  /api/v1/evolution-project-definitions/{id}?version=...
+GET  /api/v1/evolution-project-definitions/{id}/diff?from=...&to=...
+POST /api/v1/evolution-project-definitions/{id}/activate
+POST /api/v1/evolution-project-definitions/{id}/rollback
 POST /api/v1/governed-evolution/plan
+POST /api/v1/governed-evolution/runs
 POST /api/v1/governed-evolution/revalidate
 POST /api/v1/governed-evolution/recovery/decide
 GET  /api/v1/automation-registry

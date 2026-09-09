@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/harness-execution-binding-v1.schema.json",
+  "title": "Harness Execution Binding v1",
+  "type": "object",
+  "required": ["schema", "projectDefinitionRef", "projectDefinitionDigest", "goalTargetRef", "goalTargetDigest", "registryDigest", "catalogId", "catalogDigest", "profileRef", "bundleRef", "lifecycleRef", "compositionDigest", "policyDigest", "providerDigest", "environmentDigest", "hostDigest", "runtimeDigest", "authorityDigest", "evidenceDigest", "revalidateAt", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-harness-execution-binding/v1" },
+    "projectDefinitionRef": { "$ref": "#/$defs/versionedRef" },
+    "projectDefinitionDigest": { "$ref": "#/$defs/digest" },
+    "goalTargetRef": { "type": "object", "required": ["goalId", "targetId", "digest"] },
+    "goalTargetDigest": { "$ref": "#/$defs/digest" },
+    "registryDigest": { "$ref": "#/$defs/digest" }, "catalogId": { "type": "string" }, "catalogDigest": { "$ref": "#/$defs/digest" },
+    "profileRef": { "$ref": "#/$defs/versionedRef" }, "bundleRef": { "$ref": "#/$defs/versionedRef" },
+    "lifecycleRef": { "$ref": "#/$defs/versionedRef" }, "compositionDigest": { "$ref": "#/$defs/digest" },
+    "policyDigest": { "$ref": "#/$defs/digest" }, "providerDigest": { "$ref": "#/$defs/digest" }, "environmentDigest": { "$ref": "#/$defs/digest" }, "hostDigest": { "$ref": "#/$defs/digest" }, "runtimeDigest": { "$ref": "#/$defs/digest" }, "authorityDigest": { "$ref": "#/$defs/digest" }, "evidenceDigest": { "$ref": "#/$defs/digest" },
+    "revalidateAt": { "type": "array", "const": ["start", "resume", "retry", "loop-iteration"] },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "additionalProperties": true,
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "versionedRef": { "type": "object", "required": ["id", "version", "digest"], "properties": { "id": { "type": "string" }, "version": { "type": "string" }, "digest": { "$ref": "#/$defs/digest" } }, "additionalProperties": true }
+  }
+}

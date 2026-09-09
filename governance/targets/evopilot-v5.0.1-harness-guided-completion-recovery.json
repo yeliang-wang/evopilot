@@ -1,0 +1,1906 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-v5.0.1-harness-guided-completion-recovery",
+  "revision": 1,
+  "status": "APPROVED",
+  "intent": "Complete the original approved EvoPilot v5 scheme through Runtime 5.0.1 completion recovery: close every Runtime, project, Harness-binding, Lifecycle, recovery, contract, documentation, reference, acceptance-integrity, and real E2E gap with criterion-specific executable evidence, TRACE01-TRACE06, an exact installed Runtime and Expert Candidate pair, and NO_REGRESSION, while leaving both independently evolving legacy Codex Suites active and untouched until a separately authorized post-release Cutover.",
+  "objective": "Deliver an immutable Runtime 5.0.1 completion successor in which every original v5 requirement and explicit user correction is implemented, independently validated, traceable to concrete evidence and terminal journeys, and impossible to report complete unless total equals passed, all incomplete evidence classes are zero, the exact installed Candidate pair is verified, and NO_REGRESSION passes.",
+  "evidence": [
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v5-completion-recovery-r2@sha256:00040210c940a25ac2cd6127b8eb08ee5bb43d6a0ae1c1fc803a4835e093aedb",
+      "authority": "Exact authorization to apply the completion-recovery Roadmap and draft and preflight this Target; not Target approval, implementation, commit, Candidate, acceptance, Host, Suite, Cutover, publication, or Release authority."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/roadmap.yaml@sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+      "authority": "Current machine Roadmap requiring Runtime 5.0.1, TRACE01-TRACE06, 100-percent original-scheme closure, exact Candidate-pair verification, and NO_REGRESSION."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json@sha256:1960d6de16168f9b99d24f762aae1724576429fb894c630fd0d2959a227be7e5",
+      "authority": "Immutable published predecessor Target and original Runtime acceptance inventory; prior aggregate PASS records are historical process evidence only and are not successor completion proof."
+    },
+    {
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/b90d2fc29ff5/local-assurance-manifest.json",
+      "authority": "Validated local navigation manifest containing explicit user corrections and audited completion gaps; not product authority."
+    },
+    {
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/b90d2fc29ff5/roadmap-revision-proposal-r2.json@sha256:00040210c940a25ac2cd6127b8eb08ee5bb43d6a0ae1c1fc803a4835e093aedb",
+      "authority": "Approved completion-recovery design inventory and assurance rules."
+    },
+    {
+      "ref": "conversation:confirmed-evopilot-v5-complete-scheme",
+      "authority": "User-confirmed product direction and scope evidence; not Target approval or release authority."
+    },
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v5-harness-guided-evolution-runtime-r5@sha256:b4d2cce132b73a628352c9bbeea8286ee6fc2a702c65c695b12470ca0e84c9c9",
+      "authority": "Exact authorization to write Roadmap revisions 4 and 5 and draft and preflight this Target; not implementation or release authority."
+    },
+    {
+      "ref": "conversation:approved-evopilot-v5-continuously-evolving-suite-cutover-r2@sha256:da68cd1557c72bf35dd03011e1738715d7ad723d333a40864a863ee966adbbfc",
+      "authority": "Exact authorization to update only the EvoPilot Roadmap, Roadmap Gate, and tests and to draft and preflight Runtime Target revision 2; not product implementation, Suite mutation, or release authority."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/docs/roadmap/ROADMAP.md",
+      "authority": "Current human Roadmap and product narrative."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json",
+      "authority": "Published v4 acceptance baseline to inherit and retest; not authority for v5 implementation."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot-harness",
+      "authority": "Independent published Harness producer and cross-project contract evidence only; no authorization to modify it."
+    },
+    {
+      "ref": "/Users/wangyejing/CodeProjects/Java/datarig",
+      "authority": "Enterprise-internal reference declaration and journey evidence only."
+    },
+    {
+      "ref": "https://github.com/OpenHands/OpenHands/tree/f7fb0c4b21f5ed726edbba8a6309634ef434b004",
+      "authority": "Documentation structure and information-architecture reference only; no copied branding, text, general-Agent scope, or product authority."
+    }
+  ],
+  "roadmapBindings": [
+    {
+      "repo": "/Users/wangyejing/project/harness/evopilot",
+      "project": "evopilot",
+      "matchedMilestone": "evopilot-5.0-harness-guided-governed-evolution-runtime",
+      "targetVersion": "5.0.1",
+      "classification": "ALIGNED",
+      "roadmapDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7"
+    }
+  ],
+  "scope": {
+    "include": [
+      "Create a digest-bound original-scheme inventory and requirement-to-successor-criterion-to-deliverable-to-independent-validator-to-evidence-to-terminal-E2E traceability matrix covering accepted v5 Roadmap revisions, Runtime v5.0.0 Target revision 2, Expert v1.0.0 Target revision 2, every explicit user correction, and every audited gap.",
+      "Implement an executable completion aggregator that reports total, passed, failed, pending, stale, generic, and unmapped counts; it must reject silent exclusions, generic aggregate evidence, bulk PASS projection, warnings as PASS, or human declarations substituted for required machine evidence.",
+      "Make HarnessExecutionBinding a mandatory executed invariant across Lifecycle, Goal, Target, Loop start, resume, retry, and every iteration, with real immutable Registry, Catalog, Profile, Bundle, Component, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence digest revalidation rather than type-only or helper-only presence.",
+      "Wire the bounded Recovery Controller and governed Automation Registry into actual pipeline failure classification, repair, receipt reconciliation, retry, rollback, restart, resume, Host transfer, rule suspension, and exact one-time automation-rule activation.",
+      "Complete EvolutionProjectDefinition discovery, canonicalization, schema validation, schema-driven dialogue, semantic diff, compatibility impact, immutable active-run binding, migration, rollback, SecretRef, OpenAPI, CLI, API, MCP, CI, and event contracts without repository-named Engine branches.",
+      "Close README, installation, concepts, DDD architecture, Harness binding, Lifecycle, recovery, Expert and Host integration, reference declarations, tutorials, migration, security, operations, acceptance, and release documentation against executable commands and exact installed-version behavior.",
+      "Implement criterion-specific validators and evidence collectors for every FUNC01-FUNC21, CAP01-CAP16, DOC01-DOC13, V4 inherited criterion, V5 predecessor criterion, E2E01-E2E13, TRACE01-TRACE06, impact closure, and NO_REGRESSION.",
+      "Build one exact private Runtime 5.0.1 Candidate and one compatible exact Expert 1.0.1 Candidate before counted E2E, install both outside source checkout, run all terminal journeys including real Codex, designated-human WorkBuddy, independent Host, headless, restart/resume, soak, and public-surface simulations, and promote accepted bytes without rebuild only under later separate release authorizations.",
+      "Add the replacement architecture ADR and executable guards for the v5 DDD boundaries, Harness-guided invariant, independent Expert, and Host versus Runtime separation.",
+      "Implement EvolutionProjectDefinition and project-owned declarative resources for source, ecosystem, delivery, policy, secrets by reference, environment, Host, Runtime, and evidence discovery.",
+      "Implement Published Harness Consumption and Immutable Execution Binding as a first-class bounded context over Registry, Catalog, HarnessProfile, immutable HarnessBundle closure, eligibility, deterministic ranking, ambiguity, and abstention.",
+      "Make an exact eligible published immutable HarnessBundle mandatory for every Goal Target Loop and revalidate all relevant bindings before start, resume, retry, and every Loop iteration.",
+      "Compose Harness obligations with open Lifecycle orchestration monotonically: intersect permissions, union obligations, report conflicts deterministically, and never weaken required Harness evidence, validators, constraints, boundaries, or capabilities.",
+      "Implement project-neutral Lifecycle modules, schema-driven conversational and headless parameters, immutable input provenance, and explicit human decisions only at genuine authority boundaries.",
+      "Implement bounded deterministic Recovery Controller behavior and a governed Automation Registry whose learned rules require one exact human decision before activation and remain inspectable, revocable, scoped, versioned, and auditable.",
+      "Define and implement a stable Runtime-owned Human Interaction Protocol used equivalently by independent Expert, MCP, CLI, API, and CI clients without transferring product truth or authority.",
+      "Support Codex as both Agent Host and execution Runtime, retain WorkBuddy and an independent conformant Host, and keep model, Host, and execution-provider concerns separate.",
+      "Provide declarative DataRig, EvoPilot, evopilot-harness, and unknown-project reference cases without repository-named Engine branches.",
+      "Keep the real EvoPilot Codex Suite and DataRig Codex Suite active, independently owned, and independently evolving before v5 release; bind late exact snapshots for read-only comparison, stale affected evidence on snapshot drift, and prove zero invocation and no hidden fallback only in isolated Candidate environments where both Suites are absent.",
+      "Synchronize README, concepts, DDD architecture, Harness binding, Lifecycle, recovery, Expert/Host integration, tutorials, migration, security, operations, acceptance, and release documentation.",
+      "Prepare declarative migration inventory and post-release Cutover readiness evidence without switching defaults or mutating either installed Suite; actual disablement, archival, uninstall, or retirement belongs to the separate evopilot-post-v5.0.0-legacy-suite-cutover milestone.",
+      "Build exact private Runtime Candidates before counted E2E, install outside source checkout, bind acceptance to exact bytes, and promote without rebuild only after separate Release authorization."
+    ],
+    "exclude": [
+      "Any claim that public Runtime 5.0.0, Expert 1.0.0, their aggregate acceptance record, or publication alone proves the original v5 scheme complete.",
+      "Any silent exclusion, bulk PASS projection, warning-as-pass, generic aggregate evidence, source-checkout substitution, or human declaration substituted for required machine evidence.",
+      "Harness asset reasoning, authoring, mutation, review, approval, evaluation, publication, Catalog mutation, or Registry mutation in EvoPilot.",
+      "Any modification to evopilot-harness product, Roadmap, Target, source, package, or published assets.",
+      "Making Harness optional, allowing Lifecycle to weaken Harness, or allowing Expert conversation to choose, fabricate, mutate, approve, or publish Harness assets.",
+      "Embedding a general-purpose coding Agent, model loop, tool loop, or model-training system inside EvoPilot.",
+      "Project-specific Engine branches or hidden fallback to either legacy Codex Suite.",
+      "Raw secret capture in declarations, conversation, evidence, logs, or durable Runtime state.",
+      "Inferring source, database, production, credential, acceptance, publication, or Release authority from Harness, Lifecycle, Expert, Host, parameter entry, test success, or generic conversation.",
+      "Evolution Expert package implementation or publication, except the Runtime-owned protocol and compatibility surfaces explicitly required by this Target.",
+      "Any real EvoPilot Codex Suite or DataRig Codex Suite disablement, move, deletion, uninstall, archive, retirement, restriction of independent evolution, or default switch before public Runtime 5.0.1 and Expert 1.0.1 complete the original scheme and pass fresh installation verification.",
+      "Any post-release legacy Suite Cutover action without its own Evolution Target and separate explicit human authorization.",
+      "Commit, push, Candidate build, acceptance execution, Codex or WorkBuddy operation, npm/GHCR publication, GitHub Release, deployment, production access, or database access under this unapproved completion-recovery draft."
+    ]
+  },
+  "designDecisions": {
+    "productIdentity": "EvoPilot Runtime 5.0.1 Harness-Guided Completion Recovery",
+    "coreInvariant": "Every Goal Target Loop requires one exact eligible published immutable HarnessBundle and one resolved open Lifecycle.",
+    "domainModel": "Project declaration, Harness consumption and binding, Lifecycle execution, recovery, interaction, Host, Runtime, acceptance, and release are explicit bounded contexts.",
+    "compositionRule": "Harness defines mandatory professional obligations; Lifecycle orchestrates and may strengthen but never weaken them.",
+    "authorityRule": "Harness, Lifecycle, Expert, Host, and Runtime capability do not grant external authority.",
+    "expertBoundary": "Evolution Expert is independently versioned and stateless with respect to Runtime truth; the Runtime remains complete headlessly.",
+    "legacyTransition": "The real EvoPilot and DataRig Codex Suites remain installed, active, independent, and untouched. Cutover is outside this Target and requires public completion successors, verified installation, a separate Cutover Target, and separate human authorization.",
+    "releaseTopology": "Runtime and Expert Candidates, acceptance, authorization, releases, upgrades, and rollbacks are independent.",
+    "legacySnapshotDrift": "A Suite snapshot binds source identity, version, tree digest, Skill and rule inventory, capturedAt, and corpus digest; drift makes only affected parity evidence STALE and requires a fresh snapshot plus selective rerun.",
+    "legacyCutoverReleaseRelationship": "Post-release Cutover is operational migration work and is not a v5 Release blocker.",
+    "completionInvariant": "V5_ORIGINAL_SCHEME_100_PERCENT_CLOSURE: total equals passed; failed, pending, stale, generic, and unmapped are zero; exact installed Candidate pair verified; NO_REGRESSION passed.",
+    "evidenceDisposition": "Runtime 5.0.0 and Expert 1.0.0 evidence is historical process evidence only; successor acceptance must be criterion-specific and freshly bound."
+  },
+  "compatibilityPolicy": {
+    "mode": "INHERIT"
+  },
+  "acceptanceLineage": [
+    {
+      "id": "V4AC01",
+      "origin": "EvoPilot v4.0.0 Target AC01",
+      "criterionDigest": "sha256:0374cae33cc0654ba8cf7ea6ab7c6391b1ab9676c794b1ebd1a70d7acb2c73a0",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC01"
+    },
+    {
+      "id": "V4AC02",
+      "origin": "EvoPilot v4.0.0 Target AC02",
+      "criterionDigest": "sha256:96d6d75714db1b684c49cc19da0d44bedf767104162b7b47391a5a87c436d778",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC02"
+    },
+    {
+      "id": "V4AC03",
+      "origin": "EvoPilot v4.0.0 Target AC03",
+      "criterionDigest": "sha256:dd667e2295cb1f563eff7c04d5c458b8b73b329814d04dac3814f644c0008d15",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC03"
+    },
+    {
+      "id": "V4AC04",
+      "origin": "EvoPilot v4.0.0 Target AC04",
+      "criterionDigest": "sha256:e42567d5c1fed8070bdcf6b2eefea0436081b5ce3817629e55977e1326e00c95",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC04"
+    },
+    {
+      "id": "V4AC05",
+      "origin": "EvoPilot v4.0.0 Target AC05",
+      "criterionDigest": "sha256:df8c17797743618f8321245d5b712435feecd3aa1745c7b3bdfa9267a7aaf3d7",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC05"
+    },
+    {
+      "id": "V4AC06",
+      "origin": "EvoPilot v4.0.0 Target AC06",
+      "criterionDigest": "sha256:dda67160a4235b459fa5464b4721de2bd071d5160d6758a1b56436c60bf43032",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC06"
+    },
+    {
+      "id": "V4AC07",
+      "origin": "EvoPilot v4.0.0 Target AC07",
+      "criterionDigest": "sha256:f02637f1c03c94071a2149cafccc9163349cd1a2ff3b94444783fe146695ac82",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC07"
+    },
+    {
+      "id": "V4AC08",
+      "origin": "EvoPilot v4.0.0 Target AC08",
+      "criterionDigest": "sha256:7063eb8a03d332df6f04b2e3b42664e9cc945ddf3340fc684fc391a8e1763d60",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC08"
+    },
+    {
+      "id": "V4AC09",
+      "origin": "EvoPilot v4.0.0 Target AC09",
+      "criterionDigest": "sha256:9db4b457bbb110b75684c47e3681b6a9703fca1235638e3a9f6f88a27d5b0734",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC09"
+    },
+    {
+      "id": "V4AC10",
+      "origin": "EvoPilot v4.0.0 Target AC10",
+      "criterionDigest": "sha256:f14e873305c1534a6a7e42f02ce7b89ab623d72f786268da9b5118dfac3e323f",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC10"
+    },
+    {
+      "id": "V4AC11",
+      "origin": "EvoPilot v4.0.0 Target AC11",
+      "criterionDigest": "sha256:bc1f9fb4be9d3d1c4df47453fb6b363dadfadfacf25333a0cc87e58e5c2d51c9",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC11"
+    },
+    {
+      "id": "V4AC12",
+      "origin": "EvoPilot v4.0.0 Target AC12",
+      "criterionDigest": "sha256:9444a62f16d084c8377166ea0868908953c62aad905c05a136c58252910f38a6",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC12"
+    },
+    {
+      "id": "V4AC13",
+      "origin": "EvoPilot v4.0.0 Target AC13",
+      "criterionDigest": "sha256:032bb165562c3701dd5a8b41397eb3f5d0e2802d31a64463695d9b7c5325063b",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC13"
+    },
+    {
+      "id": "V4AC14",
+      "origin": "EvoPilot v4.0.0 Target AC14",
+      "criterionDigest": "sha256:72280a35cdcc23fcc39451a83b418c0841cc1d68f876f92aeba2529379e9a26a",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC14"
+    },
+    {
+      "id": "V4AC15",
+      "origin": "EvoPilot v4.0.0 Target AC15",
+      "criterionDigest": "sha256:f39721a41531f0909d5872f2cac3d16dcda65e3c254cb2c0aa5b3a210583c5af",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC15"
+    },
+    {
+      "id": "V4AC16",
+      "origin": "EvoPilot v4.0.0 Target AC16",
+      "criterionDigest": "sha256:c4fc98c3715930cd880c249c2c92b245b197e6577062a1aeaf0c9571982db7b7",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC16"
+    },
+    {
+      "id": "V4AC17",
+      "origin": "EvoPilot v4.0.0 Target AC17",
+      "criterionDigest": "sha256:399a576013ca596946540341c1a6134a33db126e2becba2d1dff123fc7dd20b8",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC17"
+    },
+    {
+      "id": "V4AC18",
+      "origin": "EvoPilot v4.0.0 Target AC18",
+      "criterionDigest": "sha256:4d5c02834226d9c6e9eb884391c32be16194630cc32c03957abe38cfaa348967",
+      "evidenceRef": "governance/targets/evopilot-v4.0.0-open-lifecycle-harness.json#AC18"
+    },
+    {
+      "id": "V5-FUNC01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC01",
+      "criterionDigest": "sha256:aab4f81df2b1ed6e02321d8a2a6d3b70259a25b502d0ab7327bacfb3e52e6ce2",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC01"
+    },
+    {
+      "id": "V5-FUNC02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC02",
+      "criterionDigest": "sha256:b51c9253d967672b30b20ed5e966096d28e364ce8e39c543d258f95134fd6373",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC02"
+    },
+    {
+      "id": "V5-FUNC03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC03",
+      "criterionDigest": "sha256:3aa6546fcd251e743ec16aa6a3d8cbe113d4463bbba083b49bd7c06a448830f4",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC03"
+    },
+    {
+      "id": "V5-FUNC04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC04",
+      "criterionDigest": "sha256:8da0dd72a3151a626e50fa11706c8590421846730f6c128df524aa6200a3a77b",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC04"
+    },
+    {
+      "id": "V5-FUNC05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC05",
+      "criterionDigest": "sha256:3cae37b86af978627b569645c6978b06a3899228cfc60fb064caa7ac7e54506b",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC05"
+    },
+    {
+      "id": "V5-FUNC06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC06",
+      "criterionDigest": "sha256:b1a45460ae33aec25789a39b35f2ccb22f2c1ce4f4dddd023a130e4cc9d42be2",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC06"
+    },
+    {
+      "id": "V5-FUNC07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC07",
+      "criterionDigest": "sha256:643cddfe2e8ceceb1ca8a7b0a949e5216d17ceb54e14e66349e13452a9add507",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC07"
+    },
+    {
+      "id": "V5-FUNC08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC08",
+      "criterionDigest": "sha256:47fef36ba566b2b800327dad9fcf8730e5774c28e9b9373228aa2053fba3fbcd",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC08"
+    },
+    {
+      "id": "V5-FUNC09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC09",
+      "criterionDigest": "sha256:21f0a2127e55e76aa7b32b6ea2ea1c66d8a20eba020f8301a88f42c0fed99792",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC09"
+    },
+    {
+      "id": "V5-FUNC10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC10",
+      "criterionDigest": "sha256:ee09d905e4c38bbe8157b161393537ea4debc228c7044214aa4d601822cee98e",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC10"
+    },
+    {
+      "id": "V5-FUNC11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC11",
+      "criterionDigest": "sha256:08d585d59550be109722d7ec2e96c97cdc0f55b628e2e41802c1f651bdb96aa2",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC11"
+    },
+    {
+      "id": "V5-FUNC12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC12",
+      "criterionDigest": "sha256:aad7785c92142e77b915f613c1eacb2bff98dac85ae2dd9b459adf301599f132",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC12"
+    },
+    {
+      "id": "V5-FUNC13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC13",
+      "criterionDigest": "sha256:fb78160a165430dcd736b6b1950c7d4e94688042998a319f5e71884596eaf4f5",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC13"
+    },
+    {
+      "id": "V5-FUNC14",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC14",
+      "criterionDigest": "sha256:70bf8602c2a1ef9f4370b1ce5895f0383478b9cbe3317268a62fb50861a815dd",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC14"
+    },
+    {
+      "id": "V5-FUNC15",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC15",
+      "criterionDigest": "sha256:7878ce6be7b01129319c03110e6bc09f5065206d20020e23470dc0ce00e6ff45",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC15"
+    },
+    {
+      "id": "V5-FUNC16",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC16",
+      "criterionDigest": "sha256:6ccad58c4caf5eb479a54884b1499551ec3cee8ae13167e1aa364f612d46352a",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC16"
+    },
+    {
+      "id": "V5-FUNC17",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC17",
+      "criterionDigest": "sha256:ccb10f6e960cd480d26d3eca867b3d1eb0e098f33fffe1d2ad02b3f7185d08ab",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC17"
+    },
+    {
+      "id": "V5-FUNC18",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC18",
+      "criterionDigest": "sha256:eec8e415f8ad993ac70188068a29e456cd9fc9235d04acf8e0af8a6a05af2506",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC18"
+    },
+    {
+      "id": "V5-FUNC19",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC19",
+      "criterionDigest": "sha256:0e2fc1b5df907d6bc57d70ac28e73e0deb1fdc71ff7c5dc43c2d4fe3705363bc",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC19"
+    },
+    {
+      "id": "V5-FUNC20",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC20",
+      "criterionDigest": "sha256:815c30fd1ea4e2effa0b6aacd170c883c7f9ab07c44ab9a117bd1e21d7c411a9",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC20"
+    },
+    {
+      "id": "V5-FUNC21",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC21",
+      "criterionDigest": "sha256:144c832c93641a9788699d300ef72d2413e5a4345bc0f18dd32b47c40a7097b3",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#FUNC21"
+    },
+    {
+      "id": "V5-CAP01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP01",
+      "criterionDigest": "sha256:87b918a30e5de4f9363d1ae877d4f6e03b57937b9f8fe40bb5e51ac7c3f4d9e5",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP01"
+    },
+    {
+      "id": "V5-CAP02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP02",
+      "criterionDigest": "sha256:9346398dee9059fbda824de16c42dbef040f7b5fdf1cb32071cd8ef0d6aabbac",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP02"
+    },
+    {
+      "id": "V5-CAP03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP03",
+      "criterionDigest": "sha256:c337f470272d43aa111ee521ca55c1fa27816eff75478b05e567df1236462930",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP03"
+    },
+    {
+      "id": "V5-CAP04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP04",
+      "criterionDigest": "sha256:aaab40d38b4506dbd0349ff9cdeba756e9839144fff65ceae9cdb178f076543c",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP04"
+    },
+    {
+      "id": "V5-CAP05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP05",
+      "criterionDigest": "sha256:293ba59a46ed6834deea06d852fc86423a83d285c858f9f98dc469bf4d872c79",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP05"
+    },
+    {
+      "id": "V5-CAP06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP06",
+      "criterionDigest": "sha256:b184c87f52456ad6df9b9197f084e7e74afc64cf4333eac18ffc232810283f85",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP06"
+    },
+    {
+      "id": "V5-CAP07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP07",
+      "criterionDigest": "sha256:da548598927d895b6f34275f6129f5348c1cb30d3205a84545f0613e7bce0af0",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP07"
+    },
+    {
+      "id": "V5-CAP08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP08",
+      "criterionDigest": "sha256:537d6e3c5f73208f07d140023d5df741526c95280138e1d31480eb037edea4ea",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP08"
+    },
+    {
+      "id": "V5-CAP09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP09",
+      "criterionDigest": "sha256:db9d5bacb4128acae7bb648e861f838a4a829c05e576188ac190f893c2cc5155",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP09"
+    },
+    {
+      "id": "V5-CAP10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP10",
+      "criterionDigest": "sha256:624b0476ca566fdab35e67ef654bcbe9af33ef972c01e646cda7c4ee5d56129b",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP10"
+    },
+    {
+      "id": "V5-CAP11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP11",
+      "criterionDigest": "sha256:2ed4736d2978affe2fa813961e931680015044779250025620b653a04d9a3ed1",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP11"
+    },
+    {
+      "id": "V5-CAP12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP12",
+      "criterionDigest": "sha256:5ba618235e033cddd4abd84e2c81b0cab01136fcf0c9c403965006e59cb72274",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP12"
+    },
+    {
+      "id": "V5-CAP13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP13",
+      "criterionDigest": "sha256:1f2cb592cae49c7a7267bbb9e7f543f41178265f46176f00573b10b6d2843336",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP13"
+    },
+    {
+      "id": "V5-CAP14",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP14",
+      "criterionDigest": "sha256:bae355d3658d821231ed8a3e14e2be43071e5231f6c0fb13a9b155ac71e8ac28",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP14"
+    },
+    {
+      "id": "V5-CAP15",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP15",
+      "criterionDigest": "sha256:ef3c180d4e029d01cfe2af279f19a878aba6035fc43558c10022932ba03f6f3f",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP15"
+    },
+    {
+      "id": "V5-CAP16",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP16",
+      "criterionDigest": "sha256:232c28448cccdf0ec6c0c6792a2e62a3d97d326a51f399e52e25a3041007b8b1",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#CAP16"
+    },
+    {
+      "id": "V5-DOC01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC01",
+      "criterionDigest": "sha256:0736d6c5998bf7c19bf2bd33f6be0f816bd1e9bde7655804ce4c8d8a7b430700",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC01"
+    },
+    {
+      "id": "V5-DOC02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC02",
+      "criterionDigest": "sha256:d788ce00cc7609736974d36afad941ba6f44e108ea94ca168197a38ad3560469",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC02"
+    },
+    {
+      "id": "V5-DOC03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC03",
+      "criterionDigest": "sha256:3eec3d88a82bc950422c26f2bcc85b374a06281d4e3a8a677b1829cb050870a0",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC03"
+    },
+    {
+      "id": "V5-DOC04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC04",
+      "criterionDigest": "sha256:bed8c6671b051e931ee33e40c47100ae961976091a866fb9816ea154c4a96465",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC04"
+    },
+    {
+      "id": "V5-DOC05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC05",
+      "criterionDigest": "sha256:7a323ade9e17dfa36b8a88290bdf893742ced215dc812a2ce8636b6cb858744b",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC05"
+    },
+    {
+      "id": "V5-DOC06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC06",
+      "criterionDigest": "sha256:5a858b6389dac543ce6b5cedfdf032054763a3e4a57f66330a100b049917e5aa",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC06"
+    },
+    {
+      "id": "V5-DOC07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC07",
+      "criterionDigest": "sha256:053bce1674440ebd7a6723665a5c039868fe7665262069a6a310c7f9db71496a",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC07"
+    },
+    {
+      "id": "V5-DOC08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC08",
+      "criterionDigest": "sha256:174a245be2f1219284b1bf6b9d67206b67f3c5ae973abd675da306e2f0612b93",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC08"
+    },
+    {
+      "id": "V5-DOC09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC09",
+      "criterionDigest": "sha256:419eb994afacfb61b4f6798b9994e7b99aaee0274dbf9a15d38fe8ad14ebe3a5",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC09"
+    },
+    {
+      "id": "V5-DOC10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC10",
+      "criterionDigest": "sha256:f537b712ed42795d2b98e9dca320932d03d1fb496faf8ce68ba170b2d5162d88",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC10"
+    },
+    {
+      "id": "V5-DOC11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC11",
+      "criterionDigest": "sha256:539afbba9f9b04c6fb0c7381615cb0058e9236287dbe0cdf9cd47783969cc096",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC11"
+    },
+    {
+      "id": "V5-DOC12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC12",
+      "criterionDigest": "sha256:2fa4d172afbccd8de364ca8c5e844108e6cafec070086dd03897671f779880d5",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC12"
+    },
+    {
+      "id": "V5-DOC13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC13",
+      "criterionDigest": "sha256:3308929cba80e4560fbdce2674aaab6d88b49c30ce3fc12f1a38546e0901d197",
+      "evidenceRef": "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json#DOC13"
+    }
+  ],
+  "inheritedAcceptance": [
+    {
+      "id": "V4AC01",
+      "origin": "EvoPilot v4.0.0 Target AC01",
+      "criterion": "Roadmap, architecture, governance, and release alignment remain deterministic.",
+      "requiredEvidence": "v5 Roadmap, ADR, gate, and release-preflight evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC02",
+      "origin": "EvoPilot v4.0.0 Target AC02",
+      "criterion": "Open Lifecycle resources remain deterministic, schema-valid, immutable, and cycle safe.",
+      "requiredEvidence": "v4 compatibility plus v5 schema and graph replay",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC03",
+      "origin": "EvoPilot v4.0.0 Target AC03",
+      "criterion": "Lifecycle definitions cannot embed arbitrary executable code or bypass registered capabilities.",
+      "requiredEvidence": "hostile definition and action-registry regression matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC04",
+      "origin": "EvoPilot v4.0.0 Target AC04",
+      "criterion": "Conversational and headless parameter paths retain equivalent schema and immutable provenance.",
+      "requiredEvidence": "cross-surface semantic equivalence evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC05",
+      "origin": "EvoPilot v4.0.0 Target AC05",
+      "criterion": "Input never implies authority and secrets remain reference-only and redacted.",
+      "requiredEvidence": "authority negatives and secret/redaction scans",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC06",
+      "origin": "EvoPilot v4.0.0 Target AC06",
+      "criterion": "Deterministic reversible stages continue automatically inside exact authority.",
+      "requiredEvidence": "automatic continuation and receipt matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC07",
+      "origin": "EvoPilot v4.0.0 Target AC07",
+      "criterion": "Human gates remain limited to genuine digest-bound authority or risk boundaries.",
+      "requiredEvidence": "gate inventory and hostile interaction matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC08",
+      "origin": "EvoPilot v4.0.0 Target AC08",
+      "criterion": "Bounded authorization and selective drift invalidation prevent repeated ceremonial approval.",
+      "requiredEvidence": "authorization coverage and drift tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC09",
+      "origin": "EvoPilot v4.0.0 Target AC09",
+      "criterion": "Retry and resume remain idempotent and uncertain mutations fail to human recovery authority.",
+      "requiredEvidence": "crash, timeout, duplicate, receipt, and uncertainty matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC10",
+      "origin": "EvoPilot v4.0.0 Target AC10",
+      "criterion": "All execution dependencies remain exact, immutable, replayable, and drift checked.",
+      "requiredEvidence": "binding closure, tamper, and replay evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC11",
+      "origin": "EvoPilot v4.0.0 Target AC11",
+      "criterion": "DataRig remains a project-neutral declarative enterprise reference.",
+      "requiredEvidence": "fresh DataRig E2E and no-project-branch scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC12",
+      "origin": "EvoPilot v4.0.0 Target AC12",
+      "criterion": "evopilot-harness remains a project-neutral public reference and independent Harness producer.",
+      "requiredEvidence": "fresh producer-reference E2E and boundary sentinels",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC13",
+      "origin": "EvoPilot v4.0.0 Target AC13",
+      "criterion": "A materially different project and Lifecycle work without Engine changes.",
+      "requiredEvidence": "unknown-project declaration and source-diff proof",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC14",
+      "origin": "EvoPilot v4.0.0 Target AC14",
+      "criterion": "v3 and v4 plans, evidence, approvals, migration, and rollback remain compatible.",
+      "requiredEvidence": "migration and rollback replay matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC15",
+      "origin": "EvoPilot v4.0.0 Target AC15",
+      "criterion": "Codex, WorkBuddy, independent Host, MCP, API, CLI, and CI retain authoritative semantic equivalence.",
+      "requiredEvidence": "cross-host and headless conformance matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC16",
+      "origin": "EvoPilot v4.0.0 Target AC16",
+      "criterion": "Execution Runtime adapters remain capability-bound, hostile-safe, resumable, and auditable.",
+      "requiredEvidence": "Runtime adapter conformance and hostile adapter evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC17",
+      "origin": "EvoPilot v4.0.0 Target AC17",
+      "criterion": "EvoPilot remains a read-only Harness consumer and feedback remains approved, redacted, and immutable.",
+      "requiredEvidence": "architecture guard, Catalog sentinels, and feedback negatives",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC18",
+      "origin": "EvoPilot v4.0.0 Target AC18",
+      "criterion": "Complete security, isolation, observability, recovery, performance, docs, packaging, and release baseline has no regression.",
+      "requiredEvidence": "full Candidate check, security, soak, docs, distribution, and public-surface evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC01",
+      "criterion": "A valid EvolutionProjectDefinition is discovered, normalized, versioned, and bound without project-specific Engine behavior.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: schema, normalization, discovery, digest, and no-project-branch tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC02",
+      "criterion": "Unknown projects are onboarded interactively into declarative resources and can be revised with evidence-preserving rollback.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: fresh unknown-project onboarding, adjustment, and rollback transcript",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC03",
+      "criterion": "Project plus GoalTarget context deterministically matches eligible published HarnessProfiles with ranking reasons and rejected alternatives.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: matching goldens, reason trace, and rejected-alternative evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC04",
+      "criterion": "No-match, ambiguity, ineligibility, and abstention fail closed without fabricating or silently selecting a Harness.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: negative matching and abstention matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC05",
+      "criterion": "Every Goal Target Loop binds one exact published immutable HarnessBundle closure before execution.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: mandatory binding tests and immutable Bundle digest closure",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC06",
+      "criterion": "HarnessExecutionBinding includes exact Project, GoalTarget, Harness, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence digests.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: binding schema, canonicalization, tamper, and replay tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC07",
+      "criterion": "Harness and Lifecycle composition intersects permissions and unions obligations without weakening Harness requirements.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: composition algebra goldens and weakening negatives",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC08",
+      "criterion": "Composition conflicts are deterministic, explainable, and fail closed before execution.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: conflict corpus and stable diagnostic snapshots",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC09",
+      "criterion": "All relevant bindings are revalidated before start, resume, retry, and every Loop iteration.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: per-transition and per-iteration drift matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC10",
+      "criterion": "Catalog growth, mutation, replacement, and version changes cannot silently alter an active binding.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Catalog mutation and unrelated-growth tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC11",
+      "criterion": "Open project-neutral Lifecycle modules accept human-readable declarations and registered capabilities without arbitrary code.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: schema, module composition, custom Lifecycle, and hostile declaration tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC12",
+      "criterion": "One parameter schema drives ordinary-human dialogue and headless YAML/JSON with identical validation and provenance.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: cross-client fixtures and immutable input binding comparison",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC13",
+      "criterion": "Deterministic reversible stages and safe identical-input recovery continue automatically inside current authority.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: automatic continuation, retry, receipt, and restart evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC14",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC14",
+      "criterion": "Unknown or unsafe outcomes stop only at the exact unresolved authority boundary with actionable diagnostics.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: uncertain mutation and genuine-gate matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC15",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC15",
+      "criterion": "An approved Automation Registry rule is scoped, inspectable, versioned, revocable, audited, and reusable without repeated confirmation.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: proposal, one-time approval, activation, reuse, revoke, and audit evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC16",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC16",
+      "criterion": "Human Interaction Protocol clients render the same Runtime-owned questions, plans, decisions, progress, recovery, evidence, and results.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Expert, MCP, CLI, API, and CI semantic conformance",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC17",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC17",
+      "criterion": "Codex Host and Runtime, WorkBuddy Host, and an independent Host cannot infer authority or change Engine semantics.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: real-host and hostile-host adapter conformance",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC18",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC18",
+      "criterion": "DataRig, EvoPilot, evopilot-harness, and unknown-project references run from declarations without named Engine branches.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: four reference journeys and source-pattern guard",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC19",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC19",
+      "criterion": "The Runtime remains fully operable through CLI, API, and CI when Evolution Expert is absent or incompatible.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: headless functional suite under missing and incompatible Expert states",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC20",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC20",
+      "criterion": "Exact installed v5 Candidates record zero legacy EvoPilot or DataRig Codex Suite invocation and no hidden fallback across success, failure, resume, upgrade, and rollback in isolated environments where both Suites are absent, while real installed Suites remain active and untouched.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: late-bound exact Suite snapshot manifests, drift and selective-rerun records, isolated-environment absence proof, legacySuiteInvocationCount zero, path/process sentinels, representative journeys, and real-installed-Suite non-mutation evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC21",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC21",
+      "criterion": "Exact installed Runtime Candidate completes acceptance and is promotable without rebuild only after separate Release authorization.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Candidate handoff, isolated install, byte digests, acceptance aggregate, and promotion dry run",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP01",
+      "criterion": "Project declarations are extensible through versioned DDD resources and capability discovery.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: extension compatibility and unknown-resource failure tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP02",
+      "criterion": "Harness Registry and Catalog consumption is dynamic, read-only, immutable at binding time, and producer-independent.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: consumer contract and filesystem/network mutation sentinels",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP03",
+      "criterion": "Harness matching exposes deterministic ranking, eligibility, explanations, ambiguity, and abstention.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: matching capability contract and golden portfolio",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP04",
+      "criterion": "Open Lifecycle modules compose, version, migrate, validate, and roll back without Engine forks.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: module catalog, migration, rollback, and third-lifecycle evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP05",
+      "criterion": "Recovery Controller classifies deterministic, transient, external, uncertain, and authority failures with bounded budgets.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: failure taxonomy, budget, escalation, and recovery tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP06",
+      "criterion": "Automation Registry learns only from an exact approved proposal and preserves scope, revocation, expiry, and audit.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: registry lifecycle, drift, and policy enforcement tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP07",
+      "criterion": "Human Interaction Protocol is stable, versioned, resumable, and transport neutral.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: protocol schema, compatibility, resume, and conformance suites",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP08",
+      "criterion": "Agent Host and execution Runtime adapters declare and bind capabilities independently.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Host/Runtime topology matrix and mismatch tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP09",
+      "criterion": "Codex is supported as an official Host and Runtime without becoming exclusive.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Codex real-host and execution-adapter Candidate evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP10",
+      "criterion": "WorkBuddy and a third-party Host use generated adapters from common semantics.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Core-digest and no-host-semantics conformance evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP11",
+      "criterion": "Provider and model bindings remain explicit, replaceable, policy constrained, and auditable.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: provider matrix, capability mismatch, usage, cost, and provenance evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP12",
+      "criterion": "Authority, tenant, workspace, secret, evidence, and audit boundaries remain exact across all clients and recovery paths.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: security, tenancy, SecretRef, authority, and audit suite",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP13",
+      "criterion": "Candidate, acceptance, release, rollback, and public verification preserve exact bytes and separate decisions.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: release topology and no-rebuild verification",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP14",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP14",
+      "criterion": "Runtime and Evolution Expert versions, Candidates, releases, upgrades, and rollbacks are independent but compatibility-bound.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: cross-version compatibility and independent lifecycle matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP15",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP15",
+      "criterion": "Reference projects are declarative examples rather than privileged profiles or Core branches.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: declaration validation and repository-name branch scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP16",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP16",
+      "criterion": "The complete Runtime supports observability, cancellation, concurrency, performance, bounded resources, security, packaging, and distribution.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: full check, threat, soak, performance, packaging, installer, npm, GHCR, and deployment-surface evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC01",
+      "criterion": "README presents the Harness-guided product identity, primary journey, quickstart, and concise routing to deeper docs.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: README review, command verification, and link check",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC02",
+      "criterion": "Installation documents exact Runtime and independent Expert installation, compatibility, upgrade, rollback, and removal.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: clean-machine install documentation rehearsal",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC03",
+      "criterion": "Concept documentation distinguishes repository evolution governance, Runtime Lifecycle, Harness asset lifecycle, Expert, Host, and execution Runtime.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: terminology audit and boundary review",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC04",
+      "criterion": "DDD architecture documents bounded contexts, aggregates, invariants, events, dependencies, and ownership.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: ADR and architecture guard mapping",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC05",
+      "criterion": "Harness matching and immutable binding documentation covers eligibility, ranking, ambiguity, abstention, closure, drift, and replay.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: documentation-to-contract traceability",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC06",
+      "criterion": "Lifecycle documentation covers open modules, monotonic composition, parameters, decisions, and migration.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: examples validated against schemas and executable fixtures",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC07",
+      "criterion": "Recovery and Automation Registry documentation explains automatic classes, budgets, one-time rule approval, audit, revocation, and human boundaries.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: runbook scenario validation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC08",
+      "criterion": "Human Interaction Protocol and Expert integration documentation covers Codex, WorkBuddy, generic MCP, and headless use.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: adapter quickstart rehearsal and protocol examples",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC09",
+      "criterion": "Project onboarding and adjustment guides cover new, existing, imported, and unknown projects as declarations.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: novice walkthrough and declaration validation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC10",
+      "criterion": "Reference guides cover DataRig, EvoPilot, and evopilot-harness without presenting them as Core special cases.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: reference declaration traceability and terminology scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC11",
+      "criterion": "Security and authority documentation covers secrets, external effects, Human gates, Harness non-authority, and hostile Hosts or Runtimes.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: threat-model and security-doc consistency check",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC12",
+      "criterion": "Migration documentation distinguishes pre-release read-only snapshot comparison and isolated independence proof from post-release default switching, recoverable archival, rollback, and retirement under a separate Cutover Target and human authorization.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: migration rehearsal, snapshot-drift procedure, isolated zero-fallback evidence map, explicit post-release prerequisites, and Cutover authority boundary review",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC13",
+      "criterion": "Acceptance and release documentation defines exact Candidate-first E2E, independent Runtime/Expert matrices, no-rebuild promotion, and terminal public verification.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: acceptance runbook lint and release dry run",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "regressionImpact": [
+    {
+      "area": "Roadmap, architecture, Lifecycle, schema, interaction, and authority compatibility",
+      "affectedAcceptanceIds": [
+        "V4AC01",
+        "V4AC02",
+        "V4AC03",
+        "V4AC04",
+        "V4AC05",
+        "V4AC06",
+        "V4AC07",
+        "V4AC08",
+        "V4AC09",
+        "V4AC10"
+      ]
+    },
+    {
+      "area": "Project-neutral reference cases and migration compatibility",
+      "affectedAcceptanceIds": [
+        "V4AC11",
+        "V4AC12",
+        "V4AC13",
+        "V4AC14"
+      ]
+    },
+    {
+      "area": "Host and Runtime conformance, Harness boundary, security, distribution, and release closure",
+      "affectedAcceptanceIds": [
+        "V4AC15",
+        "V4AC16",
+        "V4AC17",
+        "V4AC18"
+      ]
+    },
+    {
+      "area": "Every original Runtime v5.0.0 functional, capability, and documentation promise requires fresh successor proof because the predecessor aggregate evidence is not completion proof.",
+      "affectedAcceptanceIds": [
+        "V5-FUNC01",
+        "V5-FUNC02",
+        "V5-FUNC03",
+        "V5-FUNC04",
+        "V5-FUNC05",
+        "V5-FUNC06",
+        "V5-FUNC07",
+        "V5-FUNC08",
+        "V5-FUNC09",
+        "V5-FUNC10",
+        "V5-FUNC11",
+        "V5-FUNC12",
+        "V5-FUNC13",
+        "V5-FUNC14",
+        "V5-FUNC15",
+        "V5-FUNC16",
+        "V5-FUNC17",
+        "V5-FUNC18",
+        "V5-FUNC19",
+        "V5-FUNC20",
+        "V5-FUNC21",
+        "V5-CAP01",
+        "V5-CAP02",
+        "V5-CAP03",
+        "V5-CAP04",
+        "V5-CAP05",
+        "V5-CAP06",
+        "V5-CAP07",
+        "V5-CAP08",
+        "V5-CAP09",
+        "V5-CAP10",
+        "V5-CAP11",
+        "V5-CAP12",
+        "V5-CAP13",
+        "V5-CAP14",
+        "V5-CAP15",
+        "V5-CAP16",
+        "V5-DOC01",
+        "V5-DOC02",
+        "V5-DOC03",
+        "V5-DOC04",
+        "V5-DOC05",
+        "V5-DOC06",
+        "V5-DOC07",
+        "V5-DOC08",
+        "V5-DOC09",
+        "V5-DOC10",
+        "V5-DOC11",
+        "V5-DOC12",
+        "V5-DOC13"
+      ]
+    }
+  ],
+  "excludedHistoricalAcceptance": [],
+  "acceptance": [
+    {
+      "id": "FUNC01",
+      "criterion": "A valid EvolutionProjectDefinition is discovered, normalized, versioned, and bound without project-specific Engine behavior.",
+      "requiredEvidence": "schema, normalization, discovery, digest, and no-project-branch tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC02",
+      "criterion": "Unknown projects are onboarded interactively into declarative resources and can be revised with evidence-preserving rollback.",
+      "requiredEvidence": "fresh unknown-project onboarding, adjustment, and rollback transcript",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC03",
+      "criterion": "Project plus GoalTarget context deterministically matches eligible published HarnessProfiles with ranking reasons and rejected alternatives.",
+      "requiredEvidence": "matching goldens, reason trace, and rejected-alternative evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC04",
+      "criterion": "No-match, ambiguity, ineligibility, and abstention fail closed without fabricating or silently selecting a Harness.",
+      "requiredEvidence": "negative matching and abstention matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC05",
+      "criterion": "Every Goal Target Loop binds one exact published immutable HarnessBundle closure before execution.",
+      "requiredEvidence": "mandatory binding tests and immutable Bundle digest closure",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC06",
+      "criterion": "HarnessExecutionBinding includes exact Project, GoalTarget, Harness, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence digests.",
+      "requiredEvidence": "binding schema, canonicalization, tamper, and replay tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC07",
+      "criterion": "Harness and Lifecycle composition intersects permissions and unions obligations without weakening Harness requirements.",
+      "requiredEvidence": "composition algebra goldens and weakening negatives",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC08",
+      "criterion": "Composition conflicts are deterministic, explainable, and fail closed before execution.",
+      "requiredEvidence": "conflict corpus and stable diagnostic snapshots",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC09",
+      "criterion": "All relevant bindings are revalidated before start, resume, retry, and every Loop iteration.",
+      "requiredEvidence": "per-transition and per-iteration drift matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC10",
+      "criterion": "Catalog growth, mutation, replacement, and version changes cannot silently alter an active binding.",
+      "requiredEvidence": "Catalog mutation and unrelated-growth tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC11",
+      "criterion": "Open project-neutral Lifecycle modules accept human-readable declarations and registered capabilities without arbitrary code.",
+      "requiredEvidence": "schema, module composition, custom Lifecycle, and hostile declaration tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC12",
+      "criterion": "One parameter schema drives ordinary-human dialogue and headless YAML/JSON with identical validation and provenance.",
+      "requiredEvidence": "cross-client fixtures and immutable input binding comparison",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC13",
+      "criterion": "Deterministic reversible stages and safe identical-input recovery continue automatically inside current authority.",
+      "requiredEvidence": "automatic continuation, retry, receipt, and restart evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC14",
+      "criterion": "Unknown or unsafe outcomes stop only at the exact unresolved authority boundary with actionable diagnostics.",
+      "requiredEvidence": "uncertain mutation and genuine-gate matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC15",
+      "criterion": "An approved Automation Registry rule is scoped, inspectable, versioned, revocable, audited, and reusable without repeated confirmation.",
+      "requiredEvidence": "proposal, one-time approval, activation, reuse, revoke, and audit evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC16",
+      "criterion": "Human Interaction Protocol clients render the same Runtime-owned questions, plans, decisions, progress, recovery, evidence, and results.",
+      "requiredEvidence": "Expert, MCP, CLI, API, and CI semantic conformance",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC17",
+      "criterion": "Codex Host and Runtime, WorkBuddy Host, and an independent Host cannot infer authority or change Engine semantics.",
+      "requiredEvidence": "real-host and hostile-host adapter conformance",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC18",
+      "criterion": "DataRig, EvoPilot, evopilot-harness, and unknown-project references run from declarations without named Engine branches.",
+      "requiredEvidence": "four reference journeys and source-pattern guard",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC19",
+      "criterion": "The Runtime remains fully operable through CLI, API, and CI when Evolution Expert is absent or incompatible.",
+      "requiredEvidence": "headless functional suite under missing and incompatible Expert states",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC20",
+      "criterion": "Exact installed v5 Candidates record zero legacy EvoPilot or DataRig Codex Suite invocation and no hidden fallback across success, failure, resume, upgrade, and rollback in isolated environments where both Suites are absent, while real installed Suites remain active and untouched.",
+      "requiredEvidence": "late-bound exact Suite snapshot manifests, drift and selective-rerun records, isolated-environment absence proof, legacySuiteInvocationCount zero, path/process sentinels, representative journeys, and real-installed-Suite non-mutation evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC21",
+      "criterion": "Exact installed Runtime Candidate completes acceptance and is promotable without rebuild only after separate Release authorization.",
+      "requiredEvidence": "Candidate handoff, isolated install, byte digests, acceptance aggregate, and promotion dry run",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP01",
+      "criterion": "Project declarations are extensible through versioned DDD resources and capability discovery.",
+      "requiredEvidence": "extension compatibility and unknown-resource failure tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP02",
+      "criterion": "Harness Registry and Catalog consumption is dynamic, read-only, immutable at binding time, and producer-independent.",
+      "requiredEvidence": "consumer contract and filesystem/network mutation sentinels",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP03",
+      "criterion": "Harness matching exposes deterministic ranking, eligibility, explanations, ambiguity, and abstention.",
+      "requiredEvidence": "matching capability contract and golden portfolio",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP04",
+      "criterion": "Open Lifecycle modules compose, version, migrate, validate, and roll back without Engine forks.",
+      "requiredEvidence": "module catalog, migration, rollback, and third-lifecycle evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP05",
+      "criterion": "Recovery Controller classifies deterministic, transient, external, uncertain, and authority failures with bounded budgets.",
+      "requiredEvidence": "failure taxonomy, budget, escalation, and recovery tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP06",
+      "criterion": "Automation Registry learns only from an exact approved proposal and preserves scope, revocation, expiry, and audit.",
+      "requiredEvidence": "registry lifecycle, drift, and policy enforcement tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP07",
+      "criterion": "Human Interaction Protocol is stable, versioned, resumable, and transport neutral.",
+      "requiredEvidence": "protocol schema, compatibility, resume, and conformance suites",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP08",
+      "criterion": "Agent Host and execution Runtime adapters declare and bind capabilities independently.",
+      "requiredEvidence": "Host/Runtime topology matrix and mismatch tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP09",
+      "criterion": "Codex is supported as an official Host and Runtime without becoming exclusive.",
+      "requiredEvidence": "Codex real-host and execution-adapter Candidate evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP10",
+      "criterion": "WorkBuddy and a third-party Host use generated adapters from common semantics.",
+      "requiredEvidence": "Core-digest and no-host-semantics conformance evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP11",
+      "criterion": "Provider and model bindings remain explicit, replaceable, policy constrained, and auditable.",
+      "requiredEvidence": "provider matrix, capability mismatch, usage, cost, and provenance evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP12",
+      "criterion": "Authority, tenant, workspace, secret, evidence, and audit boundaries remain exact across all clients and recovery paths.",
+      "requiredEvidence": "security, tenancy, SecretRef, authority, and audit suite",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP13",
+      "criterion": "Candidate, acceptance, release, rollback, and public verification preserve exact bytes and separate decisions.",
+      "requiredEvidence": "release topology and no-rebuild verification",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP14",
+      "criterion": "Runtime and Evolution Expert versions, Candidates, releases, upgrades, and rollbacks are independent but compatibility-bound.",
+      "requiredEvidence": "cross-version compatibility and independent lifecycle matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP15",
+      "criterion": "Reference projects are declarative examples rather than privileged profiles or Core branches.",
+      "requiredEvidence": "declaration validation and repository-name branch scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP16",
+      "criterion": "The complete Runtime supports observability, cancellation, concurrency, performance, bounded resources, security, packaging, and distribution.",
+      "requiredEvidence": "full check, threat, soak, performance, packaging, installer, npm, GHCR, and deployment-surface evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC01",
+      "criterion": "README presents the Harness-guided product identity, primary journey, quickstart, and concise routing to deeper docs.",
+      "requiredEvidence": "README review, command verification, and link check",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC02",
+      "criterion": "Installation documents exact Runtime and independent Expert installation, compatibility, upgrade, rollback, and removal.",
+      "requiredEvidence": "clean-machine install documentation rehearsal",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC03",
+      "criterion": "Concept documentation distinguishes repository evolution governance, Runtime Lifecycle, Harness asset lifecycle, Expert, Host, and execution Runtime.",
+      "requiredEvidence": "terminology audit and boundary review",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC04",
+      "criterion": "DDD architecture documents bounded contexts, aggregates, invariants, events, dependencies, and ownership.",
+      "requiredEvidence": "ADR and architecture guard mapping",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC05",
+      "criterion": "Harness matching and immutable binding documentation covers eligibility, ranking, ambiguity, abstention, closure, drift, and replay.",
+      "requiredEvidence": "documentation-to-contract traceability",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC06",
+      "criterion": "Lifecycle documentation covers open modules, monotonic composition, parameters, decisions, and migration.",
+      "requiredEvidence": "examples validated against schemas and executable fixtures",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC07",
+      "criterion": "Recovery and Automation Registry documentation explains automatic classes, budgets, one-time rule approval, audit, revocation, and human boundaries.",
+      "requiredEvidence": "runbook scenario validation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC08",
+      "criterion": "Human Interaction Protocol and Expert integration documentation covers Codex, WorkBuddy, generic MCP, and headless use.",
+      "requiredEvidence": "adapter quickstart rehearsal and protocol examples",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC09",
+      "criterion": "Project onboarding and adjustment guides cover new, existing, imported, and unknown projects as declarations.",
+      "requiredEvidence": "novice walkthrough and declaration validation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC10",
+      "criterion": "Reference guides cover DataRig, EvoPilot, and evopilot-harness without presenting them as Core special cases.",
+      "requiredEvidence": "reference declaration traceability and terminology scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC11",
+      "criterion": "Security and authority documentation covers secrets, external effects, Human gates, Harness non-authority, and hostile Hosts or Runtimes.",
+      "requiredEvidence": "threat-model and security-doc consistency check",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC12",
+      "criterion": "Migration documentation distinguishes pre-release read-only snapshot comparison and isolated independence proof from post-release default switching, recoverable archival, rollback, and retirement under a separate Cutover Target and human authorization.",
+      "requiredEvidence": "migration rehearsal, snapshot-drift procedure, isolated zero-fallback evidence map, explicit post-release prerequisites, and Cutover authority boundary review",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC13",
+      "criterion": "Acceptance and release documentation defines exact Candidate-first E2E, independent Runtime/Expert matrices, no-rebuild promotion, and terminal public verification.",
+      "requiredEvidence": "acceptance runbook lint and release dry run",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE01",
+      "criterion": "The complete original v5 and Expert scheme inventory is canonical, digest-bound, immutable for the campaign, and includes every accepted Roadmap clause, both predecessor Targets, every explicit user correction, and every audited gap.",
+      "requiredEvidence": "inventory schema validation, source digest verification, completeness enumeration, and mutation-detection tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE02",
+      "criterion": "Every inventory item maps to at least one successor Target scope item and acceptance criterion, with no silent exclusion or unmapped requirement.",
+      "requiredEvidence": "machine-readable traceability matrix and negative tests for missing, duplicate, silently excluded, and unmapped items",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE03",
+      "criterion": "Every current and inherited acceptance criterion has an independent executable validator and a concrete criterion-specific evidence contract; generic aggregate anchors and bulk PASS projection are rejected.",
+      "requiredEvidence": "validator inventory, independence checks, per-criterion evidence schema, tamper tests, and generic-evidence rejection tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE04",
+      "criterion": "Every user-observable requirement maps to an exact E2E starting state, terminal state, prohibited effects, required Hosts, and concrete evidence, including all Runtime E2E01-E2E13 variants.",
+      "requiredEvidence": "E2E trace matrix, terminal-state assertions, prohibited-effect sentinels, Host coverage audit, and uncovered-behavior negative test",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE05",
+      "criterion": "Completion aggregation remains INCOMPLETE when any required item is missing, partial, failed, pending, stale, warning-only, generic, unmapped, bound to the wrong Candidate, or represented only by a human declaration where machine evidence is required.",
+      "requiredEvidence": "fail-closed aggregation tests for every incomplete evidence class and wrong-candidate binding",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE06",
+      "criterion": "The final completion report proves 100-percent original-scheme coverage, all current and inherited acceptance and E2E passed, exact installed Runtime and Expert Candidate pair verified, complete impact closure, and NO_REGRESSION passed.",
+      "requiredEvidence": "digest-bound final completion report with total equals passed and zero failed, pending, stale, generic, and unmapped counts plus independent recomputation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "realCaseCoverage": [
+    {
+      "id": "E2E01",
+      "scenario": "A novice installs exact Runtime and compatible Expert Candidates, asks for help, and completes a side-effect-free tutorial.",
+      "hosts": [
+        "Codex",
+        "WorkBuddy"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC12",
+        "FUNC16",
+        "FUNC17",
+        "FUNC19",
+        "CAP07",
+        "CAP09",
+        "CAP10",
+        "CAP14",
+        "DOC01",
+        "DOC02",
+        "DOC03",
+        "DOC08",
+        "TRACE04"
+      ],
+      "requiredEvidence": "isolated install logs, help transcript, tutorial receipts, zero external effects, and cross-host semantic comparison",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E02",
+      "scenario": "An unknown project is declared and completes its first Harness-guided governed Goal.",
+      "hosts": [
+        "Codex",
+        "direct-cli-api"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC01",
+        "FUNC02",
+        "FUNC03",
+        "FUNC04",
+        "FUNC05",
+        "FUNC06",
+        "CAP01",
+        "CAP03",
+        "DOC09"
+      ],
+      "requiredEvidence": "fresh project declaration, match trace, immutable binding, Goal Target Loop evidence, and zero Engine diff",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E03",
+      "scenario": "A project definition is adjusted, drift is detected selectively, and the definition is rolled back without evidence loss.",
+      "hosts": [
+        "Codex",
+        "direct-cli-api"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC02",
+        "FUNC09",
+        "FUNC10",
+        "CAP01",
+        "CAP12",
+        "DOC09"
+      ],
+      "requiredEvidence": "before/after digests, impacted decision set, rollback receipts, and preserved evidence graph",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E04",
+      "scenario": "DataRig completes the enterprise-internal reference lifecycle in an isolated Candidate environment where the DataRig Codex Suite is absent, without legacy Suite invocation or embedded project constants, while its real installed independently evolving Suite remains untouched.",
+      "hosts": [
+        "Codex",
+        "independent-conformant-agent-host"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC07",
+        "FUNC11",
+        "FUNC12",
+        "FUNC13",
+        "FUNC14",
+        "FUNC18",
+        "CAP04",
+        "CAP05",
+        "CAP15",
+        "DOC06",
+        "DOC07",
+        "DOC10"
+      ],
+      "requiredEvidence": "late exact DataRig Suite snapshot, installed Candidate journey, isolated Suite-absence proof, declaration provenance, recovery trace, authority boundary evidence, no-project-branch scan, and real-installed-Suite non-mutation evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E05",
+      "scenario": "EvoPilot performs GitHub open-source self-evolution from exact Goal through RC, isolated acceptance, separate release authorization, public release, and terminal verification.",
+      "hosts": [
+        "Codex",
+        "GitHub Actions"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC13",
+        "FUNC14",
+        "FUNC21",
+        "CAP12",
+        "CAP13",
+        "CAP16",
+        "DOC11",
+        "DOC13"
+      ],
+      "requiredEvidence": "exact Candidate handoff, acceptance aggregate, authorization digests, no-rebuild promotion, GitHub/npm/GHCR/installer/deployment verification",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E06",
+      "scenario": "evopilot-harness producer reference reaches release-ready state while EvoPilot and Expert remain read-only Harness consumers.",
+      "hosts": [
+        "WorkBuddy",
+        "Codex"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC03",
+        "FUNC05",
+        "FUNC06",
+        "FUNC07",
+        "FUNC17",
+        "FUNC18",
+        "CAP02",
+        "CAP10",
+        "CAP15",
+        "DOC05",
+        "DOC10"
+      ],
+      "requiredEvidence": "exact published Bundle binding, filesystem sentinels, no producer mutation, and stopped-before-publication evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E07",
+      "scenario": "A deterministic failure recovers, an unknown class produces one Automation Registry proposal, one human decision activates it, then restart, resume, and Host transfer complete automatically.",
+      "hosts": [
+        "Codex",
+        "WorkBuddy",
+        "independent-conformant-agent-host"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC09",
+        "FUNC13",
+        "FUNC14",
+        "FUNC15",
+        "FUNC16",
+        "FUNC17",
+        "CAP05",
+        "CAP06",
+        "CAP07",
+        "CAP08",
+        "DOC07",
+        "DOC08"
+      ],
+      "requiredEvidence": "failure taxonomy, budgets, proposal digest, approval, rule activation, restart/resume receipts, Host transfer, and no repeated approval",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E08",
+      "scenario": "Exact RC bytes are installed in isolation, acceptance closes, a separate Release authorization is recorded, bytes promote without rebuild, and public surfaces verify.",
+      "hosts": [
+        "Codex",
+        "GitHub Actions",
+        "direct-cli-api"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC21",
+        "CAP13",
+        "CAP14",
+        "CAP16",
+        "DOC02",
+        "DOC13",
+        "TRACE01",
+        "TRACE03",
+        "TRACE05",
+        "TRACE06"
+      ],
+      "requiredEvidence": "RC digests, isolation proof, 100% acceptance aggregate, release authorization, byte identity, signatures, install and public verification",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E09",
+      "scenario": "EvoPilot and DataRig run read-only shadow comparisons against late-bound exact Suite snapshots and then complete success, failure, resume, upgrade, and rollback with both legacy Codex Suites absent from isolated Candidate environments, proving zero invocation and no hidden fallback without disabling, moving, deleting, uninstalling, or archiving the real installed Suites.",
+      "hosts": [
+        "Codex",
+        "WorkBuddy"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC18",
+        "FUNC19",
+        "FUNC20",
+        "CAP15",
+        "DOC12"
+      ],
+      "requiredEvidence": "exact snapshot manifests and corpus digests, snapshot-drift stale/selective-rerun evidence, isolated Suite-absence proof, legacySuiteInvocationCount zero, path and process sentinels, representative journeys, and real-installed-Suite non-mutation evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E10",
+      "scenario": "Evolution Expert upgrades and rolls back independently while Runtime bytes and version remain unchanged.",
+      "hosts": [
+        "Codex",
+        "WorkBuddy"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC16",
+        "FUNC17",
+        "FUNC19",
+        "CAP07",
+        "CAP10",
+        "CAP14",
+        "DOC02",
+        "DOC08",
+        "DOC13"
+      ],
+      "requiredEvidence": "exact Runtime digest before/after, Expert Candidate/version changes, protocol compatibility, upgrade and rollback conformance",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E11",
+      "scenario": "A new third-party Host Adapter qualifies against common Expert and Runtime protocols with zero Engine source modification.",
+      "hosts": [
+        "independent-conformant-agent-host",
+        "direct-cli-api"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC16",
+        "FUNC17",
+        "CAP07",
+        "CAP08",
+        "CAP10",
+        "DOC08"
+      ],
+      "requiredEvidence": "generated adapter, Core digest, conformance report, Host capability binding, and Engine source diff",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E12",
+      "scenario": "Evolution Expert is absent and then deliberately incompatible while headless CLI, API, and CI complete the same governed Runtime journey.",
+      "hosts": [
+        "direct-cli-api",
+        "CI"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC12",
+        "FUNC19",
+        "CAP07",
+        "CAP14",
+        "DOC02",
+        "DOC08"
+      ],
+      "requiredEvidence": "missing/incompatible diagnostics plus complete headless results with equivalent authoritative object digests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E13",
+      "scenario": "A published Harness-guided Goal Target Loop composes an immutable Bundle with an open Lifecycle and revalidates before every iteration through completion.",
+      "hosts": [
+        "Codex",
+        "WorkBuddy",
+        "direct-cli-api"
+      ],
+      "coversAcceptanceIds": [
+        "FUNC03",
+        "FUNC04",
+        "FUNC05",
+        "FUNC06",
+        "FUNC07",
+        "FUNC08",
+        "FUNC09",
+        "FUNC10",
+        "FUNC11",
+        "CAP02",
+        "CAP03",
+        "CAP04",
+        "DOC04",
+        "DOC05",
+        "DOC06",
+        "TRACE02"
+      ],
+      "requiredEvidence": "match and abstention portfolio, complete HarnessExecutionBinding, composition report, per-iteration drift checks, replay, and cross-client equivalence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "noRegressionRequired": true,
+  "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
+  "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
+  "noRegression": {
+    "status": "PENDING",
+    "evidenceRefs": []
+  },
+  "approvals": {
+    "target": {
+      "decision": "APPROVED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v5.0.1-harness-guided-completion-recovery-target-revision-1",
+      "authorizationDigest": "sha256:8e5d454136f6a02f8fc3d3a4e4c65371ccf8fe48fd5fa67a2108764c9c42d67b"
+    },
+    "release": {
+      "decision": "PENDING",
+      "by": null,
+      "evidenceRef": null,
+      "authorizationDigest": null
+    }
+  },
+  "release": {
+    "product": "evopilot-runtime",
+    "actions": [
+      "commit",
+      "push",
+      "tag",
+      "github-release",
+      "npm",
+      "ghcr",
+      "installer"
+    ],
+    "versions": {
+      "evopilot": "5.0.1"
+    }
+  },
+  "revisionReason": "Create the immutable Runtime 5.0.1 completion successor required by the approved completion-recovery Roadmap; re-open every original criterion for fresh proof and add TRACE01-TRACE06 without changing the accepted Harness producer/consumer boundary.",
+  "supersedesTargetDigest": "sha256:1960d6de16168f9b99d24f762aae1724576429fb894c630fd0d2959a227be7e5"
+}

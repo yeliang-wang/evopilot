@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/GA%20Release-v4.0.0-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/latest%20public-v5.0.0-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -14,16 +14,18 @@ EvoPilot helps teams operate AI-agent products as releasable software. It collec
 
 It is not an agent runtime, prompt playground, generic code generator, or Harness Asset lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot reads a configured Harness Registry and the published Catalog directories it points to, then uses an open product-delivery Lifecycle Harness to execute project goals against the selected immutable HarnessBundle.
 
-## v5 Development Line
+## v5 Completion-Recovery Line
 
-The repository is implementing EvoPilot **v5.0.0 Harness-Guided Governed Evolution Runtime**; v4.0.0 remains the latest public release. v5 keeps `Goal -> Loop -> Target` as the product core and makes its binding explicit:
+The repository is implementing EvoPilot **v5.0.1 Harness-Guided Completion Recovery**; v5.0.0 is the latest public release. v5.0.1 closes the original v5.0.0 design criterion by criterion instead of treating the already-published v5.0.0 artifacts as proof of completeness. The product core remains `Goal -> Loop -> Target` and its binding is executable:
 
 ```text
 Project Definition + GoalTarget -> published HarnessProfile -> immutable HarnessBundle
                                       + open Lifecycle -> governed Goal Target Loop
 ```
 
-DataRig, EvoPilot, evopilot-harness, and future projects use the same declarative Project Definition aggregate. There are no project-name branches. Harness obligations cannot be weakened by Lifecycle configuration, and the exact binding is revalidated at start, resume, retry, and every Loop iteration.
+DataRig, EvoPilot, evopilot-harness, and future projects use the same declarative Project Definition aggregate and project-owned resources. There are no project-name branches. Harness obligations cannot be weakened by Lifecycle configuration, and the exact binding is revalidated at start, resume, retry, and every Loop iteration.
+
+Completion is a machine-enforced contract: all 195 current, inherited, and terminal criteria must have criterion-specific evidence for one exact Runtime/Expert Candidate pair; failed, pending, stale, warning, generic, or unmapped counts must all be zero. A human statement cannot replace required machine evidence. See [Completion Assurance](docs/operations/completion-assurance.md).
 
 The optional [EvoPilot Evolution Expert](docs/guides/evolution-expert.md) is independently versioned and provides one generated conversational adapter for Codex, WorkBuddy, generic Agents, and generic MCP Hosts. It guides and explains; Runtime remains authoritative and fully operable through MCP, CLI, HTTP API, and CI without the Expert.
 
@@ -33,8 +35,8 @@ The existing EvoPilot and DataRig Codex Suites remain active and independently e
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified release package | `npm install -g @evopilot/cli@4.0.0` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified public package | `npm install -g @evopilot/cli@5.0.0` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v5.0.0/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet. The supported public entry points are the six exact-version npm packages, GitHub Release tarballs, the self-host installer, Helm, and GHCR images.
@@ -45,7 +47,7 @@ Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet
 | --- | --- |
 | Govern product evolution | Human-readable Lifecycle planning, risk-based authority gates, automatic deterministic stages, evidence closure, and final release decisions; the v3 Alpha/Beta/RC/GA ladder remains available through compatibility data. |
 | Run auditable loops | Durable loop state, executor graphs, checkpoints, replay, worker leases, watchdog recovery, and timeline audit. |
-| Onboard any project declaratively | Immutable human-readable Project Definitions, schema-driven questions, versioned adjustment, and no project-specific Runtime branches. |
+| Onboard any project declaratively | Discovery, immutable human-readable Project Definitions and resources, schema-driven questions, semantic impact, versioned activation/rollback, and no project-specific Runtime branches. |
 | Recover and learn safely | Bounded automatic repair/retry/resume plus an Automation Registry where one reviewed proposal can automate future equivalent safe failures. |
 | Consume published Harnesses | Dynamically reads configured `evopilot-harness` Registry/Catalog roots, matches published v3 Profiles, binds immutable Bundles, and stores the complete Profile/Component/Bundle digest closure in goal plans. |
 | Control source and delivery | Bounded code-upgrader execution, allowed paths, validation commands, source closure, CI/CD delivery, and deploy evidence. |
@@ -102,7 +104,7 @@ evopilot target plan approve <goal-id> --confirmed-by "<project-owner>" --confir
 evopilot target run --project <project-id> --objective "<business objective>" --llm-profile <llm-profile-id> --json
 ```
 
-`evopilot harness ...` commands are intentionally absent in v3. Use `evopilot-harness` for Harness lifecycle and evolution.
+`evopilot harness ...` authoring and publication commands are intentionally absent from EvoPilot Runtime. Use `evopilot-harness` for the independent Harness asset lifecycle; EvoPilot only discovers, matches, binds, and consumes published assets.
 
 Start with [AGENTS.md](AGENTS.md), then use [docs/cli/AGENTS.md](docs/cli/AGENTS.md), [CLI Quickstart](docs/cli/quickstart.md), [CLI Automation](docs/cli/automation.md), and the [AI Agent Runbook](docs/guides/ai-agent-runbook.md).
 
@@ -131,14 +133,15 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-The latest published GitHub release is **v4.0.0 GA**, the Open Lifecycle Harness release. Its GitHub Release assets, six npm packages, and GHCR image were promoted from the same accepted Candidate bytes and verified through their public distribution channels.
+The latest published GitHub release is **v5.0.0**. It is a historical published artifact, but publication and its prior aggregate acceptance do not prove every item in the original v5 scheme complete. The v5.0.1 completion-recovery line supplies that stricter criterion-specific closure.
 
 The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a standalone v3.2 release. v4.0 keeps EvoPilot's strict read-only Harness-asset boundary while adding open YAML Lifecycle execution for project goals.
 
 Release evidence:
 
-- Latest published release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
-- Previous release notes: [docs/releases/3.1.0.md](docs/releases/3.1.0.md)
+- Latest published release notes: [docs/releases/5.0.0.md](docs/releases/5.0.0.md)
+- Completion-recovery plan: [docs/releases/5.0.1.md](docs/releases/5.0.1.md)
+- Previous release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
 - Open-source readiness: [docs/reference/open-source-readiness.md](docs/reference/open-source-readiness.md)
@@ -168,7 +171,7 @@ Published Harness Catalog directory with CATALOG.md
 EvoPilot runtime reads registry and catalog at use time
               |
               v
-selectedHarness -> LifecycleBinding -> GlobalGoal -> GoalTarget -> LoopRun -> Release Decision
+selectedHarness -> HarnessExecutionBinding + Lifecycle -> GlobalGoal -> GoalTarget -> LoopRun -> Release Decision
                                       |
                                       v
                          Sandbox -> Context -> Harness -> Loop

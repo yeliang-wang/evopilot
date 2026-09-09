@@ -17,6 +17,15 @@ export const LEGACY_SUITE_ISOLATION_PROOF_SCHEMA = "evopilot-legacy-suite-isolat
 export type ProjectSourceProvider = "github" | "gitlab" | "local-git";
 export type ProjectDeliveryModel = "open-source" | "enterprise-internal" | "private-service" | "library" | "documentation";
 
+export interface EvolutionProjectResource {
+  apiVersion: string;
+  kind: "Source" | "Ecosystem" | "Delivery" | "Policy" | "SecretReference" | "Environment" | "AgentHost" | "ExecutionRuntime" | "EvidenceDiscovery" | string;
+  metadata: { id: string; version: string };
+  spec: Record<string, unknown>;
+  capabilityRefs?: string[];
+  digest?: string;
+}
+
 export interface EvolutionProjectDefinition {
   schema: typeof EVOLUTION_PROJECT_DEFINITION_SCHEMA;
   metadata: {
@@ -56,7 +65,40 @@ export interface EvolutionProjectDefinition {
     hostPreferences: string[];
     runtimePreferences: string[];
     evidenceSources: string[];
+    resources?: EvolutionProjectResource[];
   };
+  digest: string;
+}
+
+export interface EvolutionProjectQuestion {
+  id: string;
+  path: string;
+  type: "string" | "enum" | "string-array" | "secret-ref";
+  prompt: string;
+  required: boolean;
+  detectedValue?: unknown;
+  defaultValue?: unknown;
+  options?: string[];
+  authority: "NONE";
+}
+
+export interface EvolutionProjectDiscovery {
+  schema: "evopilot-evolution-project-discovery/v1";
+  detected: Record<string, unknown>;
+  questions: EvolutionProjectQuestion[];
+  secretHandling: "REFERENCE_ONLY";
+  digest: string;
+}
+
+export interface EvolutionProjectImpact {
+  schema: "evopilot-evolution-project-impact/v1";
+  projectId: string;
+  fromVersion: string;
+  toVersion: string;
+  changes: Array<{ path: string; before: unknown; after: unknown; impact: "NONE" | "SELECTIVE_REVALIDATION" | "ACTIVE_RUNS_IMMUTABLE" }>;
+  affectedBindings: string[];
+  compatibility: "COMPATIBLE" | "REQUIRES_REVALIDATION";
+  rollbackVersion: string;
   digest: string;
 }
 
@@ -78,6 +120,7 @@ export interface PublishedHarnessCandidate {
     digest: string;
     catalogId: string;
     catalogDigest: string;
+    registryDigest: string;
     domains: string[];
     taskClasses: string[];
     positiveConcepts: string[];
@@ -174,6 +217,7 @@ export interface HarnessExecutionBinding {
   goalTargetDigest: string;
   catalogId: string;
   catalogDigest: string;
+  registryDigest: string;
   profileRef: { id: string; version: string; digest: string };
   bundleRef: { id: string; version: string; digest: string; componentDigests: string[] };
   lifecycleRef: { id: string; version: string; digest: string };
@@ -192,6 +236,7 @@ export interface HarnessExecutionBinding {
 export interface HarnessExecutionCurrentState {
   projectDefinitionDigest: string;
   goalTargetDigest: string;
+  registryDigest: string;
   catalogDigests: Record<string, string>;
   profiles: Array<{ id: string; version: string; digest: string }>;
   bundles: Array<{ id: string; version: string; digest: string; componentDigests: string[] }>;
@@ -231,6 +276,8 @@ export interface RecoveryDecision {
   reason: string;
   remainingBudget: number;
   bindingDigest: string;
+  ruleRef?: { id: string; revision: number; digest: string };
+  proposalRef?: { id: string; digest: string };
   digest: string;
 }
 
@@ -251,7 +298,7 @@ export interface AutomationRuleProposal {
 export interface AutomationRule extends Omit<AutomationRuleProposal, "schema" | "digest"> {
   schema: typeof AUTOMATION_RULE_SCHEMA;
   proposalDigest: string;
-  status: "ACTIVE" | "REVOKED" | "EXPIRED";
+  status: "ACTIVE" | "SUSPENDED" | "REVOKED" | "EXPIRED";
   approvedBy: string;
   approvalEvidenceRef: string;
   approvedAt: string;
@@ -349,6 +396,9 @@ export function normalizeEvolutionProjectDefinition(value: Omit<EvolutionProject
   for (const secretRef of value.spec.secretRefs) {
     if (!/^(?:secret|env|vault):\/\/[A-Za-z0-9._/-]+$/.test(secretRef)) throw new Error("PROJECT_SECRET_REF_INVALID");
   }
+  const resources = (value.spec.resources ?? []).map((resource) => normalizeProjectResource(resource));
+  const resourceKeys = resources.map((resource) => `${resource.kind}:${resource.metadata.id}@${resource.metadata.version}`);
+  if (new Set(resourceKeys).size !== resourceKeys.length) throw new Error("PROJECT_RESOURCE_DUPLICATE_ID_VERSION");
   rejectRawSecrets(value);
   const material = {
     schema: value.schema,
@@ -369,12 +419,52 @@ export function normalizeEvolutionProjectDefinition(value: Omit<EvolutionProject
       secretRefs: unique(value.spec.secretRefs),
       hostPreferences: unique(value.spec.hostPreferences),
       runtimePreferences: unique(value.spec.runtimePreferences),
-      evidenceSources: unique(value.spec.evidenceSources)
+      evidenceSources: unique(value.spec.evidenceSources),
+      ...(resources.length ? { resources } : {})
     }
   };
   const digest = canonicalDigest(material);
   if (value.digest && value.digest !== digest) throw new Error("EVOLUTION_PROJECT_DIGEST_MISMATCH");
   return { ...material, digest };
+}
+
+export function discoverEvolutionProject(input: Record<string, unknown>): EvolutionProjectDiscovery {
+  rejectRawSecrets(input, "discovery");
+  const detected = Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined));
+  const questions: EvolutionProjectQuestion[] = [
+    question("project-id", "metadata.id", "string", "What stable id should identify this project?", detected.projectId),
+    question("project-name", "metadata.name", "string", "What human-readable name should be shown?", detected.projectName),
+    question("source-provider", "spec.source.provider", "enum", "Where is the source repository hosted?", detected.sourceProvider, undefined, ["github", "gitlab", "local-git"]),
+    question("source-repository", "spec.source.repository", "string", "Which repository should EvoPilot bind?", detected.repository),
+    question("default-branch", "spec.source.defaultBranch", "string", "Which default branch is authoritative?", detected.defaultBranch, "main"),
+    question("delivery-model", "spec.delivery.model", "enum", "How is this project delivered?", detected.deliveryModel, undefined, ["open-source", "enterprise-internal", "private-service", "library", "documentation"]),
+    question("lifecycle-refs", "spec.lifecycleRefs", "string-array", "Which open Lifecycle declarations should be considered?", detected.lifecycleRefs),
+    question("secret-refs", "spec.secretRefs", "secret-ref", "Which SecretRef identifiers are required? Never enter secret values.", detected.secretRefs)
+  ].filter((item) => item.detectedValue === undefined);
+  return withDigest({ schema: "evopilot-evolution-project-discovery/v1" as const, detected, questions, secretHandling: "REFERENCE_ONLY" as const });
+}
+
+export function compareEvolutionProjectDefinitions(from: EvolutionProjectDefinition, to: EvolutionProjectDefinition, affectedBindings: string[] = []): EvolutionProjectImpact {
+  if (from.metadata.id !== to.metadata.id) throw new Error("PROJECT_IMPACT_ID_MISMATCH");
+  const paths = [
+    "metadata.labels", "spec.source", "spec.ecosystem", "spec.delivery", "spec.environment", "spec.policyRefs", "spec.lifecycleRefs", "spec.secretRefs", "spec.hostPreferences", "spec.runtimePreferences", "spec.evidenceSources", "spec.resources"
+  ];
+  const changes = paths.flatMap((path) => {
+    const before = readPath(from, path);
+    const after = readPath(to, path);
+    if (stableJson(before) === stableJson(after)) return [];
+    return [{ path, before, after, impact: path === "metadata.labels" ? "SELECTIVE_REVALIDATION" as const : "ACTIVE_RUNS_IMMUTABLE" as const }];
+  });
+  return withDigest({
+    schema: "evopilot-evolution-project-impact/v1" as const,
+    projectId: from.metadata.id,
+    fromVersion: from.metadata.version,
+    toVersion: to.metadata.version,
+    changes,
+    affectedBindings: unique(affectedBindings),
+    compatibility: changes.length ? "REQUIRES_REVALIDATION" as const : "COMPATIBLE" as const,
+    rollbackVersion: from.metadata.version
+  });
 }
 
 export function resolvePublishedHarness(input: {
@@ -464,6 +554,7 @@ export function createHarnessExecutionBinding(input: HarnessExecutionBindingInpu
     goalTargetDigest: canonicalDigest(input.goalTarget),
     catalogId: profile.catalogId,
     catalogDigest: profile.catalogDigest,
+    registryDigest: profile.registryDigest,
     profileRef: { id: profile.id, version: profile.version, digest: profile.digest },
     bundleRef: { id: bundle.id, version: bundle.version, digest: bundle.digest, componentDigests: unique(bundle.componentDigests) },
     lifecycleRef: input.composition.lifecycleRef,
@@ -484,6 +575,7 @@ export function revalidateHarnessExecutionBinding(binding: HarnessExecutionBindi
   const drift: string[] = [];
   compare("projectDefinitionDigest", binding.projectDefinitionDigest, current.projectDefinitionDigest, drift);
   compare("goalTargetDigest", binding.goalTargetDigest, current.goalTargetDigest, drift);
+  compare("registryDigest", binding.registryDigest, current.registryDigest, drift);
   compare("catalogDigest", binding.catalogDigest, current.catalogDigests[binding.catalogId], drift);
   const profile = current.profiles.find((item) => item.id === binding.profileRef.id && item.version === binding.profileRef.version);
   compare("profileDigest", binding.profileRef.digest, profile?.digest, drift);
@@ -503,6 +595,7 @@ export function revalidateHarnessExecutionBinding(binding: HarnessExecutionBindi
 
 export function decideRecovery(context: RecoveryContext): RecoveryDecision {
   assertDigest(context.bindingDigest, "bindingDigest");
+  if (context.mutationReceipt) assertDigest(context.mutationReceipt, "mutationReceipt");
   const remainingBudget = Math.max(0, context.maxAttempts - context.attempt);
   let action: RecoveryDecision["action"] = "FAIL";
   let humanRequired = false;
@@ -732,6 +825,33 @@ function rejectRawSecrets(value: unknown, path = "project"): void {
     if (SECRET_KEY.test(key) && key !== "credentialRef" && key !== "secretRefs") throw new Error(`PROJECT_RAW_SECRET_FIELD_FORBIDDEN: ${path}.${key}`);
     rejectRawSecrets(child, `${path}.${key}`);
   }
+}
+
+function normalizeProjectResource(value: EvolutionProjectResource): EvolutionProjectResource {
+  requireText(value.apiVersion, "resource.apiVersion");
+  requireText(value.kind, "resource.kind");
+  requireText(value.metadata?.id, "resource.metadata.id");
+  requireText(value.metadata?.version, "resource.metadata.version");
+  if (!value.spec || typeof value.spec !== "object" || Array.isArray(value.spec)) throw new Error("PROJECT_RESOURCE_SPEC_INVALID");
+  rejectRawSecrets(value.spec, `resource.${value.kind}.${value.metadata.id}`);
+  const material = {
+    apiVersion: value.apiVersion,
+    kind: value.kind,
+    metadata: { id: value.metadata.id, version: value.metadata.version },
+    spec: value.spec,
+    ...(value.capabilityRefs?.length ? { capabilityRefs: unique(value.capabilityRefs) } : {})
+  };
+  const digest = canonicalDigest(material);
+  if (value.digest && value.digest !== digest) throw new Error(`PROJECT_RESOURCE_DIGEST_MISMATCH: ${value.kind}/${value.metadata.id}`);
+  return { ...material, digest };
+}
+
+function question(id: string, path: string, type: EvolutionProjectQuestion["type"], prompt: string, detectedValue?: unknown, defaultValue?: unknown, options?: string[]): EvolutionProjectQuestion {
+  return { id, path, type, prompt, required: true, ...(detectedValue !== undefined ? { detectedValue } : {}), ...(defaultValue !== undefined ? { defaultValue } : {}), ...(options ? { options } : {}), authority: "NONE" };
+}
+
+function readPath(value: unknown, path: string): unknown {
+  return path.split(".").reduce<unknown>((current, key) => current && typeof current === "object" ? (current as Record<string, unknown>)[key] : undefined, value);
 }
 
 function compare(field: string, expected: string, actual: string | undefined, drift: string[]): void {

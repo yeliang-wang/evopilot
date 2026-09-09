@@ -22,9 +22,11 @@ the independently distributed Evolution Expert. External evidence, LLMs, Agent
 Hosts, and Agent Runtimes never approve a Roadmap change, Evolution Target,
 Acceptance, Harness publication, or Release.
 
-The published EvoPilot baseline is `v4.0.0`. The current Runtime working version
-is `v5.0.0`. The first independently versioned Evolution Expert working version
-is `v1.0.0`. Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset,
+The public EvoPilot Runtime `v5.0.0` and Evolution Expert `v1.0.0` artifacts are
+immutable published predecessors. Their historical acceptance records remain
+process evidence, but the completion audit found that they do not prove the
+entire approved v5 scheme. The current completion-recovery working versions are
+Runtime `v5.0.1` and Evolution Expert `v1.0.1`. Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset,
 Ontology, Policy, Evaluation, and Catalog versions evolve independently.
 
 ## Product Direction
@@ -325,6 +327,9 @@ acceptance into:
   CLI/API/MCP/schema references, migration, tutorials, Expert lifecycle, Adapter
   development, and the Harness-guided Goal Target Loop guide.
 - `E2E01`–`E2E13`: exact real journeys listed below.
+- `TRACE01`–`TRACE06`: original-scheme inventory, complete mapping, independent
+  validators, terminal E2E contracts, fail-closed aggregation, and the final
+  100-percent completion report.
 
 Every criterion maps to deterministic evidence and at least one real journey or
 declared machine variant. Equivalent variants are generated and aggregated
@@ -333,6 +338,26 @@ source-checkout runs, unit tests, prose claims, and partial aggregates cannot
 substitute for their required evidence class. Release readiness requires 100%
 PASS, complete inherited acceptance, complete impact closure, and
 `NO_REGRESSION`.
+
+### Original-Scheme Completion Assurance
+
+Runtime `5.0.1` and Evolution Expert `1.0.1` are completion successors, not a
+license to reinterpret or shorten the approved v5 design. Their Targets must
+bind one digest-addressed inventory containing every accepted v5 Roadmap clause,
+both original Targets, every explicit user correction, and every audited gap.
+Each item must trace to successor scope and acceptance, an implementation
+deliverable, an independent executable validator, concrete evidence, and a
+terminal E2E journey when the behavior is user-observable.
+
+`TRACE01`–`TRACE06` enforce inventory binding, complete mapping, independent
+validation, terminal-state E2E coverage, fail-closed aggregation, and the final
+100-percent completion report. Silent exclusions, bulk PASS projection,
+warning-as-pass, generic aggregate evidence, and substitution of a human
+declaration for required machine evidence are forbidden. Completion is valid
+only when `total == passed`, every failed, pending, stale, generic, and unmapped
+count is zero, the exact installed Runtime/Expert Candidate pair is verified,
+and `NO_REGRESSION` passes. Anything less remains `INCOMPLETE` and returns the
+exact affected scope to implementation or evidence collection.
 
 ### Required End-To-End Journeys
 
@@ -391,7 +416,7 @@ EvoPilot Runtime
   + declarative project and Lifecycle resources
 ```
 
-Before v5 release, comparison is read-only and binds late exact snapshots of
+Before the completion successors release, comparison is read-only and binds late exact snapshots of
 each Suite: source identity, version, tree digest, Skill/rule inventory,
 capture time, and corpus digest. Snapshot drift makes only the affected parity
 evidence stale and triggers a fresh snapshot plus selective rerun. Counted v5
@@ -400,14 +425,16 @@ must record `legacySuiteInvocationCount=0` with no hidden fallback. This proves
 that the Suites are technically unnecessary; it does not disable, move, delete,
 uninstall, archive, or constrain either real installed Suite.
 
-Actual default switching, archival, and retirement are post-release operations.
-They may begin only after v5 is publicly released, its exact accepted bytes are
-verified through installation, required project resources are migrated, current
-Suite comparisons are complete, and an observation period succeeds with a
-recoverable rollback path. The work requires a separate Cutover Target and a
-separate explicit human authorization. Any break-glass rollback is separately
-authorized, audited, and never an automatic fallback. This post-release Cutover
-is not a v5 release blocker.
+Actual default switching, archival, and retirement are post-completion-successor
+operations. They may begin only after Runtime `5.0.1` and Evolution Expert
+`1.0.1` prove the complete original scheme, are publicly released, and their
+exact accepted bytes are verified through fresh installation; required project
+resources must also be migrated, current Suite comparisons complete, and an
+observation period successful with a recoverable rollback path. The work
+requires a separate Cutover Target and a separate explicit human authorization.
+Any break-glass rollback is separately authorized, audited, and never an
+automatic fallback. This Cutover is not a release blocker for either completion
+successor.
 
 ## Candidate, Acceptance, And Release Topology
 
@@ -460,39 +487,47 @@ feedback-package foundations while retaining Harness-guided execution. All v4
 product, API, CLI, evidence, authority, tenancy, security, migration,
 distribution, acceptance, and public-release guarantees are inherited by v5.
 
-### v5.0.0: Harness-Guided Governed Evolution Runtime
+### v5.0.1: Harness-Guided Governed Evolution Runtime Completion Recovery
 
 Status: `IN_PROGRESS`
 
-v5 delivers the DDD project model, first-class published Harness consumption
+The immutable public `v5.0.0` predecessor does not by itself prove completion.
+`v5.0.1` must deliver and independently prove the DDD project model,
+first-class published Harness consumption
 and combined execution binding, open project-neutral Lifecycle composition,
 bounded recovery and automation learning, stable Human Interaction Protocol,
 official Codex support, multi-Host and Runtime conformance, four reference
 projects, independent Expert integration, isolated legacy Suite independence
 proof, post-release Cutover readiness, and the full
-`FUNC01`–`FUNC21`, `CAP01`–`CAP16`, `DOC01`–`DOC13`, and `E2E01`–`E2E13`
-portfolio.
+`FUNC01`–`FUNC21`, `CAP01`–`CAP16`, `DOC01`–`DOC13`, `E2E01`–`E2E13`, and
+`TRACE01`–`TRACE06` portfolio with 100-percent original-scheme traceability and
+`NO_REGRESSION`.
 
-### Evolution Expert v1.0.0
+### Evolution Expert v1.0.1 Completion Recovery
 
 Status: `IN_PROGRESS`, independent companion product
 
-The first Expert release delivers one Agent-neutral Core, Codex and WorkBuddy
+The immutable public `v1.0.0` predecessor remains historical process evidence.
+`v1.0.1` must independently prove one Agent-neutral Core, Codex and WorkBuddy
 Adapters, generic Host and MCP guidance, schema-driven onboarding and project
 adjustment, Harness and Lifecycle explanation, installed-version help,
 side-effect-free tutorials, Runtime-owned resume, independent upgrade and
-rollback, and a third-party Host Adapter conformance kit.
+rollback, and a third-party Host Adapter conformance kit. It is complete only
+with the same `TRACE01`–`TRACE06`, exact-pair, 100-percent coverage, and
+`NO_REGRESSION` discipline.
 
-### Post-v5.0.0: Legacy Suite Cutover
+### Post-completion successors: Legacy Suite Cutover
 
 Status: `PLANNED`, not a v5 release blocker
 
-After v5 public release and verified installation, a separately approved
-Cutover Target may switch explicitly approved projects and Hosts to v5 as the
-default, verify zero legacy invocation on real paths, create digest-inventoried
-recoverable archives, rehearse separately authorized rollback, and close after
-an observation period. Until then, EvoPilot and DataRig Codex Suites remain
-installed, active, independently owned, and free to evolve.
+Only after Runtime `5.0.1` and Expert `1.0.1` have passed the complete original
+scheme, been publicly released, and passed fresh installation verification may
+a separately approved Cutover Target switch explicitly approved projects and
+Hosts to v5 as the default, verify zero legacy invocation on real paths, create
+digest-inventoried recoverable archives, rehearse separately authorized
+rollback, and close after an observation period. Until then, EvoPilot and
+DataRig Codex Suites remain installed, active, independently owned, and free to
+evolve.
 
 ### v5.1.0: Controlled Experiment Loop
 

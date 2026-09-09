@@ -2,7 +2,7 @@
 
 This migration guide is for maintainers preparing EvoPilot v5 while the existing EvoPilot Codex Suite and DataRig Codex Suite continue to serve their projects. It describes preparation and evidence collection only. It does not authorize or perform Suite disablement, movement, archival, uninstall, default switching, or retirement.
 
-Supported line: EvoPilot Runtime `5.0.0` development and Candidate validation. Actual Cutover begins only after the public v5 release and exact installation verification.
+Supported line: EvoPilot Runtime `5.0.1` completion recovery and later Candidate validation. Actual Cutover begins only after public Runtime 5.0.1 plus Expert 1.0.1 release and exact installation verification.
 
 ## Goal and success signal
 

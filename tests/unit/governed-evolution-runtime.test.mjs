@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   activateAutomationRule, assertNoLegacySuiteFallback, automationRuleApplies, canonicalDigest,
-  compareLegacySuiteSnapshots, composeHarnessAndLifecycle, createHarnessExecutionBinding, createLegacySuiteIsolationProof, decideRecovery,
+  compareEvolutionProjectDefinitions, compareLegacySuiteSnapshots, composeHarnessAndLifecycle, createHarnessExecutionBinding, createLegacySuiteIsolationProof, decideRecovery, discoverEvolutionProject,
   normalizeAgentHostProfile, normalizeEvolutionProjectDefinition, normalizeExecutionRuntimeProfile, normalizeLegacySuiteSnapshot,
   proposeAutomationRule, resolvePublishedHarness, revalidateHarnessExecutionBinding
 } from "../../packages/core/dist/index.js";
@@ -27,7 +27,7 @@ function project() {
 function candidate(id = "oss", priority = 1) {
   const profileDigest = d({ profile: id });
   return {
-    profile: { id, version: "1.0.0", digest: profileDigest, catalogId: "public", catalogDigest: d("catalog"), domains: ["software"], taskClasses: ["release"], positiveConcepts: ["npm"], negativeConcepts: [] },
+    profile: { id, version: "1.0.0", digest: profileDigest, catalogId: "public", catalogDigest: d("catalog"), registryDigest: d("registry"), domains: ["software"], taskClasses: ["release"], positiveConcepts: ["npm"], negativeConcepts: [] },
     bundle: { id: `${id}-bundle`, version: "1.0.0", digest: d({ bundle: id }), profileDigest, componentDigests: [d("component")], requiredEvidence: ["tests"], validators: ["integrity"], constraints: ["no-rebuild"], capabilities: ["build"], permissions: ["build.run"] },
     published: true, eligible: true, priority
   };
@@ -41,6 +41,29 @@ test("Project plus GoalTarget resolves exactly one published immutable HarnessBu
   assert.equal(matched.selected.bundle.id, "oss-bundle");
   assert.equal(resolvePublishedHarness({ project: project(), goalTarget: goal, candidates: [] }).status, "ABSTAINED");
   assert.equal(resolvePublishedHarness({ project: project(), goalTarget: goal, candidates: [candidate("a"), candidate("b")] }).status, "AMBIGUOUS");
+});
+
+test("Project discovery is question-driven and DDD resources are immutable and diffable", () => {
+  const discovery = discoverEvolutionProject({ projectId: "sample", repository: "org/sample", sourceProvider: "github" });
+  assert.equal(discovery.secretHandling, "REFERENCE_ONLY");
+  assert.ok(discovery.questions.every((question) => question.authority === "NONE"));
+  assert.ok(discovery.questions.some((question) => question.path === "spec.secretRefs"));
+  assert.throws(() => discoverEvolutionProject({ apiToken: "raw-secret" }), /RAW_SECRET_FIELD_FORBIDDEN/);
+  const before = project();
+  const after = normalizeEvolutionProjectDefinition({
+    ...before,
+    metadata: { ...before.metadata, version: "1.1.0" },
+    spec: {
+      ...before.spec,
+      resources: [{ apiVersion: "evopilot.dev/v1", kind: "EvidenceDiscovery", metadata: { id: "ci", version: "1" }, spec: { provider: "github-actions" }, capabilityRefs: ["evidence.read"] }]
+    },
+    digest: undefined
+  });
+  assert.match(after.spec.resources[0].digest, /^sha256:/);
+  const impact = compareEvolutionProjectDefinitions(before, after, [d("binding")]);
+  assert.equal(impact.compatibility, "REQUIRES_REVALIDATION");
+  assert.equal(impact.rollbackVersion, "1.0.0");
+  assert.ok(impact.changes.some((change) => change.path === "spec.resources"));
 });
 
 test("Lifecycle composition can strengthen but never weaken Harness obligations", () => {
@@ -61,8 +84,9 @@ test("binding revalidates only its exact immutable closure at every Loop boundar
   const binding = createHarnessExecutionBinding({ projectDefinition: p, goalTarget: goal, match, composition, policyDigest: fixed, providerDigest: fixed, environmentDigest: fixed, hostDigest: fixed, runtimeDigest: fixed, authorityDigest: fixed, evidenceDigest: fixed });
   assert.throws(() => createHarnessExecutionBinding({ projectDefinition: p, goalTarget: { ...goal, projectId: "other" }, match, composition, policyDigest: fixed, providerDigest: fixed, environmentDigest: fixed, hostDigest: fixed, runtimeDigest: fixed, authorityDigest: fixed, evidenceDigest: fixed }), /PROJECT_GOAL_TARGET_MISMATCH/);
   assert.deepEqual(binding.revalidateAt, ["start", "resume", "retry", "loop-iteration"]);
-  const current = { projectDefinitionDigest: p.digest, goalTargetDigest: d(goal), catalogDigests: { public: d("catalog"), unrelated: d("new-catalog") }, profiles: [{ id: match.selected.profile.id, version: "1.0.0", digest: match.selected.profile.digest }], bundles: [{ id: match.selected.bundle.id, version: "1.0.0", digest: match.selected.bundle.digest, componentDigests: match.selected.bundle.componentDigests }], lifecycleDigest: d("lifecycle"), compositionDigest: composition.digest, policyDigest: fixed, providerDigest: fixed, environmentDigest: fixed, hostDigest: fixed, runtimeDigest: fixed, authorityDigest: fixed, evidenceDigest: fixed };
+  const current = { projectDefinitionDigest: p.digest, goalTargetDigest: d(goal), registryDigest: d("registry"), catalogDigests: { public: d("catalog"), unrelated: d("new-catalog") }, profiles: [{ id: match.selected.profile.id, version: "1.0.0", digest: match.selected.profile.digest }], bundles: [{ id: match.selected.bundle.id, version: "1.0.0", digest: match.selected.bundle.digest, componentDigests: match.selected.bundle.componentDigests }], lifecycleDigest: d("lifecycle"), compositionDigest: composition.digest, policyDigest: fixed, providerDigest: fixed, environmentDigest: fixed, hostDigest: fixed, runtimeDigest: fixed, authorityDigest: fixed, evidenceDigest: fixed };
   assert.equal(revalidateHarnessExecutionBinding(binding, current).status, "VALID");
+  assert.equal(revalidateHarnessExecutionBinding(binding, { ...current, registryDigest: d("changed-registry") }).status, "DRIFTED");
   assert.equal(revalidateHarnessExecutionBinding(binding, { ...current, policyDigest: d("changed") }).status, "DRIFTED");
 });
 
