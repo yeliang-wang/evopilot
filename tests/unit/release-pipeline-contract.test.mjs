@@ -2,7 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 
-import { validateEvolutionExpertCandidate, validateReleasePipeline, verifyReleasePipeline } from "../../scripts/verify-release-pipeline.mjs";
+import {
+  validateEvolutionExpertCandidate,
+  validateEvolutionExpertRelease,
+  validateReleasePipeline,
+  verifyReleasePipeline
+} from "../../scripts/verify-release-pipeline.mjs";
 import { run as runRegistryCommand } from "../../scripts/verify-npm-registry-publication.mjs";
 
 test("release pipeline forms one Candidate and promotes exact accepted bytes", () => {
@@ -12,6 +17,9 @@ test("release pipeline forms one Candidate and promotes exact accepted bytes", (
   assert.equal(result.invariants.acceptedBytesPromotedWithoutRebuild, true);
   assert.equal(result.invariants.productLifecycleBoundaryPreserved, true);
   assert.equal(result.invariants.expertCandidateIndependent, true);
+  assert.equal(result.invariants.expertAcceptedBytesPromotedWithoutRebuild, true);
+  assert.equal(result.invariants.expertIndependentReleaseAuthorityBound, true);
+  assert.equal(result.invariants.expertPublicPackageVerified, true);
   assert.equal(result.releaseUnits.evolutionExpert, "PASS");
 });
 
@@ -23,6 +31,20 @@ test("Evolution Expert Candidate pipeline binds its independent version and neve
   const unsafe = validateEvolutionExpertCandidate(`${workflow}\n      - run: npm publish\n`);
   assert.equal(unsafe.status, "FAIL");
   assert.ok(unsafe.failures.some((failure) => failure.includes("must not publish")));
+});
+
+test("Evolution Expert GA pipeline promotes accepted bytes through independent release and npm environments", () => {
+  const workflow = fs.readFileSync(".github/workflows/evolution-expert-release.yml", "utf8");
+  const result = validateEvolutionExpertRelease(workflow);
+  assert.equal(result.status, "PASS", JSON.stringify(result.failures));
+
+  const rebuilt = validateEvolutionExpertRelease(`${workflow}\n      - run: npm pack -w @evopilot/evolution-expert\n`);
+  assert.equal(rebuilt.status, "FAIL");
+  assert.ok(rebuilt.failures.some((failure) => failure.includes("must not rebuild")));
+
+  const clobbered = validateEvolutionExpertRelease(workflow.replace("gh release upload", "gh release upload --clobber"));
+  assert.equal(clobbered.status, "FAIL");
+  assert.ok(clobbered.failures.some((failure) => failure.includes("overwrite")));
 });
 
 test("release pipeline contract rejects a GA rebuild", () => {

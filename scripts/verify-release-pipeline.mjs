@@ -188,6 +188,76 @@ export function validateEvolutionExpertCandidate(candidate) {
   }
 }
 
+export function validateEvolutionExpertRelease(workflow) {
+  const failures = [];
+
+  requireMatch(/workflow_dispatch:/, "Expert promotion must require explicit dispatch");
+  requireMatch(/candidate_run_id:/, "Expert promotion must bind the Candidate run id");
+  requireMatch(/candidate_commit:/, "Expert promotion must bind the Candidate commit");
+  requireMatch(/candidate_handoff_sha256:/, "Expert promotion must bind the Candidate handoff digest");
+  requireMatch(/acceptance_digest:/, "Expert promotion must bind final acceptance evidence");
+  requireMatch(/release_authorization_digest:/, "Expert promotion must bind separate release authorization");
+  requireMatch(/environment:\s*release/, "Expert GitHub promotion must use the protected release environment");
+  requireMatch(/environment:\s*npm/, "Expert npm promotion must use the dedicated npm environment");
+  requireMatch(/ref:\s*\$\{\{ github\.sha \}\}/, "Expert promotion mechanics must come from the workflow commit");
+  requireMatch(/actions\/download-artifact@v4/, "Expert promotion must download the accepted Candidate artifacts");
+  requireMatch(/run-id:\s*\$\{\{ inputs\.candidate_run_id \}\}/, "Expert promotion must download from the exact Candidate run");
+  requireMatch(/project-candidate-handoff\.mjs verify/, "Expert promotion must verify the Candidate handoff");
+  requireMatch(/--release-unit evolution-expert/, "Expert promotion must bind the independent release unit");
+  requireMatch(/--required-kinds npm-package,sbom,provenance,checksums/, "Expert promotion must verify the complete Expert release set");
+  requireMatch(/verify-evolution-expert-release-artifacts\.mjs/, "Expert promotion must verify accepted Expert artifacts");
+  requireMatch(/REMOTE_TAG_COMMIT=.*git ls-remote/, "Expert promotion must verify the pre-existing exact tag");
+  requireMatch(/--verify-tag/, "Expert GitHub Release must use the pre-existing tag");
+  rejectMatch(/--target\s+"?\$CANDIDATE_COMMIT/, "Expert workflow must not create the tag implicitly");
+  requireMatch(/cmp --silent/, "Expert draft recovery must compare existing assets");
+  rejectMatch(/--clobber/, "Expert promotion must never overwrite Release assets");
+  requireMatch(/release-promotion-record\.mjs build/, "Expert promotion must create a Candidate and authorization binding record");
+  requireMatch(/release-promotion-record\.mjs verify/, "Expert npm promotion must verify the GitHub Release binding");
+  requireOrder('gh release create', 'gh release edit "$RELEASE_TAG" --draft=false', "Expert Release must remain a draft until accepted assets are verified");
+  requireOrder('gh release edit "$RELEASE_TAG" --draft=false', 'npm publish "$TARBALL"', "Expert npm publication must follow the public GitHub Release");
+  requireMatch(/npm publish "\$TARBALL" --access public --provenance/, "Expert npm publication must publish the accepted tarball with provenance");
+  requireMatch(/grep -q "E404"/, "Expert npm publication may run only after authoritative Registry absence");
+  requireMatch(/EXPECTED_INTEGRITY=/, "Expert npm promotion must calculate accepted-tarball integrity");
+  requireMatch(/test "\$ACTUAL_INTEGRITY" = "\$EXPECTED_INTEGRITY"/, "Expert npm promotion must reject existing package integrity drift");
+  requireMatch(/dist\.attestations\.url/, "Expert npm verification must require Registry provenance");
+  requireMatch(/npm audit signatures/, "Expert npm verification must audit Registry signatures");
+  requireMatch(/npm install --ignore-scripts --no-audit --no-fund --registry/, "Expert npm verification must use a fresh public install");
+  requireMatch(/evopilot-expert manifest/, "Expert npm verification must execute the installed public CLI");
+  requireMatch(/skill\/SKILL\.md/, "Expert npm verification must verify the portable Skill");
+  requireMatch(/generated\/codex\/adapter\.json/, "Expert npm verification must verify the Codex adapter");
+  requireMatch(/conformanceStatus.*CONFORMANT/, "Expert npm verification must prove Runtime compatibility");
+  for (const forbidden of [/npm ci/, /npm run build/, /npm pack/, /evolution-expert:release:artifact/, /docker\/build-push-action/]) {
+    rejectMatch(forbidden, `Expert promotion must not rebuild accepted bytes (${forbidden.source})`);
+  }
+  rejectMatch(/lifecycles\//, "Expert release workflow must not invoke EvoPilot product Lifecycle definitions");
+  rejectMatch(/Lifecycle(?:Definition|Revision|Binding|Run)/, "Expert release workflow must remain separate from product Lifecycle objects");
+
+  return {
+    schema: "evopilot-evolution-expert-release-pipeline-result/v1",
+    status: failures.length === 0 ? "PASS" : "FAIL",
+    failures,
+    invariants: {
+      acceptedBytesPromotedWithoutRebuild: failures.every((item) => !item.includes("rebuild")),
+      independentReleaseAuthorityBound: failures.every((item) => !item.includes("authorization")),
+      publicPackageVerified: failures.every((item) => !item.includes("npm verification"))
+    }
+  };
+
+  function requireMatch(pattern, message) {
+    if (!pattern.test(workflow)) failures.push(message);
+  }
+
+  function rejectMatch(pattern, message) {
+    if (pattern.test(workflow)) failures.push(message);
+  }
+
+  function requireOrder(before, after, message) {
+    const beforeIndex = workflow.indexOf(before);
+    const afterIndex = workflow.indexOf(after);
+    if (beforeIndex === -1 || afterIndex === -1 || beforeIndex >= afterIndex) failures.push(message);
+  }
+}
+
 export function verifyReleasePipeline(rootDir = path.resolve(import.meta.dirname, "..")) {
   const runtime = validateReleasePipeline({
     candidate: fs.readFileSync(path.join(rootDir, ".github/workflows/release-candidate.yml"), "utf8"),
@@ -197,17 +267,23 @@ export function verifyReleasePipeline(rootDir = path.resolve(import.meta.dirname
   const expert = validateEvolutionExpertCandidate(
     fs.readFileSync(path.join(rootDir, ".github/workflows/evolution-expert-release-candidate.yml"), "utf8")
   );
+  const expertRelease = validateEvolutionExpertRelease(
+    fs.readFileSync(path.join(rootDir, ".github/workflows/evolution-expert-release.yml"), "utf8")
+  );
   return {
     ...runtime,
-    status: runtime.status === "PASS" && expert.status === "PASS" ? "PASS" : "FAIL",
-    failures: [...runtime.failures, ...expert.failures],
+    status: runtime.status === "PASS" && expert.status === "PASS" && expertRelease.status === "PASS" ? "PASS" : "FAIL",
+    failures: [...runtime.failures, ...expert.failures, ...expertRelease.failures],
     invariants: {
       ...runtime.invariants,
-      expertCandidateIndependent: expert.status === "PASS"
+      expertCandidateIndependent: expert.status === "PASS",
+      expertAcceptedBytesPromotedWithoutRebuild: expertRelease.invariants.acceptedBytesPromotedWithoutRebuild,
+      expertIndependentReleaseAuthorityBound: expertRelease.invariants.independentReleaseAuthorityBound,
+      expertPublicPackageVerified: expertRelease.invariants.publicPackageVerified
     },
     releaseUnits: {
       runtime: runtime.status,
-      evolutionExpert: expert.status
+      evolutionExpert: expert.status === "PASS" && expertRelease.status === "PASS" ? "PASS" : "FAIL"
     }
   };
 }

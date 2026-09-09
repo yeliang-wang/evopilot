@@ -28,6 +28,7 @@ requireFile("tests/failure-recovery/control-plane-failure-recovery.test.mjs");
 requireFile(".github/workflows/ci.yml");
 requireFile(".github/workflows/release-candidate.yml");
 requireFile(".github/workflows/evolution-expert-release-candidate.yml");
+requireFile(".github/workflows/evolution-expert-release.yml");
 requireFile(".github/workflows/release-artifacts.yml");
 requireFile(".github/workflows/failure-recovery.yml");
 requireFile(".github/workflows/release-ready.yml");
@@ -66,6 +67,9 @@ requireContent(".github/workflows/release-candidate.yml", /npm run release:artif
 requireContent(".github/workflows/release-candidate.yml", /actions\/upload-artifact@v4/, "Candidate workflow must upload the controlled release set");
 requireContent(".github/workflows/evolution-expert-release-candidate.yml", /evolution-expert:release:artifact/, "Expert Candidate workflow must build its independent release set");
 requireContent(".github/workflows/evolution-expert-release-candidate.yml", /project-candidate-handoff\.mjs build/, "Expert Candidate workflow must create an immutable handoff");
+requireContent(".github/workflows/evolution-expert-release.yml", /project-candidate-handoff\.mjs verify/, "Expert release workflow must verify the accepted handoff");
+requireContent(".github/workflows/evolution-expert-release.yml", /npm publish "\$TARBALL" --access public --provenance/, "Expert release workflow must promote the accepted tarball with provenance");
+requireContent(".github/workflows/evolution-expert-release.yml", /evopilot-expert compatibility codex 5\.0\.0/, "Expert release workflow must verify Runtime compatibility from a public install");
 requireContent("packages/evolution-expert/CHANGELOG.md", new RegExp(escapeRegExp(readJson("packages/evolution-expert/package.json").version)), "Expert changelog must mention its package version");
 requireContent(".github/workflows/release-artifacts.yml", /actions\/download-artifact@v4/, "Release workflow must consume the Candidate release set");
 requireContent("scripts/immutable-rollback-runbook.mjs", /evopilot-immutable-rollback-runbook\/v1/, "immutable rollback runbook must emit evidence schema");

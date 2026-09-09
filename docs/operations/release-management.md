@@ -67,14 +67,19 @@ The release pipeline is intentionally ordered as follows:
    acceptance evidence for this step.
 5. Bind the final acceptance result to the Candidate run, commit, handoff
    digest, and release-set digest. Obtain a separate Release Binding approval.
-6. After both bindings exist, dispatch `.github/workflows/release-artifacts.yml`
-   and then `.github/workflows/npm-packages.yml`. GitHub Release and GHCR use
+6. After both bindings exist, create each exact pre-existing tag at its accepted
+   Candidate commit. Dispatch `.github/workflows/release-artifacts.yml` and
+   then `.github/workflows/npm-packages.yml` for Runtime. Dispatch
+   `.github/workflows/evolution-expert-release.yml` for the independent Expert
+   GitHub Release and npm package. GitHub Release and GHCR use
    the protected `release` Environment; npm publication uses the dedicated
    `npm` Environment. The Environment split records channel-specific deployment
    history and secrets but does not add a duplicate required-reviewer gate.
-   Both workflows download the exact Candidate run and promote accepted bytes;
-   neither may install dependencies, compile, pack, rebuild an image, or
-   overwrite an existing release.
+   All promotion jobs download their exact Candidate run and promote accepted
+   bytes; none may compile, pack, rebuild an image, or overwrite an existing
+   release. The Expert workflow installs only the resulting public package in a
+   fresh temporary project for signature, Skill, Core, CLI, and Runtime
+   compatibility verification.
 
 Run this deterministic contract check whenever the workflows change:
 
@@ -123,11 +128,14 @@ For v4.0.0, the Candidate installable path was the frozen GitHub Actions artifac
 
 ## Tag Creation
 
-Do not push a release tag before Candidate acceptance. The accepted-byte
-promotion workflow creates the tag and draft GitHub Release against the exact
-Candidate commit, uploads the accepted assets without `--clobber`, and only
-then makes the Release public. If the tag or Release already exists, the
-workflow fails closed. Never force-retag; prepare a new version instead.
+Do not push a release tag before Candidate acceptance and exact Release
+authorization. Create `v<runtime-version>` and
+`evolution-expert-v<expert-version>` only at their accepted Candidate commits.
+Promotion verifies the pre-existing remote tag before creating a draft GitHub
+Release, uploads accepted assets without `--clobber`, and only then makes the
+Release public. An exact draft may be resumed after byte comparison; any
+conflicting tag, public Release, or asset fails closed. Never force-retag;
+prepare a new version instead.
 
 ## GitHub Release Notes
 
@@ -158,6 +166,17 @@ files are:
 - `evopilot-evolution-expert-<version>-provenance.json`
 - `SHA256SUMS`
 - a separately uploaded `evopilot-evolution-expert-<version>-project-candidate-handoff.json`
+
+`.github/workflows/evolution-expert-release.yml` is the independent Expert GA
+path. It checks out reviewed promotion mechanics from the dispatch commit while
+binding the older accepted Candidate commit, run, handoff, acceptance digest, and
+release authorization. Its `release` Environment job verifies the exact tag,
+creates or resumes a non-clobbering draft, and publishes the four accepted
+assets plus the promotion record. Its dependent `npm` Environment job publishes
+or integrity-reconciles only the accepted tarball with provenance, then performs
+a fresh public install and verifies Registry signatures, the
+`evopilot-expert` CLI, portable `skill/SKILL.md`, generated Codex adapter,
+Expert Core digest, and Runtime 5.0.0 compatibility.
 
 Expected assets:
 
@@ -243,6 +262,11 @@ npm run verify:npm-registry -- --wait --timeout-ms 300000 --interval-ms 15000
 This post-publish verifier checks exact-version npm metadata, installs all six
 public packages into an empty project, and runs the `evopilot` and
 `create-evopilot` help commands.
+
+The Expert package is a seventh, independently versioned npm release unit.
+`.github/workflows/evolution-expert-release.yml` publishes
+`@evopilot/evolution-expert@<expert-version>` only after the Runtime packages
+required by its declared compatibility range are publicly available.
 
 The workflow checks out promotion mechanics from the exact workflow-dispatch
 commit, while the handoff and tarball checks continue to bind the older

@@ -10,6 +10,7 @@ const requiredFiles = [
   ".github/workflows/ci.yml",
   ".github/workflows/release-candidate.yml",
   ".github/workflows/evolution-expert-release-candidate.yml",
+  ".github/workflows/evolution-expert-release.yml",
   ".github/workflows/release-artifacts.yml",
   ".github/workflows/failure-recovery.yml",
   ".github/workflows/release-ready.yml",

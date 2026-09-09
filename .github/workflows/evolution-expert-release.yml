@@ -1,0 +1,420 @@
+name: Promote Accepted Evolution Expert Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: "GitHub Actions run id that formed the accepted Expert Candidate"
+        required: true
+        type: string
+      candidate_commit:
+        description: "Exact 40-character Expert Candidate commit"
+        required: true
+        type: string
+      version:
+        description: "Accepted Evolution Expert version without prefix"
+        required: true
+        type: string
+      target_id:
+        description: "Approved Evolution Expert Target id"
+        required: true
+        type: string
+      candidate_handoff_sha256:
+        description: "sha256 digest of the accepted Expert Candidate handoff"
+        required: true
+        type: string
+      acceptance_digest:
+        description: "sha256 digest of final joint acceptance evidence"
+        required: true
+        type: string
+      release_authorization_digest:
+        description: "sha256 digest of the separate Expert Release authorization"
+        required: true
+        type: string
+
+concurrency:
+  group: promote-accepted-evolution-expert-${{ inputs.version }}
+  cancel-in-progress: false
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  github-release:
+    name: Promote accepted Expert bytes to GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: release
+    permissions:
+      actions: read
+      contents: write
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_TAG: evolution-expert-v${{ inputs.version }}
+      CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+      CANDIDATE_COMMIT: ${{ inputs.candidate_commit }}
+      TARGET_ID: ${{ inputs.target_id }}
+      HANDOFF_DIGEST: ${{ inputs.candidate_handoff_sha256 }}
+      ACCEPTANCE_DIGEST: ${{ inputs.acceptance_digest }}
+      RELEASE_AUTHORIZATION_DIGEST: ${{ inputs.release_authorization_digest }}
+    steps:
+      - name: Initialize runner paths
+        run: |
+          echo "CANDIDATE_DIR=$RUNNER_TEMP/evopilot-evolution-expert/release" >> "$GITHUB_ENV"
+          echo "HANDOFF_DIR=$RUNNER_TEMP/evopilot-evolution-expert/handoff" >> "$GITHUB_ENV"
+
+      - name: Validate immutable bindings
+        run: |
+          set -euo pipefail
+          [[ "$CANDIDATE_COMMIT" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$CANDIDATE_RUN_ID" =~ ^[0-9]+$ ]]
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]
+          [[ "$TARGET_ID" =~ ^evopilot-evolution-expert-v[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$HANDOFF_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$ACCEPTANCE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+          [[ "$RELEASE_AUTHORIZATION_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
+
+      - name: Checkout promotion mechanics from workflow commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Validate Expert Target, version, and release pipeline
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./packages/evolution-expert/package.json').version")" = "$VERSION"
+          test "$TARGET_ID" = "evopilot-evolution-expert-v$VERSION"
+          test -f "governance/targets/$TARGET_ID.json"
+          npm run roadmap:release -- "$VERSION" --release-product evopilot-evolution-expert
+          npm run verify:release-pipeline
+          node - "governance/targets/$TARGET_ID.json" "$RELEASE_AUTHORIZATION_DIGEST" "$VERSION" <<'NODE'
+          const fs = require("node:fs");
+          const [targetPath, authorizationDigest, version] = process.argv.slice(2);
+          const target = JSON.parse(fs.readFileSync(targetPath, "utf8"));
+          if (target.status !== "RELEASE_AUTHORIZED") throw new Error("Expert Target is not RELEASE_AUTHORIZED");
+          if (target.approvals?.release?.authorizationDigest !== authorizationDigest) throw new Error("Expert release authorization digest mismatch");
+          for (const action of ["tag", "github-release", "npm"]) {
+            if (!target.release?.actions?.includes(action)) throw new Error(`Expert Target does not authorize ${action}`);
+          }
+          if (target.release?.versions?.evopilot !== version) throw new Error("Expert release version mismatch");
+          NODE
+
+      - name: Download exact Expert Candidate release set
+        uses: actions/download-artifact@v4
+        with:
+          name: evopilot-evolution-expert-${{ inputs.version }}-candidate-release-set
+          path: ${{ env.CANDIDATE_DIR }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Download exact Expert Candidate handoff
+        uses: actions/download-artifact@v4
+        with:
+          name: evopilot-evolution-expert-${{ inputs.version }}-candidate-handoff
+          path: ${{ env.HANDOFF_DIR }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Verify accepted Expert Candidate without rebuilding
+        run: |
+          set -euo pipefail
+          HANDOFF="$HANDOFF_DIR/evopilot-evolution-expert-$VERSION-project-candidate-handoff.json"
+          node scripts/project-candidate-handoff.mjs verify \
+            --handoff "$HANDOFF" \
+            --handoff-digest "$HANDOFF_DIGEST" \
+            --release-dir "$CANDIDATE_DIR" \
+            --source-checkout "$GITHUB_WORKSPACE" \
+            --release-unit evolution-expert \
+            --required-kinds npm-package,sbom,provenance,checksums \
+            --version "$VERSION" \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$CANDIDATE_COMMIT" \
+            --run-id "$CANDIDATE_RUN_ID" \
+            --target-id "$TARGET_ID"
+          node scripts/verify-evolution-expert-release-artifacts.mjs "$CANDIDATE_DIR"
+
+      - name: Verify exact pre-existing Expert tag and Release state
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          REMOTE_TAG_COMMIT="$(git ls-remote origin "refs/tags/$RELEASE_TAG" | awk '{print $1}')"
+          test "$REMOTE_TAG_COMMIT" = "$CANDIDATE_COMMIT"
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            RELEASE_IS_DRAFT="$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)"
+            test "$RELEASE_IS_DRAFT" = "true" || test "$RELEASE_IS_DRAFT" = "false"
+          fi
+
+      - name: Create or reconcile exact Expert draft Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          NOTES_FILE="docs/releases/evolution-expert-$VERSION.md"
+          HANDOFF="$HANDOFF_DIR/evopilot-evolution-expert-$VERSION-project-candidate-handoff.json"
+          PROMOTION_RECORD="$RUNNER_TEMP/evopilot-evolution-expert-$VERSION-release-promotion.json"
+          test -f "$NOTES_FILE"
+          node scripts/release-promotion-record.mjs build \
+            --handoff "$HANDOFF" \
+            --output "$PROMOTION_RECORD" \
+            --version "$VERSION" \
+            --target-id "$TARGET_ID" \
+            --candidate-run-id "$CANDIDATE_RUN_ID" \
+            --candidate-commit "$CANDIDATE_COMMIT" \
+            --handoff-digest "$HANDOFF_DIGEST" \
+            --acceptance-digest "$ACCEPTANCE_DIGEST" \
+            --release-authorization-digest "$RELEASE_AUTHORIZATION_DIGEST" \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow ".github/workflows/evolution-expert-release.yml" \
+            --promotion-run-id "$GITHUB_RUN_ID" \
+            --promotion-run-attempt "$GITHUB_RUN_ATTEMPT"
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --draft \
+              --verify-tag \
+              --title "EvoPilot Evolution Expert v$VERSION" \
+              --notes-file "$NOTES_FILE"
+          fi
+          RELEASE_IS_DRAFT="$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)"
+          EXISTING_DIR="$RUNNER_TEMP/evopilot-evolution-expert-existing-draft"
+          mkdir -p "$EXISTING_DIR"
+          if [[ "$(gh release view "$RELEASE_TAG" --json assets --jq '.assets | length')" -gt 0 ]]; then
+            gh release download "$RELEASE_TAG" --dir "$EXISTING_DIR"
+          fi
+          mapfile -t ASSETS < <(find "$CANDIDATE_DIR" -maxdepth 1 -type f -print | sort)
+          for ASSET in "${ASSETS[@]}"; do
+            NAME="$(basename "$ASSET")"
+            if [[ -f "$EXISTING_DIR/$NAME" ]]; then
+              cmp --silent "$ASSET" "$EXISTING_DIR/$NAME"
+            else
+              test "$RELEASE_IS_DRAFT" = "true"
+              gh release upload "$RELEASE_TAG" "$ASSET"
+            fi
+          done
+          PROMOTION_NAME="$(basename "$PROMOTION_RECORD")"
+          if [[ -f "$EXISTING_DIR/$PROMOTION_NAME" ]]; then
+            node scripts/release-promotion-record.mjs verify \
+              --record "$EXISTING_DIR/$PROMOTION_NAME" \
+              --handoff "$HANDOFF" \
+              --version "$VERSION" \
+              --target-id "$TARGET_ID" \
+              --candidate-run-id "$CANDIDATE_RUN_ID" \
+              --candidate-commit "$CANDIDATE_COMMIT" \
+              --handoff-digest "$HANDOFF_DIGEST" \
+              --acceptance-digest "$ACCEPTANCE_DIGEST" \
+              --release-authorization-digest "$RELEASE_AUTHORIZATION_DIGEST" \
+              --repository "$GITHUB_REPOSITORY" \
+              --workflow ".github/workflows/evolution-expert-release.yml"
+          else
+            test "$RELEASE_IS_DRAFT" = "true"
+            gh release upload "$RELEASE_TAG" "$PROMOTION_RECORD"
+          fi
+          VERIFIED_DIR="$RUNNER_TEMP/evopilot-evolution-expert-verified-draft"
+          mkdir -p "$VERIFIED_DIR"
+          gh release download "$RELEASE_TAG" --dir "$VERIFIED_DIR"
+          VERIFIED_PROMOTION_RECORD="$RUNNER_TEMP/$PROMOTION_NAME"
+          mv "$VERIFIED_DIR/$PROMOTION_NAME" "$VERIFIED_PROMOTION_RECORD"
+          node scripts/verify-evolution-expert-release-artifacts.mjs "$VERIFIED_DIR"
+          node scripts/release-promotion-record.mjs verify \
+            --record "$VERIFIED_PROMOTION_RECORD" \
+            --handoff "$HANDOFF" \
+            --version "$VERSION" \
+            --target-id "$TARGET_ID" \
+            --candidate-run-id "$CANDIDATE_RUN_ID" \
+            --candidate-commit "$CANDIDATE_COMMIT" \
+            --handoff-digest "$HANDOFF_DIGEST" \
+            --acceptance-digest "$ACCEPTANCE_DIGEST" \
+            --release-authorization-digest "$RELEASE_AUTHORIZATION_DIGEST" \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow ".github/workflows/evolution-expert-release.yml"
+          EXPECTED_NAMES="$RUNNER_TEMP/evopilot-evolution-expert-expected-assets.txt"
+          ACTUAL_NAMES="$RUNNER_TEMP/evopilot-evolution-expert-actual-assets.txt"
+          { find "$CANDIDATE_DIR" -maxdepth 1 -type f -printf '%f\n'; echo "$PROMOTION_NAME"; } | sort > "$EXPECTED_NAMES"
+          gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' | sort > "$ACTUAL_NAMES"
+          diff -u "$EXPECTED_NAMES" "$ACTUAL_NAMES"
+
+      - name: Publish and verify Expert GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [[ "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "true" ]]; then
+            gh release edit "$RELEASE_TAG" --draft=false
+          fi
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "false"
+          PUBLIC_DIR="$RUNNER_TEMP/evopilot-evolution-expert-public-release"
+          mkdir -p "$PUBLIC_DIR"
+          gh release download "$RELEASE_TAG" --dir "$PUBLIC_DIR"
+          mv "$PUBLIC_DIR/evopilot-evolution-expert-$VERSION-release-promotion.json" "$RUNNER_TEMP/public-expert-promotion-record.json"
+          node scripts/verify-evolution-expert-release-artifacts.mjs "$PUBLIC_DIR"
+
+  npm-publication:
+    name: Publish accepted Expert tarball to npm
+    needs: github-release
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: npm
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+    env:
+      VERSION: ${{ inputs.version }}
+      RELEASE_TAG: evolution-expert-v${{ inputs.version }}
+      CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+      CANDIDATE_COMMIT: ${{ inputs.candidate_commit }}
+      TARGET_ID: ${{ inputs.target_id }}
+      HANDOFF_DIGEST: ${{ inputs.candidate_handoff_sha256 }}
+      ACCEPTANCE_DIGEST: ${{ inputs.acceptance_digest }}
+      RELEASE_AUTHORIZATION_DIGEST: ${{ inputs.release_authorization_digest }}
+    steps:
+      - name: Initialize runner paths
+        run: |
+          echo "CANDIDATE_DIR=$RUNNER_TEMP/evopilot-evolution-expert/release" >> "$GITHUB_ENV"
+          echo "HANDOFF_DIR=$RUNNER_TEMP/evopilot-evolution-expert/handoff" >> "$GITHUB_ENV"
+
+      - name: Checkout promotion mechanics from workflow commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Setup Node for npm provenance
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Validate npm publication authority and public Expert Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(node -p "require('./packages/evolution-expert/package.json').version")" = "$VERSION"
+          npm run roadmap:release -- "$VERSION" --release-product evopilot-evolution-expert
+          npm run verify:release-pipeline
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "false"
+          node - "governance/targets/$TARGET_ID.json" "$RELEASE_AUTHORIZATION_DIGEST" "$VERSION" <<'NODE'
+          const fs = require("node:fs");
+          const [targetPath, authorizationDigest, version] = process.argv.slice(2);
+          const target = JSON.parse(fs.readFileSync(targetPath, "utf8"));
+          if (target.status !== "RELEASE_AUTHORIZED") throw new Error("Expert Target is not RELEASE_AUTHORIZED");
+          if (target.approvals?.release?.authorizationDigest !== authorizationDigest) throw new Error("Expert npm authorization digest mismatch");
+          if (!target.release?.actions?.includes("npm")) throw new Error("Expert Target does not authorize npm");
+          if (target.release?.versions?.evopilot !== version) throw new Error("Expert npm version mismatch");
+          NODE
+
+      - name: Download exact Expert Candidate release set
+        uses: actions/download-artifact@v4
+        with:
+          name: evopilot-evolution-expert-${{ inputs.version }}-candidate-release-set
+          path: ${{ env.CANDIDATE_DIR }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Download exact Expert Candidate handoff
+        uses: actions/download-artifact@v4
+        with:
+          name: evopilot-evolution-expert-${{ inputs.version }}-candidate-handoff
+          path: ${{ env.HANDOFF_DIR }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ inputs.candidate_run_id }}
+
+      - name: Verify accepted Expert Candidate and GitHub promotion binding
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          HANDOFF="$HANDOFF_DIR/evopilot-evolution-expert-$VERSION-project-candidate-handoff.json"
+          node scripts/project-candidate-handoff.mjs verify \
+            --handoff "$HANDOFF" \
+            --handoff-digest "$HANDOFF_DIGEST" \
+            --release-dir "$CANDIDATE_DIR" \
+            --source-checkout "$GITHUB_WORKSPACE" \
+            --release-unit evolution-expert \
+            --required-kinds npm-package,sbom,provenance,checksums \
+            --version "$VERSION" \
+            --repository "$GITHUB_REPOSITORY" \
+            --commit "$CANDIDATE_COMMIT" \
+            --run-id "$CANDIDATE_RUN_ID" \
+            --target-id "$TARGET_ID"
+          node scripts/verify-evolution-expert-release-artifacts.mjs "$CANDIDATE_DIR"
+          RECORD_DIR="$RUNNER_TEMP/evopilot-evolution-expert-release-record"
+          mkdir -p "$RECORD_DIR"
+          gh release download "$RELEASE_TAG" --pattern "evopilot-evolution-expert-$VERSION-release-promotion.json" --dir "$RECORD_DIR"
+          node scripts/release-promotion-record.mjs verify \
+            --record "$RECORD_DIR/evopilot-evolution-expert-$VERSION-release-promotion.json" \
+            --handoff "$HANDOFF" \
+            --version "$VERSION" \
+            --target-id "$TARGET_ID" \
+            --candidate-run-id "$CANDIDATE_RUN_ID" \
+            --candidate-commit "$CANDIDATE_COMMIT" \
+            --handoff-digest "$HANDOFF_DIGEST" \
+            --acceptance-digest "$ACCEPTANCE_DIGEST" \
+            --release-authorization-digest "$RELEASE_AUTHORIZATION_DIGEST" \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow ".github/workflows/evolution-expert-release.yml"
+
+      - name: Publish or verify exact accepted Expert tarball
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          REGISTRY="https://registry.npmjs.org/"
+          PACKAGE="@evopilot/evolution-expert"
+          TARBALL="$CANDIDATE_DIR/evopilot-evolution-expert-${VERSION}.tgz"
+          EXPECTED_INTEGRITY="sha512-$(openssl dgst -sha512 -binary "$TARBALL" | openssl base64 -A)"
+          ERROR_FILE="$RUNNER_TEMP/evopilot-evolution-expert-npm-view-error.log"
+          if ACTUAL_INTEGRITY="$(npm view "${PACKAGE}@${VERSION}" dist.integrity --registry "$REGISTRY" 2>"$ERROR_FILE")"; then
+            test "$ACTUAL_INTEGRITY" = "$EXPECTED_INTEGRITY"
+            echo "Verified existing ${PACKAGE}@${VERSION}; publication mutation skipped"
+          else
+            grep -q "E404" "$ERROR_FILE"
+            npm publish "$TARBALL" --access public --provenance --registry "$REGISTRY"
+          fi
+
+      - name: Verify public Expert package, signatures, Skill, Core, and Runtime compatibility
+        run: |
+          set -euo pipefail
+          REGISTRY="https://registry.npmjs.org/"
+          PACKAGE="@evopilot/evolution-expert"
+          TARBALL="$CANDIDATE_DIR/evopilot-evolution-expert-${VERSION}.tgz"
+          EXPECTED_INTEGRITY="sha512-$(openssl dgst -sha512 -binary "$TARBALL" | openssl base64 -A)"
+          for ATTEMPT in $(seq 1 20); do
+            ACTUAL_INTEGRITY="$(npm view "${PACKAGE}@${VERSION}" dist.integrity --registry "$REGISTRY" 2>/dev/null || true)"
+            ATTESTATION_URL="$(npm view "${PACKAGE}@${VERSION}" dist.attestations.url --registry "$REGISTRY" 2>/dev/null || true)"
+            if [[ "$ACTUAL_INTEGRITY" == "$EXPECTED_INTEGRITY" && -n "$ATTESTATION_URL" ]]; then
+              break
+            fi
+            if [[ "$ATTEMPT" -eq 20 ]]; then
+              echo "Expert Registry integrity or provenance did not converge" >&2
+              exit 1
+            fi
+            sleep 15
+          done
+          INSTALL_DIR="$RUNNER_TEMP/evopilot-evolution-expert-public-install"
+          mkdir -p "$INSTALL_DIR"
+          cd "$INSTALL_DIR"
+          npm init --yes >/dev/null
+          npm install --ignore-scripts --no-audit --no-fund --registry "$REGISTRY" "${PACKAGE}@${VERSION}"
+          npm audit signatures --registry "$REGISTRY"
+          npx --no-install evopilot-expert manifest > manifest.json
+          npx --no-install evopilot-expert compatibility codex 5.0.0 > compatibility.json
+          node - <<'NODE'
+          const fs = require("node:fs");
+          const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
+          const compatibility = JSON.parse(fs.readFileSync("compatibility.json", "utf8"));
+          const adapter = JSON.parse(fs.readFileSync("node_modules/@evopilot/evolution-expert/generated/codex/adapter.json", "utf8"));
+          if (manifest.schema !== "evopilot-evolution-expert-core/v1" || manifest.version !== "1.0.0") throw new Error("Expert public CLI identity mismatch");
+          if (!/^sha256:[0-9a-f]{64}$/.test(manifest.digest)) throw new Error("Expert Core digest is invalid");
+          if (adapter.version !== manifest.version || adapter.coreDigest !== manifest.digest) throw new Error("Codex Skill adapter does not bind the public Expert Core");
+          if (compatibility.expertVersion !== manifest.version || compatibility.coreDigest !== manifest.digest || compatibility.conformanceStatus !== "CONFORMANT") throw new Error("Runtime 5.0.0 compatibility failed");
+          if (!fs.existsSync("node_modules/@evopilot/evolution-expert/skill/SKILL.md")) throw new Error("Portable Expert Skill is missing");
+          NODE
+          node -p "require('./node_modules/@evopilot/contracts/package.json').version" | grep -qx "5.0.0"
