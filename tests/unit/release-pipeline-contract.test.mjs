@@ -31,6 +31,20 @@ test("Evolution Expert Candidate pipeline binds its independent version and neve
   const unsafe = validateEvolutionExpertCandidate(`${workflow}\n      - run: npm publish\n`);
   assert.equal(unsafe.status, "FAIL");
   assert.ok(unsafe.failures.some((failure) => failure.includes("must not publish")));
+
+  const legacyOnly = validateEvolutionExpertCandidate(workflow.replace(
+    "^evopilot-evolution-expert-v[0-9]+\\.[0-9]+\\.[0-9]+(-[a-z0-9][a-z0-9.-]*)?$",
+    "^evopilot-evolution-expert-v[0-9]+\\.[0-9]+\\.[0-9]+$"
+  ));
+  assert.equal(legacyOnly.status, "FAIL");
+  assert.ok(legacyOnly.failures.some((failure) => failure.includes("optional lowercase qualifier")));
+
+  const unboundQualifier = validateEvolutionExpertCandidate(workflow.replace(
+    '[[ "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX" || "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX"-* ]]',
+    "true"
+  ));
+  assert.equal(unboundQualifier.status, "FAIL");
+  assert.ok(unboundQualifier.failures.some((failure) => failure.includes("qualified Target id")));
 });
 
 test("Evolution Expert GA pipeline promotes accepted bytes through independent release and npm environments", () => {
@@ -45,6 +59,13 @@ test("Evolution Expert GA pipeline promotes accepted bytes through independent r
   const clobbered = validateEvolutionExpertRelease(workflow.replace("gh release upload", "gh release upload --clobber"));
   assert.equal(clobbered.status, "FAIL");
   assert.ok(clobbered.failures.some((failure) => failure.includes("overwrite")));
+
+  const legacyOnly = validateEvolutionExpertRelease(workflow.replace(
+    "^evopilot-evolution-expert-v[0-9]+\\.[0-9]+\\.[0-9]+(-[a-z0-9][a-z0-9.-]*)?$",
+    "^evopilot-evolution-expert-v[0-9]+\\.[0-9]+\\.[0-9]+$"
+  ));
+  assert.equal(legacyOnly.status, "FAIL");
+  assert.ok(legacyOnly.failures.some((failure) => failure.includes("optional lowercase qualifier")));
 });
 
 test("release pipeline contract rejects a GA rebuild", () => {

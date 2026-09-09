@@ -42,7 +42,7 @@ jobs:
             echo "::error::commit_sha must be an exact 40-character lowercase Git commit"
             exit 1
           fi
-          if ! [[ "$TARGET_ID" =~ ^evopilot-evolution-expert-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if ! [[ "$TARGET_ID" =~ ^evopilot-evolution-expert-v[0-9]+\.[0-9]+\.[0-9]+(-[a-z0-9][a-z0-9.-]*)?$ ]]; then
             echo "::error::target_id must use the versioned Evolution Expert Target namespace"
             exit 1
           fi
@@ -60,7 +60,8 @@ jobs:
           test "$GITHUB_SHA" = "$CANDIDATE_COMMIT"
           test -f "$TARGET_FILE"
           VERSION="$(node -p "require('./packages/evolution-expert/package.json').version")"
-          test "$TARGET_ID" = "evopilot-evolution-expert-v$VERSION"
+          EXPECTED_TARGET_PREFIX="evopilot-evolution-expert-v$VERSION"
+          [[ "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX" || "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX"-* ]]
           TARGET_STATUS="$(node -p "require('./$TARGET_FILE').status")"
           TARGET_VERSION="$(node -p "require('./$TARGET_FILE').roadmapBindings[0].targetVersion")"
           TARGET_REVISION="$(node -p "require('./$TARGET_FILE').revision")"

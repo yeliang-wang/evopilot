@@ -146,8 +146,9 @@ export function validateEvolutionExpertCandidate(candidate) {
   requireMatch(/workflow_dispatch:/, "Expert Candidate formation must be an explicit workflow dispatch");
   requireMatch(/commit_sha:/, "Expert Candidate formation must accept an exact commit SHA");
   requireMatch(/target_id:/, "Expert Candidate formation must bind the approved Expert Target");
-  requireMatch(/\^evopilot-evolution-expert-v\[0-9\]\+\\\.\[0-9\]\+\\\.\[0-9\]\+\$/, "Expert Candidate formation must reject a Target outside the versioned Expert namespace");
-  requireMatch(/test "\$TARGET_ID" = "evopilot-evolution-expert-v\$VERSION"/, "Expert Candidate formation must bind the Target id to the independent Expert package version");
+  requireLiteral('^evopilot-evolution-expert-v[0-9]+\\.[0-9]+\\.[0-9]+(-[a-z0-9][a-z0-9.-]*)?$', "Expert Candidate formation must accept only the versioned Expert Target namespace and an optional lowercase qualifier");
+  requireLiteral('EXPECTED_TARGET_PREFIX="evopilot-evolution-expert-v$VERSION"', "Expert Candidate formation must derive the Target prefix from the independent Expert package version");
+  requireLiteral('[[ "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX" || "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX"-* ]]', "Expert Candidate formation must bind the Target id or qualified Target id to the independent Expert package version");
   requireMatch(/packages\/evolution-expert\/package\.json/, "Expert Candidate formation must bind the independent Expert package version");
   requireMatch(/npm run check/, "Expert Candidate formation must run the full repository check");
   requireMatch(/npm run release:ready/, "Expert Candidate formation must pass repository release readiness");
@@ -186,6 +187,10 @@ export function validateEvolutionExpertCandidate(candidate) {
   function rejectMatch(pattern, message) {
     if (pattern.test(candidate)) failures.push(message);
   }
+
+  function requireLiteral(literal, message) {
+    if (!candidate.includes(literal)) failures.push(message);
+  }
 }
 
 export function validateEvolutionExpertRelease(workflow) {
@@ -197,6 +202,9 @@ export function validateEvolutionExpertRelease(workflow) {
   requireMatch(/candidate_handoff_sha256:/, "Expert promotion must bind the Candidate handoff digest");
   requireMatch(/acceptance_digest:/, "Expert promotion must bind final acceptance evidence");
   requireMatch(/release_authorization_digest:/, "Expert promotion must bind separate release authorization");
+  requireLiteral('^evopilot-evolution-expert-v[0-9]+\\.[0-9]+\\.[0-9]+(-[a-z0-9][a-z0-9.-]*)?$', "Expert promotion must accept only the versioned Expert Target namespace and an optional lowercase qualifier");
+  requireLiteral('EXPECTED_TARGET_PREFIX="evopilot-evolution-expert-v$VERSION"', "Expert promotion must derive the Target prefix from the independent Expert package version");
+  requireLiteral('[[ "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX" || "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX"-* ]]', "Expert promotion must bind the Target id or qualified Target id to the independent Expert package version");
   requireMatch(/environment:\s*release/, "Expert GitHub promotion must use the protected release environment");
   requireMatch(/environment:\s*npm/, "Expert npm promotion must use the dedicated npm environment");
   requireMatch(/ref:\s*\$\{\{ github\.sha \}\}/, "Expert promotion mechanics must come from the workflow commit");
@@ -249,6 +257,10 @@ export function validateEvolutionExpertRelease(workflow) {
 
   function rejectMatch(pattern, message) {
     if (pattern.test(workflow)) failures.push(message);
+  }
+
+  function requireLiteral(literal, message) {
+    if (!workflow.includes(literal)) failures.push(message);
   }
 
   function requireOrder(before, after, message) {
