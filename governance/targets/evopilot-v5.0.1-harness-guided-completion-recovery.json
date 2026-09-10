@@ -2149,6 +2149,33 @@
       "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/product-completion-report.json@sha256:c5a41daeb5282323c0c875cc05358b7b5e5893706bf1eae1b36aba7390b51913#NO_REGRESSION"
     ]
   },
+  "publicEvidence": {
+    "schema": "evopilot-public-release-evidence/v1",
+    "status": "VERIFIED",
+    "version": "5.0.1",
+    "tag": "v5.0.1",
+    "acceptedProductCommit": "8904c551399d53fd74613943924a16d661f1b064",
+    "githubRelease": "https://github.com/yeliang-wang/evopilot/releases/tag/v5.0.1",
+    "githubReleaseAssets": "16_ACCEPTED_PLUS_1_PROMOTION_RECORD_EXACT_BYTES_VERIFIED",
+    "candidateHandoffDigest": "sha256:4baa0ff4ff9038694d001000fd37fb864298ed969037122ecf17a45ae8920772",
+    "candidateReleaseSetDigest": "sha256:35af6500f346e3109a61797c26f8f9f43d3631d37d545e212e1c5fb1e8c089ff",
+    "ghcrManifestDigest": "sha256:76ae3be14f1175ae7309b25db35fdcd70479ef0e35047ae9e3e8c3d81b7a3a75",
+    "npmPackages": [
+      "@evopilot/contracts@5.0.1",
+      "@evopilot/client@5.0.1",
+      "@evopilot/adapter-mcp@5.0.1",
+      "@evopilot/adapter-opencode@5.0.1",
+      "@evopilot/cli@5.0.1",
+      "create-evopilot@5.0.1"
+    ],
+    "packageIntegrity": "VERIFIED_AGAINST_ACCEPTED_TARBALLS",
+    "registrySignatures": "CRYPTOGRAPHICALLY_VERIFIED",
+    "provenance": "SLSA_V1_REKOR_INTEGRITY_MATCH_AND_INCLUSION_PROOF_VERIFIED",
+    "publicInstallation": "VERIFIED_FROM_EMPTY_DIRECTORY",
+    "cliEntrypoints": "VERIFIED",
+    "productBytesRebuilt": false,
+    "evidenceRef": "codex-evolution://evopilot/evopilot-v501-runtime-expert101-release-001/public-release-verification.json@sha256:0e2559fa16b8355f1d3409d2dfffbec927b90fa3d9306c51b4cd00039f2b3469#runtime"
+  },
   "approvals": {
     "target": {
       "decision": "APPROVED",
@@ -2159,7 +2186,7 @@
     "release": {
       "decision": "AUTHORIZED",
       "by": "user",
-      "evidenceRef": "conversation:pending-approval-evopilot-v5.0.1-runtime-expert-v1.0.1-release-binding-1",
+      "evidenceRef": "conversation:approved-evopilot-v5.0.1-runtime-expert-v1.0.1-release-binding-1@sha256:7bac3b85098d5fd62d901d9347b776f7b1c1f483498cd984500c90fec29d8a7e",
       "authorizationDigest": "sha256:dfffb6f5f8275ce790847a6a928032938e1a3813df4b75daa2f3cc5a7880cdfa"
     }
   },

@@ -118,10 +118,11 @@ function validateRoadmap(value) {
     required(Array.isArray(milestone.signals) && milestone.signals.length > 0, `signals are required: ${milestone.id}`);
     required(Array.isArray(milestone.acceptance) && milestone.acceptance.length > 0, `acceptance is required: ${milestone.id}`);
   }
-  const currentMilestones = milestones.filter((milestone) => milestone.product === value?.versionPolicy?.runtimeProduct && milestone.status === "IN_PROGRESS" && milestone.targetVersion === value?.versionPolicy?.currentWorkingVersion);
-  required(currentMilestones.length === 1, "Runtime currentWorkingVersion must match exactly one IN_PROGRESS Runtime milestone");
-  const currentExpertMilestones = milestones.filter((milestone) => milestone.product === value?.evolutionExpertPolicy?.product && milestone.status === "IN_PROGRESS" && milestone.targetVersion === value?.evolutionExpertPolicy?.currentWorkingVersion);
-  required(currentExpertMilestones.length === 1, "Evolution Expert currentWorkingVersion must match exactly one IN_PROGRESS Expert milestone");
+  const currentStates = new Set(["IN_PROGRESS", "COMPLETE"]);
+  const currentMilestones = milestones.filter((milestone) => milestone.product === value?.versionPolicy?.runtimeProduct && currentStates.has(milestone.status) && milestone.targetVersion === value?.versionPolicy?.currentWorkingVersion);
+  required(currentMilestones.length === 1, "Runtime currentWorkingVersion must match exactly one IN_PROGRESS or COMPLETE Runtime milestone");
+  const currentExpertMilestones = milestones.filter((milestone) => milestone.product === value?.evolutionExpertPolicy?.product && currentStates.has(milestone.status) && milestone.targetVersion === value?.evolutionExpertPolicy?.currentWorkingVersion);
+  required(currentExpertMilestones.length === 1, "Evolution Expert currentWorkingVersion must match exactly one IN_PROGRESS or COMPLETE Expert milestone");
   const runtimeCompletion = milestones.find((milestone) => milestone.id === "evopilot-5.0-harness-guided-governed-evolution-runtime");
   const expertCompletion = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-1.0");
   validateCompletionSuccessor(runtimeCompletion, "5.0.0", "5.0.1", "Runtime");

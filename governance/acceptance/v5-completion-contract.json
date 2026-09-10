@@ -6,13 +6,13 @@
       "id": "evopilot-v5.0.1-harness-guided-completion-recovery",
       "revision": 1,
       "authorizationDigest": "sha256:8e5d454136f6a02f8fc3d3a4e4c65371ccf8fe48fd5fa67a2108764c9c42d67b",
-      "fileDigest": "sha256:2b95310e9f0b4a6830aefcd9bfffb72892dc14ac22055ed6599a80670fda5718"
+      "fileDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
     },
     {
       "id": "evopilot-evolution-expert-v1.0.1-completion-recovery",
       "revision": 1,
       "authorizationDigest": "sha256:530ef883e67a0045cbd56b0ecec80e4902bf07332483a271399c7c6de1aa4501",
-      "fileDigest": "sha256:b985361836bee7a603fc352b70a106f80e6a505f32704f0bfa940c94f3aca569"
+      "fileDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
     }
   ],
   "inventory": {
@@ -22,245 +22,245 @@
       {
         "id": "CORRECTION-01",
         "sourceRef": "governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#scope.include.0",
-        "sourceDigest": "sha256:2b95310e9f0b4a6830aefcd9bfffb72892dc14ac22055ed6599a80670fda5718",
+        "sourceDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
         "statement": "Create a digest-bound original-scheme inventory and requirement-to-successor-criterion-to-deliverable-to-independent-validator-to-evidence-to-terminal-E2E traceability matrix covering accepted v5 Roadmap revisions, Runtime v5.0.0 Target revision 2, Expert v1.0.0 Target revision 2, every explicit user correction, and every audited gap.",
         "kind": "AUDITED_GAP"
       },
       {
         "id": "CORRECTION-02",
         "sourceRef": "governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#scope.include.1",
-        "sourceDigest": "sha256:2b95310e9f0b4a6830aefcd9bfffb72892dc14ac22055ed6599a80670fda5718",
+        "sourceDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
         "statement": "Implement an executable completion aggregator that reports total, passed, failed, pending, stale, generic, and unmapped counts; it must reject silent exclusions, generic aggregate evidence, bulk PASS projection, warnings as PASS, or human declarations substituted for required machine evidence.",
         "kind": "AUDITED_GAP"
       },
       {
         "id": "CORRECTION-03",
         "sourceRef": "governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#scope.include.2",
-        "sourceDigest": "sha256:2b95310e9f0b4a6830aefcd9bfffb72892dc14ac22055ed6599a80670fda5718",
+        "sourceDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
         "statement": "Make HarnessExecutionBinding a mandatory executed invariant across Lifecycle, Goal, Target, Loop start, resume, retry, and every iteration, with real immutable Registry, Catalog, Profile, Bundle, Component, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence digest revalidation rather than type-only or helper-only presence.",
         "kind": "AUDITED_GAP"
       },
       {
         "id": "CORRECTION-04",
         "sourceRef": "governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#scope.include.3",
-        "sourceDigest": "sha256:2b95310e9f0b4a6830aefcd9bfffb72892dc14ac22055ed6599a80670fda5718",
+        "sourceDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
         "statement": "Wire the bounded Recovery Controller and governed Automation Registry into actual pipeline failure classification, repair, receipt reconciliation, retry, rollback, restart, resume, Host transfer, rule suspension, and exact one-time automation-rule activation.",
         "kind": "AUDITED_GAP"
       },
       {
         "id": "CORRECTION-05",
         "sourceRef": "governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#scope.include.4",
-        "sourceDigest": "sha256:2b95310e9f0b4a6830aefcd9bfffb72892dc14ac22055ed6599a80670fda5718",
+        "sourceDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
         "statement": "Complete EvolutionProjectDefinition discovery, canonicalization, schema validation, schema-driven dialogue, semantic diff, compatibility impact, immutable active-run binding, migration, rollback, SecretRef, OpenAPI, CLI, API, MCP, CI, and event contracts without repository-named Engine branches.",
         "kind": "AUDITED_GAP"
       },
       {
         "id": "CORRECTION-06",
         "sourceRef": "governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#scope.include.5",
-        "sourceDigest": "sha256:2b95310e9f0b4a6830aefcd9bfffb72892dc14ac22055ed6599a80670fda5718",
+        "sourceDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
         "statement": "Close README, installation, concepts, DDD architecture, Harness binding, Lifecycle, recovery, Expert and Host integration, reference declarations, tutorials, migration, security, operations, acceptance, and release documentation against executable commands and exact installed-version behavior.",
         "kind": "AUDITED_GAP"
       },
       {
         "id": "CORRECTION-07",
         "sourceRef": "governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#scope.include.6",
-        "sourceDigest": "sha256:2b95310e9f0b4a6830aefcd9bfffb72892dc14ac22055ed6599a80670fda5718",
+        "sourceDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
         "statement": "Implement criterion-specific validators and evidence collectors for every FUNC01-FUNC21, CAP01-CAP16, DOC01-DOC13, V4 inherited criterion, V5 predecessor criterion, E2E01-E2E13, TRACE01-TRACE06, impact closure, and NO_REGRESSION.",
         "kind": "AUDITED_GAP"
       },
       {
         "id": "CORRECTION-08",
         "sourceRef": "governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#scope.include.0",
-        "sourceDigest": "sha256:b985361836bee7a603fc352b70a106f80e6a505f32704f0bfa940c94f3aca569",
+        "sourceDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
         "statement": "Bind the same digest-addressed original-scheme inventory and cross-product traceability matrix as Runtime 5.0.1, mapping every Expert v1.0.0 requirement, explicit user correction, audited gap, current criterion, inherited criterion, validator, evidence contract, and terminal Expert journey.",
         "kind": "USER_CORRECTION"
       },
       {
         "id": "CORRECTION-09",
         "sourceRef": "governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#scope.include.1",
-        "sourceDigest": "sha256:b985361836bee7a603fc352b70a106f80e6a505f32704f0bfa940c94f3aca569",
+        "sourceDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
         "statement": "Implement and package one Agent-neutral Expert Core plus generated Codex, WorkBuddy, generic Agent, and generic MCP adapters whose installed artifacts bind exact Core, protocol, capability, compatibility, and adapter digests and contain no Host-specific business, Lifecycle, Harness, authority, or recovery semantics.",
         "kind": "USER_CORRECTION"
       },
       {
         "id": "CORRECTION-10",
         "sourceRef": "governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#scope.include.2",
-        "sourceDigest": "sha256:b985361836bee7a603fc352b70a106f80e6a505f32704f0bfa940c94f3aca569",
+        "sourceDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
         "statement": "Provide complete real installation lifecycle runbooks and executable verification for Codex and designated-human WorkBuddy: install, discover, help, tutorial, verify, upgrade, rollback, uninstall, clean reinstall, version, onboarding, adjustment, recovery explanation, Runtime-owned resume, and next-action guidance.",
         "kind": "USER_CORRECTION"
       },
       {
         "id": "CORRECTION-11",
         "sourceRef": "governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#scope.include.3",
-        "sourceDigest": "sha256:b985361836bee7a603fc352b70a106f80e6a505f32704f0bfa940c94f3aca569",
+        "sourceDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
         "statement": "Make new-project registration and project-definition adjustment genuinely interactive through Runtime-provided typed questions, detected values, defaults, previews, semantic impacts, immutable active-run behavior, migration and rollback, without requesting raw secrets or inventing Runtime state.",
         "kind": "USER_CORRECTION"
       },
       {
         "id": "CORRECTION-12",
         "sourceRef": "governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#scope.include.4",
-        "sourceDigest": "sha256:b985361836bee7a603fc352b70a106f80e6a505f32704f0bfa940c94f3aca569",
+        "sourceDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
         "statement": "Provide version-aware README and technical documentation, installed documentation routing, guided tutorials, concepts, architecture boundaries, Host Adapter authoring, MCP integration, troubleshooting, migration, and exact commands verified from packaged artifacts.",
         "kind": "USER_CORRECTION"
       },
       {
         "id": "CORRECTION-13",
         "sourceRef": "governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#scope.include.5",
-        "sourceDigest": "sha256:b985361836bee7a603fc352b70a106f80e6a505f32704f0bfa940c94f3aca569",
+        "sourceDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
         "statement": "Implement criterion-specific independent validators and evidence collectors for every EXFUNC and EXCAP criterion, V4 inherited criterion, Expert v1.0.0 predecessor criterion, EXE2E01-EXE2E08, TRACE01-TRACE06, impact closure, cross-product compatibility, and NO_REGRESSION.",
         "kind": "USER_CORRECTION"
       },
       {
         "id": "CORRECTION-14",
         "sourceRef": "governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#scope.include.6",
-        "sourceDigest": "sha256:b985361836bee7a603fc352b70a106f80e6a505f32704f0bfa940c94f3aca569",
+        "sourceDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
         "statement": "Prove an exact Expert 1.0.1 Candidate with the exact compatible Runtime 5.0.1 Candidate outside source checkout across real Codex, designated-human WorkBuddy, an independent Host, generic MCP, and headless Runtime, including restart, resume, upgrade, rollback, uninstall, absence, incompatibility, and zero-legacy-Suite-invocation variants.",
         "kind": "USER_CORRECTION"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-01",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.0",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "every Goal Target Loop binds one eligible published immutable HarnessBundle and one resolved open Lifecycle",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-02",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.1",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "Harness selection is derived from Project Definition plus GoalTarget with reasons, rejected alternatives, ambiguity, and abstention evidence",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-03",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.2",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "Harness and Lifecycle composition intersects permission and unions obligations without weakening Harness evidence, validators, constraints, boundaries, or capabilities",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-04",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.3",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "the complete binding is immutable and revalidated before start, resume, retry, and every Loop iteration",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-05",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.4",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "Catalog growth, mutation, new version, no-match, ambiguity, and conflict behavior is deterministic and fail closed",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-06",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.5",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "EvoPilot and Evolution Expert remain strict read-only Harness consumers",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-07",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.6",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "new project and new Host Adapter paths require zero project-specific Engine source diff",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-08",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.7",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "deterministic reversible work and proven Recovery rules do not stop for ceremonial approval",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-09",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.8",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "irreversible authority, production, database, credential, acceptance, publication, and Release remain exact human boundaries",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-10",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.9",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "Runtime remains complete through CLI, API, and CI when Expert is absent or incompatible",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-11",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.10",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "exact installed Candidates prove zero legacy Suite invocation and no hidden fallback while real installed Suites remain active and untouched",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-12",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.11",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "actual Suite default switching, archival, and retirement are excluded from v5 release acceptance and require the post-release Cutover milestone",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-13",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.12",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "all 21 functional, 16 capability, 13 documentation, 13 E2E, and 6 completion-traceability criteria pass with complete inherited acceptance and NO_REGRESSION",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-5.0-harness-guided-governed-evolution-runtime-14",
         "sourceRef": "governance/roadmap.yaml#evopilot-5.0-harness-guided-governed-evolution-runtime.13",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "every original approved v5 requirement and explicit user correction is mapped with no silent exclusion, bulk PASS projection, generic evidence, or unmapped item",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-evolution-expert-1.0-01",
         "sourceRef": "governance/roadmap.yaml#evopilot-evolution-expert-1.0.0",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "all adapters bind one Core digest and contain no Host-specific Lifecycle, Harness, authority, or recovery semantics",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-evolution-expert-1.0-02",
         "sourceRef": "governance/roadmap.yaml#evopilot-evolution-expert-1.0.1",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "the Expert never selects, fabricates, modifies, approves, or publishes Harness assets",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-evolution-expert-1.0-03",
         "sourceRef": "governance/roadmap.yaml#evopilot-evolution-expert-1.0.2",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "Codex and WorkBuddy complete their declared real-host ranges against exact Runtime and Expert Candidates",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-evolution-expert-1.0-04",
         "sourceRef": "governance/roadmap.yaml#evopilot-evolution-expert-1.0.3",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "Expert upgrade and rollback do not require Runtime bytes or version to change",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-evolution-expert-1.0-05",
         "sourceRef": "governance/roadmap.yaml#evopilot-evolution-expert-1.0.4",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "a new third-party Host Adapter qualifies with zero Engine source diff",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-evolution-expert-1.0-06",
         "sourceRef": "governance/roadmap.yaml#evopilot-evolution-expert-1.0.5",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "Runtime headless operation remains complete without Expert",
         "kind": "ROADMAP"
       },
       {
         "id": "ROADMAP-evopilot-evolution-expert-1.0-07",
         "sourceRef": "governance/roadmap.yaml#evopilot-evolution-expert-1.0.6",
-        "sourceDigest": "sha256:864ac9a6cd279607c7350ecc40d1f2ddc180856bf63d2a9f5c3ad7b0155bdba7",
+        "sourceDigest": "sha256:d4c8d0f113e9e2683a8b6ecca8af28cbb56bf9f00789388ecbe30ee5c80044e5",
         "statement": "every original Expert v1.0.0 requirement and explicit user correction maps to an independent validator, concrete evidence, and terminal E2E with 100% PASS and NO_REGRESSION",
         "kind": "ROADMAP"
       },
@@ -1063,11 +1063,11 @@
         "kind": "TARGET"
       }
     ],
-    "digest": "sha256:ee5e718325d3faea92132f29f0044d3bcddddf4bfd8973eba26f662c51447239"
+    "digest": "sha256:e65a324021ea9309a1eade9a4215820b9b78a8189c87719f57040768a7dc18d9"
   },
   "trace": {
     "schema": "evopilot-completion-trace/v1",
-    "inventoryDigest": "sha256:ee5e718325d3faea92132f29f0044d3bcddddf4bfd8973eba26f662c51447239",
+    "inventoryDigest": "sha256:e65a324021ea9309a1eade9a4215820b9b78a8189c87719f57040768a7dc18d9",
     "links": [
       {
         "requirementId": "CORRECTION-01",
@@ -5429,7 +5429,7 @@
         ]
       }
     ],
-    "digest": "sha256:4f7a8b6be04958a33733f6845f765c4b5ef36917d6a08310563234f68ef5f2aa"
+    "digest": "sha256:3a0c7207045f9182008ce976309934f3ca190c2c52651ad07effe4adc6defb4a"
   },
   "requiredCriteria": [
     {
@@ -9867,5 +9867,5 @@
     "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json",
     "governance/targets/evopilot-evolution-expert-v1.0.0.json"
   ],
-  "digest": "sha256:e43713a9aedefd567846dedafe21d3bf80cd18ba425779296ace8bf744e00058"
+  "digest": "sha256:7a71edd17ff89ac8917e5013543f5820ff955e0809915f49054b509296491960"
 }

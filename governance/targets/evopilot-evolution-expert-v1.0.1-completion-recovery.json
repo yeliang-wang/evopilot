@@ -973,6 +973,32 @@
       "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/product-completion-report.json@sha256:c5a41daeb5282323c0c875cc05358b7b5e5893706bf1eae1b36aba7390b51913#NO_REGRESSION"
     ]
   },
+  "publicEvidence": {
+    "schema": "evopilot-public-release-evidence/v1",
+    "status": "VERIFIED",
+    "version": "1.0.1",
+    "tag": "evolution-expert-v1.0.1",
+    "acceptedProductCommit": "8904c551399d53fd74613943924a16d661f1b064",
+    "githubRelease": "https://github.com/yeliang-wang/evopilot/releases/tag/evolution-expert-v1.0.1",
+    "githubReleaseAssets": "4_ACCEPTED_PLUS_1_PROMOTION_RECORD_EXACT_BYTES_VERIFIED",
+    "candidateHandoffDigest": "sha256:51d9c4a5720bd94577421f6134da1667ec4907c6766b9c11ec16fb36c2eb3676",
+    "candidateReleaseSetDigest": "sha256:87d234699fcfad00c3421285336d8a475c3ef0c06c3dc49ee7f474f641caddd2",
+    "npmPackage": "@evopilot/evolution-expert@1.0.1",
+    "packageSha256": "sha256:23f26024f7cdbd252b1fee57d0fc8c0573af16578aa46f957b4561eb34f8c577",
+    "packageIntegrity": "VERIFIED_AGAINST_ACCEPTED_TARBALL",
+    "registrySignatures": "CRYPTOGRAPHICALLY_VERIFIED",
+    "provenance": "SLSA_V1_REKOR_INTEGRITY_MATCH_AND_INCLUSION_PROOF_VERIFIED",
+    "publicInstallation": "VERIFIED_FROM_EMPTY_DIRECTORY",
+    "cliEntrypoint": "VERIFIED",
+    "skill": "PRESENT",
+    "coreDigest": "sha256:fef38c4295b751b15bd7274871ea5548d88d8d02cc8c999609858617411a930c",
+    "codexAdapterDigest": "sha256:7216739c5b93cff3a596aca5bde45e8682fb256248cb483bdb4a38de5fd6fbc3",
+    "codexConformance": "CONFORMANT",
+    "runtimeCompatibility": ">=5.0.0 <6.0.0",
+    "contractsVersion": "5.0.1",
+    "productBytesRebuilt": false,
+    "evidenceRef": "codex-evolution://evopilot/evopilot-v501-runtime-expert101-release-001/public-release-verification.json@sha256:0e2559fa16b8355f1d3409d2dfffbec927b90fa3d9306c51b4cd00039f2b3469#evolutionExpert"
+  },
   "approvals": {
     "target": {
       "decision": "APPROVED",
@@ -983,7 +1009,7 @@
     "release": {
       "decision": "AUTHORIZED",
       "by": "user",
-      "evidenceRef": "conversation:pending-approval-evopilot-v5.0.1-runtime-expert-v1.0.1-release-binding-1",
+      "evidenceRef": "conversation:approved-evopilot-v5.0.1-runtime-expert-v1.0.1-release-binding-1@sha256:7bac3b85098d5fd62d901d9347b776f7b1c1f483498cd984500c90fec29d8a7e",
       "authorizationDigest": "sha256:002584c7d21a6d4b0c176ef1f662e618c9bcb677237f994bc6fb7c5eff8d3fbe"
     }
   },

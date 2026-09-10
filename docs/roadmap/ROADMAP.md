@@ -24,9 +24,9 @@ Acceptance, Harness publication, or Release.
 
 The public EvoPilot Runtime `v5.0.0` and Evolution Expert `v1.0.0` artifacts are
 immutable published predecessors. Their historical acceptance records remain
-process evidence, but the completion audit found that they do not prove the
-entire approved v5 scheme. The current completion-recovery working versions are
-Runtime `v5.0.1` and Evolution Expert `v1.0.1`. Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset,
+process evidence, but the completion audit found that they did not prove the
+entire approved v5 scheme. Runtime `v5.0.1` and Evolution Expert `v1.0.1` are
+the completed public recovery releases. Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset,
 Ontology, Policy, Evaluation, and Catalog versions evolve independently.
 
 ## Product Direction
@@ -489,10 +489,10 @@ distribution, acceptance, and public-release guarantees are inherited by v5.
 
 ### v5.0.1: Harness-Guided Governed Evolution Runtime Completion Recovery
 
-Status: `IN_PROGRESS`
+Status: `COMPLETE`
 
-The immutable public `v5.0.0` predecessor does not by itself prove completion.
-`v5.0.1` must deliver and independently prove the DDD project model,
+The immutable public `v5.0.0` predecessor did not by itself prove completion.
+`v5.0.1` delivers and independently proves the DDD project model,
 first-class published Harness consumption
 and combined execution binding, open project-neutral Lifecycle composition,
 bounded recovery and automation learning, stable Human Interaction Protocol,
@@ -501,20 +501,27 @@ projects, independent Expert integration, isolated legacy Suite independence
 proof, post-release Cutover readiness, and the full
 `FUNC01`–`FUNC21`, `CAP01`–`CAP16`, `DOC01`–`DOC13`, `E2E01`–`E2E13`, and
 `TRACE01`–`TRACE06` portfolio with 100-percent original-scheme traceability and
-`NO_REGRESSION`.
+`NO_REGRESSION`. All 137 Runtime criteria passed within the 195-item combined
+campaign, the exact installed Candidate pair was verified, and the public
+GitHub Release, GHCR image, six npm packages, signatures, provenance, clean
+installation, and CLI entrypoints match the accepted bytes.
 
 ### Evolution Expert v1.0.1 Completion Recovery
 
-Status: `IN_PROGRESS`, independent companion product
+Status: `COMPLETE`, independent companion product
 
 The immutable public `v1.0.0` predecessor remains historical process evidence.
-`v1.0.1` must independently prove one Agent-neutral Core, Codex and WorkBuddy
+`v1.0.1` independently proves one Agent-neutral Core, Codex and WorkBuddy
 Adapters, generic Host and MCP guidance, schema-driven onboarding and project
 adjustment, Harness and Lifecycle explanation, installed-version help,
 side-effect-free tutorials, Runtime-owned resume, independent upgrade and
 rollback, and a third-party Host Adapter conformance kit. It is complete only
 with the same `TRACE01`–`TRACE06`, exact-pair, 100-percent coverage, and
-`NO_REGRESSION` discipline.
+`NO_REGRESSION` discipline. All 58 Expert criteria passed within the combined
+campaign; the public Expert package matches the accepted tarball, its npm
+signature and SLSA provenance verify, and independent installation proves the
+CLI, generated Codex Skill, Core digest, adapter binding, and Runtime 5.0.1
+compatibility.
 
 ### Post-completion successors: Legacy Suite Cutover
 

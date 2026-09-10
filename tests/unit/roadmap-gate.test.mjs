@@ -43,11 +43,27 @@ test("Roadmap Gate rejects incomplete, generic, or weakened completion assurance
 
 test("Roadmap Gate rejects a COMPLETE completion successor without exact closure evidence", () => {
   const result = runWithRoadmap((roadmap) => {
-    roadmap.milestones.find((milestone) => milestone.id === "evopilot-5.0-harness-guided-governed-evolution-runtime").status = "COMPLETE";
+    const milestone = roadmap.milestones.find((item) => item.id === "evopilot-5.0-harness-guided-governed-evolution-runtime");
+    milestone.status = "COMPLETE";
+    delete milestone.completionEvidence;
   });
   assert.equal(result.status, 1, result.stderr);
   assert.equal(result.body.classification, "INVALID");
   assert.match(result.body.errors.join(" "), /COMPLETE requires a completion report/);
+});
+
+test("Roadmap Gate accepts current Runtime and Expert milestones in their verified COMPLETE terminal state", () => {
+  const result = run([]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.body.classification, "ALIGNED");
+  const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
+  for (const id of ["evopilot-5.0-harness-guided-governed-evolution-runtime", "evopilot-evolution-expert-1.0"]) {
+    const milestone = roadmap.milestones.find((item) => item.id === id);
+    assert.equal(milestone.status, "COMPLETE");
+    assert.equal(milestone.completionEvidence.total, milestone.completionEvidence.passed);
+    assert.equal(milestone.completionEvidence.noRegression, "PASSED");
+    assert.equal(milestone.completionEvidence.exactInstalledCandidatePair, "VERIFIED");
+  }
 });
 
 test("Roadmap Gate preserves AgentTrajectory work inside the completed v4 foundation", () => {
