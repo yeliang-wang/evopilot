@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { mkdtemp, rm, symlink } from "node:fs/promises";
 import http from "node:http";
+import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { Client } from "@modelcontextprotocol/client";
@@ -9,6 +11,9 @@ const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 const adapterEntrypoint = path.join(repositoryRoot, "packages/adapter-mcp/dist/stdio.js");
 
 test("installed-style stdio MCP exposes the complete lifecycle surface and delegates to HTTP authority", async () => {
+  const binDirectory = await mkdtemp(path.join(os.tmpdir(), "evopilot-mcp-bin-"));
+  const installedStyleEntrypoint = path.join(binDirectory, "evopilot-mcp");
+  await symlink(adapterEntrypoint, installedStyleEntrypoint);
   const requests = [];
   const api = http.createServer(async (request, response) => {
     let body = "";
@@ -32,7 +37,7 @@ test("installed-style stdio MCP exposes the complete lifecycle surface and deleg
 
   const transport = new StdioClientTransport({
     command: process.execPath,
-    args: [adapterEntrypoint],
+    args: [installedStyleEntrypoint],
     cwd: repositoryRoot,
     stderr: "pipe",
     env: {
@@ -96,5 +101,6 @@ test("installed-style stdio MCP exposes the complete lifecycle surface and deleg
   } finally {
     await client.close();
     await new Promise((resolve, reject) => api.close((error) => error ? reject(error) : resolve()));
+    await rm(binDirectory, { recursive: true, force: true });
   }
 });

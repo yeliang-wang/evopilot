@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import * as z from "zod";
@@ -141,8 +143,17 @@ function titleFor(name: string): string {
   return name.replace(/^evopilot_/, "").split("_").map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" ");
 }
 
-if (process.argv[1] && import.meta.url === new URL(`file://${process.argv[1]}`).href) {
+if (isDirectExecution()) {
   serveStdio(createEvoPilotMcpServer, {
     onerror: (error) => process.stderr.write(`[evopilot-mcp] ${error.message}\n`)
   });
+}
+
+function isDirectExecution(): boolean {
+  if (!process.argv[1]) return false;
+  try {
+    return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
 }
