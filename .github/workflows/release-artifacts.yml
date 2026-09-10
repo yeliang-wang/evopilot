@@ -78,10 +78,10 @@ jobs:
           [[ "$RELEASE_AUTHORIZATION_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
           [[ -z "$EXISTING_IMAGE_DIGEST" || "$EXISTING_IMAGE_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]
 
-      - name: Checkout verifier and release notes from Candidate commit
+      - name: Checkout promotion mechanics from workflow commit
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.candidate_commit }}
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Validate version and Roadmap release boundary
@@ -91,6 +91,17 @@ jobs:
           test -f "governance/targets/$TARGET_ID.json"
           npm run roadmap:release -- "$VERSION"
           npm run verify:release-pipeline
+          node - "governance/targets/$TARGET_ID.json" "$RELEASE_AUTHORIZATION_DIGEST" "$VERSION" <<'NODE'
+          const fs = require("node:fs");
+          const [targetPath, authorizationDigest, version] = process.argv.slice(2);
+          const target = JSON.parse(fs.readFileSync(targetPath, "utf8"));
+          if (target.status !== "RELEASE_AUTHORIZED") throw new Error("Runtime Target is not RELEASE_AUTHORIZED");
+          if (target.approvals?.release?.authorizationDigest !== authorizationDigest) throw new Error("Runtime release authorization digest mismatch");
+          for (const action of ["tag", "github-release", "ghcr"]) {
+            if (!target.release?.actions?.includes(action)) throw new Error(`Runtime Target does not authorize ${action}`);
+          }
+          if (target.release?.versions?.evopilot !== version) throw new Error("Runtime release version mismatch");
+          NODE
 
       - name: Download exact Candidate release set
         uses: actions/download-artifact@v4

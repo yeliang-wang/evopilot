@@ -2,7 +2,7 @@
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-evolution-expert-v1.0.1-completion-recovery",
   "revision": 1,
-  "status": "APPROVED",
+  "status": "RELEASE_AUTHORIZED",
   "intent": "Complete the original approved Evolution Expert scheme through Expert v1.0.1 completion recovery: deliver and independently prove real Codex, designated-human WorkBuddy, generic Agent, generic MCP, future Host, tutorial, project onboarding and adjustment, Runtime-owned resume, installation, verification, upgrade, rollback, and uninstall journeys with TRACE01-TRACE06, exact Candidate-pair binding, and NO_REGRESSION, without giving the Expert Runtime truth or Harness authority.",
   "objective": "Deliver an immutable Evolution Expert 1.0.1 completion successor whose Agent-neutral Core and generated adapters make every approved ordinary-human journey discoverable and operable across supported Hosts while every requirement is criterion-specifically validated and the product remains stateless, independently versioned, read-only toward Harness assets, and optional to complete headless Runtime operation.",
   "evidence": [
@@ -102,7 +102,7 @@
     "authority": "conversation, readiness, explanation, or recommendation never grants authority",
     "harnessBoundary": "Expert explains Runtime match results but never selects or changes Harness",
     "degradedMode": "CLI, API, and CI remain complete without Expert",
-    "releaseCommand": "npm run roadmap:release -- 1.0.0 --release-product evopilot-evolution-expert",
+    "releaseCommand": "npm run roadmap:release -- 1.0.1 --release-product evopilot-evolution-expert",
     "completionInvariant": "V5_ORIGINAL_SCHEME_100_PERCENT_CLOSURE: total equals passed; failed, pending, stale, generic, and unmapped are zero; exact installed Candidate pair verified; NO_REGRESSION passed.",
     "evidenceDisposition": "Expert 1.0.0 and Runtime 5.0.0 evidence is historical process evidence only; successor acceptance must be criterion-specific and freshly bound.",
     "suiteBoundary": "The real EvoPilot and DataRig Codex Suites remain installed, active, independent, and untouched; this Expert Target neither modifies nor retires them."
@@ -274,208 +274,260 @@
       "origin": "EvoPilot v4.0.0 Target AC04",
       "criterion": "Conversational and headless clients retain equivalent schema-driven interaction semantics.",
       "requiredEvidence": "cross-client question, validation, provenance, and result comparison",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V4AC04.json@sha256:ab572f4e44aa1482c5b10eb3591f96e1de539a5dd7eae16106d70a77e273a058#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V4AC04"
+      ]
     },
     {
       "id": "V4AC05",
       "origin": "EvoPilot v4.0.0 Target AC05",
       "criterion": "Input and conversation never imply authority and raw secrets remain prohibited.",
       "requiredEvidence": "authority negatives, secret scans, and SecretRef use",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V4AC05.json@sha256:fbd262f8e7b0113dfc9f7d0dcef55eb33ae2133b1b45fa95d18b2184f1715ce2#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V4AC05"
+      ]
     },
     {
       "id": "V4AC07",
       "origin": "EvoPilot v4.0.0 Target AC07",
       "criterion": "Human gates are exact, digest-bound, explained, and never satisfied by generic dialogue.",
       "requiredEvidence": "hostile conversation and genuine-decision matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V4AC07.json@sha256:84f033b93eb9f4351d8cbb530e9ec4532925b0bd775c3de0d6f2331b4cdd47ed#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V4AC07"
+      ]
     },
     {
       "id": "V4AC09",
       "origin": "EvoPilot v4.0.0 Target AC09",
       "criterion": "Resume and recovery preserve Runtime receipts and uncertain outcomes stop safely.",
       "requiredEvidence": "restart, transfer, duplicate, and uncertainty evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V4AC09.json@sha256:e1326f734fcf8fba12e9e237ec6b6a10ed9c9caa90f4e43bfe63ddc2fb857f91#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V4AC09"
+      ]
     },
     {
       "id": "V4AC15",
       "origin": "EvoPilot v4.0.0 Target AC15",
       "criterion": "Codex, WorkBuddy, independent Host, and headless clients preserve Engine semantics.",
       "requiredEvidence": "cross-host and transport conformance",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V4AC15.json@sha256:cefef28668bcd069c91658ee093e6ea0fc9fe1a35574e607d1cf3739b07fa5f3#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V4AC15"
+      ]
     },
     {
       "id": "V4AC16",
       "origin": "EvoPilot v4.0.0 Target AC16",
       "criterion": "Host and Runtime adapter capabilities, requests, results, receipts, and evidence remain exact and hostile-safe.",
       "requiredEvidence": "adapter contract and hostile-host matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V4AC16.json@sha256:305f51d2a90a34c9be0ed7401488f9009a171aca296a4f28661f90144ae95da7#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V4AC16"
+      ]
     },
     {
       "id": "V4AC17",
       "origin": "EvoPilot v4.0.0 Target AC17",
       "criterion": "All Agent-facing operation remains read-only with respect to Harness assets.",
       "requiredEvidence": "Harness mutation sentinels and explanation-only behavior",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V4AC17.json@sha256:c8557f4e0e10ed4e6e58a09215f1c9f877475bc8b3ca2948900eaa16fa271ae7#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V4AC17"
+      ]
     },
     {
       "id": "V4AC18",
       "origin": "EvoPilot v4.0.0 Target AC18",
       "criterion": "Security, docs, packaging, compatibility, and distribution have no regression.",
       "requiredEvidence": "full Expert Candidate checks, security scan, docs rehearsal, and install matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V4AC18.json@sha256:03917123785beb25be8cdce7a381e89980eaad441f4e7a8b9b148c1ef4881d05#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V4AC18"
+      ]
     },
     {
       "id": "V1-EXFUNC01",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC01",
       "criterion": "A first-time user can install the exact Expert package and obtain version-aware help without prior EvoPilot terminology knowledge.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: clean-host install and novice help transcript",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC01.json@sha256:53d2a458a89cc7bb1d4c1ae37d5633bd45df9dadd38d586ada040e6e76dff801#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC01"
+      ]
     },
     {
       "id": "V1-EXFUNC02",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC02",
       "criterion": "A side-effect-free tutorial teaches Project, Harness, Lifecycle, Goal, Target, Loop, recovery, evidence, acceptance, and release boundaries.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: tutorial transcript, object fixtures, and zero-effect sentinels",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC02.json@sha256:d8eee1e8fa09e3a68fb51244afdfce0871fa269d2865eeb4dffe0ce03a3f7565#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC02"
+      ]
     },
     {
       "id": "V1-EXFUNC03",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC03",
       "criterion": "The Expert discovers an existing project or guides a new project declaration through Runtime-owned schemas.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: existing and unknown project onboarding journeys",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC03.json@sha256:e02de0f78fc658e32e7572a5ff3e762d584aacab7807b59f1874817fee67e2b4#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC03"
+      ]
     },
     {
       "id": "V1-EXFUNC04",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC04",
       "criterion": "The Expert guides project-definition adjustment and rollback while displaying exact impact and preserved evidence.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: adjustment, selective drift, rollback, and evidence transcript",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC04.json@sha256:347330f21cee7055c6f3b837b3bc48442a137cf0eb12091daf2727da93414c6c#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC04"
+      ]
     },
     {
       "id": "V1-EXFUNC05",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC05",
       "criterion": "The Expert explains Runtime-produced Harness match reasons, alternatives, ambiguity, or abstention without choosing or fabricating a Harness.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: positive, ambiguous, no-match, and hostile-prompt scenarios",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC05.json@sha256:33799d3b42e5aacb9fe4c75fc2ee702c64ecac14193d4a65ef887c4d4695c966#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC05"
+      ]
     },
     {
       "id": "V1-EXFUNC06",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC06",
       "criterion": "The Expert renders the combined immutable Harness plus Lifecycle plan and mandatory obligations without weakening them.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: plan rendering comparison with Runtime canonical objects",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC06.json@sha256:c279f95a412274f9a18cf89fc64705023a6cc0264d2cde0b8a8fed7b65a421cb#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC06"
+      ]
     },
     {
       "id": "V1-EXFUNC07",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC07",
       "criterion": "The Expert distinguishes non-authorizing questions and progress from exact digest-bound human decisions.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: authority-negative and genuine-decision interaction matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC07.json@sha256:1e892d0a703b574c97e1c8b37a598daaf62946f3b5b715329484b222b33ead4f#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC07"
+      ]
     },
     {
       "id": "V1-EXFUNC08",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC08",
       "criterion": "The Expert explains automatic recovery, unknown classes, proposed automation rules, one-time approval, reuse, revocation, and escalation.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: recovery and registry conversational portfolio",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC08.json@sha256:d4af188e9620936764164a277a4cab9870630ba44e79c44221fef22b51bec55d#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC08"
+      ]
     },
     {
       "id": "V1-EXFUNC09",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC09",
       "criterion": "After restart or Host transfer the Expert resumes only from current Runtime-owned state and receipts.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: restart, transfer, digest drift, and resume evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC09.json@sha256:ef93ea8a65ea500d2fd9ec8368316d53a647b350046071029d7307d63e869396#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC09"
+      ]
     },
     {
       "id": "V1-EXFUNC10",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC10",
       "criterion": "Codex and WorkBuddy complete their declared exact-Candidate ranges with semantically equivalent Runtime results.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: real-host transcripts, object digests, and designated-human WorkBuddy declaration",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC10.json@sha256:a0ee840000a9de943cfc6f3a6ba2e79cec882a9e4327f691703cf0e23f34f398#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC10"
+      ]
     },
     {
       "id": "V1-EXFUNC11",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC11",
       "criterion": "A generated third-party Host Adapter qualifies without Engine or Expert Core source modification.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: adapter generation, conformance report, and source-diff proof",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC11.json@sha256:7270355ccda58b6b7d87f0f4f9600ce106434ffc9f3bdf29de452a3cf91ad79b#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC11"
+      ]
     },
     {
       "id": "V1-EXFUNC12",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC12",
       "criterion": "Expert absence or incompatibility produces clear diagnostics while headless Runtime operations remain complete.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: missing/incompatible Expert matrix and successful CLI/API/CI journey",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXFUNC12.json@sha256:234b90e5b31958fbbb24eff947257ba1f122ace28fc9bcfcd547227de82c9a13#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXFUNC12"
+      ]
     },
     {
       "id": "V1-EXCAP01",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP01",
       "criterion": "All Host adapters bind one exact Expert Core digest and contain no Host-specific product semantics.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: generated-source equivalence and prohibited-semantics scan",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXCAP01.json@sha256:513f5a63c468765ce9d996c14fdec24ed26a9573fe6fdbaf67fc86184d85f260#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXCAP01"
+      ]
     },
     {
       "id": "V1-EXCAP02",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP02",
       "criterion": "Expert protocol compatibility binds Expert version, Engine range, protocol, Core, Adapter, Host capabilities, and conformance status.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: compatibility negotiation and mismatch matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXCAP02.json@sha256:7cde32a5adf4a8a572f07f2a2d82addc57fec12e7ffc3c297d4ea69684e48f0d#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXCAP02"
+      ]
     },
     {
       "id": "V1-EXCAP03",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP03",
       "criterion": "Expert keeps no durable canonical Project, Harness, Lifecycle, Goal, Target, Loop, evidence, recovery, approval, or release state.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: state-location audit, restart behavior, and filesystem sentinels",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXCAP03.json@sha256:8ead734bf2bcf7e3ef188c083311a200240c690da0d2f0014675c38d999f15f4#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXCAP03"
+      ]
     },
     {
       "id": "V1-EXCAP04",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP04",
       "criterion": "Expert never owns credentials, raw secrets, approval identity, external authority, or Harness mutation capability.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: threat model, capability negatives, secret scans, and hostile Host tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXCAP04.json@sha256:b46886d3c27b105999312700d168db7b05b6eaf104f9d87c1dc816eefd31f63c#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXCAP04"
+      ]
     },
     {
       "id": "V1-EXCAP05",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP05",
       "criterion": "Expert version, Candidate, acceptance, release, upgrade, rollback, and uninstall are independent from Runtime.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: independent lifecycle, unchanged Runtime digest, and compatibility matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXCAP05.json@sha256:09cb64c89c07773419bcf54d4e3886edcc30589b5d906243128f12bdc3614062#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXCAP05"
+      ]
     },
     {
       "id": "V1-EXCAP06",
       "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP06",
       "criterion": "Installed-version docs, tutorials, examples, troubleshooting, and migration help are discoverable and verified against exact commands and schemas.",
       "requiredEvidence": "Fresh successor evidence for the original Expert criterion: documentation map, link check, command rehearsal, and version skew tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--V1-EXCAP06.json@sha256:ab60d23d0d3f72d785a4e78cddb93b87da28d72cba2d9c8bd04a560ef868315f#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-V1-EXCAP06"
+      ]
     }
   ],
   "regressionImpact": [
@@ -527,169 +579,217 @@
       "id": "EXFUNC01",
       "criterion": "A first-time user can install the exact Expert package and obtain version-aware help without prior EvoPilot terminology knowledge.",
       "requiredEvidence": "clean-host install and novice help transcript",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC01.json@sha256:07ced7851919efa06ccb423664067a56cc5835f38c4c049df67682293d4dc230#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC01"
+      ]
     },
     {
       "id": "EXFUNC02",
       "criterion": "A side-effect-free tutorial teaches Project, Harness, Lifecycle, Goal, Target, Loop, recovery, evidence, acceptance, and release boundaries.",
       "requiredEvidence": "tutorial transcript, object fixtures, and zero-effect sentinels",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC02.json@sha256:ec77089b9f5f6a253420e9d14daec0f6157b2f8eb0a01f0af6020d480f5d28d5#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC02"
+      ]
     },
     {
       "id": "EXFUNC03",
       "criterion": "The Expert discovers an existing project or guides a new project declaration through Runtime-owned schemas.",
       "requiredEvidence": "existing and unknown project onboarding journeys",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC03.json@sha256:27d72175355cd9016ce95fa6c585b55db81e66b525adb3951102bafdd7807471#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC03"
+      ]
     },
     {
       "id": "EXFUNC04",
       "criterion": "The Expert guides project-definition adjustment and rollback while displaying exact impact and preserved evidence.",
       "requiredEvidence": "adjustment, selective drift, rollback, and evidence transcript",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC04.json@sha256:372126efff46b22509c8d602633aa0c78dc5e07307ecd0d3c206d5c90b9c4cb3#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC04"
+      ]
     },
     {
       "id": "EXFUNC05",
       "criterion": "The Expert explains Runtime-produced Harness match reasons, alternatives, ambiguity, or abstention without choosing or fabricating a Harness.",
       "requiredEvidence": "positive, ambiguous, no-match, and hostile-prompt scenarios",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC05.json@sha256:5dc7b73cd269d9131200f152871768378204ab908e216ed989ae7c39da0d1a4e#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC05"
+      ]
     },
     {
       "id": "EXFUNC06",
       "criterion": "The Expert renders the combined immutable Harness plus Lifecycle plan and mandatory obligations without weakening them.",
       "requiredEvidence": "plan rendering comparison with Runtime canonical objects",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC06.json@sha256:5f0213995b128231ea7eb8e49aaa5087be52ba40acf1654f4811974844824f7b#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC06"
+      ]
     },
     {
       "id": "EXFUNC07",
       "criterion": "The Expert distinguishes non-authorizing questions and progress from exact digest-bound human decisions.",
       "requiredEvidence": "authority-negative and genuine-decision interaction matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC07.json@sha256:c7ea256ad96992da0f00a45fc5c3f1baa8e50e741581aa10f31f7f7e292eae2e#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC07"
+      ]
     },
     {
       "id": "EXFUNC08",
       "criterion": "The Expert explains automatic recovery, unknown classes, proposed automation rules, one-time approval, reuse, revocation, and escalation.",
       "requiredEvidence": "recovery and registry conversational portfolio",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC08.json@sha256:80bd0a27de40082c46f6b778ab2f4090b9a243d0a49a82cc36e8a646ce9fdcc2#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC08"
+      ]
     },
     {
       "id": "EXFUNC09",
       "criterion": "After restart or Host transfer the Expert resumes only from current Runtime-owned state and receipts.",
       "requiredEvidence": "restart, transfer, digest drift, and resume evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC09.json@sha256:63ba5681243e47548a0bf103c36589128b2cfd0a8aef15719f0ef8a80bc86a42#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC09"
+      ]
     },
     {
       "id": "EXFUNC10",
       "criterion": "Codex and WorkBuddy complete their declared exact-Candidate ranges with semantically equivalent Runtime results.",
       "requiredEvidence": "real-host transcripts, object digests, and designated-human WorkBuddy declaration",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC10.json@sha256:89a6354e76dfafa1768636b94208e06f7673284a8219107bd6dcd05f2dfa9f3b#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC10"
+      ]
     },
     {
       "id": "EXFUNC11",
       "criterion": "A generated third-party Host Adapter qualifies without Engine or Expert Core source modification.",
       "requiredEvidence": "adapter generation, conformance report, and source-diff proof",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC11.json@sha256:d153a8f50549392bd75e1578e882b60c326dfacfff83592965aeb95fc6740b58#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC11"
+      ]
     },
     {
       "id": "EXFUNC12",
       "criterion": "Expert absence or incompatibility produces clear diagnostics while headless Runtime operations remain complete.",
       "requiredEvidence": "missing/incompatible Expert matrix and successful CLI/API/CI journey",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXFUNC12.json@sha256:91098fb663918b936f7f2bb114d113ce7bf5932eb56ca1b7460f9ee43e406ea3#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXFUNC12"
+      ]
     },
     {
       "id": "EXCAP01",
       "criterion": "All Host adapters bind one exact Expert Core digest and contain no Host-specific product semantics.",
       "requiredEvidence": "generated-source equivalence and prohibited-semantics scan",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXCAP01.json@sha256:0ef01290730b5c7e52b99c9b830526b3bdb66d8de164c2c1bc6d0d58d972a857#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXCAP01"
+      ]
     },
     {
       "id": "EXCAP02",
       "criterion": "Expert protocol compatibility binds Expert version, Engine range, protocol, Core, Adapter, Host capabilities, and conformance status.",
       "requiredEvidence": "compatibility negotiation and mismatch matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXCAP02.json@sha256:fe0ddf44990154785a8a3d5e2895bd15a4fdb9d4e91ee2ccdfe545d7b14d4212#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXCAP02"
+      ]
     },
     {
       "id": "EXCAP03",
       "criterion": "Expert keeps no durable canonical Project, Harness, Lifecycle, Goal, Target, Loop, evidence, recovery, approval, or release state.",
       "requiredEvidence": "state-location audit, restart behavior, and filesystem sentinels",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXCAP03.json@sha256:e7c98a44d18442fd70bc2f73a66d72471fa26e79e6c566bb060a71b319025c68#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXCAP03"
+      ]
     },
     {
       "id": "EXCAP04",
       "criterion": "Expert never owns credentials, raw secrets, approval identity, external authority, or Harness mutation capability.",
       "requiredEvidence": "threat model, capability negatives, secret scans, and hostile Host tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXCAP04.json@sha256:470c4ac2b16e966bcc13094585c795b5b71b3696b1b3a3ea0af3402c27c97c51#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXCAP04"
+      ]
     },
     {
       "id": "EXCAP05",
       "criterion": "Expert version, Candidate, acceptance, release, upgrade, rollback, and uninstall are independent from Runtime.",
       "requiredEvidence": "independent lifecycle, unchanged Runtime digest, and compatibility matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXCAP05.json@sha256:e4721cee2a7eb929ad54c72edc2d453afb966953ac4c254da63ebcdca6683e54#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXCAP05"
+      ]
     },
     {
       "id": "EXCAP06",
       "criterion": "Installed-version docs, tutorials, examples, troubleshooting, and migration help are discoverable and verified against exact commands and schemas.",
       "requiredEvidence": "documentation map, link check, command rehearsal, and version skew tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXCAP06.json@sha256:8b23905714333a972620c8e68798177662425d196170b646485c91fcd02cd991#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXCAP06"
+      ]
     },
     {
       "id": "TRACE01",
       "criterion": "The complete original Expert and Runtime v5 scheme inventory is canonical, digest-bound, immutable for the campaign, and includes every accepted Roadmap clause, both predecessor Targets, every explicit user correction, and every audited Expert or cross-product gap.",
       "requiredEvidence": "inventory schema validation, source digest verification, completeness enumeration, and mutation-detection tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--TRACE01.json@sha256:8be06d611293fa83008357a2e266c269f961590f2f6109fa9a7a1ad26ff9fc3a#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-TRACE01"
+      ]
     },
     {
       "id": "TRACE02",
       "criterion": "Every Expert inventory item maps to at least one successor Target scope item and acceptance criterion, with no silent exclusion or unmapped requirement.",
       "requiredEvidence": "machine-readable Expert traceability matrix and negative tests for missing, duplicate, silently excluded, and unmapped items",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--TRACE02.json@sha256:bb628f7b4ff47d0267e2417c14c6fd2d04b2deeafb4c89450ad02ccd99aa27a4#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-TRACE02"
+      ]
     },
     {
       "id": "TRACE03",
       "criterion": "Every Expert current and inherited acceptance criterion has an independent executable validator and a concrete criterion-specific evidence contract; generic aggregate anchors and bulk PASS projection are rejected.",
       "requiredEvidence": "validator inventory, independence checks, per-criterion evidence schema, tamper tests, and generic-evidence rejection tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--TRACE03.json@sha256:10bb6d836bce83b2e2712b3da0e2cb62adbb0a0ef51488ae1df2611f77aac604#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-TRACE03"
+      ]
     },
     {
       "id": "TRACE04",
       "criterion": "Every user-observable Expert requirement maps to an exact E2E starting state, terminal state, prohibited effects, required Hosts, and concrete evidence, including EXE2E01-EXE2E08 and their cross-product mappings.",
       "requiredEvidence": "Expert E2E trace matrix, terminal-state assertions, prohibited-effect sentinels, Host coverage audit, and uncovered-behavior negative test",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--TRACE04.json@sha256:414b9be905aefeffd1a733bdc0fefb3bf72440e54aaa659ed1057b732a1d9cd7#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-TRACE04"
+      ]
     },
     {
       "id": "TRACE05",
       "criterion": "Expert completion aggregation remains INCOMPLETE when any required item is missing, partial, failed, pending, stale, warning-only, generic, unmapped, bound to the wrong Candidate, or represented only by an unauthorized human declaration.",
       "requiredEvidence": "fail-closed Expert aggregation tests for every incomplete evidence class, unauthorized human substitution, and wrong-candidate binding",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--TRACE05.json@sha256:563184f7d6d1176f1de1cbe46e89160b5beff0649fa9833f01ad6f5be28b2e29#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-TRACE05"
+      ]
     },
     {
       "id": "TRACE06",
       "criterion": "The final completion report proves 100-percent original-scheme coverage, all Expert current and inherited acceptance and E2E passed, exact installed Expert and Runtime Candidate pair verified, complete impact closure, and NO_REGRESSION passed.",
       "requiredEvidence": "digest-bound final completion report with total equals passed and zero failed, pending, stale, generic, and unmapped counts plus independent recomputation",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--TRACE06.json@sha256:2e4d85af5c369d6145cd8d2117bee0346c0a87ed3a2c729a2d63160aa6ec5a47#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-TRACE06"
+      ]
     }
   ],
   "realCaseCoverage": [
@@ -711,8 +811,10 @@
         "TRACE04"
       ],
       "requiredEvidence": "isolated installs, real-host transcripts, zero-effect sentinels, and semantic comparison",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXE2E01.json@sha256:a34cea001b1c253538edac1495d7417bdf763655cc28b76defe2ccf73bdcec13#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXE2E01"
+      ]
     },
     {
       "id": "EXE2E02",
@@ -728,8 +830,10 @@
         "EXCAP06"
       ],
       "requiredEvidence": "project declaration artifacts, before/after digests, rollback, and state-ownership proof",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXE2E02.json@sha256:8ac7a52fa1ba402a08839911ea9e798e058b22c9ed6a8f0c5daad381003b96c7#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXE2E02"
+      ]
     },
     {
       "id": "EXE2E03",
@@ -746,8 +850,10 @@
         "EXCAP04"
       ],
       "requiredEvidence": "canonical Runtime objects, rendered explanations, hostile prompts, and no-Harness-authority sentinels",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXE2E03.json@sha256:d294beb23e7e82c9bbc926b5a702af19fb725127226a8a9f33fd3eba23cf084b#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXE2E03"
+      ]
     },
     {
       "id": "EXE2E04",
@@ -765,8 +871,10 @@
         "EXCAP04"
       ],
       "requiredEvidence": "recovery transcript, rule proposal and approval, Runtime receipts, transfer, and state audit",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXE2E04.json@sha256:3f53258c809d8a1a60c1d97c2bdff1cfe83f82629924102fbfa6356a84cd79e7#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXE2E04"
+      ]
     },
     {
       "id": "EXE2E05",
@@ -787,8 +895,10 @@
         "TRACE06"
       ],
       "requiredEvidence": "Expert artifacts and versions, unchanged Runtime digests, compatibility negotiation, upgrade and rollback",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXE2E05.json@sha256:55fbc37efa842fac7371803b60f45828c587d0ec2ae79c897d2e02112e283445#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXE2E05"
+      ]
     },
     {
       "id": "EXE2E06",
@@ -804,8 +914,10 @@
         "EXCAP04"
       ],
       "requiredEvidence": "generated adapter, exact bindings, conformance results, hostile tests, and source-diff proof",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXE2E06.json@sha256:46d671d8db87fb34be3af03b61d0b382e6c55eaaf3a1228ab117104c9df426b9#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXE2E06"
+      ]
     },
     {
       "id": "EXE2E07",
@@ -821,8 +933,10 @@
         "EXCAP06"
       ],
       "requiredEvidence": "diagnostics plus successful identical CLI/API/CI authoritative outcomes",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXE2E07.json@sha256:676c5419f612ee3ead26610b94a6b89d4b0a4bc34084c595c751ee4cd817b204#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXE2E07"
+      ]
     },
     {
       "id": "EXE2E08",
@@ -843,16 +957,21 @@
         "TRACE02"
       ],
       "requiredEvidence": "late-bound exact Suite snapshots, snapshot-drift handling, isolated absence proof, four journeys, zero legacy invocation counters, no-hidden-fallback sentinels, cross-host completion, and real-installed-Suite non-mutation evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/criteria/evopilot-evolution-expert-v1.0.1-completion-recovery--EXE2E08.json@sha256:570f4d3c9e0d367a39214e49f583686ae89cfb45da5fb2e215590f16c868c105#evidence-evopilot-evolution-expert-v1.0.1-completion-recovery-EXE2E08"
+      ]
     }
   ],
   "noRegressionRequired": true,
   "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
   "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
   "noRegression": {
-    "status": "PENDING",
-    "evidenceRefs": []
+    "status": "PASSED",
+    "evidenceRefs": [
+      "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/acceptance-result.json@sha256:26a6d9e02393853897feb83faa562cae1be4d0dae576c8c57e4d35c40b62278b#NO_REGRESSION",
+      "codex-evolution://evopilot/506b7ebc8b9a/acceptance/release-build-34333934757-34333938654/evidence/product-completion-report.json@sha256:c5a41daeb5282323c0c875cc05358b7b5e5893706bf1eae1b36aba7390b51913#NO_REGRESSION"
+    ]
   },
   "approvals": {
     "target": {
@@ -862,10 +981,10 @@
       "authorizationDigest": "sha256:530ef883e67a0045cbd56b0ecec80e4902bf07332483a271399c7c6de1aa4501"
     },
     "release": {
-      "decision": "PENDING",
-      "by": null,
-      "evidenceRef": null,
-      "authorizationDigest": null
+      "decision": "AUTHORIZED",
+      "by": "user",
+      "evidenceRef": "conversation:pending-approval-evopilot-v5.0.1-runtime-expert-v1.0.1-release-binding-1",
+      "authorizationDigest": "sha256:002584c7d21a6d4b0c176ef1f662e618c9bcb677237f994bc6fb7c5eff8d3fbe"
     }
   },
   "release": {

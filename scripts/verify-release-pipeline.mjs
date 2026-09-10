@@ -45,6 +45,11 @@ export function validateReleasePipeline(workflows) {
 
   requireMatch(release, /environment:\s*release/, "GitHub/GHCR promotion must use the protected release environment");
   rejectMatch(release, /environment:\s*npm/, "GitHub/GHCR promotion must not use the npm environment");
+  requireMatch(release, /ref:\s*\$\{\{ github\.sha \}\}/, "GitHub/GHCR promotion must use the dispatched workflow commit for recoverable promotion mechanics");
+  rejectMatch(release, /ref:\s*\$\{\{ inputs\.candidate_commit \}\}/, "GitHub/GHCR promotion mechanics must not roll back to the immutable Candidate source");
+  requireMatch(release, /target\.status !== "RELEASE_AUTHORIZED"/, "GitHub/GHCR promotion must require a RELEASE_AUTHORIZED Runtime Target");
+  requireMatch(release, /authorizationDigest !== authorizationDigest/, "GitHub/GHCR promotion must verify its release authorization against the Runtime Target");
+  requireMatch(release, /\["tag", "github-release", "ghcr"\]/, "GitHub/GHCR promotion must verify every required Runtime publication action");
   requireMatch(npm, /environment:\s*npm/, "npm promotion must use the dedicated npm environment");
   rejectMatch(npm, /environment:\s*release/, "npm promotion must not reuse the release environment");
 

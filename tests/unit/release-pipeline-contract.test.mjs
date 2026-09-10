@@ -231,6 +231,19 @@ test("release pipeline contract rejects rolling npm mechanics back to Candidate 
   assert.ok(result.failures.some((failure) => failure.includes("workflow commit") || failure.includes("roll back")));
 });
 
+test("release pipeline contract rejects Runtime promotion without Target authorization enforcement", () => {
+  const release = fs.readFileSync(".github/workflows/release-artifacts.yml", "utf8")
+    .replace('if (target.approvals?.release?.authorizationDigest !== authorizationDigest) throw new Error("Runtime release authorization digest mismatch");', "true;");
+  const workflows = {
+    candidate: fs.readFileSync(".github/workflows/release-candidate.yml", "utf8"),
+    release,
+    npm: fs.readFileSync(".github/workflows/npm-packages.yml", "utf8")
+  };
+  const result = validateReleasePipeline(workflows);
+  assert.equal(result.status, "FAIL");
+  assert.ok(result.failures.some((failure) => failure.includes("authorization against the Runtime Target")));
+});
+
 test("adapter manifests declare repository metadata for future npm provenance", () => {
   for (const packageName of ["adapter-mcp", "adapter-opencode"]) {
     const manifest = JSON.parse(fs.readFileSync(`packages/${packageName}/package.json`, "utf8"));
