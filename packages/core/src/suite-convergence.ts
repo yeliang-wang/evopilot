@@ -317,10 +317,10 @@ export function createCapabilityInventory(input: { sources: CapabilityInventoryS
       requireText(capability.description, "capability.description");
       assertDigest(capability.digest, "capability.digest");
       return { ...capability };
-    }).sort((left, right) => left.id.localeCompare(right.id));
+    }).sort((left, right) => compareText(left.id, right.id));
     if (new Set(capabilities.map((item) => item.id)).size !== capabilities.length) throw new Error(`CAPABILITY_INVENTORY_DUPLICATE_SOURCE_CAPABILITY:${source.suiteId}`);
     return { ...source, capabilities };
-  }).sort((left, right) => left.suiteId.localeCompare(right.suiteId));
+  }).sort((left, right) => compareText(left.suiteId, right.suiteId));
   const expected = sources.flatMap((source) => source.capabilities.map((capability) => `${source.suiteId}:${capability.id}`));
   const dispositions = [...input.dispositions].map((item) => {
     const key = `${item.sourceSuiteId}:${item.capabilityId}`;
@@ -330,7 +330,7 @@ export function createCapabilityInventory(input: { sources: CapabilityInventoryS
     if (item.destination.owner !== "EXCLUDED" && !item.validatorIds.length) throw new Error(`CAPABILITY_DISPOSITION_VALIDATOR_REQUIRED:${key}`);
     if (/(?:\.codex\/skills|codex-suite\/|legacy-suite-fallback)/i.test(item.destination.ref)) throw new Error(`CAPABILITY_DISPOSITION_HIDDEN_FALLBACK:${key}`);
     return { ...item, validatorIds: unique(item.validatorIds) };
-  }).sort((left, right) => `${left.sourceSuiteId}:${left.capabilityId}`.localeCompare(`${right.sourceSuiteId}:${right.capabilityId}`));
+  }).sort((left, right) => compareText(`${left.sourceSuiteId}:${left.capabilityId}`, `${right.sourceSuiteId}:${right.capabilityId}`));
   const keys = dispositions.map((item) => `${item.sourceSuiteId}:${item.capabilityId}`);
   if (new Set(keys).size !== keys.length) throw new Error("CAPABILITY_DISPOSITION_DUPLICATE");
   const unmapped = expected.filter((key) => !keys.includes(key));
@@ -546,11 +546,15 @@ function unique(values: readonly string[]): string[] {
 }
 
 function sortedRecord(value: Record<string, string>): Record<string, string> {
-  return Object.fromEntries(Object.entries(value).sort(([left], [right]) => left.localeCompare(right)));
+  return Object.fromEntries(Object.entries(value).sort(([left], [right]) => compareText(left, right)));
 }
 
 function stableJson(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
-  if (value && typeof value === "object") return `{${Object.entries(value as Record<string, unknown>).filter(([, child]) => child !== undefined).sort(([left], [right]) => left.localeCompare(right)).map(([key, child]) => `${JSON.stringify(key)}:${stableJson(child)}`).join(",")}}`;
+  if (value && typeof value === "object") return `{${Object.entries(value as Record<string, unknown>).filter(([, child]) => child !== undefined).sort(([left], [right]) => compareText(left, right)).map(([key, child]) => `${JSON.stringify(key)}:${stableJson(child)}`).join(",")}}`;
   return JSON.stringify(value);
+}
+
+function compareText(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }

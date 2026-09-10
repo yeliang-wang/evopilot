@@ -107,7 +107,7 @@ function bestCriteria(statement, available) {
     const source = [...(target.acceptance ?? []), ...(target.inheritedAcceptance ?? []), ...(target.realCaseCoverage ?? [])].find((entry) => entry.id === item.criterionId);
     const text = source?.criterion ?? source?.scenario ?? source?.origin ?? item.criterionId;
     return { id: item.criterionId, score: [...tokens(text)].filter((word) => words.has(word)).length };
-  }).sort((left, right) => right.score - left.score || left.id.localeCompare(right.id));
+  }).sort((left, right) => right.score - left.score || compareText(left.id, right.id));
   const selected = scored.filter((item) => item.score > 0).slice(0, 4).map((item) => item.id);
   return selected.length ? selected : [available.find((item) => item.criterionId === "TRACE02")?.criterionId ?? available[0].criterionId];
 }
@@ -127,4 +127,5 @@ function targetBinding(target) { return { id: target.id, revision: target.revisi
 function readJson(relative) { return JSON.parse(fs.readFileSync(path.join(root, relative), "utf8")); }
 function fileDigest(relative) { return `sha256:${createHash("sha256").update(fs.readFileSync(path.join(root, relative))).digest("hex")}`; }
 function sha(value) { return `sha256:${createHash("sha256").update(stable(value)).digest("hex")}`; }
-function stable(value) { if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`; if (value && typeof value === "object") return `{${Object.entries(value).filter(([, child]) => child !== undefined).sort(([a], [b]) => a.localeCompare(b)).map(([key, child]) => `${JSON.stringify(key)}:${stable(child)}`).join(",")}}`; return JSON.stringify(value); }
+function stable(value) { if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`; if (value && typeof value === "object") return `{${Object.entries(value).filter(([, child]) => child !== undefined).sort(([a], [b]) => compareText(a, b)).map(([key, child]) => `${JSON.stringify(key)}:${stable(child)}`).join(",")}}`; return JSON.stringify(value); }
+function compareText(left, right) { return left < right ? -1 : left > right ? 1 : 0; }

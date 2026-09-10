@@ -112,7 +112,7 @@ const DIGEST = /^sha256:[a-f0-9]{64}$/;
 
 export function createApprovedSchemeInventory(input: Omit<ApprovedSchemeInventory, "schema" | "digest">): ApprovedSchemeInventory {
   requireText(input.campaignId, "campaignId");
-  const requirements = [...input.requirements].sort((left, right) => left.id.localeCompare(right.id));
+  const requirements = [...input.requirements].sort((left, right) => compareText(left.id, right.id));
   assertUnique(requirements.map((item) => item.id), "REQUIREMENT_ID");
   for (const requirement of requirements) {
     requireText(requirement.id, "requirement.id");
@@ -133,7 +133,7 @@ export function createCompletionTrace(inventory: ApprovedSchemeInventory, links:
     deliverables: unique(link.deliverables),
     validatorIds: unique(link.validatorIds),
     terminalE2EIds: unique(link.terminalE2EIds)
-  })).sort((left, right) => left.requirementId.localeCompare(right.requirementId));
+  })).sort((left, right) => compareText(left.requirementId, right.requirementId));
   assertUnique(normalized.map((item) => item.requirementId), "TRACE_REQUIREMENT_ID");
   const known = new Set(inventory.requirements.map((item) => item.id));
   for (const link of normalized) {
@@ -367,6 +367,10 @@ function digestOf(value: unknown): string {
 
 function stable(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
-  if (value && typeof value === "object") return `{${Object.entries(value as Record<string, unknown>).filter(([, child]) => child !== undefined).sort(([left], [right]) => left.localeCompare(right)).map(([key, child]) => `${JSON.stringify(key)}:${stable(child)}`).join(",")}}`;
+  if (value && typeof value === "object") return `{${Object.entries(value as Record<string, unknown>).filter(([, child]) => child !== undefined).sort(([left], [right]) => compareText(left, right)).map(([key, child]) => `${JSON.stringify(key)}:${stable(child)}`).join(",")}}`;
   return JSON.stringify(value);
+}
+
+function compareText(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }

@@ -8,7 +8,7 @@
       "targetId": "evopilot-v5.1.0-suite-capability-convergence",
       "targetRevision": 1,
       "targetPath": "governance/targets/evopilot-v5.1.0-suite-capability-convergence.json",
-      "targetFileDigest": "sha256:c08a717e57cd1796a99b3c258046ae0cdcd523ce0cec15aae808f2f07a1eaae1",
+      "targetFileDigest": "sha256:6832670c30787fb35897ce12993cc8748a53f3818d988d41f89d00ee9b7728fa",
       "authorizationDigest": "sha256:a6a7e8bceb264f9b8bef8875631ee53df6922d829ea872e316ad188b5bd1a1fe",
       "version": "5.1.0"
     },
@@ -16,7 +16,7 @@
       "targetId": "evopilot-evolution-expert-v1.1.0-unified-host-entry",
       "targetRevision": 1,
       "targetPath": "governance/targets/evopilot-evolution-expert-v1.1.0-unified-host-entry.json",
-      "targetFileDigest": "sha256:8192c3aa4ec2834c60b3a6b84b426aa079ffe919cf5138125956f8255c4eac98",
+      "targetFileDigest": "sha256:b6bb7102c1e4aee9c6f32b53c60b6036684ed5739ecc95e143f1a067c30a84b9",
       "authorizationDigest": "sha256:983881153c0be7bb96d80cb9a468e2f01a10f808f63ab05db8ca20384e04e375",
       "version": "1.1.0"
     }
@@ -343,5 +343,5 @@
       "evidenceRefs": []
     }
   ],
-  "digest": "sha256:b95487a1e3e7307283265f6981c8e5a3aa6007b6d2be7e6cc8aec38011289330"
+  "digest": "sha256:982302adaa2879ccd6b11e3a2a6bbbde5a99a1f369321b097e61a7284bb23fe9"
 }
