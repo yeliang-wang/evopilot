@@ -2,7 +2,15 @@
 
 All notable changes to the independently versioned `@evopilot/evolution-expert` package are documented here. Runtime and Expert versions are compatible by declared ranges; they are not released in lockstep.
 
-## 1.0.1 - Unreleased
+## Unreleased
+
+### 1.1.0
+
+- Added source Suite versus resource/Runtime/Expert/Harness version guidance.
+- Added capability inventory, migration, shadow, Cutover-readiness, and rollback journeys generated from the same Agent-neutral Core.
+- Preserved thin Host adapters, headless Runtime equivalence, and zero legacy Suite fallback.
+
+## 1.0.1 - 2026-09-10
 
 ### Fixed
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { EVOLUTION_EXPERT_CORE, assertExpertAdapterConformance, createExpertAdapter, executeExpertTurn, expertCompatibility, expertDoctor, expertTutorial, planExpertTurn, qualifyExpertHostAdapter, routeExpertIntent } from "../../packages/evolution-expert/dist/index.js";
+import { EVOLUTION_EXPERT_CORE, assertExpertAdapterConformance, createExpertAdapter, executeExpertTurn, expertCompatibility, expertDoctor, expertMigrationGuide, expertTutorial, expertVersionGuide, planExpertTurn, qualifyExpertHostAdapter, routeExpertIntent } from "../../packages/evolution-expert/dist/index.js";
 
 test("one immutable Expert Core generates conformant Host-neutral adapters", () => {
   const codex = createExpertAdapter("codex");
@@ -12,18 +12,21 @@ test("one immutable Expert Core generates conformant Host-neutral adapters", () 
   assert.equal(expertCompatibility(codex, "4.0.0", codex.requiredCapabilities).conformanceStatus, "INCOMPATIBLE");
 });
 
-test("Expert 1.0.1 provides version-aware doctor and a side-effect-free tutorial", () => {
-  const doctor = expertDoctor("codex", "5.0.1", createExpertAdapter("codex").requiredCapabilities);
+test("Expert 1.1.0 provides version-aware doctor and a side-effect-free tutorial", () => {
+  const doctor = expertDoctor("codex", "5.1.0", createExpertAdapter("codex").requiredCapabilities);
   assert.equal(doctor.status, "READY");
-  assert.equal(doctor.expertVersion, "1.0.1");
+  assert.equal(doctor.expertVersion, "1.1.0");
   assert.equal(expertDoctor("codex", "4.0.0", createExpertAdapter("codex").requiredCapabilities).status, "INCOMPATIBLE");
   const tutorial = expertTutorial();
   assert.equal(tutorial.sideEffects, false);
-  assert.deepEqual(tutorial.steps.map((step) => step.concept), ["Project", "Harness", "Lifecycle", "Goal Target Loop", "Recovery", "Acceptance and Release"]);
+  assert.deepEqual(tutorial.steps.map((step) => step.concept), ["Project", "Resource versions", "Harness", "Lifecycle", "Goal Target Loop", "Recovery", "Acceptance and Release"]);
+  const versions = expertVersionGuide();
+  assert.equal(versions.versionLines.find((line) => line.owner === "source Suite").changesWhen.includes("Never"), true);
+  assert.equal(expertMigrationGuide().sideEffects, false);
 });
 
 test("a third-party Host qualifies without Engine source modification", () => {
-  const report = qualifyExpertHostAdapter("independent-host", "5.0.1", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation"]);
+  const report = qualifyExpertHostAdapter("independent-host", "5.1.0", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation"]);
   assert.equal(report.status, "QUALIFIED");
   assert.equal(report.sourceModificationRequired, false);
   assert.ok(report.checks.every((check) => check.status === "PASS"));
@@ -36,6 +39,9 @@ test("Expert routes onboarding, recovery, status, and tutorial without owning Ru
   assert.equal(routeExpertIntent("这个错误可以自动恢复吗").intent, "recovery");
   assert.equal(routeExpertIntent("现在进度如何").intent, "status");
   assert.equal(routeExpertIntent("给我一个入门教程").intent, "tutorial");
+  assert.equal(routeExpertIntent("解释 Suite 和资源版本关系").intent, "version-explain");
+  assert.equal(routeExpertIntent("查看迁移能力清单").intent, "capability");
+  assert.equal(routeExpertIntent("是否达到 cutover readiness").intent, "cutover");
 });
 
 

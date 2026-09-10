@@ -1,0 +1,347 @@
+{
+  "schema": "evopilot-runtime-expert-cross-acceptance-map/v1",
+  "id": "evopilot-runtime-5.1.0-expert-1.1.0-suite-capability-convergence",
+  "status": "IMPLEMENTED_AWAITING_CANDIDATE_ACCEPTANCE",
+  "roadmapDigest": "sha256:8a8d292105e70da36ed1564bd0d50c8ae5eab8bbcdc7eff81d049ef5efcb4d7c",
+  "bindings": {
+    "runtime": {
+      "targetId": "evopilot-v5.1.0-suite-capability-convergence",
+      "targetRevision": 1,
+      "targetPath": "governance/targets/evopilot-v5.1.0-suite-capability-convergence.json",
+      "targetFileDigest": "sha256:c08a717e57cd1796a99b3c258046ae0cdcd523ce0cec15aae808f2f07a1eaae1",
+      "authorizationDigest": "sha256:a6a7e8bceb264f9b8bef8875631ee53df6922d829ea872e316ad188b5bd1a1fe",
+      "version": "5.1.0"
+    },
+    "expert": {
+      "targetId": "evopilot-evolution-expert-v1.1.0-unified-host-entry",
+      "targetRevision": 1,
+      "targetPath": "governance/targets/evopilot-evolution-expert-v1.1.0-unified-host-entry.json",
+      "targetFileDigest": "sha256:8192c3aa4ec2834c60b3a6b84b426aa079ffe919cf5138125956f8255c4eac98",
+      "authorizationDigest": "sha256:983881153c0be7bb96d80cb9a468e2f01a10f808f63ab05db8ca20384e04e375",
+      "version": "1.1.0"
+    }
+  },
+  "migrationBaselines": [
+    {
+      "suiteId": "evopilot-codex-suite",
+      "sourceVersion": "3.2.1",
+      "snapshotDigest": "sha256:95e614c87b4bf01938ad559a9f13c4a00a4034437d6b59a22119ff53f22cf2f7"
+    },
+    {
+      "suiteId": "datarig-codex-suite",
+      "sourceVersion": "2.1.5",
+      "snapshotDigest": "sha256:064ee6a8a7b21ae8029cfaaf03eafef7ff0816a8b031d8468c49eae6b5b4a330"
+    }
+  ],
+  "versionPolicy": {
+    "sourceSuiteVersion": "Immutable migration provenance; never renamed or continued as a resource version.",
+    "resourceVersion": "Independent SemVer plus digest and Runtime compatibility range.",
+    "runtimeVersion": "Changes only for Runtime code, public contracts, schema compatibility, or execution semantics.",
+    "expertVersion": "Changes only for Expert Core, guided interaction, adapter generation, or package behavior.",
+    "compatibleResourceUpgrade": "Requires neither Runtime nor Expert byte or version change."
+  },
+  "completionRule": "Every mapped current, inherited, and E2E criterion must pass for one exact installed Candidate pair; inventory and impact closure are 100 percent; NO_REGRESSION passes; all negative counters and legacy Suite invocation are zero.",
+  "rows": [
+    {
+      "id": "CROSS01",
+      "objective": "Exact EvoPilot Suite 3.2.1 capability differential has no unmapped or hidden-fallback item.",
+      "runtimeE2EIds": [
+        "PARITY01"
+      ],
+      "expertE2EIds": [
+        "EXE2E01"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC01",
+        "RT51-FUNC13",
+        "RT51-CAP11"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-FUNC01",
+        "EX11-CAP05"
+      ],
+      "requiredHosts": [
+        "codex",
+        "generic-mcp",
+        "headless"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS02",
+      "objective": "Exact DataRig Suite 2.1.5 capability differential has no unmapped or hidden-fallback item.",
+      "runtimeE2EIds": [
+        "PARITY02"
+      ],
+      "expertE2EIds": [
+        "EXE2E02"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC02",
+        "RT51-FUNC14",
+        "RT51-CAP12"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-FUNC02",
+        "EX11-CAP06"
+      ],
+      "requiredHosts": [
+        "codex",
+        "generic-mcp",
+        "headless"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS03",
+      "objective": "DataRig runs its enterprise-internal declared lifecycle, including separately authorized database-ready and internal-release boundaries, with the DataRig Suite absent.",
+      "runtimeE2EIds": [
+        "E2E-DATARIG"
+      ],
+      "expertE2EIds": [
+        "EXE2E03"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC03",
+        "RT51-CAP01",
+        "RT51-DOC01"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-FUNC03",
+        "EX11-DOC01"
+      ],
+      "requiredHosts": [
+        "codex",
+        "headless",
+        "independent-host"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS04",
+      "objective": "EvoPilot runs a Harness-guided repository Goal Target Loop through public Runtime contracts with the EvoPilot Suite absent.",
+      "runtimeE2EIds": [
+        "E2E-EVOPILOT"
+      ],
+      "expertE2EIds": [
+        "EXE2E04"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC04",
+        "RT51-CAP02"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-FUNC04"
+      ],
+      "requiredHosts": [
+        "codex",
+        "generic-mcp",
+        "workbuddy"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS05",
+      "objective": "evopilot-harness runs as an ordinary Harness-producer project while Harness asset authority remains exclusively in evopilot-harness.",
+      "runtimeE2EIds": [
+        "E2E-HARNESS"
+      ],
+      "expertE2EIds": [
+        "EXE2E05"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC05",
+        "RT51-CAP03"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-FUNC05"
+      ],
+      "requiredHosts": [
+        "codex",
+        "generic-mcp",
+        "headless",
+        "independent-host",
+        "workbuddy"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS06",
+      "objective": "An unknown project onboards, matches a published Harness, resolves interactive inputs, executes, and closes with zero Engine source diff.",
+      "runtimeE2EIds": [
+        "E2E-NEW-PROJECT"
+      ],
+      "expertE2EIds": [
+        "EXE2E06"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC06",
+        "RT51-CAP04"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-FUNC06"
+      ],
+      "requiredHosts": [
+        "codex",
+        "generic-mcp",
+        "headless"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS07",
+      "objective": "A deterministic defect completes bounded repair, replacement Candidate, failed-first rerun, impact closure, full regression, and resume without a redundant human stop.",
+      "runtimeE2EIds": [
+        "E2E-RECOVERY"
+      ],
+      "expertE2EIds": [
+        "EXE2E07"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC07",
+        "RT51-CAP05"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-FUNC07"
+      ],
+      "requiredHosts": [
+        "codex",
+        "headless"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS08",
+      "objective": "Semantic, credential, production, database, destructive, acceptance, and release boundaries stop at the exact owning-human decision.",
+      "runtimeE2EIds": [
+        "E2E-AUTHORITY"
+      ],
+      "expertE2EIds": [
+        "EXE2E08"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC08",
+        "RT51-CAP06"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-FUNC08"
+      ],
+      "requiredHosts": [
+        "codex",
+        "generic-mcp",
+        "headless",
+        "independent-host",
+        "workbuddy"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS09",
+      "objective": "Codex, designated-human WorkBuddy, independent Host, generic MCP, and headless clients conform to the same Runtime truth.",
+      "runtimeE2EIds": [
+        "E2E-HOST"
+      ],
+      "expertE2EIds": [
+        "EXE2E01"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC09",
+        "RT51-CAP07"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-CAP01"
+      ],
+      "requiredHosts": [
+        "codex",
+        "generic-mcp",
+        "headless",
+        "independent-host",
+        "workbuddy"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS10",
+      "objective": "A post-Cutover capability change is delivered through Runtime, independently versioned declarative resources, providers, or Expert without editing or versioning either retired Suite, and a compatible project-resource upgrade does not change Runtime or Expert version.",
+      "runtimeE2EIds": [
+        "E2E-UPGRADE"
+      ],
+      "expertE2EIds": [
+        "EXE2E02"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC10",
+        "RT51-CAP08"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-CAP02"
+      ],
+      "requiredHosts": [
+        "codex",
+        "generic-mcp",
+        "headless"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS11",
+      "objective": "Released Runtime and Expert run in shadow, become the current Codex default only under a later Cutover Target, record zero legacy invocation, and retain recoverable rollback.",
+      "runtimeE2EIds": [
+        "E2E-CUTOVER"
+      ],
+      "expertE2EIds": [
+        "EXE2E03"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC11",
+        "RT51-CAP09"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-CAP03"
+      ],
+      "requiredHosts": [
+        "codex",
+        "headless",
+        "independent-host"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CROSS12",
+      "objective": "After recoverable archive, success, failure, resume, upgrade, rollback, and project journeys pass with both legacy Suites absent from discovery and execution.",
+      "runtimeE2EIds": [
+        "E2E-ABSENCE"
+      ],
+      "expertE2EIds": [
+        "EXE2E04"
+      ],
+      "runtimeAcceptanceIds": [
+        "RT51-FUNC12",
+        "RT51-CAP10"
+      ],
+      "expertAcceptanceIds": [
+        "EX11-CAP04"
+      ],
+      "requiredHosts": [
+        "codex",
+        "generic-mcp",
+        "headless",
+        "workbuddy"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "digest": "sha256:b95487a1e3e7307283265f6981c8e5a3aa6007b6d2be7e6cc8aec38011289330"
+}

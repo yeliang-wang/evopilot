@@ -1,4 +1,4 @@
-import { canonicalDigest, composeHarnessAndLifecycle, type HarnessExecutionCurrentState } from "@evopilot/core";
+import { canonicalDigest, composeHarnessAndLifecycle, type GovernedResourceKind, type HarnessExecutionCurrentState } from "@evopilot/core";
 import { createHash } from "node:crypto";
 import http from "node:http";
 import type { GovernedEvolutionService } from "../../domains/governed-evolution/index.js";
@@ -23,6 +23,95 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
   const scope = { tenantId: auth.tenantId, workspaceId: auth.workspaceId };
   const reject = (status: number, error: unknown) => writeJson(response, status, governedError(error));
   try {
+    if (request.method === "GET" && url.pathname === "/api/v1/evolution-resources") {
+      if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const kind = url.searchParams.get("kind") as GovernedResourceKind | null;
+      return writeJson(response, 200, envelope({ schema: "evopilot-governed-resource-list/v1", items: service.listResources(scope, kind ?? undefined) }));
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/evolution-resources") {
+      if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const resource = service.registerResource(body, scope);
+      appendAudit(audit(auth, "governed-resource.registered", `${resource.kind}/${resource.metadata.id}@${resource.metadata.version}`, { digest: resource.digest }));
+      return writeJson(response, 201, envelope(resource));
+    }
+    const resourceDiffMatch = url.pathname.match(/^\/api\/v1\/evolution-resources\/([^/]+)\/([^/]+)\/diff$/);
+    if (request.method === "GET" && resourceDiffMatch) {
+      if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      return writeJson(response, 200, envelope(service.compareResourceVersions(
+        decodeURIComponent(resourceDiffMatch[1]) as GovernedResourceKind,
+        decodeURIComponent(resourceDiffMatch[2]),
+        String(url.searchParams.get("from") ?? ""),
+        String(url.searchParams.get("to") ?? ""),
+        String(url.searchParams.get("runtimeVersion") ?? "5.1.0"),
+        scope
+      )));
+    }
+    const resourceActivationMatch = url.pathname.match(/^\/api\/v1\/evolution-resources\/([^/]+)\/([^/]+)\/(activate|rollback)$/);
+    if (request.method === "POST" && resourceActivationMatch) {
+      if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const kind = decodeURIComponent(resourceActivationMatch[1]) as GovernedResourceKind;
+      const resourceId = decodeURIComponent(resourceActivationMatch[2]);
+      const version = String(body.version ?? "");
+      const mode = resourceActivationMatch[3] as "activate" | "rollback";
+      const activation = service.activateResourceVersion(kind, resourceId, version, auth.actor, String(body.evidenceRef ?? ""), scope, mode);
+      appendAudit(audit(auth, `governed-resource.${mode}`, `${kind}/${resourceId}@${version}`, { resourceDigest: activation.resourceDigest, activationDigest: activation.digest }));
+      return writeJson(response, 200, envelope(activation));
+    }
+    const resourceMatch = url.pathname.match(/^\/api\/v1\/evolution-resources\/([^/]+)\/([^/]+)$/);
+    if (request.method === "GET" && resourceMatch) {
+      if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const resource = service.readResource(decodeURIComponent(resourceMatch[1]) as GovernedResourceKind, decodeURIComponent(resourceMatch[2]), url.searchParams.get("version") ?? undefined, scope);
+      return resource ? writeJson(response, 200, envelope(resource)) : writeJson(response, 404, { error: "GOVERNED_RESOURCE_NOT_FOUND" });
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/governed-evolution/capability-inventory/validate") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      return writeJson(response, 200, envelope(service.validateCapabilityInventory(body as never)));
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/governed-evolution/action-providers/qualify") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      return writeJson(response, 200, envelope(service.qualifyProvider(body as never)));
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/governed-evolution/governance/evaluate") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      return writeJson(response, 200, envelope(service.evaluateGovernance(body as never)));
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/governed-evolution/remediation-campaigns") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const campaign = service.startRemediationCampaign(body as never, scope);
+      appendAudit(audit(auth, "remediation-campaign.started", campaign.id, { digest: campaign.digest }));
+      return writeJson(response, 201, envelope(campaign));
+    }
+    const campaignDecisionMatch = url.pathname.match(/^\/api\/v1\/governed-evolution\/remediation-campaigns\/([^/]+)\/decide$/);
+    if (request.method === "POST" && campaignDecisionMatch) {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const id = decodeURIComponent(campaignDecisionMatch[1]);
+      const result = service.decideRemediationCampaign(id, body.incident, String(body.evidenceRef ?? ""), scope, body.replacement);
+      appendAudit(audit(auth, "remediation-campaign.decided", id, { decisionDigest: result.decision.digest, action: result.decision.action }));
+      return writeJson(response, 200, envelope(result));
+    }
+    const campaignTransitionMatch = url.pathname.match(/^\/api\/v1\/governed-evolution\/remediation-campaigns\/([^/]+)\/(resume|cancel|verify)$/);
+    if (request.method === "POST" && campaignTransitionMatch) {
+      if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const id = decodeURIComponent(campaignTransitionMatch[1]);
+      const action = campaignTransitionMatch[2].toUpperCase() as "RESUME" | "CANCEL" | "VERIFY";
+      const campaign = service.transitionRemediationCampaign(id, { action, campaignDigest: String(body.campaignDigest ?? ""), actor: auth.actor, evidenceRef: String(body.evidenceRef ?? "") }, scope);
+      appendAudit(audit(auth, `remediation-campaign.${campaignTransitionMatch[2]}`, id, { digest: campaign.digest, state: campaign.state }));
+      return writeJson(response, 200, envelope(campaign));
+    }
+    const campaignMatch = url.pathname.match(/^\/api\/v1\/governed-evolution\/remediation-campaigns\/([^/]+)$/);
+    if (request.method === "GET" && campaignMatch) {
+      if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const campaign = service.readRemediationCampaign(decodeURIComponent(campaignMatch[1]), scope);
+      return campaign ? writeJson(response, 200, envelope(campaign)) : writeJson(response, 404, { error: "REMEDIATION_CAMPAIGN_NOT_FOUND" });
+    }
     if (request.method === "GET" && url.pathname === "/api/v1/evolution-project-definitions") {
       if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
       return writeJson(response, 200, envelope({ schema: "evopilot-evolution-project-definition-list/v1", items: service.listProjectDefinitions(scope) }));

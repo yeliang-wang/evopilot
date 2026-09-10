@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "5.0.1"
+    "version": "5.1.0"
   },
   "paths": {
     "/api/v1/evolution-project-definitions": {
@@ -23,6 +23,46 @@
     },
     "/api/v1/evolution-project-definitions/{projectDefinitionId}/rollback": {
       "post": { "summary": "Roll back the active Project Definition pointer", "description": "Selects a prior immutable version without rewriting either definition or any active run binding.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "projectDefinitionId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Auditable rollback record" } } }
+    },
+    "/api/v1/evolution-resources": {
+      "get": { "summary": "List independently versioned governed resources", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Resource list" } } },
+      "post": { "summary": "Register one immutable governed resource", "description": "Registration preserves source provenance and does not imply activation or approval.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Normalized resource with digest" } } }
+    },
+    "/api/v1/evolution-resources/{kind}/{resourceId}": {
+      "get": { "summary": "Inspect one exact governed resource revision", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "kind", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "resourceId", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "version", "in": "query", "required": false, "schema": { "type": "string" } }], "responses": { "200": { "description": "Exact resource and immutable source provenance" } } }
+    },
+    "/api/v1/evolution-resources/{kind}/{resourceId}/diff": {
+      "get": { "summary": "Compare resource revisions and version impact", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Semantic changes, compatibility, and rollback version" } } }
+    },
+    "/api/v1/evolution-resources/{kind}/{resourceId}/activate": {
+      "post": { "summary": "Activate one exact immutable resource revision", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound activation record" } } }
+    },
+    "/api/v1/evolution-resources/{kind}/{resourceId}/rollback": {
+      "post": { "summary": "Roll back the active resource pointer", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound rollback record" } } }
+    },
+    "/api/v1/governed-evolution/capability-inventory/validate": {
+      "post": { "summary": "Validate complete exact-Suite capability disposition", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "100-percent mapped inventory with no hidden fallback" } } }
+    },
+    "/api/v1/governed-evolution/action-providers/qualify": {
+      "post": { "summary": "Qualify typed Action Provider boundaries", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Qualification result and failures" } } }
+    },
+    "/api/v1/governed-evolution/governance/evaluate": {
+      "post": { "summary": "Evaluate a GovernancePack against exact binding evidence", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Gate evaluation without authority inference" } } }
+    },
+    "/api/v1/governed-evolution/remediation-campaigns": {
+      "post": { "summary": "Start a durable bounded remediation campaign", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Campaign bound to Target, source, Candidate, and budget" } } }
+    },
+    "/api/v1/governed-evolution/remediation-campaigns/{campaignId}": {
+      "get": { "summary": "Inspect a remediation campaign", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Campaign state, history, budget, and replacement lineage" } } }
+    },
+    "/api/v1/governed-evolution/remediation-campaigns/{campaignId}/decide": {
+      "post": { "summary": "Classify and persist one remediation decision", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Automatic continuation or exact human stop" } } }
+    },
+    "/api/v1/governed-evolution/remediation-campaigns/{campaignId}/resume": {
+      "post": { "summary": "Resume a campaign from an exact human decision", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound resumed campaign" } } }
+    },
+    "/api/v1/governed-evolution/remediation-campaigns/{campaignId}/cancel": {
+      "post": { "summary": "Cancel a campaign with exact evidence", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound halted campaign" } } }
     },
     "/api/v1/governed-evolution/plan": {
       "post": { "summary": "Resolve and bind a Harness-guided governed evolution plan", "description": "Deterministically matches a published HarnessBundle, composes it with an open Lifecycle without weakening obligations, and persists the exact execution binding.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Harness-guided plan and immutable binding" }, "409": { "description": "Ambiguous/abstained match or composition conflict" } } }

@@ -1,6 +1,6 @@
 {
   "name": "@evopilot/profile-domainforge-fabric",
-  "version": "5.0.1",
+  "version": "5.1.0",
   "private": true,
   "type": "module",
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@evopilot/core": "5.0.1"
+    "@evopilot/core": "5.1.0"
   },
   "devDependencies": {
     "typescript": "^5.6.0"

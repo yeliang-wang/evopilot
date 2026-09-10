@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/remediation-campaign-v1.schema.json",
+  "title": "EvoPilot Remediation Campaign v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "targetDigest", "bindingDigest", "sourceDigest", "activeCandidateDigest", "state", "budget", "counters", "history", "replacementLineage", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-remediation-campaign/v1" },
+    "id": { "type": "string", "minLength": 1 },
+    "targetDigest": { "$ref": "#/$defs/digest" },
+    "bindingDigest": { "$ref": "#/$defs/digest" },
+    "sourceDigest": { "$ref": "#/$defs/digest" },
+    "activeCandidateDigest": { "$ref": "#/$defs/digest" },
+    "state": { "enum": ["ACTIVE", "WAITING_HUMAN_DECISION", "HALTED", "VERIFIED"] },
+    "budget": { "type": "object", "required": ["maxAttempts", "maxSameFailure", "maxWallClockMinutes", "startedAt"] },
+    "counters": { "type": "object", "required": ["attempts", "sameFailure"] },
+    "lastFailureSignature": { "type": "string" },
+    "history": { "type": "array" },
+    "replacementLineage": { "type": "array" },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

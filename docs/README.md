@@ -11,6 +11,8 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Published Harness Catalog](architecture/published-harness-catalog.md) - EvoPilot v3 read-only consumption of Harness definitions published by `evopilot-harness`.
 - [Open Lifecycle Harness](guides/open-lifecycle-harness.md) - v4 development flow for declarative project lifecycles, interactive inputs, bounded authorization, and Agent-host execution.
 - [Project Definitions](guides/project-definitions.md) - v5 project-neutral declarative onboarding and immutable adjustment.
+- [Governed Resource Versioning](guides/resource-versioning.md) - independently versioned Packs, Providers, bindings, activation, diff, and rollback.
+- [Suite Convergence Migration](guides/suite-convergence-migration.md) - exact latest Suite provenance, full capability disposition, shadow validation, and post-release Cutover boundary.
 - [Evolution Expert](guides/evolution-expert.md) - optional conversational guide for Codex, WorkBuddy, generic Agents, and MCP Hosts.
 - [v5 Completion Assurance](operations/completion-assurance.md) - criterion-specific evidence, exact Candidate binding, impact closure, and 100% hard-gate semantics.
 
@@ -42,6 +44,7 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Deployment](operations/deployment.md) - production deployment, ECS/Kubernetes, auth, persistence, and logging.
 - [Distribution](operations/distribution.md) - GitHub Release tarball packages, tagged installers, Helm chart release paths, and public npm post-publish verification.
 - [Release Management](operations/release-management.md) - versioning, release notes, tag rules, rollback, and public release checklist.
+- [Remediation Campaigns](operations/remediation-campaigns.md) - durable bounded repair, receipts, replacement Candidate lineage, circuit breakers, and exact human stops.
 - [Deployment Assets](../deploy/README.md) - committed Docker Compose and Kubernetes deployment assets, plus production host-local file boundaries.
 - [Runtime Assets](../runtimes/README.md) - runtime locks, code-upgrader boundary, SBOM, license, vulnerability, and validation evidence.
 - [Runtime Management](operations/runtime-management.md) - runtime locks, worker operation, and runtime checks.
@@ -63,6 +66,8 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Published Harness Catalog](architecture/published-harness-catalog.md) - split boundary between `evopilot-harness` publication and EvoPilot execution.
 - [Open Lifecycle Harness Architecture](architecture/open-lifecycle-harness.md) - v4 lifecycle resources, Action Registry, decision economy, and Goal Loop bridge.
 - [Harness-Guided Governed Evolution Runtime](architecture/harness-guided-governed-evolution-runtime.md) - v5 mandatory Harness binding, Lifecycle composition, recovery, and Host/runtime separation.
+- [Suite Capability Convergence](architecture/suite-capability-convergence.md) - v5.1 DDD ownership, resource registry, provider, migration, and version boundaries.
+- [Action Providers](reference/action-providers.md) - typed external actions, qualification, SecretRefs, receipts, rollback, and authority intersection.
 - [ADR 0003](architecture/adr/0003-harness-guided-governed-evolution-runtime.md) - accepted v5 architecture decision and product boundaries.
 - [Legacy Codex Suite Transition](guides/legacy-suite-transition.md) - read-only pre-release snapshots, isolated independence proof, selective rerun, and separately authorized post-release Cutover.
 - [v3 Lifecycle Compatibility](migrations/v3-lifecycle-compatibility.md) - evidence-preserving Alpha/Beta/RC/GA representation and rollback.
@@ -76,6 +81,8 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Release Package](reference/release-package.md) - SaaS GA release package.
 - [EvoPilot v5.0.1 Completion-Recovery Notes](releases/5.0.1.md) - unreleased criterion-specific closure plan; Candidate, acceptance, and publication remain pending.
 - [Evolution Expert v1.0.1 Completion-Recovery Notes](releases/evolution-expert-1.0.1.md) - unreleased independently versioned Expert implementation and later acceptance boundary.
+- [EvoPilot v5.1.0 Suite Capability Convergence](releases/5.1.0.md) - current implementation line; Candidate and acceptance remain pending.
+- [Evolution Expert v1.1.0 Unified Host Entry](releases/evolution-expert-1.1.0.md) - independently versioned guided Host entry for migration and resource operations.
 - [EvoPilot v5.0.0 Release Notes](releases/5.0.0.md) - published Harness-guided Runtime baseline and historical release facts; not proof of later-audited full-scheme completion.
 - [EvoPilot v4.0.0 Release Notes](releases/4.0.0.md) - released Open Lifecycle Harness capabilities, distribution, migration, and completed acceptance.
 - [EvoPilot v3.2.0 Deferred Candidate Notes](releases/3.2.0.md) - unpublished Bundle-consumer closure preserved as inherited v4 acceptance.

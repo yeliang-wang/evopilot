@@ -1,6 +1,6 @@
 # EvoPilot Evolution Expert
 
-The Evolution Expert is an optional, independently versioned conversational entry for EvoPilot. Version `1.0.1` targets Runtime protocol `>=5.0.0 <6.0.0`; it is not tied to the EvoPilot product version.
+The Evolution Expert is an optional, independently versioned conversational entry for EvoPilot. Version `1.1.0` targets Runtime protocol `>=5.0.0 <6.0.0`; it is not tied to the EvoPilot product or resource versions.
 
 The same immutable Core generates Codex, WorkBuddy, generic Agent, and generic MCP adapters. Typical conversations are:
 
@@ -9,6 +9,8 @@ The same immutable Core generates Codex, WorkBuddy, generic Agent, and generic M
 - “继续这个 Loop”：it shows binding drift checks, automatic recovery, pending evidence, and the next true authority boundary.
 - “这个异常以后自动处理”：Runtime generates a full Automation Rule proposal; the Expert presents one exact decision and cannot activate it from generic confirmation.
 - “我该怎么发布”：it explains Candidate-first acceptance and exact-byte promotion, but publication still requires an exact Runtime-bound human authorization.
+- “Suite 版本和资源版本有什么关系”：it distinguishes immutable Suite provenance, resource SemVer, Runtime, Expert, project, and Harness versions.
+- “准备迁移并检查 Cutover”：it renders inventory, shadow, readiness, and rollback guidance without switching or retiring a Suite.
 
 Headless users can perform every product operation through MCP, CLI, HTTP API, or CI. Removing the Expert changes guidance, not product semantics or state.
 
@@ -17,10 +19,12 @@ Portable artifacts are generated under `packages/evolution-expert/generated/`. I
 ## Installed lifecycle
 
 ```bash
-npm install --global @evopilot/evolution-expert@1.0.1
+npm install --global @evopilot/evolution-expert@1.1.0
 evopilot-expert version
-evopilot-expert doctor codex 5.0.1
+evopilot-expert doctor codex 5.1.0
 evopilot-expert tutorial
+evopilot-expert versions
+evopilot-expert migration
 ```
 
 Use `workbuddy`, `generic-agent`, or `generic-mcp` as the Host name when
@@ -30,8 +34,8 @@ range, and Host capability compatibility without mutating Runtime state.
 Upgrade, rollback, and removal are ordinary package operations:
 
 ```bash
+npm install --global @evopilot/evolution-expert@1.1.0
 npm install --global @evopilot/evolution-expert@1.0.1
-npm install --global @evopilot/evolution-expert@1.0.0
 npm uninstall --global @evopilot/evolution-expert
 ```
 

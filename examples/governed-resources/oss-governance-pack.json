@@ -1,0 +1,18 @@
+{
+  "apiVersion": "evopilot.io/v1",
+  "kind": "GovernancePack",
+  "metadata": { "id": "oss-github", "name": "Open-source GitHub governance", "version": "1.0.0", "labels": { "delivery": "open-source" } },
+  "provenance": {
+    "sourceType": "LEGACY_SUITE",
+    "sourceId": "evopilot-codex-suite",
+    "sourceVersion": "3.2.1",
+    "sourceDigest": "sha256:95e614c87b4bf01938ad559a9f13c4a00a4034437d6b59a22119ff53f22cf2f7"
+  },
+  "compatibility": { "runtime": ">=5.1.0 <6.0.0", "expert": ">=1.1.0 <2.0.0" },
+  "capabilityRefs": ["governance.roadmap", "governance.target", "acceptance.exact-candidate", "release.no-rebuild"],
+  "spec": {
+    "gates": ["roadmap", "target", "candidate-readiness", "criterion-acceptance", "release-decision"],
+    "authorityOwner": "project-maintainer",
+    "providerRefs": ["ActionProviderDefinition/github@1.0.0", "ActionProviderDefinition/npm@1.0.0"]
+  }
+}

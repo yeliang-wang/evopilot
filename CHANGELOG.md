@@ -6,10 +6,21 @@ This project follows a product-readiness changelog model: release entries should
 
 ## Unreleased
 
-### 5.0.1 Harness-Guided Completion Recovery
+### 5.1.0 Suite Capability Convergence
 
 This entry describes an implementation line. It does not imply Candidate
-formation, acceptance, publication, or Release.
+formation, acceptance, publication, Suite Cutover, or Release.
+
+#### Added
+
+- Added exact latest Suite capability inventory and independent governed-resource versioning, provenance, semantic diff, activation, and rollback.
+- Added typed Action Provider qualification and project-neutral local Git, GitHub, GitLab, npm, Maven, Candidate, and artifact-verification definitions.
+- Added durable bounded remediation campaigns with receipts, stop budgets, descendant source and replacement Candidate lineage.
+- Added Evolution Expert 1.1.0 version, capability, migration, shadow, Cutover-readiness, and rollback guidance.
+
+## 5.0.1 - 2026-09-10
+
+### Harness-Guided Completion Recovery
 
 #### Added
 

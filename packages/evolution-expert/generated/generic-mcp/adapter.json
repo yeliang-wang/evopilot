@@ -2,8 +2,8 @@
   "schema": "evopilot-evolution-expert-adapter/v1",
   "id": "evopilot-evolution-expert-generic-mcp",
   "host": "generic-mcp",
-  "version": "1.0.1",
-  "coreDigest": "sha256:fef38c4295b751b15bd7274871ea5548d88d8d02cc8c999609858617411a930c",
+  "version": "1.1.0",
+  "coreDigest": "sha256:da2b56f23999574dcd8e8970c99d0191094b09bb92ce80a70c1047ac56288538",
   "protocolVersion": "1.0",
   "requiredCapabilities": [
     "structured-tool-results",
@@ -20,7 +20,8 @@
     "Ask only unresolved schema fields and never collect raw secrets; use SecretRef.",
     "Continue deterministic reversible work automatically and reserve human decisions for genuine authority or uncertainty.",
     "Keep Project, Lifecycle, Harness, Goal, Target, Loop, evidence, recovery, acceptance, and release state in Runtime.",
-    "Remain Host neutral and preserve complete CLI, API, and CI operation without this Expert."
+    "Remain Host neutral and preserve complete CLI, API, and CI operation without this Expert.",
+    "Keep Runtime, Expert, declarative resource, source Suite, project, and Harness versions independent and explicit."
   ],
   "prohibitedSemantics": [
     "own-runtime-state",
@@ -30,5 +31,5 @@
     "host-specific-lifecycle",
     "automatic-publication"
   ],
-  "digest": "sha256:3864bdda10307ffa343520bad36c974c70a0674628989f303d2ced59b9546c29"
+  "digest": "sha256:7cfd7c12b72db0fea8ead9138c65ad97f67bd37210a678f303db04dee41997e0"
 }

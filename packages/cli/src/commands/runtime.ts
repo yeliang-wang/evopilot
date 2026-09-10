@@ -185,6 +185,17 @@ export async function runCli(argv: string[]): Promise<number> {
       case "project-definition:activate":
       case "project-definition:rollback":
         return await evolutionProjectDefinitionActivation(ctx, maybeId, action as "activate" | "rollback");
+      case "resource:list":
+        return await governedResourceList(ctx);
+      case "resource:inspect":
+        return await governedResourceInspect(ctx, maybeId, args.positionals[3]);
+      case "resource:register":
+        return await governedResourceRegister(ctx);
+      case "resource:diff":
+        return await governedResourceDiff(ctx, maybeId, args.positionals[3]);
+      case "resource:activate":
+      case "resource:rollback":
+        return await governedResourceActivation(ctx, maybeId, args.positionals[3], action as "activate" | "rollback");
       case "project:credentials":
         if (maybeId !== "set") throw usage("Use: evopilot project credentials set <project-id> [options]");
         return await projectCredentialsSet(ctx, args.positionals[3]);
@@ -248,6 +259,26 @@ export async function runCli(argv: string[]): Promise<number> {
         return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/revalidate", "revalidate");
       case "evolution:recover":
         return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/recovery/decide", "recover");
+      case "evolution:inventory":
+        return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/capability-inventory/validate", "inventory");
+      case "evolution:governance":
+        return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/governance/evaluate", "governance");
+      case "provider:qualify":
+        return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/action-providers/qualify", "provider-qualify");
+      case "evolution:inventory":
+        return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/capability-inventory/validate", "inventory");
+      case "provider:qualify":
+        return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/action-providers/qualify", "provider-qualify");
+      case "remediation:start":
+        return await governedEvolutionMutation(ctx, "/api/v1/governed-evolution/remediation-campaigns", "remediation-start");
+      case "remediation:inspect":
+        return await remediationCampaignInspect(ctx, maybeId);
+      case "remediation:decide":
+        return await remediationCampaignDecide(ctx, maybeId);
+      case "remediation:resume":
+      case "remediation:cancel":
+      case "remediation:verify":
+        return await remediationCampaignTransition(ctx, maybeId, action as "resume" | "cancel" | "verify");
       case "automation:list":
         return await automationRegistryList(ctx);
       case "automation:propose":
@@ -1548,6 +1579,74 @@ async function evolutionProjectDefinitionActivation(ctx: RuntimeContext, id: str
   const body = { ...payload, version: stringOption(ctx.args, "version") ?? field(payload, "version"), evidenceRef: stringOption(ctx.args, "evidence-ref") ?? field(payload, "evidenceRef") };
   const response = await ctx.client.expectOk(ctx.client.post(`/api/v1/evolution-project-definitions/${encodeURIComponent(projectDefinitionId)}/${action}`, body, requestOptions(ctx)));
   printOutput(ctx, response.data, `projectDefinition=${projectDefinitionId}@${field(response.data, "version")} activation=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function governedResourceList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.expectOk(ctx.client.get("/api/v1/evolution-resources", { query: { kind: stringOption(ctx.args, "kind") } }));
+  printOutput(ctx, response.data, listSummary(field(response.data, "items"), "metadata.id"));
+  return 0;
+}
+
+async function governedResourceInspect(ctx: RuntimeContext, kind?: string, id?: string): Promise<number> {
+  const resourceKind = kind ?? requiredOption(ctx.args, "kind");
+  const resourceId = id ?? requiredOption(ctx.args, "id");
+  const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/evolution-resources/${encodeURIComponent(resourceKind)}/${encodeURIComponent(resourceId)}`, { query: { version: stringOption(ctx.args, "version") } }));
+  printOutput(ctx, response.data, `resource=${resourceKind}/${resourceId}@${nestedField(response.data, ["metadata", "version"])} digest=${field(response.data, "digest")} source=${nestedField(response.data, ["provenance", "sourceId"])}@${nestedField(response.data, ["provenance", "sourceVersion"])}`);
+  return 0;
+}
+
+async function governedResourceRegister(ctx: RuntimeContext): Promise<number> {
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  if (Object.keys(payload).length === 0) throw usage("resource register requires --file <resource.yaml|json>.");
+  const response = await ctx.client.expectOk(ctx.client.post("/api/v1/evolution-resources", payload, requestOptions(ctx)));
+  printOutput(ctx, response.data, `resource=${field(response.data, "kind")}/${nestedField(response.data, ["metadata", "id"])}@${nestedField(response.data, ["metadata", "version"])} digest=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function governedResourceDiff(ctx: RuntimeContext, kind?: string, id?: string): Promise<number> {
+  const resourceKind = kind ?? requiredOption(ctx.args, "kind");
+  const resourceId = id ?? requiredOption(ctx.args, "id");
+  const from = requiredOption(ctx.args, "from");
+  const to = requiredOption(ctx.args, "to");
+  const runtimeVersion = stringOption(ctx.args, "runtime-version") ?? "5.1.0";
+  const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/evolution-resources/${encodeURIComponent(resourceKind)}/${encodeURIComponent(resourceId)}/diff`, { query: { from, to, runtimeVersion } }));
+  printOutput(ctx, response.data, `resource=${resourceKind}/${resourceId} from=${from} to=${to} compatibility=${field(response.data, "compatibility")} runtimeChange=${field(response.data, "runtimeVersionChangeRequired")} digest=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function governedResourceActivation(ctx: RuntimeContext, kind: string | undefined, id: string | undefined, action: "activate" | "rollback"): Promise<number> {
+  const resourceKind = kind ?? requiredOption(ctx.args, "kind");
+  const resourceId = id ?? requiredOption(ctx.args, "id");
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  const body = { ...payload, version: stringOption(ctx.args, "version") ?? field(payload, "version"), evidenceRef: stringOption(ctx.args, "evidence-ref") ?? field(payload, "evidenceRef") };
+  const response = await ctx.client.expectOk(ctx.client.post(`/api/v1/evolution-resources/${encodeURIComponent(resourceKind)}/${encodeURIComponent(resourceId)}/${action}`, body, requestOptions(ctx)));
+  printOutput(ctx, response.data, `resource=${resourceKind}/${resourceId}@${field(response.data, "version")} activation=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function remediationCampaignInspect(ctx: RuntimeContext, id?: string): Promise<number> {
+  const campaignId = id ?? requiredOption(ctx.args, "id");
+  const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/governed-evolution/remediation-campaigns/${encodeURIComponent(campaignId)}`));
+  printOutput(ctx, response.data, `remediation=${campaignId} state=${field(response.data, "state")} attempts=${nestedField(response.data, ["counters", "attempts"])} digest=${field(response.data, "digest")}`);
+  return 0;
+}
+
+async function remediationCampaignDecide(ctx: RuntimeContext, id?: string): Promise<number> {
+  const campaignId = id ?? requiredOption(ctx.args, "id");
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  if (Object.keys(payload).length === 0) throw usage("remediation decide requires --file <incident.yaml|json>.");
+  const response = await ctx.client.expectOk(ctx.client.post(`/api/v1/governed-evolution/remediation-campaigns/${encodeURIComponent(campaignId)}/decide`, payload, requestOptions(ctx)));
+  printOutput(ctx, response.data, `remediation=${campaignId} action=${nestedField(response.data, ["decision", "action"])} state=${nestedField(response.data, ["campaign", "state"])} digest=${nestedField(response.data, ["decision", "digest"])}`);
+  return 0;
+}
+
+async function remediationCampaignTransition(ctx: RuntimeContext, id: string | undefined, action: "resume" | "cancel" | "verify"): Promise<number> {
+  const campaignId = id ?? requiredOption(ctx.args, "id");
+  const payload = lifecyclePayloadFromFile(ctx.args);
+  const body = { ...payload, campaignDigest: stringOption(ctx.args, "campaign-digest") ?? field(payload, "campaignDigest"), evidenceRef: stringOption(ctx.args, "evidence-ref") ?? field(payload, "evidenceRef") };
+  const response = await ctx.client.expectOk(ctx.client.post(`/api/v1/governed-evolution/remediation-campaigns/${encodeURIComponent(campaignId)}/${action}`, body, requestOptions(ctx)));
+  printOutput(ctx, response.data, `remediation=${campaignId} state=${field(response.data, "state")} digest=${field(response.data, "digest")}`);
   return 0;
 }
 
@@ -3869,6 +3968,12 @@ Usage:
   evopilot project-definition diff <project-id> --from <version> --to <version>
   evopilot project-definition activate <project-id> --version <version> --evidence-ref <ref>
   evopilot project-definition rollback <project-id> --version <version> --evidence-ref <ref>
+  evopilot resource list [--kind <kind>]
+  evopilot resource inspect <kind> <resource-id> [--version <version>]
+  evopilot resource register --file <resource.yaml|json>
+  evopilot resource diff <kind> <resource-id> --from <version> --to <version> [--runtime-version <version>]
+  evopilot resource activate <kind> <resource-id> --version <version> --evidence-ref <ref>
+  evopilot resource rollback <kind> <resource-id> --version <version> --evidence-ref <ref>
   evopilot project credentials set <project-id> [--token-ref <env>]
   evopilot project devops set <project-id> --provider <github-actions|gitlab-ci> [options]
   evopilot project devops inspect <project-id>
@@ -3906,6 +4011,14 @@ Usage:
   evopilot evolution run --file <exact-binding-run-request.yaml|json>
   evopilot evolution revalidate --file <revalidation.yaml|json>
   evopilot evolution recover --file <recovery-context.yaml|json>
+  evopilot evolution inventory --file <capability-inventory.yaml|json>
+  evopilot evolution governance --file <governance-evaluation.yaml|json>
+  evopilot provider qualify --file <provider-qualification.yaml|json>
+  evopilot remediation start --file <campaign.yaml|json>
+  evopilot remediation inspect <campaign-id>
+  evopilot remediation decide <campaign-id> --file <incident.yaml|json>
+  evopilot remediation resume <campaign-id> --campaign-digest <sha256> --evidence-ref <ref>
+  evopilot remediation cancel <campaign-id> --campaign-digest <sha256> --evidence-ref <ref>
   evopilot automation list
   evopilot automation propose --file <rule-proposal.yaml|json>
   evopilot automation activate <rule-id> --file <exact-decision.json>

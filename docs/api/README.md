@@ -10,10 +10,22 @@ GET  /api/v1/evolution-project-definitions/{id}?version=...
 GET  /api/v1/evolution-project-definitions/{id}/diff?from=...&to=...
 POST /api/v1/evolution-project-definitions/{id}/activate
 POST /api/v1/evolution-project-definitions/{id}/rollback
+GET  /api/v1/evolution-resources?kind=...
+POST /api/v1/evolution-resources
+GET  /api/v1/evolution-resources/{kind}/{id}?version=...
+GET  /api/v1/evolution-resources/{kind}/{id}/diff?from=...&to=...&runtimeVersion=...
+POST /api/v1/evolution-resources/{kind}/{id}/activate
+POST /api/v1/evolution-resources/{kind}/{id}/rollback
 POST /api/v1/governed-evolution/plan
 POST /api/v1/governed-evolution/runs
 POST /api/v1/governed-evolution/revalidate
 POST /api/v1/governed-evolution/recovery/decide
+POST /api/v1/governed-evolution/capability-inventory/validate
+POST /api/v1/governed-evolution/action-providers/qualify
+POST /api/v1/governed-evolution/governance/evaluate
+POST /api/v1/governed-evolution/remediation-campaigns
+GET  /api/v1/governed-evolution/remediation-campaigns/{id}
+POST /api/v1/governed-evolution/remediation-campaigns/{id}/decide
 GET  /api/v1/automation-registry
 POST /api/v1/automation-registry/proposals
 POST /api/v1/automation-registry/{id}/activate
@@ -25,13 +37,16 @@ POST /api/v1/interactions/render
 
 Recovery 默认自动处理可逆 mechanics、相同输入安全重试和 receipt 恢复。未知但可安全复用的情形先生成完整 Automation Rule proposal；只有一次与 proposal digest 精确绑定的人工决定能激活后续自动化。不可逆权限与结果不确定的外部 mutation 不能学习成自动规则。
 
-Evolution Expert、MCP、CLI 和其他 Agent adapter 只投影这些 Runtime 语义，不持有权威状态或批准能力。上述内容处于已批准 v5.0.0 Target 的实现阶段，不代表 v5 已发布。
+Evolution Expert、MCP、CLI 和其他 Agent adapter 只投影这些 Runtime 语义，不持有权威状态或批准能力。资源 API 保留独立版本、来源 Suite 版本/摘要和 Runtime 兼容范围；兼容资源升级无需 Runtime 或 Expert 升级。上述新增内容处于已批准 v5.1.0 Target 的实现阶段，不代表 v5.1 已发布。
 
 对应的无 Expert CLI 入口使用同一 HTTP 语义：
 
 ```text
 evopilot project-definition <list|inspect|register>
 evopilot evolution <plan|revalidate|recover> --file <request.yaml|json>
+evopilot resource <list|inspect|register|diff|activate|rollback>
+evopilot provider qualify --file <request.yaml|json>
+evopilot remediation <start|inspect|decide>
 evopilot automation <list|propose|activate|revoke>
 ```
 

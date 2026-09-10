@@ -1,10 +1,11 @@
 # EvoPilot Evolution Expert
 
-`@evopilot/evolution-expert` 1.0.1 is the independently versioned,
+`@evopilot/evolution-expert` 1.1.0 is the independently versioned,
 Agent-neutral interactive guide for EvoPilot Runtime 5.x. It helps an ordinary
 user discover and declare a project, understand Runtime-produced Harness
 matching and Lifecycle composition, operate a Goal Target Loop, follow
-automatic recovery, and inspect evidence and readiness.
+automatic recovery, inspect evidence and readiness, and understand resource
+versions, capability migration, shadow validation, Cutover readiness, and rollback.
 
 The Expert is not the Runtime and is not a Harness producer. It owns no
 canonical state, credentials, approval identity, Harness choice, recovery
@@ -15,10 +16,12 @@ MCP, and CI.
 ## Install and verify
 
 ```bash
-npm install --global @evopilot/evolution-expert@1.0.1
+npm install --global @evopilot/evolution-expert@1.1.0
 evopilot-expert version
-evopilot-expert doctor codex 5.0.1
+evopilot-expert doctor codex 5.1.0
 evopilot-expert tutorial
+evopilot-expert versions
+evopilot-expert migration
 ```
 
 For WorkBuddy, replace `codex` with `workbuddy`. `doctor` verifies the package
@@ -48,11 +51,11 @@ and rollback remain Runtime operations.
 ## Upgrade, rollback, and remove
 
 ```bash
-npm install --global @evopilot/evolution-expert@1.0.1
-evopilot-expert doctor codex 5.0.1
+npm install --global @evopilot/evolution-expert@1.1.0
+evopilot-expert doctor codex 5.1.0
 
-npm install --global @evopilot/evolution-expert@1.0.0
-evopilot-expert doctor codex 5.0.1
+npm install --global @evopilot/evolution-expert@1.0.1
+evopilot-expert doctor codex 5.1.0
 
 npm uninstall --global @evopilot/evolution-expert
 evopilot --version

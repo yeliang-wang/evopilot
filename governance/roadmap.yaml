@@ -1,9 +1,9 @@
 {
   "schema": "evopilot-series-roadmap/v1",
   "roadmapFamily": "evopilot-series-agentic-evolution",
-  "contractVersion": "3.0.0",
+  "contractVersion": "3.1.0",
   "project": "evopilot",
-  "updatedAt": "2026-09-09",
+  "updatedAt": "2026-09-10",
   "ownership": {
     "owns": [
       "third-party project discovery, onboarding, and versioned EvolutionProjectDefinition",
@@ -29,7 +29,7 @@
   "versionPolicy": {
     "runtimeProduct": "evopilot-runtime",
     "publishedBaseline": "5.0.0",
-    "currentWorkingVersion": "5.0.1",
+    "currentWorkingVersion": "5.1.0",
     "versionsEvolveIndependently": true,
     "majorRequiredFor": [
       "incompatible published Harness consumption contract",
@@ -185,7 +185,7 @@
     "product": "evopilot-evolution-expert",
     "proposedPackage": "@evopilot/evolution-expert",
     "publishedBaseline": "1.0.0",
-    "currentWorkingVersion": "1.0.1",
+    "currentWorkingVersion": "1.1.0",
     "lockstepWithRuntime": false,
     "initialSourcePlacement": "co-located EvoPilot workspace with independent package and release identity",
     "owns": [
@@ -282,40 +282,94 @@
       "completeWhen": "TOTAL_EQUALS_PASSED_AND_FAILED_PENDING_STALE_GENERIC_UNMAPPED_ARE_ZERO_AND_NO_REGRESSION_PASSED"
     }
   },
+  "suiteConvergenceAcceptance": {
+    "required": true,
+    "capabilityInventoryCoveragePercent": 100,
+    "historicalSuiteCompatibilityRequired": false,
+    "completeWhen": "CAPABILITY_INVENTORY_100_PERCENT_AND_ALL_CURRENT_INHERITED_E2E_IMPACT_ITEMS_PASSED_AND_NO_REGRESSION_AND_EXACT_INSTALLED_PAIR_VERIFIED_AND_LEGACY_INVOCATION_ZERO",
+    "requiredJourneys": [
+      "PARITY01 exact EvoPilot Codex Suite 3.2.1 capability differential",
+      "PARITY02 exact DataRig Codex Suite 2.1.5 capability differential",
+      "E2E-DATARIG enterprise-internal declared lifecycle with separately authorized database and internal-release boundaries",
+      "E2E-EVOPILOT Harness-guided open-source self-evolution without the EvoPilot Suite",
+      "E2E-HARNESS ordinary Harness-producer project operation without crossing Harness asset authority",
+      "E2E-NEW-PROJECT declaration, interactive resolution, Harness match, execution, and closure with zero Engine source diff",
+      "E2E-RECOVERY bounded defect repair, immutable replacement Candidate lineage, failed-first rerun, impact closure, full regression, and resume",
+      "E2E-AUTHORITY exact semantic, credential, production, database, destructive, acceptance, publication, and Release stops",
+      "E2E-HOST Codex, designated-human WorkBuddy, independent Host, generic MCP, and headless conformance",
+      "E2E-UPGRADE post-Cutover capability evolution through EvoPilot-owned Runtime, declarative resources, providers, or Expert without a Suite release",
+      "E2E-CUTOVER public install, shadow observation, explicit default switch, zero invocation, recoverable archive, rollback rehearsal, and monitoring",
+      "E2E-ABSENCE success, failure, resume, upgrade, and rollback with both Suites absent from discovery and execution"
+    ],
+    "rules": [
+      "zero unmapped, silent-exclusion, stale, generic, failed, or pending capability items",
+      "zero hidden fallback and legacySuiteInvocationCount equals zero",
+      "counted acceptance installs exact private Runtime and Expert Candidates outside source checkout",
+      "actual Codex default switch and Suite archive require a later exact Cutover Target and authorization",
+      "WorkBuddy remains designated-human operated when its frozen acceptance contract requires that mode"
+    ]
+  },
   "legacySuiteTransition": {
     "legacy": ["EvoPilot Codex Suite", "DataRig Codex Suite"],
-    "replacement": ["EvoPilot Runtime", "compatible independently installed Evolution Expert", "generated Host Adapter", "declarative project and Lifecycle resources"],
-    "preRelease": {
-      "installedSuiteDisposition": "ACTIVE_AND_INDEPENDENT",
+    "replacement": ["EvoPilot Runtime", "compatible independently installed Evolution Expert", "generated Host Adapter", "declarative project, Lifecycle, Policy, Governance, and Action Provider resources"],
+    "migrationBaseline": {
+      "policy": "LATEST_ONLY_NO_HISTORICAL_COMPATIBILITY",
+      "observedAt": "2026-09-10T05:54:18Z",
+      "sourceEvidence": "/Users/wangyejing/.codex/evolution-runs/evopilot/post-v5-suite-rebaseline-20260910/rebaseline-and-capability-delta.json",
+      "sourceEvidenceDigest": "sha256:e12b7f36fe06831a86544c1f9c06984933352a28aff15e46150593d4c24ccb28",
+      "suites": [
+        {"id": "evopilot-codex-suite", "version": "3.2.1", "snapshotDigest": "sha256:95e614c87b4bf01938ad559a9f13c4a00a4034437d6b59a22119ff53f22cf2f7", "integrityGate": "PASS"},
+        {"id": "datarig-codex-suite", "version": "2.1.5", "snapshotDigest": "sha256:064ee6a8a7b21ae8029cfaaf03eafef7ff0816a8b031d8468c49eae6b5b4a330", "integrityGate": "PASS"}
+      ],
+      "targetFreezeRecheckRequired": true,
+      "supersededVersionCompatibilityRequired": false,
+      "driftBeforeTargetApproval": "refresh only the changed latest Suite snapshot and revise the Target binding",
+      "driftAfterTargetApproval": "does not automatically expand the Target; corresponding feature evolution belongs to EvoPilot unless an explicit safety-only legacy exception is authorized"
+    },
+    "convergence": {
+      "installedSuiteDisposition": "ACTIVE_UNTIL_SEPARATELY_AUTHORIZED_CUTOVER",
       "shadowComparisonMode": "READ_ONLY",
-      "snapshotPolicy": "LATE_BOUND_EXACT",
+      "snapshotPolicy": "TARGET_FROZEN_EXACT_LATEST",
       "snapshotBindings": ["source identity", "version", "tree digest", "Skill and rule inventory", "capturedAt", "comparison corpus digest"],
-      "snapshotDriftPolicy": "STALE_AND_SELECTIVE_RERUN",
+      "snapshotDriftPolicy": "RECHECK_BEFORE_TARGET_APPROVAL_THEN_FREEZE",
       "candidateEnvironment": "LEGACY_SUITES_ABSENT",
       "requiredProof": [
-        "DataRig, EvoPilot, evopilot-harness, and an unknown project pass from exact installed v5 Candidates without either legacy Suite present in the isolated environment",
-        "fresh Host starts, failure, resume, upgrade, and rollback record legacySuiteInvocationCount zero and no hidden fallback",
-        "repository evolution and product operation remain governed without legacy Suite code"
+        "a canonical capability inventory maps 100 percent of both exact latest Suite baselines to Runtime, Expert, declarative resource, Action Provider, owning-project, or explicit non-applicable dispositions",
+        "DataRig, EvoPilot, evopilot-harness, and an unknown project pass from exact installed Runtime 5.1.0 and Expert 1.1.0 Candidates without either legacy Suite present",
+        "fresh Host starts, deterministic failure and repair, replacement Candidate, resume, upgrade, rollback, and headless operation record legacySuiteInvocationCount zero and no hidden fallback",
+        "repository evolution and product operation remain governed without legacy Suite code, hidden project branches, or Suite-owned authority"
       ],
       "realInstalledSuiteMutationAllowed": false,
-      "prohibitedEffects": ["disable", "move", "delete", "uninstall", "archive", "prevent independent Suite evolution"]
+      "prohibitedEffects": ["disable", "move", "delete", "uninstall", "archive", "switch default before exact Cutover authorization"]
     },
     "postRelease": {
-      "milestone": "evopilot-post-v5.0.0-legacy-suite-cutover",
-      "timing": "AFTER_PUBLIC_COMPLETION_SUCCESSORS_AND_VERIFIED_INSTALLATION",
-      "releaseBlockerForV5": false,
+      "milestone": "evopilot-post-v5.1.0-legacy-suite-cutover",
+      "timing": "AFTER_PUBLIC_RUNTIME_5_1_AND_EXPERT_1_1_VERIFIED_INSTALLATION",
+      "releaseBlockerForV51": false,
       "requiresSeparateEvolutionTarget": true,
       "requiresSeparateHumanAuthorization": true,
       "prerequisites": [
-        "public Runtime 5.0.1 GitHub, npm, GHCR, installer, and installation surfaces verify the exact accepted bytes",
-        "public Evolution Expert 1.0.1 is installed where an interactive Host entry is required",
-        "V5_ORIGINAL_SCHEME_100_PERCENT_CLOSURE and NO_REGRESSION are proven by criterion-specific evidence",
-        "project declarations, Lifecycles, policies, Automation Registry rules, and required evidence are migrated",
-        "late-bound exact Suite snapshots and selective shadow comparisons are current",
-        "an observation period completes with v5 as the explicit default and a recoverable legacy rollback path available"
+        "public Runtime 5.1.0 GitHub, npm, GHCR, installer, and installation surfaces verify the exact accepted bytes",
+        "public Evolution Expert 1.1.0 and its released generated Codex Adapter are installed alongside the legacy Suites",
+        "capability inventory coverage, functional, capability, inherited, E2E, impact closure, and NO_REGRESSION are each 100 percent complete",
+        "project declarations, Lifecycles, policies, Governance Packs, Action Providers, Automation Registry rules, and required evidence are migrated",
+        "a bounded shadow observation completes with released EvoPilot as the explicit default candidate and a recoverable legacy rollback path available"
       ],
       "phases": ["EXPLICIT_DEFAULT_SWITCH", "ZERO_LEGACY_INVOCATION_VERIFICATION", "RECOVERABLE_ARCHIVE", "MONITOR_AND_REHEARSE_ROLLBACK", "CUTOVER_CLOSED"],
       "rollback": "separately authorized break-glass action; never an automatic hidden fallback"
+    },
+    "postCutover": {
+      "suiteDisposition": "IMMUTABLE_DIGEST_INVENTORIED_MIGRATION_EVIDENCE_ONLY",
+      "independentFeatureEvolution": false,
+      "normalCodexDiscovery": false,
+      "runtimeDependency": false,
+      "hiddenFallbackAllowed": false,
+      "futureCapabilityHomes": {
+        "generic": "EvoPilot Runtime",
+        "projectSpecific": "declarative project, Lifecycle, Policy, Governance, and Action Provider resources",
+        "hostInteraction": "independently versioned Evolution Expert and generated adapters",
+        "harnessAssetLifecycle": "independent evopilot-harness product"
+      }
     }
   },
   "releasePolicy": {
@@ -328,7 +382,13 @@
     "terminalPublicVerification": ["GitHub Release", "npm", "GHCR", "installer", "public installation", "default-branch Deployments"]
   },
   "intentPolicy": {
-    "capabilityExpansionSignals": ["add", "build", "create", "implement", "introduce", "replace", "upgrade", "新增", "创建", "实现", "引入", "替换", "升级", "公共化", "产品化"]
+    "capabilityExpansionSignals": ["add", "build", "create", "implement", "introduce", "productize", "replace", "upgrade", "新增", "创建", "实现", "引入", "替换", "升级", "公共化", "产品化"],
+    "compositeCoverage": {
+      "enabled": true,
+      "clauseSeparators": [",", "，", ";", "；", "。", " and ", " and also ", " then ", "并且", "然后"],
+      "rule": "Every capability-expanding clause must match a non-deferred milestone or expansion-authorized standing-work item; one matched milestone cannot authorize an unrelated clause.",
+      "uncoveredClassification": "UNPLANNED"
+    }
   },
   "standingWork": [
     {
@@ -489,36 +549,80 @@
       "signals": ["EvoPilot Evolution Expert", "independently versioned evolution expert", "Expert completion recovery", "Expert v1.0.1", "Codex Expert adapter", "WorkBuddy Expert adapter", "third-party Host Adapter", "独立版本数字人专家", "数字人 skill 安装包", "Expert 完成恢复"]
     },
     {
-      "id": "evopilot-post-v5.0.0-legacy-suite-cutover",
+      "id": "evopilot-5.1-suite-capability-convergence",
       "product": "evopilot-runtime",
-      "status": "PLANNED",
-      "targetVersion": "5.0.1",
-      "releaseLine": "5.0.x",
-      "standaloneReleaseEligible": false,
-      "releaseBlockerForV5": false,
-      "timing": "AFTER_PUBLIC_COMPLETION_SUCCESSORS_AND_VERIFIED_INSTALLATION",
-      "objective": "After Runtime 5.0.1 and Evolution Expert 1.0.1 publicly complete the original v5 scheme and their exact installations verify, migrate approved projects and Hosts from independently evolving legacy Codex Suites through an explicit, observable, recoverable Cutover.",
-      "outcomes": ["explicit project and Host default switch", "zero legacy invocation on real paths", "digest-inventoried recoverable archive", "separately authorized break-glass rollback", "monitored Cutover closure"],
-      "acceptance": ["a separately approved Cutover Target binds exact installed v5 and current legacy Suite snapshots", "each approved project and Host completes real-path verification with zero hidden fallback", "archive and rollback rehearsal are complete before retirement closure", "DataRig Suite ownership and independent evolution remain outside EvoPilot"],
-      "signals": ["post-release legacy suite cutover", "legacy suite cutover target", "public v5 installation verification", "archive legacy codex suite after v5", "retire legacy suite after v5", "v5 发布后旧 suite 切换", "独立 cutover target", "v5 安装验证后退役"]
+      "status": "IN_PROGRESS",
+      "targetVersion": "5.1.0",
+      "releaseLine": "5.1.x",
+      "standaloneReleaseEligible": true,
+      "objective": "Productize 100 percent of the exact latest EvoPilot Codex Suite 3.2.1 and DataRig Codex Suite 2.1.5 capability baselines into the Harness-guided Runtime, declarative resources, and qualified Action Providers so released EvoPilot can replace both independent Suites without embedding or invoking them.",
+      "outcomes": [
+        "exact-latest-only canonical Suite capability inventory and differential evidence",
+        "project-neutral Governance Packs and qualified Action Provider registry",
+        "digest-bound bounded autonomous remediation campaign with immutable repair and replacement-Candidate lineage",
+        "DataRig, EvoPilot, evopilot-harness, and unknown-project self-hosting references without Engine name branches",
+        "100-percent parity, exact acceptance completeness, zero legacy invocation, and no hidden fallback",
+        "post-release shadow observation and separately authorized recoverable Cutover readiness"
+      ],
+      "acceptance": [
+        "Target review rechecks that EvoPilot Suite 3.2.1 and DataRig Suite 2.1.5 remain the latest active baselines and binds their exact snapshots; superseded Suite compatibility is excluded",
+        "every baseline capability has one tested Runtime, Expert, declarative-resource, Action Provider, owning-project, or explicit non-applicable disposition with zero unmapped or silent exclusions",
+        "DataRig autonomous defect closure includes bounded diagnosis, repair, commit and replacement-Candidate lineage, per-Candidate readiness and secret lease, failed-first rerun, impact closure, full regression, and deterministic stop budgets",
+        "all required functional, capability, inherited, differential, Host, E2E, impact-closure, and no-regression evidence passes on one exact installed Runtime and Expert Candidate pair",
+        "Runtime and Expert remain read-only Harness consumers and a new project requires zero project-specific Engine source change",
+        "real Suite mutation, default switching, archival, and retirement remain outside this milestone until public installation and separate Cutover authorization"
+      ],
+      "signals": ["suite capability convergence", "exact latest suite parity", "productize the exact latest", "complete capability parity", "EvoPilot Suite 3.2.1", "DataRig Suite 2.1.5", "latest-only suite baseline", "bounded autonomous remediation campaign", "project-neutral governance provider", "replace both codex suites", "future suite evolution in evopilot", "all corresponding capability evolution occurs in evopilot", "suite 能力收敛", "最新 suite 能力对等", "替代两套 codex suite", "后续能力在 evopilot 演进"]
     },
     {
-      "id": "evopilot-5.1-controlled-experiment-loop",
+      "id": "evopilot-evolution-expert-1.1-unified-host-entry",
+      "product": "evopilot-evolution-expert",
+      "status": "IN_PROGRESS",
+      "targetVersion": "1.1.0",
+      "releaseLine": "1.1.x",
+      "standaloneReleaseEligible": true,
+      "objective": "Provide one released Agent-neutral Expert and generated Codex, WorkBuddy, generic Agent, and generic MCP adapters as the guided entry to Runtime 5.1 capability convergence and Cutover without owning product truth or project-specific lifecycle semantics.",
+      "outcomes": ["released generated Codex Adapter with no Candidate identity", "latest-baseline capability and parity explanation", "guided shadow, Cutover, rollback, and post-Cutover upgrade journeys", "one Core digest across Codex, WorkBuddy, independent Host, generic MCP, and headless-compatible operation"],
+      "acceptance": [
+        "the released Codex Adapter contains no project Lifecycle, Harness selection, approval, recovery, acceptance, release, credential, or durable-state semantics",
+        "all adapters bind one Core digest and render Runtime-owned facts, questions, decisions, progress, evidence, and blockers equivalently",
+        "Codex installs the released adapter alongside legacy Suites for shadow verification before any separately authorized default switch",
+        "Expert upgrade and rollback remain independent from Runtime versioning and Runtime headless operation remains complete without Expert",
+        "WorkBuddy real-host ranges remain designated-human operated when required by the frozen acceptance contract"
+      ],
+      "signals": ["Evolution Expert 1.1", "unified host entry", "released Codex adapter", "released Expert Codex adapter", "single Codex EvoPilot entry", "generated Codex Expert adapter", "统一 Host 入口", "正式 Codex adapter", "Codex 使用 EvoPilot"]
+    },
+    {
+      "id": "evopilot-post-v5.1.0-legacy-suite-cutover",
       "product": "evopilot-runtime",
       "status": "PLANNED",
       "targetVersion": "5.1.0",
       "releaseLine": "5.1.x",
+      "standaloneReleaseEligible": false,
+      "releaseBlockerForV51": false,
+      "timing": "AFTER_PUBLIC_RUNTIME_5_1_AND_EXPERT_1_1_VERIFIED_INSTALLATION",
+      "objective": "After exact public Runtime 5.1.0 and Expert 1.1.0 installation and shadow observation, switch the current Codex to released EvoPilot, prove zero legacy invocation, and recoverably archive both legacy Suites under a separate exact Cutover authorization.",
+      "outcomes": ["explicit current-Codex default switch", "zero legacy invocation and no hidden fallback on real paths", "digest-inventoried recoverable archives", "separately authorized break-glass rollback rehearsal", "monitored retirement closure", "future capability evolution only through EvoPilot-owned Runtime, declarative resources, providers, and Expert"],
+      "acceptance": ["a separately approved Cutover Target binds exact public Runtime 5.1.0, Expert 1.1.0, released Codex Adapter, and the frozen Suite snapshots", "DataRig, EvoPilot, evopilot-harness, and unknown-project real paths complete with zero hidden fallback", "archive and rollback rehearsal complete before retirement closure", "both retired Suites are absent from normal Codex discovery and remain immutable migration evidence only", "evopilot-harness retains independent Harness asset lifecycle ownership"],
+      "signals": ["post v5.1 legacy suite cutover", "legacy suite cutover target", "public Runtime 5.1 Expert 1.1 installation", "archive legacy codex suites", "retire EvoPilot and DataRig suites", "retire both independent suites", "current Codex use EvoPilot", "v5.1 发布后旧 suite 切换", "归档两套 suite", "当前 Codex 使用 EvoPilot"]
+    },
+    {
+      "id": "evopilot-5.2-controlled-experiment-loop",
+      "product": "evopilot-runtime",
+      "status": "PLANNED",
+      "targetVersion": "5.2.0",
+      "releaseLine": "5.2.x",
       "objective": "Turn governed Harness-guided trajectories into controlled replayable strategy experiments and promotion decisions.",
       "outcomes": ["Champion and Challenger cohorts", "pairwise evaluation", "comparable replay", "strategy promotion and rollback"],
       "acceptance": ["comparisons bind the same task and execution context", "promotion requires benchmark, bad-case, and regression evidence", "Harness authority remains external"],
       "signals": ["champion challenger", "pairwise evaluation", "controlled experiment loop", "候选策略", "成对评估"]
     },
     {
-      "id": "evopilot-5.2-learning-interop",
+      "id": "evopilot-5.3-learning-interop",
       "product": "evopilot-runtime",
       "status": "PLANNED",
-      "targetVersion": "5.2.0",
-      "releaseLine": "5.2.x",
+      "targetVersion": "5.3.0",
+      "releaseLine": "5.3.x",
       "objective": "Expose governed learning data to external training systems while keeping model training outside EvoPilot.",
       "outcomes": ["preference and reward dataset export", "external Trainer adapter", "trained-policy provenance and evaluation re-entry", "isolated cross-round retrieval"],
       "acceptance": ["exports are consented, redacted, versioned, and reproducible", "trainer results cannot bypass evaluation or promotion", "provider, model, dataset, and policy provenance is auditable"],
@@ -540,6 +644,16 @@
       "id": "v4.0-to-v5.0-inherited-transition",
       "sourceMilestone": "evopilot-4.0-open-lifecycle-harness",
       "destinationMilestone": "evopilot-5.0-harness-guided-governed-evolution-runtime",
+      "sourceReleaseDisposition": "PUBLISHED_BASELINE",
+      "preserveSourceCodeAndEvidence": true,
+      "deleteSourceGuarantees": false,
+      "destinationMustRetestSourceAcceptance": true,
+      "destinationTargetRevisionRequiredAfterRoadmapChange": true
+    },
+    {
+      "id": "v5.0-to-v5.1-suite-convergence-transition",
+      "sourceMilestone": "evopilot-5.0-harness-guided-governed-evolution-runtime",
+      "destinationMilestone": "evopilot-5.1-suite-capability-convergence",
       "sourceReleaseDisposition": "PUBLISHED_BASELINE",
       "preserveSourceCodeAndEvidence": true,
       "deleteSourceGuarantees": false,
@@ -611,8 +725,8 @@
     {
       "id": "legacy-suite-retirement-must-be-post-release",
       "classification": "BOUNDARY_CHANGE",
-      "reason": "Real installed EvoPilot or DataRig Codex Suite disablement, archival, uninstall, or retirement is forbidden before public Runtime 5.0.1 and Evolution Expert 1.0.1 complete the original scheme and pass verified installation; Cutover then requires a separate Target and explicit human authorization.",
-      "signals": ["retire legacy suites before v5 release", "disable datarig codex suite before v5 release", "uninstall legacy suite during v5 acceptance", "archive legacy suite before v5 installation verification", "v5 发布前退役旧 suite", "v5 验收时卸载旧 suite"]
+      "reason": "Real installed EvoPilot or DataRig Codex Suite disablement, archival, uninstall, retirement, or default switching is forbidden before public Runtime 5.1.0 and Evolution Expert 1.1.0 pass exact capability convergence acceptance and verified installation; Cutover then requires a separate Target and explicit human authorization.",
+      "signals": ["retire legacy suites before v5.1 release", "disable datarig codex suite before v5.1 release", "uninstall legacy suite during v5.1 acceptance", "archive legacy suite before v5.1 installation verification", "switch Codex default before cutover authorization", "v5.1 发布前退役旧 suite", "v5.1 验收时卸载旧 suite", "未授权切换 Codex 默认入口"]
     }
   ],
   "deviationSignals": ["replace roadmap", "skip milestone", "merge evopilot and evopilot-harness", "change product boundary", "替换 roadmap", "跳过里程碑", "合并 evopilot 和 evopilot-harness", "改变产品边界"],

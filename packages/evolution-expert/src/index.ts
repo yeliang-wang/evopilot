@@ -7,7 +7,7 @@ import {
   type EvoPilotHumanInteractionMessageV1
 } from "@evopilot/contracts";
 
-export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "1.0.1";
+export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "1.1.0";
 export const EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA = "evopilot-evolution-expert-core/v1";
 
 export type ExpertIntent =
@@ -19,6 +19,11 @@ export type ExpertIntent =
   | "goal-run"
   | "status"
   | "recovery"
+  | "version-explain"
+  | "capability"
+  | "migration"
+  | "cutover"
+  | "rollback"
   | "evidence"
   | "acceptance"
   | "release"
@@ -67,6 +72,11 @@ const operations: EvolutionExpertCore["operations"] = {
   "goal-run": { tool: "evopilot_lifecycle_start", authority: "NONE", purpose: "Create a governed run from an exact Runtime binding without authorizing execution.", requiredInputs: ["projectId", "goalId", "targetId", "harnessBundle", "lifecycleId"], nextOnSuccess: "Ask only unresolved inputs, then present the exact plan decision if required." },
   status: { tool: "evopilot_lifecycle_run_inspect", authority: "NONE", purpose: "Show Runtime-owned progress, evidence, blockers, and next action.", requiredInputs: ["runId"], nextOnSuccess: "Continue automatic work or explain the exact boundary." },
   recovery: { tool: "evopilot_recovery_decide", authority: "NONE", purpose: "Classify failure and render automatic recovery, rule proposal, or exact human boundary.", requiredInputs: ["failureClass", "failureSignature", "bindingDigest"], nextOnSuccess: "Apply bounded automation or present one exact decision." },
+  "version-explain": { tool: "evopilot_resource_inspect", authority: "NONE", purpose: "Explain immutable source Suite identity separately from resource, Runtime, Expert, and Harness versions.", requiredInputs: ["kind", "resourceId"], nextOnSuccess: "Show compatible upgrade and rollback paths without implying lockstep releases." },
+  capability: { tool: "evopilot_capability_inventory_validate", authority: "NONE", purpose: "Show the explicit destination and validator for each frozen Suite capability without loading either Suite.", requiredInputs: ["sources", "dispositions"], nextOnSuccess: "Explain Runtime, resource, Expert, project, and Harness ownership boundaries." },
+  migration: { tool: "evopilot_capability_inventory_validate", authority: "NONE", purpose: "Build a read-only migration inventory and identify missing declarative resources or evidence.", requiredInputs: ["sources", "dispositions"], nextOnSuccess: "Offer shadow comparison; do not switch, disable, or retire a Suite." },
+  cutover: { tool: "evopilot_interaction_render", authority: "NONE", purpose: "Explain shadow and Cutover readiness from Runtime evidence without performing Cutover.", requiredInputs: ["sessionDigest", "cutoverReadiness"], nextOnSuccess: "Require a separate Cutover Target and exact owning-human authorization after public installation verification." },
+  rollback: { tool: "evopilot_resource_inspect", authority: "NONE", purpose: "Show the exact immutable resource revision and rollback target without mutating Runtime state.", requiredInputs: ["kind", "resourceId", "version"], nextOnSuccess: "Route any activation or rollback to an exact Runtime operation and human evidence." },
   evidence: { tool: "evopilot_lifecycle_run_inspect", authority: "NONE", purpose: "Explain immutable Runtime evidence without creating facts.", requiredInputs: ["runId"], nextOnSuccess: "Map evidence to pending criteria." },
   acceptance: { tool: "evopilot_interaction_render", authority: "NONE", purpose: "Explain Candidate-bound acceptance readiness and missing evidence.", requiredInputs: ["sessionDigest", "acceptanceAggregate"], nextOnSuccess: "Remain stopped until every required criterion passes." },
   release: { tool: "evopilot_interaction_render", authority: "EXACT_HUMAN_DECISION", purpose: "Render one exact release decision after accepted Candidate evidence; never publish by itself.", requiredInputs: ["sessionDigest", "releaseBinding", "authorizationDigest"], nextOnSuccess: "Return the authorized object to Runtime release mechanics." }
@@ -76,7 +86,7 @@ const coreWithoutDigest = {
   schema: EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA as typeof EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA,
   version: EVOPILOT_EVOLUTION_EXPERT_VERSION as typeof EVOPILOT_EVOLUTION_EXPERT_VERSION,
   protocolVersion: EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION as typeof EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION,
-  intents: ["help", "tutorial", "project-onboard", "project-adjust", "harness-explain", "goal-run", "status", "recovery", "evidence", "acceptance", "release", "unknown"] as ExpertIntent[],
+  intents: ["help", "tutorial", "project-onboard", "project-adjust", "harness-explain", "goal-run", "status", "recovery", "version-explain", "capability", "migration", "cutover", "rollback", "evidence", "acceptance", "release", "unknown"] as ExpertIntent[],
   principles: [
     "Runtime objects are authoritative; conversation is presentation and input only.",
     "Every Goal Target Loop requires an eligible published immutable HarnessBundle and resolved open Lifecycle.",
@@ -84,7 +94,8 @@ const coreWithoutDigest = {
     "Ask only unresolved schema fields and never collect raw secrets; use SecretRef.",
     "Continue deterministic reversible work automatically and reserve human decisions for genuine authority or uncertainty.",
     "Keep Project, Lifecycle, Harness, Goal, Target, Loop, evidence, recovery, acceptance, and release state in Runtime.",
-    "Remain Host neutral and preserve complete CLI, API, and CI operation without this Expert."
+    "Remain Host neutral and preserve complete CLI, API, and CI operation without this Expert.",
+    "Keep Runtime, Expert, declarative resource, source Suite, project, and Harness versions independent and explicit."
   ],
   operations
 };
@@ -95,6 +106,11 @@ export function routeExpertIntent(text: string): { intent: ExpertIntent; confide
   const normalized = text.trim().toLowerCase();
   const patterns: Array<[ExpertIntent, RegExp]> = [
     ["tutorial", /tutorial|教程|入门|演示/],
+    ["version-explain", /version|semver|版本|升级关系/],
+    ["capability", /capabilit|能力清单|能力差异/],
+    ["migration", /migrat|迁移|收敛/],
+    ["cutover", /cutover|shadow|切换准备|影子验证/],
+    ["rollback", /rollback resource|resource rollback|资源回滚|回退资源/],
     ["project-adjust", /adjust project|update project|rollback project|调整项目|修改项目|回滚项目/],
     ["project-onboard", /onboard|register project|new project|接入项目|注册项目|新项目/],
     ["harness-explain", /harness|bundle|匹配|专业约束/],
@@ -115,7 +131,7 @@ export function planExpertTurn(text: string, payload: Record<string, unknown> = 
   const operation = routed.intent === "unknown" ? undefined : EVOLUTION_EXPERT_CORE.operations[routed.intent];
   const missing = operation?.requiredInputs.filter((key) => payload[key] === undefined) ?? [];
   const guidance = routed.intent === "unknown"
-    ? ["Describe whether you want help, a tutorial, project onboarding, Harness explanation, a Goal run, recovery, evidence, acceptance, or release guidance."]
+    ? ["Describe whether you want help, a tutorial, project onboarding, Harness explanation, a Goal run, recovery, version/capability/migration/Cutover guidance, evidence, acceptance, or release guidance."]
     : missing.length
       ? [`Ask only for unresolved Runtime schema fields: ${missing.join(", ")}.`, "Input collection does not authorize execution or publication."]
       : [operation!.purpose, operation!.nextOnSuccess];
@@ -132,6 +148,44 @@ export function planExpertTurn(text: string, payload: Record<string, unknown> = 
   return { ...material, digest: digest(material) };
 }
 
+export function expertVersionGuide() {
+  const material = {
+    schema: "evopilot-evolution-expert-version-guide/v1" as const,
+    expertVersion: EVOPILOT_EVOLUTION_EXPERT_VERSION,
+    versionLines: [
+      { owner: "Runtime", current: "5.1.0", changesWhen: "Runtime code, public contract, schema compatibility, or execution semantics change.", independentFrom: ["Expert", "governed resources", "Harness assets", "source Suites"] },
+      { owner: "Evolution Expert", current: EVOPILOT_EVOLUTION_EXPERT_VERSION, changesWhen: "Expert interaction or adapter package behavior changes.", independentFrom: ["Runtime", "governed resources", "Harness assets", "source Suites"] },
+      { owner: "governed resource", current: "resource.metadata.version", changesWhen: "The project declaration, Pack, Provider, binding, authority role, or Lifecycle resource changes.", independentFrom: ["Runtime", "Expert"] },
+      { owner: "source Suite", current: "provenance.sourceVersion", changesWhen: "Never inside EvoPilot; it is immutable migration provenance.", independentFrom: ["derived resource version"] },
+      { owner: "Harness asset", current: "published HarnessBundle version", changesWhen: "evopilot-harness publishes a new immutable asset.", independentFrom: ["Runtime", "Expert", "project resources"] }
+    ],
+    rules: [
+      "DataRig Suite 2.1.5 and EvoPilot Suite 3.2.1 retain those exact source identities.",
+      "A first derived resource may be 1.0.0; that does not rename or reset its source Suite.",
+      "A compatible resource revision does not require a Runtime or Expert release."
+    ]
+  };
+  return { ...material, digest: digest(material) };
+}
+
+export function expertMigrationGuide() {
+  const material = {
+    schema: "evopilot-evolution-expert-migration-guide/v1" as const,
+    sideEffects: false as const,
+    sourcePolicy: "LATEST_ONLY_NO_HISTORICAL_COMPATIBILITY" as const,
+    phases: [
+      { id: "freeze", action: "Bind exact source Suite version and digest read-only.", mutation: false },
+      { id: "inventory", action: "Map every capability to Runtime, resource, Expert, project, Harness, or explicit exclusion.", mutation: false },
+      { id: "derive", action: "Register independently versioned, human-readable resources with immutable provenance.", mutation: false },
+      { id: "shadow", action: "Run equivalent frozen scenarios and require zero hidden Suite invocation.", mutation: false },
+      { id: "cutover-readiness", action: "Require public installation, 100-percent evidence, rollback, and separate Cutover Target.", mutation: false },
+      { id: "cutover", action: "Not performed by this guide or this Expert Target.", mutation: false }
+    ],
+    exactHumanBoundaries: ["resource activation or rollback", "Suite Cutover", "credential", "database", "production", "acceptance", "publication", "release"]
+  };
+  return { ...material, digest: digest(material) };
+}
+
 export function expertTutorial(): { schema: "evopilot-evolution-expert-tutorial/v1"; version: string; sideEffects: false; steps: Array<{ concept: string; explanation: string; nextCommand: string }>; digest: string } {
   const material = {
     schema: "evopilot-evolution-expert-tutorial/v1" as const,
@@ -139,6 +193,7 @@ export function expertTutorial(): { schema: "evopilot-evolution-expert-tutorial/
     sideEffects: false as const,
     steps: [
       { concept: "Project", explanation: "A versioned declaration of source, delivery, policy, environment, Host, Runtime, and evidence discovery.", nextCommand: "evopilot project-definition discover --file detected-facts.yaml" },
+      { concept: "Resource versions", explanation: "Project resources evolve independently from Runtime and Expert while retaining exact source Suite provenance.", nextCommand: "evopilot-expert versions" },
       { concept: "Harness", explanation: "A published immutable professional obligation set selected by Runtime; Expert never chooses or changes it.", nextCommand: "evopilot evolution plan --file plan-request.yaml" },
       { concept: "Lifecycle", explanation: "A human-readable orchestration that may strengthen but never weaken Harness obligations.", nextCommand: "evopilot evolution run --file exact-binding-run-request.yaml" },
       { concept: "Goal Target Loop", explanation: "Execution revalidates the exact binding at start, resume, retry, and every iteration.", nextCommand: "evopilot lifecycle-run inspect <run-id>" },

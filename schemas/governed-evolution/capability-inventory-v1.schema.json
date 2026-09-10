@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/capability-inventory-v1.schema.json",
+  "title": "EvoPilot Suite Capability Inventory v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "baselinePolicy", "sources", "dispositions", "coverage", "hiddenFallbackAllowed", "status", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-suite-capability-inventory/v1" },
+    "baselinePolicy": { "const": "LATEST_ONLY_NO_HISTORICAL_COMPATIBILITY" },
+    "sources": { "type": "array", "minItems": 1 },
+    "dispositions": { "type": "array", "minItems": 1 },
+    "coverage": {
+      "type": "object",
+      "required": ["total", "mapped", "excluded", "percent", "unmapped"],
+      "properties": { "total": { "type": "integer", "minimum": 1 }, "mapped": { "type": "integer", "minimum": 1 }, "excluded": { "type": "integer", "minimum": 0 }, "percent": { "const": 100 }, "unmapped": { "type": "array", "maxItems": 0 } }
+    },
+    "hiddenFallbackAllowed": { "const": false },
+    "status": { "const": "COMPLETE" },
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+  }
+}

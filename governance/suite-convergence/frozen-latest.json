@@ -1,0 +1,51 @@
+{
+  "schema": "evopilot-suite-convergence-frozen-baseline/v1",
+  "policy": "LATEST_ONLY_NO_HISTORICAL_COMPATIBILITY",
+  "capturedAt": "2026-09-10T00:00:00.000Z",
+  "sources": [
+    {
+      "suiteId": "datarig-codex-suite",
+      "sourceVersion": "2.1.5",
+      "manifestPath": "source://datarig-codex-suite/governance/skill-suite.json",
+      "manifestDigest": "sha256:20abf6f654eaf78ad6a137f02fc483be9c430af93a5b23699c81f81c7a72bb07",
+      "snapshotDigest": "sha256:064ee6a8a7b21ae8029cfaaf03eafef7ff0816a8b031d8468c49eae6b5b4a330",
+      "readOnly": true,
+      "capabilities": [
+        { "id": "entry-routing", "description": "Evolution request routing and authority-preserving navigation" },
+        { "id": "roadmap-governance", "description": "Roadmap alignment and deterministic change classification" },
+        { "id": "target-governance", "description": "Digest-bound target review, implementation, acceptance, and release gates" },
+        { "id": "repository-integrity", "description": "Governance-kernel and staged-change integrity verification" },
+        { "id": "proofops-acceptance", "description": "Candidate-specific evidence validation and acceptance aggregation" },
+        { "id": "production-e2e", "description": "Isolated production-like E2E with explicit database authority" },
+        { "id": "agent-host-conformance", "description": "Packaged third-party Agent-host compatibility evidence" },
+        { "id": "release-readiness", "description": "Exact RC and internal promotion readiness aggregation" },
+        { "id": "release-operation", "description": "No-rebuild authorized release operation and verification" },
+        { "id": "bounded-defect-closure", "description": "Autonomous reproducible defect repair within Target and budget" },
+        { "id": "evolution-journal", "description": "Non-authoritative verified engineering lesson capture" },
+        { "id": "oss-maturity-audit", "description": "Evidence-backed open-source maturity assessment" }
+      ]
+    },
+    {
+      "suiteId": "evopilot-codex-suite",
+      "sourceVersion": "3.2.1",
+      "manifestPath": "source://evopilot-codex-suite/evopilot-suite-manifest.yaml",
+      "manifestDigest": "sha256:048ac76ce2fd82f4fc737e87d6489b6c5f98922244077d334c6874a637152234",
+      "snapshotDigest": "sha256:95e614c87b4bf01938ad559a9f13c4a00a4034437d6b59a22119ff53f22cf2f7",
+      "readOnly": true,
+      "capabilities": [
+        { "id": "entry-routing", "description": "Cross-repository governed-evolution routing" },
+        { "id": "roadmap-governance", "description": "Roadmap intent and release alignment" },
+        { "id": "target-governance", "description": "Target authoring, review, approval, and phase separation" },
+        { "id": "harness-guided-operation", "description": "Harness-bound Goal Target Loop operation" },
+        { "id": "agent-host-conformance", "description": "Released-shape Agent-host production simulation" },
+        { "id": "release-operation", "description": "GitHub, npm, GHCR, and deployment terminal reconciliation" },
+        { "id": "bounded-recovery", "description": "Recovery classification, learned automation, receipts, and stop rules" },
+        { "id": "completion-assurance", "description": "Criterion-level 100-percent completion and no-regression gate" },
+        { "id": "documentation-assurance", "description": "README and technical-document completeness" },
+        { "id": "evolution-journal", "description": "Verified engineering lesson capture" },
+        { "id": "oss-maturity-audit", "description": "Open-source maturity benchmarking" },
+        { "id": "dashboard-routing", "description": "Dashboard Agent-console boundary routing" }
+      ]
+    }
+  ]
+}

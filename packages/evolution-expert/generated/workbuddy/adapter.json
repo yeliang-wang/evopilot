@@ -2,8 +2,8 @@
   "schema": "evopilot-evolution-expert-adapter/v1",
   "id": "evopilot-evolution-expert-workbuddy",
   "host": "workbuddy",
-  "version": "1.0.1",
-  "coreDigest": "sha256:fef38c4295b751b15bd7274871ea5548d88d8d02cc8c999609858617411a930c",
+  "version": "1.1.0",
+  "coreDigest": "sha256:da2b56f23999574dcd8e8970c99d0191094b09bb92ce80a70c1047ac56288538",
   "protocolVersion": "1.0",
   "requiredCapabilities": [
     "structured-tool-results",
@@ -21,7 +21,8 @@
     "Ask only unresolved schema fields and never collect raw secrets; use SecretRef.",
     "Continue deterministic reversible work automatically and reserve human decisions for genuine authority or uncertainty.",
     "Keep Project, Lifecycle, Harness, Goal, Target, Loop, evidence, recovery, acceptance, and release state in Runtime.",
-    "Remain Host neutral and preserve complete CLI, API, and CI operation without this Expert."
+    "Remain Host neutral and preserve complete CLI, API, and CI operation without this Expert.",
+    "Keep Runtime, Expert, declarative resource, source Suite, project, and Harness versions independent and explicit."
   ],
   "prohibitedSemantics": [
     "own-runtime-state",
@@ -31,5 +32,5 @@
     "host-specific-lifecycle",
     "automatic-publication"
   ],
-  "digest": "sha256:325cef0a943708677d2f88d85eafaf31351f2c769ae3bfecab13243c168654b3"
+  "digest": "sha256:b531649c882a9c28d71c1000c44708cb0cd9017501cf1ea23a65f0a93820a242"
 }

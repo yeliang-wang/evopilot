@@ -1,5 +1,6 @@
 export * from "./governed-evolution.js";
 export * from "./completion-assurance.js";
+export * from "./suite-convergence.js";
 
 export type EvidenceSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 

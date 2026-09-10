@@ -7,25 +7,26 @@ import { createApprovedSchemeInventory, createCompletionTrace } from "../package
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const output = path.join(root, "governance/acceptance/v5-completion-contract.json");
-const runtimeId = "evopilot-v5.0.1-harness-guided-completion-recovery";
-const expertId = "evopilot-evolution-expert-v1.0.1-completion-recovery";
+const runtimeId = "evopilot-v5.1.0-suite-capability-convergence";
+const expertId = "evopilot-evolution-expert-v1.1.0-unified-host-entry";
 const runtime = readJson(`governance/targets/${runtimeId}.json`);
 const expert = readJson(`governance/targets/${expertId}.json`);
-const predecessorRuntime = readJson("governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json");
-const predecessorExpert = readJson("governance/targets/evopilot-evolution-expert-v1.0.0.json");
+const predecessorRuntime = readJson("governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json");
+const predecessorExpert = readJson("governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json");
 const roadmap = parseYaml(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
 
 const requirements = [];
 addTargetRequirements("V5RUNTIME", predecessorRuntime, "TARGET", "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json");
 addTargetRequirements("V5EXPERT", predecessorExpert, "TARGET", "governance/targets/evopilot-evolution-expert-v1.0.0.json");
-for (const [index, statement] of [...runtime.scope.include.slice(0, 7), ...expert.scope.include.slice(0, 7)].entries()) {
-  requirements.push({ id: `CORRECTION-${String(index + 1).padStart(2, "0")}`, sourceRef: index < 7 ? `governance/targets/${runtimeId}.json#scope.include.${index}` : `governance/targets/${expertId}.json#scope.include.${index - 7}`, sourceDigest: index < 7 ? fileDigest(`governance/targets/${runtimeId}.json`) : fileDigest(`governance/targets/${expertId}.json`), statement, kind: index < 7 ? "AUDITED_GAP" : "USER_CORRECTION" });
+for (const [index, statement] of [...runtime.scope.include, ...expert.scope.include].entries()) {
+  const runtimeStatement = index < runtime.scope.include.length;
+  requirements.push({ id: `CONVERGENCE-${String(index + 1).padStart(2, "0")}`, sourceRef: runtimeStatement ? `governance/targets/${runtimeId}.json#scope.include.${index}` : `governance/targets/${expertId}.json#scope.include.${index - runtime.scope.include.length}`, sourceDigest: runtimeStatement ? fileDigest(`governance/targets/${runtimeId}.json`) : fileDigest(`governance/targets/${expertId}.json`), statement, kind: runtimeStatement ? "RUNTIME_5_1" : "EXPERT_1_1" });
 }
-for (const milestone of (roadmap.milestones ?? []).filter((item) => ["evopilot-5.0-harness-guided-governed-evolution-runtime", "evopilot-evolution-expert-1.0"].includes(item.id))) {
+for (const milestone of (roadmap.milestones ?? []).filter((item) => ["evopilot-5.1-suite-capability-convergence", "evopilot-evolution-expert-1.1-unified-host-entry"].includes(item.id))) {
   for (const [index, statement] of [...(milestone.scope ?? []), ...(milestone.acceptance ?? [])].entries()) requirements.push({ id: `ROADMAP-${milestone.id}-${String(index + 1).padStart(2, "0")}`, sourceRef: `governance/roadmap.yaml#${milestone.id}.${index}`, sourceDigest: fileDigest("governance/roadmap.yaml"), statement: typeof statement === "string" ? statement : JSON.stringify(statement), kind: "ROADMAP" });
 }
 
-const inventory = createApprovedSchemeInventory({ campaignId: "evopilot-runtime-5.0.1-expert-1.0.1-completion-recovery", requirements });
+const inventory = createApprovedSchemeInventory({ campaignId: "evopilot-runtime-5.1.0-expert-1.1.0-suite-capability-convergence", requirements });
 const current = [...criteria(runtime, runtimeId), ...criteria(expert, expertId)];
 const links = inventory.requirements.map((requirement) => {
   const target = requirement.id.includes("EXPERT") || /Expert|Host Adapter/i.test(requirement.statement) ? expert : runtime;
@@ -51,15 +52,15 @@ const validators = current.map((criterion) => ({
   independent: true
 }));
 const contractMaterial = {
-  schema: "evopilot-v5-completion-contract/v1",
+  schema: "evopilot-v5-completion-contract/v2",
   campaignId: inventory.campaignId,
   targetBindings: [targetBinding(runtime), targetBinding(expert)],
   inventory,
   trace,
   requiredCriteria: current,
   validators,
-  completionRule: "total=passed; failed=pending=stale=warning=generic=unmapped=0; exactCandidatePairVerified=true; impactClosure=PASS; noRegression=PASS",
-  generatedFrom: ["governance/roadmap.yaml", `governance/targets/${runtimeId}.json`, `governance/targets/${expertId}.json`, "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json", "governance/targets/evopilot-evolution-expert-v1.0.0.json"]
+  completionRule: "capabilityInventory=100%; total=passed; failed=pending=stale=warning=generic=unmapped=0; exactCandidatePairVerified=true; impactClosure=PASS; noRegression=PASS; legacySuiteInvocation=0",
+  generatedFrom: ["governance/roadmap.yaml", `governance/targets/${runtimeId}.json`, `governance/targets/${expertId}.json`, "governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json", "governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json", "governance/suite-convergence/capability-inventory.json"]
 };
 const contract = { ...contractMaterial, digest: sha(contractMaterial) };
 const content = `${JSON.stringify(contract, null, 2)}\n`;

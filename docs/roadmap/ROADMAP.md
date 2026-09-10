@@ -26,8 +26,10 @@ The public EvoPilot Runtime `v5.0.0` and Evolution Expert `v1.0.0` artifacts are
 immutable published predecessors. Their historical acceptance records remain
 process evidence, but the completion audit found that they did not prove the
 entire approved v5 scheme. Runtime `v5.0.1` and Evolution Expert `v1.0.1` are
-the completed public recovery releases. Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset,
-Ontology, Policy, Evaluation, and Catalog versions evolve independently.
+the completed public recovery releases. Runtime `v5.1.0` and Evolution Expert
+`v1.1.0` are the next independently versioned capability-convergence releases.
+Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset, Ontology, Policy,
+Evaluation, and Catalog versions evolve independently.
 
 ## Product Direction
 
@@ -94,8 +96,11 @@ rollback point. It composes:
 - `CapabilityPack`
 - `LifecycleModule`
 - `PolicyPack`
+- `GovernancePack`
+- `ActionProviderDefinition`
 - `ProviderBinding`
 - `EnvironmentBinding`
+- `ReleaseChannelBinding`
 - `SecretRef`
 - `HumanAuthorityRole`
 
@@ -359,6 +364,36 @@ count is zero, the exact installed Runtime/Expert Candidate pair is verified,
 and `NO_REGRESSION` passes. Anything less remains `INCOMPLETE` and returns the
 exact affected scope to implementation or evidence collection.
 
+### v5.1 Convergence Acceptance
+
+Runtime `5.1.0` and Expert `1.1.0` inherit the complete accepted v4 and v5.0.1
+portfolios. Their Targets must additionally freeze and cover:
+
+1. exact differential parity for EvoPilot Suite `3.2.1` and DataRig Suite
+   `2.1.5`, with 100% inventory coverage and zero silent exclusions;
+2. project-neutral Governance Packs, Action Providers, receipts, qualification,
+   rollback, and authority constraints;
+3. bounded autonomous remediation through diagnosis, repair, immutable source
+   and replacement-Candidate lineage, per-Candidate readiness, failed-first
+   rerun, impact closure, full regression, and deterministic stop budgets;
+4. DataRig, EvoPilot, `evopilot-harness`, and unknown-project journeys with zero
+   project-name Engine branches;
+5. Codex, designated-human WorkBuddy, independent Host, generic MCP, and
+   headless conformance against one exact installed Runtime/Expert pair;
+6. success, failure, resume, upgrade, rollback, authority-stop, and Suite-absence
+   variants with `legacySuiteInvocationCount=0` and no hidden fallback;
+7. a post-Cutover capability upgrade delivered through EvoPilot-owned Runtime,
+   resource, Provider, or Expert packages without editing either retired Suite;
+8. public installation, side-by-side shadow observation, and complete readiness
+   for the separately authorized default switch, archive, rollback rehearsal,
+   monitoring, and retirement closure.
+
+The convergence completion formula is: capability inventory 100%, every current
+and inherited functional, capability, differential, documentation, Host, E2E,
+impact-closure and no-regression item passed, exact installed Candidate pair
+verified, and legacy invocation count zero. A partial aggregate remains
+`INCOMPLETE`.
+
 ### Required End-To-End Journeys
 
 1. `E2E01` — novice clean install, capability discovery, installed-version help,
@@ -403,38 +438,84 @@ exact affected scope to implementation or evidence collection.
     conflict, authority non-escalation, cross-Host equivalence, and zero Harness
     writes.
 
+## Suite Capability Convergence
+
+Runtime `5.1.0` and Evolution Expert `1.1.0` turn the current Suite migration
+inputs into one released EvoPilot operating path. *Contains the Suites* means
+capability extraction into public Runtime contracts, declarative resources,
+qualified Action Providers, and one Agent-neutral Expert Core. It never means
+copying, loading, invoking, or publishing either legacy Suite directory as
+Runtime implementation.
+
+The migration is **latest-only**. The currently observed exact baselines are:
+
+- EvoPilot Codex Suite `3.2.1`, snapshot
+  `sha256:95e614c87b4bf01938ad559a9f13c4a00a4034437d6b59a22119ff53f22cf2f7`;
+- DataRig Codex Suite `2.1.5`, snapshot
+  `sha256:064ee6a8a7b21ae8029cfaaf03eafef7ff0816a8b031d8468c49eae6b5b4a330`.
+
+Target review must re-read both installed manifests and prove these are still
+the latest active versions. Drift before Target approval refreshes only the
+changed latest snapshot. After the Target freezes its exact baseline, later
+legacy Suite feature versions do not expand the Target automatically; no
+compatibility work is required for superseded Suite versions. Corresponding
+future capability evolution belongs to EvoPilot Runtime, declarative project,
+Lifecycle, Policy, Governance and Action Provider resources, or the
+independently versioned Evolution Expert.
+
+Capability parity is not inferred from zero invocation. A canonical inventory
+must map every baseline behavior, stop rule, authority boundary, recovery class,
+acceptance obligation, E2E journey, and release surface to one tested Runtime,
+Expert, declarative-resource, Action Provider, owning-project, or explicit
+non-applicable disposition. Coverage is 100%; silent exclusion, generic PASS,
+and an unmapped item fail closure.
+
+DataRig's bounded autonomous defect-closure campaign becomes a project-neutral
+Runtime capability: digest-bound diagnosis and repair budgets, immutable repair
+and replacement-Candidate lineage, per-Candidate readiness and secret leases,
+failed-case-first rerun, impact closure, full regression, safe resume, and exact
+authority stop conditions. DataRig, EvoPilot, and `evopilot-harness` provide
+declarative reference instances; Runtime code cannot branch on their names.
+
+The final Codex surface is one released generated Evolution Expert Adapter. It
+contains no project Lifecycle, Harness selection, approval, recovery,
+acceptance, release, credential, or durable-state semantics. It guides the user
+through EvoPilot's MCP, HTTP, or CLI contracts; headless Runtime remains
+complete without the Expert.
+
 ## Legacy Suite Transition
 
-The active EvoPilot Codex Suite and DataRig Codex Suite are independently owned,
-independently evolving migration inputs, not v5 product components. Their
-supported replacement is:
+The active EvoPilot Codex Suite and DataRig Codex Suite remain untouched while
+Runtime `5.1.0` and Expert `1.1.0` are implemented and accepted. They are exact
+migration inputs, not product components. Their supported replacement is:
 
 ```text
 EvoPilot Runtime
   + compatible independently installed Evolution Expert
   + generated Host Adapter
-  + declarative project and Lifecycle resources
+  + declarative project, Lifecycle, Policy, Governance, and Action Provider resources
 ```
 
-Before the completion successors release, comparison is read-only and binds late exact snapshots of
-each Suite: source identity, version, tree digest, Skill/rule inventory,
-capture time, and corpus digest. Snapshot drift makes only the affected parity
-evidence stale and triggers a fresh snapshot plus selective rerun. Counted v5
-Candidate E2E uses an isolated environment in which both Suites are absent and
-must record `legacySuiteInvocationCount=0` with no hidden fallback. This proves
-that the Suites are technically unnecessary; it does not disable, move, delete,
-uninstall, archive, or constrain either real installed Suite.
+Comparison is read-only and binds the Target-frozen exact latest snapshots:
+source identity, version, tree digest, Skill/rule inventory, capture time, and
+corpus digest. Counted Candidate E2E uses an isolated environment in which both
+Suites are absent and records `legacySuiteInvocationCount=0` with no hidden
+fallback. Capability inventory parity, real behavior, inherited acceptance,
+impact closure, and `NO_REGRESSION` must pass in addition to absence proof.
 
-Actual default switching, archival, and retirement are post-completion-successor
-operations. They may begin only after Runtime `5.0.1` and Evolution Expert
-`1.0.1` prove the complete original scheme, are publicly released, and their
-exact accepted bytes are verified through fresh installation; required project
-resources must also be migrated, current Suite comparisons complete, and an
-observation period successful with a recoverable rollback path. The work
-requires a separate Cutover Target and a separate explicit human authorization.
-Any break-glass rollback is separately authorized, audited, and never an
-automatic fallback. This Cutover is not a release blocker for either completion
-successor.
+Actual default switching, archival, and retirement may begin only after Runtime
+`5.1.0` and Evolution Expert `1.1.0` are publicly released, their exact accepted
+bytes pass fresh installation, the released Codex Adapter is installed beside
+the legacy Suites, and a bounded shadow observation succeeds. The work requires
+a separate Cutover Target and a separate explicit human authorization. Any
+break-glass rollback is separately authorized, audited, and never an automatic
+fallback. This Cutover is not a `5.1.0` Release blocker.
+
+After Cutover closes, both legacy Suites are absent from normal Codex discovery,
+have no hidden fallback or Runtime dependency, and remain only as immutable,
+digest-inventoried migration evidence and test fixtures. They receive no further
+independent feature evolution. Harness authoring, review, approval, Catalog,
+Registry, and publication remain independently owned by `evopilot-harness`.
 
 ## Candidate, Acceptance, And Release Topology
 
@@ -523,20 +604,41 @@ signature and SLSA provenance verify, and independent installation proves the
 CLI, generated Codex Skill, Core digest, adapter binding, and Runtime 5.0.1
 compatibility.
 
-### Post-completion successors: Legacy Suite Cutover
+### v5.1.0: Suite Capability Convergence
 
-Status: `PLANNED`, not a v5 release blocker
+Status: `IN_PROGRESS`
 
-Only after Runtime `5.0.1` and Expert `1.0.1` have passed the complete original
-scheme, been publicly released, and passed fresh installation verification may
-a separately approved Cutover Target switch explicitly approved projects and
-Hosts to v5 as the default, verify zero legacy invocation on real paths, create
-digest-inventoried recoverable archives, rehearse separately authorized
-rollback, and close after an observation period. Until then, EvoPilot and
-DataRig Codex Suites remain installed, active, independently owned, and free to
-evolve.
+Productize the exact latest EvoPilot Codex Suite `3.2.1` and DataRig Codex Suite
+`2.1.5` capabilities into the Harness-guided Runtime, declarative resources,
+qualified Action Providers, and independently versioned Evolution Expert. Prove
+100-percent capability inventory coverage, DataRig-grade bounded autonomous
+remediation, exact acceptance completeness, four project references, Host and
+headless conformance, zero legacy invocation, no hidden fallback, and public
+installation readiness without embedding or modifying either Suite.
 
-### v5.1.0: Controlled Experiment Loop
+### Evolution Expert v1.1.0: Unified Host Entry
+
+Status: `IN_PROGRESS`, independent companion product
+
+Deliver one Agent-neutral Expert Core and generated released Codex, WorkBuddy,
+generic Agent, and generic MCP adapters for Runtime `5.1.0`. The Codex Adapter
+becomes the eventual single human entry but owns no project Lifecycle, Harness
+selection, approval, recovery, acceptance, release, credential, or durable
+state. Expert and Runtime versions and Releases remain independent.
+
+### Post-v5.1.0: Legacy Suite Cutover
+
+Status: `PLANNED`, not a v5.1.0 release blocker
+
+Only after exact public Runtime `5.1.0` and Expert `1.1.0` installation and
+side-by-side shadow observation may a separately approved Cutover Target switch
+the current Codex default to released EvoPilot, prove zero legacy invocation on
+real paths, create digest-inventoried recoverable archives, rehearse separately
+authorized rollback, and close after monitoring. After closure, both legacy
+Suites are immutable migration evidence only and receive no further independent
+feature evolution.
+
+### v5.2.0: Controlled Experiment Loop
 
 Status: `PLANNED`
 
@@ -544,7 +646,7 @@ Run comparable Champion/Challenger strategies over Harness-guided trajectories,
 evaluate outcome/process/safety/cost, replay controlled evidence, and promote or
 roll back only after benchmark, bad-case, regression, and human gates.
 
-### v5.2.0: Learning Interoperability
+### v5.3.0: Learning Interoperability
 
 Status: `PLANNED`
 

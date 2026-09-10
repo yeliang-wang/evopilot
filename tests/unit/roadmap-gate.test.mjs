@@ -32,7 +32,10 @@ test("Roadmap Gate rejects incomplete, generic, or weakened completion assurance
     ["99 percent coverage", (roadmap) => { roadmap.acceptancePortfolio.completionAssurance.originalSchemeCoveragePercent = 99; }, /100 percent/],
     ["bulk PASS", (roadmap) => { roadmap.acceptancePortfolio.completionAssurance.bulkPassProjectionAllowed = true; }, /bulk PASS/],
     ["missing validator", (roadmap) => { roadmap.acceptancePortfolio.completionAssurance.requiresTraceability = roadmap.acceptancePortfolio.completionAssurance.requiresTraceability.filter((item) => item !== "independent executable validator"); }, /independent executable validator/],
-    ["old cutover timing", (roadmap) => { roadmap.legacySuiteTransition.postRelease.timing = "AFTER_PUBLIC_V5_RELEASE_AND_VERIFIED_INSTALLATION"; }, /completion successors/]
+    ["old cutover timing", (roadmap) => { roadmap.legacySuiteTransition.postRelease.timing = "AFTER_PUBLIC_COMPLETION_SUCCESSORS_AND_VERIFIED_INSTALLATION"; }, /Runtime 5.1 and Expert 1.1/],
+    ["historical Suite compatibility", (roadmap) => { roadmap.legacySuiteTransition.migrationBaseline.supersededVersionCompatibilityRequired = true; }, /superseded Suite compatibility/],
+    ["continued independent Suite evolution", (roadmap) => { roadmap.legacySuiteTransition.postCutover.independentFeatureEvolution = true; }, /must not continue independent feature evolution/],
+    ["partial capability inventory", (roadmap) => { roadmap.suiteConvergenceAcceptance.capabilityInventoryCoveragePercent = 99; }, /100 percent/]
   ]) {
     const result = runWithRoadmap(mutate);
     assert.equal(result.status, 1, `${name}: ${result.stderr}`);
@@ -66,6 +69,20 @@ test("Roadmap Gate accepts current Runtime and Expert milestones in their verifi
   }
 });
 
+test("Roadmap Gate binds the v5.1 Runtime, Expert 1.1, Cutover, and rescheduled milestone order", () => {
+  const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
+  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "5.1.0");
+  assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "1.1.0");
+  assert.equal(roadmap.legacySuiteTransition.migrationBaseline.policy, "LATEST_ONLY_NO_HISTORICAL_COMPATIBILITY");
+  assert.equal(roadmap.legacySuiteTransition.migrationBaseline.supersededVersionCompatibilityRequired, false);
+  assert.equal(roadmap.legacySuiteTransition.postCutover.independentFeatureEvolution, false);
+  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-5.1-suite-capability-convergence")?.status, "IN_PROGRESS");
+  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-1.1-unified-host-entry")?.status, "IN_PROGRESS");
+  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-post-v5.1.0-legacy-suite-cutover")?.standaloneReleaseEligible, false);
+  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-5.2-controlled-experiment-loop")?.targetVersion, "5.2.0");
+  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-5.3-learning-interop")?.targetVersion, "5.3.0");
+});
+
 test("Roadmap Gate preserves AgentTrajectory work inside the completed v4 foundation", () => {
   const result = run(["--intent", "Add AgentTrajectory, RewardContract, and an approved execution feedback package"]);
   assert.equal(result.status, 0, result.stderr);
@@ -87,18 +104,35 @@ test("Roadmap Gate aligns the independently versioned Evolution Expert", () => {
   assert.ok(result.body.matchedMilestones.includes("evopilot-evolution-expert-1.0"));
 });
 
-test("Roadmap Gate aligns pre-release legacy Suite independence proof", () => {
-  const result = run(["--intent", "Keep independently evolving EvoPilot and DataRig Codex Suites active before v5 release, prove isolated Candidate independence using late-bound exact snapshots, and perform any real retirement only after public v5 installation verification through a separate Cutover Target and human authorization"]);
+test("Roadmap Gate aligns exact-latest Suite capability convergence", () => {
+  const result = run(["--intent", "Productize the exact latest EvoPilot Suite 3.2.1 and DataRig Suite 2.1.5 through suite capability convergence"]);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.body.classification, "ALIGNED");
-  assert.ok(result.body.matchedMilestones.includes("evopilot-5.0-harness-guided-governed-evolution-runtime"));
+  assert.ok(result.body.matchedMilestones.includes("evopilot-5.1-suite-capability-convergence"));
 });
 
 test("Roadmap Gate aligns separately governed post-release legacy Suite Cutover", () => {
   const result = run(["--intent", "Execute post-release legacy suite cutover through a legacy suite cutover target"]);
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.body.classification, "ALIGNED");
-  assert.ok(result.body.matchedMilestones.includes("evopilot-post-v5.0.0-legacy-suite-cutover"));
+  assert.ok(result.body.matchedMilestones.includes("evopilot-post-v5.1.0-legacy-suite-cutover"));
+});
+
+test("Roadmap Gate aligns the complete approved convergence intent across all declared milestones", () => {
+  const result = run(["--intent", "Productize the exact latest EvoPilot Codex Suite and DataRig Codex Suite capabilities into EvoPilot Runtime and independently versioned Evolution Expert, use declarative project profiles, lifecycle packs and action providers rather than embedded Suite directories or project-specific Engine branches, install one released Expert Codex adapter as the current Codex entry, prove complete capability parity and zero legacy fallback, then retire both independent Suites; after cutover all corresponding capability evolution occurs in EvoPilot rather than separate Codex Suites, while evopilot-harness remains an independent Harness producer."]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.body.classification, "ALIGNED");
+  assert.ok(result.body.matchedMilestones.includes("evopilot-5.1-suite-capability-convergence"));
+  assert.ok(result.body.matchedMilestones.includes("evopilot-evolution-expert-1.1-unified-host-entry"));
+  assert.ok(result.body.matchedMilestones.includes("evopilot-post-v5.1.0-legacy-suite-cutover"));
+});
+
+test("Roadmap Gate rejects a composite capability intent when only one clause is planned", () => {
+  const result = run(["--intent", "Implement the independently versioned EvoPilot Evolution Expert; add customer invoicing"]);
+  assert.equal(result.status, 2);
+  assert.equal(result.body.classification, "UNPLANNED");
+  assert.ok(result.body.matchedMilestones.includes("evopilot-evolution-expert-1.0"));
+  assert.match(result.body.reasons.join(" "), /uncovered-clause: add customer invoicing/);
 });
 
 test("Roadmap Gate allows repository evolution governance without changing product behavior", () => {
@@ -147,8 +181,8 @@ test("Roadmap Gate blocks Expert-owned Harness selection", () => {
   assert.equal(result.body.classification, "BOUNDARY_CHANGE");
 });
 
-test("Roadmap Gate blocks real legacy Suite retirement before v5 release", () => {
-  const result = run(["--intent", "Retire legacy Suites before v5 release"]);
+test("Roadmap Gate blocks real legacy Suite retirement before v5.1 convergence release", () => {
+  const result = run(["--intent", "Retire legacy Suites before v5.1 release"]);
   assert.equal(result.status, 2);
   assert.equal(result.body.classification, "BOUNDARY_CHANGE");
   assert.match(result.body.reasons.join(" "), /legacy-suite-retirement-must-be-post-release/);
@@ -182,6 +216,11 @@ test("Roadmap Gate permits declared releases and rejects undeclared release line
   assert.equal(runtimeV501.status, 0, runtimeV501.stderr);
   assert.equal(runtimeV501.body.classification, "ALIGNED");
 
+  const runtimeV51 = run(["--release-version", "5.1.0"]);
+  assert.equal(runtimeV51.status, 0, runtimeV51.stderr);
+  assert.equal(runtimeV51.body.classification, "ALIGNED");
+  assert.ok(runtimeV51.body.matchedMilestones.includes("evopilot-5.1-suite-capability-convergence"));
+
   const expert = run(["--release-product", "evopilot-evolution-expert", "--release-version", "1.0.0"]);
   assert.equal(expert.status, 0, expert.stderr);
   assert.equal(expert.body.classification, "ALIGNED");
@@ -190,6 +229,11 @@ test("Roadmap Gate permits declared releases and rejects undeclared release line
   const expert101 = run(["--release-product", "evopilot-evolution-expert", "--release-version", "1.0.1"]);
   assert.equal(expert101.status, 0, expert101.stderr);
   assert.equal(expert101.body.classification, "ALIGNED");
+
+  const expert11 = run(["--release-product", "evopilot-evolution-expert", "--release-version", "1.1.0"]);
+  assert.equal(expert11.status, 0, expert11.stderr);
+  assert.equal(expert11.body.classification, "ALIGNED");
+  assert.ok(expert11.body.matchedMilestones.includes("evopilot-evolution-expert-1.1-unified-host-entry"));
 
   const expertAsRuntime = run(["--release-version", "1.0.0"]);
   assert.equal(expertAsRuntime.status, 2);

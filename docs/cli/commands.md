@@ -97,6 +97,22 @@ evopilot evolution recover --file <failure.yaml|json> --json
 
 See [Project Definitions](../guides/project-definitions.md) for the schema, reference declarations, and versioning rules.
 
+## Governed resources (v5.1 development)
+
+```bash
+evopilot resource list [--kind <kind>] --json
+evopilot resource inspect <kind> <resource-id> [--version <version>] --json
+evopilot resource register --file <resource.yaml|json> --json
+evopilot resource diff <kind> <resource-id> --from <version> --to <version> [--runtime-version 5.1.0] --json
+evopilot resource activate <kind> <resource-id> --version <version> --evidence-ref <ref> --json
+evopilot resource rollback <kind> <resource-id> --version <version> --evidence-ref <ref> --json
+evopilot evolution inventory --file <capability-inventory.yaml|json> --json
+evopilot evolution governance --file <governance-evaluation.yaml|json> --json
+evopilot provider qualify --file <provider-qualification.yaml|json> --json
+```
+
+Registration never implies activation. Compatible resource revisions preserve Runtime and Expert package versions. See [Resource Versioning](../guides/resource-versioning.md) and [Action Providers](../reference/action-providers.md).
+
 ## Project DevOps
 
 ```bash
@@ -192,6 +208,11 @@ These commands use the same tenant/workspace-scoped HTTP API as MCP and other Ag
 evopilot evolution plan --file <plan-request.yaml|json> --json
 evopilot evolution revalidate --file <revalidation.yaml|json> --json
 evopilot evolution recover --file <recovery-context.yaml|json> --json
+evopilot remediation start --file <campaign.yaml|json> --json
+evopilot remediation inspect <campaign-id> --json
+evopilot remediation decide <campaign-id> --file <incident.yaml|json> --json
+evopilot remediation resume <campaign-id> --campaign-digest <sha256> --evidence-ref <ref> --json
+evopilot remediation cancel <campaign-id> --campaign-digest <sha256> --evidence-ref <ref> --json
 evopilot automation list --json
 evopilot automation propose --file <rule-proposal.yaml|json> --json
 evopilot automation activate <rule-id> --file <exact-decision.json> --json

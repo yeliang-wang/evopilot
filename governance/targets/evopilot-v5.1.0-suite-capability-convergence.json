@@ -1,0 +1,2548 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-v5.1.0-suite-capability-convergence",
+  "revision": 1,
+  "status": "APPROVED",
+  "intent": "Productize the exact latest EvoPilot Codex Suite 3.2.1 and DataRig Codex Suite 2.1.5 capabilities into EvoPilot Runtime 5.1.0 through project-neutral independently versioned declarative resources, GovernancePacks, typed Action Providers, bounded autonomous remediation, complete parity and no-regression acceptance, while preserving mandatory published Harness binding, independent evopilot-harness authority, and a separately authorized post-release Suite Cutover.",
+  "objective": "Deliver Runtime 5.1.0 as the single public Harness-guided governed-evolution execution path whose declarative DDD contracts cover current DataRig and EvoPilot Suite capability baselines without embedding or invoking either Suite; preserve source Suite versions as immutable provenance, let compatible project resources evolve independently of Runtime SemVer, and prove exact installed-Candidate parity, bounded self-repair, owning-human authority, project neutrality, zero hidden fallback, complete inherited compatibility, and NO_REGRESSION.",
+  "evidence": [
+    {
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/evopilot-v51-suite-capability-convergence-roadmap-review-001/roadmap-revision-proposal.json@sha256:08df1622850e26f55986dafdc8f1137dfe0d46e3f4f51bd58b04bbf2e0c1b811",
+      "authority": "Approved Roadmap revision design and exact-latest convergence inventory; authorizes drafting only, not this Target or implementation."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/roadmap.yaml@sha256:8a8d292105e70da36ed1564bd0d50c8ae5eab8bbcdc7eff81d049ef5efcb4d7c",
+      "authority": "Current authoritative machine Roadmap declaring Runtime 5.1.0 convergence and post-release separate Cutover."
+    },
+    {
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/post-v5-suite-rebaseline-20260910/rebaseline-and-capability-delta.json@sha256:e12b7f36fe06831a86544c1f9c06984933352a28aff15e46150593d4c24ccb28",
+      "authority": "Read-only exact latest Suite baseline and capability differential evidence; advisory until rebound by this Target."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "authority": "Published Runtime 5.0.1 compatibility and acceptance baseline inherited criterion by criterion."
+    },
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v51-suite-capability-convergence-r1@sha256:08df1622850e26f55986dafdc8f1137dfe0d46e3f4f51bd58b04bbf2e0c1b811",
+      "authority": "Exact authority to apply the Roadmap and draft/preflight this Target; not Target approval or implementation authority."
+    },
+    {
+      "ref": "conversation:clarified-independent-resource-versioning-2026-09-10",
+      "authority": "User-confirmed requirement that migrated Suite provenance remains exact, new declarative resources have independent version lines, and compatible resource evolution must not force Runtime version changes; not implementation authority."
+    }
+  ],
+  "roadmapBindings": [
+    {
+      "repo": "/Users/wangyejing/project/harness/evopilot",
+      "project": "evopilot",
+      "matchedMilestone": "evopilot-5.1-suite-capability-convergence",
+      "targetVersion": "5.1.0",
+      "classification": "ALIGNED",
+      "roadmapDigest": "sha256:8a8d292105e70da36ed1564bd0d50c8ae5eab8bbcdc7eff81d049ef5efcb4d7c",
+      "releaseProduct": "evopilot-runtime"
+    }
+  ],
+  "scope": {
+    "include": [
+      "Freeze and verify exact latest EvoPilot Suite 3.2.1 and DataRig Suite 2.1.5 snapshots, then build a canonical 100-percent capability disposition inventory.",
+      "Implement project-neutral declarative DDD resources, GovernancePacks, Action Providers, and release-channel bindings without arbitrary executable YAML or project-name Engine branches.",
+      "Define independent resource identity and versioning: apiVersion, resourceVersion or revision, digest, source Suite id/version/digest provenance, and Runtime compatibility range.",
+      "Prove compatible project declarations and Pack/Provider resource revisions can evolve, activate, diff, and roll back without changing Runtime or Expert bytes or versions.",
+      "Implement bounded autonomous remediation with exact source, Candidate, readiness, lease, evidence, impact, retry, rollback, resume, and stop-rule lineage.",
+      "Make one published immutable HarnessBundle binding mandatory and monotonically composed with Lifecycle, provider, policy, environment, credential reference, and authority at every Loop boundary.",
+      "Expose the Runtime-owned Human Interaction Protocol and public MCP, HTTP, CLI, CI, and headless contracts required by Expert and third-party Hosts.",
+      "Run DataRig, EvoPilot, evopilot-harness, and unknown-project paths as ordinary declarations and prove Suite-free execution.",
+      "Refresh the Roadmap-bound v5 completion contract as a derived 5.1 implementation artifact and build an exact 100-percent completion aggregator.",
+      "Synchronize README and full technical, operator, migration, security, acceptance, provider, recovery, self-hosting, and resource-versioning documentation.",
+      "Prepare shadow and Cutover evidence contracts only; keep both installed Suites untouched until public installation and a separate Cutover Target."
+    ],
+    "exclude": [
+      "No copy, import, invocation, packaging, compatibility shim, or hidden fallback to either legacy Suite directory.",
+      "No renumbering of DataRig Suite 2.1.5 or EvoPilot Suite 3.2.1 as resource v1; new resource 1.0.0 lines must retain exact immutable Suite provenance.",
+      "No lockstep requirement that every declaration, Lifecycle, Policy, GovernancePack, CapabilityPack, or compatible Provider change increments EvoPilot Runtime or Evolution Expert.",
+      "No compatibility with superseded EvoPilot Suite or DataRig Suite versions; only exact Target-frozen latest snapshots are migration inputs.",
+      "No Harness reasoning, authoring, review, approval, Catalog, Registry, signing, or publication in EvoPilot.",
+      "No project-owned Roadmap, Target, credential, database, production, acceptance, or release authority transferred to Runtime.",
+      "No actual Suite default switch, disablement, move, archive, uninstall, deletion, or retirement in this Target.",
+      "No arbitrary YAML shell execution, hard-coded DataRig/EvoPilot/evopilot-harness Engine branch, or general-purpose coding Agent embedded in Runtime.",
+      "No commit, push, Candidate, E2E, Host operation, Suite modification, publication, or Release under an unapproved Target."
+    ]
+  },
+  "compatibilityPolicy": {
+    "mode": "INHERIT"
+  },
+  "acceptance": [
+    {
+      "id": "RT51-FUNC01",
+      "criterion": "Load the exact Target-frozen EvoPilot Suite 3.2.1 and DataRig Suite 2.1.5 capability inventories and produce one deterministic disposition for every capability, stop rule, authority boundary, recovery class, acceptance obligation, E2E journey, and release surface.",
+      "requiredEvidence": "Inventory validator proving both snapshot digests, 100-percent item coverage, no duplicate disposition, no unmapped item, and no silent exclusion.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC02",
+      "criterion": "Resolve and validate project-neutral EvolutionProjectDefinition, CapabilityPack, LifecycleModule, PolicyPack, GovernancePack, ActionProviderDefinition, EnvironmentBinding, ReleaseChannelBinding, SecretRef, and HumanAuthorityRole resources without project-name Engine branches.",
+      "requiredEvidence": "Schema, canonicalization, semantic-diff, immutable-binding, migration, and rollback tests over DataRig, EvoPilot, evopilot-harness, and an unknown project.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC03",
+      "criterion": "Execute repository Roadmap, Target, evidence, acceptance, Candidate, and release-decision gates from declarative GovernancePack rules while preserving the owning project's authority.",
+      "requiredEvidence": "Positive and negative gate tests demonstrating exact digest binding and no authority inference.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC04",
+      "criterion": "Register only typed, qualified Action Providers with explicit input/output schemas, receipts, idempotency, rollback, credential references, authority limits, and Harness/Lifecycle/policy intersection.",
+      "requiredEvidence": "Provider conformance matrix and rejection evidence for arbitrary shell, unknown fields, unqualified providers, leaked secrets, and boundary expansion.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC05",
+      "criterion": "Support project-neutral providers for local git, GitHub, GitLab, npm, Maven, Candidate construction, artifact verification, and release-state readback without embedding legacy Suite code.",
+      "requiredEvidence": "Provider tests using isolated fixtures and read-only external-state simulations; no production publication.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC06",
+      "criterion": "Run a digest-bound bounded autonomous remediation campaign that diagnoses reproducible defects and repairs only within approved Target scope.",
+      "requiredEvidence": "State-machine tests covering classification, approved scope, stop limits, deterministic repair, receipts, rollback, and resume.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC07",
+      "criterion": "Create immutable descendant source and replacement-Candidate lineage for product defects rather than mutating or relabeling an accepted Candidate.",
+      "requiredEvidence": "Lineage validator binding source, Candidate, evidence, and supersession digests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC08",
+      "criterion": "Refresh Candidate-specific readiness, credential leases, failed-first reruns, impact closure, and the complete required matrix after a repair.",
+      "requiredEvidence": "Recovery campaign transcript and validators proving no stale readiness or cross-Candidate evidence reuse.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC09",
+      "criterion": "Expose one Runtime-owned schema-driven Human Interaction Protocol for unresolved inputs, exact authority decisions, status, tutorial, resume, and cancellation across MCP, HTTP, CLI, CI, and Agent Hosts.",
+      "requiredEvidence": "Cross-surface conformance evidence with identical prompts, field precedence, decision digests, and stop semantics.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC10",
+      "criterion": "Register and evolve EvoPilot and DataRig as ordinary projects through public Runtime contracts and published Harness bindings.",
+      "requiredEvidence": "Self-hosted project E2E evidence with no ownership transfer of Roadmaps, credentials, databases, acceptance, or releases.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC11",
+      "criterion": "Operate every required project and recovery journey with both legacy Suites absent from Candidate discovery and execution.",
+      "requiredEvidence": "Isolated process/file/open-call evidence and invocation counters proving zero Suite load, invocation, dependency, and fallback.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC12",
+      "criterion": "Aggregate exact acceptance only when capability inventory, current, inherited, E2E, impact closure, exact Candidate pair, and NO_REGRESSION all pass with zero failed, pending, stale, generic, warning, or unmapped items.",
+      "requiredEvidence": "Criterion-specific completion report and independent recomputation.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC13",
+      "criterion": "Give every migrated declarative resource a distinct identity containing apiVersion, independent resourceVersion or revision, immutable digest, source Suite id/version/digest provenance, and an explicit Runtime compatibility range.",
+      "requiredEvidence": "Schema and round-trip tests proving DataRig Suite 2.1.5 and EvoPilot Suite 3.2.1 remain immutable source identities while their first derived resource line may begin at 1.0.0 without renaming either Suite.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-FUNC14",
+      "criterion": "Register, activate, semantically diff, roll back, and audit a compatible project resource revision independently of Runtime and Expert package versions.",
+      "requiredEvidence": "Installed-Runtime test upgrading a DataRig or EvoPilot declaration/Pack from one resource version to another with unchanged Runtime and Expert bytes and versions.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP01",
+      "criterion": "Every Goal Target Loop must bind and revalidate one eligible published immutable HarnessBundle closure at start, resume, retry, and every iteration.",
+      "requiredEvidence": "Boundary tests over Registry, Catalog, Profile, Bundle, Component, policy, provider, environment, authority, and evidence digests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP02",
+      "criterion": "Lifecycle and provider composition may strengthen but never weaken Harness obligations, evidence, validators, constraints, or permissions.",
+      "requiredEvidence": "Monotonic-composition proof and deterministic conflict/abstention tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP03",
+      "criterion": "Semantic, credential, production, database, destructive, acceptance, publication, and release boundaries stop only at the exact owning-human decision.",
+      "requiredEvidence": "Authority matrix with denial and resume evidence; conversation and parameter entry never count as approval.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP04",
+      "criterion": "Legacy Suite directories, Skill discovery, chat history, and Suite manifests are neither Runtime dependencies nor hidden fallbacks.",
+      "requiredEvidence": "Package graph, process trace, filesystem trace, and cold-install verification.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP05",
+      "criterion": "DataRig, EvoPilot, evopilot-harness, and unknown projects are declarations and conformance fixtures only, never hard-coded Engine branches.",
+      "requiredEvidence": "Static architecture guard and dynamic unknown-project proof.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP06",
+      "criterion": "Future governed-evolution behavior has exactly one declared home: generic behavior in Runtime, project behavior in independently versioned declarative resources and providers, Host dialogue in Expert, Harness asset production in evopilot-harness.",
+      "requiredEvidence": "Ownership contract test and forbidden-import/module-boundary guard.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP07",
+      "criterion": "Recovery stops on semantic change, authority expansion or conflict, unresolved mutation state, same-failure threshold, attempt/time budget, or destructive external effect.",
+      "requiredEvidence": "Deterministic stop-rule and circuit-breaker evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP08",
+      "criterion": "No prior aggregate PASS, human declaration, source-checkout run, or generic evidence may substitute for exact installed-Candidate criterion evidence.",
+      "requiredEvidence": "Negative acceptance-evidence matrix.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP09",
+      "criterion": "Secrets remain references; raw credentials never enter declarations, prompts, logs, evidence, receipts, or durable Runtime state.",
+      "requiredEvidence": "Secret leakage, redaction, lease, and revocation tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP10",
+      "criterion": "Every plan, mutation, retry, rollback, Host transfer, Candidate replacement, and decision is immutable, digest-bound, idempotent, and auditable.",
+      "requiredEvidence": "Receipt ledger and replay/reconciliation tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP11",
+      "criterion": "EvoPilot remains a read-only consumer of published Harness assets; Harness authoring, approval, Catalog, Registry, and publication remain exclusively in evopilot-harness.",
+      "requiredEvidence": "Architecture and API prohibition tests plus ordinary Harness-producer E2E.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-CAP12",
+      "criterion": "A project declaration or compatible Lifecycle, Policy, Governance, Capability, or Provider resource revision does not require an EvoPilot Runtime version change; Runtime SemVer changes only when Runtime code, public contracts, schema compatibility, or execution semantics change.",
+      "requiredEvidence": "Version-policy tests proving independent resource evolution, and negative tests requiring Runtime SemVer change for incompatible Runtime-owned contract or behavior changes.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "RT51-DOC01",
+      "criterion": "README, concepts, DDD architecture, Harness binding, Lifecycle, GovernancePack, providers, recovery, acceptance, release, self-hosting, migration, Cutover preparation, resource versioning, security, tutorials, and API/CLI/MCP references match executable 5.1.0 behavior.",
+      "requiredEvidence": "Documentation link/command/version checks and tutorial execution against an installed Candidate.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "acceptanceLineage": [
+    {
+      "id": "FUNC01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC01",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC02",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC03",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC04",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC05",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC06",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC07",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC07",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC08",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC08",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC09",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC09",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC10",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC10",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC11",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC11",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC12",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC12",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC13",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC13",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC14",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC14",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC15",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC15",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC16",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC16",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC17",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC17",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC18",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC18",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC19",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC19",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC20",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC20",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "FUNC21",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC21",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP01",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP02",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP03",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP04",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP05",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP06",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP07",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP07",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP08",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP08",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP09",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP09",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP10",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP10",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP11",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP11",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP12",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP12",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP13",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP13",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP14",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP14",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP15",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP15",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "CAP16",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP16",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC01",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC02",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC03",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC04",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC05",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC06",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC07",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC07",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC08",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC08",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC09",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC09",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC10",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC10",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC11",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC11",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC12",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC12",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "DOC13",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC13",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "TRACE01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE01",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "TRACE02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE02",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "TRACE03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE03",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "TRACE04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE04",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "TRACE05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE05",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "TRACE06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE06",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC01",
+      "origin": "EvoPilot v4.0.0 Target AC01",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC02",
+      "origin": "EvoPilot v4.0.0 Target AC02",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC03",
+      "origin": "EvoPilot v4.0.0 Target AC03",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC04",
+      "origin": "EvoPilot v4.0.0 Target AC04",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC05",
+      "origin": "EvoPilot v4.0.0 Target AC05",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC06",
+      "origin": "EvoPilot v4.0.0 Target AC06",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC07",
+      "origin": "EvoPilot v4.0.0 Target AC07",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC08",
+      "origin": "EvoPilot v4.0.0 Target AC08",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC09",
+      "origin": "EvoPilot v4.0.0 Target AC09",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC10",
+      "origin": "EvoPilot v4.0.0 Target AC10",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC11",
+      "origin": "EvoPilot v4.0.0 Target AC11",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC12",
+      "origin": "EvoPilot v4.0.0 Target AC12",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC13",
+      "origin": "EvoPilot v4.0.0 Target AC13",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC14",
+      "origin": "EvoPilot v4.0.0 Target AC14",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC15",
+      "origin": "EvoPilot v4.0.0 Target AC15",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC16",
+      "origin": "EvoPilot v4.0.0 Target AC16",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC17",
+      "origin": "EvoPilot v4.0.0 Target AC17",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V4AC18",
+      "origin": "EvoPilot v4.0.0 Target AC18",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC01",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC02",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC03",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC04",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC05",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC06",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC07",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC08",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC09",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC10",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC11",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC12",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC13",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC14",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC14",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC15",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC15",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC16",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC16",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC17",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC17",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC18",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC18",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC19",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC19",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC20",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC20",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-FUNC21",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC21",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP01",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP02",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP03",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP04",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP05",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP06",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP07",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP08",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP09",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP10",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP11",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP12",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP13",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP14",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP14",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP15",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP15",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-CAP16",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP16",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC01",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC02",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC03",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC04",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC05",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC06",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC07",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC08",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC09",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC10",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC11",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC12",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    },
+    {
+      "id": "V5-DOC13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC13",
+      "criterionDigest": "sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json@sha256:8a167a1674d347132174a248ba908e6cf488299d9fcc884c58352b509b3d1f48"
+    }
+  ],
+  "inheritedAcceptance": [
+    {
+      "id": "FUNC01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC01",
+      "criterion": "A valid EvolutionProjectDefinition is discovered, normalized, versioned, and bound without project-specific Engine behavior.",
+      "requiredEvidence": "schema, normalization, discovery, digest, and no-project-branch tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC02",
+      "criterion": "Unknown projects are onboarded interactively into declarative resources and can be revised with evidence-preserving rollback.",
+      "requiredEvidence": "fresh unknown-project onboarding, adjustment, and rollback transcript",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC03",
+      "criterion": "Project plus GoalTarget context deterministically matches eligible published HarnessProfiles with ranking reasons and rejected alternatives.",
+      "requiredEvidence": "matching goldens, reason trace, and rejected-alternative evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC04",
+      "criterion": "No-match, ambiguity, ineligibility, and abstention fail closed without fabricating or silently selecting a Harness.",
+      "requiredEvidence": "negative matching and abstention matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC05",
+      "criterion": "Every Goal Target Loop binds one exact published immutable HarnessBundle closure before execution.",
+      "requiredEvidence": "mandatory binding tests and immutable Bundle digest closure",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC06",
+      "criterion": "HarnessExecutionBinding includes exact Project, GoalTarget, Harness, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence digests.",
+      "requiredEvidence": "binding schema, canonicalization, tamper, and replay tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC07",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC07",
+      "criterion": "Harness and Lifecycle composition intersects permissions and unions obligations without weakening Harness requirements.",
+      "requiredEvidence": "composition algebra goldens and weakening negatives",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC08",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC08",
+      "criterion": "Composition conflicts are deterministic, explainable, and fail closed before execution.",
+      "requiredEvidence": "conflict corpus and stable diagnostic snapshots",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC09",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC09",
+      "criterion": "All relevant bindings are revalidated before start, resume, retry, and every Loop iteration.",
+      "requiredEvidence": "per-transition and per-iteration drift matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC10",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC10",
+      "criterion": "Catalog growth, mutation, replacement, and version changes cannot silently alter an active binding.",
+      "requiredEvidence": "Catalog mutation and unrelated-growth tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC11",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC11",
+      "criterion": "Open project-neutral Lifecycle modules accept human-readable declarations and registered capabilities without arbitrary code.",
+      "requiredEvidence": "schema, module composition, custom Lifecycle, and hostile declaration tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC12",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC12",
+      "criterion": "One parameter schema drives ordinary-human dialogue and headless YAML/JSON with identical validation and provenance.",
+      "requiredEvidence": "cross-client fixtures and immutable input binding comparison",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC13",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC13",
+      "criterion": "Deterministic reversible stages and safe identical-input recovery continue automatically inside current authority.",
+      "requiredEvidence": "automatic continuation, retry, receipt, and restart evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC14",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC14",
+      "criterion": "Unknown or unsafe outcomes stop only at the exact unresolved authority boundary with actionable diagnostics.",
+      "requiredEvidence": "uncertain mutation and genuine-gate matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC15",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC15",
+      "criterion": "An approved Automation Registry rule is scoped, inspectable, versioned, revocable, audited, and reusable without repeated confirmation.",
+      "requiredEvidence": "proposal, one-time approval, activation, reuse, revoke, and audit evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC16",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC16",
+      "criterion": "Human Interaction Protocol clients render the same Runtime-owned questions, plans, decisions, progress, recovery, evidence, and results.",
+      "requiredEvidence": "Expert, MCP, CLI, API, and CI semantic conformance",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC17",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC17",
+      "criterion": "Codex Host and Runtime, WorkBuddy Host, and an independent Host cannot infer authority or change Engine semantics.",
+      "requiredEvidence": "real-host and hostile-host adapter conformance",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC18",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC18",
+      "criterion": "DataRig, EvoPilot, evopilot-harness, and unknown-project references run from declarations without named Engine branches.",
+      "requiredEvidence": "four reference journeys and source-pattern guard",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC19",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC19",
+      "criterion": "The Runtime remains fully operable through CLI, API, and CI when Evolution Expert is absent or incompatible.",
+      "requiredEvidence": "headless functional suite under missing and incompatible Expert states",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC20",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC20",
+      "criterion": "Exact installed v5 Candidates record zero legacy EvoPilot or DataRig Codex Suite invocation and no hidden fallback across success, failure, resume, upgrade, and rollback in isolated environments where both Suites are absent, while real installed Suites remain active and untouched.",
+      "requiredEvidence": "late-bound exact Suite snapshot manifests, drift and selective-rerun records, isolated-environment absence proof, legacySuiteInvocationCount zero, path/process sentinels, representative journeys, and real-installed-Suite non-mutation evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "FUNC21",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC21",
+      "criterion": "Exact installed Runtime Candidate completes acceptance and is promotable without rebuild only after separate Release authorization.",
+      "requiredEvidence": "Candidate handoff, isolated install, byte digests, acceptance aggregate, and promotion dry run",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP01",
+      "criterion": "Project declarations are extensible through versioned DDD resources and capability discovery.",
+      "requiredEvidence": "extension compatibility and unknown-resource failure tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP02",
+      "criterion": "Harness Registry and Catalog consumption is dynamic, read-only, immutable at binding time, and producer-independent.",
+      "requiredEvidence": "consumer contract and filesystem/network mutation sentinels",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP03",
+      "criterion": "Harness matching exposes deterministic ranking, eligibility, explanations, ambiguity, and abstention.",
+      "requiredEvidence": "matching capability contract and golden portfolio",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP04",
+      "criterion": "Open Lifecycle modules compose, version, migrate, validate, and roll back without Engine forks.",
+      "requiredEvidence": "module catalog, migration, rollback, and third-lifecycle evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP05",
+      "criterion": "Recovery Controller classifies deterministic, transient, external, uncertain, and authority failures with bounded budgets.",
+      "requiredEvidence": "failure taxonomy, budget, escalation, and recovery tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP06",
+      "criterion": "Automation Registry learns only from an exact approved proposal and preserves scope, revocation, expiry, and audit.",
+      "requiredEvidence": "registry lifecycle, drift, and policy enforcement tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP07",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP07",
+      "criterion": "Human Interaction Protocol is stable, versioned, resumable, and transport neutral.",
+      "requiredEvidence": "protocol schema, compatibility, resume, and conformance suites",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP08",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP08",
+      "criterion": "Agent Host and execution Runtime adapters declare and bind capabilities independently.",
+      "requiredEvidence": "Host/Runtime topology matrix and mismatch tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP09",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP09",
+      "criterion": "Codex is supported as an official Host and Runtime without becoming exclusive.",
+      "requiredEvidence": "Codex real-host and execution-adapter Candidate evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP10",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP10",
+      "criterion": "WorkBuddy and a third-party Host use generated adapters from common semantics.",
+      "requiredEvidence": "Core-digest and no-host-semantics conformance evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP11",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP11",
+      "criterion": "Provider and model bindings remain explicit, replaceable, policy constrained, and auditable.",
+      "requiredEvidence": "provider matrix, capability mismatch, usage, cost, and provenance evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP12",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP12",
+      "criterion": "Authority, tenant, workspace, secret, evidence, and audit boundaries remain exact across all clients and recovery paths.",
+      "requiredEvidence": "security, tenancy, SecretRef, authority, and audit suite",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP13",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP13",
+      "criterion": "Candidate, acceptance, release, rollback, and public verification preserve exact bytes and separate decisions.",
+      "requiredEvidence": "release topology and no-rebuild verification",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP14",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP14",
+      "criterion": "Runtime and Evolution Expert versions, Candidates, releases, upgrades, and rollbacks are independent but compatibility-bound.",
+      "requiredEvidence": "cross-version compatibility and independent lifecycle matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP15",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP15",
+      "criterion": "Reference projects are declarative examples rather than privileged profiles or Core branches.",
+      "requiredEvidence": "declaration validation and repository-name branch scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "CAP16",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP16",
+      "criterion": "The complete Runtime supports observability, cancellation, concurrency, performance, bounded resources, security, packaging, and distribution.",
+      "requiredEvidence": "full check, threat, soak, performance, packaging, installer, npm, GHCR, and deployment-surface evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC01",
+      "criterion": "README presents the Harness-guided product identity, primary journey, quickstart, and concise routing to deeper docs.",
+      "requiredEvidence": "README review, command verification, and link check",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC02",
+      "criterion": "Installation documents exact Runtime and independent Expert installation, compatibility, upgrade, rollback, and removal.",
+      "requiredEvidence": "clean-machine install documentation rehearsal",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC03",
+      "criterion": "Concept documentation distinguishes repository evolution governance, Runtime Lifecycle, Harness asset lifecycle, Expert, Host, and execution Runtime.",
+      "requiredEvidence": "terminology audit and boundary review",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC04",
+      "criterion": "DDD architecture documents bounded contexts, aggregates, invariants, events, dependencies, and ownership.",
+      "requiredEvidence": "ADR and architecture guard mapping",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC05",
+      "criterion": "Harness matching and immutable binding documentation covers eligibility, ranking, ambiguity, abstention, closure, drift, and replay.",
+      "requiredEvidence": "documentation-to-contract traceability",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC06",
+      "criterion": "Lifecycle documentation covers open modules, monotonic composition, parameters, decisions, and migration.",
+      "requiredEvidence": "examples validated against schemas and executable fixtures",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC07",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC07",
+      "criterion": "Recovery and Automation Registry documentation explains automatic classes, budgets, one-time rule approval, audit, revocation, and human boundaries.",
+      "requiredEvidence": "runbook scenario validation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC08",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC08",
+      "criterion": "Human Interaction Protocol and Expert integration documentation covers Codex, WorkBuddy, generic MCP, and headless use.",
+      "requiredEvidence": "adapter quickstart rehearsal and protocol examples",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC09",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC09",
+      "criterion": "Project onboarding and adjustment guides cover new, existing, imported, and unknown projects as declarations.",
+      "requiredEvidence": "novice walkthrough and declaration validation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC10",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC10",
+      "criterion": "Reference guides cover DataRig, EvoPilot, and evopilot-harness without presenting them as Core special cases.",
+      "requiredEvidence": "reference declaration traceability and terminology scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC11",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC11",
+      "criterion": "Security and authority documentation covers secrets, external effects, Human gates, Harness non-authority, and hostile Hosts or Runtimes.",
+      "requiredEvidence": "threat-model and security-doc consistency check",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC12",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC12",
+      "criterion": "Migration documentation distinguishes pre-release read-only snapshot comparison and isolated independence proof from post-release default switching, recoverable archival, rollback, and retirement under a separate Cutover Target and human authorization.",
+      "requiredEvidence": "migration rehearsal, snapshot-drift procedure, isolated zero-fallback evidence map, explicit post-release prerequisites, and Cutover authority boundary review",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "DOC13",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC13",
+      "criterion": "Acceptance and release documentation defines exact Candidate-first E2E, independent Runtime/Expert matrices, no-rebuild promotion, and terminal public verification.",
+      "requiredEvidence": "acceptance runbook lint and release dry run",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE01",
+      "criterion": "The complete original v5 and Expert scheme inventory is canonical, digest-bound, immutable for the campaign, and includes every accepted Roadmap clause, both predecessor Targets, every explicit user correction, and every audited gap.",
+      "requiredEvidence": "inventory schema validation, source digest verification, completeness enumeration, and mutation-detection tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE02",
+      "criterion": "Every inventory item maps to at least one successor Target scope item and acceptance criterion, with no silent exclusion or unmapped requirement.",
+      "requiredEvidence": "machine-readable traceability matrix and negative tests for missing, duplicate, silently excluded, and unmapped items",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE03",
+      "criterion": "Every current and inherited acceptance criterion has an independent executable validator and a concrete criterion-specific evidence contract; generic aggregate anchors and bulk PASS projection are rejected.",
+      "requiredEvidence": "validator inventory, independence checks, per-criterion evidence schema, tamper tests, and generic-evidence rejection tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE04",
+      "criterion": "Every user-observable requirement maps to an exact E2E starting state, terminal state, prohibited effects, required Hosts, and concrete evidence, including all Runtime E2E01-E2E13 variants.",
+      "requiredEvidence": "E2E trace matrix, terminal-state assertions, prohibited-effect sentinels, Host coverage audit, and uncovered-behavior negative test",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE05",
+      "criterion": "Completion aggregation remains INCOMPLETE when any required item is missing, partial, failed, pending, stale, warning-only, generic, unmapped, bound to the wrong Candidate, or represented only by a human declaration where machine evidence is required.",
+      "requiredEvidence": "fail-closed aggregation tests for every incomplete evidence class and wrong-candidate binding",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE06",
+      "criterion": "The final completion report proves 100-percent original-scheme coverage, all current and inherited acceptance and E2E passed, exact installed Runtime and Expert Candidate pair verified, complete impact closure, and NO_REGRESSION passed.",
+      "requiredEvidence": "digest-bound final completion report with total equals passed and zero failed, pending, stale, generic, and unmapped counts plus independent recomputation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC01",
+      "origin": "EvoPilot v4.0.0 Target AC01",
+      "criterion": "Roadmap, architecture, governance, and release alignment remain deterministic.",
+      "requiredEvidence": "v5 Roadmap, ADR, gate, and release-preflight evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC02",
+      "origin": "EvoPilot v4.0.0 Target AC02",
+      "criterion": "Open Lifecycle resources remain deterministic, schema-valid, immutable, and cycle safe.",
+      "requiredEvidence": "v4 compatibility plus v5 schema and graph replay",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC03",
+      "origin": "EvoPilot v4.0.0 Target AC03",
+      "criterion": "Lifecycle definitions cannot embed arbitrary executable code or bypass registered capabilities.",
+      "requiredEvidence": "hostile definition and action-registry regression matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC04",
+      "origin": "EvoPilot v4.0.0 Target AC04",
+      "criterion": "Conversational and headless parameter paths retain equivalent schema and immutable provenance.",
+      "requiredEvidence": "cross-surface semantic equivalence evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC05",
+      "origin": "EvoPilot v4.0.0 Target AC05",
+      "criterion": "Input never implies authority and secrets remain reference-only and redacted.",
+      "requiredEvidence": "authority negatives and secret/redaction scans",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC06",
+      "origin": "EvoPilot v4.0.0 Target AC06",
+      "criterion": "Deterministic reversible stages continue automatically inside exact authority.",
+      "requiredEvidence": "automatic continuation and receipt matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC07",
+      "origin": "EvoPilot v4.0.0 Target AC07",
+      "criterion": "Human gates remain limited to genuine digest-bound authority or risk boundaries.",
+      "requiredEvidence": "gate inventory and hostile interaction matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC08",
+      "origin": "EvoPilot v4.0.0 Target AC08",
+      "criterion": "Bounded authorization and selective drift invalidation prevent repeated ceremonial approval.",
+      "requiredEvidence": "authorization coverage and drift tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC09",
+      "origin": "EvoPilot v4.0.0 Target AC09",
+      "criterion": "Retry and resume remain idempotent and uncertain mutations fail to human recovery authority.",
+      "requiredEvidence": "crash, timeout, duplicate, receipt, and uncertainty matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC10",
+      "origin": "EvoPilot v4.0.0 Target AC10",
+      "criterion": "All execution dependencies remain exact, immutable, replayable, and drift checked.",
+      "requiredEvidence": "binding closure, tamper, and replay evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC11",
+      "origin": "EvoPilot v4.0.0 Target AC11",
+      "criterion": "DataRig remains a project-neutral declarative enterprise reference.",
+      "requiredEvidence": "fresh DataRig E2E and no-project-branch scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC12",
+      "origin": "EvoPilot v4.0.0 Target AC12",
+      "criterion": "evopilot-harness remains a project-neutral public reference and independent Harness producer.",
+      "requiredEvidence": "fresh producer-reference E2E and boundary sentinels",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC13",
+      "origin": "EvoPilot v4.0.0 Target AC13",
+      "criterion": "A materially different project and Lifecycle work without Engine changes.",
+      "requiredEvidence": "unknown-project declaration and source-diff proof",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC14",
+      "origin": "EvoPilot v4.0.0 Target AC14",
+      "criterion": "v3 and v4 plans, evidence, approvals, migration, and rollback remain compatible.",
+      "requiredEvidence": "migration and rollback replay matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC15",
+      "origin": "EvoPilot v4.0.0 Target AC15",
+      "criterion": "Codex, WorkBuddy, independent Host, MCP, API, CLI, and CI retain authoritative semantic equivalence.",
+      "requiredEvidence": "cross-host and headless conformance matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC16",
+      "origin": "EvoPilot v4.0.0 Target AC16",
+      "criterion": "Execution Runtime adapters remain capability-bound, hostile-safe, resumable, and auditable.",
+      "requiredEvidence": "Runtime adapter conformance and hostile adapter evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC17",
+      "origin": "EvoPilot v4.0.0 Target AC17",
+      "criterion": "EvoPilot remains a read-only Harness consumer and feedback remains approved, redacted, and immutable.",
+      "requiredEvidence": "architecture guard, Catalog sentinels, and feedback negatives",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC18",
+      "origin": "EvoPilot v4.0.0 Target AC18",
+      "criterion": "Complete security, isolation, observability, recovery, performance, docs, packaging, and release baseline has no regression.",
+      "requiredEvidence": "full Candidate check, security, soak, docs, distribution, and public-surface evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC01",
+      "criterion": "A valid EvolutionProjectDefinition is discovered, normalized, versioned, and bound without project-specific Engine behavior.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: schema, normalization, discovery, digest, and no-project-branch tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC02",
+      "criterion": "Unknown projects are onboarded interactively into declarative resources and can be revised with evidence-preserving rollback.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: fresh unknown-project onboarding, adjustment, and rollback transcript",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC03",
+      "criterion": "Project plus GoalTarget context deterministically matches eligible published HarnessProfiles with ranking reasons and rejected alternatives.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: matching goldens, reason trace, and rejected-alternative evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC04",
+      "criterion": "No-match, ambiguity, ineligibility, and abstention fail closed without fabricating or silently selecting a Harness.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: negative matching and abstention matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC05",
+      "criterion": "Every Goal Target Loop binds one exact published immutable HarnessBundle closure before execution.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: mandatory binding tests and immutable Bundle digest closure",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC06",
+      "criterion": "HarnessExecutionBinding includes exact Project, GoalTarget, Harness, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence digests.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: binding schema, canonicalization, tamper, and replay tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC07",
+      "criterion": "Harness and Lifecycle composition intersects permissions and unions obligations without weakening Harness requirements.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: composition algebra goldens and weakening negatives",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC08",
+      "criterion": "Composition conflicts are deterministic, explainable, and fail closed before execution.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: conflict corpus and stable diagnostic snapshots",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC09",
+      "criterion": "All relevant bindings are revalidated before start, resume, retry, and every Loop iteration.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: per-transition and per-iteration drift matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC10",
+      "criterion": "Catalog growth, mutation, replacement, and version changes cannot silently alter an active binding.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Catalog mutation and unrelated-growth tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC11",
+      "criterion": "Open project-neutral Lifecycle modules accept human-readable declarations and registered capabilities without arbitrary code.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: schema, module composition, custom Lifecycle, and hostile declaration tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC12",
+      "criterion": "One parameter schema drives ordinary-human dialogue and headless YAML/JSON with identical validation and provenance.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: cross-client fixtures and immutable input binding comparison",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC13",
+      "criterion": "Deterministic reversible stages and safe identical-input recovery continue automatically inside current authority.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: automatic continuation, retry, receipt, and restart evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC14",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC14",
+      "criterion": "Unknown or unsafe outcomes stop only at the exact unresolved authority boundary with actionable diagnostics.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: uncertain mutation and genuine-gate matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC15",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC15",
+      "criterion": "An approved Automation Registry rule is scoped, inspectable, versioned, revocable, audited, and reusable without repeated confirmation.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: proposal, one-time approval, activation, reuse, revoke, and audit evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC16",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC16",
+      "criterion": "Human Interaction Protocol clients render the same Runtime-owned questions, plans, decisions, progress, recovery, evidence, and results.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Expert, MCP, CLI, API, and CI semantic conformance",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC17",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC17",
+      "criterion": "Codex Host and Runtime, WorkBuddy Host, and an independent Host cannot infer authority or change Engine semantics.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: real-host and hostile-host adapter conformance",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC18",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC18",
+      "criterion": "DataRig, EvoPilot, evopilot-harness, and unknown-project references run from declarations without named Engine branches.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: four reference journeys and source-pattern guard",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC19",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC19",
+      "criterion": "The Runtime remains fully operable through CLI, API, and CI when Evolution Expert is absent or incompatible.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: headless functional suite under missing and incompatible Expert states",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC20",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC20",
+      "criterion": "Exact installed v5 Candidates record zero legacy EvoPilot or DataRig Codex Suite invocation and no hidden fallback across success, failure, resume, upgrade, and rollback in isolated environments where both Suites are absent, while real installed Suites remain active and untouched.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: late-bound exact Suite snapshot manifests, drift and selective-rerun records, isolated-environment absence proof, legacySuiteInvocationCount zero, path/process sentinels, representative journeys, and real-installed-Suite non-mutation evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-FUNC21",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC21",
+      "criterion": "Exact installed Runtime Candidate completes acceptance and is promotable without rebuild only after separate Release authorization.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Candidate handoff, isolated install, byte digests, acceptance aggregate, and promotion dry run",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP01",
+      "criterion": "Project declarations are extensible through versioned DDD resources and capability discovery.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: extension compatibility and unknown-resource failure tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP02",
+      "criterion": "Harness Registry and Catalog consumption is dynamic, read-only, immutable at binding time, and producer-independent.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: consumer contract and filesystem/network mutation sentinels",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP03",
+      "criterion": "Harness matching exposes deterministic ranking, eligibility, explanations, ambiguity, and abstention.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: matching capability contract and golden portfolio",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP04",
+      "criterion": "Open Lifecycle modules compose, version, migrate, validate, and roll back without Engine forks.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: module catalog, migration, rollback, and third-lifecycle evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP05",
+      "criterion": "Recovery Controller classifies deterministic, transient, external, uncertain, and authority failures with bounded budgets.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: failure taxonomy, budget, escalation, and recovery tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP06",
+      "criterion": "Automation Registry learns only from an exact approved proposal and preserves scope, revocation, expiry, and audit.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: registry lifecycle, drift, and policy enforcement tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP07",
+      "criterion": "Human Interaction Protocol is stable, versioned, resumable, and transport neutral.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: protocol schema, compatibility, resume, and conformance suites",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP08",
+      "criterion": "Agent Host and execution Runtime adapters declare and bind capabilities independently.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Host/Runtime topology matrix and mismatch tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP09",
+      "criterion": "Codex is supported as an official Host and Runtime without becoming exclusive.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Codex real-host and execution-adapter Candidate evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP10",
+      "criterion": "WorkBuddy and a third-party Host use generated adapters from common semantics.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Core-digest and no-host-semantics conformance evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP11",
+      "criterion": "Provider and model bindings remain explicit, replaceable, policy constrained, and auditable.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: provider matrix, capability mismatch, usage, cost, and provenance evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP12",
+      "criterion": "Authority, tenant, workspace, secret, evidence, and audit boundaries remain exact across all clients and recovery paths.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: security, tenancy, SecretRef, authority, and audit suite",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP13",
+      "criterion": "Candidate, acceptance, release, rollback, and public verification preserve exact bytes and separate decisions.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: release topology and no-rebuild verification",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP14",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP14",
+      "criterion": "Runtime and Evolution Expert versions, Candidates, releases, upgrades, and rollbacks are independent but compatibility-bound.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: cross-version compatibility and independent lifecycle matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP15",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP15",
+      "criterion": "Reference projects are declarative examples rather than privileged profiles or Core branches.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: declaration validation and repository-name branch scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-CAP16",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP16",
+      "criterion": "The complete Runtime supports observability, cancellation, concurrency, performance, bounded resources, security, packaging, and distribution.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: full check, threat, soak, performance, packaging, installer, npm, GHCR, and deployment-surface evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC01",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC01",
+      "criterion": "README presents the Harness-guided product identity, primary journey, quickstart, and concise routing to deeper docs.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: README review, command verification, and link check",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC02",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC02",
+      "criterion": "Installation documents exact Runtime and independent Expert installation, compatibility, upgrade, rollback, and removal.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: clean-machine install documentation rehearsal",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC03",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC03",
+      "criterion": "Concept documentation distinguishes repository evolution governance, Runtime Lifecycle, Harness asset lifecycle, Expert, Host, and execution Runtime.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: terminology audit and boundary review",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC04",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC04",
+      "criterion": "DDD architecture documents bounded contexts, aggregates, invariants, events, dependencies, and ownership.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: ADR and architecture guard mapping",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC05",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC05",
+      "criterion": "Harness matching and immutable binding documentation covers eligibility, ranking, ambiguity, abstention, closure, drift, and replay.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: documentation-to-contract traceability",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC06",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC06",
+      "criterion": "Lifecycle documentation covers open modules, monotonic composition, parameters, decisions, and migration.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: examples validated against schemas and executable fixtures",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC07",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC07",
+      "criterion": "Recovery and Automation Registry documentation explains automatic classes, budgets, one-time rule approval, audit, revocation, and human boundaries.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: runbook scenario validation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC08",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC08",
+      "criterion": "Human Interaction Protocol and Expert integration documentation covers Codex, WorkBuddy, generic MCP, and headless use.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: adapter quickstart rehearsal and protocol examples",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC09",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC09",
+      "criterion": "Project onboarding and adjustment guides cover new, existing, imported, and unknown projects as declarations.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: novice walkthrough and declaration validation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC10",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC10",
+      "criterion": "Reference guides cover DataRig, EvoPilot, and evopilot-harness without presenting them as Core special cases.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: reference declaration traceability and terminology scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC11",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC11",
+      "criterion": "Security and authority documentation covers secrets, external effects, Human gates, Harness non-authority, and hostile Hosts or Runtimes.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: threat-model and security-doc consistency check",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC12",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC12",
+      "criterion": "Migration documentation distinguishes pre-release read-only snapshot comparison and isolated independence proof from post-release default switching, recoverable archival, rollback, and retirement under a separate Cutover Target and human authorization.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: migration rehearsal, snapshot-drift procedure, isolated zero-fallback evidence map, explicit post-release prerequisites, and Cutover authority boundary review",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V5-DOC13",
+      "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC13",
+      "criterion": "Acceptance and release documentation defines exact Candidate-first E2E, independent Runtime/Expert matrices, no-rebuild promotion, and terminal public verification.",
+      "requiredEvidence": "Fresh successor evidence for the original v5 criterion: acceptance runbook lint and release dry run",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "regressionImpact": [
+    {
+      "area": "Complete public Runtime 5.0.1 behavior and authority baseline",
+      "affectedAcceptanceIds": [
+        "FUNC01",
+        "FUNC02",
+        "FUNC03",
+        "FUNC04",
+        "FUNC05",
+        "FUNC06",
+        "FUNC07",
+        "FUNC08",
+        "FUNC09",
+        "FUNC10",
+        "FUNC11",
+        "FUNC12",
+        "FUNC13",
+        "FUNC14",
+        "FUNC15",
+        "FUNC16",
+        "FUNC17",
+        "FUNC18",
+        "FUNC19",
+        "FUNC20",
+        "FUNC21",
+        "CAP01",
+        "CAP02",
+        "CAP03",
+        "CAP04",
+        "CAP05",
+        "CAP06",
+        "CAP07",
+        "CAP08",
+        "CAP09",
+        "CAP10",
+        "CAP11",
+        "CAP12",
+        "CAP13",
+        "CAP14",
+        "CAP15",
+        "CAP16",
+        "DOC01",
+        "DOC02",
+        "DOC03",
+        "DOC04",
+        "DOC05",
+        "DOC06",
+        "DOC07",
+        "DOC08",
+        "DOC09",
+        "DOC10",
+        "DOC11",
+        "DOC12",
+        "DOC13",
+        "TRACE01",
+        "TRACE02",
+        "TRACE03",
+        "TRACE04",
+        "TRACE05",
+        "TRACE06",
+        "V4AC01",
+        "V4AC02",
+        "V4AC03",
+        "V4AC04",
+        "V4AC05",
+        "V4AC06",
+        "V4AC07",
+        "V4AC08",
+        "V4AC09",
+        "V4AC10",
+        "V4AC11",
+        "V4AC12",
+        "V4AC13",
+        "V4AC14",
+        "V4AC15",
+        "V4AC16",
+        "V4AC17",
+        "V4AC18",
+        "V5-FUNC01",
+        "V5-FUNC02",
+        "V5-FUNC03",
+        "V5-FUNC04",
+        "V5-FUNC05",
+        "V5-FUNC06",
+        "V5-FUNC07",
+        "V5-FUNC08",
+        "V5-FUNC09",
+        "V5-FUNC10",
+        "V5-FUNC11",
+        "V5-FUNC12",
+        "V5-FUNC13",
+        "V5-FUNC14",
+        "V5-FUNC15",
+        "V5-FUNC16",
+        "V5-FUNC17",
+        "V5-FUNC18",
+        "V5-FUNC19",
+        "V5-FUNC20",
+        "V5-FUNC21",
+        "V5-CAP01",
+        "V5-CAP02",
+        "V5-CAP03",
+        "V5-CAP04",
+        "V5-CAP05",
+        "V5-CAP06",
+        "V5-CAP07",
+        "V5-CAP08",
+        "V5-CAP09",
+        "V5-CAP10",
+        "V5-CAP11",
+        "V5-CAP12",
+        "V5-CAP13",
+        "V5-CAP14",
+        "V5-CAP15",
+        "V5-CAP16",
+        "V5-DOC01",
+        "V5-DOC02",
+        "V5-DOC03",
+        "V5-DOC04",
+        "V5-DOC05",
+        "V5-DOC06",
+        "V5-DOC07",
+        "V5-DOC08",
+        "V5-DOC09",
+        "V5-DOC10",
+        "V5-DOC11",
+        "V5-DOC12",
+        "V5-DOC13"
+      ]
+    }
+  ],
+  "excludedHistoricalAcceptance": [],
+  "realCaseCoverage": [
+    {
+      "id": "PARITY01",
+      "scenario": "Exact EvoPilot Suite 3.2.1 capability differential has no unmapped or hidden-fallback item.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC01",
+        "RT51-FUNC11",
+        "RT51-FUNC13",
+        "RT51-CAP04",
+        "RT51-CAP06",
+        "RT51-CAP08"
+      ],
+      "hosts": [
+        "headless",
+        "generic-mcp"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "PARITY02",
+      "scenario": "Exact DataRig Suite 2.1.5 capability differential has no unmapped or hidden-fallback item.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC01",
+        "RT51-FUNC11",
+        "RT51-FUNC13",
+        "RT51-CAP04",
+        "RT51-CAP06",
+        "RT51-CAP08"
+      ],
+      "hosts": [
+        "headless",
+        "generic-mcp"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-DATARIG",
+      "scenario": "DataRig runs its enterprise-internal declared lifecycle, including separately authorized database-ready and internal-release boundaries, with the DataRig Suite absent.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC02",
+        "RT51-FUNC03",
+        "RT51-FUNC04",
+        "RT51-FUNC05",
+        "RT51-FUNC09",
+        "RT51-FUNC10",
+        "RT51-FUNC11",
+        "RT51-CAP01",
+        "RT51-CAP02",
+        "RT51-CAP03",
+        "RT51-CAP09",
+        "RT51-CAP10"
+      ],
+      "hosts": [
+        "codex",
+        "headless"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-EVOPILOT",
+      "scenario": "EvoPilot runs a Harness-guided repository Goal Target Loop through public Runtime contracts with the EvoPilot Suite absent.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC02",
+        "RT51-FUNC03",
+        "RT51-FUNC04",
+        "RT51-FUNC05",
+        "RT51-FUNC09",
+        "RT51-FUNC10",
+        "RT51-FUNC11",
+        "RT51-CAP01",
+        "RT51-CAP02",
+        "RT51-CAP03",
+        "RT51-CAP10"
+      ],
+      "hosts": [
+        "codex",
+        "generic-mcp"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-HARNESS",
+      "scenario": "evopilot-harness runs as an ordinary Harness-producer project while Harness asset authority remains exclusively in evopilot-harness.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC02",
+        "RT51-FUNC03",
+        "RT51-FUNC10",
+        "RT51-CAP01",
+        "RT51-CAP03",
+        "RT51-CAP05",
+        "RT51-CAP11"
+      ],
+      "hosts": [
+        "codex",
+        "headless"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-NEW-PROJECT",
+      "scenario": "An unknown project onboards, matches a published Harness, resolves interactive inputs, executes, and closes with zero Engine source diff.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC02",
+        "RT51-FUNC04",
+        "RT51-FUNC09",
+        "RT51-FUNC13",
+        "RT51-CAP01",
+        "RT51-CAP02",
+        "RT51-CAP05",
+        "RT51-CAP09"
+      ],
+      "hosts": [
+        "codex",
+        "generic-mcp",
+        "headless"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-RECOVERY",
+      "scenario": "A deterministic defect completes bounded repair, replacement Candidate, failed-first rerun, impact closure, full regression, and resume without a redundant human stop.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC06",
+        "RT51-FUNC07",
+        "RT51-FUNC08",
+        "RT51-FUNC12",
+        "RT51-CAP07",
+        "RT51-CAP08",
+        "RT51-CAP10"
+      ],
+      "hosts": [
+        "codex",
+        "headless"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-AUTHORITY",
+      "scenario": "Semantic, credential, production, database, destructive, acceptance, and release boundaries stop at the exact owning-human decision.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC03",
+        "RT51-FUNC04",
+        "RT51-FUNC09",
+        "RT51-CAP03",
+        "RT51-CAP07",
+        "RT51-CAP09",
+        "RT51-CAP10"
+      ],
+      "hosts": [
+        "codex",
+        "workbuddy",
+        "generic-mcp",
+        "headless"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-HOST",
+      "scenario": "Codex, designated-human WorkBuddy, independent Host, generic MCP, and headless clients conform to the same Runtime truth.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC09",
+        "RT51-FUNC12",
+        "RT51-CAP03",
+        "RT51-CAP08",
+        "RT51-DOC01"
+      ],
+      "hosts": [
+        "codex",
+        "workbuddy",
+        "independent-host",
+        "generic-mcp",
+        "headless"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-UPGRADE",
+      "scenario": "A post-Cutover capability change is delivered through Runtime, independently versioned declarative resources, providers, or Expert without editing or versioning either retired Suite, and a compatible project-resource upgrade does not change Runtime or Expert version.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC02",
+        "RT51-FUNC04",
+        "RT51-FUNC13",
+        "RT51-FUNC14",
+        "RT51-CAP04",
+        "RT51-CAP05",
+        "RT51-CAP06",
+        "RT51-CAP10",
+        "RT51-CAP12",
+        "RT51-DOC01"
+      ],
+      "hosts": [
+        "codex",
+        "headless"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-CUTOVER",
+      "scenario": "Released Runtime and Expert run in shadow, become the current Codex default only under a later Cutover Target, record zero legacy invocation, and retain recoverable rollback.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC01",
+        "RT51-FUNC09",
+        "RT51-FUNC11",
+        "RT51-CAP03",
+        "RT51-CAP04",
+        "RT51-CAP06",
+        "RT51-CAP10",
+        "RT51-DOC01"
+      ],
+      "hosts": [
+        "codex",
+        "headless"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-ABSENCE",
+      "scenario": "After recoverable archive, success, failure, resume, upgrade, rollback, and project journeys pass with both legacy Suites absent from discovery and execution.",
+      "coversAcceptanceIds": [
+        "RT51-FUNC01",
+        "RT51-FUNC02",
+        "RT51-FUNC03",
+        "RT51-FUNC04",
+        "RT51-FUNC05",
+        "RT51-FUNC06",
+        "RT51-FUNC07",
+        "RT51-FUNC08",
+        "RT51-FUNC09",
+        "RT51-FUNC10",
+        "RT51-FUNC11",
+        "RT51-FUNC12",
+        "RT51-FUNC13",
+        "RT51-FUNC14",
+        "RT51-CAP01",
+        "RT51-CAP02",
+        "RT51-CAP03",
+        "RT51-CAP04",
+        "RT51-CAP05",
+        "RT51-CAP06",
+        "RT51-CAP07",
+        "RT51-CAP08",
+        "RT51-CAP09",
+        "RT51-CAP10",
+        "RT51-CAP11",
+        "RT51-CAP12",
+        "RT51-DOC01"
+      ],
+      "hosts": [
+        "codex",
+        "generic-mcp",
+        "headless"
+      ],
+      "startingState": "Exact Runtime 5.1.0 and compatible Expert 1.1.0 private Candidates are installed outside source checkout with frozen Roadmap, Target, Harness, project, Lifecycle, provider, authority, resource-version, and legacy-Suite snapshot bindings.",
+      "terminalState": "All scenario-specific criteria are closed by exact Candidate evidence; durable state, independent resource lineage, and authority boundaries remain valid.",
+      "prohibitedEffects": [
+        "no legacy Suite invocation or hidden fallback",
+        "no Harness asset mutation",
+        "no inferred credential, database, production, acceptance, publication, or release authority",
+        "no public publication"
+      ],
+      "requiredEvidence": "Scenario transcript, immutable bindings, process/file/provider traces, criterion-specific evidence, and independent summary.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "noRegressionRequired": true,
+  "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
+  "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
+  "noRegression": {
+    "status": "PENDING",
+    "evidenceRefs": []
+  },
+  "approvals": {
+    "target": {
+      "decision": "APPROVED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v5.1.0-suite-capability-convergence-target-revision-1",
+      "authorizationDigest": "sha256:a6a7e8bceb264f9b8bef8875631ee53df6922d829ea872e316ad188b5bd1a1fe"
+    },
+    "release": {
+      "decision": "PENDING",
+      "by": null,
+      "evidenceRef": null,
+      "authorizationDigest": null
+    }
+  },
+  "release": {
+    "product": "evopilot-runtime",
+    "actions": [
+      "commit",
+      "push",
+      "tag",
+      "github-release",
+      "npm",
+      "ghcr",
+      "installer"
+    ],
+    "versions": {
+      "evopilot": "5.1.0"
+    }
+  }
+}

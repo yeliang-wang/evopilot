@@ -1,0 +1,416 @@
+{
+  "schema": "evopilot-suite-capability-inventory/v1",
+  "baselinePolicy": "LATEST_ONLY_NO_HISTORICAL_COMPATIBILITY",
+  "sources": [
+    {
+      "suiteId": "datarig-codex-suite",
+      "sourceVersion": "2.1.5",
+      "snapshotDigest": "sha256:064ee6a8a7b21ae8029cfaaf03eafef7ff0816a8b031d8468c49eae6b5b4a330",
+      "capabilities": [
+        {
+          "id": "agent-host-conformance",
+          "description": "Packaged third-party Agent-host compatibility evidence",
+          "digest": "sha256:2e1e3e735a8359361c9910a0d1bdda95eac65e8b47ba1289c8f207071c732d89"
+        },
+        {
+          "id": "bounded-defect-closure",
+          "description": "Autonomous reproducible defect repair within Target and budget",
+          "digest": "sha256:ec256d49e47e31221d306f834a5236c1e89e8d3697a1c90f834466c5196e25f3"
+        },
+        {
+          "id": "entry-routing",
+          "description": "Evolution request routing and authority-preserving navigation",
+          "digest": "sha256:f83eb4babf1e41ec2aa75e2e3842715070a774cdbd0a6d2e2c29592ebb3b86c3"
+        },
+        {
+          "id": "evolution-journal",
+          "description": "Non-authoritative verified engineering lesson capture",
+          "digest": "sha256:90a412f652d37fceff361645e62e925aae7b3c711ef92483b3c34505545253f6"
+        },
+        {
+          "id": "oss-maturity-audit",
+          "description": "Evidence-backed open-source maturity assessment",
+          "digest": "sha256:59f598250bccf53efff70c96955aed435759d4a417014ebec1f6946cd753ae73"
+        },
+        {
+          "id": "production-e2e",
+          "description": "Isolated production-like E2E with explicit database authority",
+          "digest": "sha256:a6f810aa796bc0c11db62a50a42d1ff104b071d7560760cd74b71301568af782"
+        },
+        {
+          "id": "proofops-acceptance",
+          "description": "Candidate-specific evidence validation and acceptance aggregation",
+          "digest": "sha256:06da7fd86ef3e15e125eb513711cdbcf6ff4ea8083ce9d0d55c3f295cafd4012"
+        },
+        {
+          "id": "release-operation",
+          "description": "No-rebuild authorized release operation and verification",
+          "digest": "sha256:0cef2fc0f319b62d8abd47615edf455f339bdbbecdf78a31132f8252acfb5872"
+        },
+        {
+          "id": "release-readiness",
+          "description": "Exact RC and internal promotion readiness aggregation",
+          "digest": "sha256:407be9673767c81690ca0811f8aaf46d718795a49e34c65f482d77d6e6b7dd01"
+        },
+        {
+          "id": "repository-integrity",
+          "description": "Governance-kernel and staged-change integrity verification",
+          "digest": "sha256:1401f18f4f741bdd9cd8d8ec79f527a4c3b103c2120afe88b379eae418e347fc"
+        },
+        {
+          "id": "roadmap-governance",
+          "description": "Roadmap alignment and deterministic change classification",
+          "digest": "sha256:302a1f67470b122bd4d61a2dabf4d0b13a7e8b9ee7d690a3795e506e0c3561f8"
+        },
+        {
+          "id": "target-governance",
+          "description": "Digest-bound target review, implementation, acceptance, and release gates",
+          "digest": "sha256:4314a9aca3895eacbf432a62705ddcbfa873e1602c43d803921d7a8d4ab22b36"
+        }
+      ]
+    },
+    {
+      "suiteId": "evopilot-codex-suite",
+      "sourceVersion": "3.2.1",
+      "snapshotDigest": "sha256:95e614c87b4bf01938ad559a9f13c4a00a4034437d6b59a22119ff53f22cf2f7",
+      "capabilities": [
+        {
+          "id": "agent-host-conformance",
+          "description": "Released-shape Agent-host production simulation",
+          "digest": "sha256:2cb1ce7821f134fc4caf4bcf67bfc72e1c950f7d2c5f2d5b8b15d291dea793bc"
+        },
+        {
+          "id": "bounded-recovery",
+          "description": "Recovery classification, learned automation, receipts, and stop rules",
+          "digest": "sha256:a9d29f90bbc11dd0367fd709886f69eeb17bb93b1e00a7529a9a88767505f4d4"
+        },
+        {
+          "id": "completion-assurance",
+          "description": "Criterion-level 100-percent completion and no-regression gate",
+          "digest": "sha256:5b313796e8c297f0fd6e470555d41562f99b7d15f0fb12acfc782f2a1115746d"
+        },
+        {
+          "id": "dashboard-routing",
+          "description": "Dashboard Agent-console boundary routing",
+          "digest": "sha256:ff7f921befdbb2cace6856f7d1f358a4da697928e6d8629d263ca65e3e82ff11"
+        },
+        {
+          "id": "documentation-assurance",
+          "description": "README and technical-document completeness",
+          "digest": "sha256:8bab5f13da9c0c24530151af8d1e0bb05ec1771ea3df317820e3040a443aa1b2"
+        },
+        {
+          "id": "entry-routing",
+          "description": "Cross-repository governed-evolution routing",
+          "digest": "sha256:737e5c7bbcff0098b950480ba162c7dcd341a61a2ad415f3f910b4d0ffe92c81"
+        },
+        {
+          "id": "evolution-journal",
+          "description": "Verified engineering lesson capture",
+          "digest": "sha256:76271fd1d36b140f5cac6143f576ef2bb005058e3a062d55c696c0b5f87cb0b9"
+        },
+        {
+          "id": "harness-guided-operation",
+          "description": "Harness-bound Goal Target Loop operation",
+          "digest": "sha256:f370c828d4ed90b672990a595f18d6af22928d6691239f89e8a00bdd5bc7a041"
+        },
+        {
+          "id": "oss-maturity-audit",
+          "description": "Open-source maturity benchmarking",
+          "digest": "sha256:dc10342a534be07e201230f7a8e7ed3b1f377b14a317b4525841455b0f46f46a"
+        },
+        {
+          "id": "release-operation",
+          "description": "GitHub, npm, GHCR, and deployment terminal reconciliation",
+          "digest": "sha256:8c9bb7c2beca85226135a9f95a3aac82c0616f43e348ee40a808e322939137fe"
+        },
+        {
+          "id": "roadmap-governance",
+          "description": "Roadmap intent and release alignment",
+          "digest": "sha256:d314a577064987a475eedce9e85b659559e4de30aadfeed60879397a24547117"
+        },
+        {
+          "id": "target-governance",
+          "description": "Target authoring, review, approval, and phase separation",
+          "digest": "sha256:94fc0b7d01ca569d3d15a2f5d3700e08225153cc7b8110e58d95f88b4dcbd649"
+        }
+      ]
+    }
+  ],
+  "dispositions": [
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "agent-host-conformance",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/agent-host-conformance"
+      },
+      "validatorIds": [
+        "suite-convergence:agent-host-conformance"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "bounded-defect-closure",
+      "destination": {
+        "owner": "RUNTIME",
+        "ref": "Runtime/governed-evolution"
+      },
+      "validatorIds": [
+        "suite-convergence:bounded-defect-closure"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "entry-routing",
+      "destination": {
+        "owner": "EXPERT",
+        "ref": "EvolutionExpert/interaction"
+      },
+      "validatorIds": [
+        "suite-convergence:entry-routing"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "evolution-journal",
+      "destination": {
+        "owner": "PROJECT",
+        "ref": "ProjectCapability/evolution-journal"
+      },
+      "validatorIds": [
+        "suite-convergence:evolution-journal"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "oss-maturity-audit",
+      "destination": {
+        "owner": "PROJECT",
+        "ref": "ProjectCapability/oss-maturity-audit"
+      },
+      "validatorIds": [
+        "suite-convergence:oss-maturity-audit"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "production-e2e",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/production-e2e"
+      },
+      "validatorIds": [
+        "suite-convergence:production-e2e"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "proofops-acceptance",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/proofops-acceptance"
+      },
+      "validatorIds": [
+        "suite-convergence:proofops-acceptance"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "release-operation",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/release-operation"
+      },
+      "validatorIds": [
+        "suite-convergence:release-operation"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "release-readiness",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/release-readiness"
+      },
+      "validatorIds": [
+        "suite-convergence:release-readiness"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "repository-integrity",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/repository-integrity"
+      },
+      "validatorIds": [
+        "suite-convergence:repository-integrity"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "roadmap-governance",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/roadmap-governance"
+      },
+      "validatorIds": [
+        "suite-convergence:roadmap-governance"
+      ]
+    },
+    {
+      "sourceSuiteId": "datarig-codex-suite",
+      "capabilityId": "target-governance",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/target-governance"
+      },
+      "validatorIds": [
+        "suite-convergence:target-governance"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "agent-host-conformance",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/agent-host-conformance"
+      },
+      "validatorIds": [
+        "suite-convergence:agent-host-conformance"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "bounded-recovery",
+      "destination": {
+        "owner": "RUNTIME",
+        "ref": "Runtime/governed-evolution"
+      },
+      "validatorIds": [
+        "suite-convergence:bounded-recovery"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "completion-assurance",
+      "destination": {
+        "owner": "RUNTIME",
+        "ref": "Runtime/governed-evolution"
+      },
+      "validatorIds": [
+        "suite-convergence:completion-assurance"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "dashboard-routing",
+      "destination": {
+        "owner": "PROJECT",
+        "ref": "ProjectCapability/dashboard-routing"
+      },
+      "validatorIds": [
+        "suite-convergence:dashboard-routing"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "documentation-assurance",
+      "destination": {
+        "owner": "EXPERT",
+        "ref": "EvolutionExpert/interaction"
+      },
+      "validatorIds": [
+        "suite-convergence:documentation-assurance"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "entry-routing",
+      "destination": {
+        "owner": "EXPERT",
+        "ref": "EvolutionExpert/interaction"
+      },
+      "validatorIds": [
+        "suite-convergence:entry-routing"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "evolution-journal",
+      "destination": {
+        "owner": "PROJECT",
+        "ref": "ProjectCapability/evolution-journal"
+      },
+      "validatorIds": [
+        "suite-convergence:evolution-journal"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "harness-guided-operation",
+      "destination": {
+        "owner": "HARNESS",
+        "ref": "HarnessBundle/published-binding"
+      },
+      "validatorIds": [
+        "suite-convergence:harness-guided-operation"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "oss-maturity-audit",
+      "destination": {
+        "owner": "PROJECT",
+        "ref": "ProjectCapability/oss-maturity-audit"
+      },
+      "validatorIds": [
+        "suite-convergence:oss-maturity-audit"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "release-operation",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/release-operation"
+      },
+      "validatorIds": [
+        "suite-convergence:release-operation"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "roadmap-governance",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/roadmap-governance"
+      },
+      "validatorIds": [
+        "suite-convergence:roadmap-governance"
+      ]
+    },
+    {
+      "sourceSuiteId": "evopilot-codex-suite",
+      "capabilityId": "target-governance",
+      "destination": {
+        "owner": "RESOURCE",
+        "ref": "GovernancePack/migrated/target-governance"
+      },
+      "validatorIds": [
+        "suite-convergence:target-governance"
+      ]
+    }
+  ],
+  "coverage": {
+    "total": 24,
+    "mapped": 24,
+    "excluded": 0,
+    "percent": 100,
+    "unmapped": []
+  },
+  "hiddenFallbackAllowed": false,
+  "status": "COMPLETE",
+  "digest": "sha256:002900c041e6e24d0f29d06631c9628534c29f207caa630c8702c999117bd8a3"
+}

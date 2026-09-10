@@ -12,6 +12,16 @@ import {
   proposeAutomationRule,
   resolvePublishedHarness,
   revalidateHarnessExecutionBinding,
+  compareGovernedResourceRevisions,
+  createCapabilityInventory,
+  createRemediationCampaign,
+  createReplacementCandidateLineage,
+  decideRemediationCampaign,
+  evaluateGovernancePack,
+  normalizeGovernedResource,
+  qualifyActionProvider,
+  recordRemediationDecision,
+  transitionRemediationCampaign,
   type AutomationRule,
   type AutomationRuleProposal,
   type EvolutionProjectDefinition,
@@ -20,6 +30,13 @@ import {
   type HarnessExecutionCurrentState,
   type HumanInteractionMessage,
   type PublishedHarnessCandidate,
+  type CapabilityInventory,
+  type CapabilityInventorySource,
+  type CapabilityDisposition,
+  type GovernedResource,
+  type GovernedResourceKind,
+  type RemediationCampaign,
+  type RemediationIncident,
   type RecoveryContext,
   type RecoveryDecision
 } from "@evopilot/core";
@@ -65,6 +82,9 @@ export class GovernedEvolutionService {
   private readonly rulesDir: string;
   private readonly activeDefinitionsDir: string;
   private readonly recoveryEventsDir: string;
+  private readonly resourcesDir: string;
+  private readonly activeResourcesDir: string;
+  private readonly remediationCampaignsDir: string;
 
   constructor(dataRoot: string) {
     this.projectDefinitionsDir = path.join(dataRoot, "evolution-project-definitions");
@@ -73,7 +93,104 @@ export class GovernedEvolutionService {
     this.rulesDir = path.join(dataRoot, "automation-registry", "rules");
     this.activeDefinitionsDir = path.join(dataRoot, "evolution-project-definitions-active");
     this.recoveryEventsDir = path.join(dataRoot, "automation-registry", "recovery-events");
-    for (const directory of [this.projectDefinitionsDir, this.bindingsDir, this.proposalDir, this.rulesDir, this.activeDefinitionsDir, this.recoveryEventsDir]) fs.mkdirSync(directory, { recursive: true });
+    this.resourcesDir = path.join(dataRoot, "governed-evolution-resources");
+    this.activeResourcesDir = path.join(dataRoot, "governed-evolution-resources-active");
+    this.remediationCampaignsDir = path.join(dataRoot, "remediation-campaigns");
+    for (const directory of [this.projectDefinitionsDir, this.bindingsDir, this.proposalDir, this.rulesDir, this.activeDefinitionsDir, this.recoveryEventsDir, this.resourcesDir, this.activeResourcesDir, this.remediationCampaignsDir]) fs.mkdirSync(directory, { recursive: true });
+  }
+
+  registerResource(input: unknown, scope?: GovernedEvolutionScope): GovernedResource {
+    const resource = normalizeGovernedResource(input);
+    const target = this.resourcePath(resource.kind, resource.metadata.id, resource.metadata.version, scope);
+    if (fs.existsSync(target)) {
+      const existing = this.readJson<GovernedResource>(target);
+      if (existing.digest === resource.digest) return existing;
+      throw new Error("GOVERNED_RESOURCE_VERSION_IMMUTABLE_CONFLICT");
+    }
+    this.atomicWrite(target, resource);
+    const activePath = this.activeResourcePath(resource.kind, resource.metadata.id, scope);
+    if (!fs.existsSync(activePath)) this.writeActiveResource(resource, "initial-registration", "runtime", "registration", scope);
+    return resource;
+  }
+
+  listResources(scope?: GovernedEvolutionScope, kind?: GovernedResourceKind): GovernedResource[] {
+    return this.readAll<GovernedResource>(this.scopedDirectory(this.resourcesDir, scope))
+      .filter((item) => !kind || item.kind === kind)
+      .sort((left, right) => `${left.kind}:${left.metadata.id}:${left.metadata.version}`.localeCompare(`${right.kind}:${right.metadata.id}:${right.metadata.version}`));
+  }
+
+  readResource(kind: GovernedResourceKind, id: string, version?: string, scope?: GovernedEvolutionScope): GovernedResource | undefined {
+    const items = this.listResources(scope, kind).filter((item) => item.metadata.id === id);
+    if (version) return items.find((item) => item.metadata.version === version);
+    const activePath = this.activeResourcePath(kind, id, scope);
+    if (fs.existsSync(activePath)) {
+      const active = this.readJson<{ version: string; resourceDigest: string }>(activePath);
+      const selected = items.find((item) => item.metadata.version === active.version && item.digest === active.resourceDigest);
+      if (!selected) throw new Error(`GOVERNED_RESOURCE_ACTIVE_DRIFT: ${kind}/${id}`);
+      return selected;
+    }
+    return items.sort((left, right) => compareVersions(right.metadata.version, left.metadata.version))[0];
+  }
+
+  compareResourceVersions(kind: GovernedResourceKind, id: string, fromVersion: string, toVersion: string, runtimeVersion: string, scope?: GovernedEvolutionScope) {
+    const from = this.readResource(kind, id, fromVersion, scope);
+    const to = this.readResource(kind, id, toVersion, scope);
+    if (!from || !to) throw new Error(`GOVERNED_RESOURCE_NOT_FOUND: ${kind}/${id}`);
+    return compareGovernedResourceRevisions(from, to, runtimeVersion);
+  }
+
+  activateResourceVersion(kind: GovernedResourceKind, id: string, version: string, actor: string, evidenceRef: string, scope?: GovernedEvolutionScope, mode: "activate" | "rollback" = "activate") {
+    if (!actor.trim() || !evidenceRef.trim()) throw new Error("GOVERNED_RESOURCE_ACTIVATION_EVIDENCE_REQUIRED");
+    const resource = this.readResource(kind, id, version, scope);
+    if (!resource) throw new Error(`GOVERNED_RESOURCE_NOT_FOUND: ${kind}/${id}@${version}`);
+    return this.writeActiveResource(resource, mode === "rollback" ? "explicit-rollback" : "explicit-activation", actor, evidenceRef, scope);
+  }
+
+  validateCapabilityInventory(input: { sources: CapabilityInventorySource[]; dispositions: CapabilityDisposition[] }): CapabilityInventory {
+    return createCapabilityInventory(input);
+  }
+
+  qualifyProvider(input: { provider: unknown; allowedAuthorities?: string[]; availableCredentialRefs?: string[] }) {
+    return qualifyActionProvider(input.provider, input.allowedAuthorities ?? [], input.availableCredentialRefs ?? []);
+  }
+
+  evaluateGovernance(input: Parameters<typeof evaluateGovernancePack>[0]) {
+    return evaluateGovernancePack(input);
+  }
+
+  startRemediationCampaign(input: Parameters<typeof createRemediationCampaign>[0], scope?: GovernedEvolutionScope): RemediationCampaign {
+    const campaign = createRemediationCampaign(input);
+    const target = this.remediationCampaignPath(campaign.id, scope);
+    if (fs.existsSync(target)) {
+      const existing = this.readJson<RemediationCampaign>(target);
+      if (existing.digest === campaign.digest) return existing;
+      throw new Error("REMEDIATION_CAMPAIGN_IMMUTABLE_START_CONFLICT");
+    }
+    this.atomicWrite(target, campaign);
+    return campaign;
+  }
+
+  readRemediationCampaign(id: string, scope?: GovernedEvolutionScope): RemediationCampaign | undefined {
+    const target = this.remediationCampaignPath(id, scope);
+    return fs.existsSync(target) ? this.readJson<RemediationCampaign>(target) : undefined;
+  }
+
+  decideRemediationCampaign(id: string, incident: RemediationIncident, evidenceRef: string, scope?: GovernedEvolutionScope, replacementInput?: Parameters<typeof createReplacementCandidateLineage>[0]) {
+    const campaign = this.readRemediationCampaign(id, scope);
+    if (!campaign) throw new Error(`REMEDIATION_CAMPAIGN_NOT_FOUND: ${id}`);
+    const decision = decideRemediationCampaign(campaign, incident);
+    const replacement = replacementInput ? createReplacementCandidateLineage(replacementInput) : undefined;
+    const updated = recordRemediationDecision(campaign, incident, decision, evidenceRef, replacement);
+    this.atomicWrite(this.remediationCampaignPath(id, scope), updated);
+    return { decision, campaign: updated };
+  }
+
+  transitionRemediationCampaign(id: string, input: Parameters<typeof transitionRemediationCampaign>[1], scope?: GovernedEvolutionScope) {
+    const campaign = this.readRemediationCampaign(id, scope);
+    if (!campaign) throw new Error(`REMEDIATION_CAMPAIGN_NOT_FOUND: ${id}`);
+    const updated = transitionRemediationCampaign(campaign, input);
+    this.atomicWrite(this.remediationCampaignPath(id, scope), updated);
+    return updated;
   }
 
   registerProjectDefinition(input: Omit<EvolutionProjectDefinition, "digest"> & { digest?: string }, scope?: GovernedEvolutionScope): EvolutionProjectDefinition {
@@ -358,6 +475,23 @@ export class GovernedEvolutionService {
     if (!fs.existsSync(target)) this.atomicWrite(target, binding);
   }
 
+  private writeActiveResource(resource: GovernedResource, reason: string, actor: string, evidenceRef: string, scope?: GovernedEvolutionScope) {
+    const material = {
+      schema: "evopilot-governed-resource-activation/v1" as const,
+      kind: resource.kind,
+      resourceId: resource.metadata.id,
+      version: resource.metadata.version,
+      resourceDigest: resource.digest,
+      reason,
+      actor,
+      evidenceRef,
+      activatedAt: new Date().toISOString()
+    };
+    const record = { ...material, digest: canonicalDigest(material) };
+    this.atomicWrite(this.activeResourcePath(resource.kind, resource.metadata.id, scope), record);
+    return record;
+  }
+
   private writeActiveProjectDefinition(definition: EvolutionProjectDefinition, scope: GovernedEvolutionScope | undefined, reason: string, actor = "runtime", evidenceRef = "registration"): { schema: "evopilot-evolution-project-activation/v1"; projectId: string; version: string; definitionDigest: string; reason: string; actor: string; evidenceRef: string; activatedAt: string; digest: string } {
     const material = { schema: "evopilot-evolution-project-activation/v1" as const, projectId: definition.metadata.id, version: definition.metadata.version, definitionDigest: definition.digest, reason, actor, evidenceRef, activatedAt: new Date().toISOString() };
     const record = { ...material, digest: canonicalDigest(material) };
@@ -372,6 +506,18 @@ export class GovernedEvolutionService {
 
   private projectDefinitionPath(id: string, version: string, scope?: GovernedEvolutionScope): string {
     return path.join(this.scopedDirectory(this.projectDefinitionsDir, scope), `${safeSegment(id)}--${safeSegment(version)}.json`);
+  }
+
+  private resourcePath(kind: GovernedResourceKind, id: string, version: string, scope?: GovernedEvolutionScope): string {
+    return path.join(this.scopedDirectory(this.resourcesDir, scope), `${safeSegment(kind)}--${safeSegment(id)}--${safeSegment(version)}.json`);
+  }
+
+  private activeResourcePath(kind: GovernedResourceKind, id: string, scope?: GovernedEvolutionScope): string {
+    return path.join(this.scopedDirectory(this.activeResourcesDir, scope), `${safeSegment(kind)}--${safeSegment(id)}.json`);
+  }
+
+  private remediationCampaignPath(id: string, scope?: GovernedEvolutionScope): string {
+    return path.join(this.scopedDirectory(this.remediationCampaignsDir, scope), `${safeSegment(id)}.json`);
   }
 
   private scopedDirectory(root: string, scope?: GovernedEvolutionScope): string {

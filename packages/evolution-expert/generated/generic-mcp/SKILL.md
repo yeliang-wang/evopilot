@@ -5,8 +5,8 @@ description: Generated generic-mcp adapter for the independently versioned EvoPi
 
 # EvoPilot Evolution Expert — generic-mcp
 
-- Adapter: `evopilot-evolution-expert-generic-mcp@1.0.1`
-- Core: `sha256:fef38c4295b751b15bd7274871ea5548d88d8d02cc8c999609858617411a930c`
+- Adapter: `evopilot-evolution-expert-generic-mcp@1.1.0`
+- Core: `sha256:da2b56f23999574dcd8e8970c99d0191094b09bb92ce80a70c1047ac56288538`
 - Protocol: `1.0`
 
 ## Required behavior
@@ -18,6 +18,7 @@ description: Generated generic-mcp adapter for the independently versioned EvoPi
 - Continue deterministic reversible work automatically and reserve human decisions for genuine authority or uncertainty.
 - Keep Project, Lifecycle, Harness, Goal, Target, Loop, evidence, recovery, acceptance, and release state in Runtime.
 - Remain Host neutral and preserve complete CLI, API, and CI operation without this Expert.
+- Keep Runtime, Expert, declarative resource, source Suite, project, and Harness versions independent and explicit.
 
 ## Prohibited semantics
 
@@ -30,7 +31,7 @@ description: Generated generic-mcp adapter for the independently versioned EvoPi
 
 ## First-run commands
 
-- Version and compatibility: `evopilot-expert version` then `evopilot-expert doctor generic-mcp 5.0.1`.
+- Version and compatibility: `evopilot-expert version` then `evopilot-expert doctor generic-mcp 5.1.0`.
 - Side-effect-free tutorial: `evopilot-expert tutorial`.
 - Natural-language routing: `evopilot-expert plan "help me register a project"`.
 - Runtime operations use EvoPilot MCP or its CLI/API transport and resume from Runtime-owned state.

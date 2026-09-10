@@ -2,8 +2,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
-import { assertNoLegacySuiteFallback, normalizeEvolutionProjectDefinition } from "../packages/core/dist/index.js";
-import { EVOLUTION_EXPERT_CORE, assertExpertAdapterConformance, createExpertAdapter } from "../packages/evolution-expert/dist/index.js";
+import { assertNoLegacySuiteFallback, builtInActionProviderDefinitions, normalizeEvolutionProjectDefinition, normalizeGovernedResource } from "../packages/core/dist/index.js";
+import { EVOLUTION_EXPERT_CORE, assertExpertAdapterConformance, createExpertAdapter, expertMigrationGuide, expertVersionGuide } from "../packages/evolution-expert/dist/index.js";
+import { buildSuiteCapabilityInventory } from "./build-suite-capability-inventory.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const failures = [];
@@ -36,22 +37,39 @@ for (const relative of [
   "schemas/governed-evolution/completion-report-v1.schema.json",
   "schemas/governed-evolution/human-interaction-v1.schema.json",
   "schemas/governed-evolution/legacy-suite-snapshot-v1.schema.json",
+  "schemas/governed-evolution/resource-v1.schema.json",
+  "schemas/governed-evolution/capability-inventory-v1.schema.json",
+  "schemas/governed-evolution/remediation-campaign-v1.schema.json",
+  "governance/suite-convergence/frozen-latest.json",
+  "governance/suite-convergence/capability-inventory.json",
   "governance/legacy-suite-transition.json",
   "governance/acceptance/v5-completion-contract.json",
-  "governance/acceptance/runtime-5.0.1-expert-1.0.1-cross-acceptance-map.json"
+  "governance/acceptance/runtime-5.0.1-expert-1.0.1-cross-acceptance-map.json",
+  "governance/acceptance/runtime-5.1.0-expert-1.1.0-cross-acceptance-map.json"
 ]) {
   try { JSON.parse(fs.readFileSync(path.join(root, relative), "utf8")); } catch (error) { failures.push(`${relative}: invalid JSON`); }
 }
 
 const runtimeFiles = [
   "packages/core/src/governed-evolution.ts",
+  "packages/core/src/suite-convergence.ts",
   "packages/server/src/domains/governed-evolution/service.ts",
   "packages/server/src/http/routes/governed-evolution.ts"
 ];
 for (const relative of runtimeFiles) {
   const content = fs.readFileSync(path.join(root, relative), "utf8");
   if (/(?:project|projectId|definition\.metadata\.id)\s*(?:===|==|case)\s*["'](?:datarig|evopilot-harness)["']/i.test(content)) failures.push(`${relative}: project-name branch detected`);
+  if (/\.codex\/skills|datarig-evolution\/datarig\/governance\/skill-suite/i.test(content)) failures.push(`${relative}: legacy Suite path dependency detected`);
 }
+
+try {
+  const inventory = buildSuiteCapabilityInventory({ write: false });
+  if (inventory.coverage.percent !== 100 || inventory.coverage.unmapped.length || inventory.hiddenFallbackAllowed !== false) failures.push("Suite capability inventory is not complete and fallback-free");
+  for (const relative of ["examples/governed-resources/oss-governance-pack.json", "examples/governed-resources/github-action-provider.json"]) normalizeGovernedResource(JSON.parse(fs.readFileSync(path.join(root, relative), "utf8")));
+  const providers = builtInActionProviderDefinitions();
+  for (const id of ["local-git", "github", "gitlab", "npm", "maven", "candidate", "artifact-verifier"]) if (!providers.some((provider) => provider.metadata.id === id)) failures.push(`built-in typed provider missing: ${id}`);
+  if (expertVersionGuide().expertVersion !== "1.1.0" || expertMigrationGuide().sideEffects !== false) failures.push("Evolution Expert 1.1 version or migration guide mismatch");
+} catch (error) { failures.push(`Suite convergence: ${error instanceof Error ? error.message : String(error)}`); }
 
 try {
   const transition = JSON.parse(fs.readFileSync(path.join(root, "governance/legacy-suite-transition.json"), "utf8"));
@@ -88,6 +106,13 @@ for (const relative of [
   "docs/operations/completion-assurance.md",
   "docs/releases/5.0.1.md",
   "docs/releases/evolution-expert-1.0.1.md",
+  "docs/releases/5.1.0.md",
+  "docs/releases/evolution-expert-1.1.0.md",
+  "docs/architecture/suite-capability-convergence.md",
+  "docs/guides/resource-versioning.md",
+  "docs/guides/suite-convergence-migration.md",
+  "docs/reference/action-providers.md",
+  "docs/operations/remediation-campaigns.md",
   "packages/evolution-expert/host-adapter-kit/README.md"
 ]) {
   if (!fs.existsSync(path.join(root, relative))) failures.push(`v5 completion deliverable missing: ${relative}`);

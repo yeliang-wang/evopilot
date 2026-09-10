@@ -94,17 +94,36 @@ function validateRoadmap(value) {
   required(completionAssurance?.warningCountsAsPass === false, "warnings must not count as PASS");
   required(completionAssurance?.humanDeclarationSubstitutesForMachineEvidence === false, "human declaration must not replace required machine evidence");
   required(completionAssurance?.completeWhen === "TOTAL_EQUALS_PASSED_AND_FAILED_PENDING_STALE_GENERIC_UNMAPPED_ARE_ZERO_AND_NO_REGRESSION_PASSED", "completion formula must fail closed on every incomplete evidence class");
+  const convergenceAcceptance = value?.suiteConvergenceAcceptance;
+  required(convergenceAcceptance?.required === true, "Suite convergence acceptance must be required");
+  required(convergenceAcceptance?.capabilityInventoryCoveragePercent === 100, "Suite convergence capability inventory coverage must be 100 percent");
+  required(convergenceAcceptance?.historicalSuiteCompatibilityRequired === false, "superseded Suite compatibility must not be required");
+  required(Array.isArray(convergenceAcceptance?.requiredJourneys) && convergenceAcceptance.requiredJourneys.length >= 10, "Suite convergence must declare complete parity, project, Host, recovery, upgrade, Cutover, and absence journeys");
   const suiteTransition = value?.legacySuiteTransition;
-  required(suiteTransition?.preRelease?.installedSuiteDisposition === "ACTIVE_AND_INDEPENDENT", "legacy Suites must remain active and independent before v5 release");
-  required(suiteTransition?.preRelease?.shadowComparisonMode === "READ_ONLY", "pre-release legacy Suite comparison must be read-only");
-  required(suiteTransition?.preRelease?.snapshotPolicy === "LATE_BOUND_EXACT", "pre-release legacy Suite snapshots must be late-bound and exact");
-  required(suiteTransition?.preRelease?.snapshotDriftPolicy === "STALE_AND_SELECTIVE_RERUN", "legacy Suite snapshot drift must stale affected evidence and require selective rerun");
-  required(suiteTransition?.preRelease?.candidateEnvironment === "LEGACY_SUITES_ABSENT", "v5 Candidate independence must be proven with legacy Suites absent from the isolated environment");
-  required(suiteTransition?.preRelease?.realInstalledSuiteMutationAllowed === false, "v5 release acceptance must not mutate real installed legacy Suites");
-  required(suiteTransition?.postRelease?.timing === "AFTER_PUBLIC_COMPLETION_SUCCESSORS_AND_VERIFIED_INSTALLATION", "legacy Suite Cutover must occur only after the public completion successors and installation verification");
-  required(suiteTransition?.postRelease?.releaseBlockerForV5 === false, "post-release legacy Suite Cutover must not block the v5 release");
+  const migrationBaseline = suiteTransition?.migrationBaseline;
+  required(migrationBaseline?.policy === "LATEST_ONLY_NO_HISTORICAL_COMPATIBILITY", "legacy Suite migration must use the exact latest-only baseline policy");
+  required(migrationBaseline?.targetFreezeRecheckRequired === true, "latest Suite versions must be rechecked when the Target freezes");
+  required(migrationBaseline?.supersededVersionCompatibilityRequired === false, "superseded Suite compatibility must be excluded");
+  const baselineSuites = migrationBaseline?.suites ?? [];
+  required(baselineSuites.length === 2, "exactly two latest Suite baselines are required");
+  required(baselineSuites.some((suite) => suite.id === "evopilot-codex-suite" && suite.version === "3.2.1" && suite.integrityGate === "PASS"), "EvoPilot Codex Suite 3.2.1 exact baseline is required");
+  required(baselineSuites.some((suite) => suite.id === "datarig-codex-suite" && suite.version === "2.1.5" && suite.integrityGate === "PASS"), "DataRig Codex Suite 2.1.5 exact baseline is required");
+  required(baselineSuites.every((suite) => /^sha256:[a-f0-9]{64}$/.test(suite.snapshotDigest ?? "")), "every latest Suite baseline must bind an exact snapshot digest");
+  const convergence = suiteTransition?.convergence;
+  required(convergence?.installedSuiteDisposition === "ACTIVE_UNTIL_SEPARATELY_AUTHORIZED_CUTOVER", "legacy Suites must remain active until separately authorized Cutover");
+  required(convergence?.shadowComparisonMode === "READ_ONLY", "Suite convergence comparison must be read-only");
+  required(convergence?.snapshotPolicy === "TARGET_FROZEN_EXACT_LATEST", "Suite convergence snapshots must freeze the exact latest Target baseline");
+  required(convergence?.candidateEnvironment === "LEGACY_SUITES_ABSENT", "Suite convergence Candidate independence must be proven with legacy Suites absent");
+  required(convergence?.realInstalledSuiteMutationAllowed === false, "Suite convergence acceptance must not mutate real installed legacy Suites");
+  required(suiteTransition?.postRelease?.timing === "AFTER_PUBLIC_RUNTIME_5_1_AND_EXPERT_1_1_VERIFIED_INSTALLATION", "legacy Suite Cutover must occur only after public Runtime 5.1 and Expert 1.1 installation verification");
+  required(suiteTransition?.postRelease?.releaseBlockerForV51 === false, "post-release legacy Suite Cutover must not block the v5.1 release");
   required(suiteTransition?.postRelease?.requiresSeparateEvolutionTarget === true, "post-release legacy Suite Cutover requires a separate Evolution Target");
   required(suiteTransition?.postRelease?.requiresSeparateHumanAuthorization === true, "post-release legacy Suite Cutover requires separate human authorization");
+  required(suiteTransition?.postCutover?.suiteDisposition === "IMMUTABLE_DIGEST_INVENTORIED_MIGRATION_EVIDENCE_ONLY", "retired Suites must become immutable migration evidence only");
+  required(suiteTransition?.postCutover?.independentFeatureEvolution === false, "retired Suites must not continue independent feature evolution");
+  required(suiteTransition?.postCutover?.normalCodexDiscovery === false, "retired Suites must be absent from normal Codex discovery");
+  required(suiteTransition?.postCutover?.runtimeDependency === false, "retired Suites must not be Runtime dependencies");
+  required(suiteTransition?.postCutover?.hiddenFallbackAllowed === false, "retired Suites must not be hidden fallbacks");
   required(Array.isArray(value?.milestones) && value.milestones.length > 0, "milestones are required");
   const milestones = value?.milestones ?? [];
   const ids = new Set();
@@ -127,12 +146,20 @@ function validateRoadmap(value) {
   const expertCompletion = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-1.0");
   validateCompletionSuccessor(runtimeCompletion, "5.0.0", "5.0.1", "Runtime");
   validateCompletionSuccessor(expertCompletion, "1.0.0", "1.0.1", "Evolution Expert");
+  const runtimeConvergence = milestones.find((milestone) => milestone.id === "evopilot-5.1-suite-capability-convergence");
+  required(runtimeConvergence?.status === "IN_PROGRESS" && runtimeConvergence?.targetVersion === "5.1.0", "Runtime Suite capability convergence must be the IN_PROGRESS 5.1.0 milestone");
+  const expertConvergence = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-1.1-unified-host-entry");
+  required(expertConvergence?.status === "IN_PROGRESS" && expertConvergence?.targetVersion === "1.1.0", "Evolution Expert unified Host entry must be the IN_PROGRESS 1.1.0 milestone");
   const cutoverMilestone = milestones.find((milestone) => milestone.id === suiteTransition?.postRelease?.milestone);
   required(cutoverMilestone?.status === "PLANNED", "post-release legacy Suite Cutover milestone must be PLANNED");
   required(cutoverMilestone?.standaloneReleaseEligible === false, "post-release legacy Suite Cutover must not create another release line");
-  required(cutoverMilestone?.releaseBlockerForV5 === false, "post-release legacy Suite Cutover milestone must not block v5 release");
-  required(cutoverMilestone?.timing === "AFTER_PUBLIC_COMPLETION_SUCCESSORS_AND_VERIFIED_INSTALLATION", "post-release legacy Suite Cutover milestone timing is invalid");
+  required(cutoverMilestone?.releaseBlockerForV51 === false, "post-release legacy Suite Cutover milestone must not block v5.1 release");
+  required(cutoverMilestone?.timing === "AFTER_PUBLIC_RUNTIME_5_1_AND_EXPERT_1_1_VERIFIED_INSTALLATION", "post-release legacy Suite Cutover milestone timing is invalid");
   required(cutoverMilestone?.targetVersion === value?.versionPolicy?.currentWorkingVersion, "post-release legacy Suite Cutover must bind the Runtime completion successor");
+  const experimentMilestone = milestones.find((milestone) => milestone.id === "evopilot-5.2-controlled-experiment-loop");
+  required(experimentMilestone?.targetVersion === "5.2.0" && experimentMilestone?.status === "PLANNED", "Controlled Experiment Loop must be rescheduled to v5.2.0");
+  const learningMilestone = milestones.find((milestone) => milestone.id === "evopilot-5.3-learning-interop");
+  required(learningMilestone?.targetVersion === "5.3.0" && learningMilestone?.status === "PLANNED", "Learning Interoperability must be rescheduled to v5.3.0");
   for (const milestone of milestones.filter((item) => item.status === "DEFERRED")) {
     const destination = milestones.find((item) => item.id === milestone.deferredInto);
     required(typeof milestone.deferredInto === "string" && destination != null, `DEFERRED milestone must name a declared deferredInto milestone: ${milestone.id}`);
@@ -196,6 +223,16 @@ function classifyIntent(rawIntent, value) {
   const capabilityExpansion = matches(normalized, value.intentPolicy?.capabilityExpansionSignals ?? []);
   const alignedStandingItems = matchedStandingItems.filter((item) => !capabilityExpansion || item.allowsCapabilityExpansion === true);
   const matchedStandingWork = matchedStandingItems.map((item) => item.id);
+  const uncoveredClauses = uncoveredCapabilityClauses(rawIntent, value);
+  if (uncoveredClauses.length > 0) {
+    return decision(
+      "UNPLANNED",
+      matchedMilestones,
+      matchedStandingWork,
+      ["Composite intent contains capability-expanding clauses that do not match declared Roadmap work.", ...uncoveredClauses.map((clause) => `uncovered-clause: ${clause}`)],
+      "USER_REVIEW_REQUIRED"
+    );
+  }
   if (matchedMilestones.length > 0 || alignedStandingItems.length > 0) {
     return decision("ALIGNED", matchedMilestones, alignedStandingItems.map((item) => item.id), ["Intent matches declared Roadmap work."], "NONE");
   }
@@ -251,6 +288,27 @@ function decision(classification, matchedMilestones, matchedStandingWork, reason
 
 function matches(text, signals) {
   return signals.some((signal) => text.includes(normalize(signal)));
+}
+
+function uncoveredCapabilityClauses(rawIntent, value) {
+  if (value?.intentPolicy?.compositeCoverage?.enabled !== true) return [];
+  const clauses = splitIntentClauses(rawIntent, value.intentPolicy.compositeCoverage.clauseSeparators ?? []);
+  return clauses.filter((clause) => {
+    if (!matches(clause, value.intentPolicy?.capabilityExpansionSignals ?? [])) return false;
+    const milestoneMatch = value.milestones.some((milestone) => milestone.status !== "DEFERRED" && matches(clause, milestone.signals));
+    const standingMatch = value.standingWork.some((item) => item.allowsCapabilityExpansion === true && matches(clause, item.signals));
+    return !milestoneMatch && !standingMatch;
+  });
+}
+
+function splitIntentClauses(rawIntent, separators) {
+  let clauses = [normalize(rawIntent)];
+  for (const separator of separators) {
+    const normalizedSeparator = String(separator ?? "").toLowerCase().replace(/\s+/g, " ");
+    if (!normalizedSeparator.trim()) continue;
+    clauses = clauses.flatMap((clause) => clause.split(normalizedSeparator));
+  }
+  return clauses.map((clause) => clause.trim()).filter(Boolean);
 }
 
 function normalize(value) {

@@ -1,6 +1,6 @@
-export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "5.0.1";
+export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "5.1.0";
 export const EVOPILOT_SERVER_VERSION_FALLBACK = "0.1.0";
-export const EVOPILOT_CLI_VERSION_FALLBACK = "5.0.1";
+export const EVOPILOT_CLI_VERSION_FALLBACK = "5.1.0";
 export const EVOPILOT_API_CONTRACT_VERSION = "v1";
 export const EVOPILOT_MINIMUM_CLI_VERSION = "5.0.0";
 
@@ -32,7 +32,7 @@ export const EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION = "1.0";
 
 export const EVOPILOT_HARNESS_GUIDED_RUNTIME_BOUNDARY = {
   schema: "evopilot-harness-guided-runtime-boundary/v1",
-  runtimeVersion: "5.0.1",
+  runtimeVersion: "5.1.0",
   invariant: "Every Goal Target Loop binds one eligible published immutable HarnessBundle plus one resolved declarative Lifecycle.",
   harnessOwnership: "evopilot-harness",
   runtimeOwnership: "evopilot",

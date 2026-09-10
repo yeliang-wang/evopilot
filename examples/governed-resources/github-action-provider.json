@@ -1,0 +1,29 @@
+{
+  "apiVersion": "evopilot.io/v1",
+  "kind": "ActionProviderDefinition",
+  "metadata": { "id": "github", "name": "GitHub typed actions", "version": "1.0.0" },
+  "provenance": {
+    "sourceType": "NATIVE",
+    "sourceId": "evopilot-runtime",
+    "sourceVersion": "5.1.0",
+    "sourceDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "compatibility": { "runtime": ">=5.1.0 <6.0.0" },
+  "capabilityRefs": ["source.read", "candidate.build", "release.readback"],
+  "spec": {
+    "execution": "TYPED_ACTIONS_ONLY",
+    "arbitraryShell": false,
+    "actions": [
+      {
+        "id": "candidate.build",
+        "inputSchema": { "type": "object", "required": ["repository", "commit", "workflow"] },
+        "outputSchema": { "type": "object", "required": ["runId", "attempt", "artifactDigest", "receiptDigest"] },
+        "receipt": "IMMUTABLE_REQUIRED",
+        "idempotencyKeyRequired": true,
+        "rollback": "NOT_APPLICABLE",
+        "requiredAuthorities": ["candidate.build"],
+        "credentialRefs": ["secret://github/actions"]
+      }
+    ]
+  }
+}

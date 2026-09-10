@@ -12,13 +12,13 @@ test("Evolution Expert builds and verifies an independent package Candidate set"
   const result = buildEvolutionExpertArtifacts({ outDir, build: false });
   const verification = verifyEvolutionExpertArtifacts({ outDir });
 
-  assert.equal(result.version, "1.0.1");
-  assert.equal(result.tag, "evolution-expert-v1.0.1");
+  assert.equal(result.version, "1.1.0");
+  assert.equal(result.tag, "evolution-expert-v1.1.0");
   assert.equal(verification.status, "PASS");
   assert.deepEqual(verification.files, [
     "SHA256SUMS",
-    "evopilot-evolution-expert-1.0.1-provenance.json",
-    "evopilot-evolution-expert-1.0.1-sbom.spdx.json",
-    "evopilot-evolution-expert-1.0.1.tgz"
+    "evopilot-evolution-expert-1.1.0-provenance.json",
+    "evopilot-evolution-expert-1.1.0-sbom.spdx.json",
+    "evopilot-evolution-expert-1.1.0.tgz"
   ]);
 });

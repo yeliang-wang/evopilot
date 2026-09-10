@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/latest%20public-v5.0.0-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/latest%20public-v5.0.1-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -14,22 +14,22 @@ EvoPilot helps teams operate AI-agent products as releasable software. It collec
 
 It is not an agent runtime, prompt playground, generic code generator, or Harness Asset lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot reads a configured Harness Registry and the published Catalog directories it points to, then uses an open product-delivery Lifecycle Harness to execute project goals against the selected immutable HarnessBundle.
 
-## v5 Completion-Recovery Line
+## v5.1 Suite Capability Convergence
 
-The repository is implementing EvoPilot **v5.0.1 Harness-Guided Completion Recovery**; v5.0.0 is the latest public release. v5.0.1 closes the original v5.0.0 design criterion by criterion instead of treating the already-published v5.0.0 artifacts as proof of completeness. The product core remains `Goal -> Loop -> Target` and its binding is executable:
+The repository is implementing EvoPilot **v5.1.0 Suite Capability Convergence**; v5.0.1 is the latest public release. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and an open Lifecycle:
 
 ```text
 Project Definition + GoalTarget -> published HarnessProfile -> immutable HarnessBundle
                                       + open Lifecycle -> governed Goal Target Loop
 ```
 
-DataRig, EvoPilot, evopilot-harness, and future projects use the same declarative Project Definition aggregate and project-owned resources. There are no project-name branches. Harness obligations cannot be weakened by Lifecycle configuration, and the exact binding is revalidated at start, resume, retry, and every Loop iteration.
+DataRig, EvoPilot, evopilot-harness, and future projects use the same declarative Project Definition plus independently versioned Capability, Lifecycle, Policy, Governance, Provider, environment, release-channel, SecretRef, and authority resources. There are no project-name branches. Resource revisions can evolve without a Runtime or Expert release when the declared compatibility range remains valid.
 
 Completion is a machine-enforced contract: all 195 current, inherited, and terminal criteria must have criterion-specific evidence for one exact Runtime/Expert Candidate pair; failed, pending, stale, warning, generic, or unmapped counts must all be zero. A human statement cannot replace required machine evidence. See [Completion Assurance](docs/operations/completion-assurance.md).
 
-The optional [EvoPilot Evolution Expert](docs/guides/evolution-expert.md) is independently versioned and provides one generated conversational adapter for Codex, WorkBuddy, generic Agents, and generic MCP Hosts. It guides and explains; Runtime remains authoritative and fully operable through MCP, CLI, HTTP API, and CI without the Expert.
+The optional [EvoPilot Evolution Expert](docs/guides/evolution-expert.md) 1.1.0 is independently versioned and generates thin adapters for Codex, designated-human WorkBuddy, generic Agents, generic MCP, and independent Hosts from one Agent-neutral Core. It guides versioning, migration, shadow comparison, Cutover readiness, rollback, and normal Goal Loop work; Runtime remains authoritative and headless-capable.
 
-The existing EvoPilot and DataRig Codex Suites remain active and independently evolving throughout v5 development and release acceptance. v5 uses late-bound read-only snapshots for comparison and proves independence only in isolated Candidate environments where both Suites are absent. Real default switching or retirement is a separate, explicitly authorized post-release [Cutover](docs/guides/legacy-suite-transition.md), not a v5 release gate.
+The exact latest EvoPilot Codex Suite 3.2.1 and DataRig Codex Suite 2.1.5 are immutable migration sources, not Runtime dependencies or new resource version lines. They remain installed, active, untouched, and independently usable during v5.1 implementation. Real switching or retirement requires a separately approved post-release [Cutover](docs/guides/legacy-suite-transition.md).
 
 ## Start Here
 
@@ -48,7 +48,9 @@ Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet
 | Govern product evolution | Human-readable Lifecycle planning, risk-based authority gates, automatic deterministic stages, evidence closure, and final release decisions; the v3 Alpha/Beta/RC/GA ladder remains available through compatibility data. |
 | Run auditable loops | Durable loop state, executor graphs, checkpoints, replay, worker leases, watchdog recovery, and timeline audit. |
 | Onboard any project declaratively | Discovery, immutable human-readable Project Definitions and resources, schema-driven questions, semantic impact, versioned activation/rollback, and no project-specific Runtime branches. |
+| Converge Suite capabilities | Exact source provenance, 100% capability disposition, project-neutral governed resources, typed Action Providers, and zero hidden Suite fallback. |
 | Recover and learn safely | Bounded automatic repair/retry/resume plus an Automation Registry where one reviewed proposal can automate future equivalent safe failures. |
+| Repair across Candidates safely | Durable remediation campaigns preserve source/Candidate lineage, receipts, budgets, failed-first reruns, impact closure, full-matrix reruns, and exact human stop boundaries. |
 | Consume published Harnesses | Dynamically reads configured `evopilot-harness` Registry/Catalog roots, matches published v3 Profiles, binds immutable Bundles, and stores the complete Profile/Component/Bundle digest closure in goal plans. |
 | Control source and delivery | Bounded code-upgrader execution, allowed paths, validation commands, source closure, CI/CD delivery, and deploy evidence. |
 | Track LLM usage by project | Server-projected provider/model/profile rows, token totals, latest loop tokens, and request IDs for connected projects and workspaces. |
@@ -133,14 +135,14 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-The latest published GitHub release is **v5.0.0**. It is a historical published artifact, but publication and its prior aggregate acceptance do not prove every item in the original v5 scheme complete. The v5.0.1 completion-recovery line supplies that stricter criterion-specific closure.
+The latest published GitHub release is **v5.0.1**. Runtime v5.1.0 and Evolution Expert v1.1.0 are under implementation; no Candidate, acceptance, publication, or Cutover is implied by this source tree.
 
 The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a standalone v3.2 release. v4.0 keeps EvoPilot's strict read-only Harness-asset boundary while adding open YAML Lifecycle execution for project goals.
 
 Release evidence:
 
-- Latest published release notes: [docs/releases/5.0.0.md](docs/releases/5.0.0.md)
-- Completion-recovery plan: [docs/releases/5.0.1.md](docs/releases/5.0.1.md)
+- Latest published release notes: [docs/releases/5.0.1.md](docs/releases/5.0.1.md)
+- v5.1 implementation plan: [docs/releases/5.1.0.md](docs/releases/5.1.0.md)
 - Previous release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
