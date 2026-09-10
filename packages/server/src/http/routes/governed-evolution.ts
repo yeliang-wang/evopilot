@@ -347,9 +347,10 @@ function digestExecutor(value: unknown): string {
   return digest;
 }
 
-function governedError(error: unknown): { error: string; detail: string } {
+function governedError(error: unknown): { error: string; detail: string; resolution?: unknown } {
   const detail = error instanceof Error ? error.message : String(error);
-  return { error: detail.split(":")[0] || "GOVERNED_EVOLUTION_REQUEST_INVALID", detail };
+  const resolution = error && typeof error === "object" && "resolution" in error ? (error as { resolution: unknown }).resolution : undefined;
+  return { error: detail.split(":")[0] || "GOVERNED_EVOLUTION_REQUEST_INVALID", detail, ...(resolution ? { resolution } : {}) };
 }
 
 function digestFromBody(value: unknown, fallback: unknown): string {

@@ -33,6 +33,31 @@ function candidate(id = "oss", priority = 1) {
   };
 }
 
+function projectWithHarnessSelection(selected = candidate("b"), overrides = {}) {
+  const base = project();
+  return normalizeEvolutionProjectDefinition({
+    ...base,
+    metadata: { ...base.metadata, version: "1.1.0" },
+    spec: {
+      ...base.spec,
+      resources: [{
+        apiVersion: "evopilot.dev/v1",
+        kind: "HarnessSelection",
+        metadata: { id: "primary", version: "1.0.0" },
+        spec: {
+          registryDigest: selected.profile.registryDigest,
+          catalogRef: { id: selected.profile.catalogId, digest: selected.profile.catalogDigest },
+          profileRef: { id: selected.profile.id, version: selected.profile.version, digest: selected.profile.digest },
+          bundleRef: { id: selected.bundle.id, version: selected.bundle.version, digest: selected.bundle.digest, componentDigests: selected.bundle.componentDigests },
+          decisionEvidenceRef: "decision://project-owner/harness-selection",
+          ...overrides
+        }
+      }]
+    },
+    digest: undefined
+  });
+}
+
 const goal = { projectId: "sample", goalId: "goal-1", targetId: "target-1", objective: "Publish npm package", taskClass: "release", domain: "software", requiredCapabilities: ["build"] };
 
 test("Project plus GoalTarget resolves exactly one published immutable HarnessBundle", () => {
@@ -41,6 +66,21 @@ test("Project plus GoalTarget resolves exactly one published immutable HarnessBu
   assert.equal(matched.selected.bundle.id, "oss-bundle");
   assert.equal(resolvePublishedHarness({ project: project(), goalTarget: goal, candidates: [] }).status, "ABSTAINED");
   assert.equal(resolvePublishedHarness({ project: project(), goalTarget: goal, candidates: [candidate("a"), candidate("b")] }).status, "AMBIGUOUS");
+  const selected = resolvePublishedHarness({ project: projectWithHarnessSelection(), goalTarget: goal, candidates: [candidate("a"), candidate("b")] });
+  assert.equal(selected.status, "MATCHED");
+  assert.equal(selected.selected.bundle.id, "b-bundle");
+  assert.equal(selected.selection.status, "APPLIED");
+  assert.equal(selected.candidates.find((item) => item.bundleId === "b-bundle").selectedByProjectDefinition, true);
+  assert.deepEqual(selected.candidates.map((item) => item.rank), [1, 2]);
+  assert.match(selected.candidates[0].bundleDigest, /^sha256:/);
+  const unavailable = resolvePublishedHarness({ project: projectWithHarnessSelection(candidate("b"), { registryDigest: d("other-registry") }), goalTarget: goal, candidates: [candidate("a"), candidate("b")] });
+  assert.equal(unavailable.status, "ABSTAINED");
+  assert.equal(unavailable.selection.status, "UNAVAILABLE");
+  const unpublished = { ...candidate("b"), published: false };
+  const rejected = resolvePublishedHarness({ project: projectWithHarnessSelection(unpublished), goalTarget: goal, candidates: [candidate("a"), unpublished] });
+  assert.equal(rejected.status, "ABSTAINED");
+  assert.equal(rejected.selection.status, "REJECTED");
+  assert.ok(rejected.candidates.find((item) => item.selectedByProjectDefinition).rejectionReasons.includes("bundle-not-published"));
 });
 
 test("Project discovery is question-driven and DDD resources are immutable and diffable", () => {
@@ -68,10 +108,11 @@ test("Project discovery is question-driven and DDD resources are immutable and d
 
 test("Lifecycle composition can strengthen but never weaken Harness obligations", () => {
   const harness = candidate().bundle;
-  const lifecycle = { lifecycleId: "oss", lifecycleVersion: "1.0.0", lifecycleDigest: d("lifecycle"), requiredEvidence: ["sbom"], validators: ["signature"], constraints: ["approval-bound"], capabilities: ["build"], requestedPermissions: ["build.run"] };
+  const lifecycle = { lifecycleId: "oss", lifecycleVersion: "1.0.0", lifecycleDigest: d("lifecycle"), requiredEvidence: ["sbom"], validators: ["signature"], constraints: ["approval-bound"], capabilities: ["build", "goal-loop.execute"], requestedPermissions: ["build.run"] };
   const composed = composeHarnessAndLifecycle(harness, lifecycle);
   assert.equal(composed.status, "COMPOSED");
   assert.deepEqual(composed.requiredEvidence, ["sbom", "tests"]);
+  assert.deepEqual(composed.capabilities, ["build", "goal-loop.execute"]);
   assert.deepEqual(composeHarnessAndLifecycle(harness, { ...lifecycle, disabledHarnessEvidence: ["tests"] }).conflicts, ["required-evidence-disabled:tests"]);
   assert.equal(composeHarnessAndLifecycle(harness, { ...lifecycle, requestedPermissions: ["release.publish"] }).status, "CONFLICT");
 });

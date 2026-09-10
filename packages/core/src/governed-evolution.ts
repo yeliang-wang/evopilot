@@ -13,6 +13,8 @@ export const EXECUTION_RUNTIME_PROFILE_SCHEMA = "evopilot-execution-runtime-prof
 export const LEGACY_SUITE_SNAPSHOT_SCHEMA = "evopilot-legacy-suite-snapshot/v1" as const;
 export const LEGACY_SUITE_SNAPSHOT_COMPARISON_SCHEMA = "evopilot-legacy-suite-snapshot-comparison/v1" as const;
 export const LEGACY_SUITE_ISOLATION_PROOF_SCHEMA = "evopilot-legacy-suite-isolation-proof/v1" as const;
+export const HARNESS_SELECTION_RESOURCE_API_VERSION = "evopilot.dev/v1" as const;
+export const HARNESS_SELECTION_RESOURCE_KIND = "HarnessSelection" as const;
 
 export type ProjectSourceProvider = "github" | "gitlab" | "local-git";
 export type ProjectDeliveryModel = "open-source" | "enterprise-internal" | "private-service" | "library" | "documentation";
@@ -24,6 +26,21 @@ export interface EvolutionProjectResource {
   spec: Record<string, unknown>;
   capabilityRefs?: string[];
   digest?: string;
+}
+
+export interface HarnessSelectionSpec {
+  [key: string]: unknown;
+  registryDigest: string;
+  catalogRef: { id: string; digest: string };
+  profileRef: { id: string; version: string; digest: string };
+  bundleRef: { id: string; version: string; digest: string; componentDigests: string[] };
+  decisionEvidenceRef: string;
+}
+
+export interface HarnessSelectionEvidence extends HarnessSelectionSpec {
+  source: "PROJECT_DEFINITION_RESOURCE";
+  resourceRef: { id: string; version: string; digest: string };
+  status: "APPLIED" | "UNAVAILABLE" | "REJECTED";
 }
 
 export interface EvolutionProjectDefinition {
@@ -145,12 +162,21 @@ export interface PublishedHarnessCandidate {
 }
 
 export interface HarnessMatchCandidateResult {
+  rank: number;
+  catalogId: string;
+  catalogDigest: string;
+  registryDigest: string;
   profileId: string;
   profileVersion: string;
+  profileDigest: string;
   bundleId: string;
   bundleVersion: string;
+  bundleDigest: string;
+  componentDigests: string[];
+  priority: number;
   score: number;
   eligible: boolean;
+  selectedByProjectDefinition: boolean;
   reasons: string[];
   rejectionReasons: string[];
 }
@@ -162,6 +188,7 @@ export interface HarnessMatchResult {
   goalTargetDigest: string;
   selected?: PublishedHarnessCandidate;
   candidates: HarnessMatchCandidateResult[];
+  selection?: HarnessSelectionEvidence;
   reason: string;
   digest: string;
 }
@@ -399,6 +426,7 @@ export function normalizeEvolutionProjectDefinition(value: Omit<EvolutionProject
   const resources = (value.spec.resources ?? []).map((resource) => normalizeProjectResource(resource));
   const resourceKeys = resources.map((resource) => `${resource.kind}:${resource.metadata.id}@${resource.metadata.version}`);
   if (new Set(resourceKeys).size !== resourceKeys.length) throw new Error("PROJECT_RESOURCE_DUPLICATE_ID_VERSION");
+  if (resources.filter((resource) => resource.kind === HARNESS_SELECTION_RESOURCE_KIND).length > 1) throw new Error("PROJECT_HARNESS_SELECTION_MULTIPLE");
   rejectRawSecrets(value);
   const material = {
     schema: value.schema,
@@ -473,6 +501,8 @@ export function resolvePublishedHarness(input: {
   candidates: PublishedHarnessCandidate[];
 }): HarnessMatchResult {
   assertDigest(input.project.digest, "project.digest");
+  const selectionResource = input.project.spec.resources?.find((resource) => resource.kind === HARNESS_SELECTION_RESOURCE_KIND);
+  const selectionSpec = selectionResource?.spec as unknown as HarnessSelectionSpec | undefined;
   const context = canonicalText([
     input.project.metadata.id,
     input.project.metadata.name,
@@ -487,8 +517,9 @@ export function resolvePublishedHarness(input: {
     ...input.goalTarget.requiredCapabilities,
     ...Object.entries(input.goalTarget.labels ?? {}).flat()
   ]);
-  const candidates = input.candidates.map((candidate) => scoreCandidate(candidate, input.project, input.goalTarget, context))
-    .sort((left, right) => right.result.score - left.result.score || right.priority - left.priority || left.result.profileId.localeCompare(right.result.profileId));
+  const candidates = input.candidates.map((candidate) => scoreCandidate(candidate, input.project, input.goalTarget, context, selectionSpec))
+    .sort((left, right) => right.result.score - left.result.score || right.priority - left.priority || left.result.profileId.localeCompare(right.result.profileId))
+    .map((candidate, index) => ({ ...candidate, result: { ...candidate.result, rank: index + 1 } }));
   const eligible = candidates.filter((candidate) => candidate.result.eligible && candidate.result.score > 0);
   const top = eligible[0];
   const second = eligible[1];
@@ -497,8 +528,15 @@ export function resolvePublishedHarness(input: {
     schema: HARNESS_MATCH_RESULT_SCHEMA,
     projectDigest: input.project.digest,
     goalTargetDigest: canonicalDigest(input.goalTarget),
-    candidates: candidates.map((candidate) => candidate.result)
+    candidates: candidates.map((candidate) => candidate.result),
+    ...(selectionResource && selectionSpec ? { selection: selectionEvidence(selectionResource, selectionSpec, "UNAVAILABLE") } : {})
   };
+  if (selectionResource && selectionSpec) {
+    const exact = candidates.find((candidate) => candidate.result.selectedByProjectDefinition);
+    if (!exact) return withDigest({ ...base, status: "ABSTAINED" as const, reason: "The exact HarnessSelection closure is not present in the current published Registry and Catalog set." });
+    if (!exact.result.eligible) return withDigest({ ...base, selection: selectionEvidence(selectionResource, selectionSpec, "REJECTED"), status: "ABSTAINED" as const, reason: `The exact HarnessSelection candidate is ineligible: ${exact.result.rejectionReasons.join(", ")}.` });
+    return withDigest({ ...base, selection: selectionEvidence(selectionResource, selectionSpec, "APPLIED"), status: "MATCHED" as const, selected: exact.candidate, reason: `Selected ${exact.candidate.bundle.id}@${exact.candidate.bundle.version} from the exact immutable HarnessSelection declared by the Project Definition.` });
+  }
   if (!top) return withDigest({ ...base, status: "ABSTAINED" as const, reason: "No eligible published immutable HarnessBundle matched Project plus GoalTarget context." });
   if (ambiguous) return withDigest({ ...base, status: "AMBIGUOUS" as const, reason: `Top candidates are tied at score=${top.result.score}; explicit project declaration or Catalog policy is required.` });
   return withDigest({ ...base, status: "MATCHED" as const, selected: top.candidate, reason: `Selected ${top.candidate.bundle.id}@${top.candidate.bundle.version} from deterministic Project plus GoalTarget ranking.` });
@@ -511,8 +549,7 @@ export function composeHarnessAndLifecycle(bundle: PublishedHarnessCandidate["bu
     ...(lifecycle.disabledHarnessEvidence ?? []).filter((item) => bundle.requiredEvidence.includes(item)).map((item) => `required-evidence-disabled:${item}`),
     ...(lifecycle.disabledHarnessValidators ?? []).filter((item) => bundle.validators.includes(item)).map((item) => `required-validator-disabled:${item}`),
     ...(lifecycle.weakenedHarnessConstraints ?? []).filter((item) => bundle.constraints.includes(item)).map((item) => `required-constraint-weakened:${item}`),
-    ...lifecycle.requestedPermissions.filter((permission) => !bundle.permissions.includes(permission)).map((permission) => `permission-outside-harness:${permission}`),
-    ...lifecycle.capabilities.filter((capability) => !bundle.capabilities.includes(capability)).map((capability) => `capability-outside-harness:${capability}`)
+    ...lifecycle.requestedPermissions.filter((permission) => !bundle.permissions.includes(permission)).map((permission) => `permission-outside-harness:${permission}`)
   ]);
   const material = {
     schema: HARNESS_LIFECYCLE_COMPOSITION_SCHEMA,
@@ -523,7 +560,7 @@ export function composeHarnessAndLifecycle(bundle: PublishedHarnessCandidate["bu
     requiredEvidence: unique([...bundle.requiredEvidence, ...lifecycle.requiredEvidence]),
     validators: unique([...bundle.validators, ...lifecycle.validators]),
     constraints: unique([...bundle.constraints, ...lifecycle.constraints]),
-    capabilities: lifecycle.capabilities.filter((capability) => bundle.capabilities.includes(capability)).sort(),
+    capabilities: unique([...bundle.capabilities, ...lifecycle.capabilities]),
     permissions: lifecycle.requestedPermissions.filter((permission) => bundle.permissions.includes(permission)).sort(),
     conflicts
   };
@@ -783,7 +820,7 @@ export function canonicalDigest(value: unknown): string {
   return `sha256:${createHash("sha256").update(stableJson(value)).digest("hex")}`;
 }
 
-function scoreCandidate(candidate: PublishedHarnessCandidate, project: EvolutionProjectDefinition, goal: GoalTargetContext, context: string) {
+function scoreCandidate(candidate: PublishedHarnessCandidate, project: EvolutionProjectDefinition, goal: GoalTargetContext, context: string, selection?: HarnessSelectionSpec) {
   const reasons: string[] = [];
   const rejectionReasons: string[] = [];
   if (!candidate.published) rejectionReasons.push("bundle-not-published");
@@ -806,12 +843,21 @@ function scoreCandidate(candidate: PublishedHarnessCandidate, project: Evolution
     else rejectionReasons.push(`missing-capability:${capability}`);
   }
   const result: HarnessMatchCandidateResult = {
+    rank: 0,
+    catalogId: candidate.profile.catalogId,
+    catalogDigest: candidate.profile.catalogDigest,
+    registryDigest: candidate.profile.registryDigest,
     profileId: candidate.profile.id,
     profileVersion: candidate.profile.version,
+    profileDigest: candidate.profile.digest,
     bundleId: candidate.bundle.id,
     bundleVersion: candidate.bundle.version,
+    bundleDigest: candidate.bundle.digest,
+    componentDigests: unique(candidate.bundle.componentDigests),
+    priority: candidate.priority ?? 0,
     score: rejectionReasons.length ? 0 : score,
     eligible: rejectionReasons.length === 0,
+    selectedByProjectDefinition: selection ? matchesHarnessSelection(candidate, selection) : false,
     reasons: unique(reasons),
     rejectionReasons: unique(rejectionReasons)
   };
@@ -834,16 +880,74 @@ function normalizeProjectResource(value: EvolutionProjectResource): EvolutionPro
   requireText(value.metadata?.version, "resource.metadata.version");
   if (!value.spec || typeof value.spec !== "object" || Array.isArray(value.spec)) throw new Error("PROJECT_RESOURCE_SPEC_INVALID");
   rejectRawSecrets(value.spec, `resource.${value.kind}.${value.metadata.id}`);
+  const spec = value.kind === HARNESS_SELECTION_RESOURCE_KIND ? normalizeHarnessSelectionSpec(value.apiVersion, value.spec) : value.spec;
   const material = {
     apiVersion: value.apiVersion,
     kind: value.kind,
     metadata: { id: value.metadata.id, version: value.metadata.version },
-    spec: value.spec,
+    spec,
     ...(value.capabilityRefs?.length ? { capabilityRefs: unique(value.capabilityRefs) } : {})
   };
   const digest = canonicalDigest(material);
   if (value.digest && value.digest !== digest) throw new Error(`PROJECT_RESOURCE_DIGEST_MISMATCH: ${value.kind}/${value.metadata.id}`);
   return { ...material, digest };
+}
+
+function normalizeHarnessSelectionSpec(apiVersion: string, value: Record<string, unknown>): HarnessSelectionSpec {
+  if (apiVersion !== HARNESS_SELECTION_RESOURCE_API_VERSION) throw new Error("PROJECT_HARNESS_SELECTION_API_VERSION_UNSUPPORTED");
+  const catalogRef = objectRecord(value.catalogRef, "PROJECT_HARNESS_SELECTION_CATALOG_REF_REQUIRED");
+  const profileRef = objectRecord(value.profileRef, "PROJECT_HARNESS_SELECTION_PROFILE_REF_REQUIRED");
+  const bundleRef = objectRecord(value.bundleRef, "PROJECT_HARNESS_SELECTION_BUNDLE_REF_REQUIRED");
+  const componentDigests = Array.isArray(bundleRef.componentDigests) ? bundleRef.componentDigests.map(String) : [];
+  const result: HarnessSelectionSpec = {
+    registryDigest: String(value.registryDigest ?? ""),
+    catalogRef: { id: String(catalogRef.id ?? ""), digest: String(catalogRef.digest ?? "") },
+    profileRef: { id: String(profileRef.id ?? ""), version: String(profileRef.version ?? ""), digest: String(profileRef.digest ?? "") },
+    bundleRef: { id: String(bundleRef.id ?? ""), version: String(bundleRef.version ?? ""), digest: String(bundleRef.digest ?? ""), componentDigests: unique(componentDigests) },
+    decisionEvidenceRef: String(value.decisionEvidenceRef ?? "")
+  };
+  requireText(result.catalogRef.id, "resource.HarnessSelection.spec.catalogRef.id");
+  requireText(result.profileRef.id, "resource.HarnessSelection.spec.profileRef.id");
+  requireText(result.profileRef.version, "resource.HarnessSelection.spec.profileRef.version");
+  requireText(result.bundleRef.id, "resource.HarnessSelection.spec.bundleRef.id");
+  requireText(result.bundleRef.version, "resource.HarnessSelection.spec.bundleRef.version");
+  requireText(result.decisionEvidenceRef, "resource.HarnessSelection.spec.decisionEvidenceRef");
+  if (!result.bundleRef.componentDigests.length) throw new Error("PROJECT_HARNESS_SELECTION_COMPONENT_DIGESTS_REQUIRED");
+  for (const [field, digest] of Object.entries({
+    registryDigest: result.registryDigest,
+    catalogDigest: result.catalogRef.digest,
+    profileDigest: result.profileRef.digest,
+    bundleDigest: result.bundleRef.digest
+  })) assertDigest(digest, `resource.HarnessSelection.spec.${field}`);
+  result.bundleRef.componentDigests.forEach((digest, index) => assertDigest(digest, `resource.HarnessSelection.spec.bundleRef.componentDigests[${index}]`));
+  return result;
+}
+
+function matchesHarnessSelection(candidate: PublishedHarnessCandidate, selection: HarnessSelectionSpec): boolean {
+  return candidate.profile.registryDigest === selection.registryDigest
+    && candidate.profile.catalogId === selection.catalogRef.id
+    && candidate.profile.catalogDigest === selection.catalogRef.digest
+    && candidate.profile.id === selection.profileRef.id
+    && candidate.profile.version === selection.profileRef.version
+    && candidate.profile.digest === selection.profileRef.digest
+    && candidate.bundle.id === selection.bundleRef.id
+    && candidate.bundle.version === selection.bundleRef.version
+    && candidate.bundle.digest === selection.bundleRef.digest
+    && canonicalDigest(unique(candidate.bundle.componentDigests)) === canonicalDigest(unique(selection.bundleRef.componentDigests));
+}
+
+function selectionEvidence(resource: EvolutionProjectResource, selection: HarnessSelectionSpec, status: HarnessSelectionEvidence["status"]): HarnessSelectionEvidence {
+  return {
+    source: "PROJECT_DEFINITION_RESOURCE",
+    resourceRef: { id: resource.metadata.id, version: resource.metadata.version, digest: String(resource.digest) },
+    ...selection,
+    status
+  };
+}
+
+function objectRecord(value: unknown, error: string): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error(error);
+  return value as Record<string, unknown>;
 }
 
 function question(id: string, path: string, type: EvolutionProjectQuestion["type"], prompt: string, detectedValue?: unknown, defaultValue?: unknown, options?: string[]): EvolutionProjectQuestion {

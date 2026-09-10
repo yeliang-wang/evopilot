@@ -2,7 +2,7 @@ schema: evopilot-evolution-project-definition/v1
 metadata:
   id: evopilot-harness
   name: EvoPilot Harness
-  version: 1.0.0
+  version: 1.0.1
   labels:
     delivery: public-oss
     domain: harness-product
@@ -22,3 +22,23 @@ spec:
   hostPreferences: [codex, workbuddy]
   runtimePreferences: [local, github-actions]
   evidenceSources: [github-actions, agent-host-acceptance, public-registry]
+  resources:
+    - apiVersion: evopilot.dev/v1
+      kind: HarnessSelection
+      metadata: { id: primary, version: 1.0.0 }
+      spec:
+        registryDigest: sha256:189e385686b8e3d89393fa1c44e58a008ae9eafe10f7a7b23bd02746bebe1f27
+        catalogRef:
+          id: builtin
+          digest: sha256:12c0e1edb6b8786113aa7c0d53eb89b5acaa3ec183d4669a0472fa2e3171911a
+        profileRef:
+          id: node-saas-control-plane
+          version: 1.2.0
+          digest: sha256:046795b7c826e4e14475b4c11cdd2d042a8a8f47ccc2395e15a9ed8baba83444
+        bundleRef:
+          id: node-saas-control-plane
+          version: 1.2.0
+          digest: sha256:04537d1cd9720c94a0fc4a2e60f36f6b7be58a29723b161874bc40fb2df45a44
+          componentDigests:
+            - sha256:aa84fa704cdc31dbf3c1fb8ebe84e26acd2ade7a5cc364ab5c71784f05d78638
+        decisionEvidenceRef: decision://project-definition/evopilot-harness-1.0.1

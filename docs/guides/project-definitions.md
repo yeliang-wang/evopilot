@@ -24,6 +24,47 @@ Project resources use stable identities and canonical digests. Their content
 is declarative; credentials remain `secret://`, `env://`, or `vault://`
 references. An existing `(id, version)` cannot be overwritten.
 
+## Resolve an ambiguous Harness match
+
+When deterministic ranking returns `HARNESS_MATCH_AMBIGUOUS`, review the
+machine-readable ranked candidates and create a new immutable Project
+Definition version with one `HarnessSelection` resource. Do not use a label or
+free-form prompt as a selector.
+
+```yaml
+resources:
+  - apiVersion: evopilot.dev/v1
+    kind: HarnessSelection
+    metadata: { id: primary, version: 1.0.0 }
+    spec:
+      registryDigest: sha256:<registry-digest>
+      catalogRef: { id: builtin, digest: sha256:<catalog-digest> }
+      profileRef: { id: node-saas-control-plane, version: 1.2.0, digest: sha256:<profile-digest> }
+      bundleRef:
+        id: node-saas-control-plane
+        version: 1.2.0
+        digest: sha256:<bundle-digest>
+        componentDigests: [sha256:<component-digest>]
+      decisionEvidenceRef: decision://project-owner/harness-selection
+```
+
+The selection binds the complete published Registry/Catalog/Profile/Bundle/
+Component closure. Runtime still enforces publication, eligibility, required
+capabilities, negative boundaries, labels, and every digest. A stale,
+unpublished, ineligible, or incomplete selection abstains instead of falling
+back to a similarly named candidate. Only one selection resource may be active
+in a Project Definition version.
+
+Planning errors return `resolution.match.candidates` with stable rank, score,
+priority, exact Catalog/Profile/Bundle/Component digests, eligibility reasons,
+and whether a candidate matched the declaration. This is the input for the
+project-meaning decision and the next immutable Project Definition version.
+
+Harness obligations and Lifecycle orchestration are then composed
+monotonically: evidence, validators, constraints, and capabilities are unioned;
+requested permissions remain limited to the Harness permission set. A
+Lifecycle cannot disable or weaken a Harness obligation.
+
 ## Adjust, inspect impact, and roll back
 
 An adjustment creates a new immutable version. Review its semantic impact

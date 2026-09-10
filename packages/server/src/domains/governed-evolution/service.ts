@@ -75,6 +75,17 @@ export interface GovernedEvolutionPlan {
   digest: string;
 }
 
+export class GovernedEvolutionPlanResolutionError extends Error {
+  constructor(
+    public readonly code: "HARNESS_MATCH_AMBIGUOUS" | "HARNESS_MATCH_ABSTAINED" | "HARNESS_LIFECYCLE_CONFLICT",
+    detail: string,
+    public readonly resolution: { match: ReturnType<typeof resolvePublishedHarness>; composition?: ReturnType<typeof composeHarnessAndLifecycle> }
+  ) {
+    super(`${code}: ${detail}`);
+    this.name = "GovernedEvolutionPlanResolutionError";
+  }
+}
+
 export class GovernedEvolutionService {
   private readonly projectDefinitionsDir: string;
   private readonly bindingsDir: string;
@@ -251,7 +262,8 @@ export class GovernedEvolutionService {
     if (!projectDefinition) throw new Error(`EVOLUTION_PROJECT_DEFINITION_NOT_FOUND: ${input.projectDefinitionId}`);
     if (input.goalTarget.projectId !== projectDefinition.metadata.id) throw new Error("EVOLUTION_PROJECT_GOAL_TARGET_MISMATCH");
     const match = resolvePublishedHarness({ project: projectDefinition, goalTarget: input.goalTarget, candidates: input.candidates });
-    if (match.status !== "MATCHED" || !match.selected) throw new Error(`HARNESS_MATCH_${match.status}: ${match.reason}`);
+    if (match.status !== "MATCHED") throw new GovernedEvolutionPlanResolutionError(`HARNESS_MATCH_${match.status}`, match.reason, { match });
+    if (!match.selected) throw new GovernedEvolutionPlanResolutionError("HARNESS_MATCH_ABSTAINED", "Matched Harness result has no selected immutable bundle.", { match });
     const obligations = input.lifecycle.definition.obligations ?? {};
     const composition = composeHarnessAndLifecycle(match.selected.bundle, {
       lifecycleId: input.lifecycle.ref.id,
@@ -266,7 +278,7 @@ export class GovernedEvolutionService {
       disabledHarnessValidators: obligations.disabledHarnessValidators,
       weakenedHarnessConstraints: obligations.weakenedHarnessConstraints
     });
-    if (composition.status !== "COMPOSED") throw new Error(`HARNESS_LIFECYCLE_CONFLICT: ${composition.conflicts.join(", ")}`);
+    if (composition.status !== "COMPOSED") throw new GovernedEvolutionPlanResolutionError("HARNESS_LIFECYCLE_CONFLICT", composition.conflicts.join(", "), { match, composition });
     const binding = createHarnessExecutionBinding({
       projectDefinition,
       goalTarget: input.goalTarget,

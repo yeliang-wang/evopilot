@@ -29,6 +29,37 @@ test("GovernedEvolutionService persists immutable definitions, bindings, and app
     assert.equal(plan.status, "READY");
     assert.equal(service.readBinding(plan.binding.digest).bundleRef.digest, candidate.bundle.digest);
 
+    const alternateProfileDigest = d("profile-alternate");
+    const alternate = { profile: { ...candidate.profile, id: "software-release-alternate", digest: alternateProfileDigest }, bundle: { ...candidate.bundle, id: "software-release-alternate", digest: d("bundle-alternate"), profileDigest: alternateProfileDigest }, published: true, eligible: true };
+    assert.throws(
+      () => service.plan({ projectDefinitionId: "new-project", goalTarget: { projectId: "new-project", goalId: "goal-ambiguous", targetId: "target-ambiguous", objective: "publish npm", taskClass: "release", domain: "software", requiredCapabilities: ["build.execute"] }, candidates: [candidate, alternate], lifecycle, policyDigest: fixed, providerDigest: fixed, environmentDigest: fixed, hostDigest: fixed, runtimeDigest: fixed, authorityDigest: fixed, evidenceDigest: fixed }),
+      (error) => error.code === "HARNESS_MATCH_AMBIGUOUS" && error.resolution.match.candidates.length === 2 && error.resolution.match.candidates.every((item) => item.bundleDigest.startsWith("sha256:"))
+    );
+
+    const selectedDefinition = service.registerProjectDefinition({
+      ...definition,
+      metadata: { ...definition.metadata, version: "1.0.1" },
+      spec: {
+        ...definition.spec,
+        resources: [{
+          apiVersion: "evopilot.dev/v1",
+          kind: "HarnessSelection",
+          metadata: { id: "primary", version: "1.0.0" },
+          spec: {
+            registryDigest: candidate.profile.registryDigest,
+            catalogRef: { id: candidate.profile.catalogId, digest: candidate.profile.catalogDigest },
+            profileRef: { id: candidate.profile.id, version: candidate.profile.version, digest: candidate.profile.digest },
+            bundleRef: { id: candidate.bundle.id, version: candidate.bundle.version, digest: candidate.bundle.digest, componentDigests: candidate.bundle.componentDigests },
+            decisionEvidenceRef: "decision://project-owner/harness-selection"
+          }
+        }]
+      },
+      digest: undefined
+    });
+    const selectedPlan = service.plan({ projectDefinitionId: "new-project", projectDefinitionVersion: selectedDefinition.metadata.version, goalTarget: { projectId: "new-project", goalId: "goal-selected", targetId: "target-selected", objective: "publish npm", taskClass: "release", domain: "software", requiredCapabilities: ["build.execute"] }, candidates: [candidate, alternate], lifecycle, policyDigest: fixed, providerDigest: fixed, environmentDigest: fixed, hostDigest: fixed, runtimeDigest: fixed, authorityDigest: fixed, evidenceDigest: fixed });
+    assert.equal(selectedPlan.match.selection.status, "APPLIED");
+    assert.equal(selectedPlan.binding.bundleRef.digest, candidate.bundle.digest);
+
     const revised = service.registerProjectDefinition({ ...definition, metadata: { ...definition.metadata, version: "1.1.0", labels: { ...definition.metadata.labels, release: "adjusted" } }, digest: undefined });
     assert.equal(service.readProjectDefinition("new-project")?.digest, definition.digest);
     const rollbackPlan = service.plan({ projectDefinitionId: "new-project", projectDefinitionVersion: "1.0.0", goalTarget: { projectId: "new-project", goalId: "goal-rollback", targetId: "target-rollback", objective: "publish npm", taskClass: "release", domain: "software", requiredCapabilities: ["build.execute"] }, candidates: [candidate], lifecycle, policyDigest: fixed, providerDigest: fixed, environmentDigest: fixed, hostDigest: fixed, runtimeDigest: fixed, authorityDigest: fixed, evidenceDigest: fixed });

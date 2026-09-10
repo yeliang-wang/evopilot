@@ -33,7 +33,9 @@ POST /api/v1/automation-registry/{id}/revoke
 POST /api/v1/interactions/render
 ```
 
-`plan` 采用 `ProjectDefinition + GoalTarget` 确定性匹配已发布的不可变 `HarnessBundle`，再与开放 Lifecycle 单调组合。匹配歧义、无匹配或 Lifecycle 弱化 Harness 时失败关闭。生成的 binding 在 start、resume、retry 和每次 Loop iteration 前重验。
+`plan` 采用 `ProjectDefinition + GoalTarget` 确定性匹配已发布的不可变 `HarnessBundle`，再与开放 Lifecycle 单调组合。匹配歧义、无匹配或 Lifecycle 弱化 Harness 时失败关闭。错误响应中的 `resolution.match.candidates` 提供排序、评分、优先级以及精确 Catalog/Profile/Bundle/Component 摘要；用户审阅项目含义后，可在新的不可变 Project Definition 版本中声明一个 `evopilot.dev/v1 HarnessSelection` 资源。Runtime 仅在完整 Registry/Catalog/Profile/Bundle/Component 摘要闭包仍已发布且符合 eligibility、能力和负向边界时采用该选择，不会用名称或 prompt 绕过校验。
+
+Lifecycle 的执行能力与 Harness 能力采用并集，证据、validator 和 constraint 也采用并集；Lifecycle 请求的 permission 必须属于 Harness 允许集合。因此 Lifecycle 可以增加 Goal Loop 编排能力，但不能扩大执行权限、禁用证据或弱化 Harness 约束。生成的 binding 在 start、resume、retry 和每次 Loop iteration 前重验。
 
 Recovery 默认自动处理可逆 mechanics、相同输入安全重试和 receipt 恢复。未知但可安全复用的情形先生成完整 Automation Rule proposal；只有一次与 proposal digest 精确绑定的人工决定能激活后续自动化。不可逆权限与结果不确定的外部 mutation 不能学习成自动规则。
 
