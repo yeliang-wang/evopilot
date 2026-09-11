@@ -11,8 +11,8 @@ else if (command === "manifest") output = EVOLUTION_EXPERT_CORE;
 else if (command === "adapter") output = createExpertAdapter(args[1] ?? "generic-agent");
 else if (command === "compatibility") {
   const adapter = createExpertAdapter(args[1] ?? "generic-agent");
-  output = expertCompatibility(adapter, args[2] ?? "5.1.0", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation"]);
-} else if (command === "doctor") output = expertDoctor(args[1] ?? "generic-agent", args[2] ?? "5.1.0", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation"]);
+  output = expertCompatibility(adapter, args[2] ?? "6.0.0", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation", "runtime-state-resume"]);
+} else if (command === "doctor") output = expertDoctor(args[1] ?? "generic-agent", args[2] ?? "6.0.0", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation", "runtime-state-resume"]);
 else if (command === "tutorial") output = expertTutorial();
 else if (command === "versions") output = expertVersionGuide();
 else if (["migration", "shadow", "cutover", "rollback"].includes(command)) output = expertMigrationGuide();

@@ -6,7 +6,9 @@ import { parse as parseYaml } from "yaml";
 import { createApprovedSchemeInventory, createCompletionTrace } from "../packages/core/dist/index.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const output = path.join(root, "governance/acceptance/v5-completion-contract.json");
+const output = process.env.EVOPILOT_V5_COMPLETION_CONTRACT
+  ? path.resolve(process.env.EVOPILOT_V5_COMPLETION_CONTRACT)
+  : path.join(root, "governance/acceptance/v5-completion-contract.json");
 const runtimeId = "evopilot-v5.1.0-suite-capability-convergence";
 const expertId = "evopilot-evolution-expert-v1.1.0-unified-host-entry";
 const runtime = readJson(`governance/targets/${runtimeId}.json`);
@@ -14,6 +16,15 @@ const expert = readJson(`governance/targets/${expertId}.json`);
 const predecessorRuntime = readJson("governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json");
 const predecessorExpert = readJson("governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json");
 const roadmap = parseYaml(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
+
+if (isImmutableHistoricalContract(roadmap)) {
+  if (!process.argv.includes("--check")) {
+    console.error("v5 completion contract is immutable after the v5.1 release line is superseded");
+    process.exit(1);
+  }
+  validateHistoricalContract();
+  process.exit(0);
+}
 
 const requirements = [];
 addTargetRequirements("V5RUNTIME", predecessorRuntime, "TARGET", "governance/targets/evopilot-v5.0.0-harness-guided-governed-evolution-runtime.json");
@@ -129,3 +140,48 @@ function fileDigest(relative) { return `sha256:${createHash("sha256").update(fs.
 function sha(value) { return `sha256:${createHash("sha256").update(stable(value)).digest("hex")}`; }
 function stable(value) { if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`; if (value && typeof value === "object") return `{${Object.entries(value).filter(([, child]) => child !== undefined).sort(([a], [b]) => compareText(a, b)).map(([key, child]) => `${JSON.stringify(key)}:${stable(child)}`).join(",")}}`; return JSON.stringify(value); }
 function compareText(left, right) { return left < right ? -1 : left > right ? 1 : 0; }
+
+function isImmutableHistoricalContract(currentRoadmap) {
+  const status = (id) => currentRoadmap.milestones?.find((milestone) => milestone.id === id)?.status;
+  return currentRoadmap.versionPolicy?.currentWorkingVersion === "6.0.0"
+    && currentRoadmap.evolutionExpertPolicy?.currentWorkingVersion === "2.0.0"
+    && status("evopilot-5.1-suite-capability-convergence") === "SUPERSEDED"
+    && status("evopilot-evolution-expert-1.1-unified-host-entry") === "SUPERSEDED"
+    && status("evopilot-6.0-agent-native-lifecycle-control-plane") === "IN_PROGRESS"
+    && status("evopilot-evolution-expert-2.0-agent-host-entry") === "IN_PROGRESS";
+}
+
+function validateHistoricalContract() {
+  const errors = [];
+  if (!fs.existsSync(output)) {
+    console.error("historical v5 completion contract is missing");
+    process.exit(1);
+  }
+
+  let contract;
+  try {
+    contract = JSON.parse(fs.readFileSync(output, "utf8"));
+  } catch (error) {
+    console.error(`historical v5 completion contract is not valid JSON: ${error.message}`);
+    process.exit(1);
+  }
+
+  const { digest, ...material } = contract;
+  if (contract.schema !== "evopilot-v5-completion-contract/v2") errors.push("schema does not match v2");
+  if (contract.campaignId !== "evopilot-runtime-5.1.0-expert-1.1.0-suite-capability-convergence") errors.push("campaign binding changed");
+  if (digest !== sha(material)) errors.push("self-digest does not match immutable content");
+
+  const expectedBindings = [targetBinding(runtime), targetBinding(expert)];
+  if (stable(contract.targetBindings) !== stable(expectedBindings)) errors.push("Target bindings do not match the completed v5.1 Runtime and Expert Targets");
+  if (contract.inventory?.campaignId !== contract.campaignId) errors.push("inventory campaign binding changed");
+  if (contract.inventory?.requirements?.length !== 170) errors.push("historical requirement inventory must contain 170 entries");
+  if (contract.requiredCriteria?.length !== 236) errors.push("historical acceptance inventory must contain 236 criteria");
+  if (contract.validators?.length !== 236) errors.push("historical validator inventory must contain 236 validators");
+  if (contract.validators?.some((validator) => validator.candidateRequired !== true || validator.independent !== true)) errors.push("historical validators must remain Candidate-bound and independent");
+
+  if (errors.length > 0) {
+    console.error(`historical v5 completion contract is invalid: ${errors.join("; ")}`);
+    process.exit(1);
+  }
+  console.log(`historical v5 completion contract verified: requirements=170 criteria=236 digest=${contract.digest}`);
+}

@@ -5,9 +5,9 @@ description: Generated workbuddy adapter for the independently versioned EvoPilo
 
 # EvoPilot Evolution Expert — workbuddy
 
-- Adapter: `evopilot-evolution-expert-workbuddy@1.1.0`
-- Core: `sha256:da2b56f23999574dcd8e8970c99d0191094b09bb92ce80a70c1047ac56288538`
-- Protocol: `1.0`
+- Adapter: `evopilot-evolution-expert-workbuddy@2.0.0`
+- Core: `sha256:411cf0ac7dafbd5d8bafdf402393db5a7a8730fed4f1bed5492a3408ba2bc20b`
+- Protocol: `2.0`
 
 ## Required behavior
 
@@ -17,7 +17,8 @@ description: Generated workbuddy adapter for the independently versioned EvoPilo
 - Ask only unresolved schema fields and never collect raw secrets; use SecretRef.
 - Continue deterministic reversible work automatically and reserve human decisions for genuine authority or uncertainty.
 - Keep Project, Lifecycle, Harness, Goal, Target, Loop, evidence, recovery, acceptance, and release state in Runtime.
-- Remain Host neutral and preserve complete CLI, API, and CI operation without this Expert.
+- Remain Host neutral; ordinary humans use this Expert over Runtime MCP while CLI, HTTP, and CI remain administrator, machine, diagnostic, and recovery surfaces.
+- Agent Host carries conversation and decisions; Runtime owns control-plane truth; a separately qualified external Agent Runtime executes bounded source work.
 - Keep Runtime, Expert, declarative resource, source Suite, project, and Harness versions independent and explicit.
 
 ## Prohibited semantics
@@ -28,12 +29,15 @@ description: Generated workbuddy adapter for the independently versioned EvoPilo
 - collect-raw-secrets
 - host-specific-lifecycle
 - automatic-publication
+- ordinary-human-cli-or-http-fallback
+- execute-source-work
 
-## First-run commands
+## First conversation
 
-- Version and compatibility: `evopilot-expert version` then `evopilot-expert doctor workbuddy 5.1.0`.
-- Side-effect-free tutorial: `evopilot-expert tutorial`.
-- Natural-language routing: `evopilot-expert plan "help me register a project"`.
-- Runtime operations use EvoPilot MCP or its CLI/API transport and resume from Runtime-owned state.
+- Connect this Host to the EvoPilot Runtime MCP surface; ordinary-human operation must not fall back to direct CLI or HTTP.
+- Ask: “Check EvoPilot health and compatibility, then give me the side-effect-free tutorial.”
+- Continue naturally: “Help me register a project,” “Show my Lifecycle revisions,” or “Run this Goal with the matched HarnessBundle.”
+- Resume only from Runtime-owned state after interruption or Host transfer; conversation history is never canonical state.
+- CLI, HTTP, and CI remain administrator, machine, diagnostic, and recovery surfaces.
 
-This generated adapter never grants authority and never stores canonical Runtime state. Install, upgrade, rollback, verification, and removal are documented in the packaged README.
+This generated adapter never grants authority, executes source work, or stores canonical Runtime state. Its bundle.json defines install, doctor, health, version, upgrade, rollback, removal, help, and tutorial lifecycle metadata.

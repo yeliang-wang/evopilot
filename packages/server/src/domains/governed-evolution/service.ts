@@ -20,6 +20,7 @@ import {
   evaluateGovernancePack,
   normalizeGovernedResource,
   qualifyActionProvider,
+  qualifyExecutionRuntimeProfile,
   recordRemediationDecision,
   transitionRemediationCampaign,
   type AutomationRule,
@@ -163,6 +164,10 @@ export class GovernedEvolutionService {
 
   qualifyProvider(input: { provider: unknown; allowedAuthorities?: string[]; availableCredentialRefs?: string[] }) {
     return qualifyActionProvider(input.provider, input.allowedAuthorities ?? [], input.availableCredentialRefs ?? []);
+  }
+
+  qualifyAgentRuntime(input: { profile: any; requiredCapabilities?: string[]; evidenceRefs?: string[] }) {
+    return qualifyExecutionRuntimeProfile(input.profile, input.requiredCapabilities ?? [], input.evidenceRefs ?? []);
   }
 
   evaluateGovernance(input: Parameters<typeof evaluateGovernancePack>[0]) {

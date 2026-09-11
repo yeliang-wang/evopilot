@@ -1,6 +1,8 @@
-export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "5.1.0";
+import { createHash } from "node:crypto";
+
+export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "6.0.0";
 export const EVOPILOT_SERVER_VERSION_FALLBACK = "0.1.0";
-export const EVOPILOT_CLI_VERSION_FALLBACK = "5.1.0";
+export const EVOPILOT_CLI_VERSION_FALLBACK = "6.0.0";
 export const EVOPILOT_API_CONTRACT_VERSION = "v1";
 export const EVOPILOT_MINIMUM_CLI_VERSION = "5.0.0";
 
@@ -28,11 +30,11 @@ export const EVOPILOT_EXECUTION_RUNTIME_PROFILE_SCHEMA = "evopilot-execution-run
 export const EVOPILOT_LEGACY_SUITE_SNAPSHOT_SCHEMA = "evopilot-legacy-suite-snapshot/v1";
 export const EVOPILOT_LEGACY_SUITE_SNAPSHOT_COMPARISON_SCHEMA = "evopilot-legacy-suite-snapshot-comparison/v1";
 export const EVOPILOT_LEGACY_SUITE_ISOLATION_PROOF_SCHEMA = "evopilot-legacy-suite-isolation-proof/v1";
-export const EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION = "1.0";
+export const EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION = "2.0";
 
 export const EVOPILOT_HARNESS_GUIDED_RUNTIME_BOUNDARY = {
   schema: "evopilot-harness-guided-runtime-boundary/v1",
-  runtimeVersion: "5.1.0",
+  runtimeVersion: "6.0.0",
   invariant: "Every Goal Target Loop binds one eligible published immutable HarnessBundle plus one resolved declarative Lifecycle.",
   harnessOwnership: "evopilot-harness",
   runtimeOwnership: "evopilot",
@@ -292,17 +294,28 @@ export interface EvoPilotAgentRuntimeProfileV1 {
     timeoutMs: number;
     maxOutputBytes: number;
   };
+  qualification: {
+    status: "QUALIFIED";
+    conformanceDigest: string;
+    evidenceRefs: string[];
+  };
   digest: string;
 }
 
 export interface EvoPilotAgentExecutionRequestV1Alpha1 {
   schema: typeof EVOPILOT_AGENT_EXECUTION_REQUEST_SCHEMA;
+  requestDigest: string;
+  idempotencyKey: string;
   id: string;
   runId: string;
   stageId: string;
   action: string;
   actionVersion: string;
   bindingDigest: string;
+  scope: { tenantId: string; workspaceId: string; projectId: string; goalId?: string; targetId?: string };
+  lifecycle: { id: string; version: string; digest: string };
+  harness: { id: string; version: string; digest: string; catalogId?: string; harnessExecutionBindingDigest?: string };
+  governance: { policyDigest: string; providerDigest?: string; environmentDigest?: string; authorityDigest?: string; runtimeDigest: string; evidenceDigest: string };
   inputs: Record<string, unknown>;
   capabilities: string[];
   executor: {
@@ -310,6 +323,10 @@ export interface EvoPilotAgentExecutionRequestV1Alpha1 {
     provider: string;
     model: string;
     capabilities: string[];
+    agentRuntime: { profileId: string; profileVersion: string; adapterId: string; profileDigest: string; qualificationDigest: string };
+    sandbox: { workspaceRef: string; permissionMode: "HOST_MANAGED_DENY_UNDECLARED" };
+    allowedEffects: string[];
+    credentialRefs: string[];
     digest: string;
   };
 }
@@ -318,8 +335,11 @@ export interface EvoPilotAgentExecutionResultV1Alpha1 {
   schema: typeof EVOPILOT_AGENT_EXECUTION_RESULT_SCHEMA;
   requestId: string;
   requestDigest: string;
+  bindingDigest: string;
+  idempotencyKey: string;
   status: "SUCCEEDED" | "FAILED" | "UNCERTAIN";
   receiptDigest: string;
+  effects: string[];
   evidence: string[];
   cost?: { amount: number; currency: string; inputTokens?: number; outputTokens?: number };
   artifacts?: Array<{ ref: string; digest: string }>;
@@ -341,7 +361,7 @@ export function assertLifecycleExecutorAdapterV1(value: EvoPilotLifecycleExecuto
   if (value?.schema !== EVOPILOT_LIFECYCLE_EXECUTOR_ADAPTER_SCHEMA) throw new Error("EXECUTOR_ADAPTER_SCHEMA_UNSUPPORTED");
   if (!value.id?.trim() || !value.host?.trim() || typeof value.execute !== "function") throw new Error("EXECUTOR_ADAPTER_IDENTITY_INVALID");
   if (!Array.isArray(value.capabilities) || value.capabilities.some((capability) => !capability.trim())) throw new Error("EXECUTOR_ADAPTER_CAPABILITIES_INVALID");
-  if (value.profile?.schema !== EVOPILOT_AGENT_RUNTIME_PROFILE_SCHEMA || !DIGEST_PATTERN.test(value.profile.digest)) throw new Error("AGENT_RUNTIME_PROFILE_INVALID");
+  if (value.profile?.schema !== EVOPILOT_AGENT_RUNTIME_PROFILE_SCHEMA || !DIGEST_PATTERN.test(value.profile.digest) || value.profile.qualification?.status !== "QUALIFIED" || !DIGEST_PATTERN.test(value.profile.qualification.conformanceDigest)) throw new Error("AGENT_RUNTIME_PROFILE_INVALID");
   if (value.profile.adapterId !== value.id || value.profile.host !== value.host) throw new Error("AGENT_RUNTIME_PROFILE_ADAPTER_MISMATCH");
   if (JSON.stringify([...new Set(value.profile.capabilities)].sort()) !== JSON.stringify([...new Set(value.capabilities)].sort())) throw new Error("AGENT_RUNTIME_PROFILE_CAPABILITY_MISMATCH");
 }
@@ -351,13 +371,23 @@ export function assertAgentExecutionRequestV1Alpha1(value: EvoPilotAgentExecutio
   for (const field of ["id", "runId", "stageId", "action", "actionVersion"] as const) {
     if (!value[field]?.trim()) throw new Error(`AGENT_EXECUTION_REQUEST_${field.toUpperCase()}_REQUIRED`);
   }
-  if (!DIGEST_PATTERN.test(value.bindingDigest) || !DIGEST_PATTERN.test(value.executor?.digest ?? "")) throw new Error("AGENT_EXECUTION_REQUEST_DIGEST_INVALID");
+  if (!DIGEST_PATTERN.test(value.requestDigest) || !DIGEST_PATTERN.test(value.bindingDigest) || !DIGEST_PATTERN.test(value.executor?.digest ?? "")) throw new Error("AGENT_EXECUTION_REQUEST_DIGEST_INVALID");
+  if (!value.idempotencyKey?.trim() || !DIGEST_PATTERN.test(value.lifecycle?.digest ?? "") || !DIGEST_PATTERN.test(value.harness?.digest ?? "") || !DIGEST_PATTERN.test(value.governance?.policyDigest ?? "") || !DIGEST_PATTERN.test(value.governance?.runtimeDigest ?? "")) throw new Error("AGENT_EXECUTION_REQUEST_BINDING_INVALID");
+  if (!value.scope?.tenantId || !value.scope.workspaceId || !value.scope.projectId) throw new Error("AGENT_EXECUTION_REQUEST_SCOPE_INVALID");
+  if (value.executor?.sandbox?.permissionMode !== "HOST_MANAGED_DENY_UNDECLARED" || !value.executor.sandbox.workspaceRef?.trim()) throw new Error("AGENT_EXECUTION_REQUEST_SANDBOX_INVALID");
+  if (!DIGEST_PATTERN.test(value.executor?.agentRuntime?.profileDigest ?? "") || !DIGEST_PATTERN.test(value.executor?.agentRuntime?.qualificationDigest ?? "")) throw new Error("AGENT_EXECUTION_REQUEST_RUNTIME_UNQUALIFIED");
+  if (!Array.isArray(value.executor?.credentialRefs) || value.executor.credentialRefs.some((item) => !/^secret:\/\/[A-Za-z0-9._/-]+$/.test(item))) throw new Error("AGENT_EXECUTION_REQUEST_CREDENTIAL_REF_INVALID");
   if (!Array.isArray(value.capabilities) || !value.executor || !Array.isArray(value.executor.capabilities)) throw new Error("AGENT_EXECUTION_REQUEST_EXECUTOR_INVALID");
+  const { digest: executorDigest, ...executorMaterial } = value.executor;
+  if (executorDigest !== contractDigest(executorMaterial)) throw new Error("AGENT_EXECUTION_REQUEST_EXECUTOR_DIGEST_MISMATCH");
+  const { requestDigest, ...requestMaterial } = value;
+  if (requestDigest !== contractDigest(requestMaterial)) throw new Error("AGENT_EXECUTION_REQUEST_DIGEST_MISMATCH");
 }
 
 export function assertAgentExecutionResultV1Alpha1(value: EvoPilotAgentExecutionResultV1Alpha1, request: EvoPilotAgentExecutionRequestV1Alpha1): void {
   if (value?.schema !== EVOPILOT_AGENT_EXECUTION_RESULT_SCHEMA) throw new Error("AGENT_EXECUTION_RESULT_SCHEMA_UNSUPPORTED");
-  if (value.requestId !== request.id || !DIGEST_PATTERN.test(value.requestDigest) || !DIGEST_PATTERN.test(value.receiptDigest)) throw new Error("AGENT_EXECUTION_RESULT_BINDING_INVALID");
+  if (value.requestId !== request.id || value.requestDigest !== request.requestDigest || value.bindingDigest !== request.bindingDigest || value.idempotencyKey !== request.idempotencyKey || !DIGEST_PATTERN.test(value.receiptDigest)) throw new Error("AGENT_EXECUTION_RESULT_BINDING_INVALID");
+  if (!Array.isArray(value.effects) || value.effects.some((effect) => !request.executor.allowedEffects.includes(effect))) throw new Error("AGENT_EXECUTION_RESULT_EFFECT_INVALID");
   if (!["SUCCEEDED", "FAILED", "UNCERTAIN"].includes(value.status)) throw new Error("AGENT_EXECUTION_RESULT_STATUS_INVALID");
   if (!Array.isArray(value.evidence) || value.evidence.some((item) => typeof item !== "string" || RAW_SECRET_PATTERN.test(item))) throw new Error("AGENT_EXECUTION_RESULT_EVIDENCE_UNSAFE");
   for (const artifact of value.artifacts ?? []) {
@@ -375,6 +405,22 @@ export async function executeConformantLifecycleAdapter(
   const result = await adapter.execute(request);
   assertAgentExecutionResultV1Alpha1(result, request);
   return result;
+}
+
+function contractDigest(value: unknown): string {
+  return `sha256:${createHash("sha256").update(stableContractJson(value)).digest("hex")}`;
+}
+
+function stableContractJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableContractJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .filter(([, child]) => child !== undefined)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, child]) => `${JSON.stringify(key)}:${stableContractJson(child)}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
 }
 
 export function packageBoundaryFor(packageName: string): EvoPilotPackageBoundary | undefined {

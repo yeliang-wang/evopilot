@@ -15,7 +15,7 @@ export const EVOPILOT_ADAPTER_MCP_VERSION = EVOPILOT_PRODUCT_VERSION_FALLBACK;
 export interface EvoPilotLifecycleMcpTool {
   name: string;
   description: string;
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "DELETE";
   path: string;
   authority: "NONE" | "EXACT_BINDING_DECISION" | "EXTERNAL_EXECUTION_RECEIPT";
 }
@@ -28,6 +28,8 @@ export const EVOPILOT_LIFECYCLE_MCP_TOOLS: EvoPilotLifecycleMcpTool[] = [
   { name: "evopilot_resource_activate", description: "Activate or roll back to one exact immutable resource revision with owning-human evidence.", method: "POST", path: "/api/v1/evolution-resources/{kind}/{resourceId}/activate", authority: "EXACT_BINDING_DECISION" },
   { name: "evopilot_capability_inventory_validate", description: "Validate exact latest Suite provenance and one explicit disposition for every frozen capability.", method: "POST", path: "/api/v1/governed-evolution/capability-inventory/validate", authority: "NONE" },
   { name: "evopilot_action_provider_qualify", description: "Qualify typed provider actions, SecretRefs, receipts, rollback, and authority limits; arbitrary shell is forbidden.", method: "POST", path: "/api/v1/governed-evolution/action-providers/qualify", authority: "NONE" },
+  { name: "evopilot_agent_runtime_list", description: "Discover tenant/workspace external Agent Runtime profiles without conflating them with Agent Hosts.", method: "GET", path: "/api/v1/governed-evolution/agent-runtimes", authority: "NONE" },
+  { name: "evopilot_agent_runtime_qualify", description: "Negotiate capabilities and produce an exact qualification report for an external Agent Runtime profile.", method: "POST", path: "/api/v1/governed-evolution/agent-runtimes/qualify", authority: "NONE" },
   { name: "evopilot_governance_pack_evaluate", description: "Evaluate declarative governance gates against exact binding evidence without inferring approval.", method: "POST", path: "/api/v1/governed-evolution/governance/evaluate", authority: "NONE" },
   { name: "evopilot_remediation_campaign_start", description: "Start a digest-bound, durable, bounded autonomous remediation campaign.", method: "POST", path: "/api/v1/governed-evolution/remediation-campaigns", authority: "NONE" },
   { name: "evopilot_remediation_campaign_inspect", description: "Inspect current remediation lineage, receipts, budget, and exact stop state.", method: "GET", path: "/api/v1/governed-evolution/remediation-campaigns/{campaignId}", authority: "NONE" },
@@ -49,8 +51,19 @@ export const EVOPILOT_LIFECYCLE_MCP_TOOLS: EvoPilotLifecycleMcpTool[] = [
   { name: "evopilot_automation_rule_activate", description: "Activate one exact Automation Registry proposal after the user's digest-bound decision.", method: "POST", path: "/api/v1/automation-registry/{ruleId}/activate", authority: "EXACT_BINDING_DECISION" },
   { name: "evopilot_automation_rule_revoke", description: "Revoke an Automation Registry rule with exact human evidence.", method: "POST", path: "/api/v1/automation-registry/{ruleId}/revoke", authority: "EXACT_BINDING_DECISION" },
   { name: "evopilot_interaction_render", description: "Render a Runtime-owned Human Interaction Protocol object for any compatible Expert or headless client.", method: "POST", path: "/api/v1/interactions/render", authority: "NONE" },
-  { name: "evopilot_lifecycle_list", description: "List available human-readable Lifecycle definitions.", method: "GET", path: "/api/v1/lifecycles", authority: "NONE" },
-  { name: "evopilot_lifecycle_inspect", description: "Inspect one exact Lifecycle revision and its digest.", method: "GET", path: "/api/v1/lifecycles/{lifecycleId}", authority: "NONE" },
+  { name: "evopilot_lifecycle_list", description: "List tenant/workspace Lifecycle revisions, state, and active pointers from Runtime-owned truth.", method: "GET", path: "/api/v1/lifecycles", authority: "NONE" },
+  { name: "evopilot_lifecycle_inspect", description: "Inspect one exact immutable Lifecycle revision, state, provenance, and active pointer.", method: "GET", path: "/api/v1/lifecycles/{lifecycleId}", authority: "NONE" },
+  { name: "evopilot_lifecycle_register", description: "Create or register an immutable human-readable Lifecycle revision; registration never activates it.", method: "POST", path: "/api/v1/lifecycles", authority: "NONE" },
+  { name: "evopilot_lifecycle_diff", description: "Compare two immutable Lifecycle revisions and report exact semantic and future-planning impact.", method: "GET", path: "/api/v1/lifecycles/{lifecycleId}/diff", authority: "NONE" },
+  { name: "evopilot_lifecycle_activate", description: "Move the future-planning pointer to one exact Lifecycle revision using expected-active-digest concurrency.", method: "POST", path: "/api/v1/lifecycles/{lifecycleId}/activate", authority: "EXACT_BINDING_DECISION" },
+  { name: "evopilot_lifecycle_deactivate", description: "Deactivate one exact active Lifecycle pointer without mutating bound runs.", method: "POST", path: "/api/v1/lifecycles/{lifecycleId}/deactivate", authority: "EXACT_BINDING_DECISION" },
+  { name: "evopilot_lifecycle_archive", description: "Archive an inactive exact Lifecycle revision while preserving inspection and audit history.", method: "POST", path: "/api/v1/lifecycles/{lifecycleId}/archive", authority: "EXACT_BINDING_DECISION" },
+  { name: "evopilot_lifecycle_restore", description: "Restore an archived Lifecycle revision to inactive state without activating it.", method: "POST", path: "/api/v1/lifecycles/{lifecycleId}/restore", authority: "EXACT_BINDING_DECISION" },
+  { name: "evopilot_lifecycle_rollback", description: "Move the future-planning pointer back to one exact retained Lifecycle revision without rewriting history.", method: "POST", path: "/api/v1/lifecycles/{lifecycleId}/rollback", authority: "EXACT_BINDING_DECISION" },
+  { name: "evopilot_lifecycle_dependencies", description: "Inspect exact Lifecycle imports and dependents.", method: "GET", path: "/api/v1/lifecycles/{lifecycleId}/dependencies", authority: "NONE" },
+  { name: "evopilot_lifecycle_usage", description: "Inspect immutable plan and run references to Lifecycle revisions.", method: "GET", path: "/api/v1/lifecycles/{lifecycleId}/usage", authority: "NONE" },
+  { name: "evopilot_lifecycle_audit", description: "Inspect immutable Lifecycle Registry audit history.", method: "GET", path: "/api/v1/lifecycles/{lifecycleId}/audit", authority: "NONE" },
+  { name: "evopilot_lifecycle_delete_draft", description: "Physically delete only an unreferenced, never-active registered draft revision.", method: "DELETE", path: "/api/v1/lifecycles/{lifecycleId}", authority: "EXACT_BINDING_DECISION" },
   { name: "evopilot_lifecycle_resolve", description: "Resolve an explicit or metadata-matched Lifecycle without project-specific Engine branches.", method: "POST", path: "/api/v1/lifecycles/resolve", authority: "NONE" },
   { name: "evopilot_lifecycle_resolve_inputs", description: "Resolve declared and discovered inputs and return only the next unresolved question.", method: "POST", path: "/api/v1/lifecycles/resolve-inputs", authority: "NONE" },
   { name: "evopilot_lifecycle_start", description: "Create a digest-bound Lifecycle run without authorizing execution.", method: "POST", path: "/api/v1/lifecycle-runs", authority: "NONE" },

@@ -97,13 +97,13 @@ evopilot evolution recover --file <failure.yaml|json> --json
 
 See [Project Definitions](../guides/project-definitions.md) for the schema, reference declarations, and versioning rules.
 
-## Governed resources (v5.1 development)
+## Governed resources
 
 ```bash
 evopilot resource list [--kind <kind>] --json
 evopilot resource inspect <kind> <resource-id> [--version <version>] --json
 evopilot resource register --file <resource.yaml|json> --json
-evopilot resource diff <kind> <resource-id> --from <version> --to <version> [--runtime-version 5.1.0] --json
+evopilot resource diff <kind> <resource-id> --from <version> --to <version> [--runtime-version 6.0.0] --json
 evopilot resource activate <kind> <resource-id> --version <version> --evidence-ref <ref> --json
 evopilot resource rollback <kind> <resource-id> --version <version> --evidence-ref <ref> --json
 evopilot evolution inventory --file <capability-inventory.yaml|json> --json

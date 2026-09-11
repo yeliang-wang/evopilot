@@ -1,6 +1,6 @@
 # Remediation Campaigns
 
-Audience: operators diagnosing Candidate, CI, Host, or repository failures. Applies to Runtime 5.1.0.
+Audience: operators diagnosing Candidate, CI, Host, or repository failures. Applies to Runtime 6.0.0.
 
 A remediation campaign persists across stage retries and Candidate replacement. It binds Target, execution binding, source, active Candidate, attempt budget, same-failure circuit breaker, wall-clock budget, history, and descendant lineage.
 

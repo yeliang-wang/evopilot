@@ -1,32 +1,36 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { EVOLUTION_EXPERT_CORE, assertExpertAdapterConformance, createExpertAdapter, executeExpertTurn, expertCompatibility, expertDoctor, expertMigrationGuide, expertTutorial, expertVersionGuide, planExpertTurn, qualifyExpertHostAdapter, routeExpertIntent } from "../../packages/evolution-expert/dist/index.js";
+import { EVOLUTION_EXPERT_CORE, assertExpertAdapterConformance, createExpertAdapter, createHostIntegrationBundle, executeExpertTurn, expertCompatibility, expertDoctor, expertMigrationGuide, expertTutorial, expertVersionGuide, planExpertTurn, qualifyExpertHostAdapter, routeExpertIntent } from "../../packages/evolution-expert/dist/index.js";
 
 test("one immutable Expert Core generates conformant Host-neutral adapters", () => {
   const codex = createExpertAdapter("codex");
+  const claude = createExpertAdapter("claude-code");
   const workbuddy = createExpertAdapter("workbuddy");
   assert.equal(codex.coreDigest, EVOLUTION_EXPERT_CORE.digest);
   assert.equal(workbuddy.coreDigest, codex.coreDigest);
+  assert.equal(claude.coreDigest, codex.coreDigest);
   assert.doesNotThrow(() => assertExpertAdapterConformance(codex));
-  assert.equal(expertCompatibility(codex, "5.0.0", codex.requiredCapabilities).conformanceStatus, "CONFORMANT");
-  assert.equal(expertCompatibility(codex, "4.0.0", codex.requiredCapabilities).conformanceStatus, "INCOMPATIBLE");
+  assert.equal(expertCompatibility(codex, "6.0.0", codex.requiredCapabilities).conformanceStatus, "CONFORMANT");
+  assert.equal(expertCompatibility(codex, "5.1.0", codex.requiredCapabilities).conformanceStatus, "INCOMPATIBLE");
+  assert.equal(createHostIntegrationBundle("codex").ordinaryHumanEntry, "EXPERT_OVER_MCP_ONLY");
 });
 
-test("Expert 1.1.0 provides version-aware doctor and a side-effect-free tutorial", () => {
-  const doctor = expertDoctor("codex", "5.1.0", createExpertAdapter("codex").requiredCapabilities);
+test("Expert 2.0.0 provides version-aware doctor and an MCP-first side-effect-free tutorial", () => {
+  const doctor = expertDoctor("codex", "6.0.0", createExpertAdapter("codex").requiredCapabilities);
   assert.equal(doctor.status, "READY");
-  assert.equal(doctor.expertVersion, "1.1.0");
-  assert.equal(expertDoctor("codex", "4.0.0", createExpertAdapter("codex").requiredCapabilities).status, "INCOMPATIBLE");
+  assert.equal(doctor.expertVersion, "2.0.0");
+  assert.equal(expertDoctor("codex", "5.1.0", createExpertAdapter("codex").requiredCapabilities).status, "INCOMPATIBLE");
   const tutorial = expertTutorial();
   assert.equal(tutorial.sideEffects, false);
-  assert.deepEqual(tutorial.steps.map((step) => step.concept), ["Project", "Resource versions", "Harness", "Lifecycle", "Goal Target Loop", "Recovery", "Acceptance and Release"]);
+  assert.deepEqual(tutorial.steps.map((step) => step.concept), ["Project", "Lifecycle Registry", "Harness", "Goal Target Loop", "Agent Runtime", "Recovery", "Acceptance and Release"]);
+  assert.ok(tutorial.steps.every((step) => step.nextPrompt && !("nextCommand" in step)));
   const versions = expertVersionGuide();
   assert.equal(versions.versionLines.find((line) => line.owner === "source Suite").changesWhen.includes("Never"), true);
   assert.equal(expertMigrationGuide().sideEffects, false);
 });
 
 test("a third-party Host qualifies without Engine source modification", () => {
-  const report = qualifyExpertHostAdapter("independent-host", "5.1.0", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation"]);
+  const report = qualifyExpertHostAdapter("independent-host", "6.0.0", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation", "runtime-state-resume"]);
   assert.equal(report.status, "QUALIFIED");
   assert.equal(report.sourceModificationRequired, false);
   assert.ok(report.checks.every((check) => check.status === "PASS"));
@@ -42,6 +46,8 @@ test("Expert routes onboarding, recovery, status, and tutorial without owning Ru
   assert.equal(routeExpertIntent("解释 Suite 和资源版本关系").intent, "version-explain");
   assert.equal(routeExpertIntent("查看迁移能力清单").intent, "capability");
   assert.equal(routeExpertIntent("是否达到 cutover readiness").intent, "cutover");
+  assert.equal(routeExpertIntent("请更新生命周期").intent, "lifecycle-update");
+  assert.equal(routeExpertIntent("查看生命周期审计").intent, "lifecycle-audit");
 });
 
 

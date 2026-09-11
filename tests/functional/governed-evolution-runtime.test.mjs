@@ -8,6 +8,17 @@ import { GovernedEvolutionService } from "../../packages/server/dist/domains/gov
 import { LifecycleService } from "../../packages/server/dist/domains/lifecycle/index.js";
 
 const d = (value) => canonicalDigest(value);
+const runtimeExecutor = (host, provider, model, capabilities, workspaceRef) => {
+  const material = {
+    host, provider, model, capabilities,
+    agentRuntime: { profileId: `${host}-runtime`, profileVersion: "1.0.0", adapterId: `${host}.adapter@1`, profileDigest: d(`${host}-profile`), qualificationDigest: d(`${host}-qualification`) },
+    sandbox: { workspaceRef, permissionMode: "HOST_MANAGED_DENY_UNDECLARED" },
+    allowedEffects: ["READ_ONLY", "REVERSIBLE"],
+    credentialRefs: []
+  };
+  return { ...material, digest: d(material) };
+};
+const externalResult = (run, receiptDigest, status, extra = {}) => ({ requestId: run.pendingExecution.id, requestDigest: run.pendingExecution.requestDigest, bindingDigest: run.pendingExecution.bindingDigest, idempotencyKey: run.pendingExecution.idempotencyKey, effects: [], status, receiptDigest, ...extra });
 
 test("GovernedEvolutionService persists immutable definitions, bindings, and approved reusable recovery", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-v5-"));
@@ -142,8 +153,7 @@ stages:
     const definition = evolution.registerProjectDefinition({ schema: "evopilot-evolution-project-definition/v1", metadata: { id: "guarded-project", name: "Guarded", version: "1.0.0", labels: {} }, spec: { source: { provider: "github", repository: "org/guarded", defaultBranch: "main", mode: "owned" }, ecosystem: { languages: ["typescript"], packageManagers: ["npm"], frameworks: [] }, delivery: { model: "open-source", ciProvider: "github-actions", candidateBeforeAcceptance: true, noRebuildPromotion: true, channels: ["npm"] }, environment: { development: "local", acceptance: "isolated" }, policyRefs: [], lifecycleRefs: ["guarded@1.0.0"], secretRefs: [], hostPreferences: ["codex"], runtimePreferences: ["local"], evidenceSources: ["ci"] } }, scope);
     const profileDigest = d("guarded-profile");
     const candidate = { profile: { id: "guarded", version: "1.0.0", digest: profileDigest, catalogId: "public", catalogDigest: d("catalog"), registryDigest: d("registry"), domains: ["software"], taskClasses: ["change"], positiveConcepts: ["change"], negativeConcepts: [] }, bundle: { id: "guarded-bundle", version: "1.0.0", digest: d("bundle"), profileDigest, componentDigests: [d("component")], requiredEvidence: ["tests"], validators: ["integrity"], constraints: ["no-rebuild"], capabilities: ["build.execute", "goal-loop.execute"], permissions: ["build.verify"] }, published: true, eligible: true };
-    const executorMaterial = { host: "codex", provider: "openai", model: "configured", capabilities: ["goal-loop.execute"] };
-    const executor = { ...executorMaterial, digest: d(executorMaterial) };
+    const executor = runtimeExecutor("codex", "openai", "configured", ["goal-loop.execute"], root);
     const fixed = d("fixed");
     const goalTarget = { projectId: definition.metadata.id, goalId: "goal", targetId: "target", objective: "change code", taskClass: "change", domain: "software", requiredCapabilities: ["build.execute"] };
     const plan = evolution.plan({ projectDefinitionId: definition.metadata.id, goalTarget, candidates: [candidate], lifecycle: lifecycle.catalog.resolve("guarded", "1.0.0"), policyDigest: fixed, providerDigest: fixed, environmentDigest: fixed, hostDigest: executor.digest, runtimeDigest: fixed, authorityDigest: fixed, evidenceDigest: fixed }, scope);
@@ -153,14 +163,14 @@ stages:
     run = lifecycle.advanceUntilBoundary(run.id);
     assert.equal(run.status, "WAITING_EXTERNAL_SIGNAL");
     assert.deepEqual(run.boundaryEvidence.map((item) => item.checkpoint), ["start", "resume", "loop-iteration"]);
-    run = lifecycle.recordExternalResult(run.id, { requestId: run.pendingExecution.id, status: "FAILED", receiptDigest: d("failed"), evidence: ["transient"], failure: { class: "TRANSIENT", signature: "network-reset", identicalInputs: true, reversible: true, externalEffect: false } });
+    run = lifecycle.recordExternalResult(run.id, externalResult(run, d("failed"), "FAILED", { evidence: ["transient"], failure: { class: "TRANSIENT", signature: "network-reset", identicalInputs: true, reversible: true, externalEffect: false } }));
     assert.equal(run.status, "RUNNING");
     assert.equal(run.recoveryHistory.at(-1).action, "AUTO_RETRY");
     run = lifecycle.advanceUntilBoundary(run.id);
     assert.equal(run.status, "WAITING_EXTERNAL_SIGNAL");
     assert.ok(run.boundaryEvidence.some((item) => item.checkpoint === "retry"));
     const reconciledReceipt = d("confirmed-external-mutation");
-    run = lifecycle.recordExternalResult(run.id, { requestId: run.pendingExecution.id, status: "FAILED", receiptDigest: d("reconciliation-report"), evidence: ["external response lost"], failure: { class: "EXTERNAL_SAFE_RETRY", signature: "response-lost", mutationReceipt: reconciledReceipt, identicalInputs: true, reversible: true, externalEffect: true } });
+    run = lifecycle.recordExternalResult(run.id, externalResult(run, d("reconciliation-report"), "FAILED", { evidence: ["external response lost"], failure: { class: "EXTERNAL_SAFE_RETRY", signature: "response-lost", mutationReceipt: reconciledReceipt, identicalInputs: true, reversible: true, externalEffect: true } }));
     assert.equal(run.recoveryHistory.at(-1).action, "RESUME_FROM_RECEIPT");
     assert.equal(run.stageAttempts.at(-1).status, "SUCCEEDED");
     assert.equal(run.stageAttempts.at(-1).receiptDigest, reconciledReceipt);

@@ -1,0 +1,398 @@
+{
+  "schema": "evopilot-runtime-expert-cross-acceptance-map/v2",
+  "id": "evopilot-runtime-6.0.0-expert-2.0.0-agent-native-lifecycle-control-plane",
+  "status": "IMPLEMENTED_AWAITING_CANDIDATE_ACCEPTANCE",
+  "bindings": {
+    "runtime": {
+      "id": "evopilot-v6.0.0-agent-native-lifecycle-control-plane",
+      "revision": 1,
+      "authorizationDigest": "sha256:4af91e77f5ec6ba962e117cf04acf1670792a070ac1f5114e05aef9a3ec1ae18",
+      "fileDigest": "sha256:d16b8628d8016eeef832a53e359da0102d1533713107281ceced850a943b563f"
+    },
+    "expert": {
+      "id": "evopilot-evolution-expert-v2.0.0-agent-host-entry",
+      "revision": 1,
+      "authorizationDigest": "sha256:c72fc737dcb8e4bce19451a373d787e12abe0ca2518360e51234aa8414a8d5f4",
+      "fileDigest": "sha256:7017d22c77d1ea15dc6375eb1599438c85c6ad56abd3a50662729f6efef65a43"
+    }
+  },
+  "legacySuiteFixtures": [
+    {
+      "id": "evopilot-codex-suite",
+      "version": "3.2.1",
+      "role": "FROZEN_REFERENCE_FIXTURE"
+    },
+    {
+      "id": "datarig-codex-suite",
+      "version": "2.1.5",
+      "role": "FROZEN_REFERENCE_FIXTURE"
+    }
+  ],
+  "rows": [
+    {
+      "id": "V6-CROSS01",
+      "objective": "Install one Expert Core through generated Codex, Claude Code, WorkBuddy, generic Agent, and generic MCP bundles while preserving one Runtime truth.",
+      "runtimeE2EIds": [
+        "E2E-INSTALL-CODEX",
+        "E2E-INSTALL-CLAUDE-CODE",
+        "E2E-INSTALL-WORKBUDDY",
+        "E2E-CROSS-HOST"
+      ],
+      "expertE2EIds": [
+        "EX2E2E01",
+        "EX2E2E02",
+        "EX2E2E03",
+        "EX2E2E07"
+      ],
+      "runtimeAcceptanceIds": [
+        "V6-CAP03",
+        "V6-CAP04",
+        "V6-CAP05",
+        "V6-CAP07",
+        "V6-CAP08",
+        "V6-CAP09",
+        "V6-CAP10",
+        "V6-CAP12",
+        "V6-CAP14",
+        "V6-CAP15",
+        "V6-FUNC03"
+      ],
+      "expertAcceptanceIds": [
+        "EX2-CAP01",
+        "EX2-CAP04",
+        "EX2-CAP05",
+        "EX2-CAP07",
+        "EX2-CAP08",
+        "EX2-FUNC01",
+        "EX2-FUNC07"
+      ],
+      "requiredHosts": [
+        "Claude Code",
+        "Codex",
+        "WorkBuddy",
+        "generic MCP",
+        "independent Host"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V6-CROSS02",
+      "objective": "Create and read a new project Lifecycle through Expert over MCP without direct ordinary-human CLI or HTTP operation.",
+      "runtimeE2EIds": [
+        "E2E-LIFECYCLE-CREATE",
+        "E2E-LIFECYCLE-READ"
+      ],
+      "expertE2EIds": [
+        "EX2E2E01",
+        "EX2E2E04"
+      ],
+      "runtimeAcceptanceIds": [
+        "V6-CAP07",
+        "V6-CAP08",
+        "V6-CAP12",
+        "V6-CAP14",
+        "V6-FUNC01",
+        "V6-FUNC03",
+        "V6-FUNC06",
+        "V6-FUNC07"
+      ],
+      "expertAcceptanceIds": [
+        "EX2-CAP01",
+        "EX2-CAP05",
+        "EX2-CAP06",
+        "EX2-CAP08",
+        "EX2-CAP09",
+        "EX2-FUNC01",
+        "EX2-FUNC03",
+        "EX2-FUNC07"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "generic MCP",
+        "headless"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V6-CROSS03",
+      "objective": "Update, activate, deactivate, archive, restore, and roll back immutable Lifecycle revisions without changing bound runs.",
+      "runtimeE2EIds": [
+        "E2E-LIFECYCLE-UPDATE",
+        "E2E-LIFECYCLE-DEACTIVATE",
+        "E2E-LIFECYCLE-ARCHIVE",
+        "E2E-LIFECYCLE-ROLLBACK"
+      ],
+      "expertE2EIds": [
+        "EX2E2E04"
+      ],
+      "runtimeAcceptanceIds": [
+        "V6-CAP01",
+        "V6-CAP13",
+        "V6-FUNC01",
+        "V6-FUNC03",
+        "V6-FUNC04",
+        "V6-FUNC05",
+        "V6-FUNC06",
+        "V6-FUNC07",
+        "V6-FUNC08",
+        "V6-FUNC10",
+        "V6-FUNC17"
+      ],
+      "expertAcceptanceIds": [
+        "EX2-CAP01",
+        "EX2-CAP06",
+        "EX2-CAP09",
+        "EX2-FUNC03"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "generic MCP",
+        "headless",
+        "independent Host"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V6-CROSS04",
+      "objective": "Compose reusable Lifecycle modules and reject unsafe, cyclic, missing, or Harness-weakening declarations.",
+      "runtimeE2EIds": [
+        "E2E-LIFECYCLE-IMPORT",
+        "E2E-SECURITY"
+      ],
+      "expertE2EIds": [
+        "EX2E2E08"
+      ],
+      "runtimeAcceptanceIds": [
+        "V6-CAP01",
+        "V6-CAP03",
+        "V6-CAP06",
+        "V6-CAP08",
+        "V6-FUNC02",
+        "V6-FUNC08"
+      ],
+      "expertAcceptanceIds": [
+        "EX2-CAP01",
+        "EX2-CAP02",
+        "EX2-CAP03",
+        "EX2-FUNC08"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "generic MCP",
+        "headless"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V6-CROSS05",
+      "objective": "Recover tenant-scoped Registry, pointers, runs, receipts, and audit after restart without chat history.",
+      "runtimeE2EIds": [
+        "E2E-TENANCY",
+        "E2E-RESTART"
+      ],
+      "expertE2EIds": [
+        "EX2E2E06"
+      ],
+      "runtimeAcceptanceIds": [
+        "V6-CAP01",
+        "V6-CAP02",
+        "V6-CAP05",
+        "V6-CAP15",
+        "V6-FUNC06",
+        "V6-FUNC07",
+        "V6-FUNC08",
+        "V6-FUNC17"
+      ],
+      "expertAcceptanceIds": [
+        "EX2-CAP01",
+        "EX2-CAP05",
+        "EX2-CAP07",
+        "EX2-FUNC06"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "headless",
+        "independent Host"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V6-CROSS06",
+      "objective": "Execute a real Harness-guided Goal Target Loop through an exact qualified external Agent Runtime request and normalized receipt.",
+      "runtimeE2EIds": [
+        "E2E-AGENT-RUNTIME",
+        "E2E-REFERENCE-EVOPILOT"
+      ],
+      "expertE2EIds": [
+        "EX2E2E05"
+      ],
+      "runtimeAcceptanceIds": [
+        "V6-CAP05",
+        "V6-CAP06",
+        "V6-CAP09",
+        "V6-FUNC09",
+        "V6-FUNC12",
+        "V6-FUNC14",
+        "V6-FUNC15"
+      ],
+      "expertAcceptanceIds": [
+        "EX2-CAP01",
+        "EX2-CAP03",
+        "EX2-CAP05",
+        "EX2-FUNC04"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "independent Agent Runtime"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V6-CROSS07",
+      "objective": "Operate DataRig and evopilot-harness as declaration-only projects without project branches or transfer of Harness authority.",
+      "runtimeE2EIds": [
+        "E2E-REFERENCE-DATARIG",
+        "E2E-REFERENCE-HARNESS"
+      ],
+      "expertE2EIds": [
+        "EX2E2E05",
+        "EX2E2E08"
+      ],
+      "runtimeAcceptanceIds": [
+        "V6-CAP07",
+        "V6-CAP08",
+        "V6-CAP09",
+        "V6-CAP12",
+        "V6-CAP14",
+        "V6-FUNC03",
+        "V6-FUNC13",
+        "V6-FUNC14"
+      ],
+      "expertAcceptanceIds": [
+        "EX2-CAP01",
+        "EX2-CAP02",
+        "EX2-CAP03",
+        "EX2-CAP05",
+        "EX2-FUNC04",
+        "EX2-FUNC08"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "generic MCP",
+        "independent Agent Runtime"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V6-CROSS08",
+      "objective": "Run representative success, failure, repair, resume, upgrade, and rollback with both legacy Suites absent and no fallback.",
+      "runtimeE2EIds": [
+        "E2E-NO-SUITE"
+      ],
+      "expertE2EIds": [
+        "EX2E2E09",
+        "EX2E2E10"
+      ],
+      "runtimeAcceptanceIds": [
+        "V6-CAP07",
+        "V6-CAP14",
+        "V6-FUNC01",
+        "V6-FUNC06"
+      ],
+      "expertAcceptanceIds": [
+        "EX2-CAP01",
+        "EX2-CAP03",
+        "EX2-CAP05",
+        "EX2-CAP07",
+        "EX2-CAP08",
+        "EX2-CAP09",
+        "EX2-FUNC02"
+      ],
+      "requiredHosts": [
+        "Claude Code",
+        "Codex",
+        "headless",
+        "independent Host"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V6-CROSS09",
+      "objective": "Keep semantic, credential, database, production, destructive, acceptance, publication, and Release authority explicit.",
+      "runtimeE2EIds": [
+        "E2E-SECURITY",
+        "E2E-CROSS-HOST"
+      ],
+      "expertE2EIds": [
+        "EX2E2E03",
+        "EX2E2E08"
+      ],
+      "runtimeAcceptanceIds": [
+        "V6-CAP03",
+        "V6-CAP04",
+        "V6-CAP08",
+        "V6-CAP10",
+        "V6-FUNC02",
+        "V6-FUNC03"
+      ],
+      "expertAcceptanceIds": [
+        "EX2-CAP01",
+        "EX2-CAP02",
+        "EX2-CAP03",
+        "EX2-CAP04",
+        "EX2-CAP05",
+        "EX2-CAP08",
+        "EX2-FUNC01",
+        "EX2-FUNC08"
+      ],
+      "requiredHosts": [
+        "Claude Code",
+        "Codex",
+        "WorkBuddy",
+        "generic MCP",
+        "headless"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V6-CROSS10",
+      "objective": "Close every current, inherited, E2E, impact, and NO_REGRESSION obligation before the exact Candidate pair completes active soak.",
+      "runtimeE2EIds": [
+        "E2E-SOAK"
+      ],
+      "expertE2EIds": [
+        "EX2E2E10"
+      ],
+      "runtimeAcceptanceIds": [
+        "V6-CAP07",
+        "V6-CAP10",
+        "V6-CAP14",
+        "V6-CAP15"
+      ],
+      "expertAcceptanceIds": [
+        "EX2-CAP05",
+        "EX2-CAP07",
+        "EX2-CAP08",
+        "EX2-CAP09"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "headless",
+        "independent Host"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "completionRule": "Every row and every target criterion passes for one exact installed Candidate pair; impact and NO_REGRESSION pass; legacySuiteInvocationCount is zero.",
+  "digest": "sha256:47123134037a7e6cca9c27a024e66d3b593f3d9875ddffa9aabaad2eeb0976b6"
+}

@@ -1,6 +1,6 @@
 # Governed Resource Versioning
 
-Audience: project maintainers. Prerequisite: an EvoPilot 5.1.0 server and an admin token. Goal: register, inspect, activate, diff, and roll back a human-readable resource without rebuilding Runtime or Expert.
+Audience: project maintainers. Prerequisite: an EvoPilot 6.0.0 server and an admin token. Goal: register, inspect, activate, diff, and roll back a human-readable resource without rebuilding Runtime or Expert.
 
 Every resource contains:
 
@@ -22,7 +22,7 @@ Compare a successor before activation:
 
 ```bash
 evopilot resource diff GovernancePack oss-github \
-  --from 1.0.0 --to 1.1.0 --runtime-version 5.1.0 --json
+  --from 1.0.0 --to 1.1.0 --runtime-version 6.0.0 --json
 ```
 
 `COMPATIBLE_RESOURCE_REVISION` means Runtime and Expert bytes and versions remain unchanged. `RUNTIME_CHANGE_REQUIRED` blocks independent activation until a compatible Runtime exists.

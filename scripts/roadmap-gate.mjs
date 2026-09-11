@@ -67,6 +67,19 @@ function validateRoadmap(value) {
   required(semver(value?.evolutionExpertPolicy?.publishedBaseline), "evolutionExpertPolicy.publishedBaseline must be SemVer");
   required(semver(value?.evolutionExpertPolicy?.currentWorkingVersion), "evolutionExpertPolicy.currentWorkingVersion must be SemVer");
   required(value?.evolutionExpertPolicy?.lockstepWithRuntime === false, "Evolution Expert must not be version-locked to the Runtime");
+  required(value?.versionPolicy?.publishedBaseline === "5.0.1" && value?.versionPolicy?.currentWorkingVersion === "6.0.0", "Runtime Roadmap must bind public 5.0.1 and working 6.0.0");
+  required(value?.evolutionExpertPolicy?.publishedBaseline === "1.0.1" && value?.evolutionExpertPolicy?.currentWorkingVersion === "2.0.0", "Evolution Expert Roadmap must bind public 1.0.1 and working 2.0.0");
+  required(value?.evolutionExpertPolicy?.mandatoryForOrdinaryHumans === true, "Evolution Expert must be mandatory for ordinary-human operation");
+  required(value?.evolutionExpertPolicy?.canonicalProtocol === "MCP", "Evolution Expert ordinary-human protocol must be MCP");
+  required(value?.humanInteractionProtocol?.canonicalOrdinaryHumanProtocol === "MCP", "MCP must be the canonical ordinary-human protocol");
+  required(value?.humanInteractionProtocol?.ordinaryHumanEntry?.includes("Evolution Expert"), "ordinary-human entry must be the Evolution Expert");
+  required(value?.lifecycleHarnessPolicy?.scope === "tenant/workspace", "Lifecycle definitions must be tenant/workspace scoped");
+  required(value?.lifecycleHarnessPolicy?.sourceOfTruth?.includes("Lifecycle Registry"), "production Lifecycle source of truth must be the governed Registry");
+  required(value?.lifecycleHarnessPolicy?.fileCatalogRole?.includes("never the production source of truth"), "file Lifecycle catalogs must be bootstrap or reference inputs only");
+  required(value?.lifecycleHarnessPolicy?.operations?.includes("rollback") && value?.lifecycleHarnessPolicy?.operations?.includes("archive"), "Lifecycle management must include governed rollback and archive operations");
+  required(value?.agentRuntimePolicy?.mode === "QUALIFIED_EXTERNAL_AGENT_RUNTIME_EXECUTION", "project source work must use qualified external Agent Runtime execution");
+  required(value?.agentRuntimePolicy?.externalExecutionRequiredForSourceWork === true, "external Agent Runtime must be required for project source work");
+  required(typeof value?.agentRuntimePolicy?.noEmbeddedFallback === "string", "embedded or unqualified Agent Runtime fallback must be forbidden");
   required(value?.harnessGuidedExecutionPolicy?.requiredForGoalTargetLoop === true, "Harness-guided execution must be required for Goal Target Loops");
   required(value?.harnessGuidedExecutionPolicy?.publishedAssetsReadOnly === true, "published Harness assets must remain read-only");
   required(value?.harnessGuidedExecutionPolicy?.perIterationRevalidation === true, "Harness binding must be revalidated before every Loop iteration");
@@ -99,6 +112,23 @@ function validateRoadmap(value) {
   required(convergenceAcceptance?.capabilityInventoryCoveragePercent === 100, "Suite convergence capability inventory coverage must be 100 percent");
   required(convergenceAcceptance?.historicalSuiteCompatibilityRequired === false, "superseded Suite compatibility must not be required");
   required(Array.isArray(convergenceAcceptance?.requiredJourneys) && convergenceAcceptance.requiredJourneys.length >= 10, "Suite convergence must declare complete parity, project, Host, recovery, upgrade, Cutover, and absence journeys");
+  required(convergenceAcceptance?.roleAfterV6Revision === "FROZEN_REFERENCE_AND_MIGRATION_EVIDENCE_ONLY", "legacy Suite convergence must become frozen reference and migration evidence for v6");
+  required(convergenceAcceptance?.ongoingSynchronizationRequired === false, "v6 must not require ongoing legacy Suite synchronization");
+  required(convergenceAcceptance?.runtimeDependency === false && convergenceAcceptance?.privilegedEngineBehavior === false, "legacy Suites must not become Runtime dependencies or privileged Engine behavior");
+  const v6Acceptance = value?.agentNativeLifecycleControlPlaneAcceptance;
+  required(v6Acceptance?.schema === "evopilot-v6-agent-native-lifecycle-control-plane-acceptance/v1", "v6 acceptance schema is invalid");
+  required(v6Acceptance?.required === true, "v6 Agent-native control-plane acceptance must be required");
+  required(v6Acceptance?.runtimeVersion === "6.0.0" && v6Acceptance?.evolutionExpertVersion === "2.0.0", "v6 acceptance must bind Runtime 6.0.0 and Evolution Expert 2.0.0");
+  required(v6Acceptance?.ordinaryHumanEntry === "EVOLUTION_EXPERT_OVER_MCP_IN_QUALIFIED_AGENT_HOST", "v6 ordinary-human entry must be Expert over MCP in a qualified Agent Host");
+  required(v6Acceptance?.lifecycleRegistry === "TENANT_WORKSPACE_GOVERNED_IMMUTABLE_REVISIONS", "v6 acceptance must require the governed tenant/workspace Lifecycle Registry");
+  required(v6Acceptance?.agentExecution === "QUALIFIED_EXTERNAL_AGENT_RUNTIME_ONLY", "v6 acceptance must require qualified external Agent Runtime execution");
+  required(Array.isArray(v6Acceptance?.functionalAreas) && v6Acceptance.functionalAreas.length >= 6, "v6 acceptance must declare all functional areas");
+  required(Array.isArray(v6Acceptance?.capabilityAreas) && v6Acceptance.capabilityAreas.length >= 6, "v6 acceptance must declare all capability areas");
+  required(Array.isArray(v6Acceptance?.requiredEndToEnd) && v6Acceptance.requiredEndToEnd.length === 20, "v6 acceptance must declare exactly 20 required E2E journeys");
+  for (const prefix of ["E2E-INSTALL-CODEX", "E2E-INSTALL-CLAUDE-CODE", "E2E-INSTALL-WORKBUDDY", "E2E-LIFECYCLE-CREATE", "E2E-LIFECYCLE-READ", "E2E-LIFECYCLE-UPDATE", "E2E-LIFECYCLE-DEACTIVATE", "E2E-LIFECYCLE-ARCHIVE", "E2E-LIFECYCLE-ROLLBACK", "E2E-LIFECYCLE-IMPORT", "E2E-TENANCY", "E2E-RESTART", "E2E-SECURITY", "E2E-AGENT-RUNTIME", "E2E-CROSS-HOST", "E2E-REFERENCE-DATARIG", "E2E-REFERENCE-EVOPILOT", "E2E-REFERENCE-HARNESS", "E2E-NO-SUITE", "E2E-SOAK"]) {
+    required(v6Acceptance?.requiredEndToEnd?.some((item) => item.startsWith(prefix)), `v6 acceptance is missing ${prefix}`);
+  }
+  required(v6Acceptance?.completionFormula === "FUNCTIONAL_100_PERCENT_AND_CAPABILITY_100_PERCENT_AND_INHERITED_APPLICABLE_100_PERCENT_AND_LIFECYCLE_CRUD_E2E_100_PERCENT_AND_HOST_MCP_E2E_100_PERCENT_AND_AGENT_RUNTIME_E2E_100_PERCENT_AND_IMPACT_CLOSURE_100_PERCENT_AND_NO_REGRESSION_PASSED_AND_EXACT_INSTALLED_RUNTIME_EXPERT_CANDIDATE_PAIR_VERIFIED", "v6 completion formula must fail closed across every required evidence class");
   const suiteTransition = value?.legacySuiteTransition;
   const migrationBaseline = suiteTransition?.migrationBaseline;
   required(migrationBaseline?.policy === "LATEST_ONLY_NO_HISTORICAL_COMPATIBILITY", "legacy Suite migration must use the exact latest-only baseline policy");
@@ -115,8 +145,8 @@ function validateRoadmap(value) {
   required(convergence?.snapshotPolicy === "TARGET_FROZEN_EXACT_LATEST", "Suite convergence snapshots must freeze the exact latest Target baseline");
   required(convergence?.candidateEnvironment === "LEGACY_SUITES_ABSENT", "Suite convergence Candidate independence must be proven with legacy Suites absent");
   required(convergence?.realInstalledSuiteMutationAllowed === false, "Suite convergence acceptance must not mutate real installed legacy Suites");
-  required(suiteTransition?.postRelease?.timing === "AFTER_PUBLIC_RUNTIME_5_1_AND_EXPERT_1_1_VERIFIED_INSTALLATION", "legacy Suite Cutover must occur only after public Runtime 5.1 and Expert 1.1 installation verification");
-  required(suiteTransition?.postRelease?.releaseBlockerForV51 === false, "post-release legacy Suite Cutover must not block the v5.1 release");
+  required(suiteTransition?.postRelease?.timing === "AFTER_PUBLIC_RUNTIME_6_0_AND_EXPERT_2_0_VERIFIED_INSTALLATION", "legacy Suite Cutover must occur only after public Runtime 6.0 and Expert 2.0 installation verification");
+  required(suiteTransition?.postRelease?.releaseBlockerForV60 === false, "post-release legacy Suite Cutover must not block the v6.0 release");
   required(suiteTransition?.postRelease?.requiresSeparateEvolutionTarget === true, "post-release legacy Suite Cutover requires a separate Evolution Target");
   required(suiteTransition?.postRelease?.requiresSeparateHumanAuthorization === true, "post-release legacy Suite Cutover requires separate human authorization");
   required(suiteTransition?.postCutover?.suiteDisposition === "IMMUTABLE_DIGEST_INVENTORIED_MIGRATION_EVIDENCE_ONLY", "retired Suites must become immutable migration evidence only");
@@ -130,7 +160,7 @@ function validateRoadmap(value) {
   for (const milestone of milestones) {
     required(typeof milestone.id === "string" && !ids.has(milestone.id), `milestone id must be unique: ${milestone.id}`);
     ids.add(milestone.id);
-    required(["IN_PROGRESS", "PLANNED", "DEFERRED", "COMPLETE"].includes(milestone.status), `invalid milestone status: ${milestone.id}`);
+    required(["IN_PROGRESS", "PLANNED", "DEFERRED", "SUPERSEDED", "COMPLETE"].includes(milestone.status), `invalid milestone status: ${milestone.id}`);
     required(semver(milestone.targetVersion), `targetVersion must be SemVer: ${milestone.id}`);
     required(/^\d+\.\d+\.x$/.test(milestone.releaseLine), `releaseLine must be major.minor.x: ${milestone.id}`);
     required(["evopilot-runtime", "evopilot-evolution-expert"].includes(milestone.product), `milestone product is invalid: ${milestone.id}`);
@@ -147,19 +177,27 @@ function validateRoadmap(value) {
   validateCompletionSuccessor(runtimeCompletion, "5.0.0", "5.0.1", "Runtime");
   validateCompletionSuccessor(expertCompletion, "1.0.0", "1.0.1", "Evolution Expert");
   const runtimeConvergence = milestones.find((milestone) => milestone.id === "evopilot-5.1-suite-capability-convergence");
-  required(runtimeConvergence?.status === "IN_PROGRESS" && runtimeConvergence?.targetVersion === "5.1.0", "Runtime Suite capability convergence must be the IN_PROGRESS 5.1.0 milestone");
+  required(runtimeConvergence?.status === "SUPERSEDED" && runtimeConvergence?.targetVersion === "5.1.0" && runtimeConvergence?.standaloneReleaseEligible === false, "Runtime 5.1 Suite convergence must be preserved as a non-releasable SUPERSEDED milestone");
+  required(runtimeConvergence?.supersededBy === "evopilot-6.0-agent-native-lifecycle-control-plane", "Runtime 5.1 must be superseded by Runtime 6.0");
   const expertConvergence = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-1.1-unified-host-entry");
-  required(expertConvergence?.status === "IN_PROGRESS" && expertConvergence?.targetVersion === "1.1.0", "Evolution Expert unified Host entry must be the IN_PROGRESS 1.1.0 milestone");
+  required(expertConvergence?.status === "SUPERSEDED" && expertConvergence?.targetVersion === "1.1.0" && expertConvergence?.standaloneReleaseEligible === false, "Evolution Expert 1.1 must be preserved as a non-releasable SUPERSEDED milestone");
+  required(expertConvergence?.supersededBy === "evopilot-evolution-expert-2.0-agent-host-entry", "Evolution Expert 1.1 must be superseded by Expert 2.0");
+  const runtimeV6 = milestones.find((milestone) => milestone.id === "evopilot-6.0-agent-native-lifecycle-control-plane");
+  required(runtimeV6?.status === "IN_PROGRESS" && runtimeV6?.targetVersion === "6.0.0", "Runtime Agent-native Lifecycle control plane must be the IN_PROGRESS 6.0.0 milestone");
+  required(runtimeV6?.supersedesUnreleasedMilestone === runtimeConvergence?.id, "Runtime 6.0 must explicitly supersede unreleased Runtime 5.1");
+  const expertV2 = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-2.0-agent-host-entry");
+  required(expertV2?.status === "IN_PROGRESS" && expertV2?.targetVersion === "2.0.0", "Evolution Expert Agent Host entry must be the IN_PROGRESS 2.0.0 milestone");
+  required(expertV2?.supersedesUnreleasedMilestone === expertConvergence?.id, "Evolution Expert 2.0 must explicitly supersede unreleased Expert 1.1");
   const cutoverMilestone = milestones.find((milestone) => milestone.id === suiteTransition?.postRelease?.milestone);
   required(cutoverMilestone?.status === "PLANNED", "post-release legacy Suite Cutover milestone must be PLANNED");
   required(cutoverMilestone?.standaloneReleaseEligible === false, "post-release legacy Suite Cutover must not create another release line");
-  required(cutoverMilestone?.releaseBlockerForV51 === false, "post-release legacy Suite Cutover milestone must not block v5.1 release");
-  required(cutoverMilestone?.timing === "AFTER_PUBLIC_RUNTIME_5_1_AND_EXPERT_1_1_VERIFIED_INSTALLATION", "post-release legacy Suite Cutover milestone timing is invalid");
+  required(cutoverMilestone?.releaseBlockerForV60 === false, "post-release legacy Suite Cutover milestone must not block v6.0 release");
+  required(cutoverMilestone?.timing === "AFTER_PUBLIC_RUNTIME_6_0_AND_EXPERT_2_0_VERIFIED_INSTALLATION", "post-release legacy Suite Cutover milestone timing is invalid");
   required(cutoverMilestone?.targetVersion === value?.versionPolicy?.currentWorkingVersion, "post-release legacy Suite Cutover must bind the Runtime completion successor");
-  const experimentMilestone = milestones.find((milestone) => milestone.id === "evopilot-5.2-controlled-experiment-loop");
-  required(experimentMilestone?.targetVersion === "5.2.0" && experimentMilestone?.status === "PLANNED", "Controlled Experiment Loop must be rescheduled to v5.2.0");
-  const learningMilestone = milestones.find((milestone) => milestone.id === "evopilot-5.3-learning-interop");
-  required(learningMilestone?.targetVersion === "5.3.0" && learningMilestone?.status === "PLANNED", "Learning Interoperability must be rescheduled to v5.3.0");
+  const experimentMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.1-controlled-experiment-loop");
+  required(experimentMilestone?.targetVersion === "6.1.0" && experimentMilestone?.status === "PLANNED", "Controlled Experiment Loop must be rescheduled to v6.1.0");
+  const learningMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.2-learning-interop");
+  required(learningMilestone?.targetVersion === "6.2.0" && learningMilestone?.status === "PLANNED", "Learning Interoperability must be rescheduled to v6.2.0");
   for (const milestone of milestones.filter((item) => item.status === "DEFERRED")) {
     const destination = milestones.find((item) => item.id === milestone.deferredInto);
     required(typeof milestone.deferredInto === "string" && destination != null, `DEFERRED milestone must name a declared deferredInto milestone: ${milestone.id}`);
@@ -218,7 +256,8 @@ function classifyIntent(rawIntent, value) {
 
   const matchingMilestones = value.milestones.filter((milestone) => matches(normalized, milestone.signals));
   const deferredMatches = matchingMilestones.filter((milestone) => milestone.status === "DEFERRED");
-  const matchedMilestones = matchingMilestones.filter((milestone) => milestone.status !== "DEFERRED").map((milestone) => milestone.id);
+  const supersededMatches = matchingMilestones.filter((milestone) => milestone.status === "SUPERSEDED");
+  const matchedMilestones = matchingMilestones.filter((milestone) => !["DEFERRED", "SUPERSEDED"].includes(milestone.status)).map((milestone) => milestone.id);
   const matchedStandingItems = value.standingWork.filter((item) => matches(normalized, item.signals));
   const capabilityExpansion = matches(normalized, value.intentPolicy?.capabilityExpansionSignals ?? []);
   const alignedStandingItems = matchedStandingItems.filter((item) => !capabilityExpansion || item.allowsCapabilityExpansion === true);
@@ -239,6 +278,9 @@ function classifyIntent(rawIntent, value) {
   if (deferredMatches.length > 0) {
     return decision("DEVIATION", deferredMatches.map((item) => item.id), [], ["Intent matches only a DEFERRED milestone; explicit Roadmap reactivation is required."], "ROADMAP_REVISION_REQUIRED");
   }
+  if (supersededMatches.length > 0) {
+    return decision("UNPLANNED", supersededMatches.map((item) => item.id), [], ["Intent matches only a SUPERSEDED unreleased milestone and must be planned against its declared successor."], "USER_REVIEW_REQUIRED");
+  }
   if (matchedStandingWork.length > 0 && capabilityExpansion) {
     return decision("UNPLANNED", [], matchedStandingWork, ["Standing-work wording cannot authorize a product capability expansion."], "USER_REVIEW_REQUIRED");
   }
@@ -253,9 +295,9 @@ function classifyRelease(version, product, value) {
   const exactBaseline = [versionPolicy.publishedBaseline, versionPolicy.currentWorkingVersion].includes(version);
   const matchingMilestones = value.milestones.filter((milestone) => milestone.product === product && (version === milestone.targetVersion || inReleaseLine(version, milestone.releaseLine)));
   const matchedMilestones = matchingMilestones.map((milestone) => milestone.id);
-  const eligibleMilestones = matchingMilestones.filter((milestone) => milestone.status !== "DEFERRED" && milestone.standaloneReleaseEligible !== false);
+  const eligibleMilestones = matchingMilestones.filter((milestone) => !["DEFERRED", "SUPERSEDED"].includes(milestone.status) && milestone.standaloneReleaseEligible !== false);
   if (matchingMilestones.length > 0 && eligibleMilestones.length === 0) {
-    return { classification: "UNPLANNED", matchedMilestones, reasons: [`Release ${version} matches only a DEFERRED milestone and requires explicit Roadmap reactivation.`] };
+    return { classification: "UNPLANNED", matchedMilestones, reasons: [`Release ${version} matches only a DEFERRED or SUPERSEDED non-releasable milestone.`] };
   }
   if (exactBaseline || eligibleMilestones.length > 0) return { classification: "ALIGNED", matchedMilestones: eligibleMilestones.map((milestone) => milestone.id), reasons: [`Release ${product} ${version} is declared by the Roadmap.`] };
   return { classification: "UNPLANNED", matchedMilestones: [], reasons: [`Release ${product} ${version} is outside every declared baseline and release line.`] };

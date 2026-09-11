@@ -1,6 +1,6 @@
 # Getting Started
 
-> The fastest path to run EvoPilot as an API and CLI control plane.
+> The fastest source-development path for administrators. In Runtime 6, ordinary users interact through an Evolution Expert Host Integration Bundle over MCP; direct CLI and HTTP remain machine, diagnostics, and recovery surfaces.
 
 EvoPilot is the backend control plane for AI Agent product evolution. It owns API state, CLI execution, release governance, evidence, audit, GlobalGoal planning, LoopRun execution, and release decisions. Dashboard UI is a separate client that consumes the EvoPilot API.
 
@@ -30,7 +30,15 @@ curl -fsS http://127.0.0.1:19876/health
 curl -fsS http://127.0.0.1:19876/ready
 ```
 
-## Use The CLI
+## Connect Evolution Expert For Ordinary Users
+
+Install a compatible `@evopilot/evolution-expert` Host Integration Bundle in Codex, Claude Code, WorkBuddy, or another conformant Agent Host. Connect its local or remote MCP transport to this Runtime, then ask:
+
+> Check EvoPilot health and compatibility, show the side-effect-free tutorial, then help me register this project.
+
+The Expert asks only unresolved schema fields. It never stores canonical state, collects raw credentials, executes source work, or infers approval. See [Evolution Expert](guides/evolution-expert.md).
+
+## Use The CLI For Administration Or Automation
 
 ```bash
 npm run cli -- status \

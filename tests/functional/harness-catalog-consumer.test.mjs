@@ -543,7 +543,12 @@ test("Open Lifecycle Harness binds a published immutable Bundle and preserves tr
         policyDigest: `sha256:${"1".repeat(64)}`,
         runtimeDigest: `sha256:${"2".repeat(64)}`,
         harnessBundle: { id: "database-product", version: "3.0.0", digest: catalog.bundleDigest, catalogId: "database-product-v3" },
-        executor: { host: "conformant-test-host", provider: "test-provider", model: "test-model", capabilities: ["build.execute", "test.execute", "goal-loop.execute", "release.publish"] },
+        executor: {
+          host: "conformant-test-host", provider: "test-provider", model: "test-model", capabilities: ["build.execute", "test.execute", "goal-loop.execute", "release.publish"],
+          agentRuntime: { profileId: "conformant-runtime", profileVersion: "1.0.0", adapterId: "conformant.adapter@1", profileDigest: `sha256:${"8".repeat(64)}`, qualificationDigest: `sha256:${"9".repeat(64)}` },
+          sandbox: { workspaceRef: "/tmp/evopilot-agent-runtime", permissionMode: "HOST_MANAGED_DENY_UNDECLARED" },
+          allowedEffects: ["READ_ONLY", "REVERSIBLE", "EXTERNAL", "IRREVERSIBLE"], credentialRefs: []
+        },
         answers: { projectRoot: "/workspace/project", verificationProfile: "release", candidateVersion: "4.5.0", testSuite: "release", publicationChannel: "both" }
       }
     });

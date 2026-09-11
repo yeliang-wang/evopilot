@@ -1,34 +1,53 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://evopilot.dev/schemas/lifecycle/agent-execution-request-v1alpha1.schema.json",
-  "title": "EvoPilot AgentExecutionRequest v1alpha1",
+  "title": "EvoPilot Exact PendingExecution v1alpha1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "id", "runId", "stageId", "action", "actionVersion", "bindingDigest", "inputs", "capabilities", "executor"],
+  "required": ["schema", "requestDigest", "idempotencyKey", "id", "runId", "stageId", "action", "actionVersion", "bindingDigest", "scope", "lifecycle", "harness", "governance", "inputs", "capabilities", "executor"],
   "properties": {
     "schema": { "const": "evopilot-agent-execution-request/v1alpha1" },
+    "requestDigest": { "$ref": "#/$defs/digest" },
+    "idempotencyKey": { "type": "string", "minLength": 1 },
     "id": { "type": "string", "minLength": 1 },
     "runId": { "type": "string", "minLength": 1 },
     "stageId": { "type": "string", "minLength": 1 },
     "action": { "type": "string", "minLength": 1 },
     "actionVersion": { "type": "string", "minLength": 1 },
     "bindingDigest": { "$ref": "#/$defs/digest" },
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tenantId", "workspaceId", "projectId"],
+      "properties": { "tenantId": { "type": "string", "minLength": 1 }, "workspaceId": { "type": "string", "minLength": 1 }, "projectId": { "type": "string", "minLength": 1 }, "goalId": { "type": "string", "minLength": 1 }, "targetId": { "type": "string", "minLength": 1 } }
+    },
+    "lifecycle": { "$ref": "#/$defs/versionedDigestRef" },
+    "harness": {
+      "type": "object", "additionalProperties": false, "required": ["id", "version", "digest"],
+      "properties": { "id": { "type": "string", "minLength": 1 }, "version": { "type": "string", "minLength": 1 }, "digest": { "$ref": "#/$defs/digest" }, "catalogId": { "type": "string", "minLength": 1 }, "harnessExecutionBindingDigest": { "$ref": "#/$defs/digest" } }
+    },
+    "governance": {
+      "type": "object", "additionalProperties": false,
+      "required": ["policyDigest", "runtimeDigest", "evidenceDigest"],
+      "properties": { "policyDigest": { "$ref": "#/$defs/digest" }, "providerDigest": { "$ref": "#/$defs/digest" }, "environmentDigest": { "$ref": "#/$defs/digest" }, "authorityDigest": { "$ref": "#/$defs/digest" }, "runtimeDigest": { "$ref": "#/$defs/digest" }, "evidenceDigest": { "$ref": "#/$defs/digest" } }
+    },
     "inputs": { "type": "object" },
     "capabilities": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
     "executor": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["host", "provider", "model", "capabilities", "digest"],
+      "type": "object", "additionalProperties": false,
+      "required": ["host", "provider", "model", "capabilities", "agentRuntime", "sandbox", "allowedEffects", "credentialRefs", "digest"],
       "properties": {
-        "host": { "type": "string", "minLength": 1 },
-        "provider": { "type": "string", "minLength": 1 },
-        "model": { "type": "string", "minLength": 1 },
+        "host": { "type": "string", "minLength": 1 }, "provider": { "type": "string", "minLength": 1 }, "model": { "type": "string", "minLength": 1 },
         "capabilities": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "agentRuntime": { "type": "object", "additionalProperties": false, "required": ["profileId", "profileVersion", "adapterId", "profileDigest", "qualificationDigest"], "properties": { "profileId": { "type": "string", "minLength": 1 }, "profileVersion": { "type": "string", "minLength": 1 }, "adapterId": { "type": "string", "minLength": 1 }, "profileDigest": { "$ref": "#/$defs/digest" }, "qualificationDigest": { "$ref": "#/$defs/digest" } } },
+        "sandbox": { "type": "object", "additionalProperties": false, "required": ["workspaceRef", "permissionMode"], "properties": { "workspaceRef": { "type": "string", "minLength": 1 }, "permissionMode": { "const": "HOST_MANAGED_DENY_UNDECLARED" } } },
+        "allowedEffects": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+        "credentialRefs": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^secret://[A-Za-z0-9._/-]+$" } },
         "digest": { "$ref": "#/$defs/digest" }
       }
     }
   },
   "$defs": {
-    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "versionedDigestRef": { "type": "object", "additionalProperties": false, "required": ["id", "version", "digest"], "properties": { "id": { "type": "string", "minLength": 1 }, "version": { "type": "string", "minLength": 1 }, "digest": { "$ref": "#/$defs/digest" } } }
   }
 }

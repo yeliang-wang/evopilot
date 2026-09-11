@@ -1,6 +1,6 @@
 # EvoPilot API
 
-## Harness-Guided Governed Evolution Runtime（v5 开发接口）
+## Agent-Native Lifecycle Control Plane（v6 开发接口）
 
 ```text
 GET  /api/v1/evolution-project-definitions
@@ -22,6 +22,8 @@ POST /api/v1/governed-evolution/revalidate
 POST /api/v1/governed-evolution/recovery/decide
 POST /api/v1/governed-evolution/capability-inventory/validate
 POST /api/v1/governed-evolution/action-providers/qualify
+GET  /api/v1/governed-evolution/agent-runtimes
+POST /api/v1/governed-evolution/agent-runtimes/qualify
 POST /api/v1/governed-evolution/governance/evaluate
 POST /api/v1/governed-evolution/remediation-campaigns
 GET  /api/v1/governed-evolution/remediation-campaigns/{id}
@@ -31,6 +33,18 @@ POST /api/v1/automation-registry/proposals
 POST /api/v1/automation-registry/{id}/activate
 POST /api/v1/automation-registry/{id}/revoke
 POST /api/v1/interactions/render
+POST /api/v1/lifecycles
+GET  /api/v1/lifecycles/{id}?version=...
+GET  /api/v1/lifecycles/{id}/diff?from=...&to=...
+GET  /api/v1/lifecycles/{id}/dependencies
+GET  /api/v1/lifecycles/{id}/usage
+GET  /api/v1/lifecycles/{id}/audit
+POST /api/v1/lifecycles/{id}/activate
+POST /api/v1/lifecycles/{id}/deactivate
+POST /api/v1/lifecycles/{id}/archive
+POST /api/v1/lifecycles/{id}/restore
+POST /api/v1/lifecycles/{id}/rollback
+DELETE /api/v1/lifecycles/{id}
 ```
 
 `plan` 采用 `ProjectDefinition + GoalTarget` 确定性匹配已发布的不可变 `HarnessBundle`，再与开放 Lifecycle 单调组合。匹配歧义、无匹配或 Lifecycle 弱化 Harness 时失败关闭。错误响应中的 `resolution.match.candidates` 提供排序、评分、优先级以及精确 Catalog/Profile/Bundle/Component 摘要；用户审阅项目含义后，可在新的不可变 Project Definition 版本中声明一个 `evopilot.dev/v1 HarnessSelection` 资源。Runtime 仅在完整 Registry/Catalog/Profile/Bundle/Component 摘要闭包仍已发布且符合 eligibility、能力和负向边界时采用该选择，不会用名称或 prompt 绕过校验。
@@ -39,9 +53,9 @@ Lifecycle 的执行能力与 Harness 能力采用并集，证据、validator 和
 
 Recovery 默认自动处理可逆 mechanics、相同输入安全重试和 receipt 恢复。未知但可安全复用的情形先生成完整 Automation Rule proposal；只有一次与 proposal digest 精确绑定的人工决定能激活后续自动化。不可逆权限与结果不确定的外部 mutation 不能学习成自动规则。
 
-Evolution Expert、MCP、CLI 和其他 Agent adapter 只投影这些 Runtime 语义，不持有权威状态或批准能力。资源 API 保留独立版本、来源 Suite 版本/摘要和 Runtime 兼容范围；兼容资源升级无需 Runtime 或 Expert 升级。上述新增内容处于已批准 v5.1.0 Target 的实现阶段，不代表 v5.1 已发布。
+Evolution Expert 2.0.0 通过 MCP 成为普通用户入口；它与其他 Host adapter 只投影 Runtime 语义，不持有权威状态、源码执行或批准能力。CLI、HTTP、CI、事件和 webhook 是管理员、机器、诊断和恢复接口。资源 API 保留独立版本、来源 Suite 版本/摘要和 Runtime 兼容范围；兼容资源升级无需 Runtime 或 Expert 升级。上述新增内容处于已批准 v6.0.0 Target 的本地实现阶段，不代表 Candidate、验收或发布。
 
-对应的无 Expert CLI 入口使用同一 HTTP 语义：
+对应的管理员和机器 CLI 使用同一 HTTP 语义，但不构成普通用户绕过 Expert 的第二入口：
 
 ```text
 evopilot project-definition <list|inspect|register>
@@ -55,12 +69,24 @@ evopilot automation <list|propose|activate|revoke>
 Project Definition、执行 binding、Automation proposal/rule 都按认证的 tenant/workspace 隔离。`evolution plan` 可在请求中指定 `projectDefinitionVersion`，从而显式重用旧的不可变声明；不指定时选择最新版本。Project Definition id 必须与 GoalTarget projectId 相同，防止跨项目绑定。
 `authorityDigest` 由服务端根据当前认证的 tenant、workspace、actor 与 role 生成，客户端提交的同名字段不会授予或扩大权限。
 
-## Open Lifecycle Harness（v4 开发接口）
+## Lifecycle Registry And Run Compatibility
 
 该接口执行项目 Lifecycle，不管理或发布 Harness Asset。`POST /api/v1/lifecycle-runs` 必须绑定当前 tenant/workspace 中已注册的项目，以及从只读 Harness Catalog 读取并重新校验的 `published`、不可变 `HarnessBundle`。
 
 ```text
 GET  /api/v1/lifecycles
+POST /api/v1/lifecycles
+GET  /api/v1/lifecycles/{lifecycleId}
+GET  /api/v1/lifecycles/{lifecycleId}/diff
+GET  /api/v1/lifecycles/{lifecycleId}/dependencies
+GET  /api/v1/lifecycles/{lifecycleId}/usage
+GET  /api/v1/lifecycles/{lifecycleId}/audit
+POST /api/v1/lifecycles/{lifecycleId}/activate
+POST /api/v1/lifecycles/{lifecycleId}/deactivate
+POST /api/v1/lifecycles/{lifecycleId}/archive
+POST /api/v1/lifecycles/{lifecycleId}/restore
+POST /api/v1/lifecycles/{lifecycleId}/rollback
+DELETE /api/v1/lifecycles/{lifecycleId}
 POST /api/v1/lifecycles/resolve
 POST /api/v1/lifecycles/resolve-inputs
 GET  /api/v1/lifecycle-runs
@@ -77,9 +103,9 @@ POST /api/v1/lifecycle-runs/{runId}/feedback
 
 配置输入与授权完全分离。`resolve-inputs` / `answer` 只生成带来源的 `LifecycleInputBinding`；只有 `authorize` 或 `decision` 中显式提交、且与当前 `bindingDigest` 完全一致的决定才产生权限。自动阶段会连续执行到外部 Agent 请求或真实人工权限边界。`external-result` 的相同 request/receipt 可幂等重放，冲突回执拒绝，`UNCERTAIN` 结果停在 recovery 决策。
 
-MCP 和 CLI 只是同一服务端语义的适配层。第三方 Agent 只能执行 `pendingExecution` 中声明的 action、capabilities、host/provider/model 和 binding digest；不能从对话推导批准。`feedback` 仅创建经过显式批准、严格脱敏、不可变且 `PRIVATE` 的反馈包，不会写入 `evopilot-harness` Catalog。
+MCP 和 CLI 只是同一服务端语义的适配层。第三方 Agent Runtime 必须先通过独立资格校验，只能执行 `pendingExecution` 中声明的 scope、Lifecycle、Harness、action、capabilities、sandbox、allowed effects、SecretRefs、Runtime profile 和 binding digest；返回结果必须匹配 request/binding/idempotency digest。不能从对话推导批准。`feedback` 仅创建经过显式批准、严格脱敏、不可变且 `PRIVATE` 的反馈包，不会写入 `evopilot-harness` Catalog。
 
-详细流程见 [Open Lifecycle Harness 操作指南](../guides/open-lifecycle-harness.md)。这些接口属于已批准的 v4.0.0 Target 实施内容，不代表 v4 已发布。
+详细流程见 [Lifecycle Registry](../guides/lifecycle-registry.md) 和 [External Agent Runtime](../guides/agent-runtime.md)。
 
 ## LLM 调用与 Credits 观测
 

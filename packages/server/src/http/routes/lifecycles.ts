@@ -15,6 +15,7 @@ interface LifecycleRoutesContext {
 export async function handleLifecycleRoutes(context: LifecycleRoutesContext): Promise<boolean> {
   const { request, response, url, auth, store, service, options } = context;
   const { audit, envelope, hasRole, readJson, writeJson, appendAudit } = context.deps;
+  const scope = { tenantId: auth.tenantId, workspaceId: auth.workspaceId };
   const reject = (status: number, error: unknown) => writeJson(response, status, lifecycleError(error));
 
   try {
@@ -23,24 +24,68 @@ export async function handleLifecycleRoutes(context: LifecycleRoutesContext): Pr
       return writeJson(response, 200, envelope({
         schema: "evopilot-lifecycle-catalog/v1alpha1",
         actionRegistryDigest: service.registry.digest,
-        lifecycles: service.catalog.list()
+        lifecycles: service.governedRegistry.list(scope)
       }));
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/lifecycles") {
+      if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const registered = service.governedRegistry.register({ yaml: String(body.yaml ?? ""), sourceRef: optionalString(body.sourceRef), sourceType: body.sourceType, actor: auth.actor, evidenceRef: String(body.evidenceRef ?? "") }, scope);
+      appendAudit(audit(auth, "lifecycle.registered", `${registered.id}@${registered.version}`, { revisionDigest: registered.revisionDigest, recordDigest: registered.digest }));
+      return writeJson(response, 201, envelope(registered));
+    }
+    const lifecycleViewMatch = url.pathname.match(/^\/api\/v1\/lifecycles\/([^/]+)\/(diff|dependencies|usage|audit)$/);
+    if (request.method === "GET" && lifecycleViewMatch) {
+      if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const id = decodeURIComponent(lifecycleViewMatch[1]);
+      const view = lifecycleViewMatch[2];
+      if (view === "diff") return writeJson(response, 200, envelope(service.governedRegistry.diff(id, String(url.searchParams.get("from") ?? ""), String(url.searchParams.get("to") ?? ""), scope)));
+      if (view === "dependencies") return writeJson(response, 200, envelope(service.governedRegistry.dependencies(id, url.searchParams.get("version") ?? undefined, scope)));
+      if (view === "usage") return writeJson(response, 200, envelope(service.governedRegistry.usages(id, url.searchParams.get("version") ?? undefined, scope)));
+      return writeJson(response, 200, envelope(service.governedRegistry.audit(id, scope)));
+    }
+    const lifecycleMutationMatch = url.pathname.match(/^\/api\/v1\/lifecycles\/([^/]+)\/(activate|rollback|deactivate|archive|restore)$/);
+    if (request.method === "POST" && lifecycleMutationMatch) {
+      if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const id = decodeURIComponent(lifecycleMutationMatch[1]);
+      const action = lifecycleMutationMatch[2];
+      const common = { actor: auth.actor, evidenceRef: String(body.evidenceRef ?? "") };
+      const result = action === "activate" || action === "rollback"
+        ? service.governedRegistry.activate(id, String(body.version ?? ""), { ...common, expectedActiveDigest: optionalString(body.expectedActiveDigest), rollback: action === "rollback" }, scope)
+        : action === "deactivate"
+          ? service.governedRegistry.deactivate(id, { ...common, expectedActiveDigest: String(body.expectedActiveDigest ?? "") }, scope)
+          : action === "archive"
+            ? service.governedRegistry.archive(id, String(body.version ?? ""), { ...common, revisionDigest: String(body.revisionDigest ?? "") }, scope)
+            : service.governedRegistry.restore(id, String(body.version ?? ""), { ...common, revisionDigest: String(body.revisionDigest ?? "") }, scope);
+      appendAudit(audit(auth, `lifecycle.${action}`, id, { version: body.version, revisionDigest: body.revisionDigest, expectedActiveDigest: body.expectedActiveDigest }));
+      return writeJson(response, 200, envelope(result));
     }
     const inspectMatch = url.pathname.match(/^\/api\/v1\/lifecycles\/([^/]+)$/);
     if (request.method === "GET" && inspectMatch) {
       if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
-      return writeJson(response, 200, envelope(service.catalog.resolve(decodeURIComponent(inspectMatch[1]), url.searchParams.get("version") ?? undefined)));
+      return writeJson(response, 200, envelope(service.governedRegistry.inspect(decodeURIComponent(inspectMatch[1]), url.searchParams.get("version") ?? undefined, scope)));
+    }
+    if (request.method === "DELETE" && inspectMatch) {
+      if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const id = decodeURIComponent(inspectMatch[1]);
+      service.governedRegistry.deleteUnreferencedDraft(id, String(body.version ?? ""), { actor: auth.actor, evidenceRef: String(body.evidenceRef ?? ""), revisionDigest: String(body.revisionDigest ?? "") }, scope);
+      appendAudit(audit(auth, "lifecycle.draft-deleted", `${id}@${body.version}`, { revisionDigest: body.revisionDigest }));
+      response.writeHead(204);
+      response.end();
+      return true;
     }
     if (request.method === "POST" && url.pathname === "/api/v1/lifecycles/resolve-inputs") {
       if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
       const body = await readJson(request, options.maxBodyBytes);
-      return writeJson(response, 200, envelope(service.resolveInputs(String(body.lifecycleId ?? ""), optionalString(body.lifecycleVersion), inputSources(body))));
+      return writeJson(response, 200, envelope(service.resolveInputs(String(body.lifecycleId ?? ""), optionalString(body.lifecycleVersion), inputSources(body), scope)));
     }
     if (request.method === "POST" && url.pathname === "/api/v1/lifecycles/resolve") {
       if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
       const body = await readJson(request, options.maxBodyBytes);
-      const selection = service.catalog.select({ lifecycleId: optionalString(body.lifecycleId), lifecycleVersion: optionalString(body.lifecycleVersion), labels: record(body.labels) as Record<string, string>, goalText: optionalString(body.goalText) });
-      return writeJson(response, 200, envelope({ schema: "evopilot-lifecycle-resolution/v1alpha1", selection, revision: service.catalog.resolve(selection.lifecycle.id, selection.lifecycle.version) }));
+      const selection = service.governedRegistry.select({ lifecycleId: optionalString(body.lifecycleId), lifecycleVersion: optionalString(body.lifecycleVersion), labels: record(body.labels) as Record<string, string>, goalText: optionalString(body.goalText) }, scope);
+      return writeJson(response, 200, envelope({ schema: "evopilot-lifecycle-resolution/v1", selection, revision: service.governedRegistry.resolveActive(selection.lifecycle.id, selection.lifecycle.version, scope) }));
     }
     if (request.method === "GET" && url.pathname === "/api/v1/lifecycle-runs") {
       if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -102,8 +147,12 @@ export async function handleLifecycleRoutes(context: LifecycleRoutesContext): Pr
       else if (action === "cancel") run = service.cancel(id, auth.actor, String(body.evidenceRef ?? ""), String(body.bindingDigest ?? ""));
       else if (action === "external-result") run = service.recordExternalResult(id, {
         requestId: String(body.requestId ?? ""),
+        requestDigest: String(body.requestDigest ?? ""),
+        bindingDigest: String(body.bindingDigest ?? ""),
+        idempotencyKey: String(body.idempotencyKey ?? ""),
         status: resultStatus(body.status),
         receiptDigest: String(body.receiptDigest ?? ""),
+        effects: stringList(body.effects),
         evidence: stringList(body.evidence),
         cost: record(body.cost) as any,
         artifacts: Array.isArray(body.artifacts) ? body.artifacts : [],
@@ -128,7 +177,7 @@ export async function handleLifecycleRoutes(context: LifecycleRoutesContext): Pr
     return false;
   } catch (error) {
     const code = error instanceof Error ? error.message.split(":")[0] : "LIFECYCLE_REQUEST_INVALID";
-    const status = code === "LIFECYCLE_NOT_FOUND" || code === "LIFECYCLE_RUN_NOT_FOUND" ? 404 : code.includes("LOCKED") || code.includes("NOT_PENDING") || code.includes("REQUIRED") ? 409 : 400;
+    const status = code === "LIFECYCLE_NOT_FOUND" || code === "LIFECYCLE_RUN_NOT_FOUND" ? 404 : code.includes("LOCKED") || code.includes("NOT_PENDING") || code.includes("REQUIRED") || code.includes("CONFLICT") || code.includes("MISMATCH") ? 409 : 400;
     return reject(status, error);
   }
 }

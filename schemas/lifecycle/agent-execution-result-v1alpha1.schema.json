@@ -4,13 +4,16 @@
   "title": "EvoPilot AgentExecutionResult v1alpha1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "requestId", "requestDigest", "status", "receiptDigest", "evidence"],
+  "required": ["schema", "requestId", "requestDigest", "bindingDigest", "idempotencyKey", "status", "receiptDigest", "effects", "evidence"],
   "properties": {
     "schema": { "const": "evopilot-agent-execution-result/v1alpha1" },
     "requestId": { "type": "string", "minLength": 1 },
     "requestDigest": { "$ref": "#/$defs/digest" },
+    "bindingDigest": { "$ref": "#/$defs/digest" },
+    "idempotencyKey": { "type": "string", "minLength": 1 },
     "status": { "enum": ["SUCCEEDED", "FAILED", "UNCERTAIN"] },
     "receiptDigest": { "$ref": "#/$defs/digest" },
+    "effects": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
     "evidence": { "type": "array", "items": { "type": "string" } },
     "cost": {
       "type": "object",

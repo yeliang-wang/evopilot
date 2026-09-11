@@ -55,7 +55,22 @@ try {
     policyDigest: digest("1"),
     runtimeDigest: digest("2"),
     harnessBundle: { id: "bundle-a", version: "1.0.0", digest: digest("3") },
-    executor: { host: "acceptance-host", provider: "deterministic", model: "no-model", capabilities: ["agent.execute"] },
+    executor: {
+      host: "acceptance-host",
+      provider: "deterministic",
+      model: "no-model",
+      capabilities: ["agent.execute"],
+      agentRuntime: {
+        profileId: "acceptance-runtime",
+        profileVersion: "1.0.0",
+        adapterId: "acceptance-runtime.adapter@1",
+        profileDigest: digest("8"),
+        qualificationDigest: digest("9")
+      },
+      sandbox: { workspaceRef: "/tmp/evopilot-lifecycle-nonfunctional", permissionMode: "HOST_MANAGED_DENY_UNDECLARED" },
+      allowedEffects: ["READ_ONLY", "REVERSIBLE", "EXTERNAL", "IRREVERSIBLE"],
+      credentialRefs: []
+    },
     answers: { projectRoot: `/workspace/project-${index}`, documentationScope: ["README.md"] }
   })));
   record("concurrency", created.length === concurrentRuns && new Set(created.map((run) => run.id)).size === concurrentRuns, { requested: concurrentRuns, created: created.length, unique: new Set(created.map((run) => run.id)).size });

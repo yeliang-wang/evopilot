@@ -1,0 +1,1134 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-evolution-expert-v2.0.0-agent-host-entry",
+  "revision": 1,
+  "status": "APPROVED",
+  "intent": "Implement Evolution Expert 2.0.0 as the independently versioned mandatory ordinary-human entry installed into qualified Codex, Claude Code, WorkBuddy, generic Agent, and generic MCP Hosts, using one Agent-neutral Core and Runtime-owned MCP facts for every project, Lifecycle, Harness-guided Loop, recovery, acceptance, and release journey.",
+  "objective": "Deliver a stateless non-authoritative Evolution Expert 2.0.0 that makes EvoPilot Runtime 6.0.0 understandable and operable through conversational Host Integration Bundles without requiring users to know CLI, HTTP, MCP tool names, digests, or schemas and without owning Runtime truth, Harness assets, execution, credentials, or authority.",
+  "evidence": [
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v6-agent-native-lifecycle-control-plane-r1@sha256:e2bf2fff5e198945db15ec3f3b7abbb4d5fa9014516929d103ce941fbcc783a4",
+      "authority": "Exact authorization to apply the v6 Roadmap and draft/preflight this Target; not Target approval or implementation authority."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/roadmap.yaml@sha256:51b33163ffbeb5ab7d6d811bd31e6b515aa7d2c6fd0545a06407f6c28eef368c",
+      "authority": "Current authoritative machine Roadmap declaring Expert 2.0.0 mandatory ordinary-human entry."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/docs/architecture/adr/0004-agent-native-lifecycle-control-plane.md",
+      "authority": "Approved replacement Expert/Host/Runtime architecture boundary; not implementation evidence."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json",
+      "authority": "Published Expert 1.0.1 compatibility baseline inherited criterion by criterion."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.1.0-unified-host-entry.json",
+      "authority": "Superseded unreleased development evidence only; its Candidate evidence cannot prove Expert 2.0 acceptance."
+    }
+  ],
+  "roadmapBindings": [
+    {
+      "repo": "/Users/wangyejing/project/harness/evopilot",
+      "project": "evopilot",
+      "matchedMilestone": "evopilot-evolution-expert-2.0-agent-host-entry",
+      "targetVersion": "2.0.0",
+      "classification": "ALIGNED",
+      "roadmapDigest": "sha256:51b33163ffbeb5ab7d6d811bd31e6b515aa7d2c6fd0545a06407f6c28eef368c",
+      "releaseProduct": "evopilot-evolution-expert"
+    }
+  ],
+  "scope": {
+    "include": [
+      "Implement one Agent-neutral conversational Core and deterministic generated Codex, Claude Code, WorkBuddy, generic Agent, and generic MCP Host Integration Bundles.",
+      "Use Runtime MCP facts and schemas to guide discovery, tutorial, project onboarding, Lifecycle CRUD, Harness matching, combined planning, Goal Target Loop, progress, evidence, recovery, acceptance, release, upgrade, and rollback journeys.",
+      "Implement installed bundle doctor, health, version, compatibility, upgrade, rollback, removal, help, and documentation routing.",
+      "Preserve Runtime-owned durable truth, exact decision frames, restart/resume, cross-Host transfer, and finite next actions without trusting conversation history.",
+      "Prove real Codex and Claude Code installation, designated-human WorkBuddy, independent Host, generic MCP, headless degraded recovery, exact Candidate pairing, impact closure, and NO_REGRESSION.",
+      "Synchronize Expert README, quickstart, tutorials, Host integration, Lifecycle management, Harness-guided Loop, security, recovery, troubleshooting, versioning, and migration documentation."
+    ],
+    "exclude": [
+      "No Runtime, project, Lifecycle, Harness, Goal, Target, Loop, evidence, recovery, acceptance, release, credential, or durable-state ownership in Expert.",
+      "No Harness selection, fabrication, reasoning, authoring, mutation, approval, Catalog, Registry, signing, or publication authority.",
+      "No embedded coding Agent, direct project source execution, raw credential storage, or bypass of qualified external Agent Runtime.",
+      "No Host-specific business, Lifecycle, authority, recovery, or durable-state semantics; adapters remain generated thin clients.",
+      "No lockstep version coupling among Expert, Runtime, Lifecycle resources, Host bundles, Harness assets, or frozen Suite fixtures.",
+      "No Codex operation or observation of designated-human WorkBuddy.",
+      "No direct ordinary-human CLI or HTTP fallback when Expert is unavailable.",
+      "No commit, push, Candidate, E2E, Host operation, publication, or Release under this unapproved draft."
+    ]
+  },
+  "designDecisions": {
+    "productIdentity": "EvoPilot Evolution Expert 2.0.0 Agent Host Entry",
+    "protocol": "Runtime-owned MCP Human Interaction Protocol",
+    "stateModel": "stateless presentation over Runtime durable truth",
+    "adapterModel": "one Core generates all Host Integration Bundles",
+    "authorityModel": "Expert renders exact Runtime decision frames and never infers authority",
+    "executionBoundary": "Expert never performs source execution; qualified external Agent Runtime does"
+  },
+  "compatibilityPolicy": {
+    "mode": "INHERIT"
+  },
+  "acceptance": [
+    {
+      "id": "EX2-FUNC01",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "One Agent-neutral Expert Core deterministically generates Codex, Claude Code, WorkBuddy, generic Agent, and generic MCP Host Integration Bundles.",
+      "requiredEvidence": "Generator determinism, one-Core-digest, package, and adapter conformance evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-FUNC02",
+      "category": "FUNCTIONAL",
+      "critical": false,
+      "criterion": "Expert discovers Runtime MCP health, protocol, version, capabilities, Host compatibility, and installed documentation before guiding an operation.",
+      "requiredEvidence": "Exact installed Runtime/Expert discovery transcripts and mismatch diagnostics.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-FUNC03",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert guides project and Lifecycle create, list, inspect, resolve, diff, successor update, activate, deactivate, archive, restore, rollback, dependency, usage, and audit journeys.",
+      "requiredEvidence": "MCP journey matrix against Runtime-owned objects.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-FUNC04",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert guides Harness match, combined plan, Goal Target Loop, pendingExecution progress, evidence, recovery, acceptance, and release decision frames without inventing facts or transitions.",
+      "requiredEvidence": "Golden conversation and Runtime-fact binding tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-FUNC05",
+      "category": "FUNCTIONAL",
+      "critical": false,
+      "criterion": "Expert discovers and validates inputs before asking, asks only unresolved relevant questions, and clearly separates parameters, readiness, decisions, and authority.",
+      "requiredEvidence": "Schema-driven dialogue, progressive disclosure, and negative approval-inference tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-FUNC06",
+      "category": "FUNCTIONAL",
+      "critical": false,
+      "criterion": "Expert resumes after Runtime or Host restart and transfers across Hosts solely from Runtime state rather than chat history.",
+      "requiredEvidence": "Restart and cross-Host resume evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-FUNC07",
+      "category": "FUNCTIONAL",
+      "critical": false,
+      "criterion": "Host Integration Bundle exposes install, doctor, health, version, upgrade, rollback, removal, tutorial, and help metadata for each supported Host.",
+      "requiredEvidence": "Installed bundle lifecycle tests and documentation verification.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-FUNC08",
+      "category": "FUNCTIONAL",
+      "critical": false,
+      "criterion": "Every response presents one coherent result and finite next action, with at most one unresolved human question unless an explicit typed batch is safer.",
+      "requiredEvidence": "Conversation contract and snapshot tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-CAP01",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Expert is stateless and non-authoritative: it owns no project, Lifecycle, Harness, Goal, Target, Loop, evidence, recovery, acceptance, release, credential, or durable Runtime truth.",
+      "requiredEvidence": "Architecture guards, restart tests, storage scan, and authority tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-CAP02",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Expert never selects, fabricates, authors, mutates, approves, or publishes Harness assets and cannot weaken Harness obligations.",
+      "requiredEvidence": "Negative Harness authority and composition tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-CAP03",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Expert never executes source work, embeds a general coding Agent, stores raw credentials, or bypasses qualified external Agent Runtime dispatch.",
+      "requiredEvidence": "Dependency, tool, credential, and execution boundary tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-CAP04",
+      "category": "CAPABILITY",
+      "critical": false,
+      "criterion": "Codex and Claude Code preserve identical Core and MCP semantics; WorkBuddy remains designated-human operated without Codex observation.",
+      "requiredEvidence": "Real Host conformance plus frozen WorkBuddy human declaration.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-CAP05",
+      "category": "CAPABILITY",
+      "critical": false,
+      "criterion": "A future Agent Host can qualify through the public Host Integration Bundle contract without Runtime or Expert Core source changes.",
+      "requiredEvidence": "Independent Host adapter conformance evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-CAP06",
+      "category": "CAPABILITY",
+      "critical": false,
+      "criterion": "Expert versioning, Candidate, acceptance, release, upgrade, and rollback remain independent of Runtime and declarative Lifecycle versions.",
+      "requiredEvidence": "Compatibility-range and independent release-unit tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-CAP07",
+      "category": "CAPABILITY",
+      "critical": false,
+      "criterion": "When Expert or one Host adapter is unavailable, administrator and machine recovery remain possible without silently presenting a direct ordinary-human fallback.",
+      "requiredEvidence": "Degraded-mode diagnostics and negative fallback tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-CAP08",
+      "category": "CAPABILITY",
+      "critical": false,
+      "criterion": "Expert documentation enables a new ordinary user to install, learn, onboard a project, manage Lifecycles, run a Harness-guided Loop, recover, and understand authority without prior CLI, HTTP, MCP-name, digest, or schema expertise.",
+      "requiredEvidence": "Fresh-user documentation journey and installed-artifact link/command checks.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2-CAP09",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Expert acceptance closes only on exact installed Expert 2.0.0 and compatible Runtime 6.0.0 Candidate evidence with complete inherited, Host, MCP, impact, and NO_REGRESSION closure.",
+      "requiredEvidence": "Independent criterion-level completion report and exact Candidate manifests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "acceptanceLineage": [
+    {
+      "id": "EXFUNC01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC01",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC02",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC03",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC04",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC05",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC06",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC07",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC07",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC08",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC08",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC09",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC09",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC10",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC10",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC11",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC11",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXFUNC12",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC12",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXCAP01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP01",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXCAP02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP02",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXCAP03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP03",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXCAP04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP04",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXCAP05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP05",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "EXCAP06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP06",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "TRACE01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE01",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "TRACE02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE02",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "TRACE03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE03",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "TRACE04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE04",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "TRACE05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE05",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "TRACE06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE06",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V4AC04",
+      "origin": "EvoPilot v4.0.0 Target AC04",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V4AC05",
+      "origin": "EvoPilot v4.0.0 Target AC05",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V4AC07",
+      "origin": "EvoPilot v4.0.0 Target AC07",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V4AC09",
+      "origin": "EvoPilot v4.0.0 Target AC09",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V4AC15",
+      "origin": "EvoPilot v4.0.0 Target AC15",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V4AC16",
+      "origin": "EvoPilot v4.0.0 Target AC16",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V4AC17",
+      "origin": "EvoPilot v4.0.0 Target AC17",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V4AC18",
+      "origin": "EvoPilot v4.0.0 Target AC18",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC01",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC01",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC02",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC02",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC03",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC03",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC04",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC04",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC05",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC05",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC06",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC06",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC07",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC07",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC08",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC08",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC09",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC09",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC10",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC10",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC11",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC11",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXFUNC12",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC12",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXCAP01",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP01",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXCAP02",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP02",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXCAP03",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP03",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXCAP04",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP04",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXCAP05",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP05",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    },
+    {
+      "id": "V1-EXCAP06",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP06",
+      "criterionDigest": "sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json@sha256:5330a636ded9a442e4df51951e89ffe984fb4b227b2cd19327495f029bccbe7c"
+    }
+  ],
+  "inheritedAcceptance": [
+    {
+      "id": "EXFUNC01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC01",
+      "criterion": "A first-time user can install the exact Expert package and obtain version-aware help without prior EvoPilot terminology knowledge.",
+      "requiredEvidence": "clean-host install and novice help transcript",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC02",
+      "criterion": "A side-effect-free tutorial teaches Project, Harness, Lifecycle, Goal, Target, Loop, recovery, evidence, acceptance, and release boundaries.",
+      "requiredEvidence": "tutorial transcript, object fixtures, and zero-effect sentinels",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC03",
+      "criterion": "The Expert discovers an existing project or guides a new project declaration through Runtime-owned schemas.",
+      "requiredEvidence": "existing and unknown project onboarding journeys",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC04",
+      "criterion": "The Expert guides project-definition adjustment and rollback while displaying exact impact and preserved evidence.",
+      "requiredEvidence": "adjustment, selective drift, rollback, and evidence transcript",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC05",
+      "criterion": "The Expert explains Runtime-produced Harness match reasons, alternatives, ambiguity, or abstention without choosing or fabricating a Harness.",
+      "requiredEvidence": "positive, ambiguous, no-match, and hostile-prompt scenarios",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC06",
+      "criterion": "The Expert renders the combined immutable Harness plus Lifecycle plan and mandatory obligations without weakening them.",
+      "requiredEvidence": "plan rendering comparison with Runtime canonical objects",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC07",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC07",
+      "criterion": "The Expert distinguishes non-authorizing questions and progress from exact digest-bound human decisions.",
+      "requiredEvidence": "authority-negative and genuine-decision interaction matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC08",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC08",
+      "criterion": "The Expert explains automatic recovery, unknown classes, proposed automation rules, one-time approval, reuse, revocation, and escalation.",
+      "requiredEvidence": "recovery and registry conversational portfolio",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC09",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC09",
+      "criterion": "After restart or Host transfer the Expert resumes only from current Runtime-owned state and receipts.",
+      "requiredEvidence": "restart, transfer, digest drift, and resume evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC10",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC10",
+      "criterion": "Codex and WorkBuddy complete their declared exact-Candidate ranges with semantically equivalent Runtime results.",
+      "requiredEvidence": "real-host transcripts, object digests, and designated-human WorkBuddy declaration",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC11",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC11",
+      "criterion": "A generated third-party Host Adapter qualifies without Engine or Expert Core source modification.",
+      "requiredEvidence": "adapter generation, conformance report, and source-diff proof",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXFUNC12",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXFUNC12",
+      "criterion": "Expert absence or incompatibility produces clear diagnostics while headless Runtime operations remain complete.",
+      "requiredEvidence": "missing/incompatible Expert matrix and successful CLI/API/CI journey",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXCAP01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP01",
+      "criterion": "All Host adapters bind one exact Expert Core digest and contain no Host-specific product semantics.",
+      "requiredEvidence": "generated-source equivalence and prohibited-semantics scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXCAP02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP02",
+      "criterion": "Expert protocol compatibility binds Expert version, Engine range, protocol, Core, Adapter, Host capabilities, and conformance status.",
+      "requiredEvidence": "compatibility negotiation and mismatch matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXCAP03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP03",
+      "criterion": "Expert keeps no durable canonical Project, Harness, Lifecycle, Goal, Target, Loop, evidence, recovery, approval, or release state.",
+      "requiredEvidence": "state-location audit, restart behavior, and filesystem sentinels",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXCAP04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP04",
+      "criterion": "Expert never owns credentials, raw secrets, approval identity, external authority, or Harness mutation capability.",
+      "requiredEvidence": "threat model, capability negatives, secret scans, and hostile Host tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXCAP05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP05",
+      "criterion": "Expert version, Candidate, acceptance, release, upgrade, rollback, and uninstall are independent from Runtime.",
+      "requiredEvidence": "independent lifecycle, unchanged Runtime digest, and compatibility matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EXCAP06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.EXCAP06",
+      "criterion": "Installed-version docs, tutorials, examples, troubleshooting, and migration help are discoverable and verified against exact commands and schemas.",
+      "requiredEvidence": "documentation map, link check, command rehearsal, and version skew tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE01",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE01",
+      "criterion": "The complete original Expert and Runtime v5 scheme inventory is canonical, digest-bound, immutable for the campaign, and includes every accepted Roadmap clause, both predecessor Targets, every explicit user correction, and every audited Expert or cross-product gap.",
+      "requiredEvidence": "inventory schema validation, source digest verification, completeness enumeration, and mutation-detection tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE02",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE02",
+      "criterion": "Every Expert inventory item maps to at least one successor Target scope item and acceptance criterion, with no silent exclusion or unmapped requirement.",
+      "requiredEvidence": "machine-readable Expert traceability matrix and negative tests for missing, duplicate, silently excluded, and unmapped items",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE03",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE03",
+      "criterion": "Every Expert current and inherited acceptance criterion has an independent executable validator and a concrete criterion-specific evidence contract; generic aggregate anchors and bulk PASS projection are rejected.",
+      "requiredEvidence": "validator inventory, independence checks, per-criterion evidence schema, tamper tests, and generic-evidence rejection tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE04",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE04",
+      "criterion": "Every user-observable Expert requirement maps to an exact E2E starting state, terminal state, prohibited effects, required Hosts, and concrete evidence, including EXE2E01-EXE2E08 and their cross-product mappings.",
+      "requiredEvidence": "Expert E2E trace matrix, terminal-state assertions, prohibited-effect sentinels, Host coverage audit, and uncovered-behavior negative test",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE05",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE05",
+      "criterion": "Expert completion aggregation remains INCOMPLETE when any required item is missing, partial, failed, pending, stale, warning-only, generic, unmapped, bound to the wrong Candidate, or represented only by an unauthorized human declaration.",
+      "requiredEvidence": "fail-closed Expert aggregation tests for every incomplete evidence class, unauthorized human substitution, and wrong-candidate binding",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "TRACE06",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-evolution-expert-v1.0.1-completion-recovery.json#acceptance.TRACE06",
+      "criterion": "The final completion report proves 100-percent original-scheme coverage, all Expert current and inherited acceptance and E2E passed, exact installed Expert and Runtime Candidate pair verified, complete impact closure, and NO_REGRESSION passed.",
+      "requiredEvidence": "digest-bound final completion report with total equals passed and zero failed, pending, stale, generic, and unmapped counts plus independent recomputation",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC04",
+      "origin": "EvoPilot v4.0.0 Target AC04",
+      "criterion": "Conversational and headless clients retain equivalent schema-driven interaction semantics.",
+      "requiredEvidence": "cross-client question, validation, provenance, and result comparison",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC05",
+      "origin": "EvoPilot v4.0.0 Target AC05",
+      "criterion": "Input and conversation never imply authority and raw secrets remain prohibited.",
+      "requiredEvidence": "authority negatives, secret scans, and SecretRef use",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC07",
+      "origin": "EvoPilot v4.0.0 Target AC07",
+      "criterion": "Human gates are exact, digest-bound, explained, and never satisfied by generic dialogue.",
+      "requiredEvidence": "hostile conversation and genuine-decision matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC09",
+      "origin": "EvoPilot v4.0.0 Target AC09",
+      "criterion": "Resume and recovery preserve Runtime receipts and uncertain outcomes stop safely.",
+      "requiredEvidence": "restart, transfer, duplicate, and uncertainty evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC15",
+      "origin": "EvoPilot v4.0.0 Target AC15",
+      "criterion": "Codex, WorkBuddy, independent Host, and headless clients preserve Engine semantics.",
+      "requiredEvidence": "cross-host and transport conformance",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC16",
+      "origin": "EvoPilot v4.0.0 Target AC16",
+      "criterion": "Host and Runtime adapter capabilities, requests, results, receipts, and evidence remain exact and hostile-safe.",
+      "requiredEvidence": "adapter contract and hostile-host matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC17",
+      "origin": "EvoPilot v4.0.0 Target AC17",
+      "criterion": "All Agent-facing operation remains read-only with respect to Harness assets.",
+      "requiredEvidence": "Harness mutation sentinels and explanation-only behavior",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V4AC18",
+      "origin": "EvoPilot v4.0.0 Target AC18",
+      "criterion": "Security, docs, packaging, compatibility, and distribution have no regression.",
+      "requiredEvidence": "full Expert Candidate checks, security scan, docs rehearsal, and install matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC01",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC01",
+      "criterion": "A first-time user can install the exact Expert package and obtain version-aware help without prior EvoPilot terminology knowledge.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: clean-host install and novice help transcript",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC02",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC02",
+      "criterion": "A side-effect-free tutorial teaches Project, Harness, Lifecycle, Goal, Target, Loop, recovery, evidence, acceptance, and release boundaries.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: tutorial transcript, object fixtures, and zero-effect sentinels",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC03",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC03",
+      "criterion": "The Expert discovers an existing project or guides a new project declaration through Runtime-owned schemas.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: existing and unknown project onboarding journeys",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC04",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC04",
+      "criterion": "The Expert guides project-definition adjustment and rollback while displaying exact impact and preserved evidence.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: adjustment, selective drift, rollback, and evidence transcript",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC05",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC05",
+      "criterion": "The Expert explains Runtime-produced Harness match reasons, alternatives, ambiguity, or abstention without choosing or fabricating a Harness.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: positive, ambiguous, no-match, and hostile-prompt scenarios",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC06",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC06",
+      "criterion": "The Expert renders the combined immutable Harness plus Lifecycle plan and mandatory obligations without weakening them.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: plan rendering comparison with Runtime canonical objects",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC07",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC07",
+      "criterion": "The Expert distinguishes non-authorizing questions and progress from exact digest-bound human decisions.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: authority-negative and genuine-decision interaction matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC08",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC08",
+      "criterion": "The Expert explains automatic recovery, unknown classes, proposed automation rules, one-time approval, reuse, revocation, and escalation.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: recovery and registry conversational portfolio",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC09",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC09",
+      "criterion": "After restart or Host transfer the Expert resumes only from current Runtime-owned state and receipts.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: restart, transfer, digest drift, and resume evidence",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC10",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC10",
+      "criterion": "Codex and WorkBuddy complete their declared exact-Candidate ranges with semantically equivalent Runtime results.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: real-host transcripts, object digests, and designated-human WorkBuddy declaration",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC11",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC11",
+      "criterion": "A generated third-party Host Adapter qualifies without Engine or Expert Core source modification.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: adapter generation, conformance report, and source-diff proof",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXFUNC12",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXFUNC12",
+      "criterion": "Expert absence or incompatibility produces clear diagnostics while headless Runtime operations remain complete.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: missing/incompatible Expert matrix and successful CLI/API/CI journey",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXCAP01",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP01",
+      "criterion": "All Host adapters bind one exact Expert Core digest and contain no Host-specific product semantics.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: generated-source equivalence and prohibited-semantics scan",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXCAP02",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP02",
+      "criterion": "Expert protocol compatibility binds Expert version, Engine range, protocol, Core, Adapter, Host capabilities, and conformance status.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: compatibility negotiation and mismatch matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXCAP03",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP03",
+      "criterion": "Expert keeps no durable canonical Project, Harness, Lifecycle, Goal, Target, Loop, evidence, recovery, approval, or release state.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: state-location audit, restart behavior, and filesystem sentinels",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXCAP04",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP04",
+      "criterion": "Expert never owns credentials, raw secrets, approval identity, external authority, or Harness mutation capability.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: threat model, capability negatives, secret scans, and hostile Host tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXCAP05",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP05",
+      "criterion": "Expert version, Candidate, acceptance, release, upgrade, rollback, and uninstall are independent from Runtime.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: independent lifecycle, unchanged Runtime digest, and compatibility matrix",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V1-EXCAP06",
+      "origin": "Evolution Expert v1.0.0 Target revision 2 EXCAP06",
+      "criterion": "Installed-version docs, tutorials, examples, troubleshooting, and migration help are discoverable and verified against exact commands and schemas.",
+      "requiredEvidence": "Fresh successor evidence for the original Expert criterion: documentation map, link check, command rehearsal, and version skew tests",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "regressionImpact": [
+    {
+      "area": "Expert 2.0.0 changes the ordinary-human entry and Host Integration contract while preserving every applicable published Expert 1.0.1 guarantee.",
+      "affectedAcceptanceIds": [
+        "EXFUNC01",
+        "EXFUNC02",
+        "EXFUNC03",
+        "EXFUNC04",
+        "EXFUNC05",
+        "EXFUNC06",
+        "EXFUNC07",
+        "EXFUNC08",
+        "EXFUNC09",
+        "EXFUNC10",
+        "EXFUNC11",
+        "EXFUNC12",
+        "EXCAP01",
+        "EXCAP02",
+        "EXCAP03",
+        "EXCAP04",
+        "EXCAP05",
+        "EXCAP06",
+        "TRACE01",
+        "TRACE02",
+        "TRACE03",
+        "TRACE04",
+        "TRACE05",
+        "TRACE06",
+        "V4AC04",
+        "V4AC05",
+        "V4AC07",
+        "V4AC09",
+        "V4AC15",
+        "V4AC16",
+        "V4AC17",
+        "V4AC18",
+        "V1-EXFUNC01",
+        "V1-EXFUNC02",
+        "V1-EXFUNC03",
+        "V1-EXFUNC04",
+        "V1-EXFUNC05",
+        "V1-EXFUNC06",
+        "V1-EXFUNC07",
+        "V1-EXFUNC08",
+        "V1-EXFUNC09",
+        "V1-EXFUNC10",
+        "V1-EXFUNC11",
+        "V1-EXFUNC12",
+        "V1-EXCAP01",
+        "V1-EXCAP02",
+        "V1-EXCAP03",
+        "V1-EXCAP04",
+        "V1-EXCAP05",
+        "V1-EXCAP06"
+      ],
+      "reason": "Core generation, Host adapters, dialogue, authority routing, statelessness, documentation, and compatibility may all be affected."
+    }
+  ],
+  "excludedHistoricalAcceptance": [],
+  "realCaseCoverage": [
+    {
+      "id": "EX2E2E01",
+      "scenario": "A new user installs the Codex Host Integration Bundle, discovers Expert through MCP, runs tutorial, onboards an unknown project, and creates its first Lifecycle without CLI knowledge.",
+      "hosts": [
+        "Codex"
+      ],
+      "requiredEvidence": "Exact installed-Candidate transcript, Core digest, MCP facts, Runtime objects, and zero source diff.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2E2E02",
+      "scenario": "Claude Code installs the generated bundle and inspects the object created in Codex with identical Runtime truth and Expert semantics.",
+      "hosts": [
+        "Claude Code"
+      ],
+      "requiredEvidence": "Cross-Host object and response semantic equality evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2E2E03",
+      "scenario": "A designated human completes the frozen WorkBuddy install and authority journey without Codex operation or observation.",
+      "hosts": [
+        "WorkBuddy"
+      ],
+      "requiredEvidence": "Exact Candidate-bound designated-human declaration.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2E2E04",
+      "scenario": "Expert guides complete Lifecycle successor update, diff, activation, deactivation, archive, restore, rollback, dependency, usage, and audit operations.",
+      "hosts": [
+        "Codex",
+        "generic MCP"
+      ],
+      "requiredEvidence": "Complete Runtime-owned CRUD journey transcript.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2E2E05",
+      "scenario": "Expert matches a real HarnessBundle, shows the monotonic combined plan, starts a Goal Target Loop, and renders qualified external Agent Runtime progress and receipt evidence.",
+      "hosts": [
+        "Codex",
+        "independent Agent Runtime"
+      ],
+      "requiredEvidence": "Harness, Lifecycle, pendingExecution, receipt, and Loop evidence chain.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2E2E06",
+      "scenario": "Runtime and Host restart, then Expert resumes from durable Runtime state without trusting chat history.",
+      "hosts": [
+        "Codex",
+        "headless"
+      ],
+      "requiredEvidence": "Restart/resume and conversation reconstruction rejection evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2E2E07",
+      "scenario": "A new independent Agent Host qualifies from the public bundle contract and completes discovery, read, guided mutation preview, and stop behavior without Core changes.",
+      "hosts": [
+        "independent Host",
+        "generic MCP"
+      ],
+      "requiredEvidence": "Adapter conformance and repository diff evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2E2E08",
+      "scenario": "Security and authority journey rejects raw secrets, inferred approval, Harness mutation, direct source execution, and publication while returning an exact finite next action.",
+      "hosts": [
+        "Codex",
+        "generic MCP"
+      ],
+      "requiredEvidence": "Adversarial dialogue and Runtime decision-frame evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2E2E09",
+      "scenario": "Expert upgrades and rolls back independently while remaining compatible with the exact Runtime protocol range.",
+      "hosts": [
+        "Codex",
+        "Claude Code"
+      ],
+      "requiredEvidence": "Host Integration Bundle upgrade/rollback and compatibility evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX2E2E10",
+      "scenario": "With Expert unavailable, machine diagnostics recover Runtime without exposing a silent direct ordinary-human operation path.",
+      "hosts": [
+        "headless",
+        "independent Host"
+      ],
+      "requiredEvidence": "Degraded-mode recovery and negative fallback evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "noRegressionRequired": true,
+  "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
+  "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
+  "noRegression": {
+    "status": "PENDING",
+    "evidenceRefs": []
+  },
+  "approvals": {
+    "target": {
+      "decision": "APPROVED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-evolution-expert-v2.0.0-agent-host-entry-target-revision-1",
+      "authorizationDigest": "sha256:c72fc737dcb8e4bce19451a373d787e12abe0ca2518360e51234aa8414a8d5f4"
+    },
+    "release": {
+      "decision": "PENDING",
+      "by": null,
+      "evidenceRef": null,
+      "authorizationDigest": null
+    }
+  },
+  "release": {
+    "product": "evopilot-evolution-expert",
+    "actions": [
+      "commit",
+      "push",
+      "tag",
+      "github-release",
+      "npm",
+      "installer"
+    ],
+    "versions": {
+      "evopilot": "2.0.0"
+    }
+  }
+}

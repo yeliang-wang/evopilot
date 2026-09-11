@@ -4,10 +4,13 @@
 
 This Roadmap is the human-readable product plan for EvoPilot. The
 machine-readable authority is [`governance/roadmap.yaml`](../../governance/roadmap.yaml).
-The accepted [EvoPilot / evopilot-harness boundary](../architecture/adr/0001-evopilot-harness-boundary.md)
-and [Open Lifecycle Harness](../architecture/adr/0002-open-lifecycle-harness.md)
-decisions remain inherited constraints until the v5 replacement ADR is reviewed
-and accepted.
+The accepted [EvoPilot / evopilot-harness boundary](../architecture/adr/0001-evopilot-harness-boundary.md),
+[Open Lifecycle Harness](../architecture/adr/0002-open-lifecycle-harness.md),
+[Harness-Guided Governed Evolution Runtime](../architecture/adr/0003-harness-guided-governed-evolution-runtime.md),
+and [Agent-Native Lifecycle Control Plane](../architecture/adr/0004-agent-native-lifecycle-control-plane.md)
+decisions govern the current plan. ADR 0004 supersedes only the conflicting
+optional-Expert, ordinary-human direct-entry, file-catalog, and execution-plane
+parts of ADRs 0002 and 0003.
 
 Every product feature, architecture, contract, version, and release task must
 pass the deterministic Roadmap Gate. `ALIGNED` work may proceed to Target
@@ -26,23 +29,26 @@ The public EvoPilot Runtime `v5.0.0` and Evolution Expert `v1.0.0` artifacts are
 immutable published predecessors. Their historical acceptance records remain
 process evidence, but the completion audit found that they did not prove the
 entire approved v5 scheme. Runtime `v5.0.1` and Evolution Expert `v1.0.1` are
-the completed public recovery releases. Runtime `v5.1.0` and Evolution Expert
-`v1.1.0` are the next independently versioned capability-convergence releases.
+the completed public recovery releases. The unreleased Runtime `v5.1.0` and
+Evolution Expert `v1.1.0` lines are superseded and cannot be promoted. Runtime
+`v6.0.0` and Evolution Expert `v2.0.0` are the current independently versioned
+Agent-native Lifecycle control-plane releases.
 Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset, Ontology, Policy,
 Evaluation, and Catalog versions evolve independently.
 
 ## Product Direction
 
-EvoPilot v5 is a **Harness-Guided Governed Evolution Runtime**:
+EvoPilot v6 is an **Agent-Native Harness-Guided Lifecycle Control Plane**:
 
 ```text
 EvolutionProjectDefinition
   + user Goal and exact GoalTarget
   + published immutable HarnessBundle
-  + resolved open Lifecycle and Policy
-  + qualified Host, Runtime, Provider, Environment, and Authority
+  + tenant/workspace governed immutable LifecycleRevision and Policy
+  + qualified Agent Host, Agent Runtime, Provider, Environment, and Authority
     -> HarnessExecutionBinding
     -> TargetPlan
+    -> exact pendingExecution delegated to the external Agent Runtime
     -> durable LoopRun iterations
     -> Evidence and deterministic decisions
     -> recovery or Target completion
@@ -57,12 +63,12 @@ The primary invariant is:
 > binding. Lifecycle strengthens and orchestrates Harness-guided execution; it
 > never replaces, weakens, authors, or publishes the Harness definition.
 
-This preserves EvoPilot's existing product center. v5 strengthens and
-generalizes project declarations, open Lifecycle composition, automation,
-recovery, Agent integration, human interaction, acceptance, and release around
-the retained Harness-guided Goal/Target/Loop core. EvoPilot does not become a
-Harness-independent workflow engine, Harness producer, general coding Agent,
-or model-training system.
+This preserves EvoPilot's existing product center. v6 makes Runtime the durable
+project-neutral control plane; Evolution Expert over MCP becomes the only
+supported ordinary-human interaction path; qualified third-party Agent Runtimes
+perform bounded source work. EvoPilot does not become a Harness-independent
+workflow engine, Harness producer, general coding Agent, Agent Host, or
+model-training system.
 
 ## Four Independent Lifecycle Planes
 
@@ -79,7 +85,8 @@ The word *lifecycle* has four distinct meanings in this product family:
    evidence ingestion, reasoning, authoring, review, approval, evaluation,
    Catalog, Registry, and publication. EvoPilot is a dynamic read-only consumer.
 4. **Evolution Expert lifecycle** independently versions, accepts, publishes,
-   upgrades, and rolls back the optional ordinary-human Skill distribution.
+   upgrades, and rolls back the mandatory ordinary-human Skill distribution
+   installed into qualified third-party Agent Hosts.
 
 These planes may exchange immutable evidence and compatibility metadata. They
 never share canonical state, authority, semantic versions, or automatic future
@@ -188,15 +195,28 @@ semantics but cannot grant source, credential, database, production,
 acceptance, publication, or Release authority. An irreconcilable conflict
 produces a deterministic report and blocks before mutation.
 
-## Open Lifecycle Around The Harness Core
+## Governed Lifecycle Control Plane Around The Harness Core
 
-Each `LifecycleDefinition` is human-readable YAML with `apiVersion`, `kind`,
-`metadata`, and `spec`. Definitions declare typed inputs, stage dependencies,
-imports, bounded conditions, evidence requirements, retry, recovery, decisions,
-Candidate construction, acceptance, Release, rollback, and completion. They
-reference a closed versioned Action and Capability Registry; YAML cannot embed
-arbitrary shell, code, raw secrets, host-specific executables, or hidden
-authority.
+Each tenant/workspace-scoped `LifecycleDefinition` is human-readable YAML with
+`apiVersion`, `kind`, `metadata`, and `spec`. The production source of truth is
+a governed Lifecycle Registry containing canonical immutable
+`LifecycleRevision` records and explicit active pointers. File catalogs are
+bootstrap and reference imports only. Definitions declare typed inputs, stage
+dependencies, imports, bounded conditions, evidence requirements, retry,
+recovery, decisions, Candidate construction, acceptance, Release, rollback,
+and completion. They reference a closed versioned Action and Capability
+Registry; YAML cannot embed arbitrary shell, code, raw secrets, host-specific
+executables, or hidden authority.
+
+Evolution Expert exposes create/register, list, inspect, resolve, semantic diff,
+successor update, activate, deactivate, archive, restore, rollback, dependency,
+usage, and audit journeys through MCP. Updates always create a successor
+revision. User-facing deletion means deactivate plus archive or tombstone;
+physical deletion is forbidden for referenced revisions and is allowed only for
+an explicitly eligible unreferenced draft. Mutations are idempotent, bind the
+expected active digest, enforce referential integrity, persist crash-safely, and
+append immutable audit evidence. Active-pointer changes affect future planning
+only; existing Loops retain and revalidate their exact bound revision.
 
 Resolution produces one immutable `LifecycleRevision`. Every run binds the
 revision, its input and policy closure, the complete `HarnessExecutionBinding`,
@@ -213,9 +233,9 @@ The decision modes are:
 Inputs are resolved from project discovery, Organization and Lifecycle defaults,
 Harness requirements, Runtime capability discovery, deterministic derivation,
 interactive answers, and external `SecretRef` values. The same schema drives
-Evolution Expert, UI, MCP, CLI, API, and CI. EvoPilot discovers and validates
-before asking and asks only unresolved relevant questions. Parameter capture is
-not authority.
+Evolution Expert, MCP, validation, and machine integrations. EvoPilot discovers
+and validates before asking and asks only unresolved relevant questions.
+Parameter capture is not authority.
 
 Deterministic, reversible, bounded work within current authority is automatic by
 default. This includes validation, build, test, smoke, evaluation, soak
@@ -247,33 +267,39 @@ state, or converts business ambiguity into a technical repair.
 EvoPilot remains Host-neutral and Runtime-neutral:
 
 ```text
-Human -> Codex / WorkBuddy / another Host
-  -> Evolution Expert or another conformant client
-  -> MCP / HTTP
+Human -> Codex / Claude Code / WorkBuddy / another qualified Host
+  -> Evolution Expert
+  -> MCP
   -> EvoPilot Runtime and HarnessExecutionBinding
   -> AgentRuntimeAdapter / ExecutorAdapter
   -> Codex, OpenCode, or another qualified Runtime
   -> normalized result, trajectory, usage, artifacts, and evidence
 ```
 
-A Host carries conversation and current user decisions. A Runtime performs
-bounded source work. One external product may implement either or both roles,
-but each role is qualified independently. OpenCode remains the first
-first-class coding Runtime adapter. Codex becomes an official Host and, when
-its execution transport passes capability and conformance requirements, an
-official Runtime. At least one independent Host and Runtime must pass the same
-contracts before neutrality is claimed.
+A Host carries conversation, Expert presentation, exact decision display, and
+MCP session integration. EvoPilot Runtime owns projects, Lifecycles, Goals,
+Targets, Loops, bindings, policies, evidence, recovery, authority, audit, and
+durable state. A qualified external Agent Runtime performs bounded source
+inspection, modification, test, build, analysis, and repair from one exact
+`pendingExecution`, then returns a normalized receipt, trajectory, usage,
+artifacts, and evidence. One external product may implement either or both Host
+and Agent Runtime roles, but each role is qualified independently. OpenCode
+remains the first first-class coding Runtime adapter. Codex is an official Host
+and may qualify independently as a Runtime. EvoPilot never silently embeds a
+general-purpose coding Agent or falls back to an unqualified Host or Agent
+Runtime.
 
 The Runtime may execute only the exact `pendingExecution` action and capability
 intersection permitted by the combined binding. Agent output cannot bypass
 normalization, Harness validators, Lifecycle policy, human authority, source
 closure, acceptance, or project Release decisions.
 
-## Independently Versioned Evolution Expert
+## Mandatory, Independently Versioned Evolution Expert
 
-`@evopilot/evolution-expert` is the proposed official Agent-neutral Skill
-distribution. Its first working version is `1.0.0`; it is not embedded into or
-lockstep-versioned with EvoPilot Runtime `5.0.0`.
+`@evopilot/evolution-expert` is the official Agent-neutral Skill distribution.
+Version `2.0.0` is the mandatory ordinary-human entry for Runtime `6.0.0`, but
+it remains independently versioned and is not embedded into or
+lockstep-versioned with the Runtime.
 
 The initial source may be co-located as an independent EvoPilot workspace so
 protocol and official integration changes are reviewed together. It retains a
@@ -282,12 +308,16 @@ Acceptance Binding, Release authorization, public artifact, upgrade, and
 rollback. It may move to a separate repository later without changing the
 public protocol.
 
-The package contains one Agent-neutral Core plus generated Codex, WorkBuddy,
-generic Agent, and generic MCP adapters. Host formats may differ, but every
-Adapter binds the same Core digest and contains no Host-specific Lifecycle,
-Harness-selection, approval, or recovery semantics. Compatibility binds the
-Expert version, Runtime protocol range, Expert protocol version, Core digest,
-Adapter identity and digest, required Host capabilities, and conformance status.
+The package contains one Agent-neutral Core plus generated Codex, Claude Code,
+WorkBuddy, generic Agent Host, and generic MCP Host adapters. A Host Integration
+Bundle binds the exact Expert, generated Adapter, MCP configuration, Runtime
+launcher or administrator-managed endpoint, and install, health, upgrade,
+rollback, and removal metadata. Host formats may differ, but every Adapter binds
+the same Core digest and contains no Host-specific Lifecycle, Harness-selection,
+approval, recovery, credential, or durable-state semantics. Compatibility binds
+the Expert version, Runtime protocol range, Expert protocol version, Core
+digest, Adapter identity and digest, required Host capabilities, and conformance
+status.
 
 The Expert guides first use, learning, tutorials, project registration and
 adjustment, Harness selection explanation, Goal evolution, inspection,
@@ -297,12 +327,15 @@ explain a conflict or abstention. It cannot choose, fabricate, edit, approve,
 publish, or override a Harness, validator, evidence requirement, digest,
 authority, or Runtime decision.
 
-Natural language is the ordinary-human entry. Supported journeys cannot require
+Natural language through Evolution Expert and MCP is the only supported
+ordinary-human entry. Supported journeys cannot require
 memorized slash commands, CLI commands, MCP tool names, digests, or approval
 tokens. The Runtime owns durable session state. After restart or Host transfer,
 the Expert reloads and reconciles current Runtime state instead of trusting chat
-history. CLI, HTTP API, and CI remain complete when Expert or one Adapter is
-absent or incompatible.
+history. CLI, HTTP API, and CI remain available only for machine integration,
+administration, diagnostics, compatibility, and emergency recovery when Expert
+or one Adapter is absent or incompatible; they are not an ordinary-human
+fallback and cannot bypass Runtime semantics or authority.
 
 ## Reference Instances
 
@@ -344,6 +377,42 @@ substitute for their required evidence class. Release readiness requires 100%
 PASS, complete inherited acceptance, complete impact closure, and
 `NO_REGRESSION`.
 
+### v6 Agent-Native Control-Plane Acceptance
+
+Runtime `6.0.0` and Expert `2.0.0` must bind one exact installed Candidate pair
+and close 100 percent of current functional, capability, applicable inherited,
+Lifecycle CRUD, Host/MCP, Agent Runtime, impact, and no-regression evidence.
+The mandatory real journeys are:
+
+1. `E2E-INSTALL-CODEX`, `E2E-INSTALL-CLAUDE-CODE`, and designated-human
+   `E2E-INSTALL-WORKBUDDY` prove fresh Host Integration Bundle installation,
+   Expert discovery, MCP health, exact versions, and side-effect-free tutorial.
+2. `E2E-LIFECYCLE-CREATE`, `READ`, `UPDATE`, `DEACTIVATE`, `ARCHIVE`,
+   `ROLLBACK`, and `IMPORT` prove complete immutable-revision lifecycle,
+   historical integrity, dependency/usage views, active-pointer semantics, and
+   safe module composition through Expert and MCP.
+3. `E2E-TENANCY`, `RESTART`, and `SECURITY` prove scope isolation, crash-safe
+   recovery without chat history, concurrency, audit, closed actions,
+   `SecretRef`, permission bounds, and rejection of arbitrary execution.
+4. `E2E-AGENT-RUNTIME` proves Expert starts a Harness-guided Goal Target Loop,
+   Runtime emits exact `pendingExecution`, a qualified external Agent Runtime
+   performs bounded source work, and Runtime verifies the normalized receipt.
+5. `E2E-CROSS-HOST` proves Codex creates, Claude Code inspects, and the
+   designated WorkBuddy operator authorizes the same Runtime-owned object
+   without semantic divergence.
+6. `E2E-REFERENCE-DATARIG`, `REFERENCE-EVOPILOT`, and `REFERENCE-HARNESS`
+   prove three non-privileged declarations, including a real published
+   `HarnessBundle` guiding the EvoPilot repository Loop without Harness writes.
+7. `E2E-NO-SUITE` proves all representative journeys with both legacy Suites
+   absent and `legacySuiteInvocationCount=0`; `E2E-SOAK` then runs the exact
+   installed pair actively for 5400 seconds.
+
+Every item requires criterion-specific immutable evidence and an independent
+validator. Unit tests, source-checkout simulations, screenshots, prose, partial
+aggregates, and v5.1 Candidate evidence cannot substitute for exact installed
+v6 E2E. Any failed, pending, stale, generic, warning, or unmapped required item
+keeps completion `INCOMPLETE`.
+
 ### Original-Scheme Completion Assurance
 
 Runtime `5.0.1` and Evolution Expert `1.0.1` are completion successors, not a
@@ -364,10 +433,11 @@ count is zero, the exact installed Runtime/Expert Candidate pair is verified,
 and `NO_REGRESSION` passes. Anything less remains `INCOMPLETE` and returns the
 exact affected scope to implementation or evidence collection.
 
-### v5.1 Convergence Acceptance
+### Superseded v5.1 Convergence Acceptance History
 
-Runtime `5.1.0` and Expert `1.1.0` inherit the complete accepted v4 and v5.0.1
-portfolios. Their Targets must additionally freeze and cover:
+Runtime `5.1.0` and Expert `1.1.0` were not released. Their Targets, Candidates,
+and partial acceptance remain immutable development and impact evidence only;
+they cannot accept or release v6. Their frozen scope required:
 
 1. exact differential parity for EvoPilot Suite `3.2.1` and DataRig Suite
    `2.1.5`, with 100% inventory coverage and zero silent exclusions;
@@ -438,14 +508,14 @@ verified, and legacy invocation count zero. A partial aggregate remains
     conflict, authority non-escalation, cross-Host equivalence, and zero Harness
     writes.
 
-## Suite Capability Convergence
+## Frozen Suite Reference Evidence
 
-Runtime `5.1.0` and Evolution Expert `1.1.0` turn the current Suite migration
-inputs into one released EvoPilot operating path. *Contains the Suites* means
-capability extraction into public Runtime contracts, declarative resources,
-qualified Action Providers, and one Agent-neutral Expert Core. It never means
-copying, loading, invoking, or publishing either legacy Suite directory as
-Runtime implementation.
+The unreleased Runtime `5.1.0` and Evolution Expert `1.1.0` work captured Suite
+capability evidence but is not promotable. In v6, *contains the Suite
+capabilities* means project-neutral public Runtime contracts, declarative
+resources, qualified Action Providers, and one Agent-neutral Expert Core. It
+never means copying, synchronizing, loading, invoking, or publishing either
+legacy Suite directory as Runtime implementation.
 
 The migration is **latest-only**. The currently observed exact baselines are:
 
@@ -454,14 +524,13 @@ The migration is **latest-only**. The currently observed exact baselines are:
 - DataRig Codex Suite `2.1.5`, snapshot
   `sha256:064ee6a8a7b21ae8029cfaaf03eafef7ff0816a8b031d8468c49eae6b5b4a330`.
 
-Target review must re-read both installed manifests and prove these are still
-the latest active versions. Drift before Target approval refreshes only the
-changed latest snapshot. After the Target freezes its exact baseline, later
-legacy Suite feature versions do not expand the Target automatically; no
-compatibility work is required for superseded Suite versions. Corresponding
-future capability evolution belongs to EvoPilot Runtime, declarative project,
-Lifecycle, Policy, Governance and Action Provider resources, or the
-independently versioned Evolution Expert.
+These exact snapshots are frozen migration and E2E fixtures. They do not define
+Runtime scope, become a Runtime dependency, require ongoing synchronization, or
+receive privileged Engine behavior. Later legacy Suite versions do not expand
+the v6 Target automatically. Future compatible project Pipeline changes are new
+tenant/workspace Lifecycle, Project, Policy, Governance, Provider, Environment,
+Channel, `SecretRef`, or Authority resource revisions. Runtime or Expert
+versions change only when a genuinely project-neutral public contract changes.
 
 Capability parity is not inferred from zero invocation. A canonical inventory
 must map every baseline behavior, stop rule, authority boundary, recovery class,
@@ -477,23 +546,25 @@ failed-case-first rerun, impact closure, full regression, safe resume, and exact
 authority stop conditions. DataRig, EvoPilot, and `evopilot-harness` provide
 declarative reference instances; Runtime code cannot branch on their names.
 
-The final Codex surface is one released generated Evolution Expert Adapter. It
+The final Host surface is one released generated Evolution Expert Adapter. It
 contains no project Lifecycle, Harness selection, approval, recovery,
-acceptance, release, credential, or durable-state semantics. It guides the user
-through EvoPilot's MCP, HTTP, or CLI contracts; headless Runtime remains
-complete without the Expert.
+acceptance, release, credential, or durable-state semantics. It guides ordinary
+users only through EvoPilot's MCP contracts; CLI and HTTP remain machine,
+administrator, diagnostics, compatibility, and emergency-recovery surfaces.
 
 ## Legacy Suite Transition
 
 The active EvoPilot Codex Suite and DataRig Codex Suite remain untouched while
-Runtime `5.1.0` and Expert `1.1.0` are implemented and accepted. They are exact
-migration inputs, not product components. Their supported replacement is:
+Runtime `6.0.0` and Expert `2.0.0` are implemented and accepted. They are frozen
+migration and reference inputs, not product components. Their supported
+replacement is:
 
 ```text
-EvoPilot Runtime
-  + compatible independently installed Evolution Expert
-  + generated Host Adapter
-  + declarative project, Lifecycle, Policy, Governance, and Action Provider resources
+EvoPilot Runtime 6.0 control plane
+  + compatible independently installed Evolution Expert 2.0
+  + generated Host Adapter and MCP binding
+  + tenant/workspace governed project, Lifecycle, Policy, Governance, and Action Provider resources
+  + qualified external Agent Runtime
 ```
 
 Comparison is read-only and binds the Target-frozen exact latest snapshots:
@@ -504,12 +575,12 @@ fallback. Capability inventory parity, real behavior, inherited acceptance,
 impact closure, and `NO_REGRESSION` must pass in addition to absence proof.
 
 Actual default switching, archival, and retirement may begin only after Runtime
-`5.1.0` and Evolution Expert `1.1.0` are publicly released, their exact accepted
-bytes pass fresh installation, the released Codex Adapter is installed beside
+`6.0.0` and Evolution Expert `2.0.0` are publicly released, their exact accepted
+bytes pass fresh installation, the released Codex Host Integration Bundle is installed beside
 the legacy Suites, and a bounded shadow observation succeeds. The work requires
 a separate Cutover Target and a separate explicit human authorization. Any
 break-glass rollback is separately authorized, audited, and never an automatic
-fallback. This Cutover is not a `5.1.0` Release blocker.
+fallback. This Cutover is not a `6.0.0` Release blocker.
 
 After Cutover closes, both legacy Suites are absent from normal Codex discovery,
 have no hidden fallback or Runtime dependency, and remain only as immutable,
@@ -606,7 +677,7 @@ compatibility.
 
 ### v5.1.0: Suite Capability Convergence
 
-Status: `IN_PROGRESS`
+Status: `SUPERSEDED BEFORE RELEASE`
 
 Productize the exact latest EvoPilot Codex Suite `3.2.1` and DataRig Codex Suite
 `2.1.5` capabilities into the Harness-guided Runtime, declarative resources,
@@ -614,23 +685,53 @@ qualified Action Providers, and independently versioned Evolution Expert. Prove
 100-percent capability inventory coverage, DataRig-grade bounded autonomous
 remediation, exact acceptance completeness, four project references, Host and
 headless conformance, zero legacy invocation, no hidden fallback, and public
-installation readiness without embedding or modifying either Suite.
+installation readiness without embedding or modifying either Suite. Candidate
+workflow `34542756424` and its incomplete acceptance remain immutable
+development and impact evidence only and are not promotable.
 
 ### Evolution Expert v1.1.0: Unified Host Entry
 
-Status: `IN_PROGRESS`, independent companion product
+Status: `SUPERSEDED BEFORE RELEASE`, independent companion product
 
 Deliver one Agent-neutral Expert Core and generated released Codex, WorkBuddy,
 generic Agent, and generic MCP adapters for Runtime `5.1.0`. The Codex Adapter
 becomes the eventual single human entry but owns no project Lifecycle, Harness
 selection, approval, recovery, acceptance, release, credential, or durable
-state. Expert and Runtime versions and Releases remain independent.
+state. Candidate workflow `34475009290` remains immutable development and
+impact evidence only and is not promotable. Expert and Runtime versions and
+Releases remain independent.
 
-### Post-v5.1.0: Legacy Suite Cutover
+### v6.0.0: Agent-Native Harness-Guided Lifecycle Control Plane
 
-Status: `PLANNED`, not a v5.1.0 release blocker
+Status: `IN_PROGRESS`
 
-Only after exact public Runtime `5.1.0` and Expert `1.1.0` installation and
+Deliver the public project-neutral control plane. Ordinary users install a Host
+Integration Bundle into Codex, Claude Code, WorkBuddy, or another qualified AI
+Agent Host and interact only with Evolution Expert over MCP. Runtime owns
+durable projects, Lifecycle revisions, Goal/Target/Loop state, immutable
+Harness bindings, evidence, recovery, authority, and audit. Project Pipeline
+CRUD is tenant/workspace scoped and uses immutable successor revisions,
+activation, deactivation, archive, restore, rollback, dependency, usage, and
+audit operations. Qualified external Agent Runtimes execute exact
+`pendingExecution` work and return normalized receipts. Compatible project
+Pipeline evolution requires no Runtime or Expert source change.
+
+### Evolution Expert v2.0.0: Mandatory Agent Host Entry
+
+Status: `IN_PROGRESS`, independent companion product
+
+Deliver one stateless, non-authoritative Expert Core and generated Codex,
+Claude Code, WorkBuddy, generic Agent Host, and generic MCP Host adapters. Every
+ordinary-human project, Lifecycle, Harness-guided Loop, recovery, acceptance,
+and release journey is guided through MCP without requiring CLI commands, HTTP
+construction, tool-name knowledge, or manual state editing. Runtime remains the
+sole source of truth and authority.
+
+### Post-v6.0.0: Legacy Suite Cutover
+
+Status: `PLANNED`, not a v6.0.0 release blocker
+
+Only after exact public Runtime `6.0.0` and Expert `2.0.0` installation and
 side-by-side shadow observation may a separately approved Cutover Target switch
 the current Codex default to released EvoPilot, prove zero legacy invocation on
 real paths, create digest-inventoried recoverable archives, rehearse separately
@@ -638,7 +739,7 @@ authorized rollback, and close after monitoring. After closure, both legacy
 Suites are immutable migration evidence only and receive no further independent
 feature evolution.
 
-### v5.2.0: Controlled Experiment Loop
+### v6.1.0: Controlled Experiment Loop
 
 Status: `PLANNED`
 
@@ -646,7 +747,7 @@ Run comparable Champion/Challenger strategies over Harness-guided trajectories,
 evaluate outcome/process/safety/cost, replay controlled evidence, and promote or
 roll back only after benchmark, bad-case, regression, and human gates.
 
-### v5.3.0: Learning Interoperability
+### v6.2.0: Learning Interoperability
 
 Status: `PLANNED`
 

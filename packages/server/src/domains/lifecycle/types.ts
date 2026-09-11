@@ -135,10 +135,24 @@ export interface LifecycleHarnessBundleBinding {
 }
 
 export interface LifecycleExecutorBinding {
+  /** Conversational Agent Host identity; this is not the execution runtime. */
   host: string;
   provider: string;
   model: string;
   capabilities: string[];
+  agentRuntime: {
+    profileId: string;
+    profileVersion: string;
+    adapterId: string;
+    profileDigest: string;
+    qualificationDigest: string;
+  };
+  sandbox: {
+    workspaceRef: string;
+    permissionMode: "HOST_MANAGED_DENY_UNDECLARED";
+  };
+  allowedEffects: string[];
+  credentialRefs: string[];
   digest: string;
 }
 
@@ -189,12 +203,18 @@ export interface LifecycleDecisionRecord {
 
 export interface LifecycleAgentExecutionRequest {
   schema: "evopilot-agent-execution-request/v1alpha1";
+  requestDigest: string;
+  idempotencyKey: string;
   id: string;
   runId: string;
   stageId: string;
   action: string;
   actionVersion: string;
   bindingDigest: string;
+  scope: { tenantId: string; workspaceId: string; projectId: string; goalId?: string; targetId?: string };
+  lifecycle: { id: string; version: string; digest: string };
+  harness: LifecycleHarnessBundleBinding & { harnessExecutionBindingDigest?: string };
+  governance: { policyDigest: string; providerDigest?: string; environmentDigest?: string; authorityDigest?: string; runtimeDigest: string; evidenceDigest: string };
   inputs: Record<string, unknown>;
   capabilities: string[];
   executor: Omit<LifecycleExecutorBinding, "digest"> & { digest?: string };
@@ -203,6 +223,8 @@ export interface LifecycleAgentExecutionRequest {
 export interface LifecycleAgentTrajectoryEntry {
   schema: "evopilot-agent-trajectory-entry/v1alpha1";
   requestId: string;
+  requestDigest: string;
+  idempotencyKey: string;
   runId: string;
   stageId: string;
   bindingDigest: string;
@@ -212,6 +234,7 @@ export interface LifecycleAgentTrajectoryEntry {
   capabilities: string[];
   status: "SUCCEEDED" | "FAILED" | "UNCERTAIN";
   receiptDigest: string;
+  effects: string[];
   cost: { amount: number; currency: string; inputTokens?: number; outputTokens?: number };
   artifacts: Array<{ ref: string; digest: string }>;
   evidence: string[];
@@ -291,6 +314,8 @@ export interface LifecycleStartRequest extends LifecycleInputSources {
   id?: string;
   lifecycleId: string;
   lifecycleVersion?: string;
+  /** Runtime-internal exact revision used for a Loop that was planned before an active-pointer change. */
+  lifecycleRevision?: LifecycleRevision;
   tenantId: string;
   workspaceId: string;
   projectId: string;
@@ -309,8 +334,12 @@ export interface LifecycleStartRequest extends LifecycleInputSources {
 
 export interface LifecycleExternalResult {
   requestId: string;
+  requestDigest: string;
+  bindingDigest: string;
+  idempotencyKey: string;
   status: "SUCCEEDED" | "FAILED" | "UNCERTAIN";
   receiptDigest: string;
+  effects: string[];
   evidence?: string[];
   cost?: { amount?: number; currency?: string; inputTokens?: number; outputTokens?: number };
   artifacts?: Array<{ ref: string; digest: string }>;

@@ -4,7 +4,7 @@
   "title": "EvoPilot AgentRuntimeProfile v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema", "id", "version", "adapterId", "runtime", "host", "provider", "model", "capabilities", "constraints", "digest"],
+  "required": ["schema", "id", "version", "adapterId", "runtime", "host", "provider", "model", "capabilities", "constraints", "qualification", "digest"],
   "properties": {
     "schema": { "const": "evopilot-agent-runtime-profile/v1" },
     "id": { "type": "string", "minLength": 1 },
@@ -33,6 +33,11 @@
         "timeoutMs": { "type": "integer", "minimum": 1000, "maximum": 7200000 },
         "maxOutputBytes": { "type": "integer", "minimum": 1024, "maximum": 67108864 }
       }
+    },
+    "qualification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "conformanceDigest", "evidenceRefs"],
+      "properties": { "status": { "const": "QUALIFIED" }, "conformanceDigest": { "$ref": "#/$defs/digest" }, "evidenceRefs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } } }
     },
     "digest": { "$ref": "#/$defs/digest" }
   },

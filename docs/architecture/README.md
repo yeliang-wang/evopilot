@@ -37,9 +37,10 @@ See [Package Boundaries](package-boundaries.md) for ownership rules, transitiona
 |---|---|
 | Project | Registered products, source credentials, workspace ownership |
 | Harness Catalog Consumer | Read-only published Harness Catalog loading, automatic selected-Harness matching, and goal-plan digest evidence |
-| Lifecycle Harness | Open YAML project lifecycle resolution over a closed Action Registry, immutable run bindings, minimized authority gates, and external Agent receipts |
-| Governed Evolution Runtime | Declarative Project definitions, deterministic Harness matching, monotonic Harness/Lifecycle composition, exact Loop binding, and Automation Registry recovery |
-| Evolution Expert Adapter | Optional independently versioned conversational guidance over Runtime APIs; no canonical state or authority |
+| Lifecycle Registry | Tenant/workspace immutable YAML revisions, active pointers, diff, dependencies, usage, audit, archive/restore, and rollback over a closed Action Registry |
+| Governed Evolution Runtime | Declarative Project definitions, deterministic Harness matching, monotonic Harness/Lifecycle composition, exact Loop binding, durable state, and Automation Registry recovery |
+| Evolution Expert | Independently versioned ordinary-human guidance over MCP; no canonical state, Harness authority, or source execution |
+| External Agent Runtime | Qualified bounded source execution for an exact `pendingExecution`; normalized receipts, effects, artifacts, usage, and evidence only |
 | Evidence | Runtime signals, trace/log/eval ingestion, evidence bundles |
 | GlobalGoal | Goal decomposition into GoalTargets, progress, graph, timeline, final report |
 | Loop Runtime | LoopRun execution, worker leases, sandbox proof, trace, events, replay |
@@ -61,6 +62,7 @@ Deep architecture notes remain in:
 - [ADR: Harness-Guided Governed Evolution Runtime](adr/0003-harness-guided-governed-evolution-runtime.md)
 - [ADR: Executable v5 Completion Recovery](adr/0004-v5-completion-recovery.md)
 - [Harness-Guided Governed Evolution Runtime](harness-guided-governed-evolution-runtime.md)
+- [Agent-Native Lifecycle Control Plane](agent-native-lifecycle-control-plane.md)
 - [Open Lifecycle Harness](open-lifecycle-harness.md)
 - [Published Harness Catalog](published-harness-catalog.md)
 - [Harness Template Boundary](harness-template-domain.md)

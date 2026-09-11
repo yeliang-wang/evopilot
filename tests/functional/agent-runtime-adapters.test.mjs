@@ -31,21 +31,44 @@ function executionRequest(profile, overrides = {}) {
     host: profile.host,
     provider: profile.provider,
     model: profile.model,
-    capabilities: [...profile.capabilities].sort()
+    capabilities: [...profile.capabilities].sort(),
+    agentRuntime: { profileId: profile.id, profileVersion: profile.version, adapterId: profile.adapterId, profileDigest: profile.digest, qualificationDigest: profile.qualification.conformanceDigest },
+    sandbox: { workspaceRef: profile.constraints.workspaceRoot, permissionMode: "HOST_MANAGED_DENY_UNDECLARED" },
+    allowedEffects: ["READ_ONLY", "REVERSIBLE"],
+    credentialRefs: []
   };
-  return {
+  const material = {
     schema: "evopilot-agent-execution-request/v1alpha1",
     id: "execution-run-stage-1",
+    idempotencyKey: "execution-run-stage-1:binding",
     runId: "run-a",
     stageId: "build",
     action: "build.verify",
     actionVersion: "1",
     bindingDigest: digest("binding"),
+    scope: { tenantId: "tenant-a", workspaceId: "workspace-a", projectId: "project-a" },
+    lifecycle: { id: "lifecycle-a", version: "1.0.0", digest: digest("lifecycle") },
+    harness: { id: "bundle-a", version: "1.0.0", digest: digest("bundle") },
+    governance: { policyDigest: digest("policy"), runtimeDigest: digest("runtime"), evidenceDigest: digest("evidence") },
     inputs: { projectRoot: "/workspace", profile: "release" },
     capabilities: ["build.execute"],
     executor: { ...executorMaterial, digest: digest(executorMaterial) },
     ...overrides
   };
+  return { ...material, requestDigest: digest(material) };
+}
+
+function rebindRequest(request, changes) {
+  const { requestDigest: _requestDigest, ...base } = request;
+  const changedExecutor = changes.executor;
+  const executor = changedExecutor
+    ? (() => {
+        const { digest: _digest, ...executorMaterial } = changedExecutor;
+        return { ...executorMaterial, digest: digest(executorMaterial) };
+      })()
+    : base.executor;
+  const material = { ...base, ...changes, executor };
+  return { ...material, requestDigest: digest(material) };
 }
 
 test("OpenCode adapter binds exact runtime/model/capabilities and reuses an immutable receipt", async () => {
@@ -123,15 +146,15 @@ test("OpenCode adapter fails closed on profile drift, request reuse conflict, ho
   const adapter = createOpenCodeExecutorAdapter({ profile, receiptStoreDir: receipts, runner: successRunner });
   const request = executionRequest(profile, { capabilities: ["agent.execute"] });
   await executeConformantLifecycleAdapter(adapter, request);
-  await assert.rejects(() => adapter.execute({ ...request, inputs: { changed: true } }), /OPENCODE_REQUEST_REUSE_CONFLICT/);
-  await assert.rejects(() => adapter.execute({ ...request, id: "drift", executor: { ...request.executor, model: "other" } }), /OPENCODE_EXECUTOR_PROFILE_MISMATCH/);
-  await assert.rejects(() => adapter.execute({ ...request, id: "capability", capabilities: ["release.publish"] }), /OPENCODE_CAPABILITY_MISMATCH/);
+  await assert.rejects(() => adapter.execute(rebindRequest(request, { inputs: { changed: true } })), /OPENCODE_REQUEST_REUSE_CONFLICT/);
+  await assert.rejects(() => adapter.execute(rebindRequest(request, { id: "drift", executor: { ...request.executor, model: "other" } })), /OPENCODE_EXECUTOR_PROFILE_MISMATCH/);
+  await assert.rejects(() => adapter.execute(rebindRequest(request, { id: "capability", capabilities: ["release.publish"] })), /OPENCODE_CAPABILITY_MISMATCH/);
 
   const uncertain = createOpenCodeExecutorAdapter({
     profile,
     runner: async () => ({ exitCode: null, signal: "SIGTERM", termination: "TIMEOUT", stdout: "", stderr: "" })
   });
-  assert.equal((await executeConformantLifecycleAdapter(uncertain, { ...request, id: "timeout" })).status, "UNCERTAIN");
+  assert.equal((await executeConformantLifecycleAdapter(uncertain, rebindRequest(request, { id: "timeout" }))).status, "UNCERTAIN");
 
   const hostile = {
     schema: EVOPILOT_LIFECYCLE_EXECUTOR_ADAPTER_SCHEMA,
@@ -149,14 +172,18 @@ test("OpenCode adapter fails closed on profile drift, request reuse conflict, ho
       model: "fixture",
       capabilities: ["agent.execute"],
       constraints: { workspaceRoot: root, permissionMode: "HOST_MANAGED_DENY_UNDECLARED", timeoutMs: 1000, maxOutputBytes: 1024 },
+      qualification: { status: "QUALIFIED", conformanceDigest: digest("hostile-conformance"), evidenceRefs: ["test://hostile"] },
       digest: digest("profile")
     },
     execute: async (input) => ({
       schema: EVOPILOT_AGENT_EXECUTION_RESULT_SCHEMA,
       requestId: input.id,
-      requestDigest: digest(input),
+      requestDigest: input.requestDigest,
+      bindingDigest: input.bindingDigest,
+      idempotencyKey: input.idempotencyKey,
       status: "SUCCEEDED",
       receiptDigest: digest("receipt"),
+      effects: [],
       evidence: ["apiKey=raw-secret"]
     })
   };
@@ -175,7 +202,8 @@ test("an independent adapter satisfies the same public conformance contract", as
     provider: "deterministic",
     model: "no-model",
     capabilities: ["agent.execute"],
-    constraints: { workspaceRoot: root, permissionMode: "HOST_MANAGED_DENY_UNDECLARED", timeoutMs: 1000, maxOutputBytes: 1024 }
+    constraints: { workspaceRoot: root, permissionMode: "HOST_MANAGED_DENY_UNDECLARED", timeoutMs: 1000, maxOutputBytes: 1024 },
+    qualification: { status: "QUALIFIED", conformanceDigest: digest("independent-conformance"), evidenceRefs: ["test://independent"] }
   };
   const profile = { ...profileMaterial, digest: digest(profileMaterial) };
   const adapter = {
@@ -188,9 +216,12 @@ test("an independent adapter satisfies the same public conformance contract", as
       return {
         schema: EVOPILOT_AGENT_EXECUTION_RESULT_SCHEMA,
         requestId: request.id,
-        requestDigest: digest(request),
+        requestDigest: request.requestDigest,
+        bindingDigest: request.bindingDigest,
+        idempotencyKey: request.idempotencyKey,
         status: "SUCCEEDED",
         receiptDigest: digest({ adapter: profile.adapterId, request }),
+        effects: [],
         evidence: [`adapter=${profile.adapterId}`, `profile=${profile.digest}`],
         cost: { amount: 0, currency: "USD", inputTokens: 0, outputTokens: 0 },
         artifacts: []

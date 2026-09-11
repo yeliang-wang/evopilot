@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/lifecycle/governed-lifecycle-record-v1.schema.json",
+  "title": "Governed Lifecycle Record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "tenantId", "workspaceId", "id", "version", "revisionDigest", "sourceDigest", "sourceRef", "sourceType", "yaml", "revision", "registeredAt", "registeredBy", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-governed-lifecycle-record/v1" },
+    "tenantId": { "type": "string", "minLength": 1 },
+    "workspaceId": { "type": "string", "minLength": 1 },
+    "id": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "revisionDigest": { "$ref": "#/$defs/digest" },
+    "sourceDigest": { "$ref": "#/$defs/digest" },
+    "sourceRef": { "type": "string", "minLength": 1 },
+    "sourceType": { "enum": ["BOOTSTRAP", "NATIVE", "PROJECT"] },
+    "yaml": { "type": "string", "minLength": 1 },
+    "revision": { "type": "object" },
+    "registeredAt": { "type": "string", "format": "date-time" },
+    "registeredBy": { "type": "string", "minLength": 1 },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

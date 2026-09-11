@@ -2,13 +2,14 @@
   "schema": "evopilot-evolution-expert-adapter/v1",
   "id": "evopilot-evolution-expert-workbuddy",
   "host": "workbuddy",
-  "version": "1.1.0",
-  "coreDigest": "sha256:da2b56f23999574dcd8e8970c99d0191094b09bb92ce80a70c1047ac56288538",
-  "protocolVersion": "1.0",
+  "version": "2.0.0",
+  "coreDigest": "sha256:411cf0ac7dafbd5d8bafdf402393db5a7a8730fed4f1bed5492a3408ba2bc20b",
+  "protocolVersion": "2.0",
   "requiredCapabilities": [
     "structured-tool-results",
     "local-or-remote-mcp",
-    "human-decision-presentation"
+    "human-decision-presentation",
+    "runtime-state-resume"
   ],
   "interactionModes": [
     "skill",
@@ -21,7 +22,8 @@
     "Ask only unresolved schema fields and never collect raw secrets; use SecretRef.",
     "Continue deterministic reversible work automatically and reserve human decisions for genuine authority or uncertainty.",
     "Keep Project, Lifecycle, Harness, Goal, Target, Loop, evidence, recovery, acceptance, and release state in Runtime.",
-    "Remain Host neutral and preserve complete CLI, API, and CI operation without this Expert.",
+    "Remain Host neutral; ordinary humans use this Expert over Runtime MCP while CLI, HTTP, and CI remain administrator, machine, diagnostic, and recovery surfaces.",
+    "Agent Host carries conversation and decisions; Runtime owns control-plane truth; a separately qualified external Agent Runtime executes bounded source work.",
     "Keep Runtime, Expert, declarative resource, source Suite, project, and Harness versions independent and explicit."
   ],
   "prohibitedSemantics": [
@@ -30,7 +32,9 @@
     "infer-approval",
     "collect-raw-secrets",
     "host-specific-lifecycle",
-    "automatic-publication"
+    "automatic-publication",
+    "ordinary-human-cli-or-http-fallback",
+    "execute-source-work"
   ],
-  "digest": "sha256:b531649c882a9c28d71c1000c44708cb0cd9017501cf1ea23a65f0a93820a242"
+  "digest": "sha256:8a0f23af66f2b54101c956159ad22865d9d76676205cd8ff2aaa763b5eb29902"
 }

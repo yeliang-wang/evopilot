@@ -4,6 +4,13 @@ All notable changes to the independently versioned `@evopilot/evolution-expert` 
 
 ## Unreleased
 
+### 2.0.0
+
+- Made Expert-over-MCP the ordinary-human entry for Runtime 6 while preserving administrative and machine recovery surfaces.
+- Added complete Lifecycle Registry guidance and qualified external Agent Runtime progress/receipt explanation.
+- Added generated Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP Host Integration Bundles with package lifecycle metadata.
+- Added protocol 2.0 compatibility, Runtime-state resume, exact authority presentation, and no direct source-execution or CLI/HTTP ordinary-human fallback.
+
 ### 1.1.0
 
 - Added source Suite versus resource/Runtime/Expert/Harness version guidance.

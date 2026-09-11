@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/lifecycle/governed-lifecycle-audit-v1.schema.json",
+  "title": "Governed Lifecycle Audit v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "tenantId", "workspaceId", "lifecycleId", "action", "actor", "evidenceRef", "occurredAt", "details", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-governed-lifecycle-audit/v1" },
+    "id": { "type": "string", "minLength": 1 },
+    "tenantId": { "type": "string", "minLength": 1 },
+    "workspaceId": { "type": "string", "minLength": 1 },
+    "lifecycleId": { "type": "string", "minLength": 1 },
+    "version": { "type": "string", "minLength": 1 },
+    "revisionDigest": { "$ref": "#/$defs/digest" },
+    "action": { "enum": ["BOOTSTRAP", "REGISTER", "ACTIVATE", "DEACTIVATE", "ARCHIVE", "RESTORE", "ROLLBACK", "DELETE_DRAFT", "USE"] },
+    "actor": { "type": "string", "minLength": 1 },
+    "evidenceRef": { "type": "string", "minLength": 1 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "details": { "type": "object" },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

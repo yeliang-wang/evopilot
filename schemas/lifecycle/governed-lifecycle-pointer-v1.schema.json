@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/lifecycle/governed-lifecycle-pointer-v1.schema.json",
+  "title": "Governed Lifecycle Active Pointer v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "id", "active", "changedAt", "changedBy", "evidenceRef", "action", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-governed-lifecycle-pointer/v1" },
+    "id": { "type": "string", "minLength": 1 },
+    "active": { "type": "boolean" },
+    "version": { "type": "string", "minLength": 1 },
+    "revisionDigest": { "$ref": "#/$defs/digest" },
+    "previousRevisionDigest": { "$ref": "#/$defs/digest" },
+    "changedAt": { "type": "string", "format": "date-time" },
+    "changedBy": { "type": "string", "minLength": 1 },
+    "evidenceRef": { "type": "string", "minLength": 1 },
+    "action": { "enum": ["BOOTSTRAP", "ACTIVATE", "DEACTIVATE", "ROLLBACK"] },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

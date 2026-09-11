@@ -1,54 +1,52 @@
 # EvoPilot Evolution Expert
 
-The Evolution Expert is an optional, independently versioned conversational entry for EvoPilot. Version `1.1.0` targets Runtime protocol `>=5.0.0 <6.0.0`; it is not tied to the EvoPilot product or resource versions.
+Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. Expert `2.0.0` speaks Human Interaction Protocol `2.0` to Runtime `>=6.0.0 <7.0.0` exclusively through MCP. Runtime and declarative resource versions remain independent.
 
-The same immutable Core generates Codex, WorkBuddy, generic Agent, and generic MCP adapters. Typical conversations are:
+One immutable Core generates Host Integration Bundles for Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP. Each bundle contains the same Core and Adapter digests plus install, doctor, health, version, upgrade, rollback, removal, help, and tutorial lifecycle metadata.
 
-- “带我完成一个新项目接入”：the Expert asks only unresolved Project Definition fields, previews the immutable declaration, and registers it through Runtime.
-- “为什么选这个 Harness”：it explains ranked candidates, rejections, Bundle closure, and Lifecycle composition returned by Runtime.
-- “继续这个 Loop”：it shows binding drift checks, automatic recovery, pending evidence, and the next true authority boundary.
-- “这个异常以后自动处理”：Runtime generates a full Automation Rule proposal; the Expert presents one exact decision and cannot activate it from generic confirmation.
-- “我该怎么发布”：it explains Candidate-first acceptance and exact-byte promotion, but publication still requires an exact Runtime-bound human authorization.
-- “Suite 版本和资源版本有什么关系”：it distinguishes immutable Suite provenance, resource SemVer, Runtime, Expert, project, and Harness versions.
-- “准备迁移并检查 Cutover”：it renders inventory, shadow, readiness, and rollback guidance without switching or retiring a Suite.
+## Conversation model
 
-Headless users can perform every product operation through MCP, CLI, HTTP API, or CI. Removing the Expert changes guidance, not product semantics or state.
+Users can start without knowing commands:
 
-Portable artifacts are generated under `packages/evolution-expert/generated/`. Installation into a real Codex or WorkBuddy Host is a separate operation and is not part of source implementation.
+- “检查连接，然后带我走一遍无副作用教程。”
+- “帮我接入这个新项目，并创建第一条 Pipeline。”
+- “列出 Lifecycle，解释当前激活版本和依赖。”
+- “创建 1.1.0 successor，先给我看差异，不要激活。”
+- “为什么选择这个 HarnessBundle？它对 Pipeline 增加了哪些约束？”
+- “继续 Goal Target Loop，并解释外部 Agent Runtime 的待执行请求。”
+- “这个异常能否自动恢复？真正需要我决定的是什么？”
+- “验收还差哪些逐项证据？现在是否允许发布？”
 
-## Installed lifecycle
+The Expert classifies intent, asks only unresolved Runtime schema fields, calls the matching MCP tool, and renders Runtime-owned facts or exact decision frames. Ordinary parameter input is never approval. An exact human decision must bind the object digest, authority, consequence, actor, and evidence reference.
+
+## Ownership boundary
+
+The Agent Host owns conversation and displays decisions. Expert owns guidance and presentation. Runtime owns every project, Lifecycle, Harness binding, Goal, Target, Loop, recovery, acceptance, and release object. A separately qualified external Agent Runtime performs bounded source work from an exact `pendingExecution`.
+
+Expert never:
+
+- stores canonical state in chat;
+- selects, authors, approves, or publishes Harness assets;
+- executes source work itself;
+- collects raw credentials instead of SecretRefs;
+- infers approval or publication authority;
+- falls back to direct ordinary-human CLI or HTTP operation.
+
+CLI, HTTP, CI, events, and webhooks remain available to administrators and machines for diagnostics and recovery. Their availability does not create a second ordinary-human product path.
+
+## Package and Host lifecycle
+
+Source implementation may verify the package without installing it into a real Host:
 
 ```bash
-npm install --global @evopilot/evolution-expert@1.1.0
+npm install --global @evopilot/evolution-expert@2.0.0
 evopilot-expert version
-evopilot-expert doctor codex 5.1.0
+evopilot-expert doctor codex 6.0.0
 evopilot-expert tutorial
-evopilot-expert versions
-evopilot-expert migration
 ```
 
-Use `workbuddy`, `generic-agent`, or `generic-mcp` as the Host name when
-appropriate. `doctor` checks exact package, Core, protocol, Adapter, Runtime
-range, and Host capability compatibility without mutating Runtime state.
-
-Upgrade, rollback, and removal are ordinary package operations:
-
-```bash
-npm install --global @evopilot/evolution-expert@1.1.0
-npm install --global @evopilot/evolution-expert@1.0.1
-npm uninstall --global @evopilot/evolution-expert
-```
-
-After restart, clean reinstall, or Host transfer, resume by reading the
-durable Runtime run; never recreate canonical state from chat history. CLI,
-API, MCP, and CI remain complete when Expert or one Adapter is absent or
-incompatible.
+Use `claude-code`, `workbuddy`, `generic-agent`, or `generic-mcp` for other generated bundles. Upgrade, rollback, and removal affect only the Expert installation. They must not mutate Runtime bytes or durable Runtime objects. After restart or Host transfer, the Expert reloads the current object from Runtime instead of reconstructing state from conversation history.
 
 ## Third-party Host
 
-Generate an Adapter with `createExpertAdapter(host)`, expose the three declared
-Host capabilities, run `assertExpertAdapterConformance`, and emit
-`qualifyExpertHostAdapter` evidence. The packaged
-`host-adapter-kit/README.md` is the authoring contract. A conformant Host adds
-zero Engine source branches and owns no business, Lifecycle, Harness,
-recovery, authority, or release semantics.
+An integration author generates an Adapter and Host Integration Bundle from the public Core, exposes structured tool results, MCP, human-decision presentation, and Runtime-state resume, then passes conformance without changing Runtime or Expert Core source. Host qualification is evidence only; it is not Candidate acceptance or Release authorization.

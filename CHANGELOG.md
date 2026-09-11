@@ -6,6 +6,24 @@ This project follows a product-readiness changelog model: release entries should
 
 ## Unreleased
 
+### 6.0.0 Agent-Native Lifecycle Control Plane
+
+This entry describes approved local implementation. It does not imply a
+Candidate, acceptance, Host installation, publication, Suite Cutover, or
+Release.
+
+#### Added
+
+- Added a tenant/workspace governed Lifecycle Registry with immutable YAML revisions, active pointers, semantic diff, dependencies, usage, audit, archive/restore, rollback, referential integrity, and crash-safe persistence.
+- Added exact qualified external Agent Runtime profiles, pending-execution bindings, normalized receipts, effects, artifacts, usage, replay suppression, and uncertainty handling without an embedded general-purpose Agent.
+- Added Evolution Expert 2.0.0 and five generated Host Integration Bundles for Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP.
+- Added a 253-criterion exact installed-Candidate completion contract and ten cross-product acceptance journeys.
+
+#### Changed
+
+- Made Evolution Expert over MCP the ordinary-human entry while retaining HTTP, CLI, CI, events, and webhooks for administration, machines, diagnostics, and recovery.
+- Kept DataRig, EvoPilot, evopilot-harness, and unknown projects declaration-only and kept legacy Suites as frozen reference fixtures with no Runtime fallback.
+
 ### 5.1.0 Suite Capability Convergence
 
 This entry describes an implementation line. It does not imply Candidate

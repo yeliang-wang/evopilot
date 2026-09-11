@@ -1150,7 +1150,7 @@ function liveHarnessExecutionState(
     components: store.listPublishedHarnessComponentsV3()
   });
   const candidate = candidates.find((item) => item.bundle.id === binding.bundleRef.id && item.bundle.version === binding.bundleRef.version);
-  const lifecycle = lifecycleService.catalog.resolve(binding.lifecycleRef.id, binding.lifecycleRef.version);
+  const lifecycle = lifecycleService.governedRegistry.resolveExact(binding.lifecycleRef.id, binding.lifecycleRef.version, binding.lifecycleRef.digest, scope);
   const obligations = lifecycle.definition.obligations ?? {};
   const composition = candidate ? composeHarnessAndLifecycle(candidate.bundle, {
     lifecycleId: lifecycle.ref.id,

@@ -68,6 +68,11 @@ export function createOpenCodeRuntimeProfile(input: OpenCodeRuntimeProfileInput)
   if (capabilities.length === 0) throw new Error("OPENCODE_PROFILE_CAPABILITIES_REQUIRED");
   const timeoutMs = boundedInteger("timeoutMs", input.timeoutMs ?? 1_800_000, 1_000, 7_200_000);
   const maxOutputBytes = boundedInteger("maxOutputBytes", input.maxOutputBytes ?? 16 * 1024 * 1024, 1_024, 64 * 1024 * 1024);
+  const qualification = {
+    status: "QUALIFIED" as const,
+    conformanceDigest: digest({ adapterId: EVOPILOT_OPENCODE_ADAPTER_ID, runtime: { name: "opencode", version: runtimeVersion }, capabilities, permissionMode: "HOST_MANAGED_DENY_UNDECLARED" }),
+    evidenceRefs: ["contract://evopilot-agent-runtime-conformance/v1"]
+  };
   const material: Omit<EvoPilotAgentRuntimeProfileV1, "digest"> = {
     schema: EVOPILOT_AGENT_RUNTIME_PROFILE_SCHEMA,
     id: input.id?.trim() || `opencode-${provider}-${model.replace(/[^A-Za-z0-9._-]+/g, "-")}`,
@@ -83,7 +88,8 @@ export function createOpenCodeRuntimeProfile(input: OpenCodeRuntimeProfileInput)
       permissionMode: "HOST_MANAGED_DENY_UNDECLARED" as const,
       timeoutMs,
       maxOutputBytes
-    }
+    },
+    qualification
   };
   return { ...material, digest: digest(material) };
 }
@@ -105,7 +111,9 @@ export function createOpenCodeExecutorAdapter(options: OpenCodeExecutorAdapterOp
     async execute(request) {
       assertAgentExecutionRequestV1Alpha1(request);
       assertRequestMatchesProfile(request, profile);
-      const requestDigest = digest(request);
+      const { requestDigest: claimedRequestDigest, ...requestMaterial } = request;
+      const requestDigest = digest(requestMaterial);
+      if (claimedRequestDigest !== requestDigest) throw new Error("OPENCODE_REQUEST_DIGEST_MISMATCH");
       const stored = receiptStoreDir ? readStoredReceipt(receiptStoreDir, request.id) : undefined;
       if (stored) {
         if (stored.requestDigest !== requestDigest) throw new Error("OPENCODE_REQUEST_REUSE_CONFLICT");
@@ -168,8 +176,11 @@ export function createOpenCodeExecutorAdapter(options: OpenCodeExecutorAdapterOp
         schema: EVOPILOT_AGENT_EXECUTION_RESULT_SCHEMA,
         requestId: request.id,
         requestDigest,
+        bindingDigest: request.bindingDigest,
+        idempotencyKey: request.idempotencyKey,
         status,
         receiptDigest: digest(receiptMaterial),
+        effects: [],
         evidence: [
           `adapter=${EVOPILOT_OPENCODE_ADAPTER_ID}`,
           `runtime=opencode@${profile.runtime.version}`,
@@ -274,8 +285,11 @@ function normalizeOpenCodeResult(result: OpenCodeProcessResult) {
 function assertRequestMatchesProfile(request: EvoPilotAgentExecutionRequestV1Alpha1, profile: EvoPilotAgentRuntimeProfileV1): void {
   if (request.executor.host !== profile.host || request.executor.provider !== profile.provider || request.executor.model !== profile.model) throw new Error("OPENCODE_EXECUTOR_PROFILE_MISMATCH");
   const executorCapabilities = uniqueSorted(request.executor.capabilities);
-  const expectedExecutorDigest = digest({ host: request.executor.host, provider: request.executor.provider, model: request.executor.model, capabilities: executorCapabilities });
+  const { digest: _executorDigest, ...executorMaterial } = request.executor;
+  const expectedExecutorDigest = digest({ ...executorMaterial, capabilities: executorCapabilities, allowedEffects: uniqueSorted(request.executor.allowedEffects), credentialRefs: uniqueSorted(request.executor.credentialRefs) });
   if (request.executor.digest !== expectedExecutorDigest) throw new Error("OPENCODE_EXECUTOR_DIGEST_MISMATCH");
+  if (request.executor.agentRuntime.profileDigest !== profile.digest || request.executor.agentRuntime.qualificationDigest !== profile.qualification.conformanceDigest || request.executor.agentRuntime.adapterId !== profile.adapterId) throw new Error("OPENCODE_AGENT_RUNTIME_BINDING_MISMATCH");
+  if (path.resolve(request.executor.sandbox.workspaceRef) !== path.resolve(profile.constraints.workspaceRoot) || request.executor.sandbox.permissionMode !== profile.constraints.permissionMode) throw new Error("OPENCODE_SANDBOX_BINDING_MISMATCH");
   const allowed = new Set(profile.capabilities);
   const missing = uniqueSorted(request.capabilities).filter((capability) => !allowed.has(capability) || !executorCapabilities.includes(capability));
   if (missing.length > 0) throw new Error(`OPENCODE_CAPABILITY_MISMATCH: ${missing.join(", ")}`);

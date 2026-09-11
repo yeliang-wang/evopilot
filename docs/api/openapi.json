@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "5.1.0"
+    "version": "6.0.0"
   },
   "paths": {
     "/api/v1/evolution-project-definitions": {
@@ -45,6 +45,12 @@
     },
     "/api/v1/governed-evolution/action-providers/qualify": {
       "post": { "summary": "Qualify typed Action Provider boundaries", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Qualification result and failures" } } }
+    },
+    "/api/v1/governed-evolution/agent-runtimes": {
+      "get": { "summary": "List scoped external Agent Runtime profiles", "description": "Agent Runtime profiles are independently versioned governed resources and are not Agent Host identities.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Agent Runtime profile revisions" } } }
+    },
+    "/api/v1/governed-evolution/agent-runtimes/qualify": {
+      "post": { "summary": "Qualify one external Agent Runtime profile", "description": "Negotiates required capabilities and emits digest-bound qualification evidence without executing source work.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Qualification or exact missing capabilities" } } }
     },
     "/api/v1/governed-evolution/governance/evaluate": {
       "post": { "summary": "Evaluate a GovernancePack against exact binding evidence", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Gate evaluation without authority inference" } } }
@@ -93,11 +99,43 @@
     },
     "/api/v1/lifecycles": {
       "get": {
-        "summary": "List Open Lifecycle Harness definitions",
-        "description": "Returns human-readable Lifecycle definitions discovered from configured catalogs and the closed Action Registry digest.",
+        "summary": "List governed Lifecycle revisions",
+        "description": "Returns tenant/workspace immutable revisions, state, active pointers, and the closed Action Registry digest.",
         "security": [{ "bearerAuth": [] }],
         "responses": { "200": { "description": "Lifecycle catalog" } }
-      }
+      },
+      "post": { "summary": "Register an immutable Lifecycle YAML revision", "description": "Registration validates the closed Action and Capability Registry and never activates the revision.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Registered immutable Lifecycle revision" }, "409": { "description": "Immutable identity or version conflict" } } }
+    },
+    "/api/v1/lifecycles/{lifecycleId}": {
+      "get": { "summary": "Inspect one exact Lifecycle revision", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "lifecycleId", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "version", "in": "query", "required": false, "schema": { "type": "string" } }], "responses": { "200": { "description": "Revision, state, provenance, and pointer" } } },
+      "delete": { "summary": "Delete only an unreferenced never-active draft", "description": "Requires exact revision digest and evidence. Published, active, archived, historical, or referenced revisions cannot be physically deleted.", "security": [{ "bearerAuth": [] }], "responses": { "204": { "description": "Draft deleted" }, "409": { "description": "Referential-integrity or lifecycle-state rejection" } } }
+    },
+    "/api/v1/lifecycles/{lifecycleId}/diff": {
+      "get": { "summary": "Compare two immutable Lifecycle revisions", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Semantic and future-planning impact" } } }
+    },
+    "/api/v1/lifecycles/{lifecycleId}/activate": {
+      "post": { "summary": "Activate one exact revision for future planning", "description": "Uses expected-active-digest concurrency; existing bound runs are unchanged.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Active pointer" }, "409": { "description": "Stale active pointer" } } }
+    },
+    "/api/v1/lifecycles/{lifecycleId}/deactivate": {
+      "post": { "summary": "Deactivate future Lifecycle selection", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Inactive pointer" } } }
+    },
+    "/api/v1/lifecycles/{lifecycleId}/archive": {
+      "post": { "summary": "Archive one inactive immutable revision", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Archived state with history retained" } } }
+    },
+    "/api/v1/lifecycles/{lifecycleId}/restore": {
+      "post": { "summary": "Restore an archived revision to inactive state", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Restored state" } } }
+    },
+    "/api/v1/lifecycles/{lifecycleId}/rollback": {
+      "post": { "summary": "Move the active pointer to a retained revision", "description": "Rollback never rewrites revisions, runs, evidence, or audit.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Rolled-back active pointer" } } }
+    },
+    "/api/v1/lifecycles/{lifecycleId}/dependencies": {
+      "get": { "summary": "Inspect imports and dependents", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Dependency graph" } } }
+    },
+    "/api/v1/lifecycles/{lifecycleId}/usage": {
+      "get": { "summary": "Inspect plan and run references", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Immutable usage records" } } }
+    },
+    "/api/v1/lifecycles/{lifecycleId}/audit": {
+      "get": { "summary": "Inspect immutable Lifecycle Registry audit", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Audit records" } } }
     },
     "/api/v1/lifecycles/resolve": {
       "post": {

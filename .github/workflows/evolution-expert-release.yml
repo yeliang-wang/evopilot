@@ -406,7 +406,7 @@ jobs:
           npm install --ignore-scripts --no-audit --no-fund --registry "$REGISTRY" "${PACKAGE}@${VERSION}"
           npm audit signatures --registry "$REGISTRY"
           npx --no-install evopilot-expert manifest > manifest.json
-          npx --no-install evopilot-expert compatibility codex 5.1.0 > compatibility.json
+          npx --no-install evopilot-expert compatibility codex 6.0.0 > compatibility.json
           node - <<'NODE'
           const fs = require("node:fs");
           const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
@@ -415,7 +415,7 @@ jobs:
           if (manifest.schema !== "evopilot-evolution-expert-core/v1" || manifest.version !== process.env.VERSION) throw new Error("Expert public CLI identity mismatch");
           if (!/^sha256:[0-9a-f]{64}$/.test(manifest.digest)) throw new Error("Expert Core digest is invalid");
           if (adapter.version !== manifest.version || adapter.coreDigest !== manifest.digest) throw new Error("Codex Skill adapter does not bind the public Expert Core");
-          if (compatibility.expertVersion !== manifest.version || compatibility.coreDigest !== manifest.digest || compatibility.conformanceStatus !== "CONFORMANT") throw new Error("Runtime 5.1.0 compatibility failed");
+          if (compatibility.expertVersion !== manifest.version || compatibility.coreDigest !== manifest.digest || compatibility.conformanceStatus !== "CONFORMANT") throw new Error("Runtime 6.0.0 compatibility failed");
           if (!fs.existsSync("node_modules/@evopilot/evolution-expert/skill/SKILL.md")) throw new Error("Portable Expert Skill is missing");
           NODE
-          node -p "require('./node_modules/@evopilot/contracts/package.json').version" | grep -qx "5.1.0"
+          node -p "require('./node_modules/@evopilot/contracts/package.json').version" | grep -qx "6.0.0"

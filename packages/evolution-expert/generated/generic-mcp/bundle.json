@@ -1,0 +1,22 @@
+{
+  "schema": "evopilot-evolution-expert-host-integration-bundle/v1",
+  "id": "evopilot-evolution-expert-generic-mcp",
+  "version": "2.0.0",
+  "host": "generic-mcp",
+  "expertCoreDigest": "sha256:411cf0ac7dafbd5d8bafdf402393db5a7a8730fed4f1bed5492a3408ba2bc20b",
+  "adapterDigest": "sha256:2c41e79fc6d2a547eb8b2843479752ca66ef55f89d56a52271d7fed82d7cfebd",
+  "runtimeCompatibility": ">=6.0.0 <7.0.0",
+  "ordinaryHumanEntry": "EXPERT_OVER_MCP_ONLY",
+  "lifecycle": {
+    "install": "host://generic-mcp/evopilot-evolution-expert/install",
+    "doctor": "host://generic-mcp/evopilot-evolution-expert/doctor",
+    "health": "host://generic-mcp/evopilot-evolution-expert/health",
+    "version": "host://generic-mcp/evopilot-evolution-expert/version",
+    "upgrade": "host://generic-mcp/evopilot-evolution-expert/upgrade",
+    "rollback": "host://generic-mcp/evopilot-evolution-expert/rollback",
+    "removal": "host://generic-mcp/evopilot-evolution-expert/remove",
+    "help": "host://generic-mcp/evopilot-evolution-expert/help",
+    "tutorial": "host://generic-mcp/evopilot-evolution-expert/tutorial"
+  },
+  "digest": "sha256:31fae6e179cbc5f2cb85578fccd7369461fd67c4b647098a2b4ccbfb969fa601"
+}

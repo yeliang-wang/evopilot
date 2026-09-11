@@ -335,7 +335,7 @@ export interface AutomationRule extends Omit<AutomationRuleProposal, "schema" | 
 
 export interface HumanInteractionMessage {
   schema: typeof HUMAN_INTERACTION_PROTOCOL_SCHEMA;
-  protocolVersion: "1.0";
+  protocolVersion: "2.0";
   interactionId: string;
   sessionDigest: string;
   kind: "HELP" | "QUESTION" | "PLAN" | "PROGRESS" | "DECISION" | "RECOVERY" | "EVIDENCE" | "RESULT" | "COMPATIBILITY_ERROR";
@@ -368,6 +368,17 @@ export interface ExecutionRuntimeProfile {
   model: string;
   capabilities: string[];
   permissionMode: "HOST_MANAGED_DENY_UNDECLARED";
+  digest: string;
+}
+
+export interface ExecutionRuntimeQualification {
+  schema: "evopilot-execution-runtime-qualification/v1";
+  profile: { id: string; version: string; digest: string };
+  requiredCapabilities: string[];
+  missingCapabilities: string[];
+  evidenceRefs: string[];
+  permissionMode: "HOST_MANAGED_DENY_UNDECLARED";
+  status: "QUALIFIED" | "REJECTED";
   digest: string;
 }
 
@@ -713,7 +724,7 @@ export function createHumanInteractionMessage(input: Omit<HumanInteractionMessag
   const material = {
     ...input,
     schema: HUMAN_INTERACTION_PROTOCOL_SCHEMA,
-    protocolVersion: "1.0" as const,
+    protocolVersion: "2.0" as const,
     details: [...input.details],
     objectRefs: input.objectRefs.map((item) => ({ ...item }))
   };
@@ -738,6 +749,27 @@ export function normalizeExecutionRuntimeProfile(value: Omit<ExecutionRuntimePro
   const digest = canonicalDigest(material);
   if (value.digest && value.digest !== digest) throw new Error("EXECUTION_RUNTIME_PROFILE_DIGEST_MISMATCH");
   return { ...material, digest };
+}
+
+export function qualifyExecutionRuntimeProfile(
+  value: Omit<ExecutionRuntimeProfile, "digest"> & { digest?: string },
+  requiredCapabilities: string[],
+  evidenceRefs: string[]
+): ExecutionRuntimeQualification {
+  const profile = normalizeExecutionRuntimeProfile(value);
+  if (!evidenceRefs.length || evidenceRefs.some((item) => !String(item).trim())) throw new Error("EXECUTION_RUNTIME_QUALIFICATION_EVIDENCE_REQUIRED");
+  const required = unique(requiredCapabilities);
+  const missingCapabilities = required.filter((capability) => !profile.capabilities.includes(capability));
+  const material = {
+    schema: "evopilot-execution-runtime-qualification/v1" as const,
+    profile: { id: profile.id, version: profile.version, digest: profile.digest },
+    requiredCapabilities: required,
+    missingCapabilities,
+    evidenceRefs: unique(evidenceRefs),
+    permissionMode: profile.permissionMode,
+    status: missingCapabilities.length === 0 ? "QUALIFIED" as const : "REJECTED" as const
+  };
+  return { ...material, digest: canonicalDigest(material) };
 }
 
 export function normalizeLegacySuiteSnapshot(value: Omit<LegacySuiteSnapshot, "digest"> & { digest?: string }): LegacySuiteSnapshot {

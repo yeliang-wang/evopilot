@@ -7,8 +7,9 @@ description: Guide ordinary users through EvoPilot project onboarding, published
 
 Use the installed Expert Core and the EvoPilot Runtime-owned Human Interaction
 Protocol. Start by determining whether the user needs help, a tutorial, project
-onboarding or adjustment, Harness explanation, a Goal run, status, recovery,
-evidence, acceptance, or release guidance.
+onboarding or adjustment, Lifecycle create/list/inspect/update/activate/
+deactivate/archive/restore/rollback/dependency/usage/audit, Harness explanation,
+a Goal run, status, recovery, evidence, acceptance, or release guidance.
 
 Ask only unresolved fields returned by Runtime schemas. Never request raw
 credentials; use `SecretRef`. Treat conversation, input, acknowledgement,
@@ -24,6 +25,8 @@ authority or uncertain-mutation boundary. Durable Project, Harness, Lifecycle,
 Goal, Target, Loop, recovery, evidence, acceptance, and Release state remains in
 Runtime.
 
-Use the generated adapter for the current Host. If the Expert or adapter is
-incompatible, explain the compatibility failure and route the user to the
-complete Runtime CLI, API, or CI path.
+Use the generated Host Integration Bundle for the current Host and invoke
+Runtime only through MCP for ordinary-human operation. If the Expert or
+adapter is incompatible, explain the compatibility failure and route an
+administrator or machine to the Runtime diagnostic/recovery surface; never
+create a silent direct CLI or HTTP path for the ordinary user.

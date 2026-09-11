@@ -15,7 +15,8 @@ export type GovernedResourceKind =
   | "EnvironmentBinding"
   | "ReleaseChannelBinding"
   | "SecretRef"
-  | "HumanAuthorityRole";
+  | "HumanAuthorityRole"
+  | "AgentRuntimeProfile";
 
 export interface GovernedResourceProvenance {
   sourceType: "LEGACY_SUITE" | "NATIVE" | "PROJECT";
@@ -259,8 +260,8 @@ export function builtInActionProviderDefinitions(): GovernedResource[] {
     apiVersion: GOVERNED_RESOURCE_API_VERSION,
     kind: "ActionProviderDefinition",
     metadata: { id: definition.id, name: `${definition.id} typed actions`, version: "1.0.0" },
-    provenance: { sourceType: "NATIVE", sourceId: "evopilot-runtime", sourceVersion: "5.1.0", sourceDigest: canonicalDigest({ runtime: "5.1.0", provider: definition.id }) },
-    compatibility: { runtime: ">=5.1.0 <6.0.0" },
+    provenance: { sourceType: "NATIVE", sourceId: "evopilot-runtime", sourceVersion: "6.0.0", sourceDigest: canonicalDigest({ runtime: "6.0.0", provider: definition.id }) },
+    compatibility: { runtime: ">=6.0.0 <7.0.0" },
     capabilityRefs: definition.capabilities,
     spec: {
       execution: "TYPED_ACTIONS_ONLY",
@@ -512,7 +513,7 @@ function compareSemver(left: string, right: string): number {
 }
 
 function isResourceKind(value: unknown): value is GovernedResourceKind {
-  return ["CapabilityPack", "LifecycleModule", "PolicyPack", "GovernancePack", "ActionProviderDefinition", "EnvironmentBinding", "ReleaseChannelBinding", "SecretRef", "HumanAuthorityRole"].includes(String(value));
+  return ["CapabilityPack", "LifecycleModule", "PolicyPack", "GovernancePack", "ActionProviderDefinition", "EnvironmentBinding", "ReleaseChannelBinding", "SecretRef", "HumanAuthorityRole", "AgentRuntimeProfile"].includes(String(value));
 }
 
 function rejectRawSecrets(value: unknown, path = "resource"): void {

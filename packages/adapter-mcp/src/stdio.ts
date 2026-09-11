@@ -16,9 +16,15 @@ const toolInputSchema = z.object({
   serverUrl: z.string().url().optional().describe("EvoPilot API base URL; defaults to EVOPILOT_SERVER."),
   lifecycleId: z.string().min(1).optional(),
   runId: z.string().min(1).optional(),
+  kind: z.string().min(1).optional(),
+  resourceId: z.string().min(1).optional(),
+  campaignId: z.string().min(1).optional(),
   projectDefinitionId: z.string().min(1).optional(),
   ruleId: z.string().min(1).optional(),
   version: z.string().min(1).optional(),
+  fromVersion: z.string().min(1).optional(),
+  toVersion: z.string().min(1).optional(),
+  runtimeVersion: z.string().min(1).optional(),
   idempotencyKey: z.string().min(1).optional(),
   payload: z.record(z.string(), z.unknown()).optional().describe("JSON request body. Approval fields remain subject to server-side exact-binding gates.")
 });
@@ -62,7 +68,10 @@ async function invokeEvoPilot(tool: EvoPilotLifecycleMcpTool, input: ToolInput) 
     const path = bindPath(tool.path, input);
     const serverUrl = normalizeServerUrl(input.serverUrl ?? process.env.EVOPILOT_SERVER ?? process.env.EVOPILOT_BASE_URL ?? "http://127.0.0.1:19876");
     const url = new URL(path, serverUrl);
-    if ((tool.name === "evopilot_lifecycle_inspect" || tool.name === "evopilot_project_definition_inspect") && input.version) url.searchParams.set("version", input.version);
+    if ((tool.name.includes("inspect") || tool.name === "evopilot_lifecycle_dependencies" || tool.name === "evopilot_lifecycle_usage") && input.version) url.searchParams.set("version", input.version);
+    if (input.fromVersion) url.searchParams.set("from", input.fromVersion);
+    if (input.toVersion) url.searchParams.set("to", input.toVersion);
+    if (input.runtimeVersion) url.searchParams.set("runtimeVersion", input.runtimeVersion);
 
     const headers = new Headers({ accept: "application/json" });
     const token = process.env.EVOPILOT_API_TOKEN;
@@ -73,7 +82,7 @@ async function invokeEvoPilot(tool: EvoPilotLifecycleMcpTool, input: ToolInput) 
     if (input.idempotencyKey) headers.set("x-idempotency-key", input.idempotencyKey);
 
     let body: string | undefined;
-    if (tool.method === "POST") {
+    if (tool.method === "POST" || tool.method === "DELETE") {
       headers.set("content-type", "application/json");
       body = JSON.stringify(input.payload ?? {});
     }
@@ -111,7 +120,7 @@ async function invokeEvoPilot(tool: EvoPilotLifecycleMcpTool, input: ToolInput) 
 }
 
 function bindPath(path: string, input: ToolInput): string {
-  return path.replace(/\{(lifecycleId|runId|projectDefinitionId|ruleId)\}/g, (_match, name: "lifecycleId" | "runId" | "projectDefinitionId" | "ruleId") => {
+  return path.replace(/\{(lifecycleId|runId|kind|resourceId|campaignId|projectDefinitionId|ruleId)\}/g, (_match, name: "lifecycleId" | "runId" | "kind" | "resourceId" | "campaignId" | "projectDefinitionId" | "ruleId") => {
     const value = input[name];
     if (!value) throw new Error(`${name} is required for this tool`);
     return encodeURIComponent(value);

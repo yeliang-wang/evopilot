@@ -43,7 +43,7 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
         decodeURIComponent(resourceDiffMatch[2]),
         String(url.searchParams.get("from") ?? ""),
         String(url.searchParams.get("to") ?? ""),
-        String(url.searchParams.get("runtimeVersion") ?? "5.1.0"),
+        String(url.searchParams.get("runtimeVersion") ?? "6.0.0"),
         scope
       )));
     }
@@ -74,6 +74,15 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
       if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
       const body = await readJson(request, options.maxBodyBytes);
       return writeJson(response, 200, envelope(service.qualifyProvider(body as never)));
+    }
+    if (request.method === "GET" && url.pathname === "/api/v1/governed-evolution/agent-runtimes") {
+      if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      return writeJson(response, 200, envelope({ schema: "evopilot-agent-runtime-list/v1", items: service.listResources(scope, "AgentRuntimeProfile") }));
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/governed-evolution/agent-runtimes/qualify") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      return writeJson(response, 200, envelope(service.qualifyAgentRuntime(body as never)));
     }
     if (request.method === "POST" && url.pathname === "/api/v1/governed-evolution/governance/evaluate") {
       if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
@@ -153,7 +162,7 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
       if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
       const body = await readJson(request, options.maxBodyBytes);
       assertScopedProject(store, auth, String(body.goalTarget?.projectId ?? ""));
-      const lifecycle = lifecycleService.catalog.resolve(String(body.lifecycleId ?? ""), optionalString(body.lifecycleVersion));
+      const lifecycle = lifecycleService.governedRegistry.resolveActive(String(body.lifecycleId ?? ""), optionalString(body.lifecycleVersion), scope);
       const plan = service.plan({
         projectDefinitionId: String(body.projectDefinitionId ?? ""),
         projectDefinitionVersion: optionalString(body.projectDefinitionVersion),
@@ -168,6 +177,15 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
         authorityDigest: scopedAuthorityDigest(auth),
         evidenceDigest: String(body.evidenceDigest ?? "")
       }, scope);
+      lifecycleService.governedRegistry.recordUsage({
+        id: `plan-${plan.binding.digest}`,
+        lifecycleId: lifecycle.ref.id,
+        version: lifecycle.ref.version,
+        revisionDigest: lifecycle.digest,
+        usageType: "PLAN",
+        objectId: plan.binding.digest,
+        bindingDigest: plan.binding.digest
+      }, scope);
       appendAudit(audit(auth, "governed-evolution.plan-created", plan.binding.digest, { projectId: plan.projectDefinition.metadata.id, harnessBundle: plan.binding.bundleRef, lifecycle: plan.binding.lifecycleRef }));
       return writeJson(response, 201, envelope(plan));
     }
@@ -180,7 +198,7 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
       assertScopedProject(store, auth, binding.projectDefinitionRef.id);
       const exactCandidate = publishedCandidates(store).find((item) => item.bundle.id === binding.bundleRef.id && item.bundle.version === binding.bundleRef.version && item.bundle.digest === binding.bundleRef.digest);
       if (!exactCandidate) throw new Error("HARNESS_EXECUTION_BUNDLE_NOT_PUBLISHED");
-      const lifecycle = lifecycleService.catalog.resolve(binding.lifecycleRef.id, binding.lifecycleRef.version);
+      const lifecycle = lifecycleService.governedRegistry.resolveExact(binding.lifecycleRef.id, binding.lifecycleRef.version, binding.lifecycleRef.digest, scope);
       if (lifecycle.digest !== binding.lifecycleRef.digest) throw new Error("HARNESS_EXECUTION_LIFECYCLE_DRIFT");
       const executor = body.executor;
       service.assertLifecycleBoundary({
@@ -203,6 +221,7 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
         id: optionalString(body.id),
         lifecycleId: binding.lifecycleRef.id,
         lifecycleVersion: binding.lifecycleRef.version,
+        lifecycleRevision: lifecycle,
         tenantId: auth.tenantId,
         workspaceId: auth.workspaceId,
         projectId: binding.projectDefinitionRef.id,
@@ -237,7 +256,7 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
       const goalTarget = body.goalTarget;
       if (!goalTarget || goalTarget.goalId !== binding.goalTargetRef.goalId || goalTarget.targetId !== binding.goalTargetRef.targetId) throw new Error("HARNESS_EXECUTION_GOAL_TARGET_MISMATCH");
       assertScopedProject(store, auth, String(goalTarget.projectId ?? ""));
-      const lifecycle = lifecycleService.catalog.resolve(binding.lifecycleRef.id, binding.lifecycleRef.version);
+      const lifecycle = lifecycleService.governedRegistry.resolveExact(binding.lifecycleRef.id, binding.lifecycleRef.version, binding.lifecycleRef.digest, scope);
       const candidate = publishedCandidates(store).find((item) => item.bundle.id === binding.bundleRef.id && item.bundle.version === binding.bundleRef.version && item.bundle.digest === binding.bundleRef.digest);
       const obligations = lifecycle.definition.obligations ?? {};
       const composition = candidate ? composeHarnessAndLifecycle(candidate.bundle, {
@@ -339,9 +358,13 @@ function digestExecutor(value: unknown): string {
     host: String(executor.host ?? ""),
     provider: String(executor.provider ?? ""),
     model: String(executor.model ?? ""),
-    capabilities: [...new Set(Array.isArray(executor.capabilities) ? executor.capabilities.map(String) : [])].sort()
+    capabilities: [...new Set(Array.isArray(executor.capabilities) ? executor.capabilities.map(String) : [])].sort(),
+    agentRuntime: record(executor.agentRuntime),
+    sandbox: record(executor.sandbox),
+    allowedEffects: [...new Set(Array.isArray(executor.allowedEffects) ? executor.allowedEffects.map(String) : [])].sort(),
+    credentialRefs: [...new Set(Array.isArray(executor.credentialRefs) ? executor.credentialRefs.map(String) : [])].sort()
   };
-  if (!material.host || !material.provider || !material.model) throw new Error("LIFECYCLE_EXECUTOR_BINDING_REQUIRED");
+  if (!material.host || !material.provider || !material.model || !material.agentRuntime.profileId || !material.sandbox.workspaceRef) throw new Error("LIFECYCLE_EXECUTOR_BINDING_REQUIRED");
   const digest = canonicalDigest(material);
   if (executor.digest && executor.digest !== digest) throw new Error("LIFECYCLE_EXECUTOR_DIGEST_MISMATCH");
   return digest;

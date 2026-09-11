@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   activateAutomationRule, assertNoLegacySuiteFallback, automationRuleApplies, canonicalDigest,
   compareEvolutionProjectDefinitions, compareLegacySuiteSnapshots, composeHarnessAndLifecycle, createHarnessExecutionBinding, createLegacySuiteIsolationProof, decideRecovery, discoverEvolutionProject,
-  normalizeAgentHostProfile, normalizeEvolutionProjectDefinition, normalizeExecutionRuntimeProfile, normalizeLegacySuiteSnapshot,
+  normalizeAgentHostProfile, normalizeEvolutionProjectDefinition, normalizeExecutionRuntimeProfile, normalizeLegacySuiteSnapshot, qualifyExecutionRuntimeProfile,
   proposeAutomationRule, resolvePublishedHarness, revalidateHarnessExecutionBinding
 } from "../../packages/core/dist/index.js";
 
@@ -146,8 +146,11 @@ test("Recovery automates bounded safe defects and learns only after one exact ap
 });
 
 test("Host, execution runtime, and legacy Suite transition are separate enforceable boundaries", () => {
-  const host = normalizeAgentHostProfile({ schema: "evopilot-agent-host-profile/v1", id: "codex", version: "1", protocolVersions: ["1.0"], capabilities: ["mcp"], interactionModes: ["skill", "mcp"] });
+  const host = normalizeAgentHostProfile({ schema: "evopilot-agent-host-profile/v1", id: "codex", version: "1", protocolVersions: ["2.0"], capabilities: ["mcp"], interactionModes: ["skill", "mcp"] });
   const runtime = normalizeExecutionRuntimeProfile({ schema: "evopilot-execution-runtime-profile/v1", id: "local", version: "1", provider: "openai", model: "configured-by-host", capabilities: ["filesystem"], permissionMode: "HOST_MANAGED_DENY_UNDECLARED" });
+  const qualification = qualifyExecutionRuntimeProfile(runtime, ["filesystem"], ["test://conformance"]);
+  assert.equal(qualification.status, "QUALIFIED");
+  assert.equal(qualifyExecutionRuntimeProfile(runtime, ["network"], ["test://conformance"]).status, "REJECTED");
   assert.notEqual(host.digest, runtime.digest);
   assert.doesNotThrow(() => assertNoLegacySuiteFallback({ legacySuiteInvocationCount: 0, loadedPaths: [] }));
   assert.throws(() => assertNoLegacySuiteFallback({ legacySuiteInvocationCount: 1, loadedPaths: [] }), /LEGACY_SUITE_INVOCATION_DETECTED/);

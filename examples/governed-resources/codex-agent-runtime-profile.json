@@ -1,0 +1,39 @@
+{
+  "apiVersion": "evopilot.io/v1",
+  "kind": "AgentRuntimeProfile",
+  "metadata": {
+    "id": "codex-local-runtime",
+    "name": "Codex local bounded execution runtime",
+    "version": "1.0.0"
+  },
+  "provenance": {
+    "sourceType": "NATIVE",
+    "sourceId": "project-operator",
+    "sourceVersion": "1.0.0",
+    "sourceDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "compatibility": {
+    "runtime": ">=6.0.0 <7.0.0"
+  },
+  "capabilityRefs": [
+    "source.read",
+    "source.patch",
+    "test.execute"
+  ],
+  "spec": {
+    "adapterId": "codex-local-adapter@1",
+    "runtime": {
+      "name": "codex",
+      "version": "host-qualified"
+    },
+    "provider": "host-configured",
+    "model": "host-configured",
+    "permissionMode": "HOST_MANAGED_DENY_UNDECLARED",
+    "workspaceRef": "workspace://project",
+    "credentialRefs": [],
+    "allowedEffects": [
+      "READ_ONLY",
+      "REVERSIBLE"
+    ]
+  }
+}

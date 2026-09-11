@@ -53,7 +53,7 @@ test("installed-style stdio MCP exposes the complete lifecycle surface and deleg
   try {
     await client.connect(transport);
     const listing = await client.listTools();
-    assert.equal(listing.tools.length, 43);
+    assert.equal(listing.tools.length, 56);
     for (const name of ["evopilot_resource_register", "evopilot_resource_diff", "evopilot_capability_inventory_validate", "evopilot_action_provider_qualify", "evopilot_governance_pack_evaluate", "evopilot_remediation_campaign_start", "evopilot_remediation_campaign_resume"]) {
       assert.ok(listing.tools.some((tool) => tool.name === name), `${name} missing`);
     }
@@ -67,6 +67,19 @@ test("installed-style stdio MCP exposes the complete lifecycle surface and deleg
     assert.ok(listing.tools.some((tool) => tool.name === "evopilot_interaction_render"));
     assert.ok(listing.tools.some((tool) => tool.name === "evopilot_lifecycle_finalize_binding"));
     assert.ok(listing.tools.some((tool) => tool.name === "evopilot_lifecycle_decision"));
+    for (const name of [
+      "evopilot_lifecycle_register",
+      "evopilot_lifecycle_activate",
+      "evopilot_lifecycle_deactivate",
+      "evopilot_lifecycle_archive",
+      "evopilot_lifecycle_restore",
+      "evopilot_lifecycle_rollback",
+      "evopilot_lifecycle_delete_draft",
+      "evopilot_agent_runtime_list",
+      "evopilot_agent_runtime_qualify"
+    ]) {
+      assert.ok(listing.tools.some((tool) => tool.name === name), `${name} missing`);
+    }
 
     const inspected = await client.callTool({
       name: "evopilot_lifecycle_inspect",

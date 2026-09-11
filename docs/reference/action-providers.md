@@ -1,6 +1,6 @@
 # Action Provider Reference
 
-Action Providers expose typed external actions; they are not arbitrary command runners. Runtime 5.1 includes definitions for local Git, GitHub, GitLab, npm, Maven, Candidate construction, and artifact verification.
+Action Providers expose typed external actions; they are not arbitrary command runners. Runtime 6.0 includes definitions for local Git, GitHub, GitLab, npm, Maven, Candidate construction, and artifact verification.
 
 Every action declares an input schema, output schema, immutable receipt, mandatory idempotency key, rollback or compensation behavior, required authorities, and `SecretRef` identifiers. Qualification rejects missing authority, unavailable credential references, raw secret values, duplicate actions, missing schemas, and `arbitraryShell: true`.
 

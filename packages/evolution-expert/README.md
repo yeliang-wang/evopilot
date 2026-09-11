@@ -1,7 +1,7 @@
 # EvoPilot Evolution Expert
 
-`@evopilot/evolution-expert` 1.1.0 is the independently versioned,
-Agent-neutral interactive guide for EvoPilot Runtime 5.x. It helps an ordinary
+`@evopilot/evolution-expert` 2.0.0 is the independently versioned,
+Agent-neutral interactive guide for EvoPilot Runtime 6.x. It helps an ordinary
 user discover and declare a project, understand Runtime-produced Harness
 matching and Lifecycle composition, operate a Goal Target Loop, follow
 automatic recovery, inspect evidence and readiness, and understand resource
@@ -9,22 +9,24 @@ versions, capability migration, shadow validation, Cutover readiness, and rollba
 
 The Expert is not the Runtime and is not a Harness producer. It owns no
 canonical state, credentials, approval identity, Harness choice, recovery
-policy, acceptance verdict, publication, or Release authority. If it is absent
-or incompatible, the complete Runtime remains available through CLI, API,
-MCP, and CI.
+policy, acceptance verdict, publication, or Release authority. Ordinary-human
+operation is Expert-over-MCP only. If it is absent or incompatible,
+administrators and machines can diagnose or recover Runtime through MCP, CLI,
+API, and CI without creating a silent ordinary-human fallback.
 
 ## Install and verify
 
 ```bash
-npm install --global @evopilot/evolution-expert@1.1.0
+npm install --global @evopilot/evolution-expert@2.0.0
 evopilot-expert version
-evopilot-expert doctor codex 5.1.0
+evopilot-expert doctor codex 6.0.0
 evopilot-expert tutorial
 evopilot-expert versions
 evopilot-expert migration
 ```
 
-For WorkBuddy, replace `codex` with `workbuddy`. `doctor` verifies the package
+For Claude Code or WorkBuddy, replace `codex` with `claude-code` or
+`workbuddy`. `doctor` verifies the package
 version, one Core digest, protocol compatibility, Adapter digest, and required
 Host capabilities without contacting a project or causing external effects.
 
@@ -37,13 +39,8 @@ evopilot-expert plan "why did recovery stop?"
 evopilot-expert render runtime-interaction.json
 ```
 
-Project onboarding begins with Runtime discovery:
-
-```bash
-evopilot project-definition discover --file detected-facts.yaml
-```
-
-The Expert renders only the unresolved typed questions returned by Runtime.
+Project onboarding begins with Runtime discovery through MCP. The Expert
+renders only the unresolved typed questions returned by Runtime.
 Secret values are never entered; declarations contain `secret://`, `env://`,
 or `vault://` references. Registration, adjustment, semantic diff, activation,
 and rollback remain Runtime operations.
@@ -51,11 +48,11 @@ and rollback remain Runtime operations.
 ## Upgrade, rollback, and remove
 
 ```bash
-npm install --global @evopilot/evolution-expert@1.1.0
-evopilot-expert doctor codex 5.1.0
+npm install --global @evopilot/evolution-expert@2.0.0
+evopilot-expert doctor codex 6.0.0
 
 npm install --global @evopilot/evolution-expert@1.0.1
-evopilot-expert doctor codex 5.1.0
+evopilot-expert doctor codex 5.0.1
 
 npm uninstall --global @evopilot/evolution-expert
 evopilot --version
@@ -68,9 +65,10 @@ A clean reinstall repeats install plus `doctor` and then resumes from Runtime.
 
 ## Host adapters
 
-The portable Skill is in `skill/SKILL.md`. Codex, WorkBuddy, generic Agent, and
-generic MCP projections are generated under `generated/` from the same Core.
-A new Host uses `createExpertAdapter(host)`, declares the three required Host
+The portable Skill is in `skill/SKILL.md`. Codex, Claude Code, WorkBuddy,
+generic Agent, and generic MCP projections are generated under `generated/`
+from the same Core and include a `bundle.json` lifecycle contract. A new Host
+uses `createExpertAdapter(host)`, declares the four required Host
 capabilities, and passes `assertExpertAdapterConformance`; it does not require
 an Engine or Expert Core source branch.
 

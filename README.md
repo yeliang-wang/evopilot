@@ -14,22 +14,22 @@ EvoPilot helps teams operate AI-agent products as releasable software. It collec
 
 It is not an agent runtime, prompt playground, generic code generator, or Harness Asset lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot reads a configured Harness Registry and the published Catalog directories it points to, then uses an open product-delivery Lifecycle Harness to execute project goals against the selected immutable HarnessBundle.
 
-## v5.1 Suite Capability Convergence
+## v6 Agent-Native Lifecycle Control Plane
 
-The repository is implementing EvoPilot **v5.1.0 Suite Capability Convergence**; v5.0.1 is the latest public release. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and an open Lifecycle:
+The repository is implementing EvoPilot **v6.0.0 Agent-Native Lifecycle Control Plane** and Evolution Expert **v2.0.0**; v5.0.1 remains the latest public release until independent Candidate, acceptance, and release gates pass. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
 
 ```text
 Project Definition + GoalTarget -> published HarnessProfile -> immutable HarnessBundle
                                       + open Lifecycle -> governed Goal Target Loop
 ```
 
-DataRig, EvoPilot, evopilot-harness, and future projects use the same declarative Project Definition plus independently versioned Capability, Lifecycle, Policy, Governance, Provider, environment, release-channel, SecretRef, and authority resources. There are no project-name branches. Resource revisions can evolve without a Runtime or Expert release when the declared compatibility range remains valid.
+Runtime owns a tenant/workspace Lifecycle Registry with immutable YAML revisions, active pointers, semantic diff, dependencies, usage, audit, archive/restore, and rollback. DataRig, EvoPilot, evopilot-harness, and future projects are declarations—not privileged Engine profiles. Compatible project and Pipeline revisions can evolve without a Runtime or Expert release.
 
-Completion is a machine-enforced contract: all 195 current, inherited, and terminal criteria must have criterion-specific evidence for one exact Runtime/Expert Candidate pair; failed, pending, stale, warning, generic, or unmapped counts must all be zero. A human statement cannot replace required machine evidence. See [Completion Assurance](docs/operations/completion-assurance.md).
+Evolution Expert is the ordinary-human entry and talks to Runtime only through MCP. It is independently installed into Codex, Claude Code, designated-human WorkBuddy, generic Agent, or generic MCP Hosts. Runtime never embeds a general-purpose coding Agent: it emits an exact `pendingExecution` to a qualified external Agent Runtime, validates the normalized receipt, and resumes from durable state.
 
-The optional [EvoPilot Evolution Expert](docs/guides/evolution-expert.md) 1.1.0 is independently versioned and generates thin adapters for Codex, designated-human WorkBuddy, generic Agents, generic MCP, and independent Hosts from one Agent-neutral Core. It guides versioning, migration, shadow comparison, Cutover readiness, rollback, and normal Goal Loop work; Runtime remains authoritative and headless-capable.
+Completion is a machine-enforced contract: all 253 current, inherited, and terminal Runtime/Expert criteria must have criterion-specific evidence for one exact installed Candidate pair; impact and `NO_REGRESSION` must pass, and failed, pending, stale, warning, generic, unmapped, or legacy-Suite invocation counts must be zero. See [v6 Acceptance](docs/operations/v6-acceptance.md).
 
-The exact latest EvoPilot Codex Suite 3.2.1 and DataRig Codex Suite 2.1.5 are immutable migration sources, not Runtime dependencies or new resource version lines. They remain installed, active, untouched, and independently usable during v5.1 implementation. Real switching or retirement requires a separately approved post-release [Cutover](docs/guides/legacy-suite-transition.md).
+EvoPilot Codex Suite 3.2.1 and DataRig Codex Suite 2.1.5 are frozen reference fixtures only. They are not Runtime dependencies, synchronization sources, or fallbacks. Existing installed Suites remain untouched; any real switch or retirement stays behind a separately approved post-release [Cutover](docs/guides/legacy-suite-transition.md).
 
 ## Start Here
 
@@ -45,7 +45,7 @@ Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet
 
 | Area | What EvoPilot provides |
 | --- | --- |
-| Govern product evolution | Human-readable Lifecycle planning, risk-based authority gates, automatic deterministic stages, evidence closure, and final release decisions; the v3 Alpha/Beta/RC/GA ladder remains available through compatibility data. |
+| Govern product evolution | Tenant/workspace Lifecycle Registry CRUD over immutable human-readable YAML, risk-based authority gates, automatic deterministic stages, evidence closure, and final release decisions. |
 | Run auditable loops | Durable loop state, executor graphs, checkpoints, replay, worker leases, watchdog recovery, and timeline audit. |
 | Onboard any project declaratively | Discovery, immutable human-readable Project Definitions and resources, schema-driven questions, semantic impact, versioned activation/rollback, and no project-specific Runtime branches. |
 | Converge Suite capabilities | Exact source provenance, 100% capability disposition, project-neutral governed resources, typed Action Providers, and zero hidden Suite fallback. |
@@ -54,7 +54,7 @@ Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet
 | Consume published Harnesses | Dynamically reads configured `evopilot-harness` Registry/Catalog roots, matches published v3 Profiles, binds immutable Bundles, and stores the complete Profile/Component/Bundle digest closure in goal plans. |
 | Control source and delivery | Bounded code-upgrader execution, allowed paths, validation commands, source closure, CI/CD delivery, and deploy evidence. |
 | Track LLM usage by project | Server-projected provider/model/profile rows, token totals, latest loop tokens, and request IDs for connected projects and workspaces. |
-| Operate with API, CLI, and Dashboard | API server, agent-safe CLI JSON flows, and the standalone `yeliang-wang/evopilot-dashboard` browser console. |
+| Operate through Agents | Evolution Expert over MCP is the ordinary-human surface; HTTP, CLI, CI, events, webhooks, and Dashboard remain administrator, machine, diagnostics, and recovery surfaces. |
 | Distribute and verify releases | Release package tarballs, self-host installer, Helm chart, source archive, SPDX SBOM, provenance, checksums, and GHCR image digest metadata. |
 
 ## Quick Start
@@ -69,7 +69,9 @@ curl http://127.0.0.1:19876/health
 curl http://127.0.0.1:19876/ready
 ```
 
-Run the standalone Dashboard from the sibling repository:
+Run the standalone Dashboard from the
+[`yeliang-wang/evopilot-dashboard`](https://github.com/yeliang-wang/evopilot-dashboard)
+sibling repository:
 
 ```bash
 cd ../evopilot-dashboard
@@ -90,9 +92,9 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=../evopilot-harness/harness-registry.yaml npm r
 
 EvoPilot reads `harness-registry.yaml`, then each enabled Catalog's `CATALOG.md`, at use time. It does not import, mount, approve, publish, or evolve Harness definitions.
 
-## CLI For AI Agents
+## Administrator And Machine CLI
 
-The CLI is an HTTP client for remote EvoPilot API servers. WorkBuddy, Codex, Claude Code, CI jobs, and local terminals should use JSON output and stop on `nextAction`, blockers, approval gates, or `NO-GO` decisions.
+The CLI is an HTTP client for remote EvoPilot API servers. In v6 it is for administrators, machines, diagnostics, and recovery—not the direct ordinary-human path. Ordinary users install the [Evolution Expert Host Integration Bundle](docs/guides/evolution-expert.md) in their Agent Host and converse through MCP.
 
 ```bash
 export EVOPILOT_SERVER="https://evopilot.example.com"
@@ -135,14 +137,15 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-The latest published GitHub release is **v5.0.1**. Runtime v5.1.0 and Evolution Expert v1.1.0 are under implementation; no Candidate, acceptance, publication, or Cutover is implied by this source tree.
+The latest published GitHub release is **v5.0.1**. Runtime v6.0.0 and Evolution Expert v2.0.0 are under local implementation; no Candidate, acceptance, publication, Host installation, or Cutover is implied by this source tree.
 
 The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a standalone v3.2 release. v4.0 keeps EvoPilot's strict read-only Harness-asset boundary while adding open YAML Lifecycle execution for project goals.
 
 Release evidence:
 
 - Latest published release notes: [docs/releases/5.0.1.md](docs/releases/5.0.1.md)
-- v5.1 implementation plan: [docs/releases/5.1.0.md](docs/releases/5.1.0.md)
+- v6 implementation plan: [docs/releases/6.0.0.md](docs/releases/6.0.0.md)
+- Evolution Expert 2.0.0 plan: [docs/releases/evolution-expert-2.0.0.md](docs/releases/evolution-expert-2.0.0.md)
 - Previous release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
@@ -214,7 +217,7 @@ Repository map:
 | `packages/create-evopilot/` | Self-host package used by the release installer to generate a complete Compose stack. |
 | `packages/server/` | HTTP control-plane runtime, thin compatibility adapter, RBAC, tenant/workspace scope, audit, and server-side modules. |
 | `packages/worker-runtime/` | Loop worker runtime package used by `scripts/loop-worker.mjs`. |
-| `packages/evolution-expert/` | Independently versioned optional conversational Core and generated Host adapters. |
+| `packages/evolution-expert/` | Independently versioned ordinary-human conversational Core and generated Host adapters. |
 | `packages/adapter-*` | Source, DevOps, MCP, and code-upgrader connector adapters. |
 | `charts/evopilot/` | Helm chart for API, worker, code-upgrader, Postgres, Dashboard, and Ingress. |
 | `deploy/` | Docker Compose, ECS, and Kubernetes deployment assets. |

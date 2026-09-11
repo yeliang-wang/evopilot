@@ -1609,7 +1609,7 @@ async function governedResourceDiff(ctx: RuntimeContext, kind?: string, id?: str
   const resourceId = id ?? requiredOption(ctx.args, "id");
   const from = requiredOption(ctx.args, "from");
   const to = requiredOption(ctx.args, "to");
-  const runtimeVersion = stringOption(ctx.args, "runtime-version") ?? "5.1.0";
+  const runtimeVersion = stringOption(ctx.args, "runtime-version") ?? "6.0.0";
   const response = await ctx.client.expectOk(ctx.client.get(`/api/v1/evolution-resources/${encodeURIComponent(resourceKind)}/${encodeURIComponent(resourceId)}/diff`, { query: { from, to, runtimeVersion } }));
   printOutput(ctx, response.data, `resource=${resourceKind}/${resourceId} from=${from} to=${to} compatibility=${field(response.data, "compatibility")} runtimeChange=${field(response.data, "runtimeVersionChangeRequired")} digest=${field(response.data, "digest")}`);
   return 0;

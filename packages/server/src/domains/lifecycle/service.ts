@@ -4,6 +4,7 @@ import path from "node:path";
 import type { RecoveryContext, RecoveryDecision } from "@evopilot/core";
 import { FileLifecycleCatalog } from "./catalog.js";
 import { conditionMatches, interpolateLifecycleValue, resolveLifecycleInputs } from "./core.js";
+import { GovernedLifecycleRegistry, type LifecycleRegistryScope } from "./governed-registry.js";
 import { LifecycleActionRegistry, stableJson } from "./registry.js";
 import {
   LIFECYCLE_BINDING_SCHEMA,
@@ -44,6 +45,7 @@ export interface LifecycleGovernanceHooks {
 
 export class LifecycleService {
   readonly catalog: FileLifecycleCatalog;
+  readonly governedRegistry: GovernedLifecycleRegistry;
   readonly registry: LifecycleActionRegistry;
   private readonly runsDir: string;
   private readonly feedbackDir: string;
@@ -52,6 +54,7 @@ export class LifecycleService {
   constructor(dataRoot: string, catalogRoots: string[]) {
     this.registry = new LifecycleActionRegistry();
     this.catalog = new FileLifecycleCatalog(catalogRoots, this.registry);
+    this.governedRegistry = new GovernedLifecycleRegistry(dataRoot, this.catalog, this.registry);
     this.runsDir = path.join(dataRoot, "lifecycle-runs");
     this.feedbackDir = path.join(dataRoot, "lifecycle-feedback");
     fs.mkdirSync(this.runsDir, { recursive: true });
@@ -62,12 +65,15 @@ export class LifecycleService {
     this.governanceHooks = hooks;
   }
 
-  resolveInputs(lifecycleId: string, lifecycleVersion: string | undefined, sources: LifecycleInputSources) {
-    return resolveLifecycleInputs(this.catalog.resolve(lifecycleId, lifecycleVersion), sources);
+  resolveInputs(lifecycleId: string, lifecycleVersion: string | undefined, sources: LifecycleInputSources, scope: LifecycleRegistryScope) {
+    return resolveLifecycleInputs(this.governedRegistry.resolveActive(lifecycleId, lifecycleVersion, scope), sources);
   }
 
   start(input: LifecycleStartRequest): LifecycleRun {
-    const revision = this.catalog.resolve(input.lifecycleId, input.lifecycleVersion);
+    const scope = { tenantId: input.tenantId, workspaceId: input.workspaceId };
+    const revision = input.lifecycleRevision
+      ? this.governedRegistry.resolveExact(input.lifecycleRevision.ref.id, input.lifecycleRevision.ref.version, input.lifecycleRevision.digest, scope)
+      : this.governedRegistry.resolveActive(input.lifecycleId, input.lifecycleVersion, scope);
     const inputBinding = resolveLifecycleInputs(revision, input);
     validateDigest("policyDigest", input.policyDigest);
     validateDigest("runtimeDigest", input.runtimeDigest);
@@ -97,7 +103,17 @@ export class LifecycleService {
       : base;
     if ((run.goalId || run.targetId) && this.governanceHooks && !run.binding?.harnessExecutionBindingDigest) throw new Error("HARNESS_EXECUTION_BINDING_REQUIRED");
     if (run.binding?.harnessExecutionBindingDigest) run = this.withBoundaryEvidence(run, "start");
-    return this.write(run);
+    const written = this.write(run);
+    if (written.binding) this.governedRegistry.recordUsage({
+      id: `run-${written.id}`,
+      lifecycleId: revision.ref.id,
+      version: revision.ref.version,
+      revisionDigest: revision.digest,
+      usageType: "RUN",
+      objectId: written.id,
+      bindingDigest: written.binding.digest
+    }, scope);
+    return written;
   }
 
   answer(id: string, answers: Record<string, unknown>, sources: Omit<LifecycleInputSources, "answers"> = {}): LifecycleRun {
@@ -244,26 +260,34 @@ export class LifecycleService {
     }
     const action = this.registry.resolve(stage.action.uses)!;
     if (action.execution === "EXTERNAL_ADAPTER") {
+      if (!binding.executor.allowedEffects.includes(action.effect)) throw new Error(`LIFECYCLE_EXECUTOR_EFFECT_NOT_ALLOWED: ${action.effect}`);
       const missingCapabilities = (stage.capabilities ?? action.capabilities).filter((capability) => !binding.executor.capabilities.includes(capability));
       if (missingCapabilities.length > 0) throw new Error(`LIFECYCLE_EXECUTOR_CAPABILITY_MISMATCH: ${missingCapabilities.join(", ")}`);
       if (priorAttempts.length >= (stage.retry?.maxAttempts ?? 1)) {
         return this.write({ ...run, status: "FAILED", currentStageId: stage.id, updatedAt: new Date().toISOString() });
       }
       const actionInputs = interpolateLifecycleValue(stage.action.with ?? {}, run.inputBinding) as Record<string, unknown>;
-      const pendingExecution: LifecycleAgentExecutionRequest = {
-        schema: "evopilot-agent-execution-request/v1alpha1",
-        id: `execution-${run.id}-${stage.id}-${priorAttempts.length + 1}`,
+      const requestId = `execution-${run.id}-${stage.id}-${priorAttempts.length + 1}`;
+      const pendingMaterial = {
+        schema: "evopilot-agent-execution-request/v1alpha1" as const,
+        id: requestId,
+        idempotencyKey: `${requestId}:${binding.digest}`,
         runId: run.id,
         stageId: stage.id,
         action: action.id,
         actionVersion: action.version,
         bindingDigest: binding.digest,
+        scope: { tenantId: run.tenantId, workspaceId: run.workspaceId, projectId: run.projectId, ...(run.goalId ? { goalId: run.goalId } : {}), ...(run.targetId ? { targetId: run.targetId } : {}) },
+        lifecycle: { ...run.revision.ref, digest: run.revision.digest },
+        harness: { ...binding.harnessBundle, ...(binding.harnessExecutionBindingDigest ? { harnessExecutionBindingDigest: binding.harnessExecutionBindingDigest } : {}) },
+        governance: { policyDigest: binding.policyDigest, providerDigest: binding.providerDigest, environmentDigest: binding.environmentDigest, authorityDigest: binding.authorityDigest, runtimeDigest: binding.runtimeDigest, evidenceDigest: binding.evidenceDigest },
         inputs: action.id === "evopilot.goal-loop"
           ? { ...actionInputs, goalId: run.goalId ?? actionInputs.goalId, targetId: run.targetId ?? actionInputs.targetId, projectId: run.projectId }
           : actionInputs,
         capabilities: stage.capabilities ?? action.capabilities,
         executor: binding.executor
       };
+      const pendingExecution: LifecycleAgentExecutionRequest = { ...pendingMaterial, requestDigest: digest(pendingMaterial) };
       return this.write({ ...run, status: "WAITING_EXTERNAL_SIGNAL", currentStageId: stage.id, pendingExecution, updatedAt: new Date().toISOString() });
     }
     const now = new Date().toISOString();
@@ -304,10 +328,17 @@ export class LifecycleService {
     for (const artifact of result.artifacts ?? []) validateDigest("artifact.digest", artifact.digest);
     const replay = run.stageAttempts.find((attempt) => attempt.externalRequestId === requestId);
     if (replay) {
-      if (replay.receiptDigest === receiptDigest) return run;
+      const prior = run.trajectory.find((entry) => entry.requestId === requestId);
+      if (replay.receiptDigest === receiptDigest
+        && prior?.requestDigest === result.requestDigest
+        && prior.bindingDigest === result.bindingDigest
+        && prior.idempotencyKey === result.idempotencyKey
+        && stableJson(prior.effects) === stableJson([...result.effects])) return run;
       throw new Error("LIFECYCLE_EXTERNAL_RECEIPT_CONFLICT");
     }
     if (run.status !== "WAITING_EXTERNAL_SIGNAL" || run.pendingExecution?.id !== requestId) throw new Error("LIFECYCLE_EXTERNAL_SIGNAL_NOT_PENDING");
+    if (result.requestDigest !== run.pendingExecution.requestDigest || result.bindingDigest !== run.pendingExecution.bindingDigest || result.idempotencyKey !== run.pendingExecution.idempotencyKey) throw new Error("LIFECYCLE_EXTERNAL_RESULT_BINDING_MISMATCH");
+    if (!Array.isArray(result.effects) || result.effects.some((effect) => !run.pendingExecution?.executor.allowedEffects.includes(effect))) throw new Error("LIFECYCLE_EXTERNAL_RESULT_EFFECT_MISMATCH");
     const now = new Date().toISOString();
     const evidence = (result.evidence ?? []).map(redactEvidence);
     let attempt: LifecycleStageAttempt = {
@@ -324,6 +355,8 @@ export class LifecycleService {
     const trajectory = {
       schema: "evopilot-agent-trajectory-entry/v1alpha1" as const,
       requestId,
+      requestDigest: result.requestDigest,
+      idempotencyKey: result.idempotencyKey,
       runId: run.id,
       stageId: run.pendingExecution.stageId,
       bindingDigest: run.pendingExecution.bindingDigest,
@@ -333,6 +366,7 @@ export class LifecycleService {
       capabilities: [...run.pendingExecution.capabilities],
       status,
       receiptDigest,
+      effects: [...result.effects],
       cost: {
         amount: Math.max(0, Number(result.cost?.amount ?? 0)),
         currency: String(result.cost?.currency ?? "USD"),
@@ -537,6 +571,10 @@ function buildBinding(run: LifecycleRun, input: Pick<LifecycleStartRequest, "pol
   if (input.harnessExecutionBindingDigest) validateDigest("harnessExecutionBindingDigest", input.harnessExecutionBindingDigest);
   for (const [name, value] of Object.entries({ providerDigest: input.providerDigest, environmentDigest: input.environmentDigest, authorityDigest: input.authorityDigest })) if (value) validateDigest(name, value);
   const createdAt = new Date().toISOString();
+  const executor = normalizeExecutor(input.executor);
+  const requiredCredentialRefs = Object.values(run.inputBinding.values).filter((item) => item.sensitive).map((item) => String(item.value));
+  const missingCredentialRefs = requiredCredentialRefs.filter((item) => !executor.credentialRefs.includes(item));
+  if (missingCredentialRefs.length) throw new Error("LIFECYCLE_AGENT_RUNTIME_CREDENTIAL_BINDING_REQUIRED");
   const material = {
     lifecycleRef: { ...run.revision.ref, digest: run.revision.digest },
     inputBindingDigest: run.inputBinding.digest,
@@ -546,7 +584,7 @@ function buildBinding(run: LifecycleRun, input: Pick<LifecycleStartRequest, "pol
     environmentDigest: input.environmentDigest,
     authorityDigest: input.authorityDigest,
     harnessBundle: input.harnessBundle,
-    executor: normalizeExecutor(input.executor),
+    executor,
     runtimeDigest: input.runtimeDigest,
     evidenceDigest: input.evidenceDigest ?? digest([]),
     harnessExecutionBindingDigest: input.harnessExecutionBindingDigest,
@@ -561,7 +599,22 @@ function buildBinding(run: LifecycleRun, input: Pick<LifecycleStartRequest, "pol
 
 function normalizeExecutor(value: LifecycleStartRequest["executor"]): LifecycleBinding["executor"] {
   if (!value || !String(value.host ?? "").trim() || !String(value.provider ?? "").trim() || !String(value.model ?? "").trim() || !Array.isArray(value.capabilities)) throw new Error("LIFECYCLE_EXECUTOR_BINDING_REQUIRED");
-  const material = { host: String(value.host), provider: String(value.provider), model: String(value.model), capabilities: [...new Set(value.capabilities.map(String))].sort() };
+  if (!value.agentRuntime?.profileId?.trim() || !value.agentRuntime.profileVersion?.trim() || !value.agentRuntime.adapterId?.trim()) throw new Error("LIFECYCLE_AGENT_RUNTIME_PROFILE_REQUIRED");
+  validateDigest("agentRuntime.profileDigest", value.agentRuntime.profileDigest);
+  validateDigest("agentRuntime.qualificationDigest", value.agentRuntime.qualificationDigest);
+  if (value.sandbox?.permissionMode !== "HOST_MANAGED_DENY_UNDECLARED" || !value.sandbox.workspaceRef?.trim()) throw new Error("LIFECYCLE_AGENT_RUNTIME_SANDBOX_REQUIRED");
+  const credentialRefs = [...new Set((value.credentialRefs ?? []).map(String))].sort();
+  if (credentialRefs.some((item) => !/^secret:\/\/[A-Za-z0-9._/-]+$/.test(item))) throw new Error("LIFECYCLE_AGENT_RUNTIME_SECRET_REF_REQUIRED");
+  const material = {
+    host: String(value.host),
+    provider: String(value.provider),
+    model: String(value.model),
+    capabilities: [...new Set(value.capabilities.map(String))].sort(),
+    agentRuntime: { ...value.agentRuntime },
+    sandbox: { ...value.sandbox },
+    allowedEffects: [...new Set((value.allowedEffects ?? []).map(String))].sort(),
+    credentialRefs
+  };
   const computed = digest(material);
   if (value.digest && value.digest !== computed) throw new Error("LIFECYCLE_EXECUTOR_DIGEST_MISMATCH");
   return { ...material, digest: computed };

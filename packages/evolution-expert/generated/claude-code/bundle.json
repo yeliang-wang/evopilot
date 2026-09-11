@@ -1,0 +1,22 @@
+{
+  "schema": "evopilot-evolution-expert-host-integration-bundle/v1",
+  "id": "evopilot-evolution-expert-claude-code",
+  "version": "2.0.0",
+  "host": "claude-code",
+  "expertCoreDigest": "sha256:411cf0ac7dafbd5d8bafdf402393db5a7a8730fed4f1bed5492a3408ba2bc20b",
+  "adapterDigest": "sha256:c51ce0b9209fee37d6a7c7a8435912daf758cb3a3777262c3c1575d5c39c6d8a",
+  "runtimeCompatibility": ">=6.0.0 <7.0.0",
+  "ordinaryHumanEntry": "EXPERT_OVER_MCP_ONLY",
+  "lifecycle": {
+    "install": "host://claude-code/evopilot-evolution-expert/install",
+    "doctor": "host://claude-code/evopilot-evolution-expert/doctor",
+    "health": "host://claude-code/evopilot-evolution-expert/health",
+    "version": "host://claude-code/evopilot-evolution-expert/version",
+    "upgrade": "host://claude-code/evopilot-evolution-expert/upgrade",
+    "rollback": "host://claude-code/evopilot-evolution-expert/rollback",
+    "removal": "host://claude-code/evopilot-evolution-expert/remove",
+    "help": "host://claude-code/evopilot-evolution-expert/help",
+    "tutorial": "host://claude-code/evopilot-evolution-expert/tutorial"
+  },
+  "digest": "sha256:124510819653c79b1c3ba982124e5cba6250356932a0e36374703eddf009f35f"
+}

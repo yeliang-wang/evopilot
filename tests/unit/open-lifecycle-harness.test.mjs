@@ -15,6 +15,23 @@ import {
 const repositoryRoot = path.resolve(import.meta.dirname, "../..");
 const lifecycleRoot = path.join(repositoryRoot, "lifecycles");
 const digest = (character) => `sha256:${character.repeat(64)}`;
+const executor = (host, provider, model, capabilities) => ({
+  host, provider, model, capabilities,
+  agentRuntime: { profileId: `${host}-runtime`, profileVersion: "1.0.0", adapterId: `${host}.adapter@1`, profileDigest: digest("8"), qualificationDigest: digest("9") },
+  sandbox: { workspaceRef: "/tmp/evopilot-agent-runtime", permissionMode: "HOST_MANAGED_DENY_UNDECLARED" },
+  allowedEffects: ["READ_ONLY", "REVERSIBLE", "EXTERNAL", "IRREVERSIBLE"],
+  credentialRefs: []
+});
+const external = (run, receiptDigest, status = "SUCCEEDED", extra = {}) => ({
+  requestId: run.pendingExecution.id,
+  requestDigest: run.pendingExecution.requestDigest,
+  bindingDigest: run.pendingExecution.bindingDigest,
+  idempotencyKey: run.pendingExecution.idempotencyKey,
+  status,
+  receiptDigest,
+  effects: [],
+  ...extra
+});
 
 test("resolves imported YAML into a stable immutable lifecycle graph", () => {
   const catalog = new FileLifecycleCatalog([lifecycleRoot]);
@@ -93,7 +110,7 @@ test("requires one exact plan authorization and pauses only at external or genui
     policyDigest: digest("1"),
     runtimeDigest: digest("2"),
     harnessBundle: { id: "harness-bundle", version: "4.5.0", digest: digest("3") },
-    executor: { host: "test-host", provider: "test-provider", model: "test-model", capabilities: ["build.execute", "test.execute", "goal-loop.execute", "release.publish"] },
+    executor: executor("test-host", "test-provider", "test-model", ["build.execute", "test.execute", "goal-loop.execute", "release.publish"]),
     answers: { projectRoot: "/project", verificationProfile: "release", candidateVersion: "4.5.0", testSuite: "release", publicationChannel: "both" }
   });
   assert.equal(run.status, "WAITING_AUTHORIZATION");
@@ -103,8 +120,16 @@ test("requires one exact plan authorization and pauses only at external or genui
   assert.equal(run.status, "WAITING_EXTERNAL_SIGNAL");
   assert.equal(run.pendingExecution.action, "build.verify");
   assert.equal(run.pendingExecution.bindingDigest, run.binding.digest);
-  const buildRequestId = run.pendingExecution.id;
-  run = service.recordExternalResult(run.id, { requestId: buildRequestId, status: "SUCCEEDED", receiptDigest: digest("4"), evidence: ["token=must-not-leak", "build=passed"] });
+  assert.deepEqual(run.pendingExecution.scope, { tenantId: "tenant-a", workspaceId: "workspace-a", projectId: "evopilot-harness", goalId: "goal-a" });
+  assert.deepEqual(run.pendingExecution.lifecycle, { ...run.revision.ref, digest: run.revision.digest });
+  assert.equal(run.pendingExecution.harness.digest, run.binding.harnessBundle.digest);
+  assert.equal(run.pendingExecution.executor.agentRuntime.qualificationDigest, run.binding.executor.agentRuntime.qualificationDigest);
+  assert.equal(run.pendingExecution.executor.sandbox.permissionMode, "HOST_MANAGED_DENY_UNDECLARED");
+  assert.match(run.pendingExecution.requestDigest, /^sha256:[a-f0-9]{64}$/);
+  assert.match(run.pendingExecution.idempotencyKey, new RegExp(`^${run.pendingExecution.id}:sha256:`));
+  const buildRequest = run.pendingExecution;
+  const buildRequestId = buildRequest.id;
+  run = service.recordExternalResult(run.id, external(run, digest("4"), "SUCCEEDED", { evidence: ["token=must-not-leak", "build=passed"] }));
   assert.equal(run.stageAttempts.at(-1).evidence[0], "token=<redacted>");
   run = service.advanceUntilBoundary(run.id);
   assert.equal(run.pendingExecution.action, "test.verify");
@@ -114,10 +139,14 @@ test("requires one exact plan authorization and pauses only at external or genui
   assert.equal(JSON.stringify(feedback).includes("must-not-leak"), false);
   assert.equal(service.createFeedbackPackage(run.id, { bindingDigest: run.binding.digest, actor: "user", evidenceRef: "human:feedback-export" }).digest, feedback.digest);
   assert.throws(() => service.createFeedbackPackage(run.id, { bindingDigest: digest("9"), actor: "user", evidenceRef: "human:feedback-export" }), /FEEDBACK_DIGEST_MISMATCH/);
-  assert.equal(service.recordExternalResult(run.id, { requestId: buildRequestId, status: "SUCCEEDED", receiptDigest: digest("4") }).pendingExecution.action, "test.verify");
-  assert.throws(() => service.recordExternalResult(run.id, { requestId: buildRequestId, status: "SUCCEEDED", receiptDigest: digest("5") }), /RECEIPT_CONFLICT/);
+  const replay = { requestId: buildRequestId, requestDigest: buildRequest.requestDigest, bindingDigest: buildRequest.bindingDigest, idempotencyKey: buildRequest.idempotencyKey, status: "SUCCEEDED", receiptDigest: digest("4"), effects: [] };
+  assert.equal(service.recordExternalResult(run.id, replay).pendingExecution.action, "test.verify");
+  assert.throws(() => service.recordExternalResult(run.id, { ...replay, requestDigest: digest("8") }), /RECEIPT_CONFLICT/);
+  assert.throws(() => service.recordExternalResult(run.id, { ...replay, bindingDigest: digest("8") }), /RECEIPT_CONFLICT/);
+  assert.throws(() => service.recordExternalResult(run.id, { ...replay, effects: ["IRREVERSIBLE"] }), /RECEIPT_CONFLICT/);
+  assert.throws(() => service.recordExternalResult(run.id, { ...replay, receiptDigest: digest("5") }), /RECEIPT_CONFLICT/);
   const testRequestId = run.pendingExecution.id;
-  run = service.recordExternalResult(run.id, { requestId: testRequestId, status: "UNCERTAIN", receiptDigest: digest("6"), evidence: ["mutation outcome is unknown"] });
+  run = service.recordExternalResult(run.id, external(run, digest("6"), "UNCERTAIN", { evidence: ["mutation outcome is unknown"] }));
   assert.equal(run.status, "WAITING_DECISION");
   assert.equal(run.pendingDecisionAuthority, "recovery");
   run = service.decide(run.id, run.currentStageId, "APPROVED", "user", "human:retry-uncertain-stage", run.binding.digest);
@@ -148,7 +177,7 @@ test("requires an exact binding and evidence to cancel a non-terminal run", () =
     policyDigest: digest("1"),
     runtimeDigest: digest("2"),
     harnessBundle: { id: "bundle-a", version: "1.0.0", digest: digest("3") },
-    executor: { host: "test-host", provider: "test-provider", model: "test-model", capabilities: ["agent.execute"] },
+    executor: executor("test-host", "test-provider", "test-model", ["agent.execute"]),
     answers: { projectRoot: "/project", documentationScope: ["README"] }
   });
   assert.throws(() => service.cancel(run.id, "owner", "human:cancel", digest("9")), /CANCELLATION_DIGEST_MISMATCH/);
@@ -172,18 +201,18 @@ test("bridges a published Harness-backed Lifecycle to the existing Goal Loop act
     runtimeDigest: digest("2"),
     evidenceDigest: digest("7"),
     harnessBundle: { id: "bundle-a", version: "1.0.0", digest: digest("3") },
-    executor: { host: "workbuddy", provider: "provider-a", model: "model-a", capabilities: ["build.execute", "test.execute", "goal-loop.execute", "release.publish"] },
+    executor: executor("workbuddy", "provider-a", "model-a", ["build.execute", "test.execute", "goal-loop.execute", "release.publish"]),
     answers: { projectRoot: "/project", verificationProfile: "release", candidateVersion: "4.5.0", testSuite: "release", publicationChannel: "both" }
   });
   run = service.authorizePlan(run.id, "APPROVED", "owner", "human:bounded-plan", run.binding.digest);
   run = service.advanceUntilBoundary(run.id);
-  run = service.recordExternalResult(run.id, { requestId: run.pendingExecution.id, status: "SUCCEEDED", receiptDigest: digest("4") });
+  run = service.recordExternalResult(run.id, external(run, digest("4")));
   run = service.advanceUntilBoundary(run.id);
-  run = service.recordExternalResult(run.id, { requestId: run.pendingExecution.id, status: "SUCCEEDED", receiptDigest: digest("5") });
+  run = service.recordExternalResult(run.id, external(run, digest("5")));
   run = service.advanceUntilBoundary(run.id);
   assert.equal(run.pendingExecution.action, "evopilot.goal-loop");
   assert.deepEqual({ goalId: run.pendingExecution.inputs.goalId, targetId: run.pendingExecution.inputs.targetId, projectId: run.pendingExecution.inputs.projectId }, { goalId: "goal-a", targetId: "target-a", projectId: "project-a" });
-  run = service.recordExternalResult(run.id, { requestId: run.pendingExecution.id, status: "SUCCEEDED", receiptDigest: digest("6") });
+  run = service.recordExternalResult(run.id, external(run, digest("6")));
   run = service.advanceUntilBoundary(run.id);
   assert.equal(run.status, "WAITING_DECISION");
   assert.equal(run.currentStageId, "public-publication");
