@@ -8,15 +8,27 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const check = process.argv.includes("--check");
 const runtimeId = "evopilot-v6.0.0-agent-native-lifecycle-control-plane";
 const expertId = "evopilot-evolution-expert-v2.0.0-agent-host-entry";
-const runtime = readJson(`governance/targets/${runtimeId}.json`);
-const expert = readJson(`governance/targets/${expertId}.json`);
+const runtimeTargetPath = process.env.EVOPILOT_V6_RUNTIME_TARGET
+  ? path.resolve(process.env.EVOPILOT_V6_RUNTIME_TARGET)
+  : path.join(root, `governance/targets/${runtimeId}.json`);
+const expertTargetPath = process.env.EVOPILOT_V6_EXPERT_TARGET
+  ? path.resolve(process.env.EVOPILOT_V6_EXPERT_TARGET)
+  : path.join(root, `governance/targets/${expertId}.json`);
+const contractPath = process.env.EVOPILOT_V6_COMPLETION_CONTRACT
+  ? path.resolve(process.env.EVOPILOT_V6_COMPLETION_CONTRACT)
+  : path.join(root, "governance/acceptance/v6-completion-contract.json");
+const crossContractPath = process.env.EVOPILOT_V6_CROSS_ACCEPTANCE_MAP
+  ? path.resolve(process.env.EVOPILOT_V6_CROSS_ACCEPTANCE_MAP)
+  : path.join(root, "governance/acceptance/runtime-6.0.0-expert-2.0.0-cross-acceptance-map.json");
+const runtime = readJsonPath(runtimeTargetPath);
+const expert = readJsonPath(expertTargetPath);
 const targets = [runtime, expert];
 const campaignId = "evopilot-runtime-6.0.0-expert-2.0.0-agent-native-lifecycle-control-plane";
 
 const requirements = [];
 for (const target of targets) {
   const targetPath = `governance/targets/${target.id}.json`;
-  const sourceDigest = fileDigest(targetPath);
+  const sourceDigest = target.id === runtimeId ? fileDigestPath(runtimeTargetPath) : fileDigestPath(expertTargetPath);
   for (const [index, statement] of target.scope.include.entries()) {
     requirements.push({ id: `${target.id}-SCOPE-${String(index + 1).padStart(2, "0")}`, sourceRef: `${targetPath}#scope.include.${index}`, sourceDigest, statement, kind: "TARGET_SCOPE", targetId: target.id });
   }
@@ -57,6 +69,15 @@ const validators = requiredCriteria.map((criterion) => ({
   independent: true
 }));
 
+if (isAcceptedProjectionState()) {
+  if (!check) {
+    console.error("v6 completion contract is immutable after exact Candidate acceptance has been projected");
+    process.exit(1);
+  }
+  validateAcceptedContract();
+  process.exit(0);
+}
+
 const crossAcceptance = buildCrossAcceptance();
 const crossPath = "governance/acceptance/runtime-6.0.0-expert-2.0.0-cross-acceptance-map.json";
 const crossContent = `${JSON.stringify(crossAcceptance, null, 2)}\n`;
@@ -74,8 +95,8 @@ const contractMaterial = {
   generatedFrom: [`governance/targets/${runtimeId}.json`, `governance/targets/${expertId}.json`]
 };
 const contract = { ...contractMaterial, digest: sha(contractMaterial) };
-writeOrCheck("governance/acceptance/v6-completion-contract.json", `${JSON.stringify(contract, null, 2)}\n`, "v6 completion contract");
-writeOrCheck(crossPath, crossContent, "v6 cross-acceptance map");
+writeOrCheck(contractPath, `${JSON.stringify(contract, null, 2)}\n`, "v6 completion contract");
+writeOrCheck(crossContractPath, crossContent, "v6 cross-acceptance map");
 console.log(`v6 completion contract ${check ? "current" : "written"}: requirements=${inventory.requirements.length} criteria=${requiredCriteria.length} cross=${crossAcceptance.rows.length} digest=${contract.digest}`);
 
 function criteria(target) {
@@ -157,8 +178,7 @@ function deliverablesFor(targetId, ids) {
   return result;
 }
 
-function writeOrCheck(relative, content, label) {
-  const target = path.join(root, relative);
+function writeOrCheck(target, content, label) {
   if (check) {
     if (!fs.existsSync(target) || fs.readFileSync(target, "utf8") !== content) throw new Error(`${label} is missing or stale`);
     return;
@@ -168,12 +188,93 @@ function writeOrCheck(relative, content, label) {
 }
 
 function targetBinding(target) {
-  return { id: target.id, revision: target.revision, authorizationDigest: target.approvals.target.authorizationDigest, fileDigest: fileDigest(`governance/targets/${target.id}.json`) };
+  const sourcePath = target.id === runtimeId ? runtimeTargetPath : expertTargetPath;
+  return { id: target.id, revision: target.revision, authorizationDigest: target.approvals.target.authorizationDigest, fileDigest: fileDigestPath(sourcePath) };
 }
 function validatorId(targetId, criterionId) { return `validate-${targetId}-${criterionId}`; }
 function tokens(value) { return new Set(String(value).toLowerCase().match(/[a-z][a-z0-9-]{3,}|[\u4e00-\u9fff]{2,}/g) ?? []); }
 function readJson(relative) { return JSON.parse(fs.readFileSync(path.join(root, relative), "utf8")); }
 function fileDigest(relative) { return `sha256:${createHash("sha256").update(fs.readFileSync(path.join(root, relative))).digest("hex")}`; }
+function readJsonPath(sourcePath) { return JSON.parse(fs.readFileSync(sourcePath, "utf8")); }
+function fileDigestPath(sourcePath) { return `sha256:${createHash("sha256").update(fs.readFileSync(sourcePath)).digest("hex")}`; }
 function sha(value) { return `sha256:${createHash("sha256").update(stable(value)).digest("hex")}`; }
 function stable(value) { if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`; if (value && typeof value === "object") return `{${Object.entries(value).filter(([, child]) => child !== undefined).sort(([a], [b]) => compareText(a, b)).map(([key, child]) => `${JSON.stringify(key)}:${stable(child)}`).join(",")}}`; return JSON.stringify(value); }
 function compareText(left, right) { return left < right ? -1 : left > right ? 1 : 0; }
+
+function isAcceptedProjectionState() {
+  return [runtime, expert].every((target) =>
+    target.status === "RELEASE_AUTHORIZED"
+    && target.approvals?.release?.decision === "AUTHORIZED"
+    && /^sha256:[0-9a-f]{64}$/.test(target.approvals?.release?.authorizationDigest ?? "")
+    && target.noRegression?.status === "PASSED"
+    && [target.acceptance, target.inheritedAcceptance, target.realCaseCoverage]
+      .flat()
+      .every((item) => item.status === "PASSED" && Array.isArray(item.evidenceRefs) && item.evidenceRefs.length > 0)
+  );
+}
+
+function validateAcceptedContract() {
+  const errors = [];
+  if (!fs.existsSync(contractPath)) {
+    console.error("immutable accepted v6 completion contract is missing");
+    process.exit(1);
+  }
+
+  let acceptedContract;
+  try {
+    acceptedContract = readJsonPath(contractPath);
+  } catch (error) {
+    console.error(`immutable accepted v6 completion contract is not valid JSON: ${error.message}`);
+    process.exit(1);
+  }
+
+  const { digest, ...material } = acceptedContract;
+  if (acceptedContract.schema !== "evopilot-v6-completion-contract/v1") errors.push("schema does not match v1");
+  if (acceptedContract.campaignId !== campaignId) errors.push("campaign binding changed");
+  if (digest !== sha(material)) errors.push("self-digest does not match immutable content");
+
+  const immutableBindings = acceptedContract.targetBindings?.map(({ id, revision, authorizationDigest }) => ({ id, revision, authorizationDigest }));
+  const currentBindings = [runtime, expert].map(({ id, revision, approvals }) => ({ id, revision, authorizationDigest: approvals.target.authorizationDigest }));
+  if (stable(immutableBindings) !== stable(currentBindings)) errors.push("Target revision or authorization binding changed");
+
+  if (acceptedContract.requiredCriteria?.length !== 253 || acceptedContract.validators?.length !== 253) {
+    errors.push("immutable acceptance inventory must contain exactly 253 criteria and validators");
+  }
+  if (stable(acceptedContract.requiredCriteria) !== stable(requiredCriteria)) errors.push("Target criterion semantics changed after acceptance");
+  if (stable(acceptedContract.validators) !== stable(validators)) errors.push("criterion validator contract changed after acceptance");
+
+  const immutableRequirements = acceptedContract.inventory?.requirements?.map(withoutSourceDigest).sort(byId);
+  const currentRequirements = requirements.map(withoutSourceDigest).sort(byId);
+  if (stable(immutableRequirements) !== stable(currentRequirements)) errors.push("Target scope or acceptance requirement semantics changed after acceptance");
+
+  const immutableInventory = createApprovedSchemeInventory({ campaignId: acceptedContract.inventory?.campaignId, requirements: acceptedContract.inventory?.requirements ?? [] });
+  if (immutableInventory.digest !== acceptedContract.inventory?.digest) errors.push("immutable requirement inventory digest is invalid");
+  const immutableTrace = createCompletionTrace(immutableInventory, acceptedContract.trace?.links ?? []);
+  if (immutableTrace.digest !== acceptedContract.trace?.digest) errors.push("immutable completion trace digest is invalid");
+
+  const cross = readJsonPath(crossContractPath);
+  if (cross.schema !== "evopilot-runtime-expert-cross-acceptance-map/v2" || cross.rows?.length !== 10) errors.push("cross-acceptance contract must retain exactly ten rows");
+  if (cross.digest !== sha(Object.fromEntries(Object.entries(cross).filter(([key]) => key !== "digest")))) errors.push("cross-acceptance self-digest is invalid");
+  if (acceptedContract.crossAcceptanceRef?.path !== "governance/acceptance/runtime-6.0.0-expert-2.0.0-cross-acceptance-map.json" || acceptedContract.crossAcceptanceRef?.digest !== sha(cross)) {
+    errors.push("cross-acceptance contract binding changed after acceptance");
+  }
+
+  if (errors.length > 0) {
+    console.error(`immutable accepted v6 completion contract is invalid: ${errors.join("; ")}`);
+    process.exit(1);
+  }
+  console.log(`immutable accepted v6 completion contract verified: criteria=253 cross=10 digest=${acceptedContract.digest}`);
+}
+
+function withoutSourceDigest(value) {
+  return {
+    id: value.id,
+    sourceRef: value.sourceRef,
+    statement: value.statement,
+    kind: value.kind
+  };
+}
+
+function byId(left, right) {
+  return compareText(left.id, right.id);
+}

@@ -128,6 +128,41 @@ test("completed v5 contract is verified as immutable history after the v6 Roadma
   }
 });
 
+test("accepted v6 Targets validate against the immutable completion contract without regeneration", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-v6-accepted-contract-"));
+  const runtimeTarget = path.join(tempDirectory, "runtime-target.json");
+  const expertTarget = path.join(tempDirectory, "expert-target.json");
+  const contractPath = path.join(tempDirectory, "v6-completion-contract.json");
+  const crossPath = path.join(tempDirectory, "v6-cross-acceptance-map.json");
+  try {
+    projectAcceptedTarget(
+      path.join(root, "governance/targets/evopilot-v6.0.0-agent-native-lifecycle-control-plane.json"),
+      runtimeTarget
+    );
+    projectAcceptedTarget(
+      path.join(root, "governance/targets/evopilot-evolution-expert-v2.0.0-agent-host-entry.json"),
+      expertTarget
+    );
+    fs.copyFileSync(path.join(root, "governance/acceptance/v6-completion-contract.json"), contractPath);
+    fs.copyFileSync(path.join(root, "governance/acceptance/runtime-6.0.0-expert-2.0.0-cross-acceptance-map.json"), crossPath);
+
+    const accepted = runV6CompletionContractCheck({ runtimeTarget, expertTarget, contractPath, crossPath });
+    assert.equal(accepted.status, 0, accepted.stderr);
+    assert.match(accepted.stdout, /immutable accepted v6 completion contract verified/);
+
+    const contract = JSON.parse(fs.readFileSync(contractPath, "utf8"));
+    contract.requiredCriteria.pop();
+    const { digest: _oldDigest, ...material } = contract;
+    contract.digest = stableDigest(material);
+    fs.writeFileSync(contractPath, `${JSON.stringify(contract, null, 2)}\n`);
+    const weakened = runV6CompletionContractCheck({ runtimeTarget, expertTarget, contractPath, crossPath });
+    assert.equal(weakened.status, 1, weakened.stdout);
+    assert.match(weakened.stderr, /exactly 253 criteria and validators/);
+  } finally {
+    fs.rmSync(tempDirectory, { recursive: true, force: true });
+  }
+});
+
 test("Roadmap Gate preserves AgentTrajectory work inside the completed v4 foundation", () => {
   const result = run(["--intent", "Add AgentTrajectory, RewardContract, and an approved execution feedback package"]);
   assert.equal(result.status, 0, result.stderr);
@@ -362,6 +397,37 @@ function runCompletionContractCheck(contractPath) {
     encoding: "utf8",
     env: contractPath ? { ...process.env, EVOPILOT_V5_COMPLETION_CONTRACT: contractPath } : process.env
   });
+}
+
+function runV6CompletionContractCheck({ runtimeTarget, expertTarget, contractPath, crossPath }) {
+  return spawnSync(process.execPath, ["scripts/build-v6-completion-contract.mjs", "--check"], {
+    cwd: root,
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      EVOPILOT_V6_RUNTIME_TARGET: runtimeTarget,
+      EVOPILOT_V6_EXPERT_TARGET: expertTarget,
+      EVOPILOT_V6_COMPLETION_CONTRACT: contractPath,
+      EVOPILOT_V6_CROSS_ACCEPTANCE_MAP: crossPath
+    }
+  });
+}
+
+function projectAcceptedTarget(source, destination) {
+  const target = JSON.parse(fs.readFileSync(source, "utf8"));
+  target.status = "RELEASE_AUTHORIZED";
+  target.noRegression = { status: "PASSED", evidenceRefs: ["acceptance:test/no-regression"] };
+  target.approvals.release = {
+    decision: "AUTHORIZED",
+    by: "test",
+    evidenceRef: "acceptance:test/release-authorization",
+    authorizationDigest: `sha256:${"a".repeat(64)}`
+  };
+  for (const criterion of [target.acceptance, target.inheritedAcceptance, target.realCaseCoverage].flat()) {
+    criterion.status = "PASSED";
+    criterion.evidenceRefs = [`acceptance:test/${criterion.id}`];
+  }
+  fs.writeFileSync(destination, `${JSON.stringify(target, null, 2)}\n`);
 }
 
 function stableDigest(value) {

@@ -2,7 +2,7 @@
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-v6.0.0-agent-native-lifecycle-control-plane",
   "revision": 1,
-  "status": "APPROVED",
+  "status": "RELEASE_AUTHORIZED",
   "intent": "Implement EvoPilot Runtime 6.0.0 as an Agent-native Harness-guided Lifecycle control plane with Runtime-owned tenant/workspace Lifecycle Registry CRUD, immutable revision bindings, mandatory ordinary-human Evolution Expert interaction over MCP, qualified external Agent Runtime source execution, frozen legacy Suite fixtures, and exact installed-Candidate completion.",
   "objective": "Deliver Runtime 6.0.0 as the public project-neutral control plane that lets third-party projects create, inspect, evolve, activate, execute, recover, and roll back declarative Pipeline Lifecycles independently of Runtime source while preserving a real immutable HarnessBundle-guided Goal Target Loop, explicit authority, durable Runtime truth, and external Agent execution.",
   "evidence": [
@@ -85,8 +85,10 @@
       "critical": true,
       "criterion": "LifecycleDefinition, LifecycleRevision, active pointer, dependency, usage, and audit are explicit tenant/workspace aggregates with durable Runtime-owned truth.",
       "requiredEvidence": "Contract, persistence, API, MCP, and restart tests over exact tenant/workspace resources.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC01.json@sha256:da5c9646381e74d9d7a103d4c6ac6cc5a8efb32c1ff9b8c5af110f1a8a3433aa#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC01"
+      ]
     },
     {
       "id": "V6-FUNC02",
@@ -94,8 +96,10 @@
       "critical": true,
       "criterion": "Human-readable Lifecycle YAML supports schema validation, canonicalization, closed Action and Capability references, and deterministic resolved graphs.",
       "requiredEvidence": "Positive and negative schema fixtures plus deterministic canonical and graph digest evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC02.json@sha256:4c2ffc03465041e84775250ce10627bd3b5081e13fbd4df261f3ee7d89e9f5d1#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC02"
+      ]
     },
     {
       "id": "V6-FUNC03",
@@ -103,8 +107,10 @@
       "critical": false,
       "criterion": "Create and register preserve immutable revisions; update creates a successor and semantic diff identifies exact behavior, authority, dependency, and compatibility changes.",
       "requiredEvidence": "CRUD integration evidence proving predecessor immutability and exact semantic diff output.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC03.json@sha256:7a652c954a07beba4db79f2265a4807747d8a412b86731a25a030e39f3c9c48a#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC03"
+      ]
     },
     {
       "id": "V6-FUNC04",
@@ -112,8 +118,10 @@
       "critical": true,
       "criterion": "Activation and deactivation use expected-active-digest concurrency and affect future planning without mutating an already bound Loop.",
       "requiredEvidence": "Concurrent pointer mutation tests and active-run binding evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC04.json@sha256:ce2f35a6b75102d32998db8c5236bffece9c5b8a6cf0689329ab66b91f243479#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC04"
+      ]
     },
     {
       "id": "V6-FUNC05",
@@ -121,8 +129,10 @@
       "critical": false,
       "criterion": "Archive, restore, tombstone, and restricted physical deletion preserve referential integrity and historical inspection.",
       "requiredEvidence": "Deletion eligibility, referenced-revision rejection, archive, restore, and audit tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC05.json@sha256:cb2745057f196d9927db2da334bc07931d5d27cf132c933904c1f10e7547dd61#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC05"
+      ]
     },
     {
       "id": "V6-FUNC06",
@@ -130,8 +140,10 @@
       "critical": false,
       "criterion": "Rollback moves the active pointer to one exact retained revision without rewriting revisions, bindings, runs, evidence, or audit.",
       "requiredEvidence": "Rollback integration test with before/after digests and immutable history proof.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC06.json@sha256:78c8998c608022715dd3cedc6c3890387a404c539295b846925f3e1b21d3c7ef#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC06"
+      ]
     },
     {
       "id": "V6-FUNC07",
@@ -139,8 +151,10 @@
       "critical": false,
       "criterion": "List, inspect, resolve, dependency, usage, automation, authority, rollback, and audit views are consistent through Runtime and MCP contracts.",
       "requiredEvidence": "Cross-surface contract tests over one persisted resource graph.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC07.json@sha256:467c2ff29dd72644233848733e707412780c44bc735748f5b426905d88338bc4#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC07"
+      ]
     },
     {
       "id": "V6-FUNC08",
@@ -148,8 +162,10 @@
       "critical": true,
       "criterion": "Reusable Lifecycle imports compose deterministically while cycles, duplicate identities, missing dependencies, and weakening of Harness obligations fail closed.",
       "requiredEvidence": "Composition matrix and negative fixtures with deterministic diagnostics.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC08.json@sha256:9bd4150afb15cb5d877e5d267716399ea684c16d0cacbe01b35277ef7e93aab5#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC08"
+      ]
     },
     {
       "id": "V6-FUNC09",
@@ -157,8 +173,10 @@
       "critical": true,
       "criterion": "ProjectDefinition resolves an eligible Lifecycle and one published immutable HarnessExecutionBinding before a Goal Target Loop can start.",
       "requiredEvidence": "Exact project, Lifecycle, Registry, Catalog, HarnessProfile, HarnessBundle, component, policy, and digest binding evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC09.json@sha256:747522cc24cb245f63e96b920fbbc0ff632e3a53c226977fb03a2a72a18e44d8#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC09"
+      ]
     },
     {
       "id": "V6-FUNC10",
@@ -166,8 +184,10 @@
       "critical": false,
       "criterion": "Every start, iteration, retry, and resume revalidates exact immutable bindings; active-pointer changes apply only to future planning.",
       "requiredEvidence": "Loop boundary tests with positive revalidation and drift rejection.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC10.json@sha256:ce543a8310d70d24a7948be38943ea8fc2c22ee7b1589c55ce081fcc15d37e7b#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC10"
+      ]
     },
     {
       "id": "V6-FUNC11",
@@ -175,8 +195,10 @@
       "critical": false,
       "criterion": "Schema-driven input collection discovers and validates first, asks only unresolved relevant fields, never treats parameters as decisions, and stores only SecretRefs.",
       "requiredEvidence": "Dialogue-plan, headless input, default precedence, decision-separation, and secret-redaction evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC11.json@sha256:95b24eff322375702e5b7c5b1287ddbbd16ea9aba82e1e641b354e36502edf17#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC11"
+      ]
     },
     {
       "id": "V6-FUNC12",
@@ -184,8 +206,10 @@
       "critical": true,
       "criterion": "Evolution Expert over MCP is the supported ordinary-human entry for project, Lifecycle, Harness-guided Loop, recovery, acceptance, and release journeys.",
       "requiredEvidence": "Exact installed Expert/Runtime MCP transcripts and negative direct-human fallback tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC12.json@sha256:c5f5f67c3883b3af017aba43e1e47b87d510fc6f1d0472b1651814d607aedd26#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC12"
+      ]
     },
     {
       "id": "V6-FUNC13",
@@ -193,8 +217,10 @@
       "critical": true,
       "criterion": "Lifecycle composition may strengthen but never remove a Harness validator, evidence obligation, constraint, boundary, capability, or authority stop.",
       "requiredEvidence": "Monotonic composition property tests and negative weakened-obligation fixtures.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC13.json@sha256:25af01c01222fd9b2c0487ffd27c870068f6017b1b9d2555437726cfa63afd38#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC13"
+      ]
     },
     {
       "id": "V6-FUNC14",
@@ -202,8 +228,10 @@
       "critical": true,
       "criterion": "Runtime emits an exact immutable pendingExecution that binds project, goal, target, Lifecycle, Harness, Agent Runtime profile, sandbox, allowed effects, credentials by reference, and authority.",
       "requiredEvidence": "PendingExecution schema, digest, idempotency, and authorization tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC14.json@sha256:3ee3b91e756526bed3975385e4c781104bff38c8e11e41ef9cd66e14638a1e7e#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC14"
+      ]
     },
     {
       "id": "V6-FUNC15",
@@ -211,8 +239,10 @@
       "critical": true,
       "criterion": "Only a qualified external Agent Runtime may execute bounded source work and return a normalized receipt, trajectory, usage, artifact, and evidence result.",
       "requiredEvidence": "Official Codex/OpenCode path and independent adapter conformance evidence; embedded and unqualified execution rejection.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC15.json@sha256:13e990c3fce4b566683fbc568528688687e0ae235a94ed7947f5559d187794dc#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC15"
+      ]
     },
     {
       "id": "V6-FUNC16",
@@ -220,8 +250,10 @@
       "critical": false,
       "criterion": "Runtime validates receipt identity, binding, effects, artifacts, evidence, and uncertainty before advancing, and suppresses duplicate or conflicting replays.",
       "requiredEvidence": "Receipt validation, uncertain mutation reconciliation, replay suppression, and conflict tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC16.json@sha256:0d99eca3745c0e0f5556a84454a9ac65a8b98f49224889398b70be4be3e52607#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC16"
+      ]
     },
     {
       "id": "V6-FUNC17",
@@ -229,8 +261,10 @@
       "critical": false,
       "criterion": "Crash and process restart recover Registry state, active pointers, immutable bindings, runs, pending executions, receipts, evidence, and audit without relying on chat history.",
       "requiredEvidence": "Kill/restart/resume integration evidence across persisted state.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-FUNC17.json@sha256:15106fe74d39f8eae73b587e6132fd6aae37e244b0a93dfcb6111ce511d9949e#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-FUNC17"
+      ]
     },
     {
       "id": "V6-CAP01",
@@ -238,8 +272,10 @@
       "critical": true,
       "criterion": "Tenant and workspace boundaries isolate identical project and Lifecycle identities across CRUD, binding, execution, evidence, and audit.",
       "requiredEvidence": "Two-tenant isolation E2E with cross-scope rejection.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP01.json@sha256:f2813aa9ae612c37cea7f2bce7c360800c08e9ba6eb43813d1e4291188b1611b#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP01"
+      ]
     },
     {
       "id": "V6-CAP02",
@@ -247,8 +283,10 @@
       "critical": true,
       "criterion": "Lifecycle mutations are idempotent, concurrency-safe, referentially integral, crash-safe, and immutably audited.",
       "requiredEvidence": "Concurrency, idempotency, recovery, integrity, and audit stress tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP02.json@sha256:32fa01758f122474aeaa10204b44656463e0062fa27dfb1dfa260a476093b446#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP02"
+      ]
     },
     {
       "id": "V6-CAP03",
@@ -256,8 +294,10 @@
       "critical": true,
       "criterion": "Lifecycle YAML cannot embed arbitrary shell, programming-language code, hidden executable prompts, unknown actions, raw secrets, or implicit authority.",
       "requiredEvidence": "Adversarial schema and security test corpus.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP03.json@sha256:bd0180d0eb4cd421e19552f1916228087315a245d6b4bea0f78cec8f18e41af5#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP03"
+      ]
     },
     {
       "id": "V6-CAP04",
@@ -265,8 +305,10 @@
       "critical": true,
       "criterion": "Semantic, credential, production, database, destructive, Candidate acceptance, publication, and Release authority remain explicit and cannot be inferred from conversation or readiness.",
       "requiredEvidence": "Authority decision matrix with negative and exact-digest positive evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP04.json@sha256:b37f17d95ba04e17b56fd758167bd80d2d956f60c32341e6540af082af757cec#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP04"
+      ]
     },
     {
       "id": "V6-CAP05",
@@ -274,8 +316,10 @@
       "critical": false,
       "criterion": "Agent Host, Agent Runtime, forge, language, package manager, provider, and model are independently qualified without repository-named Engine branches.",
       "requiredEvidence": "Capability negotiation and adapter conformance across multiple independent implementations.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP05.json@sha256:d0e154ca189cf422444e65d161d59d1afbcf90cd9eddc304699ad701b1be4c85#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP05"
+      ]
     },
     {
       "id": "V6-CAP06",
@@ -283,8 +327,10 @@
       "critical": true,
       "criterion": "Agent Host carries conversation and decisions, Runtime owns control-plane truth, and external Agent Runtime owns bounded execution; no role silently assumes another role.",
       "requiredEvidence": "Boundary tests and architecture guard evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP06.json@sha256:3068daeaa086c1b9e6f50343bf1127ae1e918495591745c06a99b172e81efe6b#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP06"
+      ]
     },
     {
       "id": "V6-CAP07",
@@ -292,8 +338,10 @@
       "critical": true,
       "criterion": "A new third-party project can create, change, activate, execute, and roll back its Pipeline using declarations only, with zero Runtime and Expert source diff when contracts remain compatible.",
       "requiredEvidence": "Unknown-project repository diff proof and complete E2E evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP07.json@sha256:d6665dcedd55af442c1b34952c80944dda00de836b944f9145537bbbfc189126#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP07"
+      ]
     },
     {
       "id": "V6-CAP08",
@@ -301,8 +349,10 @@
       "critical": true,
       "criterion": "EvoPilot Suite 3.2.1 and DataRig Suite 2.1.5 are frozen reference and migration fixtures only; neither is a Runtime dependency, privileged profile, synchronization source, or hidden fallback.",
       "requiredEvidence": "Exact frozen inventory, absence execution, dependency scan, and legacySuiteInvocationCount=0 evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP08.json@sha256:aac2aacf7a4ff51b616502d767ca90bc5a5f1070e1ad6478fdafaea3b3d1aa04#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP08"
+      ]
     },
     {
       "id": "V6-CAP09",
@@ -310,8 +360,10 @@
       "critical": true,
       "criterion": "A real published evopilot-harness HarnessBundle guides the EvoPilot repository Goal Target Loop through read-only consumption without transferring Harness authority.",
       "requiredEvidence": "Public package generated Registry v2, Catalog v3, HarnessProfile, HarnessBundle, HarnessComponent, export, loop, and drift evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP09.json@sha256:020258fbc1c9e9d66f2bd627ea3698896b807cf34e0676b2913ef7643b13ef5e#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP09"
+      ]
     },
     {
       "id": "V6-CAP10",
@@ -319,8 +371,10 @@
       "critical": false,
       "criterion": "Codex, Claude Code, designated-human WorkBuddy, independent Host, generic MCP, and headless callers preserve one Runtime truth and one Expert Core semantic contract.",
       "requiredEvidence": "Cross-Host conformance matrix and Runtime object digest equality.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP10.json@sha256:cff52dcb05d84946db311e27cadba03f83d6595ce49aa564e8daab3c454ba834#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP10"
+      ]
     },
     {
       "id": "V6-CAP11",
@@ -328,8 +382,10 @@
       "critical": false,
       "criterion": "Bounded recovery automatically handles deterministic safe failures while stopping only at genuine authority, semantic, destructive, unresolved-state, or exhausted-budget boundaries.",
       "requiredEvidence": "Failure-class matrix, automatic repair/retry/reconcile evidence, and exact human-stop evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP11.json@sha256:15746f816234c471b3ac3b5113e17571dd405267848295aad5e573680ad1597d#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP11"
+      ]
     },
     {
       "id": "V6-CAP12",
@@ -337,8 +393,10 @@
       "critical": false,
       "criterion": "Lifecycle, project, policy, provider, Runtime, Expert, Host Integration Bundle, and Harness versions evolve independently under explicit compatibility ranges.",
       "requiredEvidence": "Upgrade, compatibility, successor revision, and rollback matrix.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP12.json@sha256:e2fe86d785de420a55c754728f941ebcb6b5d0e78c539a55cead76fe263a72a0#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP12"
+      ]
     },
     {
       "id": "V6-CAP13",
@@ -346,8 +404,10 @@
       "critical": false,
       "criterion": "README and technical documentation accurately route installation, Expert-first operation, concepts, architecture, Lifecycle CRUD, MCP, Agent Runtime, Harness binding, security, recovery, migration, operations, acceptance, and release.",
       "requiredEvidence": "Documentation link, command, version, terminology, and installed-artifact checks.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP13.json@sha256:679e752efb52aa200e5620446e5be6e1cbdbb572337ea232ebae6d8bace7e9e5#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP13"
+      ]
     },
     {
       "id": "V6-CAP14",
@@ -355,8 +415,10 @@
       "critical": true,
       "criterion": "Completion requires 100 percent current, inherited, E2E, impact, and NO_REGRESSION closure against one exact installed Runtime and Expert Candidate pair, with no generic, stale, warning, failed, pending, or unmapped item.",
       "requiredEvidence": "Independent criterion-level completion report and exact Candidate manifests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP14.json@sha256:2d20606be6da568cf9037552e475ae6bbda1d45594842e474de4e6c61a57c193#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP14"
+      ]
     },
     {
       "id": "V6-CAP15",
@@ -364,8 +426,10 @@
       "critical": false,
       "criterion": "Candidate and release mechanics promote exact accepted Runtime bytes without rebuild and retain independent Expert authorization and publication identity.",
       "requiredEvidence": "Private Candidate handoff, byte digest, release-contract, and no-rebuild verification.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V6-CAP15.json@sha256:639c2e42c8f3ee18f9b781989821350865c54f0eabae2fcc21106cae4986a46a#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V6-CAP15"
+      ]
     }
   ],
   "acceptanceLineage": [
@@ -1120,992 +1184,1240 @@
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC01",
       "criterion": "A valid EvolutionProjectDefinition is discovered, normalized, versioned, and bound without project-specific Engine behavior.",
       "requiredEvidence": "schema, normalization, discovery, digest, and no-project-branch tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC01.json@sha256:f0e9de75783a508eaeaeb75435b167645c1b28669d0026c615dcc04065bb854b#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC01"
+      ]
     },
     {
       "id": "FUNC02",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC02",
       "criterion": "Unknown projects are onboarded interactively into declarative resources and can be revised with evidence-preserving rollback.",
       "requiredEvidence": "fresh unknown-project onboarding, adjustment, and rollback transcript",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC02.json@sha256:e08197cf294ef7d2f59d224a632a2d5ec66e72a188f84a9dc8c4aa8995043d3f#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC02"
+      ]
     },
     {
       "id": "FUNC03",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC03",
       "criterion": "Project plus GoalTarget context deterministically matches eligible published HarnessProfiles with ranking reasons and rejected alternatives.",
       "requiredEvidence": "matching goldens, reason trace, and rejected-alternative evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC03.json@sha256:1254c767edb1e2047d96ebd559ff52dd81077401e9a950201d601d0d60b5783f#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC03"
+      ]
     },
     {
       "id": "FUNC04",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC04",
       "criterion": "No-match, ambiguity, ineligibility, and abstention fail closed without fabricating or silently selecting a Harness.",
       "requiredEvidence": "negative matching and abstention matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC04.json@sha256:bd6462fec557aaf126050545f7e8ed5aa8f38c62032dfc5d36080e1df0707f45#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC04"
+      ]
     },
     {
       "id": "FUNC05",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC05",
       "criterion": "Every Goal Target Loop binds one exact published immutable HarnessBundle closure before execution.",
       "requiredEvidence": "mandatory binding tests and immutable Bundle digest closure",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC05.json@sha256:267270c6ec3799238f83b09ab0f4d3e19308db7810383b28292863cd4fbce3b5#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC05"
+      ]
     },
     {
       "id": "FUNC06",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC06",
       "criterion": "HarnessExecutionBinding includes exact Project, GoalTarget, Harness, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence digests.",
       "requiredEvidence": "binding schema, canonicalization, tamper, and replay tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC06.json@sha256:fc9d25af2e6d3490cab47ba3e896f0708a527c2a30002a38d6d5666d279e07db#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC06"
+      ]
     },
     {
       "id": "FUNC07",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC07",
       "criterion": "Harness and Lifecycle composition intersects permissions and unions obligations without weakening Harness requirements.",
       "requiredEvidence": "composition algebra goldens and weakening negatives",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC07.json@sha256:79887d79aa41dac0f2725ff62bc4299adaf469783c5f47ecf62608dd803fcb42#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC07"
+      ]
     },
     {
       "id": "FUNC08",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC08",
       "criterion": "Composition conflicts are deterministic, explainable, and fail closed before execution.",
       "requiredEvidence": "conflict corpus and stable diagnostic snapshots",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC08.json@sha256:20285a94b9696709f301db45f30e972a35f49d3d8858aec6928902e200dd14d9#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC08"
+      ]
     },
     {
       "id": "FUNC09",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC09",
       "criterion": "All relevant bindings are revalidated before start, resume, retry, and every Loop iteration.",
       "requiredEvidence": "per-transition and per-iteration drift matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC09.json@sha256:4e2547040d8700bc961b4cc35f302adf56b9fe5140dbed45f49e6156fa773a3a#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC09"
+      ]
     },
     {
       "id": "FUNC10",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC10",
       "criterion": "Catalog growth, mutation, replacement, and version changes cannot silently alter an active binding.",
       "requiredEvidence": "Catalog mutation and unrelated-growth tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC10.json@sha256:10885615006a8316eb1e4f71908b755a5bf4e12e2e44557bab66bcb8d5b3f593#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC10"
+      ]
     },
     {
       "id": "FUNC11",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC11",
       "criterion": "Open project-neutral Lifecycle modules accept human-readable declarations and registered capabilities without arbitrary code.",
       "requiredEvidence": "schema, module composition, custom Lifecycle, and hostile declaration tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC11.json@sha256:189257b90589c73bd9e25efd3b829e4fff044d4593df9a3abdfb01b3e1ecccaf#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC11"
+      ]
     },
     {
       "id": "FUNC12",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC12",
       "criterion": "One parameter schema drives ordinary-human dialogue and headless YAML/JSON with identical validation and provenance.",
       "requiredEvidence": "cross-client fixtures and immutable input binding comparison",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC12.json@sha256:db31779f6d48f803fb89021ee1d58bda27244fe088a58e7514dc19cec12b8e3a#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC12"
+      ]
     },
     {
       "id": "FUNC13",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC13",
       "criterion": "Deterministic reversible stages and safe identical-input recovery continue automatically inside current authority.",
       "requiredEvidence": "automatic continuation, retry, receipt, and restart evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC13.json@sha256:799378926891ccaa0cc047dd52f14d41b546e3713da17672dc3373142bf76a13#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC13"
+      ]
     },
     {
       "id": "FUNC14",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC14",
       "criterion": "Unknown or unsafe outcomes stop only at the exact unresolved authority boundary with actionable diagnostics.",
       "requiredEvidence": "uncertain mutation and genuine-gate matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC14.json@sha256:fb7e3720347a3fa14549496ba1b1f27c428d40a9ed9d656a34e0f7f0b98dffe5#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC14"
+      ]
     },
     {
       "id": "FUNC15",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC15",
       "criterion": "An approved Automation Registry rule is scoped, inspectable, versioned, revocable, audited, and reusable without repeated confirmation.",
       "requiredEvidence": "proposal, one-time approval, activation, reuse, revoke, and audit evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC15.json@sha256:c25f00be02c590b42a41737743ddcc88952f701ee90eca57de68b128f30c2984#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC15"
+      ]
     },
     {
       "id": "FUNC16",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC16",
       "criterion": "Human Interaction Protocol clients render the same Runtime-owned questions, plans, decisions, progress, recovery, evidence, and results.",
       "requiredEvidence": "Expert, MCP, CLI, API, and CI semantic conformance",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC16.json@sha256:c76d1934f5289fab950b98d61800e8063c9795b8c1d005744d21144a989fdc19#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC16"
+      ]
     },
     {
       "id": "FUNC17",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC17",
       "criterion": "Codex Host and Runtime, WorkBuddy Host, and an independent Host cannot infer authority or change Engine semantics.",
       "requiredEvidence": "real-host and hostile-host adapter conformance",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC17.json@sha256:ac344b9f7ca2374cbb61e028bd6e36819b872aa777acd29ae114c4f8f452a86c#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC17"
+      ]
     },
     {
       "id": "FUNC18",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC18",
       "criterion": "DataRig, EvoPilot, evopilot-harness, and unknown-project references run from declarations without named Engine branches.",
       "requiredEvidence": "four reference journeys and source-pattern guard",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC18.json@sha256:9cbbc72f9e8b4b6b61b3812e0cf319209fb21834edde5361c1736f2a818407a0#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC18"
+      ]
     },
     {
       "id": "FUNC19",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC19",
       "criterion": "The Runtime remains fully operable through CLI, API, and CI when Evolution Expert is absent or incompatible.",
       "requiredEvidence": "headless functional suite under missing and incompatible Expert states",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC19.json@sha256:3ea013225e4e907819ba87e89429cb8d0bb29b1c9495c1765f0d733270c2efad#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC19"
+      ]
     },
     {
       "id": "FUNC20",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC20",
       "criterion": "Exact installed v5 Candidates record zero legacy EvoPilot or DataRig Codex Suite invocation and no hidden fallback across success, failure, resume, upgrade, and rollback in isolated environments where both Suites are absent, while real installed Suites remain active and untouched.",
       "requiredEvidence": "late-bound exact Suite snapshot manifests, drift and selective-rerun records, isolated-environment absence proof, legacySuiteInvocationCount zero, path/process sentinels, representative journeys, and real-installed-Suite non-mutation evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC20.json@sha256:33dfc959c5ec5f5d4c76b595bd1cdb79f9934aec5e11394c084ce912c9904408#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC20"
+      ]
     },
     {
       "id": "FUNC21",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.FUNC21",
       "criterion": "Exact installed Runtime Candidate completes acceptance and is promotable without rebuild only after separate Release authorization.",
       "requiredEvidence": "Candidate handoff, isolated install, byte digests, acceptance aggregate, and promotion dry run",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--FUNC21.json@sha256:573d44d9315ba6265d39fa0e1d490d744a8612209a5f5fad41228e9b04b97427#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-FUNC21"
+      ]
     },
     {
       "id": "CAP01",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP01",
       "criterion": "Project declarations are extensible through versioned DDD resources and capability discovery.",
       "requiredEvidence": "extension compatibility and unknown-resource failure tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP01.json@sha256:b47dd7555d2711e1de7ea56959c5417327b9fabbaf56063fba3260489b574dc4#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP01"
+      ]
     },
     {
       "id": "CAP02",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP02",
       "criterion": "Harness Registry and Catalog consumption is dynamic, read-only, immutable at binding time, and producer-independent.",
       "requiredEvidence": "consumer contract and filesystem/network mutation sentinels",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP02.json@sha256:e3b80e5ecf33a478d1232072d5ad9fc3b9a6d4e91bf4fe2b3d465691e1f500f2#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP02"
+      ]
     },
     {
       "id": "CAP03",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP03",
       "criterion": "Harness matching exposes deterministic ranking, eligibility, explanations, ambiguity, and abstention.",
       "requiredEvidence": "matching capability contract and golden portfolio",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP03.json@sha256:1c56d788beffd1fa83cf48a1e2813c2f7693625d6b5b461d5186d5724dbea1ad#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP03"
+      ]
     },
     {
       "id": "CAP04",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP04",
       "criterion": "Open Lifecycle modules compose, version, migrate, validate, and roll back without Engine forks.",
       "requiredEvidence": "module catalog, migration, rollback, and third-lifecycle evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP04.json@sha256:666a200bcad1ab67a9bf048fbfb3083ef3efa6cd0c7599306b0326f44d407f06#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP04"
+      ]
     },
     {
       "id": "CAP05",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP05",
       "criterion": "Recovery Controller classifies deterministic, transient, external, uncertain, and authority failures with bounded budgets.",
       "requiredEvidence": "failure taxonomy, budget, escalation, and recovery tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP05.json@sha256:4e24940aa353d144b009e1b34d46d2c1914543a4494ad8c15b5a396e08651cf3#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP05"
+      ]
     },
     {
       "id": "CAP06",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP06",
       "criterion": "Automation Registry learns only from an exact approved proposal and preserves scope, revocation, expiry, and audit.",
       "requiredEvidence": "registry lifecycle, drift, and policy enforcement tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP06.json@sha256:e4aa69c7978275cd8f57e234060320432f32550b2f8a83505ca8d05f092cc206#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP06"
+      ]
     },
     {
       "id": "CAP07",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP07",
       "criterion": "Human Interaction Protocol is stable, versioned, resumable, and transport neutral.",
       "requiredEvidence": "protocol schema, compatibility, resume, and conformance suites",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP07.json@sha256:8b8839147114b058e91bbcbe1cf79b2d85fc399acac65eb0470b1340bf4b69b3#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP07"
+      ]
     },
     {
       "id": "CAP08",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP08",
       "criterion": "Agent Host and execution Runtime adapters declare and bind capabilities independently.",
       "requiredEvidence": "Host/Runtime topology matrix and mismatch tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP08.json@sha256:6c657cb7075c1477cadddac60e97f7c990faa46593d103ca2b79f3d526279292#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP08"
+      ]
     },
     {
       "id": "CAP09",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP09",
       "criterion": "Codex is supported as an official Host and Runtime without becoming exclusive.",
       "requiredEvidence": "Codex real-host and execution-adapter Candidate evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP09.json@sha256:8577428a341fa00f76d7ddea3a942c268387c7da50bed443fdca66d1d834e05e#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP09"
+      ]
     },
     {
       "id": "CAP10",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP10",
       "criterion": "WorkBuddy and a third-party Host use generated adapters from common semantics.",
       "requiredEvidence": "Core-digest and no-host-semantics conformance evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP10.json@sha256:00121cd2e1d9d6172fe7625fd6e7cfea10b80cc8a8968dcdd8e7b288f55e1bc2#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP10"
+      ]
     },
     {
       "id": "CAP11",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP11",
       "criterion": "Provider and model bindings remain explicit, replaceable, policy constrained, and auditable.",
       "requiredEvidence": "provider matrix, capability mismatch, usage, cost, and provenance evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP11.json@sha256:8a1b93e0b20d7c7852aaafa5d990200ab767961199378c566c76b1963c003bc5#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP11"
+      ]
     },
     {
       "id": "CAP12",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP12",
       "criterion": "Authority, tenant, workspace, secret, evidence, and audit boundaries remain exact across all clients and recovery paths.",
       "requiredEvidence": "security, tenancy, SecretRef, authority, and audit suite",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP12.json@sha256:27bfb3ddc8a28cc2c8ee0aaecdeb820dcbb79cc94cac560e09e4ac72e255188c#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP12"
+      ]
     },
     {
       "id": "CAP13",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP13",
       "criterion": "Candidate, acceptance, release, rollback, and public verification preserve exact bytes and separate decisions.",
       "requiredEvidence": "release topology and no-rebuild verification",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP13.json@sha256:bee9888361aa0dba0e285565fe2d4044f94dc03e395f01e42aad50cab8231707#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP13"
+      ]
     },
     {
       "id": "CAP14",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP14",
       "criterion": "Runtime and Evolution Expert versions, Candidates, releases, upgrades, and rollbacks are independent but compatibility-bound.",
       "requiredEvidence": "cross-version compatibility and independent lifecycle matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP14.json@sha256:dd9c3d9bdb056b505d1d7ba5d45afbaec91f2fdbf5118d72b0a01569dfa9aa9a#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP14"
+      ]
     },
     {
       "id": "CAP15",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP15",
       "criterion": "Reference projects are declarative examples rather than privileged profiles or Core branches.",
       "requiredEvidence": "declaration validation and repository-name branch scan",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP15.json@sha256:7daea3fe217db08c70dc1dce4f447d9e2c5387d098825dd7ffb23c11431537b6#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP15"
+      ]
     },
     {
       "id": "CAP16",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.CAP16",
       "criterion": "The complete Runtime supports observability, cancellation, concurrency, performance, bounded resources, security, packaging, and distribution.",
       "requiredEvidence": "full check, threat, soak, performance, packaging, installer, npm, GHCR, and deployment-surface evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--CAP16.json@sha256:158edb64f03f8387bb341ffca5815841accaba8c4a657d8dbae9ac621098ca36#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-CAP16"
+      ]
     },
     {
       "id": "DOC01",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC01",
       "criterion": "README presents the Harness-guided product identity, primary journey, quickstart, and concise routing to deeper docs.",
       "requiredEvidence": "README review, command verification, and link check",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC01.json@sha256:4a2b9eca7211f30159e6aa0c176019b7e8b26e5906776f2817f3b58f12d87a0d#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC01"
+      ]
     },
     {
       "id": "DOC02",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC02",
       "criterion": "Installation documents exact Runtime and independent Expert installation, compatibility, upgrade, rollback, and removal.",
       "requiredEvidence": "clean-machine install documentation rehearsal",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC02.json@sha256:656603fa8bb4e206651eb3612ccdd7a2a8ef1127148d76ca2bca2f8c719f3ad1#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC02"
+      ]
     },
     {
       "id": "DOC03",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC03",
       "criterion": "Concept documentation distinguishes repository evolution governance, Runtime Lifecycle, Harness asset lifecycle, Expert, Host, and execution Runtime.",
       "requiredEvidence": "terminology audit and boundary review",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC03.json@sha256:d3649301bb5caad2c9f3a855720b37de0be7e35ca7f48e1f0d5fd35dd2f6d5a9#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC03"
+      ]
     },
     {
       "id": "DOC04",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC04",
       "criterion": "DDD architecture documents bounded contexts, aggregates, invariants, events, dependencies, and ownership.",
       "requiredEvidence": "ADR and architecture guard mapping",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC04.json@sha256:1837452f5a4da6eff64ba758530f6f7f37df04c8784be5e4a6ba62fe829fb795#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC04"
+      ]
     },
     {
       "id": "DOC05",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC05",
       "criterion": "Harness matching and immutable binding documentation covers eligibility, ranking, ambiguity, abstention, closure, drift, and replay.",
       "requiredEvidence": "documentation-to-contract traceability",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC05.json@sha256:d3ea29a0ad767987b4bb4a5934a285024df5d4600c5dff12a2bc2f0249a4cb14#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC05"
+      ]
     },
     {
       "id": "DOC06",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC06",
       "criterion": "Lifecycle documentation covers open modules, monotonic composition, parameters, decisions, and migration.",
       "requiredEvidence": "examples validated against schemas and executable fixtures",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC06.json@sha256:2694225ebb0d022320add64a31fa5946c78d240d555bd4902e6bf02f32aad4c4#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC06"
+      ]
     },
     {
       "id": "DOC07",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC07",
       "criterion": "Recovery and Automation Registry documentation explains automatic classes, budgets, one-time rule approval, audit, revocation, and human boundaries.",
       "requiredEvidence": "runbook scenario validation",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC07.json@sha256:a0084eb1f0f213e813fc9948741ef26c67cf15b14458ca136ef174314a9cf64e#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC07"
+      ]
     },
     {
       "id": "DOC08",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC08",
       "criterion": "Human Interaction Protocol and Expert integration documentation covers Codex, WorkBuddy, generic MCP, and headless use.",
       "requiredEvidence": "adapter quickstart rehearsal and protocol examples",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC08.json@sha256:e6102a3e916c00a7b07817d0554d974c1c7b4970e59c6f8c6da5887f01a6e476#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC08"
+      ]
     },
     {
       "id": "DOC09",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC09",
       "criterion": "Project onboarding and adjustment guides cover new, existing, imported, and unknown projects as declarations.",
       "requiredEvidence": "novice walkthrough and declaration validation",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC09.json@sha256:414a602939b8a01850c135060dcaf846732983c0f66793d9a8defabaa85c4ce3#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC09"
+      ]
     },
     {
       "id": "DOC10",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC10",
       "criterion": "Reference guides cover DataRig, EvoPilot, and evopilot-harness without presenting them as Core special cases.",
       "requiredEvidence": "reference declaration traceability and terminology scan",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC10.json@sha256:8adb17351b9a98994a363c85994a17a1e4286f024b728e7fa26d33aed3dfdde0#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC10"
+      ]
     },
     {
       "id": "DOC11",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC11",
       "criterion": "Security and authority documentation covers secrets, external effects, Human gates, Harness non-authority, and hostile Hosts or Runtimes.",
       "requiredEvidence": "threat-model and security-doc consistency check",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC11.json@sha256:7182d7c90572736afb7efa00a7c19f3be38980b3a6a707cb22cea818b635f134#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC11"
+      ]
     },
     {
       "id": "DOC12",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC12",
       "criterion": "Migration documentation distinguishes pre-release read-only snapshot comparison and isolated independence proof from post-release default switching, recoverable archival, rollback, and retirement under a separate Cutover Target and human authorization.",
       "requiredEvidence": "migration rehearsal, snapshot-drift procedure, isolated zero-fallback evidence map, explicit post-release prerequisites, and Cutover authority boundary review",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC12.json@sha256:8ac50d40356c526be30c91f1bb27439f139d90998cb4c019416d36aaac0924f0#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC12"
+      ]
     },
     {
       "id": "DOC13",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.DOC13",
       "criterion": "Acceptance and release documentation defines exact Candidate-first E2E, independent Runtime/Expert matrices, no-rebuild promotion, and terminal public verification.",
       "requiredEvidence": "acceptance runbook lint and release dry run",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--DOC13.json@sha256:2f13368f9a23b51d79896de5bd7d06817369d86c4796002f71a72e6443971dc7#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-DOC13"
+      ]
     },
     {
       "id": "TRACE01",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE01",
       "criterion": "The complete original v5 and Expert scheme inventory is canonical, digest-bound, immutable for the campaign, and includes every accepted Roadmap clause, both predecessor Targets, every explicit user correction, and every audited gap.",
       "requiredEvidence": "inventory schema validation, source digest verification, completeness enumeration, and mutation-detection tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--TRACE01.json@sha256:bf0ac87778752efe51db2c7c2409c7d45070abdf5359b84917ed2a904eab514c#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-TRACE01"
+      ]
     },
     {
       "id": "TRACE02",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE02",
       "criterion": "Every inventory item maps to at least one successor Target scope item and acceptance criterion, with no silent exclusion or unmapped requirement.",
       "requiredEvidence": "machine-readable traceability matrix and negative tests for missing, duplicate, silently excluded, and unmapped items",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--TRACE02.json@sha256:5bd9e5af5da21a20e05768dcf3c2e31cc718174d905a3f0b0d71f971e3bffd39#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-TRACE02"
+      ]
     },
     {
       "id": "TRACE03",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE03",
       "criterion": "Every current and inherited acceptance criterion has an independent executable validator and a concrete criterion-specific evidence contract; generic aggregate anchors and bulk PASS projection are rejected.",
       "requiredEvidence": "validator inventory, independence checks, per-criterion evidence schema, tamper tests, and generic-evidence rejection tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--TRACE03.json@sha256:a4674d0fdafba2e5805e01236aafa347feaaedacca791038c424f140176ba7bd#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-TRACE03"
+      ]
     },
     {
       "id": "TRACE04",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE04",
       "criterion": "Every user-observable requirement maps to an exact E2E starting state, terminal state, prohibited effects, required Hosts, and concrete evidence, including all Runtime E2E01-E2E13 variants.",
       "requiredEvidence": "E2E trace matrix, terminal-state assertions, prohibited-effect sentinels, Host coverage audit, and uncovered-behavior negative test",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--TRACE04.json@sha256:33a49ad9ac37f655db5947f914e96543cdcd4db20566f1d2b8de59fc26bb3662#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-TRACE04"
+      ]
     },
     {
       "id": "TRACE05",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE05",
       "criterion": "Completion aggregation remains INCOMPLETE when any required item is missing, partial, failed, pending, stale, warning-only, generic, unmapped, bound to the wrong Candidate, or represented only by a human declaration where machine evidence is required.",
       "requiredEvidence": "fail-closed aggregation tests for every incomplete evidence class and wrong-candidate binding",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--TRACE05.json@sha256:0c6fa9b140360b2b98575b8ebf6a182b73780858b63fedb30c6243501fed5972#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-TRACE05"
+      ]
     },
     {
       "id": "TRACE06",
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/targets/evopilot-v5.0.1-harness-guided-completion-recovery.json#acceptance.TRACE06",
       "criterion": "The final completion report proves 100-percent original-scheme coverage, all current and inherited acceptance and E2E passed, exact installed Runtime and Expert Candidate pair verified, complete impact closure, and NO_REGRESSION passed.",
       "requiredEvidence": "digest-bound final completion report with total equals passed and zero failed, pending, stale, generic, and unmapped counts plus independent recomputation",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--TRACE06.json@sha256:75e7889c169773112a64689bd291ca3b94d970b899eb40a18d2df605ab6d16dd#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-TRACE06"
+      ]
     },
     {
       "id": "V4AC01",
       "origin": "EvoPilot v4.0.0 Target AC01",
       "criterion": "Roadmap, architecture, governance, and release alignment remain deterministic.",
       "requiredEvidence": "v5 Roadmap, ADR, gate, and release-preflight evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC01.json@sha256:e033e826cf9e1af55b1c67dc72f67dcb7dba950d533bdf9d45a4d2b41d45c2bc#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC01"
+      ]
     },
     {
       "id": "V4AC02",
       "origin": "EvoPilot v4.0.0 Target AC02",
       "criterion": "Open Lifecycle resources remain deterministic, schema-valid, immutable, and cycle safe.",
       "requiredEvidence": "v4 compatibility plus v5 schema and graph replay",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC02.json@sha256:4173de2084558042e4b8c4af0ba0c7c2f9fa7d5d9c9b39261ad58d28b358b5f9#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC02"
+      ]
     },
     {
       "id": "V4AC03",
       "origin": "EvoPilot v4.0.0 Target AC03",
       "criterion": "Lifecycle definitions cannot embed arbitrary executable code or bypass registered capabilities.",
       "requiredEvidence": "hostile definition and action-registry regression matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC03.json@sha256:8d53fa0881a3f9ebde91d4245cc20243a0a5e4cffd9132d869659c6428eddc00#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC03"
+      ]
     },
     {
       "id": "V4AC04",
       "origin": "EvoPilot v4.0.0 Target AC04",
       "criterion": "Conversational and headless parameter paths retain equivalent schema and immutable provenance.",
       "requiredEvidence": "cross-surface semantic equivalence evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC04.json@sha256:8722778422a78d169c8a12dc02ae2c3959da192fa7046fcec6c53216cb8cad91#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC04"
+      ]
     },
     {
       "id": "V4AC05",
       "origin": "EvoPilot v4.0.0 Target AC05",
       "criterion": "Input never implies authority and secrets remain reference-only and redacted.",
       "requiredEvidence": "authority negatives and secret/redaction scans",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC05.json@sha256:5d50d4c355b94c99fcf6a6d72697ab5f7c4c732adec36fc113af13e69feec5f9#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC05"
+      ]
     },
     {
       "id": "V4AC06",
       "origin": "EvoPilot v4.0.0 Target AC06",
       "criterion": "Deterministic reversible stages continue automatically inside exact authority.",
       "requiredEvidence": "automatic continuation and receipt matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC06.json@sha256:7a66286717cdcdd571ebdc57dd21e85a5971e3f7ad6363fed6074f26eae3cd29#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC06"
+      ]
     },
     {
       "id": "V4AC07",
       "origin": "EvoPilot v4.0.0 Target AC07",
       "criterion": "Human gates remain limited to genuine digest-bound authority or risk boundaries.",
       "requiredEvidence": "gate inventory and hostile interaction matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC07.json@sha256:8b9002e19a2541a25a838a8237c33d497d842ad65c5626d672c8d64651e9d1a6#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC07"
+      ]
     },
     {
       "id": "V4AC08",
       "origin": "EvoPilot v4.0.0 Target AC08",
       "criterion": "Bounded authorization and selective drift invalidation prevent repeated ceremonial approval.",
       "requiredEvidence": "authorization coverage and drift tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC08.json@sha256:d61a269286859ec7f09b6f129520ed2dd52b1fc758c8fa91044ba2df8e6bb53b#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC08"
+      ]
     },
     {
       "id": "V4AC09",
       "origin": "EvoPilot v4.0.0 Target AC09",
       "criterion": "Retry and resume remain idempotent and uncertain mutations fail to human recovery authority.",
       "requiredEvidence": "crash, timeout, duplicate, receipt, and uncertainty matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC09.json@sha256:cd0dce67b0cc8be98a657f8acfd483a46282fb91505882dae51d25a0b6318355#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC09"
+      ]
     },
     {
       "id": "V4AC10",
       "origin": "EvoPilot v4.0.0 Target AC10",
       "criterion": "All execution dependencies remain exact, immutable, replayable, and drift checked.",
       "requiredEvidence": "binding closure, tamper, and replay evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC10.json@sha256:4466bf9745a59140449c15670332582461101009d32197705b1d8de6f8e2f290#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC10"
+      ]
     },
     {
       "id": "V4AC11",
       "origin": "EvoPilot v4.0.0 Target AC11",
       "criterion": "DataRig remains a project-neutral declarative enterprise reference.",
       "requiredEvidence": "fresh DataRig E2E and no-project-branch scan",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC11.json@sha256:ca1a8b29a985be194d821fc449f1f703455d7c4dc0ee8c9d5c971977707f4684#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC11"
+      ]
     },
     {
       "id": "V4AC12",
       "origin": "EvoPilot v4.0.0 Target AC12",
       "criterion": "evopilot-harness remains a project-neutral public reference and independent Harness producer.",
       "requiredEvidence": "fresh producer-reference E2E and boundary sentinels",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC12.json@sha256:53028595f6b99152c65bb742e3b04d059160ea0ec930cce3ae119b9f21a01616#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC12"
+      ]
     },
     {
       "id": "V4AC13",
       "origin": "EvoPilot v4.0.0 Target AC13",
       "criterion": "A materially different project and Lifecycle work without Engine changes.",
       "requiredEvidence": "unknown-project declaration and source-diff proof",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC13.json@sha256:1404ea932df74685facf02781740761c0900eb29f298d6ea84878de4d1763f9b#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC13"
+      ]
     },
     {
       "id": "V4AC14",
       "origin": "EvoPilot v4.0.0 Target AC14",
       "criterion": "v3 and v4 plans, evidence, approvals, migration, and rollback remain compatible.",
       "requiredEvidence": "migration and rollback replay matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC14.json@sha256:a3b07fb9d4a2f505e57b153253cdce3ff57db28b117deebe816bf9b671ee8da9#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC14"
+      ]
     },
     {
       "id": "V4AC15",
       "origin": "EvoPilot v4.0.0 Target AC15",
       "criterion": "Codex, WorkBuddy, independent Host, MCP, API, CLI, and CI retain authoritative semantic equivalence.",
       "requiredEvidence": "cross-host and headless conformance matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC15.json@sha256:a43d8fd1862d623392bb017c59bcd54bbabd5707722a1d6a8d3beddb32c9065a#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC15"
+      ]
     },
     {
       "id": "V4AC16",
       "origin": "EvoPilot v4.0.0 Target AC16",
       "criterion": "Execution Runtime adapters remain capability-bound, hostile-safe, resumable, and auditable.",
       "requiredEvidence": "Runtime adapter conformance and hostile adapter evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC16.json@sha256:48e0f9d49fd01b2df4cde15faecc654e4740180de76065fb94e49dc3e8d30e56#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC16"
+      ]
     },
     {
       "id": "V4AC17",
       "origin": "EvoPilot v4.0.0 Target AC17",
       "criterion": "EvoPilot remains a read-only Harness consumer and feedback remains approved, redacted, and immutable.",
       "requiredEvidence": "architecture guard, Catalog sentinels, and feedback negatives",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC17.json@sha256:72d539324f61508fb8dbf11206e07c735f86eb944587095212b0ded576ead6c6#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC17"
+      ]
     },
     {
       "id": "V4AC18",
       "origin": "EvoPilot v4.0.0 Target AC18",
       "criterion": "Complete security, isolation, observability, recovery, performance, docs, packaging, and release baseline has no regression.",
       "requiredEvidence": "full Candidate check, security, soak, docs, distribution, and public-surface evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V4AC18.json@sha256:153aa2fcf358b8892f86d51ca4b1d9e7401ca5be882ba79c1cebf9f6ca28167f#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V4AC18"
+      ]
     },
     {
       "id": "V5-FUNC01",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC01",
       "criterion": "A valid EvolutionProjectDefinition is discovered, normalized, versioned, and bound without project-specific Engine behavior.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: schema, normalization, discovery, digest, and no-project-branch tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC01.json@sha256:ba847a0604bb19bd323a69f6c6a6ced29ef927b4cc517ac689aadb81d7293ca4#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC01"
+      ]
     },
     {
       "id": "V5-FUNC02",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC02",
       "criterion": "Unknown projects are onboarded interactively into declarative resources and can be revised with evidence-preserving rollback.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: fresh unknown-project onboarding, adjustment, and rollback transcript",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC02.json@sha256:1bbc7585edbd60e6cbf16b29e12a7f070d25bf1c39d81bbaf2c9e0ceff58066a#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC02"
+      ]
     },
     {
       "id": "V5-FUNC03",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC03",
       "criterion": "Project plus GoalTarget context deterministically matches eligible published HarnessProfiles with ranking reasons and rejected alternatives.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: matching goldens, reason trace, and rejected-alternative evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC03.json@sha256:947a9a27c49d9fc814c5f69708f4fb305b84c34f0701f0c34c2c7f8c722cde7c#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC03"
+      ]
     },
     {
       "id": "V5-FUNC04",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC04",
       "criterion": "No-match, ambiguity, ineligibility, and abstention fail closed without fabricating or silently selecting a Harness.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: negative matching and abstention matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC04.json@sha256:b808592a476b76608dbb174080e2f7389d29029d292a6996753abda8de5131ac#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC04"
+      ]
     },
     {
       "id": "V5-FUNC05",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC05",
       "criterion": "Every Goal Target Loop binds one exact published immutable HarnessBundle closure before execution.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: mandatory binding tests and immutable Bundle digest closure",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC05.json@sha256:84b1c78c5e89c8fe10191e50c8821767147b2f4332e99a40f04bdba541aa61cd#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC05"
+      ]
     },
     {
       "id": "V5-FUNC06",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC06",
       "criterion": "HarnessExecutionBinding includes exact Project, GoalTarget, Harness, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence digests.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: binding schema, canonicalization, tamper, and replay tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC06.json@sha256:2fe7342addfe9765f613903452dd8cd36993da28c856a31df530f19f3c614d40#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC06"
+      ]
     },
     {
       "id": "V5-FUNC07",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC07",
       "criterion": "Harness and Lifecycle composition intersects permissions and unions obligations without weakening Harness requirements.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: composition algebra goldens and weakening negatives",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC07.json@sha256:1bf7dcfc5d800c479383e1578ed368ed8707e1b3bb88b5b1f5727dbbd2275180#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC07"
+      ]
     },
     {
       "id": "V5-FUNC08",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC08",
       "criterion": "Composition conflicts are deterministic, explainable, and fail closed before execution.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: conflict corpus and stable diagnostic snapshots",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC08.json@sha256:04ce318f2ac2752f3979fa56a40f61fe3776898b5a520b46569d91909056f1d3#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC08"
+      ]
     },
     {
       "id": "V5-FUNC09",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC09",
       "criterion": "All relevant bindings are revalidated before start, resume, retry, and every Loop iteration.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: per-transition and per-iteration drift matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC09.json@sha256:6d1bc3b54efba9b405f7adb4bde76594f0651d5efa67e42df5b4a76b07b7c567#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC09"
+      ]
     },
     {
       "id": "V5-FUNC10",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC10",
       "criterion": "Catalog growth, mutation, replacement, and version changes cannot silently alter an active binding.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Catalog mutation and unrelated-growth tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC10.json@sha256:083e134985fc3e8e3def6c628589acaa00d4d6f24e49a72a0d27f47e5e9adb57#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC10"
+      ]
     },
     {
       "id": "V5-FUNC11",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC11",
       "criterion": "Open project-neutral Lifecycle modules accept human-readable declarations and registered capabilities without arbitrary code.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: schema, module composition, custom Lifecycle, and hostile declaration tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC11.json@sha256:473a11c5117e3a1fbd305040cd45ea9751f1f10238025af5c8bc7b00cea31a17#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC11"
+      ]
     },
     {
       "id": "V5-FUNC12",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC12",
       "criterion": "One parameter schema drives ordinary-human dialogue and headless YAML/JSON with identical validation and provenance.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: cross-client fixtures and immutable input binding comparison",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC12.json@sha256:2c57723aba8084ec8beeb16ea7222355b3a255e9ba1a4ad0158e0453dbe34188#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC12"
+      ]
     },
     {
       "id": "V5-FUNC13",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC13",
       "criterion": "Deterministic reversible stages and safe identical-input recovery continue automatically inside current authority.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: automatic continuation, retry, receipt, and restart evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC13.json@sha256:33f06297ce0bbfa033cc3fbb6d741fff2e780fa8c5debfe7e3e399d3a34436f9#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC13"
+      ]
     },
     {
       "id": "V5-FUNC14",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC14",
       "criterion": "Unknown or unsafe outcomes stop only at the exact unresolved authority boundary with actionable diagnostics.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: uncertain mutation and genuine-gate matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC14.json@sha256:b454308bb71234a6d62fa5716e029287c238b5e6a4eb8cd09984d1165fcd4b4f#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC14"
+      ]
     },
     {
       "id": "V5-FUNC15",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC15",
       "criterion": "An approved Automation Registry rule is scoped, inspectable, versioned, revocable, audited, and reusable without repeated confirmation.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: proposal, one-time approval, activation, reuse, revoke, and audit evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC15.json@sha256:f05c09b2b67a8352d3fceb89a45dc13553cbbd81708238bb8553318525332886#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC15"
+      ]
     },
     {
       "id": "V5-FUNC16",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC16",
       "criterion": "Human Interaction Protocol clients render the same Runtime-owned questions, plans, decisions, progress, recovery, evidence, and results.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Expert, MCP, CLI, API, and CI semantic conformance",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC16.json@sha256:7b8b62dfd0d6e7373ea7dae3b914c9ee4174241c55aca900df962a0d2309e319#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC16"
+      ]
     },
     {
       "id": "V5-FUNC17",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC17",
       "criterion": "Codex Host and Runtime, WorkBuddy Host, and an independent Host cannot infer authority or change Engine semantics.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: real-host and hostile-host adapter conformance",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC17.json@sha256:852aba6eaf9a8c6aff7c8bf12974bc69b93717881096c55d6e913a1a0631ef0c#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC17"
+      ]
     },
     {
       "id": "V5-FUNC18",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC18",
       "criterion": "DataRig, EvoPilot, evopilot-harness, and unknown-project references run from declarations without named Engine branches.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: four reference journeys and source-pattern guard",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC18.json@sha256:1e5ec0c233ace00a44f721bc840cf7c4ef8ba29beb46e402447a5d5e472384e3#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC18"
+      ]
     },
     {
       "id": "V5-FUNC19",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC19",
       "criterion": "The Runtime remains fully operable through CLI, API, and CI when Evolution Expert is absent or incompatible.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: headless functional suite under missing and incompatible Expert states",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC19.json@sha256:8dc1a449379311c976c5538c5619d3578564077eabaa19400fb91d24e183f1d8#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC19"
+      ]
     },
     {
       "id": "V5-FUNC20",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC20",
       "criterion": "Exact installed v5 Candidates record zero legacy EvoPilot or DataRig Codex Suite invocation and no hidden fallback across success, failure, resume, upgrade, and rollback in isolated environments where both Suites are absent, while real installed Suites remain active and untouched.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: late-bound exact Suite snapshot manifests, drift and selective-rerun records, isolated-environment absence proof, legacySuiteInvocationCount zero, path/process sentinels, representative journeys, and real-installed-Suite non-mutation evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC20.json@sha256:776c17d5adc50a40ee9ebc77659ab706f398633b202014932736e28d83019638#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC20"
+      ]
     },
     {
       "id": "V5-FUNC21",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 FUNC21",
       "criterion": "Exact installed Runtime Candidate completes acceptance and is promotable without rebuild only after separate Release authorization.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Candidate handoff, isolated install, byte digests, acceptance aggregate, and promotion dry run",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-FUNC21.json@sha256:dfca68aa0fd38673bdf88bea70d25d531117c434f8ed2f60749ec91694caa90d#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-FUNC21"
+      ]
     },
     {
       "id": "V5-CAP01",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP01",
       "criterion": "Project declarations are extensible through versioned DDD resources and capability discovery.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: extension compatibility and unknown-resource failure tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP01.json@sha256:713947643d41788f92015dd491e7f68a25c12ea2aab51191afe46e3713a51156#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP01"
+      ]
     },
     {
       "id": "V5-CAP02",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP02",
       "criterion": "Harness Registry and Catalog consumption is dynamic, read-only, immutable at binding time, and producer-independent.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: consumer contract and filesystem/network mutation sentinels",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP02.json@sha256:a0d085a0dcfe32d8fdbb47a6bac4674f76191218b56e4020e777a47c73679271#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP02"
+      ]
     },
     {
       "id": "V5-CAP03",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP03",
       "criterion": "Harness matching exposes deterministic ranking, eligibility, explanations, ambiguity, and abstention.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: matching capability contract and golden portfolio",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP03.json@sha256:de0866de5490b15cf37b5adeb0dfad5fd6bb8ab59bb8f9872233c80dd6b9ad1b#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP03"
+      ]
     },
     {
       "id": "V5-CAP04",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP04",
       "criterion": "Open Lifecycle modules compose, version, migrate, validate, and roll back without Engine forks.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: module catalog, migration, rollback, and third-lifecycle evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP04.json@sha256:36ec7b1ea269ac731ae2abcf4a5df922535d2987696f786cfbd7cd105afd6b1a#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP04"
+      ]
     },
     {
       "id": "V5-CAP05",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP05",
       "criterion": "Recovery Controller classifies deterministic, transient, external, uncertain, and authority failures with bounded budgets.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: failure taxonomy, budget, escalation, and recovery tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP05.json@sha256:4b98c7c2aa9b7be68debfde629187792bee501b10533217f86d5578d41eff00d#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP05"
+      ]
     },
     {
       "id": "V5-CAP06",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP06",
       "criterion": "Automation Registry learns only from an exact approved proposal and preserves scope, revocation, expiry, and audit.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: registry lifecycle, drift, and policy enforcement tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP06.json@sha256:9a1dc98997270666e76976a864a7af33f946a4699978752ca24a164c4210d574#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP06"
+      ]
     },
     {
       "id": "V5-CAP07",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP07",
       "criterion": "Human Interaction Protocol is stable, versioned, resumable, and transport neutral.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: protocol schema, compatibility, resume, and conformance suites",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP07.json@sha256:1ffdde28e900a899252ded91db3e44d3b906733dfd763ac6143001530f6d18c9#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP07"
+      ]
     },
     {
       "id": "V5-CAP08",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP08",
       "criterion": "Agent Host and execution Runtime adapters declare and bind capabilities independently.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Host/Runtime topology matrix and mismatch tests",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP08.json@sha256:f062e51fbec4600912eb20793e12c346f5a40570b3f3d318b456b209efdbcf89#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP08"
+      ]
     },
     {
       "id": "V5-CAP09",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP09",
       "criterion": "Codex is supported as an official Host and Runtime without becoming exclusive.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Codex real-host and execution-adapter Candidate evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP09.json@sha256:9850d963a89a2380b998e7d5d7613ba9ad0309d51eeb97102550b03a573f2dbe#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP09"
+      ]
     },
     {
       "id": "V5-CAP10",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP10",
       "criterion": "WorkBuddy and a third-party Host use generated adapters from common semantics.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: Core-digest and no-host-semantics conformance evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP10.json@sha256:720ae7d51e3838e4cd33309ea18c3a86f258793e53b2d48589c4af48a5466c88#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP10"
+      ]
     },
     {
       "id": "V5-CAP11",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP11",
       "criterion": "Provider and model bindings remain explicit, replaceable, policy constrained, and auditable.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: provider matrix, capability mismatch, usage, cost, and provenance evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP11.json@sha256:6684accf6026cc3caba07bdeef6ecde60b2fbab04de493af217028042714c0cb#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP11"
+      ]
     },
     {
       "id": "V5-CAP12",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP12",
       "criterion": "Authority, tenant, workspace, secret, evidence, and audit boundaries remain exact across all clients and recovery paths.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: security, tenancy, SecretRef, authority, and audit suite",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP12.json@sha256:8da2156956172dc000284586657e3f53d3b51335c8655e818e903eaeeb0a3ce5#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP12"
+      ]
     },
     {
       "id": "V5-CAP13",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP13",
       "criterion": "Candidate, acceptance, release, rollback, and public verification preserve exact bytes and separate decisions.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: release topology and no-rebuild verification",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP13.json@sha256:10d5574a41942ea114ce7005456f55f3339625d03f8b67f376617706108b97da#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP13"
+      ]
     },
     {
       "id": "V5-CAP14",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP14",
       "criterion": "Runtime and Evolution Expert versions, Candidates, releases, upgrades, and rollbacks are independent but compatibility-bound.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: cross-version compatibility and independent lifecycle matrix",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP14.json@sha256:4da8c4d55db5c438ec1872f48f5ab69f97562e167894260306309a0d8e1f4d18#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP14"
+      ]
     },
     {
       "id": "V5-CAP15",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP15",
       "criterion": "Reference projects are declarative examples rather than privileged profiles or Core branches.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: declaration validation and repository-name branch scan",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP15.json@sha256:eb91c3baeb8892b8df70f82739e9f4fab38b07373149f7da82add9b539ecc32d#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP15"
+      ]
     },
     {
       "id": "V5-CAP16",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 CAP16",
       "criterion": "The complete Runtime supports observability, cancellation, concurrency, performance, bounded resources, security, packaging, and distribution.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: full check, threat, soak, performance, packaging, installer, npm, GHCR, and deployment-surface evidence",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-CAP16.json@sha256:812355c691560f1d245596735122926a0760423b40a092dca40155a28f50d61c#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-CAP16"
+      ]
     },
     {
       "id": "V5-DOC01",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC01",
       "criterion": "README presents the Harness-guided product identity, primary journey, quickstart, and concise routing to deeper docs.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: README review, command verification, and link check",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC01.json@sha256:cedcdbc07128f455391891b9e4d55eb57885f6a620894726747e5c158c533031#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC01"
+      ]
     },
     {
       "id": "V5-DOC02",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC02",
       "criterion": "Installation documents exact Runtime and independent Expert installation, compatibility, upgrade, rollback, and removal.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: clean-machine install documentation rehearsal",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC02.json@sha256:c54aff45af99e01289b256d78ed4d9a7d0d830675619e2264a3c8f02d4cb8a19#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC02"
+      ]
     },
     {
       "id": "V5-DOC03",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC03",
       "criterion": "Concept documentation distinguishes repository evolution governance, Runtime Lifecycle, Harness asset lifecycle, Expert, Host, and execution Runtime.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: terminology audit and boundary review",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC03.json@sha256:5a0e464bb81ef829e29efa2d337a47a2728520997c46f18d8c53d766c89d2d5b#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC03"
+      ]
     },
     {
       "id": "V5-DOC04",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC04",
       "criterion": "DDD architecture documents bounded contexts, aggregates, invariants, events, dependencies, and ownership.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: ADR and architecture guard mapping",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC04.json@sha256:56dd7cf325c7393a10bfc972aac3b467e185b7c82cac1597ec6511f130f0f6ec#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC04"
+      ]
     },
     {
       "id": "V5-DOC05",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC05",
       "criterion": "Harness matching and immutable binding documentation covers eligibility, ranking, ambiguity, abstention, closure, drift, and replay.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: documentation-to-contract traceability",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC05.json@sha256:e2d81b41136adb9178a888999a65047ebde714ca55931a01e589ac54bcaa06bf#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC05"
+      ]
     },
     {
       "id": "V5-DOC06",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC06",
       "criterion": "Lifecycle documentation covers open modules, monotonic composition, parameters, decisions, and migration.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: examples validated against schemas and executable fixtures",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC06.json@sha256:de0cd17076ee7b6ef9941324afa5d848c7fbc3e36a21c95fe0de67c0bf72e270#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC06"
+      ]
     },
     {
       "id": "V5-DOC07",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC07",
       "criterion": "Recovery and Automation Registry documentation explains automatic classes, budgets, one-time rule approval, audit, revocation, and human boundaries.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: runbook scenario validation",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC07.json@sha256:dc2a795c86dd908304d75129a32ea2d0a6ef3e3dd98595fc4d916582ddbb01f5#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC07"
+      ]
     },
     {
       "id": "V5-DOC08",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC08",
       "criterion": "Human Interaction Protocol and Expert integration documentation covers Codex, WorkBuddy, generic MCP, and headless use.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: adapter quickstart rehearsal and protocol examples",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC08.json@sha256:d7cd2b83405dcc5c4e031e8cdd7299cc2c26b368f2252a6475e3ccea4a28080a#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC08"
+      ]
     },
     {
       "id": "V5-DOC09",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC09",
       "criterion": "Project onboarding and adjustment guides cover new, existing, imported, and unknown projects as declarations.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: novice walkthrough and declaration validation",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC09.json@sha256:1214bed87546f95c47901d87bf9ac39c31e9e361403177d5a47e8056b968959c#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC09"
+      ]
     },
     {
       "id": "V5-DOC10",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC10",
       "criterion": "Reference guides cover DataRig, EvoPilot, and evopilot-harness without presenting them as Core special cases.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: reference declaration traceability and terminology scan",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC10.json@sha256:745d9fe7de6f3c7e0e687bf7f8d54b00d277ad14052797f791fa54ca9c6cff5b#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC10"
+      ]
     },
     {
       "id": "V5-DOC11",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC11",
       "criterion": "Security and authority documentation covers secrets, external effects, Human gates, Harness non-authority, and hostile Hosts or Runtimes.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: threat-model and security-doc consistency check",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC11.json@sha256:cf41d0063df6f7ecb2fd66d8965abdde07eb127bdd8159588dd8ec08116e9d49#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC11"
+      ]
     },
     {
       "id": "V5-DOC12",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC12",
       "criterion": "Migration documentation distinguishes pre-release read-only snapshot comparison and isolated independence proof from post-release default switching, recoverable archival, rollback, and retirement under a separate Cutover Target and human authorization.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: migration rehearsal, snapshot-drift procedure, isolated zero-fallback evidence map, explicit post-release prerequisites, and Cutover authority boundary review",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC12.json@sha256:c17f02014973c63080b2e69aab15b50c28a91bbb138d28deddc4bc809d8a4fd5#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC12"
+      ]
     },
     {
       "id": "V5-DOC13",
       "origin": "EvoPilot Runtime v5.0.0 Target revision 2 DOC13",
       "criterion": "Acceptance and release documentation defines exact Candidate-first E2E, independent Runtime/Expert matrices, no-rebuild promotion, and terminal public verification.",
       "requiredEvidence": "Fresh successor evidence for the original v5 criterion: acceptance runbook lint and release dry run",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--V5-DOC13.json@sha256:9fc2edca65b548e9642ca118be9f8943fda7c4b4f5b7e3f586fc108c11ff6ba2#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-V5-DOC13"
+      ]
     }
   ],
   "regressionImpact": [
@@ -2249,8 +2561,10 @@
         "Codex"
       ],
       "requiredEvidence": "Isolated installed-Candidate transcript, package and Core digests, MCP health, version, and no-side-effect evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-INSTALL-CODEX.json@sha256:2e4a18dd533c96cbd9394324663588120ab1c7d5b51d8d596c1add83bc3ae818#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-INSTALL-CODEX"
+      ]
     },
     {
       "id": "E2E-INSTALL-CLAUDE-CODE",
@@ -2259,8 +2573,10 @@
         "Claude Code"
       ],
       "requiredEvidence": "Isolated installed-Candidate Host conformance evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-INSTALL-CLAUDE-CODE.json@sha256:fb47d4d4157fedbf7336b466ce01f84edbbbe5a5412fb33f5a776a7ae23c14b7#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-INSTALL-CLAUDE-CODE"
+      ]
     },
     {
       "id": "E2E-INSTALL-WORKBUDDY",
@@ -2269,8 +2585,10 @@
         "WorkBuddy"
       ],
       "requiredEvidence": "Designated-human frozen-runbook declaration bound to exact Candidate and criterion range.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-INSTALL-WORKBUDDY.json@sha256:cb2c63ebedf63d0e1d9411f81d74c01457d586f2dd22a00be717b59167f551d0#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-INSTALL-WORKBUDDY"
+      ]
     },
     {
       "id": "E2E-LIFECYCLE-CREATE",
@@ -2280,8 +2598,10 @@
         "generic MCP"
       ],
       "requiredEvidence": "Resource revisions, validation, repository diff, and MCP transcript.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-LIFECYCLE-CREATE.json@sha256:0a67db66f6ba9e46195f228b6f4d49654b404577f18d2cb27e86ea2b1de9a450#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-LIFECYCLE-CREATE"
+      ]
     },
     {
       "id": "E2E-LIFECYCLE-READ",
@@ -2291,8 +2611,10 @@
         "headless"
       ],
       "requiredEvidence": "Cross-surface equality evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-LIFECYCLE-READ.json@sha256:e2daccea0cea3dae1c4218ade77aacaf336e62b37acb4355e95d7c0662f01ead#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-LIFECYCLE-READ"
+      ]
     },
     {
       "id": "E2E-LIFECYCLE-UPDATE",
@@ -2302,8 +2624,10 @@
         "independent Host"
       ],
       "requiredEvidence": "Concurrent old/new run bindings and semantic diff.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-LIFECYCLE-UPDATE.json@sha256:e47fa9b7ad9c0bc1b22a0ad7080b203f9339de8b0e3731d57264590c14c8813e#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-LIFECYCLE-UPDATE"
+      ]
     },
     {
       "id": "E2E-LIFECYCLE-DEACTIVATE",
@@ -2313,8 +2637,10 @@
         "headless"
       ],
       "requiredEvidence": "Binding rejection and historical-state integrity evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-LIFECYCLE-DEACTIVATE.json@sha256:8a3c072e83160c8f8d1b2cd76289e665d020d25b421e6cc44a7589ee5d0aefd3#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-LIFECYCLE-DEACTIVATE"
+      ]
     },
     {
       "id": "E2E-LIFECYCLE-ARCHIVE",
@@ -2324,8 +2650,10 @@
         "generic MCP"
       ],
       "requiredEvidence": "Archive/restore/delete decision and audit evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-LIFECYCLE-ARCHIVE.json@sha256:3b36c92bd4b936966519f9b2d2277e173981dc7053e9f968d37597bb934acf06#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-LIFECYCLE-ARCHIVE"
+      ]
     },
     {
       "id": "E2E-LIFECYCLE-ROLLBACK",
@@ -2335,8 +2663,10 @@
         "headless"
       ],
       "requiredEvidence": "Pointer, revision, evidence, and audit digests before and after rollback.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-LIFECYCLE-ROLLBACK.json@sha256:5e26bc2b8a79e9befed64ef3316be31399cd50571fcfd388ac526d93bf61275e#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-LIFECYCLE-ROLLBACK"
+      ]
     },
     {
       "id": "E2E-LIFECYCLE-IMPORT",
@@ -2346,8 +2676,10 @@
         "headless"
       ],
       "requiredEvidence": "Positive resolved graph and negative diagnostic corpus.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-LIFECYCLE-IMPORT.json@sha256:c6193ec37de9d3830ed4c76adf7c25659eadccf4493574e5c509206d9c1f8c44#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-LIFECYCLE-IMPORT"
+      ]
     },
     {
       "id": "E2E-TENANCY",
@@ -2357,8 +2689,10 @@
         "headless"
       ],
       "requiredEvidence": "Two-tenant isolation and cross-scope rejection evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-TENANCY.json@sha256:8dad0c4ee4d661f4d0aa194569b00c1c90c233674fc06fc6d25da66969b648ee#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-TENANCY"
+      ]
     },
     {
       "id": "E2E-RESTART",
@@ -2368,8 +2702,10 @@
         "headless"
       ],
       "requiredEvidence": "Process-restart persistence and resume evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-RESTART.json@sha256:fc6c1af68d3a75ed0df3a1046fc24d19d3b7588914202942358648af05ef75b7#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-RESTART"
+      ]
     },
     {
       "id": "E2E-SECURITY",
@@ -2379,8 +2715,10 @@
         "headless"
       ],
       "requiredEvidence": "Adversarial security matrix with no prohibited effect.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-SECURITY.json@sha256:0899146da6336508193c8582b5dcdd199a19cce111e4b83ee1a155ba6f2d29b8#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-SECURITY"
+      ]
     },
     {
       "id": "E2E-AGENT-RUNTIME",
@@ -2390,8 +2728,10 @@
         "independent Agent Runtime"
       ],
       "requiredEvidence": "End-to-end pendingExecution, trajectory, normalized receipt, source closure, and Loop transition evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-AGENT-RUNTIME.json@sha256:01db79cf633caa101788271ce5c70b2b418047eaf1698cfc6f924bed370c079f#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-AGENT-RUNTIME"
+      ]
     },
     {
       "id": "E2E-CROSS-HOST",
@@ -2402,8 +2742,10 @@
         "WorkBuddy"
       ],
       "requiredEvidence": "Runtime object digest equality plus designated-human authority declaration.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-CROSS-HOST.json@sha256:c00bcecb032fca16f1bb68ef597310bc69c9639b311e424bbf34cc94293bf595#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-CROSS-HOST"
+      ]
     },
     {
       "id": "E2E-REFERENCE-DATARIG",
@@ -2413,8 +2755,10 @@
         "independent Agent Runtime"
       ],
       "requiredEvidence": "DataRig declaration-only lifecycle and repository diff evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-REFERENCE-DATARIG.json@sha256:a160ebb41b1e78255793c64cb1e592fe8c1ae0fe6c5dd4351927e738bd3de216#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-REFERENCE-DATARIG"
+      ]
     },
     {
       "id": "E2E-REFERENCE-EVOPILOT",
@@ -2424,8 +2768,10 @@
         "independent Agent Runtime"
       ],
       "requiredEvidence": "Published HarnessBundle export, selection, binding, Loop, source, test, and evidence chain.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-REFERENCE-EVOPILOT.json@sha256:fa90bd8545e2f86ef64361f433b36c35b3ca2bb0a06ff8ddb6f4ba36c0305484#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-REFERENCE-EVOPILOT"
+      ]
     },
     {
       "id": "E2E-REFERENCE-HARNESS",
@@ -2435,8 +2781,10 @@
         "independent Agent Runtime"
       ],
       "requiredEvidence": "Project operation and explicit Harness authority-boundary evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-REFERENCE-HARNESS.json@sha256:e44f54e23693817d8411ff5141257e0665b769afa92024527dc224f3ccd463a6#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-REFERENCE-HARNESS"
+      ]
     },
     {
       "id": "E2E-NO-SUITE",
@@ -2446,8 +2794,10 @@
         "headless"
       ],
       "requiredEvidence": "Discovery/dependency scan and legacySuiteInvocationCount=0 across all journeys.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-NO-SUITE.json@sha256:2c6505d7b8ab036355e5f0fe73724ae080f8c64b41d0bd360852d4a006d43c02#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-NO-SUITE"
+      ]
     },
     {
       "id": "E2E-SOAK",
@@ -2457,16 +2807,21 @@
         "headless"
       ],
       "requiredEvidence": "Continuous active-workload timeline, health, errors, resource use, and exact Candidate binding.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/criteria/evopilot-v6.0.0-agent-native-lifecycle-control-plane--E2E-SOAK.json@sha256:169af16be6c4e8b3457a59ecd01ac2aac3d9df981df66430c179d79bf7c9ca04#evidence-evopilot-v6.0.0-agent-native-lifecycle-control-plane-E2E-SOAK"
+      ]
     }
   ],
   "noRegressionRequired": true,
   "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
   "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
   "noRegression": {
-    "status": "PENDING",
-    "evidenceRefs": []
+    "status": "PASSED",
+    "evidenceRefs": [
+      "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/acceptance-result.json@sha256:43f2ed055215226927a217d87d5c6618aa9f3294e27b064ce5aa03c02c3fd00c#NO_REGRESSION",
+      "codex-evolution://evopilot/8cb7646ca0fa/acceptance/release-build-34605137379-34605141499/evidence/independent-completion-recompute.json@sha256:f4a6af8af68424626308ab2868f6b60c339e1524bdf377e85df1ff4cd9d9fc69#NO_REGRESSION"
+    ]
   },
   "approvals": {
     "target": {
@@ -2476,10 +2831,10 @@
       "authorizationDigest": "sha256:4af91e77f5ec6ba962e117cf04acf1670792a070ac1f5114e05aef9a3ec1ae18"
     },
     "release": {
-      "decision": "PENDING",
-      "by": null,
-      "evidenceRef": null,
-      "authorizationDigest": null
+      "decision": "AUTHORIZED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v6.0.0-runtime-expert-v2.0.0-release-binding-1",
+      "authorizationDigest": "sha256:0a42ff789b7800b644b932179a98de20dd958543c03996e8ee80db9022b765d8"
     }
   },
   "release": {
