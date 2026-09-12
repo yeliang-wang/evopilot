@@ -52,6 +52,9 @@ test("Evolution Expert GA pipeline promotes accepted bytes through independent r
   const result = validateEvolutionExpertRelease(workflow);
   assert.equal(result.status, "PASS", JSON.stringify(result.failures));
 
+  assert.match(workflow, /manifest\.schema !== "evopilot-evolution-expert-core\/v2"/);
+  assert.doesNotMatch(workflow, /manifest\.schema !== "evopilot-evolution-expert-core\/v1"/);
+
   const rebuilt = validateEvolutionExpertRelease(`${workflow}\n      - run: npm pack -w @evopilot/evolution-expert\n`);
   assert.equal(rebuilt.status, "FAIL");
   assert.ok(rebuilt.failures.some((failure) => failure.includes("must not rebuild")));
