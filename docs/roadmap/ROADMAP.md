@@ -703,7 +703,7 @@ Releases remain independent.
 
 ### v6.0.0: Agent-Native Harness-Guided Lifecycle Control Plane
 
-Status: `IN_PROGRESS`
+Status: `COMPLETE` — Runtime `176/176`, joint campaign `253/253`, cross-acceptance `10/10`
 
 Deliver the public project-neutral control plane. Ordinary users install a Host
 Integration Bundle into Codex, Claude Code, WorkBuddy, or another qualified AI
@@ -716,9 +716,15 @@ audit operations. Qualified external Agent Runtimes execute exact
 `pendingExecution` work and return normalized receipts. Compatible project
 Pipeline evolution requires no Runtime or Expert source change.
 
+The exact installed Runtime `6.0.0` and Expert `2.0.0` Candidate pair passed
+all required acceptance, impact closure, `NO_REGRESSION`, and the 5400-second
+active soak with `legacySuiteInvocationCount=0`. The accepted bytes are public
+as GitHub Release, npm, and Runtime GHCR artifacts and were independently
+verified without rebuild.
+
 ### Evolution Expert v2.0.0: Mandatory Agent Host Entry
 
-Status: `IN_PROGRESS`, independent companion product
+Status: `COMPLETE` — Expert `77/77`, joint campaign `253/253`, cross-acceptance `10/10`; independent companion product
 
 Deliver one stateless, non-authoritative Expert Core and generated Codex,
 Claude Code, WorkBuddy, generic Agent Host, and generic MCP Host adapters. Every
@@ -727,11 +733,16 @@ and release journey is guided through MCP without requiring CLI commands, HTTP
 construction, tool-name knowledge, or manual state editing. Runtime remains the
 sole source of truth and authority.
 
+The public Expert `2.0.0` package, Skill/Core schema v2, MCP surface, generated
+Host adapters, signatures, provenance, installation, and Runtime `6.0.0`
+compatibility were verified from the accepted Candidate bytes.
+
 ### Post-v6.0.0: Legacy Suite Cutover
 
 Status: `PLANNED`, not a v6.0.0 release blocker
 
-Only after exact public Runtime `6.0.0` and Expert `2.0.0` installation and
+Exact public Runtime `6.0.0` and Expert `2.0.0` installation is now verified,
+but no Cutover has been authorized or executed. Only after the required
 side-by-side shadow observation may a separately approved Cutover Target switch
 the current Codex default to released EvoPilot, prove zero legacy invocation on
 real paths, create digest-inventoried recoverable archives, rehearse separately

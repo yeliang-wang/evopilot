@@ -77,9 +77,9 @@ test("Roadmap Gate accepts current Runtime and Expert milestones in their verifi
 
 test("Roadmap Gate binds the v6 Runtime, Expert 2.0, superseded unreleased lines, Cutover, and rescheduled milestones", () => {
   const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
-  assert.equal(roadmap.versionPolicy.publishedBaseline, "5.0.1");
+  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.0.0");
   assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.0.0");
-  assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "1.0.1");
+  assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.0.0");
   assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.0.0");
   assert.equal(roadmap.evolutionExpertPolicy.mandatoryForOrdinaryHumans, true);
   assert.equal(roadmap.humanInteractionProtocol.canonicalOrdinaryHumanProtocol, "MCP");
@@ -92,11 +92,37 @@ test("Roadmap Gate binds the v6 Runtime, Expert 2.0, superseded unreleased lines
   assert.equal(roadmap.suiteConvergenceAcceptance.ongoingSynchronizationRequired, false);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-5.1-suite-capability-convergence")?.status, "SUPERSEDED");
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-1.1-unified-host-entry")?.status, "SUPERSEDED");
-  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-6.0-agent-native-lifecycle-control-plane")?.status, "IN_PROGRESS");
-  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.0-agent-host-entry")?.status, "IN_PROGRESS");
+  const runtimeV6 = roadmap.milestones.find((item) => item.id === "evopilot-6.0-agent-native-lifecycle-control-plane");
+  const expertV2 = roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.0-agent-host-entry");
+  assert.equal(runtimeV6?.status, "COMPLETE");
+  assert.equal(expertV2?.status, "COMPLETE");
+  assert.equal(runtimeV6?.completionEvidence.total, 176);
+  assert.equal(runtimeV6?.completionEvidence.passed, 176);
+  assert.equal(expertV2?.completionEvidence.total, 77);
+  assert.equal(expertV2?.completionEvidence.passed, 77);
+  assert.equal(runtimeV6?.completionEvidence.acceptanceCampaignPassed, 253);
+  assert.equal(expertV2?.completionEvidence.crossAcceptancePassed, 10);
+  assert.equal(runtimeV6?.completionEvidence.legacySuiteInvocationCount, 0);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-post-v6.0.0-legacy-suite-cutover")?.standaloneReleaseEligible, false);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-6.1-controlled-experiment-loop")?.targetVersion, "6.1.0");
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-6.2-learning-interop")?.targetVersion, "6.2.0");
+});
+
+test("Roadmap Gate fails closed on incomplete v6 terminal evidence or premature Suite Cutover", () => {
+  for (const [name, mutate, pattern] of [
+    ["runtime count", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-6.0-agent-native-lifecycle-control-plane").completionEvidence.passed = 175; }, /176\/176/],
+    ["campaign count", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.0-agent-host-entry").completionEvidence.acceptanceCampaignPassed = 252; }, /253\/253/],
+    ["cross acceptance", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-6.0-agent-native-lifecycle-control-plane").completionEvidence.crossAcceptancePassed = 9; }, /10\/10/],
+    ["missing Candidate", (roadmap) => { delete roadmap.milestones.find((item) => item.id === "evopilot-6.0-agent-native-lifecycle-control-plane").completionEvidence.acceptedCandidateCommit; }, /accepted Candidate commit/],
+    ["impact closure", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.0-agent-host-entry").completionEvidence.impactClosure = "FAIL"; }, /impact closure PASS/],
+    ["legacy invocation", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-6.0-agent-native-lifecycle-control-plane").completionEvidence.legacySuiteInvocationCount = 1; }, /zero legacy Suite invocation/],
+    ["premature Cutover", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-post-v6.0.0-legacy-suite-cutover").status = "COMPLETE"; }, /must be PLANNED/]
+  ]) {
+    const result = runWithRoadmap(mutate);
+    assert.equal(result.status, 1, `${name}: ${result.stderr}`);
+    assert.equal(result.body.classification, "INVALID");
+    assert.match(result.body.errors.join(" "), pattern);
+  }
 });
 
 test("completed v5 contract is verified as immutable history after the v6 Roadmap becomes current", () => {

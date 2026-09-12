@@ -2851,5 +2851,32 @@
     "versions": {
       "evopilot": "6.0.0"
     }
+  },
+  "publicEvidence": {
+    "schema": "evopilot-public-release-evidence/v1",
+    "status": "VERIFIED",
+    "version": "6.0.0",
+    "tag": "v6.0.0",
+    "acceptedProductCommit": "d0d0f691d9fb4408da727464d37c05d3d0024435",
+    "githubRelease": "https://github.com/yeliang-wang/evopilot/releases/tag/v6.0.0",
+    "githubReleaseAssets": "ACCEPTED_BYTES_VERIFIED",
+    "releaseWorkflowRun": 34663626209,
+    "npmWorkflowRun": 34663719439,
+    "ghcrManifestDigest": "sha256:dc25689ea9bdbf4901bf28be556f036f377ed6561fb73d6a3bd387e3b02592d7",
+    "npmPackages": [
+      "@evopilot/contracts@6.0.0",
+      "@evopilot/client@6.0.0",
+      "@evopilot/adapter-mcp@6.0.0",
+      "@evopilot/adapter-opencode@6.0.0",
+      "@evopilot/cli@6.0.0",
+      "create-evopilot@6.0.0"
+    ],
+    "packageIntegrity": "VERIFIED_AGAINST_ACCEPTED_TARBALLS",
+    "registrySignatures": "CRYPTOGRAPHICALLY_VERIFIED",
+    "provenance": "SLSA_V1_REKOR_INTEGRITY_MATCH_AND_INCLUSION_PROOF_VERIFIED",
+    "publicInstallation": "VERIFIED_FROM_EMPTY_DIRECTORY",
+    "cliEntrypoints": "VERIFIED",
+    "productBytesRebuilt": false,
+    "acceptanceResultDigest": "sha256:43f2ed055215226927a217d87d5c6618aa9f3294e27b064ce5aa03c02c3fd00c"
   }
 }

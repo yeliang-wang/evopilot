@@ -1287,5 +1287,27 @@
     "versions": {
       "evopilot": "2.0.0"
     }
+  },
+  "publicEvidence": {
+    "schema": "evopilot-public-release-evidence/v1",
+    "status": "VERIFIED",
+    "version": "2.0.0",
+    "tag": "evolution-expert-v2.0.0",
+    "acceptedProductCommit": "d0d0f691d9fb4408da727464d37c05d3d0024435",
+    "githubRelease": "https://github.com/yeliang-wang/evopilot/releases/tag/evolution-expert-v2.0.0",
+    "githubReleaseAssets": "ACCEPTED_BYTES_VERIFIED",
+    "verificationOnlyWorkflowRun": 34670295443,
+    "npmPackage": "@evopilot/evolution-expert@2.0.0",
+    "packageIntegrity": "VERIFIED_AGAINST_ACCEPTED_TARBALL",
+    "registrySignatures": "CRYPTOGRAPHICALLY_VERIFIED",
+    "provenance": "SLSA_V1_REKOR_INTEGRITY_MATCH_AND_INCLUSION_PROOF_VERIFIED",
+    "publicInstallation": "VERIFIED_FROM_EMPTY_DIRECTORY",
+    "cliEntrypoint": "VERIFIED",
+    "skill": "PRESENT",
+    "coreSchema": "evopilot-evolution-expert-core/v2",
+    "coreDigest": "sha256:411cf0ac7dafbd5d8bafdf402393db5a7a8730fed4f1bed5492a3408ba2bc20b",
+    "runtimeCompatibility": "6.0.0_CONFORMANT",
+    "productBytesRebuilt": false,
+    "acceptanceResultDigest": "sha256:43f2ed055215226927a217d87d5c6618aa9f3294e27b064ce5aa03c02c3fd00c"
   }
 }
