@@ -176,7 +176,10 @@ assets plus the promotion record. Its dependent `npm` Environment job publishes
 or integrity-reconciles only the accepted tarball with provenance, then performs
 a fresh public install and verifies Registry signatures, the
 `evopilot-expert` CLI, portable `skill/SKILL.md`, generated Codex adapter,
-Expert Core digest, and exact Runtime 6.0.0 compatibility. Completion-recovery
+Expert Core digest, and exact Runtime 6.1.0 compatibility for Evolution Expert
+2.1.0. The published Expert 2.0.0 / Runtime 6.0.0 compatibility evidence remains
+immutable historical evidence and is not regenerated from the current source
+tree. Completion-recovery
 Targets may append a lowercase, digest-bound qualifier to the versioned Expert
 Target id; the workflow still verifies that the Target's declared version
 equals the exact Expert package version.

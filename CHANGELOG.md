@@ -6,6 +6,35 @@ This project follows a product-readiness changelog model: release entries should
 
 ## Unreleased
 
+### 6.1.0 Controlled Lifecycle Evolution
+
+This entry describes approved local implementation. It does not imply a
+Candidate, acceptance, Host installation, publication, Suite Cutover, or
+Release.
+
+#### Added
+
+- Added project-neutral observation, deterministic gap classification,
+  immutable Lifecycle successor proposals, comparable Champion/Challenger
+  evaluation, policy-bounded future-run activation, health monitoring, and
+  idempotent rollback.
+- Added nine canonical MCP operations and Evolution Expert 2.1.0 guidance for
+  the controlled Lifecycle evolution loop across supported Agent Hosts.
+- Added an exact read-only DataRig Suite 2.1.11 production reference with all
+  20 capability items explicitly mapped to independently versioned declarative
+  resources, typed providers, evidence, or review-only generic Targets.
+- Added a 305-criterion Candidate completion contract: 52 current Runtime and
+  Expert criteria/E2E plus the immutable 253-item published v6 baseline.
+
+#### Changed
+
+- Preserved Runtime as a project-neutral control plane: project Lifecycle
+  resources evolve independently, and project-specific gaps cannot introduce
+  Runtime branches or invoke an installed legacy Suite.
+- Kept semantic, authority, credential, database, production, destructive,
+  acceptance, publication, deployment, and Release decisions outside automatic
+  activation policy.
+
 ### 6.0.0 Agent-Native Lifecycle Control Plane
 
 This entry describes approved local implementation. It does not imply a
