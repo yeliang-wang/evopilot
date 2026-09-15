@@ -121,6 +121,25 @@ test("installed-style stdio MCP exposes the complete lifecycle surface and deleg
     assert.equal(requests[1].idempotencyKey, "decision-once");
     assert.deepEqual(requests[1].body, { bindingDigest: "sha256:exact", stageId: "publication", decision: "REJECTED" });
 
+    const classified = await client.callTool({
+      name: "evopilot_lifecycle_gap_classify",
+      arguments: {
+        observationId: "observation/one",
+        payload: { gapClass: "PROJECT_LIFECYCLE_GAP", evidenceRefs: ["evidence://one"] }
+      }
+    });
+    assert.equal(classified.isError, false);
+    assert.equal(requests[2].method, "POST");
+    assert.equal(requests[2].url, "/api/v1/controlled-lifecycle/observations/observation%2Fone/classify");
+
+    const successor = await client.callTool({
+      name: "evopilot_lifecycle_successor_inspect",
+      arguments: { proposalId: "proposal/one" }
+    });
+    assert.equal(successor.isError, false);
+    assert.equal(requests[3].method, "GET");
+    assert.equal(requests[3].url, "/api/v1/controlled-lifecycle/successors/proposal%2Fone");
+
     const missingBinding = await client.callTool({ name: "evopilot_lifecycle_run_inspect", arguments: {} });
     assert.equal(missingBinding.isError, true);
     assert.match(missingBinding.content[0].text, /runId is required/);
