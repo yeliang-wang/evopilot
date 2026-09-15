@@ -1,6 +1,6 @@
 # EvoPilot Evolution Expert
 
-Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. Expert `2.0.0` speaks Human Interaction Protocol `2.0` to Runtime `>=6.0.0 <7.0.0` exclusively through MCP. Runtime and declarative resource versions remain independent.
+Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. Expert `2.1.0` speaks Human Interaction Protocol `2.0` to Runtime `>=6.1.0 <7.0.0` exclusively through MCP. Runtime and declarative resource versions remain independent.
 
 One immutable Core generates Host Integration Bundles for Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP. Each bundle contains the same Core and Adapter digests plus install, doctor, health, version, upgrade, rollback, removal, help, and tutorial lifecycle metadata.
 
@@ -15,6 +15,9 @@ Users can start without knowing commands:
 - “为什么选择这个 HarnessBundle？它对 Pipeline 增加了哪些约束？”
 - “继续 Goal Target Loop，并解释外部 Agent Runtime 的待执行请求。”
 - “这个异常能否自动恢复？真正需要我决定的是什么？”
+- “记录这次 Pipeline 问题，生成不可变后继版本并展示完整差异。”
+- “比较 Champion 和 Challenger；上下文不一致时不要混合证据。”
+- “当前策略是否允许自动激活？激活后如何监控和回滚？”
 - “验收还差哪些逐项证据？现在是否允许发布？”
 
 The Expert classifies intent, asks only unresolved Runtime schema fields, calls the matching MCP tool, and renders Runtime-owned facts or exact decision frames. Ordinary parameter input is never approval. An exact human decision must bind the object digest, authority, consequence, actor, and evidence reference.
@@ -39,9 +42,9 @@ CLI, HTTP, CI, events, and webhooks remain available to administrators and machi
 Source implementation may verify the package without installing it into a real Host:
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.0.0
+npm install --global @evopilot/evolution-expert@2.1.0
 evopilot-expert version
-evopilot-expert doctor codex 6.0.0
+evopilot-expert doctor codex 6.1.0
 evopilot-expert tutorial
 ```
 

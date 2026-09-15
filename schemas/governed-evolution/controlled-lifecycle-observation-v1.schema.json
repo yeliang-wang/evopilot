@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/controlled-lifecycle-observation-v1.schema.json",
+  "title": "Controlled Lifecycle Observation v1",
+  "type": "object",
+  "required": ["schema", "id", "context", "signals", "capturedAt", "provenance", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-controlled-lifecycle-observation/v1" },
+    "id": { "type": "string", "minLength": 1 },
+    "context": {
+      "type": "object",
+      "required": ["tenantId", "workspaceId", "projectDefinitionDigest", "lifecycleRevisionDigest", "harnessExecutionBindingDigest", "harnessBundleDigest", "goalTargetDigest", "runtimeDigest", "hostDigest", "providerDigest", "environmentDigest", "authorityDigest", "evaluatorDigest", "scorerDigest", "evidenceDigest"],
+      "additionalProperties": false,
+      "properties": {
+        "tenantId": { "type": "string", "minLength": 1 },
+        "workspaceId": { "type": "string", "minLength": 1 },
+        "projectDefinitionDigest": { "$ref": "#/$defs/digest" },
+        "lifecycleRevisionDigest": { "$ref": "#/$defs/digest" },
+        "harnessExecutionBindingDigest": { "$ref": "#/$defs/digest" },
+        "harnessBundleDigest": { "$ref": "#/$defs/digest" },
+        "goalTargetDigest": { "$ref": "#/$defs/digest" },
+        "runtimeDigest": { "$ref": "#/$defs/digest" },
+        "hostDigest": { "$ref": "#/$defs/digest" },
+        "providerDigest": { "$ref": "#/$defs/digest" },
+        "environmentDigest": { "$ref": "#/$defs/digest" },
+        "authorityDigest": { "$ref": "#/$defs/digest" },
+        "evaluatorDigest": { "$ref": "#/$defs/digest" },
+        "scorerDigest": { "$ref": "#/$defs/digest" },
+        "evidenceDigest": { "$ref": "#/$defs/digest" }
+      }
+    },
+    "signals": { "type": "array", "minItems": 1, "items": { "type": "object", "required": ["id", "kind", "severity", "summary", "evidenceRefs"] } },
+    "capturedAt": { "type": "string", "format": "date-time" },
+    "provenance": { "type": "object", "required": ["source", "sourceRef"] },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

@@ -1,11 +1,13 @@
 # EvoPilot Evolution Expert
 
-`@evopilot/evolution-expert` 2.0.0 is the independently versioned,
-Agent-neutral interactive guide for EvoPilot Runtime 6.x. It helps an ordinary
+`@evopilot/evolution-expert` 2.1.0 is the independently versioned,
+Agent-neutral interactive guide for EvoPilot Runtime 6.1.x. It helps an ordinary
 user discover and declare a project, understand Runtime-produced Harness
 matching and Lifecycle composition, operate a Goal Target Loop, follow
 automatic recovery, inspect evidence and readiness, and understand resource
-versions, capability migration, shadow validation, Cutover readiness, and rollback.
+versions, capability migration, controlled Pipeline observations and successors,
+Champion/Challenger evidence, policy-bounded activation, monitoring, deterministic
+rollback, generic-primitive gaps, shadow validation, and Cutover readiness.
 
 The Expert is not the Runtime and is not a Harness producer. It owns no
 canonical state, credentials, approval identity, Harness choice, recovery
@@ -17,9 +19,9 @@ API, and CI without creating a silent ordinary-human fallback.
 ## Install and verify
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.0.0
+npm install --global @evopilot/evolution-expert@2.1.0
 evopilot-expert version
-evopilot-expert doctor codex 6.0.0
+evopilot-expert doctor codex 6.1.0
 evopilot-expert tutorial
 evopilot-expert versions
 evopilot-expert migration
@@ -36,6 +38,9 @@ Host capabilities without contacting a project or causing external effects.
 evopilot-expert plan "help me register an unknown project"
 evopilot-expert plan "explain the selected Harness and Lifecycle plan"
 evopilot-expert plan "why did recovery stop?"
+evopilot-expert plan "record this Pipeline observation and show the immutable successor"
+evopilot-expert plan "compare champion and challenger without mixing mismatched evidence"
+evopilot-expert plan "can the active policy safely activate this successor?"
 evopilot-expert render runtime-interaction.json
 ```
 
@@ -48,8 +53,8 @@ and rollback remain Runtime operations.
 ## Upgrade, rollback, and remove
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.0.0
-evopilot-expert doctor codex 6.0.0
+npm install --global @evopilot/evolution-expert@2.1.0
+evopilot-expert doctor codex 6.1.0
 
 npm install --global @evopilot/evolution-expert@1.0.1
 evopilot-expert doctor codex 5.0.1

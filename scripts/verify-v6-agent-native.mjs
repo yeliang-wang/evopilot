@@ -9,12 +9,10 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const failures = [];
 const hosts = ["codex", "claude-code", "workbuddy", "generic-agent", "generic-mcp"];
 
-assertPackageVersion("package.json", "6.0.0");
-assertPackageVersion("packages/core/package.json", "6.0.0");
-assertPackageVersion("packages/server/package.json", "6.0.0");
-assertPackageVersion("packages/adapter-mcp/package.json", "6.0.0");
-assertPackageVersion("packages/adapter-opencode/package.json", "6.0.0");
-assertPackageVersion("packages/evolution-expert/package.json", "2.0.0");
+const acceptedRuntime = readJson("governance/targets/evopilot-v6.0.0-agent-native-lifecycle-control-plane.json");
+const acceptedExpert = readJson("governance/targets/evopilot-evolution-expert-v2.0.0-agent-host-entry.json");
+if (acceptedRuntime.status !== "RELEASE_AUTHORIZED" || acceptedRuntime.release?.versions?.evopilot !== "6.0.0") failures.push("immutable Runtime 6.0.0 release Target is not terminal");
+if (acceptedExpert.status !== "RELEASE_AUTHORIZED" || acceptedExpert.release?.versions?.evopilot !== "2.0.0") failures.push("immutable Expert 2.0.0 release Target is not terminal");
 
 for (const id of ["datarig", "evopilot", "evopilot-harness", "new-project"]) {
   try { normalizeEvolutionProjectDefinition(parse(read(`examples/projects/${id}.yaml`))); }
@@ -81,15 +79,14 @@ for (const relative of ["packages/core/src", "packages/server/src/domains/lifecy
 }
 
 const guide = expertVersionGuide();
-if (guide.expertVersion !== "2.0.0" || guide.versionLines.find((line) => line.owner === "Runtime")?.current !== "6.0.0") failures.push("Evolution Expert 2.0.0 version compatibility mismatch");
+if (!guide.expertVersion.startsWith("2.") || !guide.versionLines.find((line) => line.owner === "Runtime")?.current.startsWith("6.")) failures.push("current successors no longer preserve the Runtime 6 / Expert 2 public contract line");
 if (failures.length) {
   console.error("EvoPilot v6 agent-native verification failed:");
   failures.forEach((failure) => console.error(`- ${failure}`));
   process.exit(1);
 }
-console.log(`EvoPilot v6 agent-native verification passed: governed Lifecycle Registry, exact external Agent Runtime boundary, ${hosts.length} generated Host bundles, four declaration-only projects, and zero legacy Suite fallback.`);
+console.log(`EvoPilot v6 immutable history and successor invariants passed: governed Lifecycle Registry, exact external Agent Runtime boundary, ${hosts.length} generated Host bundles, four declaration-only projects, and zero legacy Suite fallback.`);
 
-function assertPackageVersion(relative, expected) { try { const actual = readJson(relative).version; if (actual !== expected) failures.push(`${relative}: ${actual} != ${expected}`); } catch { failures.push(`${relative}: invalid package JSON`); } }
 function read(relative) { return fs.readFileSync(path.join(root, relative), "utf8"); }
 function readJson(relative) { return JSON.parse(read(relative)); }
 function message(error) { return error instanceof Error ? error.message : String(error); }

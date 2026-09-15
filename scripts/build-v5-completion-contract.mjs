@@ -143,13 +143,10 @@ function compareText(left, right) { return left < right ? -1 : left > right ? 1 
 
 function isImmutableHistoricalContract(currentRoadmap) {
   const status = (id) => currentRoadmap.milestones?.find((milestone) => milestone.id === id)?.status;
-  const isCurrentV6State = (value) => ["IN_PROGRESS", "COMPLETE"].includes(value);
-  return currentRoadmap.versionPolicy?.currentWorkingVersion === "6.0.0"
-    && currentRoadmap.evolutionExpertPolicy?.currentWorkingVersion === "2.0.0"
-    && status("evopilot-5.1-suite-capability-convergence") === "SUPERSEDED"
+  return status("evopilot-5.1-suite-capability-convergence") === "SUPERSEDED"
     && status("evopilot-evolution-expert-1.1-unified-host-entry") === "SUPERSEDED"
-    && isCurrentV6State(status("evopilot-6.0-agent-native-lifecycle-control-plane"))
-    && isCurrentV6State(status("evopilot-evolution-expert-2.0-agent-host-entry"));
+    && status("evopilot-6.0-agent-native-lifecycle-control-plane") === "COMPLETE"
+    && status("evopilot-evolution-expert-2.0-agent-host-entry") === "COMPLETE";
 }
 
 function validateHistoricalContract() {

@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/lifecycle-successor-proposal-v1.schema.json",
+  "title": "Lifecycle Successor Proposal v1",
+  "type": "object",
+  "required": ["schema", "id", "observationDigest", "classificationDigest", "lifecycleId", "champion", "challenger", "diff", "safety", "provenance", "status", "activePointerMutated", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-lifecycle-successor-proposal/v1" },
+    "id": { "type": "string", "minLength": 1 },
+    "observationDigest": { "$ref": "#/$defs/digest" },
+    "classificationDigest": { "$ref": "#/$defs/digest" },
+    "lifecycleId": { "type": "string", "minLength": 1 },
+    "champion": { "$ref": "#/$defs/revision" },
+    "challenger": { "allOf": [{ "$ref": "#/$defs/revision" }, { "type": "object", "required": ["definition"] }] },
+    "diff": { "type": "object", "required": ["semantic", "authority", "dependencies", "compatibility", "impact", "migration", "experiment", "monitoring", "rollback"] },
+    "safety": { "type": "object", "required": ["backwardCompatible", "reversible", "destructive", "publicEffect", "newAuthority", "productionAccessChange", "databaseAccessChange", "credentialChange", "acceptanceChange", "publicationChange", "releaseChange"] },
+    "provenance": { "type": "object", "required": ["sourceObservationDigest", "sourceLifecycleDigest", "evidenceRefs"] },
+    "status": { "const": "PROPOSED" },
+    "activePointerMutated": { "const": false },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": {
+    "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "revision": { "type": "object", "required": ["version", "digest"], "properties": { "version": { "type": "string" }, "digest": { "$ref": "#/$defs/digest" } } }
+  }
+}

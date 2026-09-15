@@ -1,0 +1,917 @@
+{
+  "schema": "evopilot-production-delivery-reference/v1",
+  "id": "datarig-production-delivery",
+  "version": "1.0.0",
+  "status": "REFERENCE_ONLY_INACTIVE",
+  "source": {
+    "suiteId": "datarig-codex-suite",
+    "suiteVersion": "2.1.11",
+    "manifestDigest": "sha256:416e76bd1c8244eb227a835d9c2db1e7728e9d59ff56b6df516306b3c058bd80",
+    "criticalContentDigest": "sha256:ef4efe668eb978e1dab2669cb20156bf1ad0dfbc28b927e50ae1aa3c27d8515f",
+    "advisoryContentDigest": "sha256:0d592fc441423d7f790ca26fe69e0adb90ba65f76069d0037da914652354a128",
+    "inventoryDigest": "sha256:a5fab323c50b460c0d7366eb8eb3ef0c9e59c7f63e9c3af922b10a94865db486"
+  },
+  "projectDefinition": {
+    "schema": "evopilot-evolution-project-definition/v1",
+    "metadata": {
+      "id": "datarig-production-delivery",
+      "name": "DataRig production delivery reference",
+      "version": "1.0.0",
+      "labels": {
+        "reference": "datarig",
+        "delivery": "enterprise-internal"
+      }
+    },
+    "provenance": {
+      "sourceSuiteId": "datarig-codex-suite",
+      "sourceSuiteVersion": "2.1.11",
+      "sourceDigest": "sha256:cfa3b8ab2f1c16829a2c3a7fc3e10d044076b69a317b117bdbe708222db71bbb",
+      "inventoryId": "datarig-suite-2.1.11-production-reference"
+    },
+    "spec": {
+      "source": {
+        "provider": "gitlab",
+        "repository": "declared-by-operator",
+        "defaultBranch": "main",
+        "mode": "owned"
+      },
+      "ecosystem": {
+        "languages": [
+          "java"
+        ],
+        "packageManagers": [
+          "maven"
+        ],
+        "frameworks": []
+      },
+      "delivery": {
+        "model": "enterprise-internal",
+        "ciProvider": "gitlab",
+        "candidateBeforeAcceptance": true,
+        "noRebuildPromotion": true,
+        "channels": [
+          "maven"
+        ]
+      },
+      "environment": {
+        "development": "local",
+        "acceptance": "isolated-real-database"
+      },
+      "policyRefs": [
+        "PolicyPack/datarig-production-delivery-authority@1.0.0#sha256:21595b24c33088738f955f4028d251294104e2b725f030d318051645b64cc2ca",
+        "PolicyPack/datarig-production-delivery-protected-tests@1.0.0#sha256:b70e01648d7303b175e7a3af0a904af197fb69db1767f73464f88e76a6d48818"
+      ],
+      "lifecycleRefs": [
+        "datarig-production-delivery@1.0.0"
+      ],
+      "secretRefs": [
+        "secret://workspace/datarig-database",
+        "secret://workspace/datarig-release"
+      ],
+      "hostPreferences": [
+        "codex",
+        "claude-code",
+        "workbuddy",
+        "generic-mcp"
+      ],
+      "runtimePreferences": [
+        "external-agent-runtime"
+      ],
+      "evidenceSources": [
+        "gitlab",
+        "maven",
+        "database-e2e",
+        "agent-host"
+      ]
+    },
+    "digest": "sha256:c3120dd95c0b7d42094caae0b1cec3cbdb3837d38b0a4319d883b8e4b0e27083"
+  },
+  "lifecycleRef": {
+    "id": "datarig-production-delivery",
+    "version": "1.0.0",
+    "source": "lifecycles/reference/datarig-production-delivery.yaml"
+  },
+  "resources": [
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "CapabilityPack",
+      "metadata": {
+        "id": "controlled-lifecycle-evolution",
+        "name": "EvolutionExpert/controlled-lifecycle-evolution",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:b006558f1a487d12d77d7e019ee9de8e2485c9f6c9b984d87915582dc801a409",
+        "sourceRef": "skill:datarig-evolution-orchestrator"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:orchestration-and-bounded-recovery"
+      ],
+      "spec": {
+        "capability": "Route requests, preserve authority boundaries, perform bounded recovery, and distinguish evolution, E2E, readiness, and release phases.",
+        "expertJourney": "controlled-lifecycle-evolution",
+        "validatorId": "datarig-211:orchestration-and-bounded-recovery"
+      },
+      "digest": "sha256:41df11b0e70a2f1f72f4a808c159f150c242867d4ae7693efbad9aa697a128db"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "GovernancePack",
+      "metadata": {
+        "id": "datarig-production-delivery-roadmap",
+        "name": "GovernancePack/datarig-production-delivery/roadmap",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:b83aff1792d098d45f561e20af4ca1615d0201b9c9b3c94156368e86b5f24ce2",
+        "sourceRef": "skill:datarig-roadmap-governor"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:roadmap-governance"
+      ],
+      "spec": {
+        "gates": [
+          "datarig-211:roadmap-governance"
+        ],
+        "sourceCapability": "Classify Roadmap alignment, baseline freshness, release intent, and mirror integrity without granting authority."
+      },
+      "digest": "sha256:0e469a2c7088cd0dfda65ed92969606bd9a6aa165b85f2d85fa712ec7d5d5c5d"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "GovernancePack",
+      "metadata": {
+        "id": "datarig-production-delivery-target",
+        "name": "GovernancePack/datarig-production-delivery/target",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:f0ec0851c127fdbb45444bfe7716edcf3d9b2109c0901a1c30297d4b1d1fb10b",
+        "sourceRef": "skill:datarig-evolution-target-governor"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:target-governance"
+      ],
+      "spec": {
+        "gates": [
+          "datarig-211:target-governance"
+        ],
+        "sourceCapability": "Bind exact scope, repository lineage, checkpoints, real-database acceptance, and separate release authority in a versioned Target."
+      },
+      "digest": "sha256:414e3c2514777908e478b16694a47b63a9f81512330fa369cd0bf2b73ae0304f"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "ActionProviderDefinition",
+      "metadata": {
+        "id": "datarig-repository-integrity",
+        "name": "ActionProvider/datarig-repository-integrity",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:19aa14af0af125bd6ad6bf795a283a77e179b7adcc6b52eb2ec5dd6655fb0da5",
+        "sourceRef": "skill:datarig-repository-integrity-governor"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:repository-integrity"
+      ],
+      "spec": {
+        "execution": "TYPED_ACTIONS_ONLY",
+        "arbitraryShell": false,
+        "actions": [
+          {
+            "id": "datarig-211:repository-integrity",
+            "inputSchema": {
+              "type": "object",
+              "additionalProperties": false
+            },
+            "outputSchema": {
+              "type": "object",
+              "required": [
+                "receiptDigest"
+              ]
+            },
+            "receipt": "IMMUTABLE_REQUIRED",
+            "idempotencyKeyRequired": true,
+            "rollback": "NOT_APPLICABLE",
+            "requiredAuthorities": [],
+            "credentialRefs": []
+          }
+        ]
+      },
+      "digest": "sha256:efec864bbf00fb5d2117314f51758f7313b59fc2cd66c96d531ae83845d0f753"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "GovernancePack",
+      "metadata": {
+        "id": "datarig-production-delivery-proofops-acceptance",
+        "name": "GovernancePack/datarig-production-delivery/proofops-acceptance",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:c5f7b5dfbb78d8a27e48836ae8c34fe84d9fc7dec6845addfb1e8e4139b9a4e3",
+        "sourceRef": "skill:datarig-proofops-acceptance"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:proofops-acceptance"
+      ],
+      "spec": {
+        "gates": [
+          "datarig-211:proofops-acceptance"
+        ],
+        "sourceCapability": "Independently validate database-free checkpoints and final production-E2E evidence against exact candidate and target bindings."
+      },
+      "digest": "sha256:66fe91d4c1eb07b6aa3db6165be761895acffaa4f308c199d0c0251bc662f4cb"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "LifecycleModule",
+      "metadata": {
+        "id": "datarig-production-delivery-e2e-and-recovery",
+        "name": "Lifecycle/datarig-production-delivery/e2e-and-recovery",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:22267e785736fe564aa7d600d0a38b61fc8fbf5b561c0caf6ef6447daf7d211d",
+        "sourceRef": "skill:datarig-production-e2e-simulator"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:production-e2e"
+      ],
+      "spec": {
+        "lifecycleRef": "datarig-production-delivery@1.0.0",
+        "capability": "Establish fresh database authority, execute isolated production-like E2E, collect all safe findings, and run bounded descendant-candidate defect closure.",
+        "validatorId": "datarig-211:production-e2e"
+      },
+      "digest": "sha256:5eb101265f260edf12f0e1d34d2f283349c640131f730f7580cf9bdd2b5f1304"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "ActionProviderDefinition",
+      "metadata": {
+        "id": "datarig-agent-host-conformance",
+        "name": "ActionProvider/datarig-agent-host-conformance",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:84b62c48e523e335dc9c7e53cf60d99a4c7cd7ed5f7573613fbcad9c64b0ed1f",
+        "sourceRef": "skill:datarig-agent-host-production-simulator"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:agent-host-conformance"
+      ],
+      "spec": {
+        "execution": "TYPED_ACTIONS_ONLY",
+        "arbitraryShell": false,
+        "actions": [
+          {
+            "id": "datarig-211:agent-host-conformance",
+            "inputSchema": {
+              "type": "object",
+              "additionalProperties": false
+            },
+            "outputSchema": {
+              "type": "object",
+              "required": [
+                "receiptDigest"
+              ]
+            },
+            "receipt": "IMMUTABLE_REQUIRED",
+            "idempotencyKeyRequired": true,
+            "rollback": "NOT_APPLICABLE",
+            "requiredAuthorities": [],
+            "credentialRefs": []
+          }
+        ]
+      },
+      "digest": "sha256:ea22afd0d79e5b5eedc841e2d97305d161ef125eb045e10b0e16b96f5dece00e"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "LifecycleModule",
+      "metadata": {
+        "id": "datarig-production-delivery-readiness",
+        "name": "Lifecycle/datarig-production-delivery/readiness",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:0fbd3f1b6f0c1b1d2694ca5e2f5c8f8fb871dfe7ae1cab7c15d721823c0d3032",
+        "sourceRef": "skill:datarig-release-readiness-governor"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:release-readiness"
+      ],
+      "spec": {
+        "lifecycleRef": "datarig-production-delivery@1.0.0",
+        "capability": "Aggregate formal-RC-input and internal-promotion readiness with documentation closure and build-once separation.",
+        "validatorId": "datarig-211:release-readiness"
+      },
+      "digest": "sha256:48dafcae17a17b356fb0739a991f29b9c2525ae1859f6bd5efb230a4441db83b"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "ActionProviderDefinition",
+      "metadata": {
+        "id": "datarig-release",
+        "name": "ActionProvider/datarig-release",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:314effef91ebecc8c6148d3605b564c03049a0a6dc8da7da206e775f81fdca38",
+        "sourceRef": "skill:datarig-release-operator"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:release-operation-and-reconciliation"
+      ],
+      "spec": {
+        "execution": "TYPED_ACTIONS_ONLY",
+        "arbitraryShell": false,
+        "actions": [
+          {
+            "id": "datarig-211:release-operation-and-reconciliation",
+            "inputSchema": {
+              "type": "object",
+              "additionalProperties": false
+            },
+            "outputSchema": {
+              "type": "object",
+              "required": [
+                "receiptDigest"
+              ]
+            },
+            "receipt": "IMMUTABLE_REQUIRED",
+            "idempotencyKeyRequired": true,
+            "rollback": "COMPENSATING_ACTION",
+            "requiredAuthorities": [
+              "release.publish"
+            ],
+            "credentialRefs": [
+              "secret://workspace/datarig-release"
+            ]
+          }
+        ]
+      },
+      "digest": "sha256:7b5bfee56a92bbdd8644432e75c9c3c50962f0ac0cd69a34a5008c886738d574"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "ActionProviderDefinition",
+      "metadata": {
+        "id": "oss-maturity-audit",
+        "name": "ActionProvider/oss-maturity-audit",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:480c55c916c66417aaf32aa031a9704ee65d1ea8765a852b279bce5705e1a0bd",
+        "sourceRef": "skill:datarig-oss-maturity-auditor"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:oss-maturity-audit"
+      ],
+      "spec": {
+        "execution": "TYPED_ACTIONS_ONLY",
+        "arbitraryShell": false,
+        "actions": [
+          {
+            "id": "datarig-211:oss-maturity-audit",
+            "inputSchema": {
+              "type": "object",
+              "additionalProperties": false
+            },
+            "outputSchema": {
+              "type": "object",
+              "required": [
+                "receiptDigest"
+              ]
+            },
+            "receipt": "IMMUTABLE_REQUIRED",
+            "idempotencyKeyRequired": true,
+            "rollback": "NOT_APPLICABLE",
+            "requiredAuthorities": [],
+            "credentialRefs": []
+          }
+        ]
+      },
+      "digest": "sha256:8d79c149456c5e4961ec630945f01c379652f44c26abb4d4307b5d3fbbaa3748"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "GovernancePack",
+      "metadata": {
+        "id": "datarig-production-delivery-target-schema",
+        "name": "GovernancePack/datarig-production-delivery/target-schema",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:3299d8de493a31df03d183ade1832a0fa59a8ce8fa4fe18e3c04a4545c563f8c",
+        "sourceRef": "contract:evolution-target-v3"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:target-schema"
+      ],
+      "spec": {
+        "gates": [
+          "datarig-211:target-schema"
+        ],
+        "sourceCapability": "Define DataRig evolution target phases, exact acceptance lineage, database boundaries, and release separation."
+      },
+      "digest": "sha256:9b98f3797ed0b393529b6bb53e449e016c187a670af20896c3fdc0d4681cbeba"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "GovernancePack",
+      "metadata": {
+        "id": "datarig-production-delivery-repository-integrity-result",
+        "name": "GovernancePack/datarig-production-delivery/repository-integrity-result",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:3da2834ed75d692ec07bbcd8f1645d37e2bbd048af97db9193a6a6ed5036b715",
+        "sourceRef": "contract:repository-integrity-result-v1"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:repository-integrity-result"
+      ],
+      "spec": {
+        "gates": [
+          "datarig-211:repository-integrity-result"
+        ],
+        "sourceCapability": "Normalize repository-integrity results and exact source bindings."
+      },
+      "digest": "sha256:cd57d6cd876574f161c83746d4e6753ac4dd04eb7853e79f706b6ffeb2023ecb"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "GovernancePack",
+      "metadata": {
+        "id": "datarig-production-delivery-release-readiness-result",
+        "name": "GovernancePack/datarig-production-delivery/release-readiness-result",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:013981d887f1fea179d5eb6dbedb4b51af3ff33774ff04ca1501db200ba99749",
+        "sourceRef": "contract:release-readiness-result-v1"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:release-readiness-result"
+      ],
+      "spec": {
+        "gates": [
+          "datarig-211:release-readiness-result"
+        ],
+        "sourceCapability": "Normalize RC-input and promotion-readiness aggregation."
+      },
+      "digest": "sha256:9e1585e5527aa7beafcf41a0b291efed19277f17d3f2087f352317270ab952ae"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "GovernancePack",
+      "metadata": {
+        "id": "datarig-production-delivery-governance-exception",
+        "name": "GovernancePack/datarig-production-delivery/governance-exception",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:059872ea47d1855bca13ea65c72e4376d24b3ae1b80ea758a741a28ef24a8cbd",
+        "sourceRef": "contract:governance-exception-v1"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:governance-exception"
+      ],
+      "spec": {
+        "gates": [
+          "datarig-211:governance-exception"
+        ],
+        "sourceCapability": "Bind explicit, bounded governance exceptions without silently changing policy."
+      },
+      "digest": "sha256:8076c7edf7cbfdbd7471214ad304f753061e84b220ad6839a5da36495e8113d7"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "GovernancePack",
+      "metadata": {
+        "id": "datarig-production-delivery-production-e2e-result",
+        "name": "GovernancePack/datarig-production-delivery/production-e2e-result",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:cd23e6f547f29953f16b85604e8ef16d87538c0b9fe40d376f9ae6a4bc5148ec",
+        "sourceRef": "contract:production-e2e-result"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:production-e2e-result"
+      ],
+      "spec": {
+        "gates": [
+          "datarig-211:production-e2e-result"
+        ],
+        "sourceCapability": "Normalize candidate-bound production-E2E outcomes, cases, findings, and evidence."
+      },
+      "digest": "sha256:6c4a4f56ce71885089b158fbdb0dc0e0e9cb13f9bb8f796a3795efcee45872f6"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "PolicyPack",
+      "metadata": {
+        "id": "datarig-production-delivery-authority",
+        "name": "Policy/datarig-production-delivery/authority",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:472980468e12bfeeb6f4a9bab9db01445077bdc241901564a3e6586e93216c45",
+        "sourceRef": "policy:authority-boundaries-v1"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:authority-boundaries"
+      ],
+      "spec": {
+        "rules": [
+          {
+            "id": "datarig-211:authority-boundaries",
+            "statement": "Separate readiness, database, repair, acceptance, promotion, and release authority."
+          }
+        ],
+        "defaultDecision": "DENY_UNDECLARED"
+      },
+      "digest": "sha256:21595b24c33088738f955f4028d251294104e2b725f030d318051645b64cc2ca"
+    },
+    {
+      "apiVersion": "evopilot.io/v1",
+      "kind": "PolicyPack",
+      "metadata": {
+        "id": "datarig-production-delivery-protected-tests",
+        "name": "Policy/datarig-production-delivery/protected-tests",
+        "version": "1.0.0",
+        "labels": {
+          "reference": "datarig-production-delivery"
+        }
+      },
+      "provenance": {
+        "sourceType": "LEGACY_SUITE",
+        "sourceId": "datarig-codex-suite",
+        "sourceVersion": "2.1.11",
+        "sourceDigest": "sha256:925a4e427ed7521a7efba3e3fc06a6039ec9b43fb515f2f986876ac677c40688",
+        "sourceRef": "policy:protected-tests-v1"
+      },
+      "compatibility": {
+        "runtime": ">=6.0.0 <7.0.0",
+        "expert": ">=2.0.0 <3.0.0"
+      },
+      "capabilityRefs": [
+        "datarig-211:protected-tests"
+      ],
+      "spec": {
+        "rules": [
+          {
+            "id": "datarig-211:protected-tests",
+            "statement": "Protect acceptance inventory and forbid repair from weakening required tests."
+          }
+        ],
+        "defaultDecision": "DENY_UNDECLARED"
+      },
+      "digest": "sha256:b70e01648d7303b175e7a3af0a904af197fb69db1767f73464f88e76a6d48818"
+    }
+  ],
+  "itemProvenance": [
+    {
+      "id": "skill:datarig-evolution-orchestrator",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:b006558f1a487d12d77d7e019ee9de8e2485c9f6c9b984d87915582dc801a409",
+      "disposition": "EXPERT_GENERIC_JOURNEY",
+      "destination": "EvolutionExpert/controlled-lifecycle-evolution",
+      "validatorId": "datarig-211:orchestration-and-bounded-recovery"
+    },
+    {
+      "id": "skill:datarig-roadmap-governor",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:b83aff1792d098d45f561e20af4ca1615d0201b9c9b3c94156368e86b5f24ce2",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/roadmap",
+      "validatorId": "datarig-211:roadmap-governance"
+    },
+    {
+      "id": "skill:datarig-evolution-target-governor",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:f0ec0851c127fdbb45444bfe7716edcf3d9b2109c0901a1c30297d4b1d1fb10b",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/target",
+      "validatorId": "datarig-211:target-governance"
+    },
+    {
+      "id": "skill:datarig-repository-integrity-governor",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:19aa14af0af125bd6ad6bf795a283a77e179b7adcc6b52eb2ec5dd6655fb0da5",
+      "disposition": "ACTION_PROVIDER",
+      "destination": "ActionProvider/datarig-repository-integrity",
+      "validatorId": "datarig-211:repository-integrity"
+    },
+    {
+      "id": "skill:datarig-proofops-acceptance",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:c5f7b5dfbb78d8a27e48836ae8c34fe84d9fc7dec6845addfb1e8e4139b9a4e3",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/proofops-acceptance",
+      "validatorId": "datarig-211:proofops-acceptance"
+    },
+    {
+      "id": "skill:datarig-production-e2e-simulator",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:22267e785736fe564aa7d600d0a38b61fc8fbf5b561c0caf6ef6447daf7d211d",
+      "disposition": "LIFECYCLE_RESOURCE",
+      "destination": "Lifecycle/datarig-production-delivery/e2e-and-recovery",
+      "validatorId": "datarig-211:production-e2e"
+    },
+    {
+      "id": "skill:datarig-agent-host-production-simulator",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:84b62c48e523e335dc9c7e53cf60d99a4c7cd7ed5f7573613fbcad9c64b0ed1f",
+      "disposition": "ACTION_PROVIDER",
+      "destination": "ActionProvider/datarig-agent-host-conformance",
+      "validatorId": "datarig-211:agent-host-conformance"
+    },
+    {
+      "id": "skill:datarig-release-readiness-governor",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:0fbd3f1b6f0c1b1d2694ca5e2f5c8f8fb871dfe7ae1cab7c15d721823c0d3032",
+      "disposition": "LIFECYCLE_RESOURCE",
+      "destination": "Lifecycle/datarig-production-delivery/readiness",
+      "validatorId": "datarig-211:release-readiness"
+    },
+    {
+      "id": "skill:datarig-release-operator",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:314effef91ebecc8c6148d3605b564c03049a0a6dc8da7da206e775f81fdca38",
+      "disposition": "ACTION_PROVIDER",
+      "destination": "ActionProvider/datarig-release",
+      "validatorId": "datarig-211:release-operation-and-reconciliation"
+    },
+    {
+      "id": "skill:datarig-evolution-journal",
+      "sourceClass": "ADVISORY_SKILL",
+      "sourceDigest": "sha256:1f27dfe0d7ff05fc52ed56991841315437c8424631dba6adb960f2f0a20a09d1",
+      "disposition": "DATARIG_OWNED_BEHAVIOR",
+      "destination": "OptionalProvider/datarig-evolution-journal",
+      "validatorId": "datarig-211:advisory-journal-boundary"
+    },
+    {
+      "id": "skill:datarig-oss-maturity-auditor",
+      "sourceClass": "ADVISORY_SKILL",
+      "sourceDigest": "sha256:480c55c916c66417aaf32aa031a9704ee65d1ea8765a852b279bce5705e1a0bd",
+      "disposition": "ACTION_PROVIDER",
+      "destination": "ActionProvider/oss-maturity-audit",
+      "validatorId": "datarig-211:oss-maturity-audit"
+    },
+    {
+      "id": "contract:skill-suite-v3",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:52d8254d3808407f16634310cc8b1895ee3a6189cb932ce468f83845437a2190",
+      "disposition": "NON_APPLICABLE_WITH_REASON",
+      "destination": "Provenance/datarig-production-delivery/source-suite",
+      "validatorId": "datarig-211:suite-provenance-only",
+      "reason": "The Suite is read-only source evidence and is not a Runtime resource or dependency."
+    },
+    {
+      "id": "contract:evolution-target-v3",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:3299d8de493a31df03d183ade1832a0fa59a8ce8fa4fe18e3c04a4545c563f8c",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/target-schema",
+      "validatorId": "datarig-211:target-schema"
+    },
+    {
+      "id": "contract:repository-integrity-result-v1",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:3da2834ed75d692ec07bbcd8f1645d37e2bbd048af97db9193a6a6ed5036b715",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/repository-integrity-result",
+      "validatorId": "datarig-211:repository-integrity-result"
+    },
+    {
+      "id": "contract:release-readiness-result-v1",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:013981d887f1fea179d5eb6dbedb4b51af3ff33774ff04ca1501db200ba99749",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/release-readiness-result",
+      "validatorId": "datarig-211:release-readiness-result"
+    },
+    {
+      "id": "contract:governance-exception-v1",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:059872ea47d1855bca13ea65c72e4376d24b3ae1b80ea758a741a28ef24a8cbd",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/governance-exception",
+      "validatorId": "datarig-211:governance-exception"
+    },
+    {
+      "id": "contract:governance-kernel-binding-v1",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:cfa3b8ab2f1c16829a2c3a7fc3e10d044076b69a317b117bdbe708222db71bbb",
+      "disposition": "PROJECT_DEFINITION",
+      "destination": "ProjectDefinition/datarig/kernel-binding",
+      "validatorId": "datarig-211:kernel-binding"
+    },
+    {
+      "id": "contract:production-e2e-result",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:cd23e6f547f29953f16b85604e8ef16d87538c0b9fe40d376f9ae6a4bc5148ec",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/production-e2e-result",
+      "validatorId": "datarig-211:production-e2e-result"
+    },
+    {
+      "id": "policy:authority-boundaries-v1",
+      "sourceClass": "GOVERNED_POLICY",
+      "sourceDigest": "sha256:472980468e12bfeeb6f4a9bab9db01445077bdc241901564a3e6586e93216c45",
+      "disposition": "POLICY_RESOURCE",
+      "destination": "Policy/datarig-production-delivery/authority",
+      "validatorId": "datarig-211:authority-boundaries"
+    },
+    {
+      "id": "policy:protected-tests-v1",
+      "sourceClass": "GOVERNED_POLICY",
+      "sourceDigest": "sha256:925a4e427ed7521a7efba3e3fc06a6039ec9b43fb515f2f986876ac677c40688",
+      "disposition": "POLICY_RESOURCE",
+      "destination": "Policy/datarig-production-delivery/protected-tests",
+      "validatorId": "datarig-211:protected-tests"
+    }
+  ],
+  "coverage": {
+    "sourceItems": 20,
+    "dispositionedItems": 20,
+    "unmappedItems": 0,
+    "silentlyExcludedItems": 0,
+    "criticalFilesDigestCovered": 90,
+    "advisoryFilesDigestCovered": 8,
+    "percent": 100
+  },
+  "boundary": {
+    "runtimeDependency": false,
+    "suiteInvocationAllowed": false,
+    "suiteMutationAllowed": false,
+    "automaticActivation": false,
+    "projectSpecificRuntimeBranch": false,
+    "activationRequiresRuntimeDecision": true
+  },
+  "digest": "sha256:266f16e9eb9c35d524e1866ade1c616ab9fcd4083ab81aaf9b65d6ae5eb9dce6"
+}

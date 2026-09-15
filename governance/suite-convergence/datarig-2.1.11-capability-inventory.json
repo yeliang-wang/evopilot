@@ -1,0 +1,242 @@
+{
+  "schema": "evopilot-production-reference-capability-inventory/v1",
+  "id": "datarig-suite-2.1.11-production-reference",
+  "status": "DRAFT_BOUND_READ_ONLY",
+  "source": {
+    "suiteId": "datarig-codex-suite",
+    "suiteVersion": "2.1.11",
+    "manifestPath": "/Users/wangyejing/.codex/datarig-evolution/datarig/governance/skill-suite.json",
+    "manifestDigest": "sha256:416e76bd1c8244eb227a835d9c2db1e7728e9d59ff56b6df516306b3c058bd80",
+    "criticalContentDigest": "sha256:ef4efe668eb978e1dab2669cb20156bf1ad0dfbc28b927e50ae1aa3c27d8515f",
+    "advisoryContentDigest": "sha256:0d592fc441423d7f790ca26fe69e0adb90ba65f76069d0037da914652354a128",
+    "activationState": "ACTIVE",
+    "suiteGate": {
+      "schema": "datarig-skill-suite-gate/v2",
+      "decision": "PASS",
+      "criticalFileCount": 90,
+      "advisoryFileCount": 8,
+      "authority": "LOCAL_SKILL_INTEGRITY_ONLY"
+    },
+    "repositoryKernel": {
+      "schema": "datarig-governance-kernel/v1",
+      "expectedCommit": "735e56b999a41ca4f59fa44b19ff15a398510b0c",
+      "expectedManifestDigest": "sha256:3689cb83768d978b7eef1105ef8e93077834d9dce499edd107ca999c99139f00",
+      "expectedValidatorDigest": "sha256:a55dca98d68b497b6d65b946d18581eba2f8d6d281ff76c6f9c14d444e9ac596"
+    }
+  },
+  "boundary": {
+    "role": "READ_ONLY_PRODUCTION_CONVERGENCE_EVIDENCE",
+    "runtimeDependency": false,
+    "installedSuiteMutationAllowed": false,
+    "suiteInvocationAllowed": false,
+    "historicalBaselineRewriteAllowed": false,
+    "targetResource": "datarig-production-delivery@1.0.0",
+    "gapRule": "A missing project-neutral primitive becomes an explicit Runtime 6.1.0 or Evolution Expert 2.1.0 Target criterion; it never becomes a DataRig-specific core branch."
+  },
+  "items": [
+    {
+      "id": "skill:datarig-evolution-orchestrator",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:b006558f1a487d12d77d7e019ee9de8e2485c9f6c9b984d87915582dc801a409",
+      "fileCount": 14,
+      "capability": "Route requests, preserve authority boundaries, perform bounded recovery, and distinguish evolution, E2E, readiness, and release phases.",
+      "disposition": "EXPERT_GENERIC_JOURNEY",
+      "destination": "EvolutionExpert/controlled-lifecycle-evolution",
+      "validatorId": "datarig-211:orchestration-and-bounded-recovery"
+    },
+    {
+      "id": "skill:datarig-roadmap-governor",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:b83aff1792d098d45f561e20af4ca1615d0201b9c9b3c94156368e86b5f24ce2",
+      "fileCount": 4,
+      "capability": "Classify Roadmap alignment, baseline freshness, release intent, and mirror integrity without granting authority.",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/roadmap",
+      "validatorId": "datarig-211:roadmap-governance"
+    },
+    {
+      "id": "skill:datarig-evolution-target-governor",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:f0ec0851c127fdbb45444bfe7716edcf3d9b2109c0901a1c30297d4b1d1fb10b",
+      "fileCount": 5,
+      "capability": "Bind exact scope, repository lineage, checkpoints, real-database acceptance, and separate release authority in a versioned Target.",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/target",
+      "validatorId": "datarig-211:target-governance"
+    },
+    {
+      "id": "skill:datarig-repository-integrity-governor",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:19aa14af0af125bd6ad6bf795a283a77e179b7adcc6b52eb2ec5dd6655fb0da5",
+      "fileCount": 5,
+      "capability": "Validate checked-in Governance Kernel alignment for review, staged changes, and immutable CI commits.",
+      "disposition": "ACTION_PROVIDER",
+      "destination": "ActionProvider/datarig-repository-integrity",
+      "validatorId": "datarig-211:repository-integrity"
+    },
+    {
+      "id": "skill:datarig-proofops-acceptance",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:c5f7b5dfbb78d8a27e48836ae8c34fe84d9fc7dec6845addfb1e8e4139b9a4e3",
+      "fileCount": 6,
+      "capability": "Independently validate database-free checkpoints and final production-E2E evidence against exact candidate and target bindings.",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/proofops-acceptance",
+      "validatorId": "datarig-211:proofops-acceptance"
+    },
+    {
+      "id": "skill:datarig-production-e2e-simulator",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:22267e785736fe564aa7d600d0a38b61fc8fbf5b561c0caf6ef6447daf7d211d",
+      "fileCount": 23,
+      "capability": "Establish fresh database authority, execute isolated production-like E2E, collect all safe findings, and run bounded descendant-candidate defect closure.",
+      "disposition": "LIFECYCLE_RESOURCE",
+      "destination": "Lifecycle/datarig-production-delivery/e2e-and-recovery",
+      "validatorId": "datarig-211:production-e2e"
+    },
+    {
+      "id": "skill:datarig-agent-host-production-simulator",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:84b62c48e523e335dc9c7e53cf60d99a4c7cd7ed5f7573613fbcad9c64b0ed1f",
+      "fileCount": 6,
+      "capability": "Prove exact packaged MCP behavior in a named external Agent Host while keeping WorkBuddy designated-human-only.",
+      "disposition": "ACTION_PROVIDER",
+      "destination": "ActionProvider/datarig-agent-host-conformance",
+      "validatorId": "datarig-211:agent-host-conformance"
+    },
+    {
+      "id": "skill:datarig-release-readiness-governor",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:0fbd3f1b6f0c1b1d2694ca5e2f5c8f8fb871dfe7ae1cab7c15d721823c0d3032",
+      "fileCount": 5,
+      "capability": "Aggregate formal-RC-input and internal-promotion readiness with documentation closure and build-once separation.",
+      "disposition": "LIFECYCLE_RESOURCE",
+      "destination": "Lifecycle/datarig-production-delivery/readiness",
+      "validatorId": "datarig-211:release-readiness"
+    },
+    {
+      "id": "skill:datarig-release-operator",
+      "sourceClass": "CRITICAL_SKILL",
+      "sourceDigest": "sha256:314effef91ebecc8c6148d3605b564c03049a0a6dc8da7da206e775f81fdca38",
+      "fileCount": 13,
+      "capability": "Promote exact accepted bytes to authorized GitLab and Maven destinations, reconcile partial success, and verify public release surfaces without rebuild.",
+      "disposition": "ACTION_PROVIDER",
+      "destination": "ActionProvider/datarig-release",
+      "validatorId": "datarig-211:release-operation-and-reconciliation"
+    },
+    {
+      "id": "skill:datarig-evolution-journal",
+      "sourceClass": "ADVISORY_SKILL",
+      "sourceDigest": "sha256:1f27dfe0d7ff05fc52ed56991841315437c8424631dba6adb960f2f0a20a09d1",
+      "fileCount": 4,
+      "capability": "Capture evidence-classified engineering lessons without becoming approval or product truth.",
+      "disposition": "DATARIG_OWNED_BEHAVIOR",
+      "destination": "OptionalProvider/datarig-evolution-journal",
+      "validatorId": "datarig-211:advisory-journal-boundary"
+    },
+    {
+      "id": "skill:datarig-oss-maturity-auditor",
+      "sourceClass": "ADVISORY_SKILL",
+      "sourceDigest": "sha256:480c55c916c66417aaf32aa031a9704ee65d1ea8765a852b279bce5705e1a0bd",
+      "fileCount": 4,
+      "capability": "Audit open-source maturity from checked-in evidence without claiming readiness or mutating the project.",
+      "disposition": "ACTION_PROVIDER",
+      "destination": "ActionProvider/oss-maturity-audit",
+      "validatorId": "datarig-211:oss-maturity-audit"
+    },
+    {
+      "id": "contract:skill-suite-v3",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:52d8254d3808407f16634310cc8b1895ee3a6189cb932ce468f83845437a2190",
+      "capability": "Define local Suite identity, activation, content digests, governed files, and repository-kernel binding.",
+      "disposition": "NON_APPLICABLE_WITH_REASON",
+      "destination": "Provenance/datarig-production-delivery/source-suite",
+      "reason": "The Suite is read-only source evidence and is not a Runtime resource or dependency.",
+      "validatorId": "datarig-211:suite-provenance-only"
+    },
+    {
+      "id": "contract:evolution-target-v3",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:3299d8de493a31df03d183ade1832a0fa59a8ce8fa4fe18e3c04a4545c563f8c",
+      "capability": "Define DataRig evolution target phases, exact acceptance lineage, database boundaries, and release separation.",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/target-schema",
+      "validatorId": "datarig-211:target-schema"
+    },
+    {
+      "id": "contract:repository-integrity-result-v1",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:3da2834ed75d692ec07bbcd8f1645d37e2bbd048af97db9193a6a6ed5036b715",
+      "capability": "Normalize repository-integrity results and exact source bindings.",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/repository-integrity-result",
+      "validatorId": "datarig-211:repository-integrity-result"
+    },
+    {
+      "id": "contract:release-readiness-result-v1",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:013981d887f1fea179d5eb6dbedb4b51af3ff33774ff04ca1501db200ba99749",
+      "capability": "Normalize RC-input and promotion-readiness aggregation.",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/release-readiness-result",
+      "validatorId": "datarig-211:release-readiness-result"
+    },
+    {
+      "id": "contract:governance-exception-v1",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:059872ea47d1855bca13ea65c72e4376d24b3ae1b80ea758a741a28ef24a8cbd",
+      "capability": "Bind explicit, bounded governance exceptions without silently changing policy.",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/governance-exception",
+      "validatorId": "datarig-211:governance-exception"
+    },
+    {
+      "id": "contract:governance-kernel-binding-v1",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:cfa3b8ab2f1c16829a2c3a7fc3e10d044076b69a317b117bdbe708222db71bbb",
+      "capability": "Bind a project declaration to the exact checked-in repository governance kernel.",
+      "disposition": "PROJECT_DEFINITION",
+      "destination": "ProjectDefinition/datarig/kernel-binding",
+      "validatorId": "datarig-211:kernel-binding"
+    },
+    {
+      "id": "contract:production-e2e-result",
+      "sourceClass": "GOVERNED_CONTRACT",
+      "sourceDigest": "sha256:cd23e6f547f29953f16b85604e8ef16d87538c0b9fe40d376f9ae6a4bc5148ec",
+      "capability": "Normalize candidate-bound production-E2E outcomes, cases, findings, and evidence.",
+      "disposition": "GOVERNANCE_PACK",
+      "destination": "GovernancePack/datarig-production-delivery/production-e2e-result",
+      "validatorId": "datarig-211:production-e2e-result"
+    },
+    {
+      "id": "policy:authority-boundaries-v1",
+      "sourceClass": "GOVERNED_POLICY",
+      "sourceDigest": "sha256:472980468e12bfeeb6f4a9bab9db01445077bdc241901564a3e6586e93216c45",
+      "capability": "Separate readiness, database, repair, acceptance, promotion, and release authority.",
+      "disposition": "POLICY_RESOURCE",
+      "destination": "Policy/datarig-production-delivery/authority",
+      "validatorId": "datarig-211:authority-boundaries"
+    },
+    {
+      "id": "policy:protected-tests-v1",
+      "sourceClass": "GOVERNED_POLICY",
+      "sourceDigest": "sha256:925a4e427ed7521a7efba3e3fc06a6039ec9b43fb515f2f986876ac677c40688",
+      "capability": "Protect acceptance inventory and forbid repair from weakening required tests.",
+      "disposition": "POLICY_RESOURCE",
+      "destination": "Policy/datarig-production-delivery/protected-tests",
+      "validatorId": "datarig-211:protected-tests"
+    }
+  ],
+  "coverage": {
+    "sourceItems": 20,
+    "dispositionedItems": 20,
+    "unmappedItems": 0,
+    "silentlyExcludedItems": 0,
+    "percent": 100,
+    "criticalFilesDigestCovered": 90,
+    "advisoryFilesDigestCovered": 8,
+    "complete": true
+  },
+  "activationDecision": "PENDING_TARGET_IMPLEMENTATION_AND_COMPARABLE_EVIDENCE",
+  "completionRule": "All 20 source items retain exact provenance and one explicit disposition; the Suite Gate remains PASS; criticalFilesDigestCovered=90; advisoryFilesDigestCovered=8; percent=100; unmappedItems=silentlyExcludedItems=0; no installed Suite invocation or mutation occurs."
+}

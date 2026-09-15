@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/lifecycle-monitoring-decision-v1.schema.json",
+  "title": "Lifecycle Monitoring Decision v1",
+  "type": "object",
+  "required": ["schema", "activationReceiptDigest", "lifecycleId", "activeVersion", "activeRevisionDigest", "rollbackVersion", "rollbackRevisionDigest", "action", "reason", "idempotencyKey", "mutationOutcomeKnown", "duplicateSuppressed", "evidenceRefs", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-lifecycle-monitoring-decision/v1" },
+    "activationReceiptDigest": { "$ref": "#/$defs/digest" },
+    "lifecycleId": { "type": "string", "minLength": 1 },
+    "activeVersion": { "type": "string" },
+    "activeRevisionDigest": { "$ref": "#/$defs/digest" },
+    "rollbackVersion": { "type": "string" },
+    "rollbackRevisionDigest": { "$ref": "#/$defs/digest" },
+    "action": { "enum": ["RETAIN", "ROLLBACK", "HUMAN_DECISION"] },
+    "reason": { "type": "string" },
+    "idempotencyKey": { "$ref": "#/$defs/digest" },
+    "mutationOutcomeKnown": { "type": "boolean" },
+    "duplicateSuppressed": { "type": "boolean" },
+    "evidenceRefs": { "type": "array", "minItems": 1 },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

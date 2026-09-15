@@ -67,8 +67,8 @@ function validateRoadmap(value) {
   required(semver(value?.evolutionExpertPolicy?.publishedBaseline), "evolutionExpertPolicy.publishedBaseline must be SemVer");
   required(semver(value?.evolutionExpertPolicy?.currentWorkingVersion), "evolutionExpertPolicy.currentWorkingVersion must be SemVer");
   required(value?.evolutionExpertPolicy?.lockstepWithRuntime === false, "Evolution Expert must not be version-locked to the Runtime");
-  required(value?.versionPolicy?.publishedBaseline === "6.0.0" && value?.versionPolicy?.currentWorkingVersion === "6.0.0", "Runtime Roadmap must bind public and working 6.0.0");
-  required(value?.evolutionExpertPolicy?.publishedBaseline === "2.0.0" && value?.evolutionExpertPolicy?.currentWorkingVersion === "2.0.0", "Evolution Expert Roadmap must bind public and working 2.0.0");
+  required(value?.versionPolicy?.publishedBaseline === "6.0.0" && value?.versionPolicy?.currentWorkingVersion === "6.1.0", "Runtime Roadmap must bind public 6.0.0 and working 6.1.0");
+  required(value?.evolutionExpertPolicy?.publishedBaseline === "2.0.0" && value?.evolutionExpertPolicy?.currentWorkingVersion === "2.1.0", "Evolution Expert Roadmap must bind public 2.0.0 and working 2.1.0");
   required(value?.evolutionExpertPolicy?.mandatoryForOrdinaryHumans === true, "Evolution Expert must be mandatory for ordinary-human operation");
   required(value?.evolutionExpertPolicy?.canonicalProtocol === "MCP", "Evolution Expert ordinary-human protocol must be MCP");
   required(value?.humanInteractionProtocol?.canonicalOrdinaryHumanProtocol === "MCP", "MCP must be the canonical ordinary-human protocol");
@@ -115,6 +115,42 @@ function validateRoadmap(value) {
   required(convergenceAcceptance?.roleAfterV6Revision === "FROZEN_REFERENCE_AND_MIGRATION_EVIDENCE_ONLY", "legacy Suite convergence must become frozen reference and migration evidence for v6");
   required(convergenceAcceptance?.ongoingSynchronizationRequired === false, "v6 must not require ongoing legacy Suite synchronization");
   required(convergenceAcceptance?.runtimeDependency === false && convergenceAcceptance?.privilegedEngineBehavior === false, "legacy Suites must not become Runtime dependencies or privileged Engine behavior");
+  const lifecycleEvolution = value?.controlledLifecycleEvolutionPolicy;
+  required(lifecycleEvolution?.schema === "evopilot-controlled-lifecycle-evolution-policy/v1", "controlled Lifecycle evolution policy schema is invalid");
+  required(lifecycleEvolution?.required === true, "controlled Lifecycle evolution must be required");
+  required(lifecycleEvolution?.runtimeVersion === "6.1.0" && lifecycleEvolution?.evolutionExpertVersion === "2.1.0", "controlled Lifecycle evolution must bind Runtime 6.1.0 and Expert 2.1.0");
+  required(lifecycleEvolution?.mode === "OBSERVE_PROPOSE_EXPERIMENT_ACTIVATE_MONITOR_ROLLBACK", "controlled Lifecycle evolution mode is invalid");
+  required(Array.isArray(lifecycleEvolution?.stages) && lifecycleEvolution.stages.length === 11, "controlled Lifecycle evolution must declare exactly 11 stages");
+  for (const stage of ["OBSERVE", "CLASSIFY", "PROPOSE_IMMUTABLE_SUCCESSOR", "SEMANTIC_DIFF_AND_COMPATIBILITY", "PLAN_COMPARABLE_EXPERIMENT", "VALIDATE_CHALLENGER", "DECIDE_BY_POLICY_OR_HUMAN_AUTHORITY", "ACTIVATE_FOR_FUTURE_RUNS", "MONITOR", "ROLLBACK_OR_RETAIN", "LEARN_WITH_PROVENANCE"]) {
+    required(lifecycleEvolution?.stages?.includes(stage), `controlled Lifecycle evolution is missing ${stage}`);
+  }
+  const safeActivation = lifecycleEvolution?.safeAutomaticActivation;
+  required(safeActivation?.preauthorizedPolicyRequired === true, "automatic Lifecycle activation requires an exact preauthorized policy");
+  required(safeActivation?.compatibilityRequired === "BACKWARD_COMPATIBLE", "automatic Lifecycle activation must be backward compatible");
+  required(safeActivation?.reversibleRequired === true && safeActivation?.verifiedRollbackRequired === true, "automatic Lifecycle activation requires reversible verified rollback");
+  required(safeActivation?.destructiveAllowed === false && safeActivation?.externallyVisibleAllowed === false && safeActivation?.newAuthorityAllowed === false, "automatic Lifecycle activation must not be destructive, externally visible, or expand authority");
+  required(safeActivation?.canaryEvidenceRequired === true, "automatic Lifecycle activation requires canary evidence");
+  for (const decision of ["project or product meaning", "material acceptance or policy semantics", "production or database authority", "credential use or authority expansion", "destructive, irreversible, or externally visible effect", "Candidate acceptance, publication, deployment, or Release", "ambiguous Harness match or same-rank authority conflict", "unresolved mutation state or exhausted bounded recovery"]) {
+    required(lifecycleEvolution?.humanDecisionRequiredFor?.includes(decision), `controlled Lifecycle evolution is missing human gate: ${decision}`);
+  }
+  required(lifecycleEvolution?.immutableRunBinding?.includes("active run retains its exact LifecycleRevision and HarnessExecutionBinding"), "active runs must retain exact Lifecycle and Harness bindings");
+  required(lifecycleEvolution?.productGapRule?.includes("Evolution Target proposal") && lifecycleEvolution?.productGapRule?.includes("never a project-specific branch"), "generic product gaps must route to an Evolution Target without project-specific branches");
+  const dataRigReference = lifecycleEvolution?.dataRigProductionReference;
+  required(dataRigReference?.role === "READ_ONLY_PRODUCTION_CONVERGENCE_EVIDENCE", "DataRig 2.1.11 must be read-only production convergence evidence");
+  required(dataRigReference?.suiteVersion === "2.1.11" && dataRigReference?.sourceSuiteVersion === "2.1.11", "DataRig production reference must bind Suite 2.1.11");
+  required(dataRigReference?.manifestDigest === "sha256:416e76bd1c8244eb227a835d9c2db1e7728e9d59ff56b6df516306b3c058bd80", "DataRig 2.1.11 manifest digest is invalid");
+  required(dataRigReference?.criticalContentDigest === "sha256:ef4efe668eb978e1dab2669cb20156bf1ad0dfbc28b927e50ae1aa3c27d8515f", "DataRig 2.1.11 critical content digest is invalid");
+  required(dataRigReference?.resourceIdentity === "datarig-production-delivery" && dataRigReference?.initialResourceVersion === "1.0.0", "DataRig production reference must create independently versioned datarig-production-delivery@1.0.0");
+  required(dataRigReference?.runtimeDependency === false && dataRigReference?.installedSuiteMutationAllowed === false && dataRigReference?.rewritesV6HistoricalBaseline === false, "DataRig 2.1.11 must not become a Runtime dependency, mutate the installed Suite, or rewrite v6 history");
+  required(dataRigReference?.capabilityInventoryCoveragePercent === 100, "DataRig 2.1.11 capability inventory coverage must be 100 percent");
+  for (const disposition of ["PROJECT_DEFINITION", "LIFECYCLE_RESOURCE", "POLICY_RESOURCE", "GOVERNANCE_PACK", "ACTION_PROVIDER", "RUNTIME_GENERIC_PRIMITIVE", "EXPERT_GENERIC_JOURNEY", "DATARIG_OWNED_BEHAVIOR", "NON_APPLICABLE_WITH_REASON"]) {
+    required(dataRigReference?.dispositions?.includes(disposition), `DataRig capability inventory is missing disposition ${disposition}`);
+  }
+  required(Array.isArray(lifecycleEvolution?.requiredEndToEnd) && lifecycleEvolution.requiredEndToEnd.length === 13, "controlled Lifecycle evolution must declare exactly 13 E2E journeys");
+  for (const e2e of ["E2E-DATARIG-211-SNAPSHOT", "E2E-DATARIG-211-CAPABILITY-MAP", "E2E-DATARIG-211-RESOURCE-ONLY", "E2E-DATARIG-211-GAP-TO-TARGET", "E2E-OBSERVE-PROPOSE", "E2E-CHAMPION-CHALLENGER", "E2E-AUTO-ACTIVATE-SAFE", "E2E-HUMAN-GATE-SEMANTIC", "E2E-MONITOR-ROLLBACK", "E2E-EXPERT-CROSS-HOST", "E2E-REAL-HARNESS-BUNDLE", "E2E-NO-SUITE", "E2E-NO-REGRESSION"]) {
+    required(lifecycleEvolution?.requiredEndToEnd?.includes(e2e), `controlled Lifecycle evolution is missing ${e2e}`);
+  }
+  required(lifecycleEvolution?.completionFormula === "FUNCTIONAL_100_PERCENT_AND_CAPABILITY_DISPOSITION_100_PERCENT_AND_CURRENT_E2E_100_PERCENT_AND_INHERITED_APPLICABLE_100_PERCENT_AND_IMPACT_CLOSURE_100_PERCENT_AND_NO_REGRESSION_PASSED_AND_FAILED_PENDING_STALE_GENERIC_SILENT_EXCLUSION_UNMAPPED_ALL_ZERO", "controlled Lifecycle evolution completion must fail closed");
   const v6Acceptance = value?.agentNativeLifecycleControlPlaneAcceptance;
   required(v6Acceptance?.schema === "evopilot-v6-agent-native-lifecycle-control-plane-acceptance/v1", "v6 acceptance schema is invalid");
   required(v6Acceptance?.required === true, "v6 Agent-native control-plane acceptance must be required");
@@ -197,9 +233,11 @@ function validateRoadmap(value) {
   required(cutoverMilestone?.standaloneReleaseEligible === false, "post-release legacy Suite Cutover must not create another release line");
   required(cutoverMilestone?.releaseBlockerForV60 === false, "post-release legacy Suite Cutover milestone must not block v6.0 release");
   required(cutoverMilestone?.timing === "AFTER_PUBLIC_RUNTIME_6_0_AND_EXPERT_2_0_VERIFIED_INSTALLATION", "post-release legacy Suite Cutover milestone timing is invalid");
-  required(cutoverMilestone?.targetVersion === value?.versionPolicy?.currentWorkingVersion, "post-release legacy Suite Cutover must bind the Runtime completion successor");
-  const experimentMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.1-controlled-experiment-loop");
-  required(experimentMilestone?.targetVersion === "6.1.0" && experimentMilestone?.status === "PLANNED", "Controlled Experiment Loop must be rescheduled to v6.1.0");
+  required(cutoverMilestone?.targetVersion === value?.versionPolicy?.publishedBaseline, "post-release legacy Suite Cutover must remain bound to the public Runtime 6.0.0 prerequisite");
+  const experimentMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.1-controlled-lifecycle-evolution");
+  required(experimentMilestone?.targetVersion === "6.1.0" && experimentMilestone?.status === "IN_PROGRESS", "Controlled Lifecycle Evolution must be the active Runtime 6.1.0 milestone");
+  const expertEvolutionMilestone = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution");
+  required(expertEvolutionMilestone?.targetVersion === "2.1.0" && expertEvolutionMilestone?.status === "IN_PROGRESS", "Controlled Lifecycle Evolution Expert must be the active Expert 2.1.0 milestone");
   const learningMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.2-learning-interop");
   required(learningMilestone?.targetVersion === "6.2.0" && learningMilestone?.status === "PLANNED", "Learning Interoperability must be rescheduled to v6.2.0");
   for (const milestone of milestones.filter((item) => item.status === "DEFERRED")) {

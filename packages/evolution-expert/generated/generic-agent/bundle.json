@@ -1,11 +1,11 @@
 {
   "schema": "evopilot-evolution-expert-host-integration-bundle/v1",
   "id": "evopilot-evolution-expert-generic-agent",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "host": "generic-agent",
-  "expertCoreDigest": "sha256:411cf0ac7dafbd5d8bafdf402393db5a7a8730fed4f1bed5492a3408ba2bc20b",
-  "adapterDigest": "sha256:87a3e89276f184ad6b57d8fd55f67f77cd239d8da571c895547b5284b6a55058",
-  "runtimeCompatibility": ">=6.0.0 <7.0.0",
+  "expertCoreDigest": "sha256:36367e9556355db2b5afbb69dc5476aa498c416bd8c6c39b402394e57157b6c4",
+  "adapterDigest": "sha256:3c0e1a3be07cb85964709e8a1d018d5913ce27bfd899a1d337023d35fc2dc87f",
+  "runtimeCompatibility": ">=6.1.0 <7.0.0",
   "ordinaryHumanEntry": "EXPERT_OVER_MCP_ONLY",
   "lifecycle": {
     "install": "host://generic-agent/evopilot-evolution-expert/install",
@@ -18,5 +18,5 @@
     "help": "host://generic-agent/evopilot-evolution-expert/help",
     "tutorial": "host://generic-agent/evopilot-evolution-expert/tutorial"
   },
-  "digest": "sha256:0cea3a88f827a1fc9c829079225628de0d1d65b30a6500e6165d73cf3e844834"
+  "digest": "sha256:a522ab4362937ebfc8face6212560a0c3299a7ef1f418a6cabdf86b16b844bf6"
 }

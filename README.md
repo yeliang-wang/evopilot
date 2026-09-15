@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/latest%20public-v5.0.1-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/latest%20public-v6.0.0-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -14,9 +14,9 @@ EvoPilot helps teams operate AI-agent products as releasable software. It collec
 
 It is not an agent runtime, prompt playground, generic code generator, or Harness Asset lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot reads a configured Harness Registry and the published Catalog directories it points to, then uses an open product-delivery Lifecycle Harness to execute project goals against the selected immutable HarnessBundle.
 
-## v6 Agent-Native Lifecycle Control Plane
+## v6.1 Controlled Lifecycle Evolution
 
-The repository is implementing EvoPilot **v6.0.0 Agent-Native Lifecycle Control Plane** and Evolution Expert **v2.0.0**; v5.0.1 remains the latest public release until independent Candidate, acceptance, and release gates pass. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
+EvoPilot **v6.0.0 Agent-Native Lifecycle Control Plane** and Evolution Expert **v2.0.0** are public. This source tree is implementing Runtime **v6.1.0** and Evolution Expert **v2.1.0** under independently approved Targets; no Candidate, acceptance, Host installation, publication, or Release is implied. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
 
 ```text
 Project Definition + GoalTarget -> published HarnessProfile -> immutable HarnessBundle
@@ -25,18 +25,20 @@ Project Definition + GoalTarget -> published HarnessProfile -> immutable Harness
 
 Runtime owns a tenant/workspace Lifecycle Registry with immutable YAML revisions, active pointers, semantic diff, dependencies, usage, audit, archive/restore, and rollback. DataRig, EvoPilot, evopilot-harness, and future projects are declarations—not privileged Engine profiles. Compatible project and Pipeline revisions can evolve without a Runtime or Expert release.
 
+Runtime 6.1 adds a controlled project-Pipeline evolution loop: exact observations and user feedback become classified gaps, immutable successor proposals, comparable Champion/Challenger experiments, policy-bounded future-run activation, health monitoring, and receipt-safe rollback. A project-specific Pipeline revision normally changes only declarative resources; a missing project-neutral primitive produces a review-only Runtime or Expert Target rather than a hidden project branch. See [Controlled Lifecycle Evolution](docs/guides/controlled-lifecycle-evolution.md).
+
 Evolution Expert is the ordinary-human entry and talks to Runtime only through MCP. It is independently installed into Codex, Claude Code, designated-human WorkBuddy, generic Agent, or generic MCP Hosts. Runtime never embeds a general-purpose coding Agent: it emits an exact `pendingExecution` to a qualified external Agent Runtime, validates the normalized receipt, and resumes from durable state.
 
-Completion is a machine-enforced contract: all 253 current, inherited, and terminal Runtime/Expert criteria must have criterion-specific evidence for one exact installed Candidate pair; impact and `NO_REGRESSION` must pass, and failed, pending, stale, warning, generic, unmapped, or legacy-Suite invocation counts must be zero. See [v6 Acceptance](docs/operations/v6-acceptance.md).
+The published v6 completion baseline remains an immutable 253-item contract. Runtime 6.1 and Expert 2.1 must add their current and E2E criteria on an exact installed Candidate pair, preserve the entire baseline, close impact and `NO_REGRESSION`, and leave failed, pending, stale, warning, generic, unmapped, silent-exclusion, and legacy-Suite invocation counts at zero.
 
-EvoPilot Codex Suite 3.2.1 and DataRig Codex Suite 2.1.5 are frozen reference fixtures only. They are not Runtime dependencies, synchronization sources, or fallbacks. Existing installed Suites remain untouched; any real switch or retirement stays behind a separately approved post-release [Cutover](docs/guides/legacy-suite-transition.md).
+EvoPilot Codex Suite 3.2.1 remains historical reference evidence. The exact active DataRig Codex Suite 2.1.11 snapshot is used read-only to prove production-reference convergence into independently versioned `datarig-production-delivery@1.0.0` declarations. Neither Suite is a Runtime dependency, execution path, synchronization source, or fallback. Existing installed Suites remain untouched; any real switch or retirement stays behind a separately approved post-release [Cutover](docs/guides/legacy-suite-transition.md).
 
 ## Start Here
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified public package | `npm install -g @evopilot/cli@5.0.0` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v5.0.0/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified public package | `npm install -g @evopilot/cli@6.0.0` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.0.0/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet. The supported public entry points are the six exact-version npm packages, GitHub Release tarballs, the self-host installer, Helm, and GHCR images.
@@ -49,6 +51,7 @@ Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet
 | Run auditable loops | Durable loop state, executor graphs, checkpoints, replay, worker leases, watchdog recovery, and timeline audit. |
 | Onboard any project declaratively | Discovery, immutable human-readable Project Definitions and resources, schema-driven questions, semantic impact, versioned activation/rollback, and no project-specific Runtime branches. |
 | Converge Suite capabilities | Exact source provenance, 100% capability disposition, project-neutral governed resources, typed Action Providers, and zero hidden Suite fallback. |
+| Evolve project Pipelines safely | Exact observations, deterministic gap classification, immutable successors, comparable experiments, policy-preauthorized safe activation, monitoring, and idempotent rollback without project-specific Core branches. |
 | Recover and learn safely | Bounded automatic repair/retry/resume plus an Automation Registry where one reviewed proposal can automate future equivalent safe failures. |
 | Repair across Candidates safely | Durable remediation campaigns preserve source/Candidate lineage, receipts, budgets, failed-first reruns, impact closure, full-matrix reruns, and exact human stop boundaries. |
 | Consume published Harnesses | Dynamically reads configured `evopilot-harness` Registry/Catalog roots, matches published v3 Profiles, binds immutable Bundles, and stores the complete Profile/Component/Bundle digest closure in goal plans. |
@@ -137,15 +140,15 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-The latest published GitHub release is **v5.0.1**. Runtime v6.0.0 and Evolution Expert v2.0.0 are under local implementation; no Candidate, acceptance, publication, Host installation, or Cutover is implied by this source tree.
+The latest published GitHub release is **v6.0.0**, paired with Evolution Expert **v2.0.0**. Runtime v6.1.0 and Evolution Expert v2.1.0 are under local implementation; no Candidate, acceptance, publication, Host installation, Suite change, or Cutover is implied by this source tree.
 
 The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a standalone v3.2 release. v4.0 keeps EvoPilot's strict read-only Harness-asset boundary while adding open YAML Lifecycle execution for project goals.
 
 Release evidence:
 
-- Latest published release notes: [docs/releases/5.0.1.md](docs/releases/5.0.1.md)
-- v6 implementation plan: [docs/releases/6.0.0.md](docs/releases/6.0.0.md)
-- Evolution Expert 2.0.0 plan: [docs/releases/evolution-expert-2.0.0.md](docs/releases/evolution-expert-2.0.0.md)
+- Latest published release notes: [docs/releases/6.0.0.md](docs/releases/6.0.0.md)
+- v6.1 implementation plan: [docs/releases/6.1.0.md](docs/releases/6.1.0.md)
+- Evolution Expert 2.1.0 plan: [docs/releases/evolution-expert-2.1.0.md](docs/releases/evolution-expert-2.1.0.md)
 - Previous release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)

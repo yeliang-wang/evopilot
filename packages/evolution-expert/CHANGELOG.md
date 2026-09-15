@@ -4,6 +4,13 @@ All notable changes to the independently versioned `@evopilot/evolution-expert` 
 
 ## Unreleased
 
+### 2.1.0
+
+- Added guided read-only production-reference discovery and complete capability-disposition review for DataRig Suite 2.1.11 and future source snapshots.
+- Added observation, gap classification, immutable Lifecycle successor, complete semantic diff, comparable Champion/Challenger, bad-case closure, safe activation, monitoring, deterministic rollback, and generic-primitive Target journeys.
+- Kept policy-preauthorized automation distinct from semantic and authority decisions, with no inferred approval, mixed non-comparable evidence, Suite invocation, active-run rebinding, uncertain replay, or project-specific Core branches.
+- Regenerated Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP bundles from one Core for Runtime `>=6.1.0 <7.0.0`.
+
 ### 2.0.0
 
 - Made Expert-over-MCP the ordinary-human entry for Runtime 6 while preserving administrative and machine recovery surfaces.

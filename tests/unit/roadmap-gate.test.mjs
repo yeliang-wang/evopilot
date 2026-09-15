@@ -41,7 +41,11 @@ test("Roadmap Gate rejects incomplete, generic, or weakened completion assurance
     ["optional Expert", (roadmap) => { roadmap.evolutionExpertPolicy.mandatoryForOrdinaryHumans = false; }, /ordinary-human/],
     ["file Lifecycle truth", (roadmap) => { roadmap.lifecycleHarnessPolicy.sourceOfTruth = "project file directory"; }, /governed Registry/],
     ["embedded Agent Runtime fallback", (roadmap) => { delete roadmap.agentRuntimePolicy.noEmbeddedFallback; }, /fallback/],
-    ["incomplete v6 E2E", (roadmap) => { roadmap.agentNativeLifecycleControlPlaneAcceptance.requiredEndToEnd.pop(); }, /exactly 20/]
+    ["incomplete v6 E2E", (roadmap) => { roadmap.agentNativeLifecycleControlPlaneAcceptance.requiredEndToEnd.pop(); }, /exactly 20/],
+    ["unsafe lifecycle auto activation", (roadmap) => { roadmap.controlledLifecycleEvolutionPolicy.safeAutomaticActivation.newAuthorityAllowed = true; }, /must not be destructive, externally visible, or expand authority/],
+    ["mutable DataRig reference", (roadmap) => { roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.installedSuiteMutationAllowed = true; }, /must not become a Runtime dependency/],
+    ["partial DataRig 2.1.11 inventory", (roadmap) => { roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.capabilityInventoryCoveragePercent = 99; }, /100 percent/],
+    ["incomplete lifecycle evolution E2E", (roadmap) => { roadmap.controlledLifecycleEvolutionPolicy.requiredEndToEnd.pop(); }, /exactly 13/]
   ]) {
     const result = runWithRoadmap(mutate);
     assert.equal(result.status, 1, `${name}: ${result.stderr}`);
@@ -75,12 +79,12 @@ test("Roadmap Gate accepts current Runtime and Expert milestones in their verifi
   }
 });
 
-test("Roadmap Gate binds the v6 Runtime, Expert 2.0, superseded unreleased lines, Cutover, and rescheduled milestones", () => {
+test("Roadmap Gate binds public v6, active v6.1 lifecycle evolution, Expert 2.1, and independent Cutover", () => {
   const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
   assert.equal(roadmap.versionPolicy.publishedBaseline, "6.0.0");
-  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.0.0");
+  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.1.0");
   assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.0.0");
-  assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.0.0");
+  assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.1.0");
   assert.equal(roadmap.evolutionExpertPolicy.mandatoryForOrdinaryHumans, true);
   assert.equal(roadmap.humanInteractionProtocol.canonicalOrdinaryHumanProtocol, "MCP");
   assert.match(roadmap.lifecycleHarnessPolicy.sourceOfTruth, /Lifecycle Registry/);
@@ -104,8 +108,14 @@ test("Roadmap Gate binds the v6 Runtime, Expert 2.0, superseded unreleased lines
   assert.equal(expertV2?.completionEvidence.crossAcceptancePassed, 10);
   assert.equal(runtimeV6?.completionEvidence.legacySuiteInvocationCount, 0);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-post-v6.0.0-legacy-suite-cutover")?.standaloneReleaseEligible, false);
-  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-6.1-controlled-experiment-loop")?.targetVersion, "6.1.0");
+  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-post-v6.0.0-legacy-suite-cutover")?.targetVersion, "6.0.0");
+  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-6.1-controlled-lifecycle-evolution")?.status, "IN_PROGRESS");
+  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution")?.status, "IN_PROGRESS");
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-6.2-learning-interop")?.targetVersion, "6.2.0");
+  assert.equal(roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.suiteVersion, "2.1.11");
+  assert.equal(roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.initialResourceVersion, "1.0.0");
+  assert.equal(roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.runtimeDependency, false);
+  assert.equal(roadmap.controlledLifecycleEvolutionPolicy.requiredEndToEnd.length, 13);
 });
 
 test("Roadmap Gate fails closed on incomplete v6 terminal evidence or premature Suite Cutover", () => {
@@ -230,6 +240,20 @@ test("Roadmap Gate aligns the complete approved v6 Agent-native control-plane in
   assert.equal(result.body.classification, "ALIGNED");
   assert.ok(result.body.matchedMilestones.includes("evopilot-6.0-agent-native-lifecycle-control-plane"));
   assert.ok(result.body.matchedMilestones.includes("evopilot-evolution-expert-2.0-agent-host-entry"));
+});
+
+test("Roadmap Gate aligns Runtime 6.1 controlled Lifecycle evolution and the exact DataRig 2.1.11 production reference", () => {
+  const result = run(["--intent", "Converge the exact active DataRig Suite 2.1.11 into datarig-production-delivery and add automatic lifecycle evolution through immutable successor proposal and champion challenger validation"]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.body.classification, "ALIGNED");
+  assert.ok(result.body.matchedMilestones.includes("evopilot-6.1-controlled-lifecycle-evolution"));
+});
+
+test("Roadmap Gate aligns independently versioned Expert 2.1 controlled Lifecycle guidance", () => {
+  const result = run(["--intent", "Implement Evolution Expert 2.1 pipeline evolution over MCP with lifecycle successor guidance"]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.body.classification, "ALIGNED");
+  assert.ok(result.body.matchedMilestones.includes("evopilot-evolution-expert-2.1-controlled-lifecycle-evolution"));
 });
 
 test("Roadmap Gate rejects a composite capability intent when only one clause is planned", () => {

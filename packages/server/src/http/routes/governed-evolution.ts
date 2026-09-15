@@ -23,6 +23,87 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
   const scope = { tenantId: auth.tenantId, workspaceId: auth.workspaceId };
   const reject = (status: number, error: unknown) => writeJson(response, status, governedError(error));
   try {
+    if (request.method === "POST" && url.pathname === "/api/v1/controlled-lifecycle/observations") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const observation = service.recordLifecycleObservation(body as never, scope);
+      appendAudit(audit(auth, "controlled-lifecycle.observation-recorded", observation.id, { digest: observation.digest }));
+      return writeJson(response, 201, envelope(observation));
+    }
+    const observationClassifyMatch = url.pathname.match(/^\/api\/v1\/controlled-lifecycle\/observations\/([^/]+)\/classify$/);
+    if (request.method === "POST" && observationClassifyMatch) {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const id = decodeURIComponent(observationClassifyMatch[1]);
+      const classification = service.classifyLifecycleObservation(id, body as never, scope);
+      appendAudit(audit(auth, "controlled-lifecycle.observation-classified", id, { digest: classification.digest, gapClass: classification.gapClass }));
+      return writeJson(response, 201, envelope(classification));
+    }
+    const observationMatch = url.pathname.match(/^\/api\/v1\/controlled-lifecycle\/observations\/([^/]+)$/);
+    if (request.method === "GET" && observationMatch) {
+      if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const observation = service.readLifecycleObservation(decodeURIComponent(observationMatch[1]), scope);
+      return observation ? writeJson(response, 200, envelope({ observation, classification: service.readLifecycleClassification(observation.id, scope) })) : writeJson(response, 404, { error: "CONTROLLED_LIFECYCLE_OBSERVATION_NOT_FOUND" });
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/controlled-lifecycle/successors") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const proposal = service.proposeLifecycleSuccessor(body as never, scope);
+      appendAudit(audit(auth, "controlled-lifecycle.successor-proposed", proposal.id, { digest: proposal.digest, activePointerMutated: false }));
+      return writeJson(response, 201, envelope(proposal));
+    }
+    const successorMatch = url.pathname.match(/^\/api\/v1\/controlled-lifecycle\/successors\/([^/]+)$/);
+    if (request.method === "GET" && successorMatch) {
+      if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const proposal = service.readLifecycleSuccessor(decodeURIComponent(successorMatch[1]), scope);
+      return proposal ? writeJson(response, 200, envelope(proposal)) : writeJson(response, 404, { error: "LIFECYCLE_SUCCESSOR_PROPOSAL_NOT_FOUND" });
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/controlled-lifecycle/experiments") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const report = service.evaluateLifecycleSuccessorExperiment(body as never, scope);
+      appendAudit(audit(auth, "controlled-lifecycle.experiment-evaluated", String(body.proposalId ?? ""), { digest: report.digest, status: report.status, recommendation: report.recommendation }));
+      return writeJson(response, 201, envelope(report));
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/controlled-lifecycle/activation-decisions") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const decision = service.decideLifecycleSuccessor(body as never, scope);
+      let activation;
+      if (decision.action === "AUTO_ACTIVATE_FUTURE_RUNS") {
+        const proposal = service.readLifecycleSuccessor(String(body.proposalId ?? ""), scope)!;
+        activation = lifecycleService.governedRegistry.activate(proposal.lifecycleId, proposal.challenger.version, {
+          expectedActiveDigest: proposal.champion.digest,
+          actor: `policy:${String(body.policy?.id ?? "unknown")}`,
+          evidenceRef: decision.digest
+        }, scope);
+      }
+      appendAudit(audit(auth, "controlled-lifecycle.activation-decided", String(body.proposalId ?? ""), { digest: decision.digest, action: decision.action, activationDigest: activation?.digest }));
+      return writeJson(response, 200, envelope({ decision, ...(activation ? { activation } : {}) }));
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/controlled-lifecycle/monitoring/evaluate") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const decision = service.evaluateLifecycleHealth(body as never, scope);
+      let rollback;
+      if (decision.action === "ROLLBACK" && !decision.duplicateSuppressed) {
+        rollback = lifecycleService.governedRegistry.activate(decision.lifecycleId, decision.rollbackVersion, {
+          expectedActiveDigest: decision.activeRevisionDigest,
+          actor: "runtime-monitor",
+          evidenceRef: decision.digest,
+          rollback: true
+        }, scope);
+      }
+      appendAudit(audit(auth, "controlled-lifecycle.monitoring-evaluated", decision.lifecycleId, { digest: decision.digest, action: decision.action, duplicateSuppressed: decision.duplicateSuppressed, rollbackDigest: rollback?.digest }));
+      return writeJson(response, 200, envelope({ decision, ...(rollback ? { rollback } : {}) }));
+    }
+    if (request.method === "POST" && url.pathname === "/api/v1/controlled-lifecycle/target-proposals") {
+      if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
+      const body = await readJson(request, options.maxBodyBytes);
+      const proposal = service.proposeGenericPrimitiveTarget(body as never, scope);
+      appendAudit(audit(auth, "controlled-lifecycle.target-proposed", proposal.id, { digest: proposal.digest, owner: proposal.owner, sourceMutationPerformed: false }));
+      return writeJson(response, 201, envelope(proposal));
+    }
     if (request.method === "GET" && url.pathname === "/api/v1/evolution-resources") {
       if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
       const kind = url.searchParams.get("kind") as GovernedResourceKind | null;
@@ -43,7 +124,7 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
         decodeURIComponent(resourceDiffMatch[2]),
         String(url.searchParams.get("from") ?? ""),
         String(url.searchParams.get("to") ?? ""),
-        String(url.searchParams.get("runtimeVersion") ?? "6.0.0"),
+        String(url.searchParams.get("runtimeVersion") ?? "6.1.0"),
         scope
       )));
     }

@@ -1,11 +1,11 @@
 {
   "schema": "evopilot-evolution-expert-host-integration-bundle/v1",
   "id": "evopilot-evolution-expert-workbuddy",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "host": "workbuddy",
-  "expertCoreDigest": "sha256:411cf0ac7dafbd5d8bafdf402393db5a7a8730fed4f1bed5492a3408ba2bc20b",
-  "adapterDigest": "sha256:8a0f23af66f2b54101c956159ad22865d9d76676205cd8ff2aaa763b5eb29902",
-  "runtimeCompatibility": ">=6.0.0 <7.0.0",
+  "expertCoreDigest": "sha256:36367e9556355db2b5afbb69dc5476aa498c416bd8c6c39b402394e57157b6c4",
+  "adapterDigest": "sha256:434501cd512a55911745ad5d5c8bc81b777b03d5ab568e0a3cdfd1e1340de605",
+  "runtimeCompatibility": ">=6.1.0 <7.0.0",
   "ordinaryHumanEntry": "EXPERT_OVER_MCP_ONLY",
   "lifecycle": {
     "install": "host://workbuddy/evopilot-evolution-expert/install",
@@ -18,5 +18,5 @@
     "help": "host://workbuddy/evopilot-evolution-expert/help",
     "tutorial": "host://workbuddy/evopilot-evolution-expert/tutorial"
   },
-  "digest": "sha256:a7808148c739a36addf37dfc34318daaa991ef2cf05956c32ccfea3cf45e1fe9"
+  "digest": "sha256:ddae5c5a6ac0e8fbcc8a613ee21f184dfebbd217f6b13090986e3d886aad8bb9"
 }

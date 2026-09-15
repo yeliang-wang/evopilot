@@ -2,8 +2,8 @@
   "schema": "evopilot-evolution-expert-adapter/v1",
   "id": "evopilot-evolution-expert-generic-agent",
   "host": "generic-agent",
-  "version": "2.0.0",
-  "coreDigest": "sha256:411cf0ac7dafbd5d8bafdf402393db5a7a8730fed4f1bed5492a3408ba2bc20b",
+  "version": "2.1.0",
+  "coreDigest": "sha256:36367e9556355db2b5afbb69dc5476aa498c416bd8c6c39b402394e57157b6c4",
   "protocolVersion": "2.0",
   "requiredCapabilities": [
     "structured-tool-results",
@@ -24,7 +24,10 @@
     "Keep Project, Lifecycle, Harness, Goal, Target, Loop, evidence, recovery, acceptance, and release state in Runtime.",
     "Remain Host neutral; ordinary humans use this Expert over Runtime MCP while CLI, HTTP, and CI remain administrator, machine, diagnostic, and recovery surfaces.",
     "Agent Host carries conversation and decisions; Runtime owns control-plane truth; a separately qualified external Agent Runtime executes bounded source work.",
-    "Keep Runtime, Expert, declarative resource, source Suite, project, and Harness versions independent and explicit."
+    "Keep Runtime, Expert, declarative resource, source Suite, project, and Harness versions independent and explicit.",
+    "Treat external Suite snapshots as read-only production reference evidence and evolve project Pipeline resources without invoking the Suite.",
+    "Separate observation, recommendation, experiment, policy-preauthorized automation, and human authority; successful evidence never becomes authority.",
+    "Never mix non-comparable Champion/Challenger evidence, mutate an active run binding, replay an uncertain mutation, or add a project-specific Core branch."
   ],
   "prohibitedSemantics": [
     "own-runtime-state",
@@ -36,5 +39,5 @@
     "ordinary-human-cli-or-http-fallback",
     "execute-source-work"
   ],
-  "digest": "sha256:87a3e89276f184ad6b57d8fd55f67f77cd239d8da571c895547b5284b6a55058"
+  "digest": "sha256:3c0e1a3be07cb85964709e8a1d018d5913ce27bfd899a1d337023d35fc2dc87f"
 }

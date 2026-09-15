@@ -1,0 +1,394 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-v6.1.0-controlled-lifecycle-evolution",
+  "revision": 1,
+  "status": "APPROVED",
+  "intent": "Implement Runtime 6.1.0 controlled lifecycle evolution and converge the exact DataRig Suite 2.1.11 production reference through immutable successor proposal, champion challenger validation, policy-bounded activation, monitoring, rollback, and generic-gap Target escalation.",
+  "objective": "Deliver a project-neutral Runtime control plane that can learn from exact project Pipeline evidence and safely evolve independently versioned declarative Lifecycles without invoking or mutating project Suites, without self-modifying the Runtime core, and without weakening Harness or human authority.",
+  "evidence": [
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v61-controlled-lifecycle-evolution-r1@sha256:4525aad0431db2e967b710ac4803b28dfbbde305d3ddcd3a3f9346138b17468b",
+      "authority": "Roadmap application and Target drafting authority only."
+    },
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v61-application-validation-recovery-r1@sha256:e4be198f489657bc9d01150fdb9790c0248279d7b01b5b61c10d4556c26f8e7f",
+      "authority": "Bounded Roadmap validation repair and Target drafting authority only."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/roadmap.yaml@sha256:9d329ae059dc3b47b954c0cc77900cef15a715631788efe80895037447c9b037",
+      "authority": "Current authoritative Roadmap."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v6-completion-contract.json@sha256:ec6e075f036fbb137804e1f2b5889b9580ba717aa899fcc77ef9eca9da8cde3c",
+      "authority": "Immutable published v6 completion baseline containing all 253 Runtime, Expert, inherited, E2E, and cross-acceptance criteria."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/suite-convergence/datarig-2.1.11-capability-inventory.json@sha256:8adc0248b64171fa7f48d9589632c6bf11e1878929b91207b00409eaf0fdca37",
+      "authority": "Read-only 100-percent DataRig Suite 2.1.11 capability inventory; not implementation or activation evidence."
+    }
+  ],
+  "roadmapBindings": [
+    {
+      "repo": "/Users/wangyejing/project/harness/evopilot",
+      "project": "evopilot",
+      "matchedMilestone": "evopilot-6.1-controlled-lifecycle-evolution",
+      "targetVersion": "6.1.0",
+      "classification": "ALIGNED",
+      "roadmapDigest": "sha256:9d329ae059dc3b47b954c0cc77900cef15a715631788efe80895037447c9b037",
+      "releaseProduct": "evopilot-runtime"
+    }
+  ],
+  "scope": {
+    "include": [
+      "Add typed observation and gap-classification contracts bound to exact project, LifecycleRevision, HarnessExecutionBinding, GoalTarget, Runtime, Host, Provider, environment, authority, and evidence digests.",
+      "Create immutable Lifecycle successor proposals with semantic diff, compatibility, impact, migration, experiment, activation, monitoring, rollback, and provenance records.",
+      "Execute comparable Champion/Challenger experiments only under identical governed task, Lifecycle, HarnessBundle, GoalTarget, Runtime, Host, Provider, environment, authority, evaluator, scorer, and evidence context; stratify non-comparable evidence.",
+      "Allow automatic activation only when an exact active policy preauthorizes a backward-compatible, reversible, non-destructive, non-public, no-new-authority class with verified rollback and canary evidence.",
+      "Monitor activated future-run pointers and perform deterministic policy-authorized rollback without mutating already bound runs or replaying uncertain mutations.",
+      "Represent project-specific production Pipeline semantics as independently versioned ProjectDefinition, Lifecycle, Policy, GovernancePack, ActionProvider, and related resources rather than Runtime source branches.",
+      "Use the exact active DataRig Suite 2.1.11 only as read-only production convergence evidence and produce datarig-production-delivery@1.0.0 with item-level provenance for all 20 inventory items and digest coverage for 90 critical plus 8 advisory files.",
+      "Escalate every missing generic primitive into an explicit Runtime or Expert Target proposal; refuse unsafe resource activation until that Target is separately approved and implemented.",
+      "Expose canonical MCP facts, previews, decision frames, receipts, audit, monitoring, and rollback operations for Evolution Expert 2.1.0 and qualified machine clients.",
+      "Preserve a real published immutable HarnessBundle-guided Goal Target Loop, external Harness authority, external Agent Runtime execution, tenant/workspace isolation, restart/resume, and v6 public compatibility.",
+      "Provide criterion-specific automated validators, 13 exact E2E journeys, impact closure, and NO_REGRESSION over exact installed Runtime 6.1.0 and Expert 2.1.0 Candidates."
+    ],
+    "exclude": [
+      "No DataRig, EvoPilot, evopilot-harness, forge, package-manager, database, or Agent-Host-specific Runtime branch.",
+      "No installed DataRig or EvoPilot Suite invocation, mutation, synchronization, Cutover, disablement, archive, uninstall, or retirement.",
+      "No Runtime self-modifying core, unreviewed code generation, hidden policy mutation, implicit activation, or conversationally inferred authority.",
+      "No Harness reasoning, authoring, review, approval, Catalog mutation, publication, or source change in EvoPilot.",
+      "No active-run rebinding, non-comparable evidence aggregation, uncertain mutation replay, raw credential storage, destructive or externally visible automatic action.",
+      "No production/database access, Host operation, Candidate build, E2E execution, publication, or Release under this draft."
+    ]
+  },
+  "compatibilityPolicy": {
+    "mode": "INHERIT"
+  },
+  "acceptance": [
+    {
+      "id": "R61-FUNC01",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Runtime records typed observations and deterministic gap classifications with exact project, Lifecycle, HarnessBundle, GoalTarget, Runtime, Host, Provider, environment, authority, and evidence bindings.",
+      "requiredEvidence": "Schema, canonical digest, persistence, restart, drift rejection, and cross-surface contract tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC02",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "A classified project Pipeline gap produces an immutable Lifecycle successor proposal with complete provenance and never mutates the active revision or Runtime core.",
+      "requiredEvidence": "Successor immutability, active-pointer stability, provenance, and zero-core-diff tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC03",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Every successor exposes exact semantic, authority, dependency, compatibility, impact, migration, experiment, monitoring, and rollback diffs before validation or activation.",
+      "requiredEvidence": "Positive and negative semantic-diff fixtures with stable canonical output and completeness checks.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC04",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Champion and Challenger execute under one comparable governed context and pairwise evaluation refuses or stratifies any context mismatch.",
+      "requiredEvidence": "Pairwise experiment matrix, non-comparable negative corpus, evaluator/scorer bindings, and bad-case closure evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC05",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Policy-bounded automatic activation succeeds only for an exact preauthorized backward-compatible, reversible, non-destructive, non-public, no-new-authority class with verified rollback and canary evidence.",
+      "requiredEvidence": "Decision-table tests covering every safe predicate plus fail-closed negative cases for each absent predicate.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC06",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Semantic, policy, authority, production, database, credential, destructive, acceptance, publication, deployment, and Release changes stop at an exact Runtime-owned human decision frame.",
+      "requiredEvidence": "Authority matrix and adversarial tests proving no inferred approval or readiness-to-authority promotion.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC07",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Activation changes only future planning; every active Goal Target Loop retains and revalidates its immutable LifecycleRevision and HarnessExecutionBinding.",
+      "requiredEvidence": "Concurrent activation and active-run start, iteration, retry, resume, and rollback boundary tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC08",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Health monitoring evaluates declared signals and performs deterministic policy-authorized rollback with idempotent receipts and no uncertain mutation replay.",
+      "requiredEvidence": "Canary, degradation, rollback, crash, receipt reconciliation, duplicate suppression, and retained-success tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC09",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "The exact DataRig Suite 2.1.11 snapshot is validated read-only and every one of 20 inventory items has exact provenance and one explicit disposition with 90 critical and 8 advisory files digest-covered.",
+      "requiredEvidence": "Suite Gate PASS, manifest and content digests, item-count recomputation, disposition completeness, and no-Suite-write evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC10",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "DataRig production semantics resolve as datarig-production-delivery@1.0.0 declarative resources and typed providers without a DataRig-specific Runtime branch or installed Suite invocation.",
+      "requiredEvidence": "Resource graph, provider qualification, no-project-branch source scan, legacySuiteInvocationCount=0, and equivalent journey evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC11",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "A missing project-neutral primitive creates an explicit digest-bound Target proposal and blocks unsafe activation instead of adding a hidden project branch.",
+      "requiredEvidence": "Gap fixture, generated proposal, stop reason, no-core-mutation proof, and subsequent generic-primitive path test.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-FUNC12",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Runtime exposes project Pipeline evolution, experiment, decision, activation, monitoring, rollback, provenance, and audit through canonical MCP contracts used by Evolution Expert.",
+      "requiredEvidence": "MCP schema, protocol, idempotency, authorization, error-model, and cross-Host semantic equality tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-CAP01",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Runtime remains a project-neutral control plane: project Pipeline resource versions evolve independently and do not require Runtime or Expert releases unless a public generic contract changes.",
+      "requiredEvidence": "Independent resource SemVer update tests, source diff checks, compatibility negotiation, and zero project-specific branch evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-CAP02",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Harness authority remains external and every controlled evolution experiment and resulting Goal Target Loop binds a real published immutable HarnessBundle without weakening its obligations.",
+      "requiredEvidence": "Public HarnessBundle generation/consumption, monotonic composition, digest drift, and authority-boundary E2E evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-CAP03",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "All mutation, experiment, activation, monitoring, and rollback operations are tenant/workspace isolated, idempotent, concurrency-safe, crash-safe, immutably audited, and SecretRef-only.",
+      "requiredEvidence": "Isolation, concurrency, restart, audit, redaction, replay, and adverse-state tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-CAP04",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "The controlled evolution loop never self-activates a semantic or authority change, never aggregates non-comparable evidence, and never exceeds an explicit recovery or experiment budget.",
+      "requiredEvidence": "Property tests, policy corpus, exhaustion cases, and exact stop/next-action evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R61-CAP05",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Runtime 6.1.0 acceptance closes only on exact installed Runtime 6.1.0 and Expert 2.1.0 Candidates with all current criteria, the immutable v6 253-item baseline, cross acceptance, impact closure, and NO_REGRESSION passing.",
+      "requiredEvidence": "Independent completion recomputation bound to exact Candidate bytes, target digests, cross map, and zero failed, pending, stale, generic, silent-exclusion, or unmapped items.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "acceptanceLineage": [
+    {
+      "id": "V6-PUBLISHED-COMPLETION-253",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v6-completion-contract.json#requiredCriteria",
+      "criterionDigest": "sha256:ec6e075f036fbb137804e1f2b5889b9580ba717aa899fcc77ef9eca9da8cde3c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v6-completion-contract.json@sha256:ec6e075f036fbb137804e1f2b5889b9580ba717aa899fcc77ef9eca9da8cde3c"
+    }
+  ],
+  "inheritedAcceptance": [
+    {
+      "id": "V6-PUBLISHED-COMPLETION-253",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v6-completion-contract.json#requiredCriteria",
+      "criterion": "Every one of the immutable published v6 completion contract's 253 criteria, including Runtime, Expert, inherited, E2E, cross-acceptance, impact, NO_REGRESSION, and zero legacy Suite invocation, remains applicable and must pass against the 6.1.0/2.1.0 Candidate pair.",
+      "requiredEvidence": "Fresh successor validation of the full v6 completion contract with criterion-level evidence and no exclusions.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "regressionImpact": [
+    {
+      "area": "Controlled Lifecycle evolution can affect every public v6 project, Lifecycle, Harness-guided Loop, external Agent Runtime, authority, persistence, MCP, Host, evidence, security, and release guarantee.",
+      "affectedAcceptanceIds": [
+        "V6-PUBLISHED-COMPLETION-253"
+      ],
+      "reason": "The immutable completion-contract aggregate preserves item-level historical traceability while avoiding a second drifting copy of its 253 criteria."
+    }
+  ],
+  "excludedHistoricalAcceptance": [],
+  "realCaseCoverage": [
+    {
+      "id": "E2E-DATARIG-211-SNAPSHOT",
+      "scenario": "Bind and verify the exact active DataRig Suite 2.1.11 as read-only production reference evidence.",
+      "hosts": ["headless"],
+      "requiredEvidence": "Manifest, Suite Gate, content, file-count, repository-kernel, and no-mutation evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-DATARIG-211-CAPABILITY-MAP",
+      "scenario": "Recompute all 20 inventory dispositions and prove 100-percent coverage with no silent exclusion.",
+      "hosts": ["Codex", "headless"],
+      "requiredEvidence": "Item-level provenance and disposition report with percent=100 and unmapped=0.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-DATARIG-211-RESOURCE-ONLY",
+      "scenario": "Create and execute datarig-production-delivery@1.0.0 from declarative resources and providers without invoking the Suite or changing Runtime core.",
+      "hosts": ["Codex", "independent Agent Runtime"],
+      "requiredEvidence": "Resource graph, execution receipt, repository diff, and legacySuiteInvocationCount=0.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-DATARIG-211-GAP-TO-TARGET",
+      "scenario": "Classify a deliberately missing generic primitive, generate an explicit Target proposal, and stop without project branch or unsafe activation.",
+      "hosts": ["Codex", "headless"],
+      "requiredEvidence": "Gap classification, proposal digest, stop frame, and zero source mutation.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-OBSERVE-PROPOSE",
+      "scenario": "Convert exact project run evidence into an immutable Lifecycle successor proposal with semantic diff and provenance.",
+      "hosts": ["Codex", "generic MCP"],
+      "requiredEvidence": "Observation, classification, successor, diff, provenance, and unchanged active revision evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-CHAMPION-CHALLENGER",
+      "scenario": "Run comparable Champion/Challenger replays and reject a mismatched context from mixed aggregation.",
+      "hosts": ["headless", "independent Agent Runtime"],
+      "requiredEvidence": "Exact bindings, pairwise scores, stratified mismatch, bad-case closure, and recommendation.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-AUTO-ACTIVATE-SAFE",
+      "scenario": "Automatically activate only a fully preauthorized safe successor for future planning after canary and rollback verification.",
+      "hosts": ["Codex", "generic MCP"],
+      "requiredEvidence": "Matched policy predicates, activation receipt, canary proof, verified rollback, and unchanged active run.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-HUMAN-GATE-SEMANTIC",
+      "scenario": "A semantic or authority change stops at one exact human decision frame and cannot infer approval from dialogue.",
+      "hosts": ["Codex", "Claude Code", "generic MCP"],
+      "requiredEvidence": "Cross-Host decision-frame equality, negative inferred-approval proof, and finite next action.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-MONITOR-ROLLBACK",
+      "scenario": "Detect declared post-activation degradation and perform deterministic policy-authorized rollback without duplicate or uncertain mutation.",
+      "hosts": ["headless", "independent Host"],
+      "requiredEvidence": "Health samples, threshold decision, rollback receipt, restart reconciliation, and retained audit.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-EXPERT-CROSS-HOST",
+      "scenario": "Start controlled evolution in Codex, inspect in Claude Code, complete designated WorkBuddy steps, and resume through generic MCP from one Runtime truth.",
+      "hosts": ["Codex", "Claude Code", "WorkBuddy", "generic MCP", "independent Host"],
+      "requiredEvidence": "Exact Candidate/Core bindings, Runtime object equality, designated-human WorkBuddy declaration, and cross-Host resume.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-REAL-HARNESS-BUNDLE",
+      "scenario": "Use a real published HarnessBundle to guide proposal evaluation and a Goal Target Loop without changing Harness assets or weakening obligations.",
+      "hosts": ["Codex", "independent Agent Runtime"],
+      "requiredEvidence": "Registry, Catalog, HarnessProfile, HarnessBundle, component, export, Loop, monotonic composition, and drift rejection chain.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-NO-SUITE",
+      "scenario": "Complete a new unknown-project Pipeline evolution journey with both legacy Suites absent from the isolated environment.",
+      "hosts": ["Codex", "headless"],
+      "requiredEvidence": "Fresh install inventory, onboarding, successor, experiment, decision, activation or stop, and legacySuiteInvocationCount=0.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-NO-REGRESSION",
+      "scenario": "Revalidate the immutable v6 253-item completion baseline plus all 6.1 current criteria and impact closure on exact installed Candidates.",
+      "hosts": ["Codex", "Claude Code", "WorkBuddy", "generic MCP", "headless", "independent Host", "independent Agent Runtime"],
+      "requiredEvidence": "Independent criterion-level aggregation with passed=total and failed=pending=stale=generic=unmapped=silentExclusion=0.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "noRegressionRequired": true,
+  "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
+  "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
+  "noRegression": {
+    "status": "PENDING",
+    "evidenceRefs": []
+  },
+  "approvals": {
+    "target": {
+      "decision": "APPROVED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v6.1.0-controlled-lifecycle-evolution-target-revision-1",
+      "authorizationDigest": "sha256:3950914679e8e37b7282c631726f2d1c216c3d911822596fd0dd87c91f144228"
+    },
+    "release": {
+      "decision": "PENDING",
+      "by": null,
+      "evidenceRef": null,
+      "authorizationDigest": null
+    }
+  },
+  "release": {
+    "product": "evopilot-runtime",
+    "actions": ["commit", "push", "tag", "github-release", "npm", "ghcr", "installer"],
+    "versions": {
+      "evopilot": "6.1.0"
+    }
+  },
+  "designDecisions": {
+    "controlPlane": "Project-neutral Runtime-owned Lifecycle evolution resources and immutable revisions",
+    "projectSemantics": "Independently versioned declarative resources and typed providers",
+    "evolutionMode": "OBSERVE_PROPOSE_EXPERIMENT_ACTIVATE_MONITOR_ROLLBACK",
+    "safeAutomation": "Exact active policy and all safe predicates are required; otherwise fail closed",
+    "ordinaryHumanEntry": "Evolution Expert 2.1.0 over canonical MCP",
+    "executionPlane": "Qualified external Agent Runtime",
+    "harnessAuthority": "External published immutable HarnessBundle",
+    "suiteBoundary": "Read-only production reference evidence only; zero invocation, mutation, dependency, or core privilege"
+  }
+}

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "6.0.0"
+    "version": "6.1.0"
   },
   "paths": {
     "/api/v1/evolution-project-definitions": {
@@ -69,6 +69,33 @@
     },
     "/api/v1/governed-evolution/remediation-campaigns/{campaignId}/cancel": {
       "post": { "summary": "Cancel a campaign with exact evidence", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound halted campaign" } } }
+    },
+    "/api/v1/controlled-lifecycle/observations": {
+      "post": { "summary": "Record an exact Pipeline observation", "description": "Persists immutable Runtime, project, Lifecycle, HarnessBundle, GoalTarget, Host, Provider, environment, authority, evaluator, scorer, and evidence bindings. Conversation may contribute evidence but never authority.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Digest-bound observation" } } }
+    },
+    "/api/v1/controlled-lifecycle/observations/{observationId}": {
+      "get": { "summary": "Inspect an observation and classification", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Immutable observation and optional classification" } } }
+    },
+    "/api/v1/controlled-lifecycle/observations/{observationId}/classify": {
+      "post": { "summary": "Classify a Pipeline gap without active mutation", "description": "Routes project gaps to declarative successors and missing project-neutral primitives to explicit Runtime or Expert Target proposals.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Deterministic gap classification" } } }
+    },
+    "/api/v1/controlled-lifecycle/successors": {
+      "post": { "summary": "Create an immutable Lifecycle successor proposal", "description": "Includes semantic, authority, dependency, compatibility, impact, migration, experiment, monitoring, rollback, safety, and provenance facts; it never changes the active pointer.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Successor proposal" } } }
+    },
+    "/api/v1/controlled-lifecycle/successors/{proposalId}": {
+      "get": { "summary": "Inspect an exact Lifecycle successor", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Immutable successor proposal" } } }
+    },
+    "/api/v1/controlled-lifecycle/experiments": {
+      "post": { "summary": "Evaluate a comparable Champion/Challenger experiment", "description": "Every governed context binding must match; mismatched evidence is stratified and never pairwise aggregated.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Comparable or stratified experiment report" } } }
+    },
+    "/api/v1/controlled-lifecycle/activation-decisions": {
+      "post": { "summary": "Decide policy-bounded future-run activation", "description": "Auto-activation requires the exact active PolicyPack and every safe predicate. Semantic or authority changes return an exact human decision; active runs are never rebound.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Activation decision and optional future-run pointer receipt" } } }
+    },
+    "/api/v1/controlled-lifecycle/monitoring/evaluate": {
+      "post": { "summary": "Evaluate post-activation health and deterministic rollback", "description": "Uses immutable receipts and duplicate suppression; unknown health or uncertain prior mutations stop for exact review.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Retain, rollback, or exact human decision" } } }
+    },
+    "/api/v1/controlled-lifecycle/target-proposals": {
+      "post": { "summary": "Propose a project-neutral Runtime or Expert primitive", "description": "Blocks unsafe activation and project-specific Core branching until a separately reviewed Target is approved and implemented.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Review-only Target proposal" } } }
     },
     "/api/v1/governed-evolution/plan": {
       "post": { "summary": "Resolve and bind a Harness-guided governed evolution plan", "description": "Deterministically matches a published HarnessBundle, composes it with an open Lifecycle without weakening obligations, and persists the exact execution binding.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Harness-guided plan and immutable binding" }, "409": { "description": "Ambiguous/abstained match or composition conflict" } } }

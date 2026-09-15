@@ -3,7 +3,7 @@
   "roadmapFamily": "evopilot-series-agentic-evolution",
   "contractVersion": "4.0.0",
   "project": "evopilot",
-  "updatedAt": "2026-09-11",
+  "updatedAt": "2026-09-15",
   "ownership": {
     "owns": [
       "third-party project discovery, onboarding, and versioned EvolutionProjectDefinition",
@@ -30,7 +30,7 @@
   "versionPolicy": {
     "runtimeProduct": "evopilot-runtime",
     "publishedBaseline": "6.0.0",
-    "currentWorkingVersion": "6.0.0",
+    "currentWorkingVersion": "6.1.0",
     "versionsEvolveIndependently": true,
     "majorRequiredFor": [
       "incompatible published Harness consumption contract",
@@ -178,6 +178,99 @@
     },
     "mustNotDo": ["expand authority", "repeat an uncertain mutation", "hide changed state", "convert business ambiguity into a technical repair"]
   },
+  "controlledLifecycleEvolutionPolicy": {
+    "schema": "evopilot-controlled-lifecycle-evolution-policy/v1",
+    "required": true,
+    "runtimeVersion": "6.1.0",
+    "evolutionExpertVersion": "2.1.0",
+    "mode": "OBSERVE_PROPOSE_EXPERIMENT_ACTIVATE_MONITOR_ROLLBACK",
+    "stages": [
+      "OBSERVE",
+      "CLASSIFY",
+      "PROPOSE_IMMUTABLE_SUCCESSOR",
+      "SEMANTIC_DIFF_AND_COMPATIBILITY",
+      "PLAN_COMPARABLE_EXPERIMENT",
+      "VALIDATE_CHALLENGER",
+      "DECIDE_BY_POLICY_OR_HUMAN_AUTHORITY",
+      "ACTIVATE_FOR_FUTURE_RUNS",
+      "MONITOR",
+      "ROLLBACK_OR_RETAIN",
+      "LEARN_WITH_PROVENANCE"
+    ],
+    "automaticThrough": [
+      "observation aggregation and deterministic gap classification",
+      "immutable successor drafting with provenance",
+      "schema, compatibility, impact, migration, and rollback validation",
+      "comparable experiment execution within current authority",
+      "evidence aggregation and recommendation",
+      "activation only when an exact active policy preauthorizes the matched safe class",
+      "declared health monitoring and deterministic rollback"
+    ],
+    "humanDecisionRequiredFor": [
+      "project or product meaning",
+      "material acceptance or policy semantics",
+      "production or database authority",
+      "credential use or authority expansion",
+      "destructive, irreversible, or externally visible effect",
+      "Candidate acceptance, publication, deployment, or Release",
+      "ambiguous Harness match or same-rank authority conflict",
+      "unresolved mutation state or exhausted bounded recovery"
+    ],
+    "safeAutomaticActivation": {
+      "preauthorizedPolicyRequired": true,
+      "compatibilityRequired": "BACKWARD_COMPATIBLE",
+      "reversibleRequired": true,
+      "destructiveAllowed": false,
+      "externallyVisibleAllowed": false,
+      "newAuthorityAllowed": false,
+      "verifiedRollbackRequired": true,
+      "canaryEvidenceRequired": true
+    },
+    "immutableRunBinding": "An active run retains its exact LifecycleRevision and HarnessExecutionBinding; activation affects future planning only.",
+    "productGapRule": "A missing generic Runtime or Expert primitive creates an explicit Evolution Target proposal and never a project-specific branch or self-modifying core change.",
+    "projectResourceVersioning": "Project Pipeline resources use independent SemVer and provenance; their revisions do not require Runtime or Expert releases unless a public generic contract changes.",
+    "dataRigProductionReference": {
+      "role": "READ_ONLY_PRODUCTION_CONVERGENCE_EVIDENCE",
+      "suiteVersion": "2.1.11",
+      "manifestDigest": "sha256:416e76bd1c8244eb227a835d9c2db1e7728e9d59ff56b6df516306b3c058bd80",
+      "criticalContentDigest": "sha256:ef4efe668eb978e1dab2669cb20156bf1ad0dfbc28b927e50ae1aa3c27d8515f",
+      "advisoryContentDigest": "sha256:0d592fc441423d7f790ca26fe69e0adb90ba65f76069d0037da914652354a128",
+      "resourceIdentity": "datarig-production-delivery",
+      "initialResourceVersion": "1.0.0",
+      "sourceSuiteVersion": "2.1.11",
+      "runtimeDependency": false,
+      "installedSuiteMutationAllowed": false,
+      "rewritesV6HistoricalBaseline": false,
+      "capabilityInventoryCoveragePercent": 100,
+      "dispositions": [
+        "PROJECT_DEFINITION",
+        "LIFECYCLE_RESOURCE",
+        "POLICY_RESOURCE",
+        "GOVERNANCE_PACK",
+        "ACTION_PROVIDER",
+        "RUNTIME_GENERIC_PRIMITIVE",
+        "EXPERT_GENERIC_JOURNEY",
+        "DATARIG_OWNED_BEHAVIOR",
+        "NON_APPLICABLE_WITH_REASON"
+      ]
+    },
+    "requiredEndToEnd": [
+      "E2E-DATARIG-211-SNAPSHOT",
+      "E2E-DATARIG-211-CAPABILITY-MAP",
+      "E2E-DATARIG-211-RESOURCE-ONLY",
+      "E2E-DATARIG-211-GAP-TO-TARGET",
+      "E2E-OBSERVE-PROPOSE",
+      "E2E-CHAMPION-CHALLENGER",
+      "E2E-AUTO-ACTIVATE-SAFE",
+      "E2E-HUMAN-GATE-SEMANTIC",
+      "E2E-MONITOR-ROLLBACK",
+      "E2E-EXPERT-CROSS-HOST",
+      "E2E-REAL-HARNESS-BUNDLE",
+      "E2E-NO-SUITE",
+      "E2E-NO-REGRESSION"
+    ],
+    "completionFormula": "FUNCTIONAL_100_PERCENT_AND_CAPABILITY_DISPOSITION_100_PERCENT_AND_CURRENT_E2E_100_PERCENT_AND_INHERITED_APPLICABLE_100_PERCENT_AND_IMPACT_CLOSURE_100_PERCENT_AND_NO_REGRESSION_PASSED_AND_FAILED_PENDING_STALE_GENERIC_SILENT_EXCLUSION_UNMAPPED_ALL_ZERO"
+  },
   "humanInteractionProtocol": {
     "owner": "evopilot-runtime",
     "canonicalOrdinaryHumanProtocol": "MCP",
@@ -198,7 +291,7 @@
     "product": "evopilot-evolution-expert",
     "proposedPackage": "@evopilot/evolution-expert",
     "publishedBaseline": "2.0.0",
-    "currentWorkingVersion": "2.0.0",
+    "currentWorkingVersion": "2.1.0",
     "lockstepWithRuntime": false,
     "mandatoryForOrdinaryHumans": true,
     "canonicalProtocol": "MCP",
@@ -795,15 +888,51 @@
       "signals": ["post v6 legacy suite cutover", "legacy suite cutover target", "public Runtime 6 Expert 2 installation", "archive legacy codex suites", "retire EvoPilot and DataRig suites", "retire both independent suites", "current Codex use EvoPilot", "v6 发布后旧 suite 切换", "归档两套 suite", "当前 Codex 使用 EvoPilot"]
     },
     {
-      "id": "evopilot-6.1-controlled-experiment-loop",
+      "id": "evopilot-6.1-controlled-lifecycle-evolution",
       "product": "evopilot-runtime",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "targetVersion": "6.1.0",
       "releaseLine": "6.1.x",
-      "objective": "Turn governed Harness-guided trajectories into controlled replayable strategy experiments and promotion decisions.",
-      "outcomes": ["Champion and Challenger cohorts", "pairwise evaluation", "comparable replay", "strategy promotion and rollback"],
-      "acceptance": ["comparisons bind the same task and execution context", "promotion requires benchmark, bad-case, and regression evidence", "Harness authority remains external"],
-      "signals": ["champion challenger", "pairwise evaluation", "controlled experiment loop", "候选策略", "成对评估"]
+      "objective": "Convert project run evidence and explicit Expert dialogue signals into immutable Lifecycle successor proposals, comparable Champion/Challenger experiments, policy-bounded activation or exact human decisions, continuous verification, and deterministic rollback while preserving the Harness-guided Goal Target Loop and project-neutral control-plane boundary.",
+      "outcomes": [
+        "typed observations and gap classification bound to exact project, Lifecycle, HarnessBundle, GoalTarget, Runtime, Host, Provider, environment, authority, and evidence digests",
+        "immutable Lifecycle successors with semantic diff, compatibility, impact, migration, experiment, activation, monitoring, rollback, and provenance records",
+        "comparable Champion and Challenger replay with pairwise evaluation, bad-case closure, and separated non-comparable contexts",
+        "policy-bounded safe activation and deterministic rollback without uncertain mutation replay",
+        "generic product gaps become explicit Targets rather than hidden project branches",
+        "DataRig Suite 2.1.11 proves project-specific production Pipeline convergence as datarig-production-delivery@1.0.0"
+      ],
+      "acceptance": [
+        "100 percent of the exact DataRig Suite 2.1.11 capability inventory has an item-level disposition and exact provenance without mutating or invoking the Suite",
+        "comparisons bind the same task, Lifecycle, HarnessBundle, GoalTarget, Runtime, Host, Provider, environment, authority, evaluator, scorer, and evidence context",
+        "automatic activation is permitted only for an exact preauthorized compatible, reversible, non-destructive, non-public, no-new-authority class with verified rollback and canary evidence",
+        "semantic, authority, production, database, credential, destructive, acceptance, publication, deployment, and Release decisions fail closed to exact human authority",
+        "active runs retain immutable Lifecycle and Harness bindings while activation affects future planning only",
+        "all 13 current E2E journeys, applicable inherited acceptance, impact closure, and NO_REGRESSION pass with zero legacy Suite invocation and zero project-specific Runtime branch",
+        "Harness authority remains external and a real published HarnessBundle continues to guide the Goal Target Loop"
+      ],
+      "signals": ["controlled lifecycle evolution", "automatic lifecycle evolution", "immutable successor proposal", "DataRig Suite 2.1.11", "datarig-production-delivery", "champion challenger", "pairwise evaluation", "controlled experiment loop", "候选策略", "成对评估", "生命周期自动演进"]
+    },
+    {
+      "id": "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution",
+      "product": "evopilot-evolution-expert",
+      "status": "IN_PROGRESS",
+      "targetVersion": "2.1.0",
+      "releaseLine": "2.1.x",
+      "objective": "Guide ordinary humans through production-reference import, capability disposition, Lifecycle successor review, experiment observation, safe activation, semantic or authority decisions, monitoring, and rollback over canonical Runtime MCP contracts without owning state or authority.",
+      "outcomes": [
+        "one Agent-neutral Core journey across Codex, Claude Code, designated-human WorkBuddy, generic MCP, independent Host, and headless administrator integration",
+        "progressive disclosure asks only unresolved semantic or authority questions and renders exact Runtime-owned diffs, evidence, stop reasons, and next actions",
+        "no Host-specific project logic, Suite invocation, hidden fallback, raw credentials, Expert-owned mutation, or approval truth"
+      ],
+      "acceptance": [
+        "all Host adapters bind one Expert Core and the same Runtime-owned MCP contracts, facts, decision frames, stop conditions, and error model",
+        "ordinary users can create, inspect, evolve, compare, activate when authorized, monitor, and roll back project Pipeline resources without knowing CLI commands or raw schemas",
+        "Expert never infers semantic or authority decisions, mutates a Suite or Harness, stores raw credentials, or owns durable Lifecycle truth",
+        "Codex, Claude Code, designated-human WorkBuddy, independent Host, generic MCP, and headless paths preserve cross-Host resume and one Runtime truth",
+        "Expert versioning and release remain independent from Runtime and project resource versions"
+      ],
+      "signals": ["Evolution Expert 2.1", "controlled lifecycle evolution expert", "lifecycle successor guidance", "pipeline evolution over MCP", "生命周期演进数字人", "项目 pipeline 演进"]
     },
     {
       "id": "evopilot-6.2-learning-interop",

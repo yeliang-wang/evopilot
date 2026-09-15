@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/generic-primitive-target-proposal-v1.schema.json",
+  "title": "Generic Primitive Target Proposal v1",
+  "type": "object",
+  "required": ["schema", "id", "owner", "observationDigest", "classificationDigest", "objective", "requiredPrimitive", "projectSpecificBranchAllowed", "sourceMutationPerformed", "unsafeActivationBlocked", "evidenceRefs", "status", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-generic-primitive-target-proposal/v1" },
+    "id": { "type": "string", "minLength": 1 },
+    "owner": { "enum": ["RUNTIME", "EXPERT"] },
+    "observationDigest": { "$ref": "#/$defs/digest" },
+    "classificationDigest": { "$ref": "#/$defs/digest" },
+    "objective": { "type": "string", "minLength": 1 },
+    "requiredPrimitive": { "type": "string", "minLength": 1 },
+    "projectSpecificBranchAllowed": { "const": false },
+    "sourceMutationPerformed": { "const": false },
+    "unsafeActivationBlocked": { "const": true },
+    "evidenceRefs": { "type": "array", "minItems": 1 },
+    "status": { "const": "PROPOSED_FOR_REVIEW" },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

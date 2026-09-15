@@ -47,6 +47,10 @@ test("Lifecycle Registry exposes consistent governed CRUD through HTTP and MCP c
     assert.deepEqual(audit.body.data.filter((item) => item.action === "REGISTER").length, 2);
     assert.ok(EVOPILOT_LIFECYCLE_MCP_TOOLS.some((tool) => tool.name === "evopilot_lifecycle_rollback" && tool.authority === "EXACT_BINDING_DECISION"));
     assert.ok(EVOPILOT_LIFECYCLE_MCP_TOOLS.some((tool) => tool.name === "evopilot_lifecycle_audit" && tool.method === "GET"));
+    assert.ok(EVOPILOT_LIFECYCLE_MCP_TOOLS.some((tool) => tool.name === "evopilot_lifecycle_observation_record" && tool.authority === "NONE"));
+    assert.ok(EVOPILOT_LIFECYCLE_MCP_TOOLS.some((tool) => tool.name === "evopilot_lifecycle_experiment_evaluate" && tool.description.includes("stratify")));
+    assert.ok(EVOPILOT_LIFECYCLE_MCP_TOOLS.some((tool) => tool.name === "evopilot_lifecycle_activation_decide" && tool.authority === "NONE"));
+    assert.ok(EVOPILOT_LIFECYCLE_MCP_TOOLS.some((tool) => tool.name === "evopilot_generic_primitive_target_propose"));
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

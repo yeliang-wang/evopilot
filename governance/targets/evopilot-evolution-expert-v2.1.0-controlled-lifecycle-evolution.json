@@ -1,0 +1,320 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-evolution-expert-v2.1.0-controlled-lifecycle-evolution",
+  "revision": 1,
+  "status": "APPROVED",
+  "intent": "Implement Evolution Expert 2.1.0 as the Agent-neutral conversational entry for Runtime 6.1.0 production-reference intake, project Pipeline capability disposition, immutable Lifecycle successor review, comparable experiment observation, exact human decisions, policy-bounded activation, monitoring, and rollback over MCP.",
+  "objective": "Let ordinary users safely manage and evolve third-party project Pipeline Lifecycles from Codex, Claude Code, designated-human WorkBuddy, generic MCP, independent Hosts, and headless administration without knowing raw schemas or commands and without giving Expert state, execution, Harness, or authority ownership.",
+  "evidence": [
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v61-controlled-lifecycle-evolution-r1@sha256:4525aad0431db2e967b710ac4803b28dfbbde305d3ddcd3a3f9346138b17468b",
+      "authority": "Roadmap application and Target drafting authority only."
+    },
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v61-application-validation-recovery-r1@sha256:e4be198f489657bc9d01150fdb9790c0248279d7b01b5b61c10d4556c26f8e7f",
+      "authority": "Bounded Roadmap validation repair and Target drafting authority only."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/roadmap.yaml@sha256:9d329ae059dc3b47b954c0cc77900cef15a715631788efe80895037447c9b037",
+      "authority": "Current authoritative Roadmap."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v6-completion-contract.json@sha256:ec6e075f036fbb137804e1f2b5889b9580ba717aa899fcc77ef9eca9da8cde3c",
+      "authority": "Immutable published v6 Runtime/Expert completion baseline."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/suite-convergence/datarig-2.1.11-capability-inventory.json@sha256:8adc0248b64171fa7f48d9589632c6bf11e1878929b91207b00409eaf0fdca37",
+      "authority": "Read-only DataRig Suite 2.1.11 capability inventory used for interaction design and acceptance only."
+    }
+  ],
+  "roadmapBindings": [
+    {
+      "repo": "/Users/wangyejing/project/harness/evopilot",
+      "project": "evopilot-evolution-expert",
+      "matchedMilestone": "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution",
+      "targetVersion": "2.1.0",
+      "classification": "ALIGNED",
+      "roadmapDigest": "sha256:9d329ae059dc3b47b954c0cc77900cef15a715631788efe80895037447c9b037",
+      "releaseProduct": "evopilot-evolution-expert"
+    }
+  ],
+  "scope": {
+    "include": [
+      "Extend one Agent-neutral Expert Core with progressive-disclosure journeys for production-reference discovery, snapshot validation, capability disposition, resource preview, and generic-gap escalation.",
+      "Guide observation review, immutable successor proposal, semantic and authority diff, compatibility and impact review, Champion/Challenger comparison, bad-case closure, and evidence interpretation from canonical Runtime MCP facts.",
+      "Present policy-bounded safe activation separately from semantic or authority decisions and never infer approval from readiness, conversational agreement, or successful validation.",
+      "Guide future-run activation, health monitoring, deterministic rollback, restart/resume, audit, and finite recovery from Runtime-owned durable state rather than chat history.",
+      "Generate deterministic Codex, Claude Code, WorkBuddy, generic Agent, and generic MCP Host Integration Bundles from one Core; WorkBuddy execution remains designated-human-only.",
+      "Render DataRig Suite 2.1.11 only as read-only source provenance and explain datarig-production-delivery@1.0.0 declarative dispositions without invoking, mutating, or depending on the Suite.",
+      "Preserve Harness-guided Goal Target Loop guidance over a real published immutable HarnessBundle and qualified external Agent Runtime execution.",
+      "Provide install, doctor, health, version, compatibility, upgrade, rollback, removal, tutorial, help, and exact documentation routing for Expert 2.1.0 and Runtime 6.1.0.",
+      "Provide criterion-specific validators, cross-Host semantic conformance, exact Candidate-pair binding, impact closure, and NO_REGRESSION."
+    ],
+    "exclude": [
+      "No Expert-owned project, Lifecycle, proposal, experiment, policy, activation, monitoring, rollback, evidence, credential, acceptance, publication, or release truth.",
+      "No direct source execution, embedded coding Agent, raw credential capture, Runtime mutation outside MCP, or Host-specific product semantics.",
+      "No DataRig or EvoPilot Suite invocation, mutation, synchronization, Cutover, hidden fallback, or project-specific Core branch.",
+      "No Harness selection invention, authoring, mutation, approval, Catalog change, publication, or obligation weakening.",
+      "No production/database authority, WorkBuddy operation by Codex, Candidate, E2E, publication, or Release under this draft."
+    ]
+  },
+  "compatibilityPolicy": {
+    "mode": "INHERIT"
+  },
+  "acceptance": [
+    {
+      "id": "EX21-FUNC01",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert discovers exact Runtime, protocol, capability, Host, documentation, project, Lifecycle, Harness, and production-reference facts before guiding controlled evolution.",
+      "requiredEvidence": "Discovery transcript and negative stale, incompatible, unavailable, or incomplete Runtime fact tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-FUNC02",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert guides DataRig Suite 2.1.11 read-only snapshot validation and renders every capability disposition, provenance binding, unmapped item, and generic-gap outcome without Suite invocation.",
+      "requiredEvidence": "Exact 20-item guided review transcript, digest checks, Suite Gate facts, zero invocation, and no silent exclusion.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-FUNC03",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert guides observation, classification, immutable successor preview, semantic diff, compatibility, impact, migration, experiment, monitoring, rollback, and provenance from Runtime-owned facts.",
+      "requiredEvidence": "End-to-end dialogue transcript with exact object and digest correspondence to Runtime MCP results.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-FUNC04",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert renders comparable Champion/Challenger evidence, explains non-comparable stratification and bad-case closure, and never turns a recommendation into authority.",
+      "requiredEvidence": "Comparable and mismatched experiment transcripts plus decision separation evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-FUNC05",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert distinguishes policy-preauthorized safe activation from semantic or authority gates and asks only the unresolved exact decision with its bound digest and consequences.",
+      "requiredEvidence": "Decision-frame matrix, progressive-disclosure transcripts, and negative inferred-approval tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-FUNC06",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert guides activation for future runs, monitoring, deterministic rollback, audit, restart/resume, and finite recovery solely from Runtime-owned state.",
+      "requiredEvidence": "Cross-restart and cross-Host transcripts proving no chat-history dependency or active-run rebinding.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-FUNC07",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert explains and guides an explicit generic Runtime or Expert Target proposal when a project Pipeline need lacks a safe public primitive, then stops without mutation.",
+      "requiredEvidence": "Unknown-gap journey with exact proposal digest, boundary explanation, finite next action, and zero source change.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-FUNC08",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Codex, Claude Code, designated-human WorkBuddy, generic MCP, independent Host, and headless administration preserve one Core semantics and one Runtime truth across controlled evolution.",
+      "requiredEvidence": "Generated bundle digests, semantic conformance, cross-Host transfer, designated-human declaration, and headless recovery evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-CAP01",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Expert is stateless and non-authoritative and cannot own, fabricate, mutate, approve, activate, publish, or release any Runtime, project, Suite, Harness, or credential state.",
+      "requiredEvidence": "Architecture, protocol, adversarial dialogue, persistence scan, and authority-negative tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-CAP02",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "One Agent-neutral Core generates all Host bundles without Host-specific project semantics, while future Hosts qualify through the public integration contract without Core changes.",
+      "requiredEvidence": "Core and adapter digests, generated-output determinism, independent Host conformance, and zero Core diff.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-CAP03",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Expert version, Candidate, acceptance, release, upgrade, and rollback remain independent from Runtime and project resource versions through explicit compatibility negotiation.",
+      "requiredEvidence": "Version matrix, compatible independent upgrade/rollback, incompatible-version stop, and public package metadata tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21-CAP04",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Expert 2.1.0 acceptance closes only on exact installed Expert 2.1.0 and Runtime 6.1.0 Candidates with all current criteria, the immutable v6 253-item baseline, cross acceptance, impact closure, and NO_REGRESSION passing.",
+      "requiredEvidence": "Independent completion recomputation with exact Candidate/Core bindings and zero failed, pending, stale, generic, silent-exclusion, or unmapped items.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "acceptanceLineage": [
+    {
+      "id": "V6-PUBLISHED-COMPLETION-253",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v6-completion-contract.json#requiredCriteria",
+      "criterionDigest": "sha256:ec6e075f036fbb137804e1f2b5889b9580ba717aa899fcc77ef9eca9da8cde3c",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v6-completion-contract.json@sha256:ec6e075f036fbb137804e1f2b5889b9580ba717aa899fcc77ef9eca9da8cde3c"
+    }
+  ],
+  "inheritedAcceptance": [
+    {
+      "id": "V6-PUBLISHED-COMPLETION-253",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v6-completion-contract.json#requiredCriteria",
+      "criterion": "Every one of the immutable published v6 completion contract's 253 criteria remains applicable and must pass against the Runtime 6.1.0 and Expert 2.1.0 Candidate pair without exclusions.",
+      "requiredEvidence": "Fresh successor validation of the full v6 completion contract with criterion-level evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "regressionImpact": [
+    {
+      "area": "Expert 2.1.0 extends the ordinary-human control plane entry and can affect every published v6 Expert, MCP, Host, authority, Harness-guidance, recovery, documentation, and versioning guarantee.",
+      "affectedAcceptanceIds": ["V6-PUBLISHED-COMPLETION-253"],
+      "reason": "The immutable completion-contract aggregate preserves the exact criterion-level baseline and cross-product obligations."
+    }
+  ],
+  "excludedHistoricalAcceptance": [],
+  "realCaseCoverage": [
+    {
+      "id": "EX21E2E01",
+      "scenario": "A new Codex user discovers Runtime 6.1.0, imports the DataRig 2.1.11 production reference read-only, and reviews all capability dispositions without raw schemas or Suite invocation.",
+      "hosts": ["Codex"],
+      "requiredEvidence": "Installed-Candidate transcript, Core and Runtime digests, inventory coverage, and legacySuiteInvocationCount=0.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21E2E02",
+      "scenario": "Expert guides an observation into an immutable successor, complete semantic diff, and comparable Champion/Challenger plan.",
+      "hosts": ["Codex", "generic MCP"],
+      "requiredEvidence": "Dialogue-to-MCP object correspondence and unchanged active revision evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21E2E03",
+      "scenario": "Expert explains a safe preauthorized activation and separately stops a semantic or authority change at one exact human decision.",
+      "hosts": ["Codex", "Claude Code"],
+      "requiredEvidence": "Safe predicate rendering, decision-frame equality, no inferred approval, and finite next action.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21E2E04",
+      "scenario": "A designated human performs the frozen WorkBuddy controlled-evolution journey without Codex operation or observation.",
+      "hosts": ["WorkBuddy"],
+      "requiredEvidence": "Exact Candidate-bound designated-human declaration for the declared WorkBuddy range.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21E2E05",
+      "scenario": "A controlled evolution journey starts in Codex, is inspected in Claude Code, and resumes through an independent Host from Runtime truth rather than chat history.",
+      "hosts": ["Codex", "Claude Code", "independent Host", "generic MCP"],
+      "requiredEvidence": "Cross-Host semantic equality, object digests, restart/resume, and Core binding evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21E2E06",
+      "scenario": "Expert guides a real HarnessBundle-bound Goal Target Loop after Lifecycle evolution and never weakens or mutates Harness obligations.",
+      "hosts": ["Codex", "independent Agent Runtime"],
+      "requiredEvidence": "Harness asset chain, combined plan, pendingExecution, receipt, Loop, and monotonic obligation evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21E2E07",
+      "scenario": "Expert identifies a missing generic primitive, prepares an exact Target proposal, and stops without project-specific Core or Runtime mutation.",
+      "hosts": ["Codex", "headless"],
+      "requiredEvidence": "Gap facts, proposal digest, boundary explanation, stop reason, and zero source change.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21E2E08",
+      "scenario": "Expert unavailable: headless diagnostics preserve recovery and audit without exposing a silent direct ordinary-human mutation path.",
+      "hosts": ["headless", "independent Host"],
+      "requiredEvidence": "Degraded-mode recovery, access-boundary, and negative hidden-fallback evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21E2E09",
+      "scenario": "Expert upgrades and rolls back independently while remaining compatible with the exact Runtime protocol range and project resource versions.",
+      "hosts": ["Codex", "Claude Code"],
+      "requiredEvidence": "Bundle install, upgrade, rollback, compatibility, and version-skew evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX21E2E10",
+      "scenario": "Adversarial dialogue cannot infer authority, expose raw secrets, invoke a Suite, mutate a Harness, aggregate non-comparable evidence, or publish any result.",
+      "hosts": ["Codex", "generic MCP"],
+      "requiredEvidence": "Security and authority corpus with exact stop reasons and no prohibited effects.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "noRegressionRequired": true,
+  "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
+  "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
+  "noRegression": {
+    "status": "PENDING",
+    "evidenceRefs": []
+  },
+  "approvals": {
+    "target": {
+      "decision": "APPROVED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-evolution-expert-v2.1.0-controlled-lifecycle-evolution-target-revision-1",
+      "authorizationDigest": "sha256:d9a6c1edf67f8f7ce8d31a6129eed49eeccb705003c7584e68e59f65c9212489"
+    },
+    "release": {
+      "decision": "PENDING",
+      "by": null,
+      "evidenceRef": null,
+      "authorizationDigest": null
+    }
+  },
+  "release": {
+    "product": "evopilot-evolution-expert",
+    "actions": ["commit", "push", "tag", "github-release", "npm", "installer"],
+    "versions": {
+      "evopilot-evolution-expert": "2.1.0"
+    }
+  },
+  "designDecisions": {
+    "productIdentity": "Evolution Expert 2.1.0 controlled Lifecycle evolution guide",
+    "core": "One Agent-neutral generated Host semantics",
+    "truth": "Canonical Runtime 6.1.0 MCP facts and durable state",
+    "authority": "Exact Runtime-owned decision frames and explicit human or active-policy authority",
+    "projectBoundary": "Project-specific semantics are declarative resources, never Host or Expert branches",
+    "suiteBoundary": "Read-only source provenance only",
+    "harnessBoundary": "External immutable HarnessBundle authority",
+    "workBuddyBoundary": "Designated-human-only operation"
+  }
+}

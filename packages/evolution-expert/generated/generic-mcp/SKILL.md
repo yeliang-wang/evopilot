@@ -5,8 +5,8 @@ description: Generated generic-mcp adapter for the independently versioned EvoPi
 
 # EvoPilot Evolution Expert — generic-mcp
 
-- Adapter: `evopilot-evolution-expert-generic-mcp@2.0.0`
-- Core: `sha256:411cf0ac7dafbd5d8bafdf402393db5a7a8730fed4f1bed5492a3408ba2bc20b`
+- Adapter: `evopilot-evolution-expert-generic-mcp@2.1.0`
+- Core: `sha256:36367e9556355db2b5afbb69dc5476aa498c416bd8c6c39b402394e57157b6c4`
 - Protocol: `2.0`
 
 ## Required behavior
@@ -20,6 +20,9 @@ description: Generated generic-mcp adapter for the independently versioned EvoPi
 - Remain Host neutral; ordinary humans use this Expert over Runtime MCP while CLI, HTTP, and CI remain administrator, machine, diagnostic, and recovery surfaces.
 - Agent Host carries conversation and decisions; Runtime owns control-plane truth; a separately qualified external Agent Runtime executes bounded source work.
 - Keep Runtime, Expert, declarative resource, source Suite, project, and Harness versions independent and explicit.
+- Treat external Suite snapshots as read-only production reference evidence and evolve project Pipeline resources without invoking the Suite.
+- Separate observation, recommendation, experiment, policy-preauthorized automation, and human authority; successful evidence never becomes authority.
+- Never mix non-comparable Champion/Challenger evidence, mutate an active run binding, replay an uncertain mutation, or add a project-specific Core branch.
 
 ## Prohibited semantics
 

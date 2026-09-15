@@ -1,6 +1,6 @@
 # EvoPilot API
 
-## Agent-Native Lifecycle Control Plane（v6 开发接口）
+## Agent-Native Lifecycle Control Plane（v6.1 开发接口）
 
 ```text
 GET  /api/v1/evolution-project-definitions
@@ -33,6 +33,15 @@ POST /api/v1/automation-registry/proposals
 POST /api/v1/automation-registry/{id}/activate
 POST /api/v1/automation-registry/{id}/revoke
 POST /api/v1/interactions/render
+POST /api/v1/controlled-lifecycle/observations
+GET  /api/v1/controlled-lifecycle/observations/{id}
+POST /api/v1/controlled-lifecycle/observations/{id}/classify
+POST /api/v1/controlled-lifecycle/successors
+GET  /api/v1/controlled-lifecycle/successors/{id}
+POST /api/v1/controlled-lifecycle/experiments
+POST /api/v1/controlled-lifecycle/activation-decisions
+POST /api/v1/controlled-lifecycle/monitoring/evaluate
+POST /api/v1/controlled-lifecycle/target-proposals
 POST /api/v1/lifecycles
 GET  /api/v1/lifecycles/{id}?version=...
 GET  /api/v1/lifecycles/{id}/diff?from=...&to=...
@@ -53,7 +62,7 @@ Lifecycle 的执行能力与 Harness 能力采用并集，证据、validator 和
 
 Recovery 默认自动处理可逆 mechanics、相同输入安全重试和 receipt 恢复。未知但可安全复用的情形先生成完整 Automation Rule proposal；只有一次与 proposal digest 精确绑定的人工决定能激活后续自动化。不可逆权限与结果不确定的外部 mutation 不能学习成自动规则。
 
-Evolution Expert 2.0.0 通过 MCP 成为普通用户入口；它与其他 Host adapter 只投影 Runtime 语义，不持有权威状态、源码执行或批准能力。CLI、HTTP、CI、事件和 webhook 是管理员、机器、诊断和恢复接口。资源 API 保留独立版本、来源 Suite 版本/摘要和 Runtime 兼容范围；兼容资源升级无需 Runtime 或 Expert 升级。上述新增内容处于已批准 v6.0.0 Target 的本地实现阶段，不代表 Candidate、验收或发布。
+Evolution Expert 2.1.0 通过 MCP 成为普通用户入口；它与其他 Host adapter 只投影 Runtime 语义，不持有权威状态、源码执行或批准能力。CLI、HTTP、CI、事件和 webhook 是管理员、机器、诊断和恢复接口。资源 API 保留独立版本、来源 Suite 版本/摘要和 Runtime 兼容范围；兼容资源升级无需 Runtime 或 Expert 升级。受控演进 API 将精确观察转为分类、不可变后继、可比实验、活动策略决策、监控回滚或通用 Target 提案；对话、成功测试和推荐都不构成权限。上述新增内容处于已批准 v6.1.0/Expert 2.1.0 Targets 的本地实现阶段，不代表 Candidate、验收或发布。
 
 对应的管理员和机器 CLI 使用同一 HTTP 语义，但不构成普通用户绕过 Expert 的第二入口：
 

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/lifecycle-experiment-report-v1.schema.json",
+  "title": "Lifecycle Champion Challenger Experiment Report v1",
+  "type": "object",
+  "required": ["schema", "proposalDigest", "status", "contextMismatches", "pairwiseAggregationPerformed", "champion", "challenger", "scoreDelta", "badCaseClosure", "recommendation", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-lifecycle-experiment-report/v1" },
+    "proposalDigest": { "$ref": "#/$defs/digest" },
+    "status": { "enum": ["COMPARABLE", "STRATIFIED_NON_COMPARABLE"] },
+    "contextMismatches": { "type": "array", "items": { "type": "string" } },
+    "pairwiseAggregationPerformed": { "type": "boolean" },
+    "champion": { "type": "object" },
+    "challenger": { "type": "object" },
+    "scoreDelta": { "type": ["number", "null"] },
+    "badCaseClosure": { "enum": ["PASSED", "FAILED", "NOT_COMPARABLE"] },
+    "recommendation": { "enum": ["CHALLENGER", "CHAMPION", "NONE"] },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

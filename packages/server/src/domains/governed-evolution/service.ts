@@ -14,9 +14,16 @@ import {
   revalidateHarnessExecutionBinding,
   compareGovernedResourceRevisions,
   createCapabilityInventory,
+  createControlledLifecycleObservation,
+  classifyLifecycleGap,
+  createGenericPrimitiveTargetProposal,
+  createLifecycleSuccessorProposal,
   createRemediationCampaign,
   createReplacementCandidateLineage,
+  decideLifecycleSuccessorActivation,
   decideRemediationCampaign,
+  evaluateLifecycleExperiment,
+  evaluateLifecycleMonitoring,
   evaluateGovernancePack,
   normalizeGovernedResource,
   qualifyActionProvider,
@@ -34,8 +41,15 @@ import {
   type CapabilityInventory,
   type CapabilityInventorySource,
   type CapabilityDisposition,
+  type ControlledLifecycleObservation,
+  type GenericPrimitiveTargetProposal,
   type GovernedResource,
   type GovernedResourceKind,
+  type LifecycleActivationDecision,
+  type LifecycleExperimentReport,
+  type LifecycleGapClassification,
+  type LifecycleMonitoringDecision,
+  type LifecycleSuccessorProposal,
   type RemediationCampaign,
   type RemediationIncident,
   type RecoveryContext,
@@ -97,6 +111,13 @@ export class GovernedEvolutionService {
   private readonly resourcesDir: string;
   private readonly activeResourcesDir: string;
   private readonly remediationCampaignsDir: string;
+  private readonly lifecycleObservationsDir: string;
+  private readonly lifecycleClassificationsDir: string;
+  private readonly lifecycleSuccessorsDir: string;
+  private readonly lifecycleExperimentsDir: string;
+  private readonly lifecycleActivationDecisionsDir: string;
+  private readonly lifecycleMonitoringDir: string;
+  private readonly genericPrimitiveTargetsDir: string;
 
   constructor(dataRoot: string) {
     this.projectDefinitionsDir = path.join(dataRoot, "evolution-project-definitions");
@@ -108,7 +129,92 @@ export class GovernedEvolutionService {
     this.resourcesDir = path.join(dataRoot, "governed-evolution-resources");
     this.activeResourcesDir = path.join(dataRoot, "governed-evolution-resources-active");
     this.remediationCampaignsDir = path.join(dataRoot, "remediation-campaigns");
-    for (const directory of [this.projectDefinitionsDir, this.bindingsDir, this.proposalDir, this.rulesDir, this.activeDefinitionsDir, this.recoveryEventsDir, this.resourcesDir, this.activeResourcesDir, this.remediationCampaignsDir]) fs.mkdirSync(directory, { recursive: true });
+    this.lifecycleObservationsDir = path.join(dataRoot, "controlled-lifecycle-evolution", "observations");
+    this.lifecycleClassificationsDir = path.join(dataRoot, "controlled-lifecycle-evolution", "classifications");
+    this.lifecycleSuccessorsDir = path.join(dataRoot, "controlled-lifecycle-evolution", "successors");
+    this.lifecycleExperimentsDir = path.join(dataRoot, "controlled-lifecycle-evolution", "experiments");
+    this.lifecycleActivationDecisionsDir = path.join(dataRoot, "controlled-lifecycle-evolution", "activation-decisions");
+    this.lifecycleMonitoringDir = path.join(dataRoot, "controlled-lifecycle-evolution", "monitoring");
+    this.genericPrimitiveTargetsDir = path.join(dataRoot, "controlled-lifecycle-evolution", "target-proposals");
+    for (const directory of [this.projectDefinitionsDir, this.bindingsDir, this.proposalDir, this.rulesDir, this.activeDefinitionsDir, this.recoveryEventsDir, this.resourcesDir, this.activeResourcesDir, this.remediationCampaignsDir, this.lifecycleObservationsDir, this.lifecycleClassificationsDir, this.lifecycleSuccessorsDir, this.lifecycleExperimentsDir, this.lifecycleActivationDecisionsDir, this.lifecycleMonitoringDir, this.genericPrimitiveTargetsDir]) fs.mkdirSync(directory, { recursive: true });
+  }
+
+  recordLifecycleObservation(input: Parameters<typeof createControlledLifecycleObservation>[0], scope?: GovernedEvolutionScope): ControlledLifecycleObservation {
+    const normalizedScope = scope ?? { tenantId: "tenant-default", workspaceId: "workspace-default" };
+    if (input.context.tenantId !== normalizedScope.tenantId || input.context.workspaceId !== normalizedScope.workspaceId) throw new Error("CONTROLLED_LIFECYCLE_SCOPE_MISMATCH");
+    const observation = createControlledLifecycleObservation(input);
+    return this.writeImmutable(this.lifecycleObservationsDir, observation.id, observation, scope, "CONTROLLED_LIFECYCLE_OBSERVATION_IMMUTABLE_CONFLICT");
+  }
+
+  readLifecycleObservation(id: string, scope?: GovernedEvolutionScope): ControlledLifecycleObservation | undefined {
+    return this.readScoped<ControlledLifecycleObservation>(this.lifecycleObservationsDir, id, scope);
+  }
+
+  classifyLifecycleObservation(id: string, input: Omit<Parameters<typeof classifyLifecycleGap>[0], "observation">, scope?: GovernedEvolutionScope): LifecycleGapClassification {
+    const observation = this.readLifecycleObservation(id, scope);
+    if (!observation) throw new Error(`CONTROLLED_LIFECYCLE_OBSERVATION_NOT_FOUND: ${id}`);
+    const classification = classifyLifecycleGap({ observation, ...input });
+    return this.writeImmutable(this.lifecycleClassificationsDir, id, classification, scope, "LIFECYCLE_GAP_CLASSIFICATION_IMMUTABLE_CONFLICT");
+  }
+
+  readLifecycleClassification(id: string, scope?: GovernedEvolutionScope): LifecycleGapClassification | undefined {
+    return this.readScoped<LifecycleGapClassification>(this.lifecycleClassificationsDir, id, scope);
+  }
+
+  proposeLifecycleSuccessor(input: Omit<Parameters<typeof createLifecycleSuccessorProposal>[0], "observation" | "classification"> & { observationId: string }, scope?: GovernedEvolutionScope): LifecycleSuccessorProposal {
+    const observation = this.readLifecycleObservation(input.observationId, scope);
+    const classification = this.readLifecycleClassification(input.observationId, scope);
+    if (!observation || !classification) throw new Error(`CONTROLLED_LIFECYCLE_CLASSIFIED_OBSERVATION_NOT_FOUND: ${input.observationId}`);
+    const { observationId: _observationId, ...proposalInput } = input;
+    const proposal = createLifecycleSuccessorProposal({ ...proposalInput, observation, classification });
+    return this.writeImmutable(this.lifecycleSuccessorsDir, proposal.id, proposal, scope, "LIFECYCLE_SUCCESSOR_PROPOSAL_IMMUTABLE_CONFLICT");
+  }
+
+  readLifecycleSuccessor(id: string, scope?: GovernedEvolutionScope): LifecycleSuccessorProposal | undefined {
+    return this.readScoped<LifecycleSuccessorProposal>(this.lifecycleSuccessorsDir, id, scope);
+  }
+
+  evaluateLifecycleSuccessorExperiment(input: Omit<Parameters<typeof evaluateLifecycleExperiment>[0], "proposal"> & { proposalId: string }, scope?: GovernedEvolutionScope): LifecycleExperimentReport {
+    const proposal = this.readLifecycleSuccessor(input.proposalId, scope);
+    if (!proposal) throw new Error(`LIFECYCLE_SUCCESSOR_PROPOSAL_NOT_FOUND: ${input.proposalId}`);
+    const report = evaluateLifecycleExperiment({ proposal, champion: input.champion, challenger: input.challenger });
+    return this.writeImmutable(this.lifecycleExperimentsDir, report.digest.slice("sha256:".length), report, scope, "LIFECYCLE_EXPERIMENT_REPORT_IMMUTABLE_CONFLICT");
+  }
+
+  readLifecycleExperiment(digest: string, scope?: GovernedEvolutionScope): LifecycleExperimentReport | undefined {
+    return this.readScoped<LifecycleExperimentReport>(this.lifecycleExperimentsDir, digest.replace(/^sha256:/, ""), scope);
+  }
+
+  decideLifecycleSuccessor(input: Omit<Parameters<typeof decideLifecycleSuccessorActivation>[0], "proposal" | "classification" | "experiment"> & { proposalId: string; experimentDigest: string }, scope?: GovernedEvolutionScope): LifecycleActivationDecision {
+    const proposal = this.readLifecycleSuccessor(input.proposalId, scope);
+    if (!proposal) throw new Error(`LIFECYCLE_SUCCESSOR_PROPOSAL_NOT_FOUND: ${input.proposalId}`);
+    const observation = this.readAll<ControlledLifecycleObservation>(this.scopedDirectory(this.lifecycleObservationsDir, scope)).find((item) => item.digest === proposal.observationDigest);
+    if (!observation) throw new Error("CONTROLLED_LIFECYCLE_OBSERVATION_NOT_FOUND");
+    const classification = this.readLifecycleClassification(observation.id, scope);
+    const experiment = this.readLifecycleExperiment(input.experimentDigest, scope);
+    if (!classification || !experiment) throw new Error("CONTROLLED_LIFECYCLE_DECISION_INPUT_NOT_FOUND");
+    const activePolicy = this.readResource("PolicyPack", input.policy.id, undefined, scope);
+    if (!activePolicy || activePolicy.metadata.version !== input.policy.version || activePolicy.digest !== input.policy.resourceDigest) throw new Error("LIFECYCLE_ACTIVATION_POLICY_NOT_ACTIVE");
+    const declaredPolicy = activePolicy.spec.safeLifecycleActivation;
+    if (!declaredPolicy || canonicalDigest(declaredPolicy) !== canonicalDigest(policyDeclaration(input.policy))) throw new Error("LIFECYCLE_ACTIVATION_POLICY_SPEC_MISMATCH");
+    const decision = decideLifecycleSuccessorActivation({ proposal, classification, experiment, policy: input.policy, canaryEvidenceRefs: input.canaryEvidenceRefs });
+    return this.writeImmutable(this.lifecycleActivationDecisionsDir, decision.digest.slice("sha256:".length), decision, scope, "LIFECYCLE_ACTIVATION_DECISION_IMMUTABLE_CONFLICT");
+  }
+
+  evaluateLifecycleHealth(input: Parameters<typeof evaluateLifecycleMonitoring>[0], scope?: GovernedEvolutionScope): LifecycleMonitoringDecision {
+    const prior = this.readAll<LifecycleMonitoringDecision>(this.scopedDirectory(this.lifecycleMonitoringDir, scope));
+    const decision = evaluateLifecycleMonitoring({ ...input, priorDecisionDigests: prior.map((item) => item.idempotencyKey) });
+    if (decision.duplicateSuppressed) return decision;
+    return this.writeImmutable(this.lifecycleMonitoringDir, decision.digest.slice("sha256:".length), decision, scope, "LIFECYCLE_MONITORING_DECISION_IMMUTABLE_CONFLICT");
+  }
+
+  proposeGenericPrimitiveTarget(input: Omit<Parameters<typeof createGenericPrimitiveTargetProposal>[0], "observation" | "classification"> & { observationId: string }, scope?: GovernedEvolutionScope): GenericPrimitiveTargetProposal {
+    const observation = this.readLifecycleObservation(input.observationId, scope);
+    const classification = this.readLifecycleClassification(input.observationId, scope);
+    if (!observation || !classification) throw new Error(`CONTROLLED_LIFECYCLE_CLASSIFIED_OBSERVATION_NOT_FOUND: ${input.observationId}`);
+    const { observationId: _observationId, ...targetInput } = input;
+    const proposal = createGenericPrimitiveTargetProposal({ ...targetInput, observation, classification });
+    return this.writeImmutable(this.genericPrimitiveTargetsDir, proposal.id, proposal, scope, "GENERIC_PRIMITIVE_TARGET_PROPOSAL_IMMUTABLE_CONFLICT");
   }
 
   registerResource(input: unknown, scope?: GovernedEvolutionScope): GovernedResource {
@@ -550,6 +656,22 @@ export class GovernedEvolutionService {
     fs.renameSync(temporary, target);
   }
 
+  private writeImmutable<T extends { digest: string }>(root: string, id: string, value: T, scope: GovernedEvolutionScope | undefined, conflictCode: string): T {
+    const target = path.join(this.scopedDirectory(root, scope), `${safeSegment(id)}.json`);
+    if (fs.existsSync(target)) {
+      const existing = this.readJson<T>(target);
+      if (existing.digest === value.digest) return existing;
+      throw new Error(conflictCode);
+    }
+    this.atomicWrite(target, value);
+    return value;
+  }
+
+  private readScoped<T>(root: string, id: string, scope?: GovernedEvolutionScope): T | undefined {
+    const target = path.join(this.scopedDirectory(root, scope), `${safeSegment(id)}.json`);
+    return fs.existsSync(target) ? this.readJson<T>(target) : undefined;
+  }
+
   private readAll<T>(directory: string): T[] {
     return fs.readdirSync(directory).filter((file) => file.endsWith(".json")).sort().map((file) => this.readJson<T>(path.join(directory, file)));
   }
@@ -578,4 +700,9 @@ function compareVersions(left: string, right: string): number {
     if (difference !== 0) return difference;
   }
   return left.localeCompare(right);
+}
+
+function policyDeclaration(policy: Parameters<typeof decideLifecycleSuccessorActivation>[0]["policy"]): Record<string, unknown> {
+  const { id: _id, version: _version, resourceDigest: _resourceDigest, digest: _digest, ...declaration } = policy;
+  return declaration;
 }

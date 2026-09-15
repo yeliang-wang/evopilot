@@ -31,8 +31,10 @@ process evidence, but the completion audit found that they did not prove the
 entire approved v5 scheme. Runtime `v5.0.1` and Evolution Expert `v1.0.1` are
 the completed public recovery releases. The unreleased Runtime `v5.1.0` and
 Evolution Expert `v1.1.0` lines are superseded and cannot be promoted. Runtime
-`v6.0.0` and Evolution Expert `v2.0.0` are the current independently versioned
-Agent-native Lifecycle control-plane releases.
+`v6.0.0` and Evolution Expert `v2.0.0` are the current public independently
+versioned Agent-native Lifecycle control-plane releases. Runtime `v6.1.0` and
+Evolution Expert `v2.1.0` are the active working lines for controlled project
+Lifecycle evolution.
 Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset, Ontology, Policy,
 Evaluation, and Catalog versions evolve independently.
 
@@ -297,9 +299,10 @@ closure, acceptance, or project Release decisions.
 ## Mandatory, Independently Versioned Evolution Expert
 
 `@evopilot/evolution-expert` is the official Agent-neutral Skill distribution.
-Version `2.0.0` is the mandatory ordinary-human entry for Runtime `6.0.0`, but
-it remains independently versioned and is not embedded into or
-lockstep-versioned with the Runtime.
+Public version `2.0.0` is the mandatory ordinary-human entry for Runtime
+`6.0.0`. Working version `2.1.0` adds guided controlled Lifecycle evolution for
+Runtime `6.1.0`; both products remain independently versioned and the Expert is
+not embedded into or lockstep-versioned with the Runtime.
 
 The initial source may be co-located as an independent EvoPilot workspace so
 protocol and official integration changes are reviewed together. It retains a
@@ -750,13 +753,56 @@ authorized rollback, and close after monitoring. After closure, both legacy
 Suites are immutable migration evidence only and receive no further independent
 feature evolution.
 
-### v6.1.0: Controlled Experiment Loop
+### v6.1.0: Controlled Lifecycle Evolution & Experiment Loop
 
-Status: `PLANNED`
+Status: `IN_PROGRESS`
 
-Run comparable Champion/Challenger strategies over Harness-guided trajectories,
-evaluate outcome/process/safety/cost, replay controlled evidence, and promote or
-roll back only after benchmark, bad-case, regression, and human gates.
+Runtime `6.1.0` turns project run evidence and explicit Expert dialogue signals
+into immutable Lifecycle successor proposals. Each proposal binds the exact
+project, Lifecycle, HarnessBundle, GoalTarget, Runtime, Host, Provider,
+environment, authority, and evidence context; includes semantic diff,
+compatibility, impact, migration, experiment, activation, monitoring, rollback,
+and provenance; and never changes an active run's frozen binding.
+
+Comparable Champion/Challenger experiments evaluate outcome, process, safety,
+cost, bad cases, and regression without mixing non-comparable contexts.
+Activation may be automatic only when an active policy already authorizes the
+exact compatible, reversible, non-destructive, non-public, no-new-authority
+class and both canary and rollback evidence pass. Product or project meaning,
+material policy or acceptance semantics, production/database/credential
+authority, destructive or visible effects, Candidate acceptance, deployment,
+publication, Release, ambiguity, and unresolved mutations remain exact human
+gates.
+
+The first production convergence reference is the exact active DataRig Codex
+Suite `2.1.11`, bound read-only by manifest and content digests. It does not
+rewrite the accepted v6.0 DataRig `2.1.5` historical evidence and is never a
+Runtime dependency. One hundred percent of its capabilities must receive an
+item-level disposition before EvoPilot may create the independently versioned
+`datarig-production-delivery@1.0.0` project resource. Existing generic contracts
+produce resource-only evolution; a missing generic primitive produces an exact
+Runtime or Expert Target proposal instead of a DataRig-specific core branch.
+
+Acceptance covers the exact DataRig snapshot and capability map, resource-only
+convergence, gap-to-Target routing, observe/propose, Champion/Challenger,
+policy-bounded safe activation, semantic human stops, monitoring and rollback,
+Expert cross-Host behavior, a real published HarnessBundle-guided Goal Target
+Loop, operation with both legacy Suites absent, full applicable v6 regression,
+impact closure, and `legacySuiteInvocationCount=0`.
+
+### Evolution Expert v2.1.0: Controlled Lifecycle Evolution Guide
+
+Status: `IN_PROGRESS`
+
+Expert `2.1.0` presents production-reference import, capability disposition,
+Lifecycle successor review, experiment observation, safe activation, exact
+semantic or authority decisions, monitoring, and rollback through the same
+Runtime-owned MCP contracts. Codex, Claude Code, designated-human WorkBuddy,
+independent Host, generic MCP, and headless administrator paths share one
+Agent-neutral Core and one Runtime truth. The Expert remains stateless and
+non-authoritative: it cannot invoke a legacy Suite, own Lifecycle truth, infer
+approval, mutate Harness assets, store raw credentials, or introduce
+Host-specific project logic.
 
 ### v6.2.0: Learning Interoperability
 

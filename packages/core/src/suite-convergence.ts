@@ -260,7 +260,7 @@ export function builtInActionProviderDefinitions(): GovernedResource[] {
     apiVersion: GOVERNED_RESOURCE_API_VERSION,
     kind: "ActionProviderDefinition",
     metadata: { id: definition.id, name: `${definition.id} typed actions`, version: "1.0.0" },
-    provenance: { sourceType: "NATIVE", sourceId: "evopilot-runtime", sourceVersion: "6.0.0", sourceDigest: canonicalDigest({ runtime: "6.0.0", provider: definition.id }) },
+    provenance: { sourceType: "NATIVE", sourceId: "evopilot-runtime", sourceVersion: "6.1.0", sourceDigest: canonicalDigest({ runtime: "6.1.0", provider: definition.id }) },
     compatibility: { runtime: ">=6.0.0 <7.0.0" },
     capabilityRefs: definition.capabilities,
     spec: {

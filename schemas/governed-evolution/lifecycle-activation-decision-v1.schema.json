@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://evopilot.dev/schemas/governed-evolution/lifecycle-activation-decision-v1.schema.json",
+  "title": "Lifecycle Activation Decision v1",
+  "type": "object",
+  "required": ["schema", "proposalDigest", "experimentDigest", "policyDigest", "action", "humanRequired", "predicates", "reasons", "activeRunsRebound", "digest"],
+  "properties": {
+    "schema": { "const": "evopilot-lifecycle-activation-decision/v1" },
+    "proposalDigest": { "$ref": "#/$defs/digest" },
+    "experimentDigest": { "$ref": "#/$defs/digest" },
+    "policyDigest": { "$ref": "#/$defs/digest" },
+    "action": { "enum": ["AUTO_ACTIVATE_FUTURE_RUNS", "HUMAN_DECISION", "REJECT"] },
+    "humanRequired": { "type": "boolean" },
+    "decisionFrame": { "type": "object", "required": ["authorities", "boundDigest", "prompt"] },
+    "predicates": { "type": "array", "minItems": 18, "items": { "type": "object", "required": ["id", "passed"] } },
+    "reasons": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "activeRunsRebound": { "const": false },
+    "digest": { "$ref": "#/$defs/digest" }
+  },
+  "$defs": { "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } }
+}

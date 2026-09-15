@@ -7,7 +7,7 @@ import {
   type EvoPilotHumanInteractionMessageV1
 } from "@evopilot/contracts";
 
-export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "2.0.0";
+export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "2.1.0";
 export const EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA = "evopilot-evolution-expert-core/v2";
 
 export type ExpertIntent =
@@ -27,6 +27,13 @@ export type ExpertIntent =
   | "lifecycle-dependencies"
   | "lifecycle-usage"
   | "lifecycle-audit"
+  | "production-reference"
+  | "lifecycle-observe"
+  | "lifecycle-propose"
+  | "lifecycle-experiment"
+  | "lifecycle-evolution-decision"
+  | "lifecycle-monitor"
+  | "primitive-gap"
   | "harness-explain"
   | "goal-run"
   | "status"
@@ -115,6 +122,13 @@ const operations: EvolutionExpertCore["operations"] = {
   "lifecycle-dependencies": { tool: "evopilot_lifecycle_dependencies", authority: "NONE", purpose: "Explain exact Lifecycle imports and dependents.", requiredInputs: ["lifecycleId"], nextOnSuccess: "Highlight referential-integrity constraints before mutation." },
   "lifecycle-usage": { tool: "evopilot_lifecycle_usage", authority: "NONE", purpose: "Show immutable plan and run references to a Lifecycle revision.", requiredInputs: ["lifecycleId"], nextOnSuccess: "Explain which archive or deletion operations remain safe." },
   "lifecycle-audit": { tool: "evopilot_lifecycle_audit", authority: "NONE", purpose: "Show immutable Lifecycle mutation and use history.", requiredInputs: ["lifecycleId"], nextOnSuccess: "Offer inspection of any exact referenced revision." },
+  "production-reference": { tool: "evopilot_capability_inventory_validate", authority: "NONE", purpose: "Validate one exact external Suite snapshot read-only and render every capability disposition and provenance binding without invoking or mutating that Suite.", requiredInputs: ["sources", "dispositions"], nextOnSuccess: "Preview independently versioned project resources and identify only genuinely missing project-neutral primitives." },
+  "lifecycle-observe": { tool: "evopilot_lifecycle_observation_record", authority: "NONE", purpose: "Turn exact run evidence or user feedback into an immutable Runtime-owned Pipeline observation; conversation remains evidence input, never authority.", requiredInputs: ["id", "context", "signals", "capturedAt", "provenance"], nextOnSuccess: "Classify the gap without changing the active Lifecycle." },
+  "lifecycle-propose": { tool: "evopilot_lifecycle_successor_propose", authority: "NONE", purpose: "Create an immutable Lifecycle successor with complete semantic, authority, dependency, compatibility, impact, migration, experiment, monitoring, rollback, and provenance facts.", requiredInputs: ["observationId", "id", "champion", "challenger", "safety", "monitoring", "evidenceRefs"], nextOnSuccess: "Render the exact diff and prepare a comparable Champion/Challenger evaluation; do not activate implicitly." },
+  "lifecycle-experiment": { tool: "evopilot_lifecycle_experiment_evaluate", authority: "NONE", purpose: "Compare Champion and Challenger only under identical governed context and explain any stratified non-comparable evidence.", requiredInputs: ["proposalId", "champion", "challenger"], nextOnSuccess: "Show pairwise score, bad-case closure, recommendation, and its non-authoritative status." },
+  "lifecycle-evolution-decision": { tool: "evopilot_lifecycle_activation_decide", authority: "NONE", purpose: "Evaluate the exact active safe-activation policy; automatically advance only a fully preauthorized safe class and otherwise render one exact human decision or rejection.", requiredInputs: ["proposalId", "experimentDigest", "policy", "canaryEvidenceRefs"], nextOnSuccess: "For an automatic decision, confirm future-run-only activation; for a human gate, ask only the bound unresolved authority." },
+  "lifecycle-monitor": { tool: "evopilot_lifecycle_monitoring_evaluate", authority: "NONE", purpose: "Interpret declared health samples and guide retained activation, deterministic idempotent rollback, or an uncertain-state human decision from Runtime truth.", requiredInputs: ["activationReceiptDigest", "lifecycleId", "activeVersion", "activeRevisionDigest", "rollbackVersion", "rollbackRevisionDigest", "samples", "requiredConsecutiveDegraded", "mutationOutcomeKnown"], nextOnSuccess: "Show the receipt, duplicate-suppression result, retained active-run bindings, and audit evidence." },
+  "primitive-gap": { tool: "evopilot_generic_primitive_target_propose", authority: "NONE", purpose: "Create an exact Runtime or Expert Target proposal when a project need cannot be expressed by existing project-neutral primitives; never add a hidden project-specific Core branch.", requiredInputs: ["observationId", "id", "objective", "requiredPrimitive", "evidenceRefs"], nextOnSuccess: "Stop unsafe activation and request separate Target review and implementation authority." },
   "harness-explain": { tool: "evopilot_governed_evolution_plan", authority: "NONE", purpose: "Explain Runtime-produced match, rejected alternatives, immutable Bundle, and Lifecycle composition.", requiredInputs: ["projectDefinitionId", "goalTarget", "lifecycleId"], nextOnSuccess: "Present the exact binding and non-authorizing review." },
   "goal-run": { tool: "evopilot_governed_evolution_run", authority: "NONE", purpose: "Create a governed run from one exact Runtime-owned HarnessExecutionBinding without authorizing execution.", requiredInputs: ["bindingDigest", "executor"], nextOnSuccess: "Ask only unresolved inputs, then present the exact plan decision if required." },
   status: { tool: "evopilot_lifecycle_run_inspect", authority: "NONE", purpose: "Show Runtime-owned progress, evidence, blockers, and next action.", requiredInputs: ["runId"], nextOnSuccess: "Continue automatic work or explain the exact boundary." },
@@ -133,7 +147,7 @@ const coreWithoutDigest = {
   schema: EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA as typeof EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA,
   version: EVOPILOT_EVOLUTION_EXPERT_VERSION as typeof EVOPILOT_EVOLUTION_EXPERT_VERSION,
   protocolVersion: EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION as typeof EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION,
-  intents: ["help", "tutorial", "project-onboard", "project-adjust", "lifecycle-create", "lifecycle-list", "lifecycle-inspect", "lifecycle-update", "lifecycle-activate", "lifecycle-deactivate", "lifecycle-archive", "lifecycle-restore", "lifecycle-rollback", "lifecycle-dependencies", "lifecycle-usage", "lifecycle-audit", "harness-explain", "goal-run", "status", "recovery", "version-explain", "capability", "migration", "cutover", "rollback", "evidence", "acceptance", "release", "unknown"] as ExpertIntent[],
+  intents: ["help", "tutorial", "project-onboard", "project-adjust", "lifecycle-create", "lifecycle-list", "lifecycle-inspect", "lifecycle-update", "lifecycle-activate", "lifecycle-deactivate", "lifecycle-archive", "lifecycle-restore", "lifecycle-rollback", "lifecycle-dependencies", "lifecycle-usage", "lifecycle-audit", "production-reference", "lifecycle-observe", "lifecycle-propose", "lifecycle-experiment", "lifecycle-evolution-decision", "lifecycle-monitor", "primitive-gap", "harness-explain", "goal-run", "status", "recovery", "version-explain", "capability", "migration", "cutover", "rollback", "evidence", "acceptance", "release", "unknown"] as ExpertIntent[],
   principles: [
     "Runtime objects are authoritative; conversation is presentation and input only.",
     "Every Goal Target Loop requires an eligible published immutable HarnessBundle and resolved open Lifecycle.",
@@ -144,6 +158,9 @@ const coreWithoutDigest = {
     "Remain Host neutral; ordinary humans use this Expert over Runtime MCP while CLI, HTTP, and CI remain administrator, machine, diagnostic, and recovery surfaces.",
     "Agent Host carries conversation and decisions; Runtime owns control-plane truth; a separately qualified external Agent Runtime executes bounded source work.",
     "Keep Runtime, Expert, declarative resource, source Suite, project, and Harness versions independent and explicit."
+    ,"Treat external Suite snapshots as read-only production reference evidence and evolve project Pipeline resources without invoking the Suite."
+    ,"Separate observation, recommendation, experiment, policy-preauthorized automation, and human authority; successful evidence never becomes authority."
+    ,"Never mix non-comparable Champion/Challenger evidence, mutate an active run binding, replay an uncertain mutation, or add a project-specific Core branch."
   ],
   operations
 };
@@ -154,6 +171,13 @@ export function routeExpertIntent(text: string): { intent: ExpertIntent; confide
   const normalized = text.trim().toLowerCase();
   const patterns: Array<[ExpertIntent, RegExp]> = [
     ["tutorial", /tutorial|教程|入门|演示/],
+    ["production-reference", /production reference|suite snapshot|生产参考|suite 快照|能力处置/],
+    ["lifecycle-observe", /observe lifecycle|pipeline observation|record feedback|观察生命周期|记录反馈|流水线观察/],
+    ["lifecycle-experiment", /champion|challenger|对照实验|影子实验|可比实验/],
+    ["lifecycle-evolution-decision", /safe activation|activation decision|安全激活|激活判断/],
+    ["lifecycle-monitor", /monitor lifecycle|health rollback|监控生命周期|健康回滚|自动回滚/],
+    ["primitive-gap", /generic primitive|core primitive|通用原语|公共原语|能力缺口/],
+    ["lifecycle-propose", /propose lifecycle|lifecycle successor|pipeline successor|生命周期提案|后继生命周期|流水线后继/],
     ["version-explain", /version|semver|版本|升级关系/],
     ["capability", /capabilit|能力清单|能力差异/],
     ["migration", /migrat|迁移|收敛/],
@@ -213,14 +237,14 @@ export function expertVersionGuide() {
     schema: "evopilot-evolution-expert-version-guide/v1" as const,
     expertVersion: EVOPILOT_EVOLUTION_EXPERT_VERSION,
     versionLines: [
-      { owner: "Runtime", current: "6.0.0", changesWhen: "Runtime code, public contract, schema compatibility, or execution semantics change.", independentFrom: ["Expert", "governed resources", "Harness assets", "source Suites"] },
+      { owner: "Runtime", current: "6.1.0", changesWhen: "Runtime code, public contract, schema compatibility, or execution semantics change.", independentFrom: ["Expert", "governed resources", "Harness assets", "source Suites"] },
       { owner: "Evolution Expert", current: EVOPILOT_EVOLUTION_EXPERT_VERSION, changesWhen: "Expert interaction or adapter package behavior changes.", independentFrom: ["Runtime", "governed resources", "Harness assets", "source Suites"] },
       { owner: "governed resource", current: "resource.metadata.version", changesWhen: "The project declaration, Pack, Provider, binding, authority role, or Lifecycle resource changes.", independentFrom: ["Runtime", "Expert"] },
       { owner: "source Suite", current: "provenance.sourceVersion", changesWhen: "Never inside EvoPilot; it is immutable migration provenance.", independentFrom: ["derived resource version"] },
       { owner: "Harness asset", current: "published HarnessBundle version", changesWhen: "evopilot-harness publishes a new immutable asset.", independentFrom: ["Runtime", "Expert", "project resources"] }
     ],
     rules: [
-      "DataRig Suite 2.1.5 and EvoPilot Suite 3.2.1 retain those exact source identities.",
+      "DataRig Suite 2.1.11 retains its exact read-only source identity; derived project resources version independently.",
       "A first derived resource may be 1.0.0; that does not rename or reset its source Suite.",
       "A compatible resource revision does not require a Runtime or Expert release."
     ]
@@ -253,6 +277,7 @@ export function expertTutorial(): { schema: "evopilot-evolution-expert-tutorial/
     steps: [
       { concept: "Project", explanation: "A versioned declaration of source, delivery, policy, environment, Host, Agent Runtime, and evidence discovery.", nextPrompt: "Help me discover and register this project." },
       { concept: "Lifecycle Registry", explanation: "Human-readable Pipeline definitions are immutable tenant/workspace resources with independent versions, active pointers, audit, and rollback.", nextPrompt: "Show my Lifecycle list and explain which revisions are active." },
+      { concept: "Controlled Lifecycle Evolution", explanation: "Runtime turns exact observations into immutable successors, comparable experiments, policy-bounded future-run activation, monitoring, and receipt-safe rollback; conversation never supplies authority.", nextPrompt: "Show how an observation can become a safely evaluated Lifecycle successor." },
       { concept: "Harness", explanation: "A published immutable professional obligation set selected by Runtime; Expert never chooses or changes it.", nextPrompt: "Match a Harness for my next goal and explain the result." },
       { concept: "Goal Target Loop", explanation: "Runtime combines one Lifecycle revision and one real HarnessBundle, then revalidates every start, resume, retry, and iteration.", nextPrompt: "Plan and run my goal using the exact selected Harness and Lifecycle." },
       { concept: "Agent Runtime", explanation: "A qualified external Agent Runtime executes only the exact pendingExecution; the Agent Host remains the conversation surface.", nextPrompt: "Explain the pending execution, allowed effects, and sandbox before continuing." },
@@ -319,7 +344,7 @@ export function createHostIntegrationBundle(host: string): EvolutionExpertHostIn
     host,
     expertCoreDigest: EVOLUTION_EXPERT_CORE.digest,
     adapterDigest: adapter.digest,
-    runtimeCompatibility: ">=6.0.0 <7.0.0",
+    runtimeCompatibility: ">=6.1.0 <7.0.0",
     ordinaryHumanEntry: "EXPERT_OVER_MCP_ONLY" as const,
     lifecycle: {
       install: `${prefix}/install`,
@@ -371,12 +396,13 @@ export function qualifyExpertHostAdapter(host: string, engineVersion: string, ho
 }
 
 export function expertCompatibility(adapter: EvoPilotEvolutionExpertAdapterManifestV1, engineVersion: string, hostCapabilities: string[]): EvoPilotEvolutionExpertCompatibilityV1 {
-  const compatibleEngine = /^6\./.test(engineVersion);
+  const match = engineVersion.match(/^(\d+)\.(\d+)\.(\d+)/);
+  const compatibleEngine = Boolean(match && Number(match[1]) === 6 && Number(match[2]) >= 1);
   const missing = adapter.requiredCapabilities.filter((capability) => !hostCapabilities.includes(capability));
   return {
     schema: "evopilot-evolution-expert-compatibility/v1",
     expertVersion: EVOPILOT_EVOLUTION_EXPERT_VERSION,
-    engineProtocolRange: ">=6.0.0 <7.0.0",
+    engineProtocolRange: ">=6.1.0 <7.0.0",
     expertProtocolVersion: EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION,
     coreDigest: EVOLUTION_EXPERT_CORE.digest,
     adapterId: adapter.id,

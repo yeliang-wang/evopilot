@@ -1,0 +1,85 @@
+schema: evopilot-lifecycle-definition/v1alpha1
+metadata:
+  id: datarig-production-delivery
+  name: DataRig production delivery reference
+  version: 1.0.0
+  description: A read-only-derived, independently versioned production Pipeline reference for DataRig Suite 2.1.11.
+  labels:
+    audience: enterprise-internal
+    reference: datarig-production-delivery
+    source-suite: datarig-codex-suite-2.1.11
+imports:
+  - id: common-software-delivery
+    version: 1.0.0
+capabilities: [build.execute, test.execute, goal-loop.execute, release.readiness, release.publish]
+obligations:
+  requiredEvidence: [repository-integrity, candidate-integrity, isolated-install, real-database-e2e, proofops-acceptance, release-readback]
+  validators: [governance-kernel, candidate-digest, no-rebuild-promotion, protected-tests, documentation-closure]
+  constraints: [candidate-before-acceptance, exact-byte-promotion, separate-database-authority, separate-release-authority, workbuddy-designated-human-only]
+inputs:
+  - id: candidateRef
+    type: string
+    prompt: Which exact immutable Candidate is under evaluation?
+    required: true
+  - id: artifactChannel
+    type: string
+    prompt: Which declared internal artifact channel is the release target?
+    required: true
+  - id: databaseCredential
+    type: secret-ref
+    prompt: Which approved SecretRef may be used for real-database E2E?
+    required: false
+  - id: releaseCredential
+    type: secret-ref
+    prompt: Which approved SecretRef may be used for exact-byte promotion?
+    required: false
+stages:
+  - id: repository-integrity
+    name: Verify exact repository governance binding
+    action: { uses: project.validate@1, with: { strict: true } }
+    decision: { mode: AUTO }
+  - id: release-readiness
+    name: Evaluate complete RC-input readiness
+    needs: [repository-integrity]
+    action: { uses: readiness.evaluate@1, with: { profile: "${inputs.verificationProfile}" } }
+    decision: { mode: AUTO }
+  - id: candidate-build
+    name: Build the exact immutable Candidate
+    needs: [release-readiness]
+    action: { uses: build.verify@1, with: { profile: candidate } }
+    decision: { mode: EXTERNAL_SIGNAL }
+    retry: { maxAttempts: 2 }
+  - id: database-e2e
+    name: Execute authorized isolated real-database E2E
+    needs: [candidate-build]
+    when: { input: databaseCredential, exists: true }
+    action: { uses: test.verify@1, with: { suite: production-e2e } }
+    decision:
+      mode: HUMAN
+      authority: production
+      prompt: Authorize the exact Candidate-bound isolated real-database E2E?
+  - id: harness-goal-loop
+    name: Execute the Harness-guided Goal Target Loop
+    needs: [database-e2e]
+    action: { uses: evopilot.goal-loop@1, with: { objective: Validate the exact DataRig Candidate under the bound HarnessBundle and Lifecycle. } }
+    decision: { mode: EXTERNAL_SIGNAL }
+    retry: { maxAttempts: 2 }
+  - id: acceptance-evidence
+    name: Aggregate independent acceptance evidence
+    needs: [harness-goal-loop]
+    action: { uses: evidence.aggregate@1, with: { format: json } }
+    decision: { mode: AUTO }
+  - id: release-readback
+    name: Prepare exact-byte release and readback evidence
+    needs: [acceptance-evidence]
+    action: { uses: release.prepare@1, with: { channel: "${inputs.artifactChannel}" } }
+    decision: { mode: AUTO }
+  - id: exact-byte-promotion
+    name: Promote accepted bytes to the authorized internal channel
+    needs: [release-readback]
+    when: { input: releaseCredential, exists: true }
+    action: { uses: release.publish@1, with: { channel: "${inputs.artifactChannel}" } }
+    decision:
+      mode: HUMAN
+      authority: release
+      prompt: Authorize exact-byte promotion for this binding and channel?

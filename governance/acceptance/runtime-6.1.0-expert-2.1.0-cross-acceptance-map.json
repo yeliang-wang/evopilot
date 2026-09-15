@@ -1,0 +1,333 @@
+{
+  "schema": "evopilot-runtime-expert-cross-acceptance-map/v3",
+  "id": "evopilot-runtime-6.1.0-expert-2.1.0-controlled-lifecycle-evolution",
+  "status": "IMPLEMENTED_AWAITING_CANDIDATE_ACCEPTANCE",
+  "bindings": {
+    "runtime": {
+      "id": "evopilot-v6.1.0-controlled-lifecycle-evolution",
+      "revision": 1,
+      "authorizationDigest": "sha256:3950914679e8e37b7282c631726f2d1c216c3d911822596fd0dd87c91f144228",
+      "fileDigest": "sha256:0c205ad4b9028f86f15e5ba7ba9d03318ac502ecd68b16959d3c76ceca483b07"
+    },
+    "expert": {
+      "id": "evopilot-evolution-expert-v2.1.0-controlled-lifecycle-evolution",
+      "revision": 1,
+      "authorizationDigest": "sha256:d9a6c1edf67f8f7ce8d31a6129eed49eeccb705003c7584e68e59f65c9212489",
+      "fileDigest": "sha256:ebd180b92f9ff27bf4867181c601774a06994f128bd89c2d957de587363d81c7"
+    }
+  },
+  "publishedBaseline": {
+    "contract": "governance/acceptance/v6-completion-contract.json",
+    "fileDigest": "sha256:ec6e075f036fbb137804e1f2b5889b9580ba717aa899fcc77ef9eca9da8cde3c",
+    "contractDigest": "sha256:cb84208c8aee21378ef392f27cec08070f34056a6667e6b47b14d3b4a00ffca4",
+    "requiredCriteria": 253,
+    "disposition": "INHERIT_ALL_NO_EXCLUSIONS"
+  },
+  "productionReferences": [
+    {
+      "id": "datarig-codex-suite",
+      "version": "2.1.11",
+      "role": "READ_ONLY_PRODUCTION_CONVERGENCE_EVIDENCE",
+      "manifestDigest": "sha256:416e76bd1c8244eb227a835d9c2db1e7728e9d59ff56b6df516306b3c058bd80",
+      "inventoryRef": "governance/suite-convergence/datarig-2.1.11-capability-inventory.json",
+      "inventoryFileDigest": "sha256:8adc0248b64171fa7f48d9589632c6bf11e1878929b91207b00409eaf0fdca37",
+      "suiteInvocationAllowed": false,
+      "suiteMutationAllowed": false
+    }
+  ],
+  "rows": [
+    {
+      "id": "V61-CROSS01",
+      "objective": "Prove exact DataRig Suite 2.1.11 read-only snapshot, 100-percent item disposition, declarative resource convergence, and generic-gap escalation without Suite invocation or Runtime project branch.",
+      "runtimeE2EIds": [
+        "E2E-DATARIG-211-SNAPSHOT",
+        "E2E-DATARIG-211-CAPABILITY-MAP",
+        "E2E-DATARIG-211-RESOURCE-ONLY",
+        "E2E-DATARIG-211-GAP-TO-TARGET"
+      ],
+      "expertE2EIds": [
+        "EX21E2E01",
+        "EX21E2E07"
+      ],
+      "runtimeAcceptanceIds": [
+        "R61-FUNC09",
+        "R61-FUNC10",
+        "R61-FUNC11",
+        "R61-CAP01"
+      ],
+      "expertAcceptanceIds": [
+        "EX21-FUNC01",
+        "EX21-FUNC02",
+        "EX21-FUNC07",
+        "EX21-CAP01"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "generic MCP",
+        "headless",
+        "independent Agent Runtime"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V61-CROSS02",
+      "objective": "Convert exact Runtime observations into one immutable Lifecycle successor with complete semantic and provenance review through Expert.",
+      "runtimeE2EIds": [
+        "E2E-OBSERVE-PROPOSE"
+      ],
+      "expertE2EIds": [
+        "EX21E2E02"
+      ],
+      "runtimeAcceptanceIds": [
+        "R61-FUNC01",
+        "R61-FUNC02",
+        "R61-FUNC03"
+      ],
+      "expertAcceptanceIds": [
+        "EX21-FUNC03"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "generic MCP"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V61-CROSS03",
+      "objective": "Run and explain comparable Champion/Challenger evaluation, stratify mismatches, and close bad cases without turning recommendation into authority.",
+      "runtimeE2EIds": [
+        "E2E-CHAMPION-CHALLENGER"
+      ],
+      "expertE2EIds": [
+        "EX21E2E02"
+      ],
+      "runtimeAcceptanceIds": [
+        "R61-FUNC04",
+        "R61-CAP04"
+      ],
+      "expertAcceptanceIds": [
+        "EX21-FUNC04"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "generic MCP",
+        "headless",
+        "independent Agent Runtime"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V61-CROSS04",
+      "objective": "Separate exact policy-bounded safe activation from semantic or authority decisions across Agent Hosts.",
+      "runtimeE2EIds": [
+        "E2E-AUTO-ACTIVATE-SAFE",
+        "E2E-HUMAN-GATE-SEMANTIC"
+      ],
+      "expertE2EIds": [
+        "EX21E2E03",
+        "EX21E2E04"
+      ],
+      "runtimeAcceptanceIds": [
+        "R61-FUNC05",
+        "R61-FUNC06",
+        "R61-FUNC07"
+      ],
+      "expertAcceptanceIds": [
+        "EX21-FUNC05"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "Claude Code",
+        "WorkBuddy",
+        "generic MCP"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V61-CROSS05",
+      "objective": "Monitor an activated future-run pointer and perform deterministic rollback while preserving active-run bindings, audit, idempotency, and restart recovery.",
+      "runtimeE2EIds": [
+        "E2E-MONITOR-ROLLBACK"
+      ],
+      "expertE2EIds": [
+        "EX21E2E03"
+      ],
+      "runtimeAcceptanceIds": [
+        "R61-FUNC07",
+        "R61-FUNC08",
+        "R61-CAP03"
+      ],
+      "expertAcceptanceIds": [
+        "EX21-FUNC06"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "headless",
+        "independent Host"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V61-CROSS06",
+      "objective": "Preserve one Expert Core and one Runtime truth across Codex, Claude Code, designated-human WorkBuddy, generic MCP, independent Host, and headless recovery.",
+      "runtimeE2EIds": [
+        "E2E-EXPERT-CROSS-HOST"
+      ],
+      "expertE2EIds": [
+        "EX21E2E04",
+        "EX21E2E05"
+      ],
+      "runtimeAcceptanceIds": [
+        "R61-FUNC12",
+        "R61-CAP03"
+      ],
+      "expertAcceptanceIds": [
+        "EX21-FUNC08",
+        "EX21-CAP02"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "Claude Code",
+        "WorkBuddy",
+        "generic MCP",
+        "independent Host",
+        "headless"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V61-CROSS07",
+      "objective": "Use a real published immutable HarnessBundle to guide controlled Lifecycle evaluation and the Goal Target Loop without weakening or mutating Harness obligations.",
+      "runtimeE2EIds": [
+        "E2E-REAL-HARNESS-BUNDLE"
+      ],
+      "expertE2EIds": [
+        "EX21E2E06"
+      ],
+      "runtimeAcceptanceIds": [
+        "R61-FUNC07",
+        "R61-CAP02"
+      ],
+      "expertAcceptanceIds": [
+        "EX21-FUNC03",
+        "EX21-CAP01"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "independent Agent Runtime"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V61-CROSS08",
+      "objective": "Onboard and evolve an unknown project with both legacy Suites absent, escalating missing generic primitives through an explicit Target and preserving finite recovery.",
+      "runtimeE2EIds": [
+        "E2E-NO-SUITE",
+        "E2E-DATARIG-211-GAP-TO-TARGET"
+      ],
+      "expertE2EIds": [
+        "EX21E2E07",
+        "EX21E2E08"
+      ],
+      "runtimeAcceptanceIds": [
+        "R61-FUNC11",
+        "R61-FUNC12",
+        "R61-CAP01"
+      ],
+      "expertAcceptanceIds": [
+        "EX21-FUNC07"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "generic MCP",
+        "headless",
+        "independent Host"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V61-CROSS09",
+      "objective": "Close the exact 6.1.0 and 2.1.0 Candidate pair only after all current criteria, the immutable v6 253-item baseline, impact closure, and NO_REGRESSION pass.",
+      "runtimeE2EIds": [
+        "E2E-NO-REGRESSION"
+      ],
+      "expertE2EIds": [
+        "EX21E2E10"
+      ],
+      "runtimeAcceptanceIds": [
+        "R61-CAP04",
+        "R61-CAP05"
+      ],
+      "expertAcceptanceIds": [
+        "EX21-CAP04"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "Claude Code",
+        "WorkBuddy",
+        "generic MCP",
+        "headless",
+        "independent Host",
+        "independent Agent Runtime"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V61-CROSS10",
+      "objective": "Prove independent Expert/Runtime/resource versioning, Host-neutral generation, credential redaction, and adversarial authority boundaries.",
+      "runtimeE2EIds": [
+        "E2E-HUMAN-GATE-SEMANTIC",
+        "E2E-NO-SUITE"
+      ],
+      "expertE2EIds": [
+        "EX21E2E08",
+        "EX21E2E09",
+        "EX21E2E10"
+      ],
+      "runtimeAcceptanceIds": [
+        "R61-CAP01",
+        "R61-CAP03"
+      ],
+      "expertAcceptanceIds": [
+        "EX21-CAP01",
+        "EX21-CAP03"
+      ],
+      "requiredHosts": [
+        "Codex",
+        "Claude Code",
+        "generic MCP",
+        "headless",
+        "independent Host"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "coverage": {
+    "runtimeCurrentCriteria": 17,
+    "runtimeCurrentCriteriaCovered": 17,
+    "runtimeE2E": 13,
+    "runtimeE2ECovered": 13,
+    "expertCurrentCriteria": 12,
+    "expertCurrentCriteriaCovered": 12,
+    "expertE2E": 10,
+    "expertE2ECovered": 10,
+    "inheritedPublishedCriteria": 253,
+    "inheritedPublishedCriteriaDisposition": "INHERIT_ALL_NO_EXCLUSIONS",
+    "crossAcceptanceRows": 10,
+    "percent": 100,
+    "unmapped": 0,
+    "silentExclusions": 0
+  },
+  "completionRule": "Every row, all 17 Runtime current criteria and 13 Runtime E2E, all 12 Expert current criteria and 10 Expert E2E, the immutable v6 253-item baseline, impact closure, and NO_REGRESSION pass for one exact installed Candidate pair; failed=pending=stale=generic=unmapped=silentExclusions=legacySuiteInvocationCount=0.",
+  "digest": "sha256:61074e928908344ef26a1bfa9145605e6230301b8f48c7e508b020c3d553ff06"
+}
