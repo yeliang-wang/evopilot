@@ -511,5 +511,34 @@
     "executionPlane": "Qualified external Agent Runtime",
     "harnessAuthority": "External published immutable HarnessBundle",
     "suiteBoundary": "Read-only production reference evidence only; zero invocation, mutation, dependency, or core privilege"
+  },
+  "publicEvidence": {
+    "schema": "evopilot-public-release-evidence/v1",
+    "status": "VERIFIED",
+    "version": "6.1.0",
+    "tag": "v6.1.0",
+    "acceptedProductCommit": "314ec9b01024706b932b19afdc71f4c2c8f8f6ea",
+    "githubRelease": "https://github.com/yeliang-wang/evopilot/releases/tag/v6.1.0",
+    "githubReleaseAssets": "ACCEPTED_BYTES_VERIFIED",
+    "releaseWorkflowRun": 35050749023,
+    "npmWorkflowRun": 35050949732,
+    "ghcrManifestDigest": "sha256:faf883b4fcc7bded42500aa96c8e0b9e978eff069d6146a0d3cfef80c7380e65",
+    "npmPackages": [
+      "@evopilot/contracts@6.1.0",
+      "@evopilot/client@6.1.0",
+      "@evopilot/adapter-mcp@6.1.0",
+      "@evopilot/adapter-opencode@6.1.0",
+      "@evopilot/cli@6.1.0",
+      "create-evopilot@6.1.0"
+    ],
+    "packageIntegrity": "VERIFIED_AGAINST_ACCEPTED_TARBALLS",
+    "registrySignatures": "CRYPTOGRAPHICALLY_VERIFIED",
+    "provenance": "SLSA_V1_REKOR_INTEGRITY_MATCH_AND_INCLUSION_PROOF_VERIFIED",
+    "publicInstallation": "VERIFIED_FROM_EMPTY_DIRECTORY",
+    "cliEntrypoints": "VERIFIED",
+    "installer": "VERIFIED_DRY_RUN_FROM_PUBLIC_ACCEPTED_MANIFEST",
+    "mcpAdapter": "VERIFIED",
+    "productBytesRebuilt": false,
+    "acceptanceResultDigest": "sha256:5ba1b4f61046ead07a463027cd5becd615c50d3ef26cbb22b2f2a54a9e057605"
   }
 }

@@ -31,10 +31,9 @@ process evidence, but the completion audit found that they did not prove the
 entire approved v5 scheme. Runtime `v5.0.1` and Evolution Expert `v1.0.1` are
 the completed public recovery releases. The unreleased Runtime `v5.1.0` and
 Evolution Expert `v1.1.0` lines are superseded and cannot be promoted. Runtime
-`v6.0.0` and Evolution Expert `v2.0.0` are the current public independently
-versioned Agent-native Lifecycle control-plane releases. Runtime `v6.1.0` and
-Evolution Expert `v2.1.0` are the active working lines for controlled project
-Lifecycle evolution.
+`v6.0.0` and Evolution Expert `v2.0.0` remain immutable public history.
+Runtime `v6.1.0` and Evolution Expert `v2.1.0` are the current public,
+independently versioned controlled project Lifecycle evolution releases.
 Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset, Ontology, Policy,
 Evaluation, and Catalog versions evolve independently.
 
@@ -755,7 +754,7 @@ feature evolution.
 
 ### v6.1.0: Controlled Lifecycle Evolution & Experiment Loop
 
-Status: `IN_PROGRESS`
+Status: `COMPLETE` — joint campaign `305/305`, cross-acceptance `10/10`, DataRig Suite `2.1.11` read-only coverage `100%`, `NO_REGRESSION` passed
 
 Runtime `6.1.0` turns project run evidence and explicit Expert dialogue signals
 into immutable Lifecycle successor proposals. Each proposal binds the exact
@@ -792,7 +791,7 @@ impact closure, and `legacySuiteInvocationCount=0`.
 
 ### Evolution Expert v2.1.0: Controlled Lifecycle Evolution Guide
 
-Status: `IN_PROGRESS`
+Status: `COMPLETE` — joint campaign `305/305`, cross-acceptance `10/10`, Runtime `6.1.0` conformance verified, `NO_REGRESSION` passed
 
 Expert `2.1.0` presents production-reference import, capability disposition,
 Lifecycle successor review, experiment observation, safe activation, exact

@@ -405,5 +405,29 @@
     "suiteBoundary": "Read-only source provenance only",
     "harnessBoundary": "External immutable HarnessBundle authority",
     "workBuddyBoundary": "Designated-human-only operation"
+  },
+  "publicEvidence": {
+    "schema": "evopilot-public-release-evidence/v1",
+    "status": "VERIFIED",
+    "version": "2.1.0",
+    "tag": "evolution-expert-v2.1.0",
+    "acceptedProductCommit": "56e4506664a962d6f09fd0a3077a82e13bf532ff",
+    "githubRelease": "https://github.com/yeliang-wang/evopilot/releases/tag/evolution-expert-v2.1.0",
+    "githubReleaseAssets": "ACCEPTED_BYTES_VERIFIED",
+    "initialWorkflowRun": 35050750840,
+    "verificationOnlyWorkflowRun": 35051238147,
+    "npmPackage": "@evopilot/evolution-expert@2.1.0",
+    "packageIntegrity": "VERIFIED_AGAINST_ACCEPTED_TARBALL",
+    "registrySignatures": "CRYPTOGRAPHICALLY_VERIFIED",
+    "provenance": "SLSA_V1_REKOR_INTEGRITY_MATCH_AND_INCLUSION_PROOF_VERIFIED",
+    "publicInstallation": "VERIFIED_FROM_EMPTY_DIRECTORY",
+    "cliEntrypoint": "VERIFIED",
+    "skill": "PRESENT",
+    "coreSchema": "evopilot-evolution-expert-core/v2",
+    "coreDigest": "sha256:36367e9556355db2b5afbb69dc5476aa498c416bd8c6c39b402394e57157b6c4",
+    "mcpCompatibility": "VERIFIED",
+    "runtimeCompatibility": "6.1.0_CONFORMANT",
+    "productBytesRebuilt": false,
+    "acceptanceResultDigest": "sha256:5ba1b4f61046ead07a463027cd5becd615c50d3ef26cbb22b2f2a54a9e057605"
   }
 }

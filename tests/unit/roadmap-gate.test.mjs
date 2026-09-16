@@ -79,11 +79,11 @@ test("Roadmap Gate accepts current Runtime and Expert milestones in their verifi
   }
 });
 
-test("Roadmap Gate binds public v6, active v6.1 lifecycle evolution, Expert 2.1, and independent Cutover", () => {
+test("Roadmap Gate binds public v6 history, completed v6.1 lifecycle evolution, Expert 2.1, and independent Cutover", () => {
   const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
-  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.0.0");
+  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.1.0");
   assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.1.0");
-  assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.0.0");
+  assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.1.0");
   assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.1.0");
   assert.equal(roadmap.evolutionExpertPolicy.mandatoryForOrdinaryHumans, true);
   assert.equal(roadmap.humanInteractionProtocol.canonicalOrdinaryHumanProtocol, "MCP");
@@ -109,13 +109,37 @@ test("Roadmap Gate binds public v6, active v6.1 lifecycle evolution, Expert 2.1,
   assert.equal(runtimeV6?.completionEvidence.legacySuiteInvocationCount, 0);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-post-v6.0.0-legacy-suite-cutover")?.standaloneReleaseEligible, false);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-post-v6.0.0-legacy-suite-cutover")?.targetVersion, "6.0.0");
-  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-6.1-controlled-lifecycle-evolution")?.status, "IN_PROGRESS");
-  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution")?.status, "IN_PROGRESS");
+  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.1.0");
+  assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.1.0");
+  const runtimeV61 = roadmap.milestones.find((item) => item.id === "evopilot-6.1-controlled-lifecycle-evolution");
+  const expertV21 = roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution");
+  assert.equal(runtimeV61?.status, "COMPLETE");
+  assert.equal(expertV21?.status, "COMPLETE");
+  assert.equal(runtimeV61?.completionEvidence.total, 305);
+  assert.equal(runtimeV61?.completionEvidence.passed, 305);
+  assert.equal(expertV21?.completionEvidence.total, 305);
+  assert.equal(expertV21?.completionEvidence.passed, 305);
+  assert.equal(runtimeV61?.completionEvidence.dataRigSuite211ReadOnlyCoverage, "VERIFIED");
+  assert.equal(expertV21?.completionEvidence.legacySuiteInvocationCount, 0);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-6.2-learning-interop")?.targetVersion, "6.2.0");
   assert.equal(roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.suiteVersion, "2.1.11");
   assert.equal(roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.initialResourceVersion, "1.0.0");
   assert.equal(roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.runtimeDependency, false);
   assert.equal(roadmap.controlledLifecycleEvolutionPolicy.requiredEndToEnd.length, 13);
+});
+
+test("Roadmap Gate fails closed on incomplete v6.1 terminal or public evidence", () => {
+  for (const [name, mutate, pattern] of [
+    ["runtime count", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-6.1-controlled-lifecycle-evolution").completionEvidence.passed = 304; }, /305\/305/],
+    ["expert Candidate", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution").completionEvidence.acceptedCandidateCommit = "0".repeat(40); }, /accepted Candidate commit/],
+    ["DataRig coverage", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-6.1-controlled-lifecycle-evolution").completionEvidence.dataRigDispositionCoveragePercent = 99; }, /DataRig Suite 2\.1\.11 coverage/],
+    ["legacy invocation", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution").completionEvidence.legacySuiteInvocationCount = 1; }, /zero legacy Suite invocation/]
+  ]) {
+    const result = runWithRoadmap(mutate);
+    assert.equal(result.status, 1, `${name}: ${result.stderr}`);
+    assert.equal(result.body.classification, "INVALID");
+    assert.match(result.body.errors.join(" "), pattern);
+  }
 });
 
 test("Roadmap Gate fails closed on incomplete v6 terminal evidence or premature Suite Cutover", () => {

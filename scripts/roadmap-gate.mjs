@@ -67,8 +67,8 @@ function validateRoadmap(value) {
   required(semver(value?.evolutionExpertPolicy?.publishedBaseline), "evolutionExpertPolicy.publishedBaseline must be SemVer");
   required(semver(value?.evolutionExpertPolicy?.currentWorkingVersion), "evolutionExpertPolicy.currentWorkingVersion must be SemVer");
   required(value?.evolutionExpertPolicy?.lockstepWithRuntime === false, "Evolution Expert must not be version-locked to the Runtime");
-  required(value?.versionPolicy?.publishedBaseline === "6.0.0" && value?.versionPolicy?.currentWorkingVersion === "6.1.0", "Runtime Roadmap must bind public 6.0.0 and working 6.1.0");
-  required(value?.evolutionExpertPolicy?.publishedBaseline === "2.0.0" && value?.evolutionExpertPolicy?.currentWorkingVersion === "2.1.0", "Evolution Expert Roadmap must bind public 2.0.0 and working 2.1.0");
+  required(value?.versionPolicy?.publishedBaseline === "6.1.0" && value?.versionPolicy?.currentWorkingVersion === "6.1.0", "Runtime Roadmap must bind public and current 6.1.0");
+  required(value?.evolutionExpertPolicy?.publishedBaseline === "2.1.0" && value?.evolutionExpertPolicy?.currentWorkingVersion === "2.1.0", "Evolution Expert Roadmap must bind public and current 2.1.0");
   required(value?.evolutionExpertPolicy?.mandatoryForOrdinaryHumans === true, "Evolution Expert must be mandatory for ordinary-human operation");
   required(value?.evolutionExpertPolicy?.canonicalProtocol === "MCP", "Evolution Expert ordinary-human protocol must be MCP");
   required(value?.humanInteractionProtocol?.canonicalOrdinaryHumanProtocol === "MCP", "MCP must be the canonical ordinary-human protocol");
@@ -233,11 +233,15 @@ function validateRoadmap(value) {
   required(cutoverMilestone?.standaloneReleaseEligible === false, "post-release legacy Suite Cutover must not create another release line");
   required(cutoverMilestone?.releaseBlockerForV60 === false, "post-release legacy Suite Cutover milestone must not block v6.0 release");
   required(cutoverMilestone?.timing === "AFTER_PUBLIC_RUNTIME_6_0_AND_EXPERT_2_0_VERIFIED_INSTALLATION", "post-release legacy Suite Cutover milestone timing is invalid");
-  required(cutoverMilestone?.targetVersion === value?.versionPolicy?.publishedBaseline, "post-release legacy Suite Cutover must remain bound to the public Runtime 6.0.0 prerequisite");
+  required(cutoverMilestone?.targetVersion === "6.0.0", "post-release legacy Suite Cutover must remain bound to the public Runtime 6.0.0 prerequisite");
   const experimentMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.1-controlled-lifecycle-evolution");
-  required(experimentMilestone?.targetVersion === "6.1.0" && experimentMilestone?.status === "IN_PROGRESS", "Controlled Lifecycle Evolution must be the active Runtime 6.1.0 milestone");
+  required(experimentMilestone?.targetVersion === "6.1.0" && experimentMilestone?.status === "COMPLETE", "Controlled Lifecycle Evolution must be the COMPLETE Runtime 6.1.0 milestone");
   const expertEvolutionMilestone = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution");
-  required(expertEvolutionMilestone?.targetVersion === "2.1.0" && expertEvolutionMilestone?.status === "IN_PROGRESS", "Controlled Lifecycle Evolution Expert must be the active Expert 2.1.0 milestone");
+  required(expertEvolutionMilestone?.targetVersion === "2.1.0" && expertEvolutionMilestone?.status === "COMPLETE", "Controlled Lifecycle Evolution Expert must be the COMPLETE Expert 2.1.0 milestone");
+  validateV61TerminalCompletion(experimentMilestone, "Runtime", "6.1.0", "314ec9b01024706b932b19afdc71f4c2c8f8f6ea", "v6.1.0");
+  validateV61TerminalCompletion(expertEvolutionMilestone, "Evolution Expert", "2.1.0", "56e4506664a962d6f09fd0a3077a82e13bf532ff", "evolution-expert-v2.1.0");
+  validateV61PublicEvidence("governance/targets/evopilot-v6.1.0-controlled-lifecycle-evolution.json", "Runtime", "6.1.0", "v6.1.0", 6, "314ec9b01024706b932b19afdc71f4c2c8f8f6ea", true);
+  validateV61PublicEvidence("governance/targets/evopilot-evolution-expert-v2.1.0-controlled-lifecycle-evolution.json", "Evolution Expert", "2.1.0", "evolution-expert-v2.1.0", 1, "56e4506664a962d6f09fd0a3077a82e13bf532ff", false);
   const learningMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.2-learning-interop");
   required(learningMilestone?.targetVersion === "6.2.0" && learningMilestone?.status === "PLANNED", "Learning Interoperability must be rescheduled to v6.2.0");
   for (const milestone of milestones.filter((item) => item.status === "DEFERRED")) {
@@ -321,6 +325,56 @@ function validateRoadmap(value) {
     required(evidence?.publicInstallation === "VERIFIED_FROM_EMPTY_DIRECTORY", `${label} public installation must be verified`);
     required(evidence?.productBytesRebuilt === false, `${label} public evidence must prove no rebuild`);
     required(evidence?.acceptanceResultDigest === "sha256:43f2ed055215226927a217d87d5c6618aa9f3294e27b064ce5aa03c02c3fd00c", `${label} public evidence must bind the acceptance result`);
+  }
+
+  function validateV61TerminalCompletion(milestone, label, version, acceptedCommit, releaseTag) {
+    const report = milestone?.completionEvidence;
+    required(report?.schema === "evopilot-approved-scheme-completion-report/v1", `${label} v6.1 terminal completion report is required`);
+    required(report?.total === 305 && report?.passed === 305, `${label} v6.1 terminal completion must be 305/305`);
+    for (const key of ["failed", "pending", "stale", "generic", "unmapped"]) required(report?.[key] === 0, `${label} v6.1 terminal completion requires ${key}=0`);
+    required(report?.version === version, `${label} v6.1 terminal completion version must be ${version}`);
+    required(report?.acceptanceCampaignTotal === 305 && report?.acceptanceCampaignPassed === 305, `${label} v6.1 terminal completion requires campaign 305/305`);
+    required(report?.crossAcceptanceTotal === 10 && report?.crossAcceptancePassed === 10, `${label} v6.1 terminal completion requires cross-acceptance 10/10`);
+    required(report?.exactInstalledCandidatePair === "VERIFIED", `${label} v6.1 terminal completion requires the exact installed Candidate pair VERIFIED`);
+    required(report?.acceptedCandidateCommit === acceptedCommit, `${label} v6.1 terminal completion must bind the accepted Candidate commit`);
+    required(report?.acceptanceResultDigest === "sha256:5ba1b4f61046ead07a463027cd5becd615c50d3ef26cbb22b2f2a54a9e057605", `${label} v6.1 terminal completion must bind the acceptance result digest`);
+    required(report?.impactClosure === "PASS", `${label} v6.1 terminal completion requires impact closure PASS`);
+    required(report?.noRegression === "PASSED", `${label} v6.1 terminal completion requires NO_REGRESSION PASSED`);
+    required(report?.legacySuiteInvocationCount === 0, `${label} v6.1 terminal completion requires zero legacy Suite invocation`);
+    required(report?.dataRigSuite211ReadOnlyCoverage === "VERIFIED" && report?.dataRigDispositionCoveragePercent === 100, `${label} v6.1 terminal completion requires exact read-only DataRig Suite 2.1.11 coverage`);
+    required(report?.publicEvidenceRef === `https://github.com/yeliang-wang/evopilot/releases/tag/${releaseTag}`, `${label} v6.1 terminal completion requires exact public Release evidence`);
+  }
+
+  function validateV61PublicEvidence(relativeTargetPath, label, version, tag, packageCount, acceptedCommit, runtime) {
+    let target;
+    try {
+      target = JSON.parse(fs.readFileSync(path.join(root, relativeTargetPath), "utf8"));
+    } catch (error) {
+      required(false, `${label} v6.1 public evidence Target cannot be read: ${error.message}`);
+      return;
+    }
+    const evidence = target?.publicEvidence;
+    required(evidence?.schema === "evopilot-public-release-evidence/v1" && evidence?.status === "VERIFIED", `${label} v6.1 public evidence must be VERIFIED`);
+    required(evidence?.version === version && evidence?.tag === tag, `${label} v6.1 public evidence must bind ${tag}`);
+    required(evidence?.acceptedProductCommit === acceptedCommit, `${label} v6.1 public evidence must bind the accepted Candidate commit`);
+    required(evidence?.githubRelease === `https://github.com/yeliang-wang/evopilot/releases/tag/${tag}`, `${label} v6.1 public evidence must bind the exact GitHub Release`);
+    const packages = Array.isArray(evidence?.npmPackages) ? evidence.npmPackages : evidence?.npmPackage ? [evidence.npmPackage] : [];
+    required(packages.length === packageCount && packages.every((item) => item.endsWith(`@${version}`)), `${label} v6.1 public evidence must bind all ${packageCount} npm package(s)`);
+    required(evidence?.packageIntegrity?.startsWith("VERIFIED_AGAINST_ACCEPTED_TARBALL"), `${label} v6.1 npm integrity evidence is required`);
+    required(evidence?.registrySignatures === "CRYPTOGRAPHICALLY_VERIFIED", `${label} v6.1 registry signatures must be verified`);
+    required(evidence?.provenance === "SLSA_V1_REKOR_INTEGRITY_MATCH_AND_INCLUSION_PROOF_VERIFIED", `${label} v6.1 provenance must be verified`);
+    required(evidence?.publicInstallation === "VERIFIED_FROM_EMPTY_DIRECTORY", `${label} v6.1 public installation must be verified`);
+    required(evidence?.productBytesRebuilt === false, `${label} v6.1 public evidence must prove no rebuild`);
+    required(evidence?.acceptanceResultDigest === "sha256:5ba1b4f61046ead07a463027cd5becd615c50d3ef26cbb22b2f2a54a9e057605", `${label} v6.1 public evidence must bind the acceptance result`);
+    if (runtime) {
+      required(evidence?.ghcrManifestDigest === "sha256:faf883b4fcc7bded42500aa96c8e0b9e978eff069d6146a0d3cfef80c7380e65", "Runtime v6.1 public evidence must bind the exact GHCR digest");
+      required(evidence?.cliEntrypoints === "VERIFIED" && evidence?.installer === "VERIFIED_DRY_RUN_FROM_PUBLIC_ACCEPTED_MANIFEST", "Runtime v6.1 CLI and installer evidence are required");
+      required(evidence?.mcpAdapter === "VERIFIED", "Runtime v6.1 MCP adapter evidence is required");
+    } else {
+      required(evidence?.coreSchema === "evopilot-evolution-expert-core/v2" && /^sha256:[0-9a-f]{64}$/.test(evidence?.coreDigest ?? ""), "Evolution Expert v2.1 Core evidence is invalid");
+      required(evidence?.skill === "PRESENT" && evidence?.mcpCompatibility === "VERIFIED", "Evolution Expert v2.1 Skill and MCP evidence are required");
+      required(evidence?.runtimeCompatibility === "6.1.0_CONFORMANT", "Evolution Expert v2.1 Runtime compatibility must be conformant");
+    }
   }
 }
 
