@@ -6,6 +6,31 @@ This project follows a product-readiness changelog model: release entries should
 
 ## Unreleased
 
+### 6.2.0 First-Run LLM Readiness
+
+This entry describes approved local implementation. It does not imply a
+Candidate, acceptance, Host or Secret operation, publication, Suite Cutover,
+or Release.
+
+#### Added
+
+- Added persisted, audited Runtime readiness and explicit workspace LLM default
+  bindings so normal operation fails closed until a user-selected provider and
+  model pass server-side preflight.
+- Added provider-neutral Runtime APIs, MCP and CLI setup surfaces plus Evolution
+  Expert 2.2.0 journeys that keep raw credentials in reviewed Host-native secure
+  input and persist only governed secret references.
+- Added README architecture guidance and editable SVG with PNG fallback that
+  distinguishes the Host LLM, Runtime LLM, Agent Model, Evolution Expert,
+  external Agent Runtime, project systems, and read-only Harness authority.
+
+#### Changed
+
+- Removed every implicit Runtime LLM fallback, including local Agent settings,
+  environment values, Host models, Agent models, and operator-specific profiles.
+- Deferred Learning Interoperability without scope loss to Runtime 6.3.0 and
+  retained Runtime 6.1.0 / Expert 2.1.0 as immutable no-regression evidence.
+
 ### 6.1.0 Controlled Lifecycle Evolution
 
 This entry describes approved local implementation. It does not imply a
