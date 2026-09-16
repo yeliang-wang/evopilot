@@ -137,11 +137,18 @@ evopilot llm profile list --json
 evopilot llm profile set <profile-id> --provider openai-compatible --base-url <url> --model <name> --api-key-ref <secret-ref> --json
 evopilot llm profile inspect <profile-id> --json
 evopilot llm profile preflight <profile-id> --json
+evopilot runtime readiness --json
+evopilot llm providers --json
+evopilot llm workspace-default inspect --json
+evopilot llm workspace-default bind --profile <profile-id> --profile-digest <sha256> --reason <text> --json
+evopilot llm migrate-v61 [--profile <profile-id>] [--reason <text>] --json
 evopilot project llm set <project-id> --profile <llm-profile-id> --json
 evopilot project llm inspect <project-id> --json
 evopilot project llm preflight <project-id> --json
 evopilot project llm clear <project-id> --json
 ```
+
+Runtime 6.2 starts in setup-only mode until a workspace-scoped Profile passes live preflight and an administrator explicitly binds its exact digest as the workspace default. `migrate-v61` is an explicit one-time migration helper: it never imports an Agent Host, shell, environment, or hidden global model configuration, and it stops when the eligible Profile choice is ambiguous.
 
 ## Project LLM
 

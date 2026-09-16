@@ -1208,7 +1208,7 @@ test("loop store readiness verifies Postgres TCP reachability", async () => {
   }
 });
 
-test("production loop llm executor calls real llm client and records usage", async () => {
+test("injected debug loop llm executor calls the provided llm client and records usage", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-loop-real-llm-"));
   const previousPrice = process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD;
   process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD = "0.002";
@@ -1216,7 +1216,7 @@ test("production loop llm executor calls real llm client and records usage", asy
   let capturedPrompt = "";
   const server = createServer({
     dataRoot,
-    runtimeMode: "prod",
+    runtimeMode: "debug",
     requireLlm: true,
     llmClient: {
       async generate(request) {

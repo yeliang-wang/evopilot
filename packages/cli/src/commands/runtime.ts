@@ -162,6 +162,8 @@ export async function runCli(argv: string[]): Promise<number> {
       case "status:":
       case "status:undefined":
         return await status(ctx);
+      case "runtime:readiness":
+        return await runtimeReadiness(ctx);
       case "project:register":
         return await projectRegister(ctx);
       case "project:onboard":
@@ -217,6 +219,14 @@ export async function runCli(argv: string[]): Promise<number> {
         if (maybeId === "inspect") return await llmProfileInspect(ctx, args.positionals[3]);
         if (maybeId === "preflight") return await llmProfilePreflight(ctx, args.positionals[3]);
         throw usage("Use: evopilot llm profile <list|set|inspect|preflight> [profile-id] [options]");
+      case "llm:providers":
+        return await llmProviderList(ctx);
+      case "llm:workspace-default":
+        if (maybeId === "inspect" || maybeId === undefined) return await workspaceLlmDefaultInspect(ctx);
+        if (maybeId === "bind") return await workspaceLlmDefaultBind(ctx);
+        throw usage("Use: evopilot llm workspace-default <inspect|bind> [options]");
+      case "llm:migrate-v61":
+        return await llmMigrateV61(ctx);
       case "maturity:standards":
         if (maybeId === "list" || maybeId === undefined) return await maturityStandardsList(ctx);
         if (maybeId === "inspect") return await maturityStandardsInspect(ctx, args.positionals[3]);
@@ -1317,6 +1327,46 @@ async function llmProfilePreflight(ctx: RuntimeContext, id?: string): Promise<nu
   const profileId = id ?? requiredOption(ctx.args, "profile");
   const response = await ctx.client.post(`/api/v1/llm-profiles/${encodeURIComponent(profileId)}/preflight`, {}, requestOptions(ctx));
   printLlmProfileResult(ctx, "llm profile preflight", response.data ?? response.body, response.status);
+  return response.ok ? 0 : 2;
+}
+
+async function runtimeReadiness(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.get("/api/v1/runtime-readiness");
+  printOutput(ctx, response.data ?? response.body, response.ok ? "Runtime readiness inspected." : "Runtime readiness inspection failed.");
+  return response.ok ? 0 : 2;
+}
+
+async function llmProviderList(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.get("/api/v1/llm-providers");
+  printOutput(ctx, response.data ?? response.body, response.ok ? "Provider-neutral LLM choices listed; no default selected." : "LLM provider discovery failed.");
+  return response.ok ? 0 : 2;
+}
+
+async function workspaceLlmDefaultInspect(ctx: RuntimeContext): Promise<number> {
+  const response = await ctx.client.get("/api/v1/runtime-readiness/workspace-default");
+  printOutput(ctx, response.data ?? response.body, response.ok ? "Workspace LLM default inspected." : "Workspace LLM default is not configured.");
+  return response.ok ? 0 : 2;
+}
+
+async function workspaceLlmDefaultBind(ctx: RuntimeContext): Promise<number> {
+  const body = {
+    profileId: requiredOption(ctx.args, "profile"),
+    expectedProfileDigest: stringOption(ctx.args, "profile-digest"),
+    expectedBindingDigest: stringOption(ctx.args, "expected-binding-digest"),
+    reason: requiredOption(ctx.args, "reason")
+  };
+  const response = await ctx.client.post("/api/v1/runtime-readiness/workspace-default", body, requestOptions(ctx));
+  printOutput(ctx, response.data ?? response.body, response.ok ? "Workspace LLM default bound and Runtime readiness reconciled." : "Workspace LLM default binding failed.");
+  return response.ok ? 0 : 2;
+}
+
+async function llmMigrateV61(ctx: RuntimeContext): Promise<number> {
+  const body = {
+    profileId: stringOption(ctx.args, "profile"),
+    reason: stringOption(ctx.args, "reason") ?? "explicit-v6.1-to-v6.2-migration"
+  };
+  const response = await ctx.client.post("/api/v1/runtime-readiness/migrate-v61", body, requestOptions(ctx));
+  printOutput(ctx, response.data ?? response.body, response.ok ? "Explicit v6.1 LLM configuration migration completed." : "Migration stopped without guessing.");
   return response.ok ? 0 : 2;
 }
 
@@ -3955,6 +4005,7 @@ Usage:
   evopilot config path
   evopilot config show
   evopilot status [--json]
+  evopilot runtime readiness [--json]
   evopilot project register --id <id> --provider <local-git|github|gitlab> [options]
   evopilot project onboard plan <github|gitlab|local-git> [options]
   evopilot project onboard <github|gitlab|local-git> [options]
@@ -3990,6 +4041,10 @@ Usage:
   evopilot llm profile set <profile-id> --provider openai-compatible --base-url <url> --model <name> --api-key-ref <secret-ref>
   evopilot llm profile inspect <profile-id>
   evopilot llm profile preflight <profile-id>
+  evopilot llm providers
+  evopilot llm workspace-default inspect
+  evopilot llm workspace-default bind --profile <profile-id> --profile-digest <sha256> --reason <text>
+  evopilot llm migrate-v61 [--profile <profile-id>] [--reason <text>]
   evopilot maturity standards list
   evopilot maturity standards inspect <alpha|beta|rc|ga|standard-id>
   evopilot lifecycle list

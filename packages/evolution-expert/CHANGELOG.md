@@ -4,6 +4,13 @@ All notable changes to the independently versioned `@evopilot/evolution-expert` 
 
 ## Unreleased
 
+### 2.2.0
+
+- Added MCP-first first-run Runtime LLM readiness setup, status, degradation, repair, and v6.1 migration guidance.
+- Refused raw credentials in conversation and required Host-native secure input with SecretRef-only Runtime operations.
+- Distinguished Host LLM, Runtime governed LLM Profile, and external Agent Model across generated Host adapters.
+- Raised Runtime compatibility to `>=6.2.0 <7.0.0` and Human Interaction Protocol to 2.2.
+
 ### 2.1.0
 
 - Added guided read-only production-reference discovery and complete capability-disposition review for DataRig Suite 2.1.11 and future source snapshots.

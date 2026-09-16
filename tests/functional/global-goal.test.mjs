@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import { createServer } from "../../packages/server/dist/index.js";
 import { createSoftwareDeliveryHarnessRegistry } from "../helpers/v5-harness-catalog.mjs";
+import { configureTestWorkspaceRuntimeLlm } from "../helpers/v62-runtime-llm.mjs";
 
 test("GlobalGoal API creates a white-box goal shell with dashboard projections", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-global-goal-"));
@@ -22,6 +23,7 @@ test("GlobalGoal API creates a white-box goal shell with dashboard projections",
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
   const baseUrl = `http://127.0.0.1:${address.port}`;
+  let runtimeLlm;
 
   try {
     const standards = await jsonFetch(`${baseUrl}/api/v1/maturity/standards`, { token: "viewer-token" });
@@ -199,6 +201,7 @@ test("GlobalGoal API creates a white-box goal shell with dashboard projections",
     assert.equal(repeatedTargets.body.data[0].evidence.filter((item) => item.startsWith("goal=")).length, 1);
     assert.equal(repeatedTargets.body.data[0].evidence.filter((item) => item.startsWith("target=")).length, 1);
 
+    runtimeLlm = await configureTestWorkspaceRuntimeLlm({ baseUrl, token: "admin-token", profileId: "global-goal-runtime" });
     const bound = await jsonFetch(`${baseUrl}/api/v1/goals/${encodeURIComponent(created.body.data.id)}/advance`, {
       method: "POST",
       token: "operator-token",
@@ -247,6 +250,7 @@ test("GlobalGoal API creates a white-box goal shell with dashboard projections",
     assert.ok(graphAfterAdvance.body.data.edges.some((edge) => edge.type === "depends-on"));
   } finally {
     await new Promise((resolve) => server.close(resolve));
+    await runtimeLlm?.close();
   }
 });
 

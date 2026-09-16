@@ -16,6 +16,10 @@ import type {
 } from "@evopilot/core";
 import type { LlmTaskClient } from "@evopilot/llm";
 import type {
+  EvoPilotRuntimeReadinessV1,
+  EvoPilotWorkspaceLlmDefaultBindingV1
+} from "@evopilot/contracts";
+import type {
   HarnessCapabilityDefinition,
   HarnessAssetRefV3,
   HarnessTemplateChangelogEntry,
@@ -916,9 +920,12 @@ export interface LlmProfileReadiness {
   checkedAt: string;
 }
 
+export type RuntimeReadinessRecord = EvoPilotRuntimeReadinessV1;
+export type WorkspaceLlmDefaultBinding = EvoPilotWorkspaceLlmDefaultBindingV1;
+
 export interface LoopLlmSelection {
   schema: "evopilot-loop-llm-selection/v1";
-  source: "global-default" | "project-default" | "loop-override" | "none";
+  source: "global-default" | "workspace-default" | "project-default" | "loop-override" | "none";
   configured: boolean;
   required: boolean;
   profileId?: string;

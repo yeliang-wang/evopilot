@@ -1,0 +1,281 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-evolution-expert-v2.2.0-first-run-llm-setup",
+  "revision": 1,
+  "status": "APPROVED",
+  "intent": "Implement Evolution Expert 2.2.0 as the Agent-neutral first-run governed LLM setup and repair guide for Runtime 6.2.0 over MCP, using Host-native secure input without exposing raw credentials or owning Runtime state or authority.",
+  "objective": "Let an ordinary user install EvoPilot in any supported third-party AI Agent Host and safely reach or restore Runtime READY through one clear conversational journey while keeping all profile, SecretRef, preflight, binding, decision, and durable state in Runtime authority.",
+  "evidence": [
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v62-first-run-llm-readiness-r1@sha256:18e6f015f14308223c12b53c0b0d010f6f19a535c5447d29fc85389af4a685c5",
+      "authority": "Roadmap mutation plus Runtime and Expert Target drafting authority only."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/roadmap.yaml@sha256:93437ceff6744505eaccca1379a94bed484ba6d524f627d9bbc798ddbecc9864",
+      "authority": "Current authoritative Roadmap after approved revision."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v61-completion-contract.json@sha256:7ccd4cdf090df47c8467c9c2a3482d7c63f8409da2025f4f33579610b324ed70",
+      "authority": "Immutable published Runtime 6.1.0 and Expert 2.1.0 completion baseline containing 305 criteria."
+    }
+  ],
+  "roadmapBindings": [
+    {
+      "repo": "/Users/wangyejing/project/harness/evopilot",
+      "project": "evopilot",
+      "matchedMilestone": "evopilot-evolution-expert-2.2-first-run-llm-setup",
+      "targetVersion": "2.2.0",
+      "classification": "ALIGNED",
+      "roadmapDigest": "sha256:93437ceff6744505eaccca1379a94bed484ba6d524f627d9bbc798ddbecc9864",
+      "releaseProduct": "evopilot-evolution-expert"
+    }
+  ],
+  "scope": {
+    "include": [
+      "Add Agent-neutral Core states and journeys for SETUP_REQUIRED, PREFLIGHT_REQUIRED, READY, and LLM_BLOCKED using only Runtime-owned MCP facts and transitions.",
+      "Guide provider-neutral selection of a supported preset or custom OpenAI-compatible endpoint, base URL, model, tenant/workspace scope, readiness, and explicit workspace-default binding.",
+      "Delegate every raw credential entry to reviewed Host-native secure dialog or no-echo input and refuse to request, receive, repeat, log, summarize, or embed raw keys in conversation or generated artifacts.",
+      "Render exact Runtime preflight, binding, denial, degradation, repair, rotation, migration, headless, and upgrade-required results with progressive disclosure and one finite next action.",
+      "Generate Codex, Claude Code, designated-human WorkBuddy, independent Host, generic MCP, and supported headless administration adapters from one Core without Host-specific authority or project semantics.",
+      "Explain the README architecture and distinguish Host LLM, Runtime LLM profile, Agent Model, Evolution Expert, Agent Runtime, Project Systems, and Harness supply boundaries without becoming documentation truth.",
+      "Add version negotiation that returns exact upgrade-required guidance when an older Expert cannot safely operate Runtime 6.2 setup protocol.",
+      "Add criterion-specific validators, Expert real cases, Runtime 6.2 cross acceptance, applicable Expert 2.1 inheritance, impact closure, security corpus, and NO_REGRESSION."
+    ],
+    "exclude": [
+      "No Expert-owned profile, SecretRef, readiness state, binding, provider fallback, approval, audit, project, Lifecycle, Goal, Target, Loop, Harness match, acceptance, release, or durable state.",
+      "No conversational raw-key collection, echo, storage, transformation, or transmission and no direct access to Host, provider, vault, or secret-manager credentials.",
+      "No Host-specific business rules, project Pipeline branches, hidden Suite invocation, direct CLI or HTTP ordinary-human bypass, or embedded Agent execution.",
+      "No Harness reasoning, authoring, mutation, review, approval, publication, or evopilot-harness source change.",
+      "No Learning Interoperability implementation, legacy Suite modification or Cutover, Host or Secret operation, Candidate, E2E execution, production or database access, publication, or Release under this draft."
+    ]
+  },
+  "compatibilityPolicy": {"mode": "INHERIT"},
+  "acceptance": [
+    {
+      "id": "EX22-FUNC01",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "One Agent-neutral Expert Core detects and explains all four RuntimeReadiness states from Runtime-owned MCP facts and offers only state-appropriate setup, diagnosis, repair, documentation, or normal-operation next actions.",
+      "requiredEvidence": "Core state-machine fixtures, MCP schema bindings, progressive-disclosure snapshots, and invalid-transition tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22-FUNC02",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert guides provider-neutral preset or custom endpoint, base URL, model, scope, live preflight, and explicit workspace-default confirmation without selecting a provider or default on the user's behalf.",
+      "requiredEvidence": "Question graph, provider matrix, custom endpoint fixtures, explicit-decision frames, and no-default-selection tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22-FUNC03",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Expert invokes only approved Host-native secure input for raw credentials, refuses conversational keys, and receives or renders only a redacted SecretRef result.",
+      "requiredEvidence": "Codex, Claude Code, WorkBuddy runbook, independent Host, and generic MCP secure-input conformance plus adversarial transcript leak scans.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22-FUNC04",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Preflight failure, LLM_BLOCKED degradation, rotation, repair, and recovery are rendered from exact Runtime evidence with redacted diagnostics, preserved stop reason, and one finite next action and never trigger fallback.",
+      "requiredEvidence": "Failure and repair fixtures, cross-Host render equality, redaction corpus, and fallback-negative tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22-FUNC05",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Migration and headless bootstrap journeys explain what Runtime will materialize, require explicit opt-in, present resulting governed resources, and stop on ambiguity without reading or importing local Agent configuration.",
+      "requiredEvidence": "Unambiguous, ambiguous, opt-in, refusal, no-local-import, and environment-cleanup journey fixtures.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22-FUNC06",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Version negotiation produces exact upgrade-required guidance when the installed Expert cannot safely complete Runtime 6.2 setup, while compatible versions preserve cross-Host resume from Runtime truth.",
+      "requiredEvidence": "Compatibility matrix, older-Core negative fixtures, upgrade and rollback, resume, and no-chat-history-dependency tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22-CAP01",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Expert never owns or fabricates profiles, SecretRefs, readiness, bindings, provider fallback, approval, audit, Harness selection, Goal Target Loop, acceptance, release, or durable state.",
+      "requiredEvidence": "Core source scan, authority matrix, adversarial dialogue corpus, persistence inspection, and zero-Expert-state evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22-CAP02",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Codex, Claude Code, designated-human WorkBuddy, independent Host, generic MCP, and supported headless administration preserve one Core, one Runtime truth, equivalent facts and stop conditions, and Host-specific secure-input transport only.",
+      "requiredEvidence": "Generated adapter digests, Host conformance, designated-human WorkBuddy declaration, cross-Host semantic equality, and resume tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22-CAP03",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Expert and architecture guidance clearly distinguish Host LLM, Runtime governed LLM profile, Agent Model, Evolution Expert, qualified Agent Runtime, Project Systems, and external Harness authority and contain none of the forbidden implications.",
+      "requiredEvidence": "Explanation fixtures, README render assertions, terminology corpus, and forbidden-implication negative tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22-CAP04",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Evolution Expert 2.2.0 acceptance closes only with exact Runtime 6.2.0 and Expert 2.2.0 Candidates, all current and cross-product criteria, immutable v61 305-item inheritance, security and leak closure, 5400-second active soak, impact closure, zero hidden fallback, zero legacy Suite invocation, and NO_REGRESSION.",
+      "requiredEvidence": "Independent item-level aggregation bound to Candidate bytes, Core and Adapter digests, Target digests, cross map, soak, and every incomplete or prohibited count equal to zero.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "acceptanceLineage": [
+    {
+      "id": "V61-PUBLISHED-COMPLETION-305",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v61-completion-contract.json#requiredCriteria",
+      "criterionDigest": "sha256:7ccd4cdf090df47c8467c9c2a3482d7c63f8409da2025f4f33579610b324ed70",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v61-completion-contract.json@sha256:7ccd4cdf090df47c8467c9c2a3482d7c63f8409da2025f4f33579610b324ed70"
+    }
+  ],
+  "inheritedAcceptance": [
+    {
+      "id": "V61-PUBLISHED-COMPLETION-305",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v61-completion-contract.json#requiredCriteria",
+      "criterion": "Every one of the immutable published Runtime 6.1.0 and Expert 2.1.0 completion contract's 305 criteria remains applicable, including Agent-neutral Expert Core and generated Hosts, canonical MCP interaction, Runtime truth and authority, Harness guidance, external Agent Runtime, security, version independence, impact closure, active soak, NO_REGRESSION, and zero legacy Suite invocation.",
+      "requiredEvidence": "Fresh successor validation of the complete v61 completion contract with item-level evidence and no exclusions.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "regressionImpact": [
+    {
+      "area": "Expert 2.2 becomes the ordinary-human first-run and repair entry and can affect every published Expert, MCP, Host, credential protection, Runtime authority, Harness guidance, recovery, documentation, versioning, acceptance, and release guarantee.",
+      "affectedAcceptanceIds": ["V61-PUBLISHED-COMPLETION-305"],
+      "reason": "The immutable v61 completion-contract aggregate preserves exact item-level historical traceability and cross-product obligations."
+    }
+  ],
+  "excludedHistoricalAcceptance": [],
+  "realCaseCoverage": [
+    {
+      "id": "EX22E2E01",
+      "scenario": "A fresh installation in SETUP_REQUIRED is explained consistently and every normal operation is refused with a finite secure setup next action.",
+      "hosts": ["Codex", "Claude Code", "generic MCP"],
+      "requiredEvidence": "Core and adapter outputs, Runtime facts, denial equality, and no local configuration import.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22E2E02",
+      "scenario": "Expert completes provider-neutral secure setup to READY through no-echo input without any raw credential entering conversation or generated artifacts.",
+      "hosts": ["Codex", "Claude Code", "independent Host"],
+      "requiredEvidence": "Secure-input conformance, Runtime resources, explicit binding, preflight, transcript and artifact leak scans.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22E2E03",
+      "scenario": "A designated human performs the frozen WorkBuddy setup and cross-Host journey while Codex neither operates nor observes WorkBuddy.",
+      "hosts": ["WorkBuddy"],
+      "requiredEvidence": "Exact Candidate-bound designated-human declaration for the frozen WorkBuddy range and secure-input behavior.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22E2E04",
+      "scenario": "Preflight failure and later LLM_BLOCKED degradation are explained and repaired without fallback, credential exposure, lost Runtime state, or duplicate effects.",
+      "hosts": ["Codex", "generic MCP", "headless"],
+      "requiredEvidence": "Failure and repair frames, state transitions, redaction, resume, receipt reconciliation, and hiddenFallbackCount=0.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22E2E05",
+      "scenario": "Expert explains successful and ambiguous 6.1 migration plus explicit headless bootstrap while proving no local Agent configuration is read or retained.",
+      "hosts": ["Codex", "headless"],
+      "requiredEvidence": "Migration and bootstrap previews, opt-in decisions, stop frames, resource digests, audit, and environment cleanup.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22E2E06",
+      "scenario": "A setup journey begins in Codex, is inspected in Claude Code, and resumes through an independent Host and generic MCP from Runtime truth rather than chat history.",
+      "hosts": ["Codex", "Claude Code", "independent Host", "generic MCP"],
+      "requiredEvidence": "Cross-Host semantic equality, exact Core and Adapter bindings, Runtime object digests, restart, and resume evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22E2E07",
+      "scenario": "An older Expert encountering Runtime 6.2 SETUP_REQUIRED stops with exact upgrade-required guidance and cannot attempt unsafe setup; compatible upgrade and rollback preserve state.",
+      "hosts": ["Codex", "Claude Code"],
+      "requiredEvidence": "Version-skew matrix, stop result, upgrade, rollback, and no unsafe MCP invocation.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22E2E08",
+      "scenario": "After READY, Expert guides a real immutable HarnessBundle-bound Goal Target Loop and explains Host LLM, Runtime LLM, Agent Model, Agent Runtime, Project Systems, and Harness authority correctly.",
+      "hosts": ["Codex", "independent Agent Runtime"],
+      "requiredEvidence": "Harness asset chain, combined plan, pendingExecution and receipt, Loop evidence, architecture explanation, and no weakened obligation.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22E2E09",
+      "scenario": "Adversarial dialogue cannot expose a secret, claim READY, infer authority, select a fallback, invoke a legacy Suite, mutate a Harness, or publish or release any result.",
+      "hosts": ["Codex", "generic MCP"],
+      "requiredEvidence": "Security and authority corpus, exact stop reasons, transcript scans, and zero prohibited effects.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "EX22E2E10",
+      "scenario": "Exact Runtime 6.2.0 and Expert 2.2.0 Candidates pass all current, inherited, cross-Host, security, architecture, real HarnessBundle, active-soak, impact-closure, and NO_REGRESSION obligations with every prohibited count zero.",
+      "hosts": ["Codex", "Claude Code", "WorkBuddy", "generic MCP", "headless", "independent Host", "independent Agent Runtime"],
+      "requiredEvidence": "Independent item-level acceptance aggregate bound to exact Candidate, Core, Adapter, Target, and cross-map digests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "noRegressionRequired": true,
+  "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
+  "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
+  "noRegression": {"status": "PENDING", "evidenceRefs": []},
+  "approvals": {
+    "target": {
+      "decision": "APPROVED",
+      "by": "user",
+      "authorizationDigest": "sha256:57f633d0e8b7d8c9fa7d3f10703be4b2e4553e271eecad4c9c4f4e7b63fc1e5f",
+      "evidenceRef": "conversation:approved-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-target-r1@sha256:57f633d0e8b7d8c9fa7d3f10703be4b2e4553e271eecad4c9c4f4e7b63fc1e5f"
+    },
+    "release": {"decision": "PENDING"}
+  },
+  "release": {
+    "product": "evopilot-evolution-expert",
+    "actions": ["commit", "push", "tag", "github-release", "npm", "installer"],
+    "versions": {"evopilot-evolution-expert": "2.2.0"}
+  },
+  "designDecisions": {
+    "productIdentity": "Evolution Expert 2.2.0 first-run governed LLM setup and repair guide",
+    "core": "One Agent-neutral Core generates every Host adapter journey and stop rule",
+    "truth": "Canonical Runtime 6.2.0 MCP facts, readiness, binding, audit, and durable state",
+    "secureInput": "Host-native no-echo transport; Expert never receives raw credential content",
+    "authority": "Runtime-owned decision frames and explicit human decisions only",
+    "llmBoundary": "Host LLM, Runtime governed LLM profile, and Agent Model are independent",
+    "harnessBoundary": "External immutable HarnessBundle authority",
+    "workBuddyBoundary": "Designated-human-only operation"
+  }
+}

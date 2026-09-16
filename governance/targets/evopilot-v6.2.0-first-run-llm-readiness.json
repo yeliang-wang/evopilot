@@ -1,0 +1,376 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-v6.2.0-first-run-llm-readiness",
+  "revision": 1,
+  "status": "APPROVED",
+  "intent": "Implement Runtime 6.2.0 first run llm readiness with mandatory tenant/workspace profile binding, secure SecretRef-only setup, live provider preflight, fail-closed setup-only operation, explicit migration and headless bootstrap, and the README architecture diagram contract.",
+  "objective": "Make EvoPilot operationally safe from the first process start: no LLM-dependent project or Harness-guided Goal Target Loop work may run until an explicit governed workspace LLM binding is live-preflight READY, while preserving provider neutrality, Host and Agent Runtime separation, external Harness authority, and all Runtime 6.1.0 guarantees.",
+  "evidence": [
+    {
+      "ref": "conversation:approved-evopilot-roadmap-v62-first-run-llm-readiness-r1@sha256:18e6f015f14308223c12b53c0b0d010f6f19a535c5447d29fc85389af4a685c5",
+      "authority": "Roadmap mutation plus Runtime and Expert Target drafting authority only."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/roadmap.yaml@sha256:93437ceff6744505eaccca1379a94bed484ba6d524f627d9bbc798ddbecc9864",
+      "authority": "Current authoritative Roadmap after approved revision."
+    },
+    {
+      "ref": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v61-completion-contract.json@sha256:7ccd4cdf090df47c8467c9c2a3482d7c63f8409da2025f4f33579610b324ed70",
+      "authority": "Immutable published Runtime 6.1.0 and Expert 2.1.0 completion baseline containing 305 criteria."
+    }
+  ],
+  "roadmapBindings": [
+    {
+      "repo": "/Users/wangyejing/project/harness/evopilot",
+      "project": "evopilot",
+      "matchedMilestone": "evopilot-6.2-first-run-llm-readiness",
+      "targetVersion": "6.2.0",
+      "classification": "ALIGNED",
+      "roadmapDigest": "sha256:93437ceff6744505eaccca1379a94bed484ba6d524f627d9bbc798ddbecc9864",
+      "releaseProduct": "evopilot-runtime"
+    }
+  ],
+  "scope": {
+    "include": [
+      "Add tenant/workspace RuntimeReadiness as a persisted, audited, concurrency-safe aggregate with SETUP_REQUIRED, PREFLIGHT_REQUIRED, READY, and LLM_BLOCKED transitions.",
+      "Add immutable explicit WorkspaceLlmDefaultBinding to exact profile identity and digest, provider, model, SecretRef, readiness evidence, actor, reason, and time.",
+      "Restrict a non-READY Runtime to the exact health, authentication, Expert MCP setup, provider discovery, secure SecretRef, profile CRUD and preflight, workspace binding and repair, diagnostics, and documentation allowlist.",
+      "Fail closed before READY for project activation, Harness matching or binding, Goal Target Loop and Lifecycle execution, Agent Runtime dispatch, Candidate, acceptance, release, publication, deployment, and production effects.",
+      "Resolve LLM use only by run override, project default, explicit workspace default, then LLM_PROFILE_REQUIRED; forbid all implicit environment, Host LLM, Agent Model, Agent configuration, MyGlm5, and hard-coded preset fallback.",
+      "Provide server-side live provider preflight, freshness, degradation to LLM_BLOCKED, explicit repair and rotation, safe in-flight boundaries, and restart persistence without silent profile switching.",
+      "Provide explicit headless bootstrap and one-time auditable 6.1 migration that materialize governed SecretRef, profile, preflight, binding, and audit resources and stop on ambiguity.",
+      "Protect raw secrets from every LLM context and durable output surface; accept only approved secure inputs and persist SecretRef only.",
+      "Add provider-neutral API, MCP, schema, CLI administrator and installer surfaces needed by Evolution Expert 2.2.0 without giving Expert durable truth or authority.",
+      "Add README Architecture prose plus authoritative editable SVG and PNG fallback showing exact Human, Host, Host LLM, Expert, MCP, Runtime, readiness, profile/provider, Agent Runtime/Model, Project Systems, and read-only Harness boundaries.",
+      "Add criterion-specific validators, all 15 declared E2E journeys, cross-product acceptance, impact closure, active soak, and full Runtime 6.1.0 plus Expert 2.1.0 no-regression evidence."
+    ],
+    "exclude": [
+      "No bundled, default, privileged, or vendor-locked model provider and no import of the operator's current Codex, Claude Code, WorkBuddy, CodeBuddy, shell, or MyGlm5 configuration.",
+      "No raw credential in conversation, prompt, Expert Core, generated Skill, MCP result, project or Lifecycle YAML, Harness binding, receipt, evidence, audit metadata, or logs.",
+      "No Harness authoring, reasoning, review, approval, Registry or Catalog mutation, publication, or evopilot-harness source change.",
+      "No embedded coding Agent, direct Runtime project-source modification, Host LLM reuse as Runtime LLM, or Agent Model reuse as Runtime control-plane LLM.",
+      "No Learning Interoperability implementation; its full scope remains deferred intact to Runtime 6.3.0.",
+      "No legacy Suite modification or Cutover, Host or Secret operation, Candidate, E2E execution, production or database access, publication, or Release under this draft."
+    ]
+  },
+  "compatibilityPolicy": {
+    "mode": "INHERIT"
+  },
+  "acceptance": [
+    {
+      "id": "R62-FUNC01",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "RuntimeReadiness persists exact tenant/workspace SETUP_REQUIRED, PREFLIGHT_REQUIRED, READY, and LLM_BLOCKED transitions with actor, reason, evidence, audit, idempotency, concurrency, and restart safety.",
+      "requiredEvidence": "State-machine, persistence, tenancy, concurrency, crash, idempotency, audit, and restart tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-FUNC02",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "WorkspaceLlmDefaultBinding pins exact profile identity and digest, provider, model, same-scope SecretRef, fresh readiness evidence, actor, reason, and time and rejects drift or cross-scope references.",
+      "requiredEvidence": "Schema, canonical digest, optimistic concurrency, tenancy, drift, replacement, repair, and audit tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-FUNC03",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "A non-READY Runtime exposes only the declared setup allowlist and returns deterministic repair-oriented errors for every blocked normal operation across HTTP, MCP, CLI administration, and internal orchestration.",
+      "requiredEvidence": "Positive allowlist and exhaustive negative route, tool, command, orchestration, and privilege tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-FUNC04",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "LLM resolution uses run override, project default, explicit workspace default, then LLM_PROFILE_REQUIRED and records exact provider/model/profile attribution without any hidden fallback.",
+      "requiredEvidence": "Precedence matrix, missing-binding, invalid override, attribution, and adversarial fallback tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-FUNC05",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Server-side SecretRef resolution performs a minimum live provider preflight, records redacted freshness evidence, degrades to LLM_BLOCKED on invalid profile, revoked secret, stale readiness, or provider failure, and returns to READY only after explicit verified repair.",
+      "requiredEvidence": "Provider contract fixtures, live isolated preflight, freshness clock, failure injection, rotation, repair, redaction, and no-silent-failover tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-FUNC06",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Explicit headless bootstrap and one-time 6.1 migration create governed SecretRef, profile, preflight, binding, and audit resources; environment values never remain runtime truth and ambiguity stops without guessing.",
+      "requiredEvidence": "Fresh headless bootstrap, restart, cleanup, unambiguous migration, ambiguous migration, rollback, and zero-environment-fallback tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-FUNC07",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Runtime 6.2 exposes one provider-neutral readiness and setup protocol used by Evolution Expert 2.2 across supported Hosts while retaining every fact, decision frame, secret reference, and durable transition in Runtime authority.",
+      "requiredEvidence": "MCP/API schemas, protocol negotiation, version skew, cross-Host semantic equality, idempotency, and authority tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-FUNC08",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "README contains an Architecture section linked to the authoritative editable SVG and PNG fallback with all required nodes, edges, boundaries, accessible alt text, local-link validity, and GitHub light/dark legibility.",
+      "requiredEvidence": "Deterministic asset validation, structural SVG assertions, rendered README snapshots, accessibility inspection, terminology checks, and link tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-CAP01",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "No model provider is bundled, preselected, privileged, or silently imported, including GLM, OpenAI, Kimi, Gemma, local, enterprise, MyGlm5, shell, Codex, Claude Code, WorkBuddy, or CodeBuddy configuration.",
+      "requiredEvidence": "Fresh-install inventory, source/config scans, provider matrix, no-local-import E2E, and negative fallback corpus.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-CAP02",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "No raw secret reaches an LLM context or any forbidden output surface; only SecretRef is persisted and cross-tenant or cross-workspace secret, profile, readiness, and binding access is rejected.",
+      "requiredEvidence": "Taint/redaction tests, transcript and log scans, persistence inspection, tenancy attack corpus, and zero-leak evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-CAP03",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "A functioning Host LLM or Agent Model cannot satisfy Runtime readiness, and Runtime LLM, Host LLM, and Agent Model remain separately configured, attributed, authorized, and audited.",
+      "requiredEvidence": "Host-only and Agent-only negative E2E, identity and usage attribution, protocol separation, and adversarial authority tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-CAP04",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "READY is a hard prerequisite for every real published immutable HarnessBundle-guided Goal Target Loop, while Harness authority remains external and read-only and qualified external Agent Runtime execution remains separate.",
+      "requiredEvidence": "Public HarnessBundle supply chain, pre-READY denial, READY success, pendingExecution, receipt, drift, monotonic composition, and no-Harness-mutation evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-CAP05",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Degradation and repair preserve safe in-flight boundaries, durable project and Loop state, explicit human authority, deterministic recovery, and no duplicate or uncertain external effect.",
+      "requiredEvidence": "In-flight failure matrix, restart/resume, receipt reconciliation, bounded recovery, and mutation suppression tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-CAP06",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Runtime, Expert, Agent Host, Host LLM, qualified Agent Runtime, Agent Model, user-selected provider, Project Systems, and evopilot-harness remain independent products or authorities exactly as represented by the architecture contract.",
+      "requiredEvidence": "Architecture boundary tests, source dependency analysis, contract ownership checks, and forbidden-implication documentation assertions.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R62-CAP07",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Runtime 6.2.0 acceptance closes only when all current criteria and E2E, the immutable 305-item Runtime 6.1.0 and Expert 2.1.0 baseline, cross acceptance, 5400-second active soak, impact closure, zero leaks, zero hidden fallback, zero legacy Suite invocation, and NO_REGRESSION pass on one exact installed Candidate pair.",
+      "requiredEvidence": "Independent criterion-level aggregation bound to Candidate bytes, Target digests, cross map, soak evidence, and zero failed, pending, stale, generic, unmapped, leaked-secret, hidden-fallback, or legacy-invocation items.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "acceptanceLineage": [
+    {
+      "id": "V61-PUBLISHED-COMPLETION-305",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v61-completion-contract.json#requiredCriteria",
+      "criterionDigest": "sha256:7ccd4cdf090df47c8467c9c2a3482d7c63f8409da2025f4f33579610b324ed70",
+      "evidenceRef": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v61-completion-contract.json@sha256:7ccd4cdf090df47c8467c9c2a3482d7c63f8409da2025f4f33579610b324ed70"
+    }
+  ],
+  "inheritedAcceptance": [
+    {
+      "id": "V61-PUBLISHED-COMPLETION-305",
+      "origin": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v61-completion-contract.json#requiredCriteria",
+      "criterion": "Every one of the immutable published Runtime 6.1.0 and Expert 2.1.0 completion contract's 305 criteria remains applicable, including earlier Runtime and Expert lineage, project-neutral Lifecycle evolution, real HarnessBundle behavior, external Agent Runtime conformance, cross-Host operation, security, impact closure, active soak, NO_REGRESSION, and zero legacy Suite invocation.",
+      "requiredEvidence": "Fresh successor validation of the complete v61 completion contract with item-level evidence and no exclusions.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "regressionImpact": [
+    {
+      "area": "First-run readiness gates every Runtime and Expert path and can affect all published project, Lifecycle, Harness-guided Loop, Agent Runtime, provider, Host, persistence, security, evidence, acceptance, and release guarantees.",
+      "affectedAcceptanceIds": ["V61-PUBLISHED-COMPLETION-305"],
+      "reason": "The immutable v61 completion-contract aggregate preserves exact item-level historical traceability while avoiding a second drifting copy of 305 criteria."
+    }
+  ],
+  "excludedHistoricalAcceptance": [],
+  "realCaseCoverage": [
+    {
+      "id": "E2E-SETUP-FRESH-INSTALL",
+      "scenario": "Install exact Candidates with no LLM profile or local Agent configuration, observe SETUP_REQUIRED, and prove every normal operation is blocked while setup-only surfaces remain usable.",
+      "hosts": ["Codex", "headless"],
+      "requiredEvidence": "Fresh-install inventory, readiness state, allowlist, exhaustive blocked-operation matrix, and zero imported configuration.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-NO-LOCAL-IMPORT",
+      "scenario": "Expose MyGlm5, CodeBuddy, Codex, Claude Code, WorkBuddy, and shell configuration to the isolated environment and prove none is silently imported or selected.",
+      "hosts": ["Codex", "Claude Code", "headless"],
+      "requiredEvidence": "Controlled configuration fixtures, Runtime resource inventory, resolution trace, and hiddenFallbackCount=0.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-HOST-LLM-NOT-RUNTIME",
+      "scenario": "Operate a functioning Agent Host and Agent Model while Runtime has no READY profile and prove Runtime remains SETUP_REQUIRED and all normal work is denied.",
+      "hosts": ["Codex", "Claude Code", "independent Host"],
+      "requiredEvidence": "Host success, Runtime denial, separate identities and usage attribution, and no implicit credential reuse.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-EXPERT-SECURE-SETUP",
+      "scenario": "Evolution Expert guides provider choice, secure SecretRef creation, profile creation, live preflight, explicit workspace binding, and READY without raw credential exposure.",
+      "hosts": ["Codex", "Claude Code", "generic MCP"],
+      "requiredEvidence": "Cross-Host transcript semantics, no-echo input, Runtime resources, preflight evidence, explicit binding decision, and zero-leak scans.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-PREFLIGHT-FAIL",
+      "scenario": "A bad endpoint, model, or credential fails live preflight and leaves Runtime non-operational with exact redacted repair guidance and no fallback.",
+      "hosts": ["Codex", "generic MCP", "headless"],
+      "requiredEvidence": "Provider failure matrix, readiness transitions, repair frame, redaction, and hiddenFallbackCount=0.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-READY-HARNESS-LOOP",
+      "scenario": "After READY, consume a real public evopilot-harness Registry, Catalog, HarnessProfile, immutable HarnessBundle and components, then complete a Harness-guided Goal Target Loop through a qualified external Agent Runtime.",
+      "hosts": ["Codex", "independent Agent Runtime"],
+      "requiredEvidence": "Asset chain and digests, combined plan, pendingExecution, receipt, trajectory, usage, artifacts, Loop state, and pre-READY negative control.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-RESTART-PERSISTENCE",
+      "scenario": "Restart Runtime after READY and prove the exact binding and redacted readiness evidence persist without reimport, drift, or secret exposure.",
+      "hosts": ["headless", "independent Host"],
+      "requiredEvidence": "Before/after canonical digests, storage inspection, freshness policy, audit, and zero raw secret evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-DEGRADE-REPAIR",
+      "scenario": "Revoke or invalidate the bound provider or SecretRef, observe LLM_BLOCKED, preserve safe in-flight state, and return to READY only after explicit verified repair.",
+      "hosts": ["Codex", "headless", "independent Agent Runtime"],
+      "requiredEvidence": "Failure injection, state and receipt boundaries, repair and rotation audit, restart, and no duplicate effect evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-RESOLUTION-PRECEDENCE",
+      "scenario": "Prove run override, project default, workspace default, then hard failure across distinct provider/model fixtures with exact usage attribution.",
+      "hosts": ["headless", "generic MCP"],
+      "requiredEvidence": "Complete precedence matrix, invalid and missing cases, canonical resolution traces, and provider/model usage records.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-TENANT-ISOLATION",
+      "scenario": "Attempt cross-tenant and cross-workspace profile, SecretRef, readiness, and default-binding access and prove fail-closed isolation.",
+      "hosts": ["headless", "generic MCP"],
+      "requiredEvidence": "Multi-tenant fixtures, authorization matrix, negative read/write/bind/preflight cases, and audit evidence.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-V61-MIGRATION",
+      "scenario": "Convert one unambiguous explicit 6.1 global provider into governed resources and stop without guessing when the old configuration is ambiguous.",
+      "hosts": ["Codex", "headless"],
+      "requiredEvidence": "Successful and ambiguous migration fixtures, resource digests, audit, rollback, and zero environment fallback.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-HEADLESS-BOOTSTRAP",
+      "scenario": "Explicit headless bootstrap creates governed SecretRef, profile, preflight and binding resources, removes transient input, and reaches READY without retaining environment fallback.",
+      "hosts": ["headless"],
+      "requiredEvidence": "Opt-in command contract, no-echo source, resource and audit digests, process restart, and environment cleanup proof.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-CROSS-HOST",
+      "scenario": "Begin setup in Codex, inspect in Claude Code, complete designated-human WorkBuddy scope, and resume from an independent Host and generic MCP using one Runtime truth and one Expert Core.",
+      "hosts": ["Codex", "Claude Code", "WorkBuddy", "independent Host", "generic MCP"],
+      "requiredEvidence": "Exact Candidate/Core bindings, Runtime object equality, version negotiation, designated-human declaration, and cross-Host resume.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-README-ARCHITECTURE",
+      "scenario": "Render the public README architecture and independently verify every required node, edge, term, local asset, alt text, theme legibility, and forbidden implication.",
+      "hosts": ["headless", "GitHub-render-compatible renderer"],
+      "requiredEvidence": "SVG structural assertions, PNG parity, README render snapshots, link and alt-text checks, and architecture terminology corpus.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E2E-NO-REGRESSION",
+      "scenario": "Revalidate all current Runtime and Expert criteria plus the immutable v61 305-item baseline, cross acceptance, real HarnessBundle behavior, external Agent Runtime conformance, 5400-second active soak, impact closure, zero legacy Suite invocation, and NO_REGRESSION on exact Candidates.",
+      "hosts": ["Codex", "Claude Code", "WorkBuddy", "generic MCP", "headless", "independent Host", "independent Agent Runtime"],
+      "requiredEvidence": "Independent item-level recomputation with passed=total and every failure, pending, stale, generic, unmapped, leak, hidden fallback, silent exclusion, and legacy invocation count zero.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "noRegressionRequired": true,
+  "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
+  "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
+  "noRegression": {
+    "status": "PENDING",
+    "evidenceRefs": []
+  },
+  "approvals": {
+    "target": {
+      "decision": "APPROVED",
+      "by": "user",
+      "authorizationDigest": "sha256:ef85e24874bf4315ab7ec8f16efd05dca5dab7d084ad2e085216d0b77788784c",
+      "evidenceRef": "conversation:approved-evopilot-v6.2.0-first-run-llm-readiness-target-r1@sha256:ef85e24874bf4315ab7ec8f16efd05dca5dab7d084ad2e085216d0b77788784c"
+    },
+    "release": {"decision": "PENDING"}
+  },
+  "release": {
+    "product": "evopilot-runtime",
+    "actions": ["commit", "push", "tag", "github-release", "npm", "ghcr", "installer"],
+    "versions": {"evopilot": "6.2.0"}
+  },
+  "designDecisions": {
+    "readinessTruth": "Tenant/workspace RuntimeReadiness and explicit WorkspaceLlmDefaultBinding owned by Runtime",
+    "providerPolicy": "User-selected provider-neutral profile with no bundled or hidden fallback",
+    "secretPolicy": "Approved secure input to server-side SecretRef only; no raw secret in an LLM context",
+    "ordinaryHumanEntry": "Evolution Expert 2.2.0 over canonical MCP inside a qualified Agent Host",
+    "hostBoundary": "Host LLM and Agent Model cannot satisfy Runtime LLM readiness",
+    "executionPlane": "Qualified external Agent Runtime receives exact pendingExecution",
+    "harnessAuthority": "Read-only external published immutable HarnessBundle",
+    "documentationContract": "README Architecture section plus deterministic authoritative SVG and PNG fallback",
+    "deferredScope": "Learning Interoperability is preserved intact for Runtime 6.3.0"
+  }
+}

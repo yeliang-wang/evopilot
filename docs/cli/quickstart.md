@@ -21,9 +21,10 @@ Verify before changing state:
 ```bash
 evopilot status --json
 evopilot logging inspect --json
+evopilot runtime readiness --json
 ```
 
-Continue only when `status=READY`, `health.status=UP`, `ready.status=READY`, and authenticated `summary` is present.
+On Runtime 6.2, `health.status=UP` proves that the process is available; it does not prove that normal operations are enabled. A fresh installation is expected to report `runtimeReadiness.state=SETUP_REQUIRED` and expose only setup operations. Do not expect authenticated `summary` or normal project operations until step 3 has made readiness `READY`.
 
 ## 2. Prepare Harness Catalog
 
@@ -73,7 +74,20 @@ evopilot llm profile set my-agent-llm \
 evopilot llm profile preflight my-agent-llm --json
 ```
 
-Continue only when the profile preflight returns `READY`.
+Bind the exact preflighted Profile digest as the workspace default, then re-check readiness:
+
+```bash
+evopilot llm workspace-default bind \
+  --profile my-agent-llm \
+  --profile-digest '<sha256 returned by profile inspect/preflight>' \
+  --reason 'initial workspace Runtime LLM' \
+  --json
+
+evopilot runtime readiness --json
+evopilot status --json
+```
+
+Continue only when the live profile preflight and `runtimeReadiness.state` both return `READY`, `status=READY`, and authenticated `summary` is present. The Agent Host LLM, Agent Model, shell environment, Codex/Claude Code/WorkBuddy configuration, and any local `models.json` are never accepted as the Runtime LLM default.
 
 ## 4. Choose Repository Mode
 

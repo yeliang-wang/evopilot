@@ -45,7 +45,14 @@ test("Roadmap Gate rejects incomplete, generic, or weakened completion assurance
     ["unsafe lifecycle auto activation", (roadmap) => { roadmap.controlledLifecycleEvolutionPolicy.safeAutomaticActivation.newAuthorityAllowed = true; }, /must not be destructive, externally visible, or expand authority/],
     ["mutable DataRig reference", (roadmap) => { roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.installedSuiteMutationAllowed = true; }, /must not become a Runtime dependency/],
     ["partial DataRig 2.1.11 inventory", (roadmap) => { roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.capabilityInventoryCoveragePercent = 99; }, /100 percent/],
-    ["incomplete lifecycle evolution E2E", (roadmap) => { roadmap.controlledLifecycleEvolutionPolicy.requiredEndToEnd.pop(); }, /exactly 13/]
+    ["incomplete lifecycle evolution E2E", (roadmap) => { roadmap.controlledLifecycleEvolutionPolicy.requiredEndToEnd.pop(); }, /exactly 13/],
+    ["missing readiness state", (roadmap) => { roadmap.firstRunLlmReadinessPolicy.states.pop(); }, /readiness states/],
+    ["hidden Host LLM fallback", (roadmap) => { roadmap.firstRunLlmReadinessPolicy.forbiddenFallbacks = roadmap.firstRunLlmReadinessPolicy.forbiddenFallbacks.filter((item) => item !== "Host LLM"); }, /forbid fallback: Host LLM/],
+    ["incomplete setup allowlist", (roadmap) => { roadmap.firstRunLlmReadinessPolicy.setupOnlyAllowed.pop(); }, /exactly eight/],
+    ["weakened secret redaction", (roadmap) => { roadmap.firstRunLlmReadinessPolicy.secureSecretContract.rawSecretForbiddenIn.pop(); }, /twelve declared surfaces/],
+    ["missing architecture edge", (roadmap) => { roadmap.firstRunLlmReadinessPolicy.readmeArchitecture.requiredEdges.pop(); }, /seven required edges/],
+    ["incomplete readiness E2E", (roadmap) => { roadmap.firstRunLlmReadinessPolicy.requiredEndToEnd.pop(); }, /exact fifteen E2E/],
+    ["weakened completion formula", (roadmap) => { roadmap.firstRunLlmReadinessPolicy.completionFormula = "CURRENT_ONLY"; }, /completion formula/]
   ]) {
     const result = runWithRoadmap(mutate);
     assert.equal(result.status, 1, `${name}: ${result.stderr}`);
@@ -79,12 +86,12 @@ test("Roadmap Gate accepts current Runtime and Expert milestones in their verifi
   }
 });
 
-test("Roadmap Gate binds public v6 history, completed v6.1 lifecycle evolution, Expert 2.1, and independent Cutover", () => {
+test("Roadmap Gate binds public v6 history, completed v6.1, active v6.2 first-run readiness, and independent Cutover", () => {
   const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
   assert.equal(roadmap.versionPolicy.publishedBaseline, "6.1.0");
-  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.1.0");
+  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.2.0");
   assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.1.0");
-  assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.1.0");
+  assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.2.0");
   assert.equal(roadmap.evolutionExpertPolicy.mandatoryForOrdinaryHumans, true);
   assert.equal(roadmap.humanInteractionProtocol.canonicalOrdinaryHumanProtocol, "MCP");
   assert.match(roadmap.lifecycleHarnessPolicy.sourceOfTruth, /Lifecycle Registry/);
@@ -121,7 +128,22 @@ test("Roadmap Gate binds public v6 history, completed v6.1 lifecycle evolution, 
   assert.equal(expertV21?.completionEvidence.passed, 305);
   assert.equal(runtimeV61?.completionEvidence.dataRigSuite211ReadOnlyCoverage, "VERIFIED");
   assert.equal(expertV21?.completionEvidence.legacySuiteInvocationCount, 0);
-  assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-6.2-learning-interop")?.targetVersion, "6.2.0");
+  const runtimeV62 = roadmap.milestones.find((item) => item.id === "evopilot-6.2-first-run-llm-readiness");
+  const expertV22 = roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.2-first-run-llm-setup");
+  assert.equal(runtimeV62?.status, "IN_PROGRESS");
+  assert.equal(runtimeV62?.targetVersion, "6.2.0");
+  assert.equal(expertV22?.status, "IN_PROGRESS");
+  assert.equal(expertV22?.targetVersion, "2.2.0");
+  const deferredLearning = roadmap.milestones.find((item) => item.id === "evopilot-6.2-learning-interop");
+  const plannedLearning = roadmap.milestones.find((item) => item.id === "evopilot-6.3-learning-interop");
+  assert.equal(deferredLearning?.status, "DEFERRED");
+  assert.equal(deferredLearning?.deferredInto, "evopilot-6.3-learning-interop");
+  assert.equal(plannedLearning?.status, "PLANNED");
+  assert.equal(plannedLearning?.targetVersion, "6.3.0");
+  assert.deepEqual(plannedLearning?.outcomes, deferredLearning?.outcomes);
+  assert.deepEqual(plannedLearning?.inheritedAcceptance, deferredLearning?.acceptance);
+  assert.deepEqual(roadmap.firstRunLlmReadinessPolicy.states, ["SETUP_REQUIRED", "PREFLIGHT_REQUIRED", "READY", "LLM_BLOCKED"]);
+  assert.equal(roadmap.firstRunLlmReadinessPolicy.readmeArchitecture.required, true);
   assert.equal(roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.suiteVersion, "2.1.11");
   assert.equal(roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.initialResourceVersion, "1.0.0");
   assert.equal(roadmap.controlledLifecycleEvolutionPolicy.dataRigProductionReference.runtimeDependency, false);
@@ -313,6 +335,27 @@ test("Roadmap Gate aligns independently versioned Expert 2.1 controlled Lifecycl
   assert.equal(result.status, 0, result.stderr);
   assert.equal(result.body.classification, "ALIGNED");
   assert.ok(result.body.matchedMilestones.includes("evopilot-evolution-expert-2.1-controlled-lifecycle-evolution"));
+});
+
+test("Roadmap Gate aligns the complete Runtime 6.2 first-run LLM readiness and README architecture intent", () => {
+  const result = run(["--intent", "Implement first run llm readiness with mandatory llm profile, workspace llm default, setup required, secure SecretRef setup, and README architecture diagram"]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.body.classification, "ALIGNED");
+  assert.ok(result.body.matchedMilestones.includes("evopilot-6.2-first-run-llm-readiness"));
+});
+
+test("Roadmap Gate aligns Evolution Expert 2.2 secure first-run setup", () => {
+  const result = run(["--intent", "Implement Evolution Expert 2.2 first run llm setup expert and secure provider setup over MCP"]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.body.classification, "ALIGNED");
+  assert.ok(result.body.matchedMilestones.includes("evopilot-evolution-expert-2.2-first-run-llm-setup"));
+});
+
+test("Roadmap Gate aligns Learning Interoperability only through its Runtime 6.3 destination", () => {
+  const result = run(["--intent", "Implement Runtime 6.3 learning interoperability with preference dataset and training adapter"]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.body.classification, "ALIGNED");
+  assert.deepEqual(result.body.matchedMilestones, ["evopilot-6.3-learning-interop"]);
 });
 
 test("Roadmap Gate rejects a composite capability intent when only one clause is planned", () => {

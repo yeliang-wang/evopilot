@@ -10,20 +10,20 @@ test("one immutable Expert Core generates conformant Host-neutral adapters", () 
   assert.equal(workbuddy.coreDigest, codex.coreDigest);
   assert.equal(claude.coreDigest, codex.coreDigest);
   assert.doesNotThrow(() => assertExpertAdapterConformance(codex));
-  assert.equal(expertCompatibility(codex, "6.1.0", codex.requiredCapabilities).conformanceStatus, "CONFORMANT");
-  assert.equal(expertCompatibility(codex, "6.0.0", codex.requiredCapabilities).conformanceStatus, "INCOMPATIBLE");
+  assert.equal(expertCompatibility(codex, "6.2.0", codex.requiredCapabilities).conformanceStatus, "CONFORMANT");
+  assert.equal(expertCompatibility(codex, "6.1.0", codex.requiredCapabilities).conformanceStatus, "INCOMPATIBLE");
   assert.equal(expertCompatibility(codex, "5.1.0", codex.requiredCapabilities).conformanceStatus, "INCOMPATIBLE");
   assert.equal(createHostIntegrationBundle("codex").ordinaryHumanEntry, "EXPERT_OVER_MCP_ONLY");
 });
 
-test("Expert 2.1.0 provides version-aware doctor and an MCP-first side-effect-free tutorial", () => {
-  const doctor = expertDoctor("codex", "6.1.0", createExpertAdapter("codex").requiredCapabilities);
+test("Expert 2.2.0 provides version-aware doctor and an MCP-first side-effect-free tutorial", () => {
+  const doctor = expertDoctor("codex", "6.2.0", createExpertAdapter("codex").requiredCapabilities);
   assert.equal(doctor.status, "READY");
-  assert.equal(doctor.expertVersion, "2.1.0");
-  assert.equal(expertDoctor("codex", "6.0.0", createExpertAdapter("codex").requiredCapabilities).status, "INCOMPATIBLE");
+  assert.equal(doctor.expertVersion, "2.2.0");
+  assert.equal(expertDoctor("codex", "6.1.0", createExpertAdapter("codex").requiredCapabilities).status, "INCOMPATIBLE");
   const tutorial = expertTutorial();
   assert.equal(tutorial.sideEffects, false);
-  assert.deepEqual(tutorial.steps.map((step) => step.concept), ["Project", "Lifecycle Registry", "Controlled Lifecycle Evolution", "Harness", "Goal Target Loop", "Agent Runtime", "Recovery", "Acceptance and Release"]);
+  assert.deepEqual(tutorial.steps.map((step) => step.concept), ["Runtime LLM Readiness", "Project", "Lifecycle Registry", "Controlled Lifecycle Evolution", "Harness", "Goal Target Loop", "Agent Runtime", "Recovery", "Acceptance and Release"]);
   assert.ok(tutorial.steps.every((step) => step.nextPrompt && !("nextCommand" in step)));
   const versions = expertVersionGuide();
   assert.equal(versions.versionLines.find((line) => line.owner === "source Suite").changesWhen.includes("Never"), true);
@@ -31,7 +31,7 @@ test("Expert 2.1.0 provides version-aware doctor and an MCP-first side-effect-fr
 });
 
 test("a third-party Host qualifies without Engine source modification", () => {
-  const report = qualifyExpertHostAdapter("independent-host", "6.1.0", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation", "runtime-state-resume"]);
+  const report = qualifyExpertHostAdapter("independent-host", "6.2.0", createExpertAdapter("independent-host").requiredCapabilities);
   assert.equal(report.status, "QUALIFIED");
   assert.equal(report.sourceModificationRequired, false);
   assert.ok(report.checks.every((check) => check.status === "PASS"));

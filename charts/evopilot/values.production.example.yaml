@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/yeliang-wang/evopilot
-  tag: "6.1.0"
+  tag: "6.2.0"
   pullPolicy: IfNotPresent
 
 dashboard:
@@ -14,13 +14,6 @@ auth:
   existingSecret: evopilot-prod-secrets
   tokens: ""
   users: ""
-
-llm:
-  providerName: openai-compatible
-  baseUrl: https://llm.internal.example/v1
-  modelName: production-model
-  apiKey: ""
-  requireLlm: true
 
 postgres:
   enabled: true

@@ -18,6 +18,7 @@ const toolInputSchema = z.object({
   runId: z.string().min(1).optional(),
   kind: z.string().min(1).optional(),
   resourceId: z.string().min(1).optional(),
+  profileId: z.string().min(1).optional(),
   campaignId: z.string().min(1).optional(),
   observationId: z.string().min(1).optional(),
   proposalId: z.string().min(1).optional(),
@@ -122,7 +123,7 @@ async function invokeEvoPilot(tool: EvoPilotLifecycleMcpTool, input: ToolInput) 
 }
 
 function bindPath(path: string, input: ToolInput): string {
-  return path.replace(/\{(lifecycleId|runId|kind|resourceId|campaignId|observationId|proposalId|projectDefinitionId|ruleId)\}/g, (_match, name: "lifecycleId" | "runId" | "kind" | "resourceId" | "campaignId" | "observationId" | "proposalId" | "projectDefinitionId" | "ruleId") => {
+  return path.replace(/\{(lifecycleId|runId|kind|resourceId|profileId|campaignId|observationId|proposalId|projectDefinitionId|ruleId)\}/g, (_match, name: "lifecycleId" | "runId" | "kind" | "resourceId" | "profileId" | "campaignId" | "observationId" | "proposalId" | "projectDefinitionId" | "ruleId") => {
     const value = input[name];
     if (!value) throw new Error(`${name} is required for this tool`);
     return encodeURIComponent(value);

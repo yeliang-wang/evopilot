@@ -847,7 +847,7 @@ test("OTLP trace evidence enters the full evolution delivery loop", async () => 
   }
 });
 
-test("opportunity draft generation reads current project code before architectural planning", async () => {
+test("injected debug LLM draft generation reads current project code before architectural planning", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-code-aware-draft-"));
   const repoRoot = createGitProjectRepo(dataRoot, "agent-code-aware-repo");
   fs.writeFileSync(path.join(repoRoot, "app.py"), [
@@ -860,7 +860,7 @@ test("opportunity draft generation reads current project code before architectur
   let capturedPrompt = "";
   const server = createServer({
     dataRoot,
-    runtimeMode: "prod",
+    runtimeMode: "debug",
     requireLlm: true,
     llmClient: {
       async generate(request) {

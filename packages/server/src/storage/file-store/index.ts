@@ -177,6 +177,7 @@ import type {
   GovernancePolicyEvaluation,
   LlmProfileReadiness,
   LlmProfileRecord,
+  RuntimeReadinessRecord,
   LoopArtifact,
   LoopCheckpoint,
   LoopDecision,
@@ -236,6 +237,7 @@ import type {
   TenantHarnessPolicyVersion,
   TenantRecord,
   UserRecord,
+  WorkspaceLlmDefaultBinding,
   WorkspaceRecord
 } from "../../model.js";
 import { executeLoopNode } from "../../runtime/executor-adapters.js";
@@ -269,7 +271,7 @@ import { atomicWriteJson, atomicWriteText, safeFileName } from "../json-files.js
 export class FileStore {
   constructor(
     private readonly dataRoot: string,
-    private readonly executionRuntime: { llmClient?: LlmTaskClient; requireLlm?: boolean; harnessCatalogDirs?: string[]; harnessRegistryConfig?: string } = {}
+    private readonly executionRuntime: { llmClient?: LlmTaskClient; requireLlm?: boolean; allowLegacyGlobalLlm?: boolean; harnessCatalogDirs?: string[]; harnessRegistryConfig?: string } = {}
   ) {
     fs.mkdirSync(this.dataRoot, { recursive: true });
     fs.mkdirSync(this.tenantsDir, { recursive: true });
@@ -277,6 +279,8 @@ export class FileStore {
     fs.mkdirSync(this.usersDir, { recursive: true });
     fs.mkdirSync(this.secretsDir, { recursive: true });
     fs.mkdirSync(this.llmProfilesDir, { recursive: true });
+    fs.mkdirSync(this.runtimeReadinessDir, { recursive: true });
+    fs.mkdirSync(this.workspaceLlmBindingsDir, { recursive: true });
     fs.mkdirSync(this.githubAppInstallationsDir, { recursive: true });
     fs.mkdirSync(this.settingsDir, { recursive: true });
     fs.mkdirSync(this.runsDir, { recursive: true });
@@ -335,6 +339,14 @@ export class FileStore {
 
   get llmProfilesDir(): string {
     return path.join(this.dataRoot, "llm-profiles");
+  }
+
+  get runtimeReadinessDir(): string {
+    return path.join(this.dataRoot, "runtime-readiness");
+  }
+
+  get workspaceLlmBindingsDir(): string {
+    return path.join(this.dataRoot, "workspace-llm-default-bindings");
   }
 
   get githubAppInstallationsDir(): string {
@@ -1222,12 +1234,51 @@ export class FileStore {
     return hydrated;
   }
 
+  readRuntimeReadiness(tenantId: string, workspaceId: string): RuntimeReadinessRecord | undefined {
+    const file = path.join(this.runtimeReadinessDir, `${safeFileName(tenantId)}--${safeFileName(workspaceId)}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return JSON.parse(fs.readFileSync(file, "utf8")) as RuntimeReadinessRecord;
+  }
+
+  writeRuntimeReadiness(record: RuntimeReadinessRecord, expectedDigest?: string): RuntimeReadinessRecord {
+    const current = this.readRuntimeReadiness(record.tenantId, record.workspaceId);
+    if (expectedDigest !== undefined && current?.digest !== expectedDigest) throw new Error("RUNTIME_READINESS_CONFLICT");
+    atomicWriteJson(path.join(this.runtimeReadinessDir, `${safeFileName(record.tenantId)}--${safeFileName(record.workspaceId)}.json`), record);
+    return record;
+  }
+
+  readWorkspaceLlmDefaultBinding(tenantId: string, workspaceId: string): WorkspaceLlmDefaultBinding | undefined {
+    const file = path.join(this.workspaceLlmBindingsDir, `${safeFileName(tenantId)}--${safeFileName(workspaceId)}.json`);
+    if (!fs.existsSync(file)) return undefined;
+    return JSON.parse(fs.readFileSync(file, "utf8")) as WorkspaceLlmDefaultBinding;
+  }
+
+  writeWorkspaceLlmDefaultBinding(binding: WorkspaceLlmDefaultBinding, expectedDigest?: string): WorkspaceLlmDefaultBinding {
+    const current = this.readWorkspaceLlmDefaultBinding(binding.tenantId, binding.workspaceId);
+    if (expectedDigest !== undefined && current?.digest !== expectedDigest) throw new Error("WORKSPACE_LLM_BINDING_CONFLICT");
+    atomicWriteJson(path.join(this.workspaceLlmBindingsDir, `${safeFileName(binding.tenantId)}--${safeFileName(binding.workspaceId)}.json`), binding);
+    return binding;
+  }
+
   defaultLlmConfigured(): boolean {
-    return Boolean(this.executionRuntime.llmClient);
+    return this.executionRuntime.allowLegacyGlobalLlm === true && Boolean(this.executionRuntime.llmClient);
+  }
+
+  legacyGlobalLlmAllowed(): boolean {
+    return this.executionRuntime.allowLegacyGlobalLlm === true;
   }
 
   requireLlm(): boolean {
     return this.executionRuntime.requireLlm === true;
+  }
+
+  resolveWorkspaceLlmClient(tenantId: string, workspaceId: string): LlmTaskClient | undefined {
+    const binding = this.readWorkspaceLlmDefaultBinding(tenantId, workspaceId);
+    if (!binding) return undefined;
+    const profile = this.readLlmProfile(binding.profileId);
+    if (!profile || profile.status !== "ACTIVE" || profile.tenantId !== tenantId || profile.workspaceId !== workspaceId || profile.scope !== "workspace") return undefined;
+    const apiKey = resolveLlmProfileApiKey(this, profile);
+    return apiKey ? createLlmClientFromProfile(profile, apiKey) : undefined;
   }
 
   resolveLoopLlmClient(loop: LoopRun): LlmTaskClient | undefined {
@@ -1237,7 +1288,7 @@ export class FileStore {
       const apiKey = resolveLlmProfileApiKey(this, profile);
       return apiKey ? createLlmClientFromProfile(profile, apiKey) : undefined;
     }
-    return this.executionRuntime.llmClient;
+    return this.executionRuntime.allowLegacyGlobalLlm === true ? this.executionRuntime.llmClient : undefined;
   }
 
   resolveGoalPlanLlmClient(selection?: LoopLlmSelection): LlmTaskClient | undefined {
@@ -1247,7 +1298,7 @@ export class FileStore {
       const apiKey = resolveLlmProfileApiKey(this, profile);
       return apiKey ? createLlmClientFromProfile(profile, apiKey) : undefined;
     }
-    return this.executionRuntime.llmClient;
+    return this.executionRuntime.allowLegacyGlobalLlm === true ? this.executionRuntime.llmClient : undefined;
   }
 
   private hydrateLlmProfile(profile: any): LlmProfileRecord {

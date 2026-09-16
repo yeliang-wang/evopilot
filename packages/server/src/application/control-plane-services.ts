@@ -45,6 +45,7 @@ import {
   type HarnessTemplateProfile,
   type HarnessTemplateRef
 } from "../domains/harness-template/index.js";
+import { LLM_READINESS_FRESHNESS_MS } from "../domains/llm-readiness/index.js";
 import {
   httpError
 } from "../http/errors.js";
@@ -6136,30 +6137,6 @@ export function llmProfileReadinessResult(input: {
   };
 }
 
-export function defaultLlmReadiness(store: FileStore, scope: { tenantId: string; workspaceId: string }): LlmProfileReadiness {
-  const checkedAt = new Date().toISOString();
-  const provider = optionalTrimmedString(process.env.EVOPILOT_LLM_PROVIDER_NAME);
-  const model = optionalTrimmedString(process.env.EVOPILOT_LLM_MODEL_NAME);
-  const configured = store.defaultLlmConfigured();
-  const checks: LlmProfileReadiness["checks"] = [
-    { id: "profile", status: configured ? "PASS" : "SKIP", required: false, evidence: ["profile=global-default"] },
-    { id: "provider", status: provider || configured ? "PASS" : "FAIL", required: store.requireLlm(), evidence: [`provider=${provider ?? "runtime-default"}`] },
-    { id: "base-url", status: process.env.EVOPILOT_LLM_BASE_URL || configured ? "PASS" : "FAIL", required: store.requireLlm(), evidence: [process.env.EVOPILOT_LLM_BASE_URL ? "baseUrl=env-configured" : "baseUrl=not-visible"] },
-    { id: "model", status: model || configured ? "PASS" : "FAIL", required: store.requireLlm(), evidence: [`model=${model ?? "runtime-default"}`] },
-    { id: "secret", status: process.env.EVOPILOT_LLM_API_KEY || configured ? "PASS" : "FAIL", required: store.requireLlm(), evidence: [process.env.EVOPILOT_LLM_API_KEY ? "apiKey=env-configured" : "apiKey=not-visible"] },
-    { id: "provider-call", status: "SKIP", required: false, evidence: ["use llm profile preflight for provider-call proof"] }
-  ];
-  return llmProfileReadinessResult({
-    tenantId: scope.tenantId,
-    workspaceId: scope.workspaceId,
-    source: configured ? "global-default" : "missing",
-    checks,
-    checkedAt,
-    provider: provider ?? (configured ? "runtime-default" : undefined),
-    model: model ?? (configured ? "runtime-default" : undefined)
-  });
-}
-
 export function resolveLoopLlmSelection(store: FileStore, input: {
   project?: StoredProject;
   tenantId: string;
@@ -6170,10 +6147,11 @@ export function resolveLoopLlmSelection(store: FileStore, input: {
 }): { selection: LoopLlmSelection; readiness: LlmProfileReadiness; profile?: LlmProfileRecord } {
   const now = new Date().toISOString();
   const projectProfileId = input.project?.llm?.profileId;
-  const profileId = optionalTrimmedString(input.requestedProfileId) ?? projectProfileId;
+  const workspaceBinding = store.readWorkspaceLlmDefaultBinding(input.tenantId, input.workspaceId);
+  const profileId = optionalTrimmedString(input.requestedProfileId) ?? projectProfileId ?? workspaceBinding?.profileId;
   if (profileId) {
     const profile = store.readLlmProfile(profileId);
-    const source: LoopLlmSelection["source"] = input.requestedProfileId ? "loop-override" : "project-default";
+    const source: LoopLlmSelection["source"] = input.requestedProfileId ? "loop-override" : projectProfileId ? "project-default" : "workspace-default";
     if (!profile || profile.tenantId !== input.tenantId || profile.workspaceId !== input.workspaceId || profile.status !== "ACTIVE" || (input.actor && source === "loop-override" && !canUseLlmProfileForRun(input.actor, profile))) {
       const readiness = llmProfileReadinessResult({
         tenantId: input.tenantId,
@@ -6206,7 +6184,17 @@ export function resolveLoopLlmSelection(store: FileStore, input: {
         { id: "base-url", status: profile.baseUrl ? "PASS" : "FAIL", required: true, evidence: [`baseUrl=${profile.baseUrl || "missing"}`] },
         { id: "model", status: profile.modelName ? "PASS" : "FAIL", required: true, evidence: [`model=${profile.modelName || "missing"}`] },
         { id: "secret", status: apiKey ? "PASS" : "FAIL", required: true, evidence: [profile.apiKeyRef ? `apiKeyRef=${profile.apiKeyRef}` : "apiKeyRef=missing", apiKey ? "apiKeyResolved=true" : "LLM_API_KEY_REF_NOT_RESOLVED"] },
-        { id: "provider-call", status: "SKIP", required: false, evidence: ["provider probe skipped during loop creation; run llm profile preflight for live proof"] }
+        {
+          id: "provider-call",
+          status: profile.lastPreflight?.status === "READY"
+            && Number.isFinite(Date.parse(profile.lastPreflight.checkedAt))
+            && Date.parse(profile.lastPreflight.checkedAt) <= Date.now()
+            && Date.now() - Date.parse(profile.lastPreflight.checkedAt) <= LLM_READINESS_FRESHNESS_MS ? "PASS" : "FAIL",
+          required: true,
+          evidence: profile.lastPreflight?.status === "READY"
+            ? [`lastPreflight=${profile.lastPreflight.checkedAt}`, "livePreflight=freshness-checked"]
+            : ["livePreflight=missing-or-blocked"]
+        }
       ],
       checkedAt: now,
       provider: profile.providerName,
@@ -6229,16 +6217,25 @@ export function resolveLoopLlmSelection(store: FileStore, input: {
       }
     };
   }
-  const readiness = defaultLlmReadiness(store, input);
+  const readiness = llmProfileReadinessResult({
+    tenantId: input.tenantId,
+    workspaceId: input.workspaceId,
+    source: "missing",
+    checks: [{
+      id: "profile",
+      status: "FAIL",
+      required: true,
+      evidence: ["profile=missing", "workspaceDefaultBinding=missing", "implicitGlobalFallback=forbidden"]
+    }],
+    checkedAt: now
+  });
   return {
     readiness,
     selection: {
       schema: "evopilot-loop-llm-selection/v1",
-      source: readiness.status === "READY" ? "global-default" : "none",
-      configured: readiness.status === "READY",
+      source: "none",
+      configured: false,
       required: input.requireLlm === true,
-      provider: readiness.provider,
-      model: readiness.model,
       resolvedAt: now
     }
   };

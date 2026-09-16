@@ -45,6 +45,7 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     normalizeWorkspaceStatus,
     optionalTrimmedString,
     readJson,
+    reconcileRuntimeReadiness,
     requireBodyString,
     resolveWorkspace,
     safeFileName,
@@ -221,6 +222,7 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     }
     if (!profile.baseUrl || !profile.modelName || !profile.apiKeyRef) return writeJson(response, 400, { error: "LLM_PROFILE_REQUIRED", detail: "baseUrl, model/modelName, and apiKeyRef are required." });
     const written = store.writeLlmProfile(profile);
+    reconcileRuntimeReadiness({ store, tenantId: written.tenantId, workspaceId: written.workspaceId, actor: auth.actor, reason: existing ? "Workspace LLM profile changed and requires a new live preflight and explicit binding." : undefined });
     store.appendAudit(audit(auth, existing ? "llm-profile.updated" : "llm-profile.created", written.id, {
       provider: written.providerName,
       model: written.modelName,
@@ -248,6 +250,7 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     if (!canReadLlmProfile(auth, profileRecord)) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN" });
     const readiness = await checkLlmProfileReadiness(store, profileRecord, { tenantId: profileRecord.tenantId, workspaceId: profileRecord.workspaceId });
     const updated = store.writeLlmProfile({ ...profileRecord, lastPreflight: readiness, updatedAt: new Date().toISOString() });
+    reconcileRuntimeReadiness({ store, tenantId: updated.tenantId, workspaceId: updated.workspaceId, actor: auth.actor });
     if (request.method === "POST") {
       store.appendAudit(audit(auth, "llm-profile.preflight", updated.id, {
         provider: updated.providerName,
@@ -278,6 +281,7 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     const workspace = store.readWorkspace(secret.workspaceId);
     if (!workspace || !canAccessWorkspace(auth, workspace, "admin")) return writeJson(response, 403, { error: "WORKSPACE_FORBIDDEN" });
     const updated = store.writeSecret({ ...secret, status: "REVOKED", revokedAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+    reconcileRuntimeReadiness({ store, tenantId: updated.tenantId, workspaceId: updated.workspaceId, actor: auth.actor, reason: "A SecretRef changed or was revoked; Runtime LLM readiness must be repaired explicitly." });
     store.appendAudit(audit(auth, "secret.revoked", updated.id, { kind: updated.kind, version: updated.version }));
     return writeJson(response, 200, envelope(maskSecret(updated)));
   }

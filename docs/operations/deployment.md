@@ -101,31 +101,25 @@ EVOPILOT_LOOP_STORE_DSN=postgres://evopilot:<password>@evopilot-postgres:5432/ev
 
 LLM metrics 默认启用。未设置 `EVOPILOT_LLM_METRICS_PATH` 时，只要存在 `EVOPILOT_DATA_ROOT`，EvoPilot 会默认写入 `EVOPILOT_DATA_ROOT/llm-metrics.jsonl`。如果显式设置 `EVOPILOT_LLM_METRICS_PATH` 且它是相对路径，EvoPilot 会把它解析到 `EVOPILOT_DATA_ROOT` 下，便于 server、worker 和 code-upgrader 共享同一份 LLM metrics。
 
-生产环境可以继续通过全局环境变量提供默认 LLM：
+Runtime 6.2 不接受全局环境变量作为生产默认 LLM，也不会导入 Host LLM、Agent Model、开发者机器配置或第一个可用 Profile。生产服务可以在 `SETUP_REQUIRED` 状态启动，以便管理员访问健康、认证、Expert MCP 与 LLM 设置面；所有正常项目、Harness、Goal、Target、Loop 与发布操作继续 fail-closed。
 
-```text
-EVOPILOT_LLM_PROVIDER_NAME=zhipu
-EVOPILOT_LLM_BASE_URL=<provider-base-url>
-EVOPILOT_LLM_MODEL_NAME=glm-5.1
-EVOPILOT_LLM_API_KEY=<provider-api-key>
-```
-
-多租户或多项目生产建议把具体模型注册为 LLM Profile，并在项目上绑定默认 profile。这样 WorkBuddy、macOS 终端、CI 和 Dashboard 都能看到同一个服务端事实来源：
+通过 Evolution Expert 2.2 的 MCP 向导完成普通用户设置。管理员或 headless 自动化使用同一 Runtime 协议时，应创建受治理的 SecretRef 与 workspace Profile，执行 live preflight，再把精确 Profile digest 显式绑定为 workspace default：
 
 ```bash
 evopilot secret set --id LLM_API_KEY_MY_AGENT --kind llm-key --scope workspace --from-env LLM_API_KEY_MY_AGENT --json
 evopilot llm profile set my-agent-llm --scope workspace --provider-preset custom --provider-name qwen-private --base-url https://llm.example.com/v1 --model qwen2.5-coder-32b --api-key-ref LLM_API_KEY_MY_AGENT --json
 evopilot llm profile preflight my-agent-llm --json
-evopilot project llm set my-agent --profile my-agent-llm --json
+evopilot llm workspace-default bind --profile my-agent-llm --profile-digest <sha256> --reason "approved workspace default" --json
+evopilot runtime readiness --json
 ```
 
 Loop 执行时 LLM 解析顺序为：
 
 ```text
-run override --llm-profile -> project default LLM -> global environment default LLM
+run override --llm-profile -> project default LLM -> explicit workspace default -> LLM_PROFILE_REQUIRED
 ```
 
-`target run --require-llm-ready`、`project onboard --require-llm-ready` 和 `project llm set` 会在 profile key、provider endpoint、model 或网络不可用时提前停止。不要把 LLM API key 写入 Docker image、Git 仓库、日志或 daily CLI wrapper 命令。
+`target run --require-llm-ready`、`project onboard --require-llm-ready` 和 `project llm set` 会在 Profile、SecretRef、provider endpoint、model、live preflight 或 workspace binding 不可用时提前停止。不要把 LLM API key 写入 Docker image、Git 仓库、日志、对话、Lifecycle/Harness YAML、证据或 CLI 参数；Runtime 只持久化 SecretRef。
 
 文件态业务数据迁移、Postgres business store 备份和恢复见 [SaaS 生产发布包](../reference/release-package.md)。生产发布前至少执行：
 
@@ -196,7 +190,7 @@ EVOPILOT_RUN_MODE=prod
 
 - Dashboard 面向用户使用用户名/密码登录。服务端会确保存在持久化 bootstrap 平台高级管理员 `admin/admin`，首次登录后必须改密；生产环境也可以额外配置 `EVOPILOT_USERS` 作为用户种子。
 - `EVOPILOT_TOKENS` 或 `EVOPILOT_API_TOKEN` 主要用于自动化 API 调用，不作为最终用户登录方式。
-- `EVOPILOT_REQUIRE_LLM` 默认等于 `true`，必须配置真实 LLM provider；缺少 `EVOPILOT_LLM_BASE_URL`、`EVOPILOT_LLM_MODEL_NAME` 或 `EVOPILOT_LLM_API_KEY` 时，生产服务会拒绝启动并返回 `EVOPILOT_PROD_REQUIRES_LLM_PROVIDER`。
+- 生产服务允许在 `SETUP_REQUIRED` 下启动设置面，但 `RuntimeReadiness` 未达到 `READY` 时，正常业务请求返回 `409 LLM_PROFILE_REQUIRED`。只有 active SecretRef、live preflight 与精确 workspace-default binding 同时有效才会开放正常操作。
 - Loop Runtime 的 `llm` executor 会调用真实 LLM Gateway，成功后把 `provider`、`model`、`totalTokens`、`costUsd` 写入 executor output、evidence 和 trace；调用失败时节点失败，不允许在生产模式下空跑成功。
 - 不允许无鉴权 admin。
 - 不允许模拟集成链路。

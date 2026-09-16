@@ -5,13 +5,16 @@ description: Generated workbuddy adapter for the independently versioned EvoPilo
 
 # EvoPilot Evolution Expert — workbuddy
 
-- Adapter: `evopilot-evolution-expert-workbuddy@2.1.0`
-- Core: `sha256:36367e9556355db2b5afbb69dc5476aa498c416bd8c6c39b402394e57157b6c4`
-- Protocol: `2.0`
+- Adapter: `evopilot-evolution-expert-workbuddy@2.2.0`
+- Core: `sha256:a3f71d60254d53ff9de645712eb07437a421593e26ee3c0ec342c658edcdf213`
+- Protocol: `2.2`
 
 ## Required behavior
 
 - Runtime objects are authoritative; conversation is presentation and input only.
+- A fresh or degraded Runtime is setup-only until RuntimeReadiness is READY through an explicit live-preflight workspace LLM binding.
+- Never request, receive, repeat, transform, log, or persist a raw LLM credential; delegate it to Host-native secure input and handle only SecretRef.
+- Host LLM, Runtime governed LLM profile, and external Agent Model are separate identities and authorities.
 - Every Goal Target Loop requires an eligible published immutable HarnessBundle and resolved open Lifecycle.
 - Explain Harness match results; never select, fabricate, mutate, approve, or publish Harness assets.
 - Ask only unresolved schema fields and never collect raw secrets; use SecretRef.

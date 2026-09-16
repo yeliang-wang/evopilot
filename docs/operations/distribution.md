@@ -6,20 +6,20 @@ EvoPilot distribution has three supported entry points. These labels match the r
 
 | README CTA | Audience | Command |
 | --- | --- | --- |
-| Install CLI | Operators, CI jobs, and AI agents that already have a server | `npm install -g @evopilot/cli@4.0.0` |
-| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh)"` |
+| Install CLI | Operators, CI jobs, and AI agents that already have a server | `npm install -g @evopilot/cli@6.1.0` |
+| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.1.0/install.sh)"` |
 | Kubernetes | Platform teams running EvoPilot on Kubernetes | `helm install evopilot ./charts/evopilot` |
 
 The CLI, stdio MCP adapter, OpenCode runtime adapter, and installer are release artifacts. They do not replace server-side RBAC, tenant/workspace scope, approval gates, source closure, release policy, or audit.
 
-The Open Lifecycle Harness release set and public npm registry contain `@evopilot/adapter-mcp@4.0.0`. Install that exact version in a third-party Agent host environment to obtain the `evopilot-mcp` executable. Candidate acceptance still uses the frozen Candidate tarball rather than a source checkout.
+The latest published release set and public npm registry contain `@evopilot/adapter-mcp@6.1.0`. Install that exact public version in a third-party Agent host environment to obtain the `evopilot-mcp` executable. Candidate acceptance for the 6.2 implementation line still uses frozen Candidate tarballs rather than a source checkout.
 
 The same release set contains `evopilot-adapter-opencode-<version>.tgz`. The
 adapter does not bundle OpenCode or provider credentials. Candidate acceptance
 binds an exact external `opencode-ai` version and provider/model route, while
 credentials remain in OpenCode's or the Host's configured secret environment.
 
-Desktop installer and hosted Cloud trial are not published EvoPilot distribution surfaces in this version. All six v4.0.0 npm packages are public and exact-version verified; do not describe any later npm version as available until its own public-registry verification passes.
+Desktop installer and hosted Cloud trial are not published EvoPilot distribution surfaces in this version. Runtime 6.1.0 is the public baseline; source-tree 6.2.0 distribution metadata is release preparation only and must not be described as public until exact registry and release verification passes.
 
 ## CLI Release Tarballs
 
@@ -27,9 +27,9 @@ Install the CLI from the GitHub Release tarball set when you already have an Evo
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-contracts-4.0.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-client-4.0.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v4.0.0/evopilot-cli-4.0.0.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.1.0/evopilot-contracts-6.1.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.1.0/evopilot-client-6.1.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.1.0/evopilot-cli-6.1.0.tgz
 evopilot --help
 evopilot status --server https://evopilot.example.com --json
 ```
@@ -37,7 +37,7 @@ evopilot status --server https://evopilot.example.com --json
 The public npm registry is also verified for v4.0.0:
 
 ```bash
-npm install -g @evopilot/cli@4.0.0
+npm install -g @evopilot/cli@6.1.0
 evopilot --help
 ```
 
@@ -46,14 +46,14 @@ evopilot --help
 Bootstrap from the tagged POSIX installer. It downloads the release manifest first, verifies the requested package/version boundary, and resolves `create-evopilot` to the matching GitHub Release tarball by default:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.1.0/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
 
 Windows operators can use the tagged PowerShell entrypoint:
 
 ```powershell
-iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.ps1 -OutFile install.ps1
+iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.1.0/install.ps1 -OutFile install.ps1
 .\install.ps1 -Dir evopilot-stack
 ```
 
@@ -62,22 +62,22 @@ The manifest is published at `installers/manifest.json` in the release tag and a
 After public npm publication, operators may explicitly opt into the registry package spec:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh \
-  | EVOPILOT_INSTALL_PACKAGE_SPEC=create-evopilot@4.0.0 bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.1.0/install.sh \
+  | EVOPILOT_INSTALL_PACKAGE_SPEC=create-evopilot@6.1.0 bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
 
-Review `.env` before starting services. Do not leave unresolved LLM values in production.
+Review `.env` before starting services. Runtime 6.2 installers intentionally emit no default provider, model, endpoint, or raw LLM key; the stack starts setup-only and normal operations remain blocked until Evolution Expert completes SecretRef-safe live preflight and explicit workspace binding.
 
 ```bash
 docker compose up -d
 ./verify.sh
 ```
 
-After `.env` has real LLM settings, the installer can start and verify the stack:
+After authentication and database values are ready, the installer can start and verify the setup-only stack:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v4.0.0/install.sh | bash -s -- --dir evopilot-stack --start
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.1.0/install.sh | bash -s -- --dir evopilot-stack --start
 ```
 
 The generated stack starts:
@@ -88,7 +88,7 @@ The generated stack starts:
 - Postgres
 - EvoPilot Dashboard
 
-It uses published container images by default and keeps raw GitHub, GitLab, LLM, deploy, and password secrets out of command-line arguments.
+It uses published container images by default and keeps raw GitHub, GitLab, LLM, deploy, and password secrets out of command-line arguments. Process health does not imply Runtime readiness: use Evolution Expert 2.2 over MCP to reach `RuntimeReadiness=READY` before any normal project operation.
 
 ## Helm Chart
 
@@ -109,7 +109,7 @@ helm upgrade --install evopilot ./charts/evopilot \
   --set ingress.hosts[0].host=evopilot.example.com
 ```
 
-The chart deploys the control-plane API, loop worker, code-upgrader, Postgres, Dashboard service, optional Ingress, and persistent volumes. Use `service.extraPorts` and `dashboard.service.extraPorts` when the platform needs additional Service ports for metrics, private health routing, or controlled previews.
+The chart deploys the control-plane API, loop worker, code-upgrader, Postgres, Dashboard service, optional Ingress, and persistent volumes. It deliberately has no `llm` values block and does not project raw LLM credentials into Pods; governed Runtime setup happens after startup through the same Expert/MCP protocol. Use `service.extraPorts` and `dashboard.service.extraPorts` when the platform needs additional Service ports for metrics, private health routing, or controlled previews.
 
 Set `postgres.enabled=false` only when `postgres.externalDsn` is provided or `auth.existingSecret` contains `EVOPILOT_LOOP_STORE_DSN`. Set `persistence.enabled=false` only for disposable evaluation environments; the chart then uses an `emptyDir` volume for EvoPilot runtime data.
 
@@ -133,7 +133,7 @@ Release artifacts also include package tarballs (including the installable stdio
 After npm publication, verify the public registry path separately:
 
 ```bash
-npm run verify:npm-registry -- --version 4.0.0
+npm run verify:npm-registry -- --version 6.1.0
 ```
 
 This command checks exact-version npm metadata for all six packages, installs them into an empty project from the public registry, then verifies the `evopilot` and `create-evopilot` binaries.

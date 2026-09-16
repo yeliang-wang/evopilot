@@ -3,7 +3,7 @@ fullnameOverride: ""
 
 image:
   repository: ghcr.io/yeliang-wang/evopilot
-  tag: "6.1.0"
+  tag: "6.2.0"
   pullPolicy: IfNotPresent
 
 dashboard:
@@ -48,13 +48,6 @@ auth:
   existingSecret: ""
   tokens: "admin:change-me-admin-token:admin,operator:change-me-operator-token:operator,viewer:change-me-viewer-token:viewer"
   users: "admin:change-me-admin-password:admin:tenant-production:workspace-agent-products:PlatformAdmin"
-
-llm:
-  providerName: openai-compatible
-  baseUrl: https://llm.example.com/v1
-  modelName: replace-with-model
-  apiKey: replace-with-server-side-secret
-  requireLlm: true
 
 runtime:
   dataRoot: /var/lib/evopilot

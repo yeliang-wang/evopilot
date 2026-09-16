@@ -67,8 +67,8 @@ function validateRoadmap(value) {
   required(semver(value?.evolutionExpertPolicy?.publishedBaseline), "evolutionExpertPolicy.publishedBaseline must be SemVer");
   required(semver(value?.evolutionExpertPolicy?.currentWorkingVersion), "evolutionExpertPolicy.currentWorkingVersion must be SemVer");
   required(value?.evolutionExpertPolicy?.lockstepWithRuntime === false, "Evolution Expert must not be version-locked to the Runtime");
-  required(value?.versionPolicy?.publishedBaseline === "6.1.0" && value?.versionPolicy?.currentWorkingVersion === "6.1.0", "Runtime Roadmap must bind public and current 6.1.0");
-  required(value?.evolutionExpertPolicy?.publishedBaseline === "2.1.0" && value?.evolutionExpertPolicy?.currentWorkingVersion === "2.1.0", "Evolution Expert Roadmap must bind public and current 2.1.0");
+  required(value?.versionPolicy?.publishedBaseline === "6.1.0" && value?.versionPolicy?.currentWorkingVersion === "6.2.0", "Runtime Roadmap must preserve public 6.1.0 and bind current 6.2.0");
+  required(value?.evolutionExpertPolicy?.publishedBaseline === "2.1.0" && value?.evolutionExpertPolicy?.currentWorkingVersion === "2.2.0", "Evolution Expert Roadmap must preserve public 2.1.0 and bind current 2.2.0");
   required(value?.evolutionExpertPolicy?.mandatoryForOrdinaryHumans === true, "Evolution Expert must be mandatory for ordinary-human operation");
   required(value?.evolutionExpertPolicy?.canonicalProtocol === "MCP", "Evolution Expert ordinary-human protocol must be MCP");
   required(value?.humanInteractionProtocol?.canonicalOrdinaryHumanProtocol === "MCP", "MCP must be the canonical ordinary-human protocol");
@@ -151,6 +151,42 @@ function validateRoadmap(value) {
     required(lifecycleEvolution?.requiredEndToEnd?.includes(e2e), `controlled Lifecycle evolution is missing ${e2e}`);
   }
   required(lifecycleEvolution?.completionFormula === "FUNCTIONAL_100_PERCENT_AND_CAPABILITY_DISPOSITION_100_PERCENT_AND_CURRENT_E2E_100_PERCENT_AND_INHERITED_APPLICABLE_100_PERCENT_AND_IMPACT_CLOSURE_100_PERCENT_AND_NO_REGRESSION_PASSED_AND_FAILED_PENDING_STALE_GENERIC_SILENT_EXCLUSION_UNMAPPED_ALL_ZERO", "controlled Lifecycle evolution completion must fail closed");
+  const firstRunReadiness = value?.firstRunLlmReadinessPolicy;
+  required(firstRunReadiness?.schema === "evopilot-first-run-llm-readiness-policy/v1", "first-run LLM readiness policy schema is invalid");
+  required(firstRunReadiness?.required === true, "first-run LLM readiness must be required");
+  required(firstRunReadiness?.runtimeVersion === "6.2.0" && firstRunReadiness?.evolutionExpertVersion === "2.2.0", "first-run LLM readiness must bind Runtime 6.2.0 and Expert 2.2.0");
+  required(arrayEquals(firstRunReadiness?.states, ["SETUP_REQUIRED", "PREFLIGHT_REQUIRED", "READY", "LLM_BLOCKED"]), "first-run LLM readiness states are incomplete or reordered");
+  for (const prerequisite of ["one active tenant/workspace-visible workspace LLM profile", "server-side SecretRef resolved inside the same tenant/workspace", "live provider preflight READY within the declared freshness policy", "explicit WorkspaceLlmDefaultBinding", "compatible Evolution Expert and MCP setup protocol"]) {
+    required(firstRunReadiness?.normalOperationRequires?.includes(prerequisite), `first-run LLM readiness is missing normal-operation prerequisite: ${prerequisite}`);
+  }
+  required(Array.isArray(firstRunReadiness?.setupOnlyAllowed) && firstRunReadiness.setupOnlyAllowed.length === 8, "setup-only allowlist must contain exactly eight governed capability groups");
+  required(Array.isArray(firstRunReadiness?.blockedUntilReady) && firstRunReadiness.blockedUntilReady.length === 5, "pre-READY blocked-operation list must contain exactly five groups");
+  required(arrayEquals(firstRunReadiness?.resolutionOrder, ["run override", "project default", "explicit workspace default", "LLM_PROFILE_REQUIRED"]), "LLM resolution precedence must be run, project, workspace, then hard failure");
+  for (const fallback of ["implicit shell environment", "Host LLM", "Agent Model", "Codex configuration", "Claude Code configuration", "WorkBuddy configuration", "CodeBuddy models.json", "MyGlm5", "hard-coded provider preset"]) {
+    required(firstRunReadiness?.forbiddenFallbacks?.includes(fallback), `first-run LLM readiness must forbid fallback: ${fallback}`);
+  }
+  required(firstRunReadiness?.readinessFailure?.includes("LLM_BLOCKED") && firstRunReadiness?.readinessFailure?.includes("never select another profile silently"), "readiness failure must fail closed without silent profile failover");
+  required(firstRunReadiness?.migrationFrom61?.includes("without guessing"), "6.1 migration must stop on ambiguity without guessing");
+  required(firstRunReadiness?.headlessBootstrap?.includes("never remain runtime truth"), "headless bootstrap must not retain environment values as runtime truth");
+  const secretContract = firstRunReadiness?.secureSecretContract;
+  required(Array.isArray(secretContract?.rawSecretForbiddenIn) && secretContract.rawSecretForbiddenIn.length === 12, "raw secrets must be forbidden across all twelve declared surfaces");
+  required(Array.isArray(secretContract?.allowedInputs) && secretContract.allowedInputs.length === 5, "secure secret input must declare exactly five approved source classes");
+  required(secretContract?.persistedForm === "SecretRef only", "only SecretRef may be persisted");
+  required(secretContract?.preflight?.includes("Resolve server-side") && secretContract?.preflight?.includes("never return the raw value"), "provider preflight must resolve server-side and remain redacted");
+  const architecture = firstRunReadiness?.readmeArchitecture;
+  required(architecture?.required === true, "README architecture contract must be required");
+  required(architecture?.authoritativeAsset === "docs/assets/architecture/evopilot-agent-native-architecture.svg", "README architecture must bind the authoritative SVG asset");
+  required(architecture?.fallbackAsset === "docs/assets/architecture/evopilot-agent-native-architecture.png", "README architecture must bind the PNG fallback asset");
+  required(architecture?.readmeSection === "Architecture", "README architecture section name is invalid");
+  required(Array.isArray(architecture?.requiredNodes) && architecture.requiredNodes.length === 15, "README architecture must declare exactly fifteen required nodes");
+  required(Array.isArray(architecture?.requiredEdges) && architecture.requiredEdges.length === 7, "README architecture must declare exactly seven required edges");
+  required(Array.isArray(architecture?.forbiddenImplications) && architecture.forbiddenImplications.length === 5, "README architecture must declare all forbidden implications");
+  required(Array.isArray(architecture?.quality) && architecture.quality.length === 6, "README architecture must declare all rendering and accessibility qualities");
+  required(Array.isArray(firstRunReadiness?.functionalAcceptance) && firstRunReadiness.functionalAcceptance.length === 8, "first-run LLM readiness must declare exactly eight functional acceptance areas");
+  required(Array.isArray(firstRunReadiness?.capabilityAcceptance) && firstRunReadiness.capabilityAcceptance.length === 7, "first-run LLM readiness must declare exactly seven capability acceptance areas");
+  const requiredReadinessE2e = ["E2E-SETUP-FRESH-INSTALL", "E2E-NO-LOCAL-IMPORT", "E2E-HOST-LLM-NOT-RUNTIME", "E2E-EXPERT-SECURE-SETUP", "E2E-PREFLIGHT-FAIL", "E2E-READY-HARNESS-LOOP", "E2E-RESTART-PERSISTENCE", "E2E-DEGRADE-REPAIR", "E2E-RESOLUTION-PRECEDENCE", "E2E-TENANT-ISOLATION", "E2E-V61-MIGRATION", "E2E-HEADLESS-BOOTSTRAP", "E2E-CROSS-HOST", "E2E-README-ARCHITECTURE", "E2E-NO-REGRESSION"];
+  required(arrayEquals(firstRunReadiness?.requiredEndToEnd, requiredReadinessE2e), "first-run LLM readiness must declare the exact fifteen E2E journeys");
+  required(firstRunReadiness?.completionFormula === "FUNCTIONAL_100_PERCENT_AND_CAPABILITY_100_PERCENT_AND_DOCUMENTATION_100_PERCENT_AND_CURRENT_E2E_100_PERCENT_AND_INHERITED_APPLICABLE_100_PERCENT_AND_CROSS_HOST_100_PERCENT_AND_MIGRATION_100_PERCENT_AND_REAL_HARNESS_BUNDLE_100_PERCENT_AND_SECURITY_100_PERCENT_AND_IMPACT_CLOSURE_100_PERCENT_AND_NO_REGRESSION_PASSED_AND_FAILED_PENDING_STALE_GENERIC_UNMAPPED_LEAKED_SECRET_HIDDEN_FALLBACK_LEGACY_SUITE_INVOCATION_ALL_ZERO", "first-run LLM readiness completion formula must fail closed across every evidence and leak class");
   const v6Acceptance = value?.agentNativeLifecycleControlPlaneAcceptance;
   required(v6Acceptance?.schema === "evopilot-v6-agent-native-lifecycle-control-plane-acceptance/v1", "v6 acceptance schema is invalid");
   required(v6Acceptance?.required === true, "v6 Agent-native control-plane acceptance must be required");
@@ -242,13 +278,23 @@ function validateRoadmap(value) {
   validateV61TerminalCompletion(expertEvolutionMilestone, "Evolution Expert", "2.1.0", "56e4506664a962d6f09fd0a3077a82e13bf532ff", "evolution-expert-v2.1.0");
   validateV61PublicEvidence("governance/targets/evopilot-v6.1.0-controlled-lifecycle-evolution.json", "Runtime", "6.1.0", "v6.1.0", 6, "314ec9b01024706b932b19afdc71f4c2c8f8f6ea", true);
   validateV61PublicEvidence("governance/targets/evopilot-evolution-expert-v2.1.0-controlled-lifecycle-evolution.json", "Evolution Expert", "2.1.0", "evolution-expert-v2.1.0", 1, "56e4506664a962d6f09fd0a3077a82e13bf532ff", false);
+  const readinessMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.2-first-run-llm-readiness");
+  required(readinessMilestone?.targetVersion === "6.2.0" && readinessMilestone?.status === "IN_PROGRESS", "First-Run Governed LLM Readiness must be the IN_PROGRESS Runtime 6.2.0 milestone");
+  const expertReadinessMilestone = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-2.2-first-run-llm-setup");
+  required(expertReadinessMilestone?.targetVersion === "2.2.0" && expertReadinessMilestone?.status === "IN_PROGRESS", "First-Run Governed LLM Setup Guide must be the IN_PROGRESS Expert 2.2.0 milestone");
   const learningMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.2-learning-interop");
-  required(learningMilestone?.targetVersion === "6.2.0" && learningMilestone?.status === "PLANNED", "Learning Interoperability must be rescheduled to v6.2.0");
+  required(learningMilestone?.targetVersion === "6.2.0" && learningMilestone?.status === "DEFERRED" && learningMilestone?.deferredInto === "evopilot-6.3-learning-interop", "Learning Interoperability must be deferred intact from v6.2.0 to v6.3.0");
+  const learningDestination = milestones.find((milestone) => milestone.id === "evopilot-6.3-learning-interop");
+  required(learningDestination?.targetVersion === "6.3.0" && learningDestination?.status === "PLANNED", "Learning Interoperability destination must be the PLANNED Runtime 6.3.0 milestone");
+  required(learningDestination?.objective === learningMilestone?.objective, "Learning Interoperability objective must be preserved intact during deferral");
+  required(arrayEquals(learningDestination?.outcomes, learningMilestone?.outcomes), "Learning Interoperability outcomes must be preserved intact during deferral");
+  required(arrayEquals(learningDestination?.acceptance, learningMilestone?.acceptance), "Learning Interoperability acceptance must be preserved intact during deferral");
+  required(arrayEquals(learningDestination?.inheritedAcceptance, learningMilestone?.acceptance), "Learning Interoperability destination must explicitly inherit every source acceptance guarantee");
   for (const milestone of milestones.filter((item) => item.status === "DEFERRED")) {
     const destination = milestones.find((item) => item.id === milestone.deferredInto);
     required(typeof milestone.deferredInto === "string" && destination != null, `DEFERRED milestone must name a declared deferredInto milestone: ${milestone.id}`);
     required(milestone.standaloneReleaseEligible === false, `DEFERRED milestone must disable standalone release eligibility: ${milestone.id}`);
-    required(["IN_PROGRESS", "COMPLETE"].includes(destination?.status), `DEFERRED milestone destination must be IN_PROGRESS or COMPLETE: ${milestone.id}`);
+    required(["PLANNED", "IN_PROGRESS", "COMPLETE"].includes(destination?.status), `DEFERRED milestone destination must be PLANNED, IN_PROGRESS, or COMPLETE: ${milestone.id}`);
     required(destination?.inheritsMilestone === milestone.id, `DEFERRED milestone destination must declare inheritsMilestone: ${milestone.id}`);
     required(Array.isArray(destination?.inheritedAcceptance) && destination.inheritedAcceptance.length > 0, `DEFERRED milestone destination must declare inheritedAcceptance: ${milestone.id}`);
     const transition = (value?.transitionPolicies ?? []).find((item) => item.sourceMilestone === milestone.id && item.destinationMilestone === milestone.deferredInto);
@@ -259,6 +305,10 @@ function validateRoadmap(value) {
   const knownVersions = new Set([value?.versionPolicy?.publishedBaseline, value?.versionPolicy?.currentWorkingVersion, ...(value?.milestones ?? []).filter((item) => item.product === value?.versionPolicy?.runtimeProduct).map((item) => item.targetVersion)]);
   required(knownVersions.has(packageVersion), `package version ${packageVersion} is not declared by the Roadmap`);
   required(fs.existsSync(path.join(root, "docs/roadmap/ROADMAP.md")), "docs/roadmap/ROADMAP.md is missing");
+  const roadmapDocument = fs.readFileSync(path.join(root, "docs/roadmap/ROADMAP.md"), "utf8");
+  for (const requiredText of ["### v6.2.0: First-Run Governed LLM Readiness", "### Evolution Expert v2.2.0: First-Run Governed LLM Setup Guide", "### v6.3.0: Learning Interoperability", "docs/assets/architecture/evopilot-agent-native-architecture.svg", "E2E-README-ARCHITECTURE"]) {
+    required(roadmapDocument.includes(requiredText), `human Roadmap is missing required v6.2/v2.2 projection: ${requiredText}`);
+  }
   const agents = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
   required(agents.includes("Roadmap Gate"), "AGENTS.md must require the Roadmap Gate");
   const packageJson = fs.readFileSync(path.join(root, "package.json"), "utf8");

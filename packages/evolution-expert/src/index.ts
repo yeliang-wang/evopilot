@@ -4,15 +4,19 @@ import {
   EVOPILOT_HUMAN_INTERACTION_PROTOCOL_SCHEMA,
   type EvoPilotEvolutionExpertAdapterManifestV1,
   type EvoPilotEvolutionExpertCompatibilityV1,
-  type EvoPilotHumanInteractionMessageV1
+  type EvoPilotHumanInteractionMessageV1,
+  type EvoPilotRuntimeReadinessV1
 } from "@evopilot/contracts";
 
-export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "2.1.0";
-export const EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA = "evopilot-evolution-expert-core/v2";
+export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "2.2.0";
+export const EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA = "evopilot-evolution-expert-core/v3";
 
 export type ExpertIntent =
   | "help"
   | "tutorial"
+  | "llm-setup"
+  | "llm-status"
+  | "llm-repair"
   | "project-onboard"
   | "project-adjust"
   | "lifecycle-create"
@@ -82,6 +86,16 @@ export interface EvolutionExpertTransport {
   invoke(tool: string, payload: Record<string, unknown>): Promise<EvoPilotHumanInteractionMessageV1 | Record<string, unknown>>;
 }
 
+export interface ExpertLlmReadinessPlan {
+  schema: "evopilot-evolution-expert-llm-readiness-plan/v1";
+  state: EvoPilotRuntimeReadinessV1["state"];
+  runtimeReadinessDigest: string;
+  steps: Array<{ tool: string; purpose: string; secureInputRequired: boolean }>;
+  prohibited: string[];
+  nextAction: string;
+  digest: string;
+}
+
 export interface EvolutionExpertHostIntegrationBundle {
   schema: "evopilot-evolution-expert-host-integration-bundle/v1";
   id: string;
@@ -108,6 +122,9 @@ export interface EvolutionExpertHostIntegrationBundle {
 const operations: EvolutionExpertCore["operations"] = {
   help: { tool: "evopilot_interaction_render", authority: "NONE", purpose: "Explain installed-version concepts and route the user's intent.", requiredInputs: ["sessionDigest"], nextOnSuccess: "Offer the smallest relevant next action." },
   tutorial: { tool: "evopilot_interaction_render", authority: "NONE", purpose: "Run a side-effect-free guided tutorial.", requiredInputs: ["sessionDigest"], nextOnSuccess: "Offer project discovery without registering anything." },
+  "llm-setup": { tool: "evopilot_runtime_readiness_inspect", authority: "NONE", purpose: "Inspect Runtime-owned readiness, guide provider-neutral setup, and delegate raw credentials only to Host-native secure input.", requiredInputs: [], nextOnSuccess: "Follow the Runtime state-specific action; never request or echo a raw credential." },
+  "llm-status": { tool: "evopilot_runtime_readiness_inspect", authority: "NONE", purpose: "Explain the exact RuntimeReadiness state, binding, freshness, and finite next action from Runtime truth.", requiredInputs: [], nextOnSuccess: "Continue only with a state-appropriate setup, repair, or normal operation." },
+  "llm-repair": { tool: "evopilot_runtime_readiness_repair", authority: "NONE", purpose: "Reconcile an explicitly repaired SecretRef, profile, provider preflight, or workspace binding without selecting a fallback.", requiredInputs: [], nextOnSuccess: "Render the resulting Runtime state and stop unless it is READY." },
   "project-onboard": { tool: "evopilot_project_definition_register", authority: "NONE", purpose: "Register one immutable declarative project definition from Runtime-owned typed questions.", requiredInputs: ["projectDiscovery", "projectDefinition"], nextOnSuccess: "Resolve a published Harness for the first GoalTarget." },
   "project-adjust": { tool: "evopilot_project_definition_register", authority: "NONE", purpose: "Create a new project-definition revision from Runtime-owned impact and question objects; never overwrite the old revision.", requiredInputs: ["projectImpact", "projectDefinition"], nextOnSuccess: "Show selective drift and exact rollback options." },
   "lifecycle-create": { tool: "evopilot_lifecycle_register", authority: "NONE", purpose: "Register one immutable Lifecycle YAML revision; registration never activates it.", requiredInputs: ["yaml", "evidenceRef"], nextOnSuccess: "Inspect the revision and semantic safety result before offering activation." },
@@ -147,9 +164,12 @@ const coreWithoutDigest = {
   schema: EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA as typeof EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA,
   version: EVOPILOT_EVOLUTION_EXPERT_VERSION as typeof EVOPILOT_EVOLUTION_EXPERT_VERSION,
   protocolVersion: EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION as typeof EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION,
-  intents: ["help", "tutorial", "project-onboard", "project-adjust", "lifecycle-create", "lifecycle-list", "lifecycle-inspect", "lifecycle-update", "lifecycle-activate", "lifecycle-deactivate", "lifecycle-archive", "lifecycle-restore", "lifecycle-rollback", "lifecycle-dependencies", "lifecycle-usage", "lifecycle-audit", "production-reference", "lifecycle-observe", "lifecycle-propose", "lifecycle-experiment", "lifecycle-evolution-decision", "lifecycle-monitor", "primitive-gap", "harness-explain", "goal-run", "status", "recovery", "version-explain", "capability", "migration", "cutover", "rollback", "evidence", "acceptance", "release", "unknown"] as ExpertIntent[],
+  intents: ["help", "tutorial", "llm-setup", "llm-status", "llm-repair", "project-onboard", "project-adjust", "lifecycle-create", "lifecycle-list", "lifecycle-inspect", "lifecycle-update", "lifecycle-activate", "lifecycle-deactivate", "lifecycle-archive", "lifecycle-restore", "lifecycle-rollback", "lifecycle-dependencies", "lifecycle-usage", "lifecycle-audit", "production-reference", "lifecycle-observe", "lifecycle-propose", "lifecycle-experiment", "lifecycle-evolution-decision", "lifecycle-monitor", "primitive-gap", "harness-explain", "goal-run", "status", "recovery", "version-explain", "capability", "migration", "cutover", "rollback", "evidence", "acceptance", "release", "unknown"] as ExpertIntent[],
   principles: [
     "Runtime objects are authoritative; conversation is presentation and input only.",
+    "A fresh or degraded Runtime is setup-only until RuntimeReadiness is READY through an explicit live-preflight workspace LLM binding.",
+    "Never request, receive, repeat, transform, log, or persist a raw LLM credential; delegate it to Host-native secure input and handle only SecretRef.",
+    "Host LLM, Runtime governed LLM profile, and external Agent Model are separate identities and authorities.",
     "Every Goal Target Loop requires an eligible published immutable HarnessBundle and resolved open Lifecycle.",
     "Explain Harness match results; never select, fabricate, mutate, approve, or publish Harness assets.",
     "Ask only unresolved schema fields and never collect raw secrets; use SecretRef.",
@@ -170,6 +190,9 @@ export const EVOLUTION_EXPERT_CORE: EvolutionExpertCore = { ...coreWithoutDigest
 export function routeExpertIntent(text: string): { intent: ExpertIntent; confidence: number } {
   const normalized = text.trim().toLowerCase();
   const patterns: Array<[ExpertIntent, RegExp]> = [
+    ["llm-repair", /repair (?:llm|model|provider)|llm blocked|provider failure|secret revoked|修复.*(?:llm|模型|供应商)|凭据失效/],
+    ["llm-status", /llm status|llm readiness|runtime readiness|model readiness|llm 状态|运行时就绪|模型就绪/],
+    ["llm-setup", /setup (?:llm|model|provider)|configure (?:llm|model|provider)|first[- ]run|llm profile|配置.*(?:llm|模型|供应商)|(?:llm|模型|供应商).*配置|首次.*(?:llm|模型|供应商)|首次运行/],
     ["tutorial", /tutorial|教程|入门|演示/],
     ["production-reference", /production reference|suite snapshot|生产参考|suite 快照|能力处置/],
     ["lifecycle-observe", /observe lifecycle|pipeline observation|record feedback|观察生命周期|记录反馈|流水线观察/],
@@ -211,11 +234,24 @@ export function routeExpertIntent(text: string): { intent: ExpertIntent; confide
 }
 
 export function planExpertTurn(text: string, payload: Record<string, unknown> = {}): ExpertTurnPlan {
+  if (containsRawSecret(text, payload)) {
+    const material = {
+      schema: "evopilot-evolution-expert-turn/v1" as const,
+      intent: "llm-setup" as const,
+      confidence: 1,
+      coreDigest: EVOLUTION_EXPERT_CORE.digest,
+      operation: EVOLUTION_EXPERT_CORE.operations["llm-setup"],
+      guidance: ["Raw credentials are refused in conversation.", "Use the Agent Host's reviewed secure-secret input; return only the resulting SecretRef to Runtime setup."],
+      requiresExactHumanDecision: false,
+      payload: {}
+    };
+    return { ...material, digest: digest(material) };
+  }
   const routed = routeExpertIntent(text);
   const operation = routed.intent === "unknown" ? undefined : EVOLUTION_EXPERT_CORE.operations[routed.intent];
   const missing = operation?.requiredInputs.filter((key) => payload[key] === undefined) ?? [];
   const guidance = routed.intent === "unknown"
-    ? ["Describe whether you want help, a tutorial, project onboarding, Harness explanation, a Goal run, recovery, version/capability/migration/Cutover guidance, evidence, acceptance, or release guidance."]
+    ? ["Describe whether you want first-run LLM setup/status/repair, help, a tutorial, project onboarding, Harness explanation, a Goal run, recovery, version/capability/migration/Cutover guidance, evidence, acceptance, or release guidance."]
     : missing.length
       ? [`Ask only for unresolved Runtime schema fields: ${missing.join(", ")}.`, "Input collection does not authorize execution or publication."]
       : [operation!.purpose, operation!.nextOnSuccess];
@@ -232,12 +268,41 @@ export function planExpertTurn(text: string, payload: Record<string, unknown> = 
   return { ...material, digest: digest(material) };
 }
 
+export function planExpertLlmReadiness(readiness: EvoPilotRuntimeReadinessV1): ExpertLlmReadinessPlan {
+  const steps: ExpertLlmReadinessPlan["steps"] = readiness.state === "SETUP_REQUIRED"
+    ? [
+        { tool: "evopilot_llm_provider_discover", purpose: "Let the user choose a provider or custom OpenAI-compatible endpoint; select nothing by default.", secureInputRequired: false },
+        { tool: "host-native-secure-secret-input", purpose: "Provision a Runtime SecretRef without exposing the raw credential to Expert or MCP.", secureInputRequired: true },
+        { tool: "evopilot_llm_profile_upsert", purpose: "Create the governed profile using only the returned SecretRef.", secureInputRequired: false }
+      ]
+    : readiness.state === "PREFLIGHT_REQUIRED"
+      ? [
+          { tool: "evopilot_llm_profile_preflight", purpose: "Run the server-side live provider probe.", secureInputRequired: false },
+          { tool: "evopilot_workspace_llm_default_bind", purpose: "Ask the user to bind the exact READY profile explicitly.", secureInputRequired: false }
+        ]
+      : readiness.state === "LLM_BLOCKED"
+        ? [
+            { tool: "evopilot_runtime_readiness_inspect", purpose: "Explain the exact drift, stale preflight, revoked SecretRef, or provider failure.", secureInputRequired: false },
+            { tool: "evopilot_runtime_readiness_repair", purpose: "Reconcile only after the named defect has been repaired explicitly.", secureInputRequired: false }
+          ]
+        : [];
+  const material = {
+    schema: "evopilot-evolution-expert-llm-readiness-plan/v1" as const,
+    state: readiness.state,
+    runtimeReadinessDigest: readiness.digest,
+    steps,
+    prohibited: ["raw-secret-in-conversation", "implicit-provider-selection", "Host-LLM-as-Runtime-LLM", "Agent-Model-as-Runtime-LLM", "environment-fallback", "silent-profile-switch"],
+    nextAction: readiness.state === "READY" ? "normal-operation" : readiness.nextAction
+  };
+  return { ...material, digest: digest(material) };
+}
+
 export function expertVersionGuide() {
   const material = {
     schema: "evopilot-evolution-expert-version-guide/v1" as const,
     expertVersion: EVOPILOT_EVOLUTION_EXPERT_VERSION,
     versionLines: [
-      { owner: "Runtime", current: "6.1.0", changesWhen: "Runtime code, public contract, schema compatibility, or execution semantics change.", independentFrom: ["Expert", "governed resources", "Harness assets", "source Suites"] },
+      { owner: "Runtime", current: "6.2.0", changesWhen: "Runtime code, public contract, schema compatibility, or execution semantics change.", independentFrom: ["Expert", "governed resources", "Harness assets", "source Suites"] },
       { owner: "Evolution Expert", current: EVOPILOT_EVOLUTION_EXPERT_VERSION, changesWhen: "Expert interaction or adapter package behavior changes.", independentFrom: ["Runtime", "governed resources", "Harness assets", "source Suites"] },
       { owner: "governed resource", current: "resource.metadata.version", changesWhen: "The project declaration, Pack, Provider, binding, authority role, or Lifecycle resource changes.", independentFrom: ["Runtime", "Expert"] },
       { owner: "source Suite", current: "provenance.sourceVersion", changesWhen: "Never inside EvoPilot; it is immutable migration provenance.", independentFrom: ["derived resource version"] },
@@ -275,6 +340,7 @@ export function expertTutorial(): { schema: "evopilot-evolution-expert-tutorial/
     version: EVOPILOT_EVOLUTION_EXPERT_VERSION,
     sideEffects: false as const,
     steps: [
+      { concept: "Runtime LLM Readiness", explanation: "Before project or Harness-guided work, Runtime must own one explicit live-preflight workspace LLM binding. Host LLM and Agent Model do not satisfy it.", nextPrompt: "Inspect Runtime LLM readiness and guide setup without asking me to paste a key." },
       { concept: "Project", explanation: "A versioned declaration of source, delivery, policy, environment, Host, Agent Runtime, and evidence discovery.", nextPrompt: "Help me discover and register this project." },
       { concept: "Lifecycle Registry", explanation: "Human-readable Pipeline definitions are immutable tenant/workspace resources with independent versions, active pointers, audit, and rollback.", nextPrompt: "Show my Lifecycle list and explain which revisions are active." },
       { concept: "Controlled Lifecycle Evolution", explanation: "Runtime turns exact observations into immutable successors, comparable experiments, policy-bounded future-run activation, monitoring, and receipt-safe rollback; conversation never supplies authority.", nextPrompt: "Show how an observation can become a safely evaluated Lifecycle successor." },
@@ -326,7 +392,7 @@ export function createExpertAdapter(host: string, version = EVOPILOT_EVOLUTION_E
     version,
     coreDigest: EVOLUTION_EXPERT_CORE.digest,
     protocolVersion: EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION as typeof EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION,
-    requiredCapabilities: ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation", "runtime-state-resume"],
+    requiredCapabilities: ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation", "runtime-state-resume", "host-native-secure-secret-input"],
     interactionModes: host === "generic-mcp" ? ["mcp" as const] : ["skill" as const, "mcp" as const],
     instructions: EVOLUTION_EXPERT_CORE.principles,
     prohibitedSemantics: ["own-runtime-state", "select-or-mutate-harness", "infer-approval", "collect-raw-secrets", "host-specific-lifecycle", "automatic-publication", "ordinary-human-cli-or-http-fallback", "execute-source-work"]
@@ -344,7 +410,7 @@ export function createHostIntegrationBundle(host: string): EvolutionExpertHostIn
     host,
     expertCoreDigest: EVOLUTION_EXPERT_CORE.digest,
     adapterDigest: adapter.digest,
-    runtimeCompatibility: ">=6.1.0 <7.0.0",
+    runtimeCompatibility: ">=6.2.0 <7.0.0",
     ordinaryHumanEntry: "EXPERT_OVER_MCP_ONLY" as const,
     lifecycle: {
       install: `${prefix}/install`,
@@ -397,12 +463,12 @@ export function qualifyExpertHostAdapter(host: string, engineVersion: string, ho
 
 export function expertCompatibility(adapter: EvoPilotEvolutionExpertAdapterManifestV1, engineVersion: string, hostCapabilities: string[]): EvoPilotEvolutionExpertCompatibilityV1 {
   const match = engineVersion.match(/^(\d+)\.(\d+)\.(\d+)/);
-  const compatibleEngine = Boolean(match && Number(match[1]) === 6 && Number(match[2]) >= 1);
+  const compatibleEngine = Boolean(match && Number(match[1]) === 6 && Number(match[2]) >= 2);
   const missing = adapter.requiredCapabilities.filter((capability) => !hostCapabilities.includes(capability));
   return {
     schema: "evopilot-evolution-expert-compatibility/v1",
     expertVersion: EVOPILOT_EVOLUTION_EXPERT_VERSION,
-    engineProtocolRange: ">=6.1.0 <7.0.0",
+    engineProtocolRange: ">=6.2.0 <7.0.0",
     expertProtocolVersion: EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION,
     coreDigest: EVOLUTION_EXPERT_CORE.digest,
     adapterId: adapter.id,
@@ -431,4 +497,11 @@ function stable(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stable).join(",")}]`;
   if (value && typeof value === "object") return `{${Object.entries(value as Record<string, unknown>).filter(([, child]) => child !== undefined).sort(([left], [right]) => left.localeCompare(right)).map(([key, child]) => `${JSON.stringify(key)}:${stable(child)}`).join(",")}}`;
   return JSON.stringify(value);
+}
+
+function containsRawSecret(text: string, payload: Record<string, unknown>): boolean {
+  const secretKey = /(?:^|_)(?:api[-_]?key|token|password|secret|credential)(?:$|_)/i;
+  const secretValue = /(?:sk-[A-Za-z0-9_-]{12,}|npm_[A-Za-z0-9]{12,}|(?:api[-_]?key|token|password|secret)\s*[=:]\s*(?!secret:\/\/|<redacted>)[^\s,;]+)/i;
+  if (secretValue.test(text)) return true;
+  return Object.entries(payload).some(([key, value]) => secretKey.test(key) && typeof value === "string" && value.length > 0 && !value.startsWith("secret://"));
 }

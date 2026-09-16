@@ -1,8 +1,8 @@
 import { createHash } from "node:crypto";
 
-export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "6.1.0";
+export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "6.2.0";
 export const EVOPILOT_SERVER_VERSION_FALLBACK = "0.1.0";
-export const EVOPILOT_CLI_VERSION_FALLBACK = "6.1.0";
+export const EVOPILOT_CLI_VERSION_FALLBACK = "6.2.0";
 export const EVOPILOT_API_CONTRACT_VERSION = "v1";
 export const EVOPILOT_MINIMUM_CLI_VERSION = "5.0.0";
 
@@ -30,11 +30,14 @@ export const EVOPILOT_EXECUTION_RUNTIME_PROFILE_SCHEMA = "evopilot-execution-run
 export const EVOPILOT_LEGACY_SUITE_SNAPSHOT_SCHEMA = "evopilot-legacy-suite-snapshot/v1";
 export const EVOPILOT_LEGACY_SUITE_SNAPSHOT_COMPARISON_SCHEMA = "evopilot-legacy-suite-snapshot-comparison/v1";
 export const EVOPILOT_LEGACY_SUITE_ISOLATION_PROOF_SCHEMA = "evopilot-legacy-suite-isolation-proof/v1";
-export const EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION = "2.0";
+export const EVOPILOT_RUNTIME_READINESS_SCHEMA = "evopilot-runtime-readiness/v1";
+export const EVOPILOT_WORKSPACE_LLM_DEFAULT_BINDING_SCHEMA = "evopilot-workspace-llm-default-binding/v1";
+export const EVOPILOT_LLM_SETUP_PROTOCOL_SCHEMA = "evopilot-llm-setup-protocol/v1";
+export const EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION = "2.2";
 
 export const EVOPILOT_HARNESS_GUIDED_RUNTIME_BOUNDARY = {
   schema: "evopilot-harness-guided-runtime-boundary/v1",
-  runtimeVersion: "6.1.0",
+  runtimeVersion: "6.2.0",
   invariant: "Every Goal Target Loop binds one eligible published immutable HarnessBundle plus one resolved declarative Lifecycle.",
   harnessOwnership: "evopilot-harness",
   runtimeOwnership: "evopilot",
@@ -46,6 +49,61 @@ export const EVOPILOT_HARNESS_GUIDED_RUNTIME_BOUNDARY = {
   hostRuntimeConflation: false,
   humanAuthority: ["ambiguous-or-unknown-choice", "irreversible-external-effect", "acceptance-verdict", "release-publication"]
 } as const;
+
+export type EvoPilotRuntimeReadinessState = "SETUP_REQUIRED" | "PREFLIGHT_REQUIRED" | "READY" | "LLM_BLOCKED";
+
+export interface EvoPilotRuntimeReadinessV1 {
+  schema: typeof EVOPILOT_RUNTIME_READINESS_SCHEMA;
+  tenantId: string;
+  workspaceId: string;
+  state: EvoPilotRuntimeReadinessState;
+  revision: number;
+  bindingDigest?: string;
+  profileId?: string;
+  reason: string;
+  evidenceRefs: string[];
+  actor: string;
+  updatedAt: string;
+  digest: string;
+  nextAction: "configure-secret-ref" | "configure-llm-profile" | "run-live-preflight" | "bind-workspace-default" | "repair-llm-readiness" | "normal-operation";
+}
+
+export interface EvoPilotWorkspaceLlmDefaultBindingV1 {
+  schema: typeof EVOPILOT_WORKSPACE_LLM_DEFAULT_BINDING_SCHEMA;
+  tenantId: string;
+  workspaceId: string;
+  revision: number;
+  profileId: string;
+  profileDigest: string;
+  provider: string;
+  model: string;
+  secretRef: string;
+  readiness: {
+    status: "READY";
+    checkedAt: string;
+    expiresAt: string;
+    evidenceDigest: string;
+  };
+  actor: string;
+  reason: string;
+  createdAt: string;
+  previousBindingDigest?: string;
+  digest: string;
+}
+
+export interface EvoPilotLlmSetupProtocolV1 {
+  schema: typeof EVOPILOT_LLM_SETUP_PROTOCOL_SCHEMA;
+  runtimeVersion: "6.2.0";
+  expertProtocolRange: ">=2.2 <3";
+  states: EvoPilotRuntimeReadinessState[];
+  setupOnlyTools: string[];
+  forbiddenFallbacks: string[];
+  secureInput: {
+    rawSecretAcceptedByExpert: false;
+    persistedForm: "SecretRef only";
+    hostCapability: "host-native-secure-secret-input";
+  };
+}
 
 export const EVOPILOT_CLI_PACKAGE_NAME = "@evopilot/cli";
 
@@ -90,7 +148,8 @@ export const EVOPILOT_PACKAGE_BOUNDARIES: readonly EvoPilotPackageBoundary[] = [
       "shared schema names",
       "version constants",
       "public API/CLI/runtime boundary metadata",
-      "LifecycleDefinition, LifecycleBinding, LifecycleRun, and ExecutorAdapter schema names"
+      "LifecycleDefinition, LifecycleBinding, LifecycleRun, and ExecutorAdapter schema names",
+      "RuntimeReadiness, WorkspaceLlmDefaultBinding, and LLM setup protocol schemas"
     ],
     mustNotOwn: [
       "business decisions",
@@ -133,6 +192,7 @@ export const EVOPILOT_PACKAGE_BOUNDARIES: readonly EvoPilotPackageBoundary[] = [
       "Open Lifecycle Harness domain and persistence",
       "Governed Evolution Runtime persistence and API",
       "Automation Registry persistence",
+      "RuntimeReadiness and WorkspaceLlmDefaultBinding persistence and API",
       "RBAC enforcement",
       "tenant/workspace scoped API orchestration"
     ],
@@ -223,7 +283,8 @@ export const EVOPILOT_PACKAGE_BOUNDARIES: readonly EvoPilotPackageBoundary[] = [
       "intent routing and progressive disclosure",
       "schema-driven question and deterministic result rendering",
       "installed-version help and side-effect-free tutorials",
-      "generated Codex, WorkBuddy, generic Agent, and generic MCP adapters"
+      "generated Codex, WorkBuddy, generic Agent, and generic MCP adapters",
+      "first-run LLM setup, degradation, repair, and upgrade-required guidance"
     ],
     mustNotOwn: [
       "Runtime domain truth",

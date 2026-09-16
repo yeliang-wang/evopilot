@@ -17,6 +17,7 @@ export interface PlatformRouteContext {
   ready: boolean;
   schemaVersion: number;
   dashboardEnabled: boolean;
+  runtimeReadiness?: string;
 }
 
 export function handlePlatformRoute(context: PlatformRouteContext): boolean {
@@ -35,7 +36,8 @@ export function handlePlatformRoute(context: PlatformRouteContext): boolean {
   if (request.method === "GET" && url.pathname === "/ready") {
     writeJson(response, 200, platformReadyBody({
       ready: context.ready,
-      schemaVersion: context.schemaVersion
+      schemaVersion: context.schemaVersion,
+      runtimeReadiness: context.runtimeReadiness
     }));
     return true;
   }

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="${EVOPILOT_INSTALL_VERSION:-6.1.0}"
+VERSION="${EVOPILOT_INSTALL_VERSION:-6.2.0}"
 DIR="${EVOPILOT_INSTALL_DIR:-evopilot-stack}"
 PACKAGE="${EVOPILOT_INSTALL_PACKAGE:-create-evopilot}"
 PACKAGE_SPEC="${EVOPILOT_INSTALL_PACKAGE_SPEC:-}"
@@ -26,9 +26,6 @@ Environment:
   EVOPILOT_INSTALL_PACKAGE       npm package name. Default: ${PACKAGE}
   EVOPILOT_INSTALL_PACKAGE_SPEC  npm/npx package spec override. Default: manifest tarball URL, or ${PACKAGE}@${VERSION} with --skip-manifest
   EVOPILOT_INSTALL_MANIFEST_URL  release manifest URL. Default: ${MANIFEST_URL}
-  EVOPILOT_LLM_BASE_URL          used by --start validation when creating .env
-  EVOPILOT_LLM_MODEL_NAME        used by --start validation when creating .env
-  EVOPILOT_LLM_API_KEY           used by --start validation when creating .env
 USAGE
 }
 

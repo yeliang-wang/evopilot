@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { configureTestWorkspaceRuntimeLlm } from "../helpers/v62-runtime-llm.mjs";
 import { createServer } from "../../packages/server/dist/index.js";
 
 test("EvoPilot consumes a published Harness Catalog without exposing Harness lifecycle APIs", async () => {
@@ -348,6 +349,7 @@ test("EvoPilot auto-matches a v3 Profile and binds an immutable Bundle through G
   });
   await listen(server);
   const baseUrl = serverUrl(server);
+  const runtimeLlm = await configureTestWorkspaceRuntimeLlm({ baseUrl, token: "admin-token", profileId: "v3-bundle-runtime" });
   try {
     const catalogs = await jsonFetch(`${baseUrl}/api/v1/harness/catalogs`, { token: "viewer-token" });
     assert.equal(catalogs.status, 200);
@@ -430,6 +432,7 @@ test("EvoPilot auto-matches a v3 Profile and binds an immutable Bundle through G
     assert.ok(advanced.body.data.loop.evidenceSets[0].evidence.includes("harnessExecutionPlan[0]=discover-project-commands"));
   } finally {
     await close(server);
+    await runtimeLlm.close();
   }
 });
 
@@ -451,6 +454,7 @@ test("EvoPilot revalidates a planned v3 HarnessBundle before each Goal Loop iter
   });
   await listen(server);
   const baseUrl = serverUrl(server);
+  const runtimeLlm = await configureTestWorkspaceRuntimeLlm({ baseUrl, token: "admin-token", profileId: "v3-tamper-runtime" });
   try {
     assert.equal((await jsonFetch(`${baseUrl}/api/v1/projects`, {
       method: "POST",
@@ -499,6 +503,7 @@ test("EvoPilot revalidates a planned v3 HarnessBundle before each Goal Loop iter
     assert.equal(blocked.body.error, "HARNESS_BUNDLE_DIGEST_MISMATCH");
   } finally {
     await close(server);
+    await runtimeLlm.close();
   }
 });
 

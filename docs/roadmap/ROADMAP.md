@@ -34,6 +34,8 @@ Evolution Expert `v1.1.0` lines are superseded and cannot be promoted. Runtime
 `v6.0.0` and Evolution Expert `v2.0.0` remain immutable public history.
 Runtime `v6.1.0` and Evolution Expert `v2.1.0` are the current public,
 independently versioned controlled project Lifecycle evolution releases.
+Runtime `v6.2.0` and Evolution Expert `v2.2.0` are the current working lines for
+mandatory first-run governed LLM readiness and its Agent-neutral setup guide.
 Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset, Ontology, Policy,
 Evaluation, and Catalog versions evolve independently.
 
@@ -803,13 +805,101 @@ non-authoritative: it cannot invoke a legacy Suite, own Lifecycle truth, infer
 approval, mutate Harness assets, store raw credentials, or introduce
 Host-specific project logic.
 
-### v6.2.0: Learning Interoperability
+### v6.2.0: First-Run Governed LLM Readiness
 
-Status: `PLANNED`
+Status: `IN_PROGRESS`
+
+A fresh Runtime may start only as a restricted setup control plane. Its
+tenant/workspace `RuntimeReadiness` state is one of `SETUP_REQUIRED`,
+`PREFLIGHT_REQUIRED`, `READY`, or `LLM_BLOCKED`. Normal project activation,
+Harness matching or binding, Goal/Target/Loop/Lifecycle execution, external
+Agent Runtime dispatch, Candidate, acceptance, release, publication,
+deployment, and production effects all fail closed until the Runtime is
+`READY`.
+
+`READY` requires one active workspace-visible governed LLM profile, a
+same-tenant/workspace server-side `SecretRef`, a fresh live provider preflight,
+an explicit `WorkspaceLlmDefaultBinding`, and a compatible Expert/MCP setup
+protocol. Resolution is deterministic: run override, project default, explicit
+workspace default, then `LLM_PROFILE_REQUIRED`. EvoPilot never silently imports
+or falls back to shell environment values, a Host LLM, an Agent Model, Codex,
+Claude Code, WorkBuddy, CodeBuddy `models.json`, `MyGlm5`, or a hard-coded
+provider preset.
+
+Setup-only access is limited to health/readiness, authentication, Expert MCP
+handshake and setup status, provider discovery, secure `SecretRef`
+provisioning, LLM profile CRUD and preflight, workspace-default binding and
+repair, diagnostics, and documentation. Headless bootstrap is explicit and
+materializes governed resources; a one-time 6.1 migration converts only one
+unambiguous explicitly configured provider and otherwise returns
+`SETUP_REQUIRED`. Invalid profiles, revoked secrets, stale readiness, or failed
+provider health move the Runtime to `LLM_BLOCKED`; repair is explicit and no
+silent provider switch is permitted.
+
+Raw credentials are forbidden in conversation, prompts, Expert Core,
+generated Skills, MCP results, project or Lifecycle YAML, Harness bindings,
+receipts, evidence, audit metadata, and logs. Approved Host-native secure input,
+no-echo helpers, tenant/workspace vaults, external secret-manager references,
+and explicit headless secret sources persist only a `SecretRef`; live preflight
+resolves it server-side and returns redacted evidence.
+
+The README must add an `Architecture` section using the authoritative editable
+`docs/assets/architecture/evopilot-agent-native-architecture.svg` with a PNG
+fallback. The diagram must distinguish Human, third-party AI Agent and Agent
+Host, Host LLM, Evolution Expert, MCP Client, EvoPilot Runtime control plane,
+Runtime readiness, governed LLM profiles, user-selected model providers,
+qualified Agent Runtime and Agent Model, Project Systems, and the read-only
+evopilot-harness Registry/Catalog and immutable HarnessBundle supply plane. It
+must show natural-language, MCP, exact `pendingExecution`, normalized receipt,
+bounded project effects, read-only Harness consumption, and governed
+profile-to-provider edges without implying that EvoPilot bundles a model,
+directly edits source, merges LLM authorities, gives Expert durable authority,
+or mutates Harness assets.
+
+Acceptance covers all readiness state transitions and persistence, tenancy and
+concurrency, deterministic binding and resolution, setup-only HTTP/MCP denial,
+secure secret handling and redaction, provider-neutral live preflight,
+degradation and recovery, explicit migration and headless bootstrap, README
+architecture rendering, real HarnessBundle-guided Goal Target Loop behavior,
+all supported Hosts, applicable Runtime 6.1 and Expert 2.1 inheritance, impact
+closure, active soak, `legacySuiteInvocationCount=0`, and `NO_REGRESSION`. The
+15 mandatory journeys are `E2E-SETUP-FRESH-INSTALL`, `E2E-NO-LOCAL-IMPORT`,
+`E2E-HOST-LLM-NOT-RUNTIME`, `E2E-EXPERT-SECURE-SETUP`,
+`E2E-PREFLIGHT-FAIL`, `E2E-READY-HARNESS-LOOP`,
+`E2E-RESTART-PERSISTENCE`, `E2E-DEGRADE-REPAIR`,
+`E2E-RESOLUTION-PRECEDENCE`, `E2E-TENANT-ISOLATION`,
+`E2E-V61-MIGRATION`, `E2E-HEADLESS-BOOTSTRAP`, `E2E-CROSS-HOST`,
+`E2E-README-ARCHITECTURE`, and `E2E-NO-REGRESSION`.
+
+### Evolution Expert v2.2.0: First-Run Governed LLM Setup Guide
+
+Status: `IN_PROGRESS`
+
+One Agent-neutral Expert Core detects setup-only Runtime state and guides the
+ordinary user through provider choice, approved secure secret collection,
+profile configuration, live preflight, explicit workspace-default confirmation,
+repair, rotation, and recovery over Runtime-owned MCP contracts. Codex, Claude
+Code, designated-human WorkBuddy, independent Host, generic MCP, and supported
+headless administration must preserve the same facts and stop conditions.
+
+The Expert refuses to request or echo raw keys in conversation and delegates
+secret entry to Host-native no-echo or secure-dialog surfaces. It asks only the
+unresolved provider-neutral fields needed for a preset or custom
+OpenAI-compatible endpoint, base URL, model, scope, readiness, and explicit
+binding. An incompatible older Expert returns an exact upgrade-required result.
+It never owns a profile, readiness state, approval, secret, provider fallback,
+or durable state and cannot claim `READY` without Runtime evidence.
+
+### v6.3.0: Learning Interoperability
+
+Status: `PLANNED` — inherited intact from the deferred v6.2 milestone
 
 Export consented, redacted, reproducible preference and reward datasets to
 external Trainer systems and re-enter trained policies through provenance,
 evaluation, and promotion gates. Distributed model training remains external.
+The v6.2 objective, all four outcomes, all three acceptance guarantees, and
+their evidence obligations are preserved and must be retested; deferral deletes
+no source guarantee.
 
 ## Cross-Project Feedback
 

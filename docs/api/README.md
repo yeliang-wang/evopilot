@@ -194,9 +194,21 @@ POST /api/v1/settings/logging
 
 结构化日志使用 `schema=evopilot-log/v1`，包含 `severity`、`category`、`routeGroup`、`outcome`、`errorCode`、`correlation.*`、`diagnosis.*` 和脱敏后的 `metadata`。Harness 相关事件使用 `category=harness`，包括 template 发布、重复版本拒绝、项目 profile 生成、校验失败、应用、激活、升级 DRAFT，以及 goal plan 是否绑定 active profile。
 
-## LLM Profile 与项目绑定
+## Runtime LLM Readiness、Profile 与项目绑定
 
-EvoPilot 支持 workspace 级和 user 级 LLM Profile。Workspace profile 由管理员维护，可绑定为项目默认 LLM；user profile 由当前用户维护，只能作为一次 Goal/Loop run override 使用，不能绑定为项目默认。Profile 用于声明 GLM、Kimi、Gemma 或自定义 OpenAI-compatible 模型的 provider、base URL、model、timeout、重试和 `apiKeyRef`。真实 API key 只保存在服务端环境变量或当前 tenant/workspace secret vault；API 响应不会回显明文。
+Runtime 6.2 默认没有 provider、model 或 credential，也不会继承 Host LLM、Agent Model 或进程环境的 LLM 配置。生产 Runtime 在 `RuntimeReadiness=READY` 之前只开放健康、认证和 LLM 设置面；其他接口返回 `409 LLM_PROFILE_REQUIRED`。
+
+```http
+GET /api/v1/runtime-readiness
+GET /api/v1/runtime-readiness/setup-protocol
+GET /api/v1/llm-providers
+GET /api/v1/runtime-readiness/workspace-default
+POST /api/v1/runtime-readiness/workspace-default
+POST /api/v1/runtime-readiness/repair
+POST /api/v1/runtime-readiness/migrate-v61
+```
+
+EvoPilot 支持 workspace 级和 user 级 LLM Profile。Workspace profile 由管理员维护，可作为显式 Runtime workspace default 或项目默认 LLM；user profile 由当前用户维护，只能作为一次 Goal/Loop run override 使用。Profile 用于声明用户选择的 preset 或自定义 OpenAI-compatible provider、base URL、model、timeout、重试和 `apiKeyRef`。真实 API key 仅进入受控 secret store；持久化绑定、API 响应、日志和审计只包含 SecretRef，不回显明文。
 
 ```http
 GET /api/v1/llm-profiles
@@ -242,7 +254,7 @@ Content-Type: application/json
 }
 ```
 
-内置 preset 可以省略部分 provider 参数：`glm` 默认 `providerName=zhipu`、`baseUrl=https://open.bigmodel.cn/api/paas/v4`、`modelName=glm-5.2`；`kimi` 默认 `providerName=moonshot`、`baseUrl=https://api.moonshot.cn/v1`、`modelName=kimi-k2`；`gemma` 默认 `providerName=openai-compatible`、`modelName=gemma`。自定义 provider 使用 `providerPreset=custom` 并传入 `baseUrl` 和 `modelName`。
+内置 preset 是用户明确选择后才应用的字段模板：`glm`、`kimi`、`gemma`；EvoPilot 不会自动选中任何 preset。自定义 provider 使用 `providerPreset=custom` 并显式传入 `baseUrl` 和 `modelName`。
 
 用户自己的 profile 使用 `scope=user`，并且 `apiKeyRef` 必须引用同一用户创建的 user-scope LLM secret：
 
@@ -281,6 +293,8 @@ Content-Type: application/json
   "nextAction": "run-loop"
 }
 ```
+
+只有 workspace Profile 处于 ACTIVE、SecretRef 同 scope 且有效、实时 preflight 为 READY 且未过期时，管理员才能通过 `POST /api/v1/runtime-readiness/workspace-default` 将精确 Profile digest 绑定为 Runtime workspace default。Profile 漂移、SecretRef 撤销或 preflight 过期会将 Runtime 降级为 `LLM_BLOCKED`，不会静默切换模型。
 
 绑定项目默认 LLM：
 

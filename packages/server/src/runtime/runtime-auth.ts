@@ -37,13 +37,12 @@ export function resolveRuntimeConfig(options: EvoPilotServerOptions): RuntimeCon
   };
 }
 
-export function assertProductionRuntimeIsConfigured(runtime: RuntimeConfig, tokens: AuthToken[], llmClient?: LlmTaskClient): void {
+export function assertProductionRuntimeIsConfigured(runtime: RuntimeConfig, tokens: AuthToken[], _llmClient?: LlmTaskClient): void {
   if (runtime.mode !== "prod") return;
   if (runtime.allowAnonymousAdmin) throw new Error("EVOPILOT_PROD_FORBIDS_ANONYMOUS_ADMIN");
   if (runtime.allowMockIntegrations) throw new Error("EVOPILOT_PROD_FORBIDS_MOCK_INTEGRATIONS");
   if (!runtime.requireLlm) throw new Error("EVOPILOT_PROD_REQUIRES_LLM");
   if (tokens.length === 0) throw new Error("EVOPILOT_PROD_REQUIRES_TOKENS");
-  if (!llmClient) throw new Error("EVOPILOT_PROD_REQUIRES_LLM_PROVIDER");
 }
 
 export function requireBodyString(value: unknown, errorCode: string, runtime: RuntimeConfig, debugFallback?: string): string {

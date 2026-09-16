@@ -25,13 +25,13 @@ Production installation uses the GitHub Release CLI tarball set for the current 
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-contracts-3.1.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-client-3.1.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.1.0/evopilot-contracts-6.1.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.1.0/evopilot-client-6.1.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.1.0/evopilot-cli-6.1.0.tgz
 evopilot --version
 ```
 
-The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@3.1.0` only after `npm run verify:npm-registry -- --version 3.1.0` passes.
+The public npm registry package remains a separate post-publish layer. Use `npm install -g @evopilot/cli@6.1.0` only after `npm run verify:npm-registry -- --version 6.1.0` passes.
 
 From this repository, use the same CLI package without publishing:
 
@@ -95,7 +95,7 @@ evopilot logging inspect --json
 
 Expected result:
 
-- `status` is `READY`.
+- `status` is `READY` after Runtime 6.2 first-run LLM setup is complete; before that, setup-only mode is expected.
 - `health.status` is `UP`.
 - `ready.status` is `READY`.
 - `api.schema` is `evopilot-version/v1`.
@@ -104,6 +104,8 @@ Expected result:
 - Exit code is `0`.
 
 If the API Server cannot be reached, `status --json` still prints schema `evopilot-cli-status/v1` with `status=UNREACHABLE`, `stage`, `server`, `config`, `missingConfig`, `diagnosis.recommendedAction`, and `error.message`, then exits `2`.
+
+For Runtime 6.2 first-run setup and the mandatory explicit workspace LLM binding, follow [First-run LLM readiness](../guides/first-run-llm-readiness.md). Process health is not permission to run project operations, and neither the Host LLM nor an Agent Model is a Runtime LLM fallback.
 
 ## AI Agent Contract
 

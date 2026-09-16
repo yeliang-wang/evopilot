@@ -21,6 +21,14 @@ export interface EvoPilotLifecycleMcpTool {
 }
 
 export const EVOPILOT_LIFECYCLE_MCP_TOOLS: EvoPilotLifecycleMcpTool[] = [
+  { name: "evopilot_runtime_readiness_inspect", description: "Inspect Runtime-owned first-run LLM readiness and the finite next repair action.", method: "GET", path: "/api/v1/runtime-readiness", authority: "NONE" },
+  { name: "evopilot_llm_provider_discover", description: "Discover provider-neutral LLM setup choices; no provider or model is selected by default.", method: "GET", path: "/api/v1/llm-providers", authority: "NONE" },
+  { name: "evopilot_llm_profile_list", description: "List tenant/workspace-visible governed LLM profiles without exposing raw credentials.", method: "GET", path: "/api/v1/llm-profiles", authority: "NONE" },
+  { name: "evopilot_llm_profile_inspect", description: "Inspect one governed LLM profile and its redacted SecretRef-only configuration.", method: "GET", path: "/api/v1/llm-profiles/{profileId}", authority: "NONE" },
+  { name: "evopilot_llm_profile_upsert", description: "Create or revise one governed LLM profile from an existing SecretRef; raw credentials are forbidden.", method: "POST", path: "/api/v1/llm-profiles", authority: "NONE" },
+  { name: "evopilot_llm_profile_preflight", description: "Run a server-side live provider preflight for one exact governed LLM profile.", method: "POST", path: "/api/v1/llm-profiles/{profileId}/preflight", authority: "NONE" },
+  { name: "evopilot_workspace_llm_default_bind", description: "Bind one live-preflight READY workspace profile as the explicit Runtime default.", method: "POST", path: "/api/v1/runtime-readiness/workspace-default", authority: "EXACT_BINDING_DECISION" },
+  { name: "evopilot_runtime_readiness_repair", description: "Reconcile readiness after explicit profile, SecretRef, or provider repair without selecting a fallback.", method: "POST", path: "/api/v1/runtime-readiness/repair", authority: "NONE" },
   { name: "evopilot_resource_list", description: "List independently versioned governed resources without loading a legacy Codex Suite.", method: "GET", path: "/api/v1/evolution-resources", authority: "NONE" },
   { name: "evopilot_resource_inspect", description: "Inspect one exact governed resource revision and immutable source provenance.", method: "GET", path: "/api/v1/evolution-resources/{kind}/{resourceId}", authority: "NONE" },
   { name: "evopilot_resource_register", description: "Register one immutable declarative resource; registration is not activation or approval.", method: "POST", path: "/api/v1/evolution-resources", authority: "NONE" },

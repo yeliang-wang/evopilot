@@ -1,7 +1,7 @@
 # EvoPilot Evolution Expert
 
-`@evopilot/evolution-expert` 2.1.0 is the independently versioned,
-Agent-neutral interactive guide for EvoPilot Runtime 6.1.x. It helps an ordinary
+`@evopilot/evolution-expert` 2.2.0 is the independently versioned,
+Agent-neutral interactive guide for EvoPilot Runtime 6.2.x. It helps an ordinary
 user discover and declare a project, understand Runtime-produced Harness
 matching and Lifecycle composition, operate a Goal Target Loop, follow
 automatic recovery, inspect evidence and readiness, and understand resource
@@ -19,9 +19,9 @@ API, and CI without creating a silent ordinary-human fallback.
 ## Install and verify
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.1.0
+npm install --global @evopilot/evolution-expert@2.2.0
 evopilot-expert version
-evopilot-expert doctor codex 6.1.0
+evopilot-expert doctor codex 6.2.0
 evopilot-expert tutorial
 evopilot-expert versions
 evopilot-expert migration
@@ -50,11 +50,17 @@ Secret values are never entered; declarations contain `secret://`, `env://`,
 or `vault://` references. Registration, adjustment, semantic diff, activation,
 and rollback remain Runtime operations.
 
+On first run, ask the Expert to inspect Runtime LLM readiness. Runtime stays
+setup-only until a user-selected workspace Profile has an active SecretRef, a
+fresh live preflight, and an explicit digest-bound workspace-default binding.
+The Expert refuses raw credentials in conversation and delegates credential
+entry to a Host-native secure-input capability.
+
 ## Upgrade, rollback, and remove
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.1.0
-evopilot-expert doctor codex 6.1.0
+npm install --global @evopilot/evolution-expert@2.2.0
+evopilot-expert doctor codex 6.2.0
 
 npm install --global @evopilot/evolution-expert@1.0.1
 evopilot-expert doctor codex 5.0.1

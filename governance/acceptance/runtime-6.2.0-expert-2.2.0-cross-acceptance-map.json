@@ -1,0 +1,156 @@
+{
+  "schema": "evopilot-runtime-expert-cross-acceptance-map/v3",
+  "id": "evopilot-runtime-6.2.0-expert-2.2.0-first-run-llm-readiness",
+  "status": "PROPOSED",
+  "bindings": {
+    "runtime": {
+      "id": "evopilot-v6.2.0-first-run-llm-readiness",
+      "revision": 1,
+      "authorizationDigest": "sha256:ef85e24874bf4315ab7ec8f16efd05dca5dab7d084ad2e085216d0b77788784c",
+      "fileDigest": "sha256:4198fb4c7a4bc1b5955e07fbb35933d95ad8398938f48ed77f666d474f62dd68"
+    },
+    "expert": {
+      "id": "evopilot-evolution-expert-v2.2.0-first-run-llm-setup",
+      "revision": 1,
+      "authorizationDigest": "sha256:57f633d0e8b7d8c9fa7d3f10703be4b2e4553e271eecad4c9c4f4e7b63fc1e5f",
+      "fileDigest": "sha256:88a59a993530eee43b803cef4ed9f2b564b35d68a9c60f9269fb156f358e013d"
+    }
+  },
+  "publishedBaseline": {
+    "contract": "governance/acceptance/v61-completion-contract.json",
+    "fileDigest": "sha256:7ccd4cdf090df47c8467c9c2a3482d7c63f8409da2025f4f33579610b324ed70",
+    "contractDigest": "sha256:b1de496aa5d745f56c8942a423dab1a2eb77a41e18b1de0689ccd8be786e96b9",
+    "requiredCriteria": 305,
+    "disposition": "INHERIT_ALL_NO_EXCLUSIONS"
+  },
+  "rows": [
+    {
+      "id": "V62-CROSS01",
+      "objective": "A fresh installation remains SETUP_REQUIRED with no local import, and Expert explains the setup-only boundary consistently without using Host LLM or Agent Model as Runtime readiness.",
+      "runtimeE2EIds": ["E2E-SETUP-FRESH-INSTALL", "E2E-NO-LOCAL-IMPORT", "E2E-HOST-LLM-NOT-RUNTIME"],
+      "expertE2EIds": ["EX22E2E01", "EX22E2E09"],
+      "runtimeAcceptanceIds": ["R62-FUNC01", "R62-FUNC03", "R62-CAP01", "R62-CAP03"],
+      "expertAcceptanceIds": ["EX22-FUNC01", "EX22-CAP01", "EX22-CAP03"],
+      "requiredHosts": ["Codex", "Claude Code", "generic MCP", "headless", "independent Host"],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V62-CROSS02",
+      "objective": "Expert uses approved secure input to create a Runtime-owned SecretRef, profile, live preflight, explicit workspace binding, and READY without raw-secret exposure.",
+      "runtimeE2EIds": ["E2E-EXPERT-SECURE-SETUP"],
+      "expertE2EIds": ["EX22E2E02", "EX22E2E03"],
+      "runtimeAcceptanceIds": ["R62-FUNC02", "R62-FUNC05", "R62-CAP02"],
+      "expertAcceptanceIds": ["EX22-FUNC02", "EX22-FUNC03", "EX22-CAP02"],
+      "requiredHosts": ["Codex", "Claude Code", "WorkBuddy", "generic MCP", "independent Host"],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V62-CROSS03",
+      "objective": "Preflight failure and later provider or secret degradation stay non-operational and recover only through explicit verified repair with no fallback or duplicate effect.",
+      "runtimeE2EIds": ["E2E-PREFLIGHT-FAIL", "E2E-DEGRADE-REPAIR"],
+      "expertE2EIds": ["EX22E2E04", "EX22E2E09"],
+      "runtimeAcceptanceIds": ["R62-FUNC05", "R62-CAP02", "R62-CAP05"],
+      "expertAcceptanceIds": ["EX22-FUNC04", "EX22-CAP01"],
+      "requiredHosts": ["Codex", "generic MCP", "headless", "independent Agent Runtime"],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V62-CROSS04",
+      "objective": "READY permits one real immutable HarnessBundle-guided Goal Target Loop through a qualified Agent Runtime while Expert and documentation preserve all product boundaries.",
+      "runtimeE2EIds": ["E2E-READY-HARNESS-LOOP"],
+      "expertE2EIds": ["EX22E2E08"],
+      "runtimeAcceptanceIds": ["R62-CAP04", "R62-CAP06"],
+      "expertAcceptanceIds": ["EX22-CAP03"],
+      "requiredHosts": ["Codex", "independent Agent Runtime"],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V62-CROSS05",
+      "objective": "Exact readiness and binding persist across Runtime restart and cross-Host resume from Runtime truth, with one Expert Core and no chat-history dependency.",
+      "runtimeE2EIds": ["E2E-RESTART-PERSISTENCE", "E2E-CROSS-HOST"],
+      "expertE2EIds": ["EX22E2E03", "EX22E2E06"],
+      "runtimeAcceptanceIds": ["R62-FUNC01", "R62-FUNC02", "R62-FUNC07"],
+      "expertAcceptanceIds": ["EX22-CAP02"],
+      "requiredHosts": ["Codex", "Claude Code", "WorkBuddy", "generic MCP", "headless", "independent Host"],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V62-CROSS06",
+      "objective": "Run, project, and workspace LLM resolution precedence is exact, attributed, tenant-isolated, and explained without Expert-owned selection or authority.",
+      "runtimeE2EIds": ["E2E-RESOLUTION-PRECEDENCE", "E2E-TENANT-ISOLATION"],
+      "expertE2EIds": ["EX22E2E02", "EX22E2E09"],
+      "runtimeAcceptanceIds": ["R62-FUNC02", "R62-FUNC04", "R62-CAP02"],
+      "expertAcceptanceIds": ["EX22-FUNC02", "EX22-CAP01"],
+      "requiredHosts": ["Codex", "generic MCP", "headless"],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V62-CROSS07",
+      "objective": "One-time 6.1 migration and explicit headless bootstrap materialize governed resources, stop on ambiguity, and never retain environment or local Agent configuration as runtime truth.",
+      "runtimeE2EIds": ["E2E-V61-MIGRATION", "E2E-HEADLESS-BOOTSTRAP"],
+      "expertE2EIds": ["EX22E2E05"],
+      "runtimeAcceptanceIds": ["R62-FUNC06", "R62-CAP01"],
+      "expertAcceptanceIds": ["EX22-FUNC05"],
+      "requiredHosts": ["Codex", "headless"],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V62-CROSS08",
+      "objective": "Runtime and Expert protocol compatibility fails closed on unsafe version skew and supports independently versioned upgrade, rollback, and resumed setup.",
+      "runtimeE2EIds": ["E2E-CROSS-HOST"],
+      "expertE2EIds": ["EX22E2E06", "EX22E2E07"],
+      "runtimeAcceptanceIds": ["R62-FUNC07"],
+      "expertAcceptanceIds": ["EX22-FUNC06", "EX22-CAP02"],
+      "requiredHosts": ["Codex", "Claude Code", "generic MCP", "independent Host"],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V62-CROSS09",
+      "objective": "README and Expert explanation expose the same exact Agent-native architecture, LLM separations, Harness supply boundary, and forbidden implications.",
+      "runtimeE2EIds": ["E2E-README-ARCHITECTURE"],
+      "expertE2EIds": ["EX22E2E08", "EX22E2E09"],
+      "runtimeAcceptanceIds": ["R62-FUNC08", "R62-CAP03", "R62-CAP06"],
+      "expertAcceptanceIds": ["EX22-CAP03"],
+      "requiredHosts": ["Codex", "headless", "GitHub-render-compatible renderer"],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "V62-CROSS10",
+      "objective": "Close one exact Runtime 6.2.0 and Expert 2.2.0 Candidate pair only after all current criteria, the immutable v61 305-item baseline, cross-Host security and architecture, real HarnessBundle behavior, 5400-second active soak, impact closure, and NO_REGRESSION pass with every prohibited count zero.",
+      "runtimeE2EIds": ["E2E-NO-REGRESSION"],
+      "expertE2EIds": ["EX22E2E10"],
+      "runtimeAcceptanceIds": ["R62-CAP07"],
+      "expertAcceptanceIds": ["EX22-CAP04"],
+      "requiredHosts": ["Codex", "Claude Code", "WorkBuddy", "generic MCP", "headless", "independent Host", "independent Agent Runtime"],
+      "status": "PENDING",
+      "evidenceRefs": []
+    }
+  ],
+  "coverage": {
+    "runtimeCurrentCriteria": 15,
+    "runtimeCurrentCriteriaCovered": 15,
+    "runtimeE2E": 15,
+    "runtimeE2ECovered": 15,
+    "expertCurrentCriteria": 10,
+    "expertCurrentCriteriaCovered": 10,
+    "expertE2E": 10,
+    "expertE2ECovered": 10,
+    "inheritedPublishedCriteria": 305,
+    "inheritedPublishedCriteriaDisposition": "INHERIT_ALL_NO_EXCLUSIONS",
+    "crossAcceptanceRows": 10,
+    "percent": 100,
+    "unmapped": 0,
+    "silentExclusions": 0
+  },
+  "completionRule": "Every row, all 15 Runtime current criteria and 15 Runtime E2E, all 10 Expert current criteria and 10 Expert E2E, the immutable v61 305-item baseline, security and architecture evidence, real HarnessBundle behavior, 5400-second active soak, impact closure, and NO_REGRESSION pass for one exact installed Candidate pair; failed=pending=stale=generic=unmapped=silentExclusions=leakedSecret=hiddenFallback=legacySuiteInvocationCount=0.",
+  "digest": "sha256:de0eccc4ff61b1586c347d973bec553687eb5c6eeec36388292d49b4bcc480a6"
+}

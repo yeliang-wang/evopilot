@@ -2,14 +2,15 @@
   "schema": "evopilot-evolution-expert-adapter/v1",
   "id": "evopilot-evolution-expert-generic-agent",
   "host": "generic-agent",
-  "version": "2.1.0",
-  "coreDigest": "sha256:36367e9556355db2b5afbb69dc5476aa498c416bd8c6c39b402394e57157b6c4",
-  "protocolVersion": "2.0",
+  "version": "2.2.0",
+  "coreDigest": "sha256:a3f71d60254d53ff9de645712eb07437a421593e26ee3c0ec342c658edcdf213",
+  "protocolVersion": "2.2",
   "requiredCapabilities": [
     "structured-tool-results",
     "local-or-remote-mcp",
     "human-decision-presentation",
-    "runtime-state-resume"
+    "runtime-state-resume",
+    "host-native-secure-secret-input"
   ],
   "interactionModes": [
     "skill",
@@ -17,6 +18,9 @@
   ],
   "instructions": [
     "Runtime objects are authoritative; conversation is presentation and input only.",
+    "A fresh or degraded Runtime is setup-only until RuntimeReadiness is READY through an explicit live-preflight workspace LLM binding.",
+    "Never request, receive, repeat, transform, log, or persist a raw LLM credential; delegate it to Host-native secure input and handle only SecretRef.",
+    "Host LLM, Runtime governed LLM profile, and external Agent Model are separate identities and authorities.",
     "Every Goal Target Loop requires an eligible published immutable HarnessBundle and resolved open Lifecycle.",
     "Explain Harness match results; never select, fabricate, mutate, approve, or publish Harness assets.",
     "Ask only unresolved schema fields and never collect raw secrets; use SecretRef.",
@@ -39,5 +43,5 @@
     "ordinary-human-cli-or-http-fallback",
     "execute-source-work"
   ],
-  "digest": "sha256:3c0e1a3be07cb85964709e8a1d018d5913ce27bfd899a1d337023d35fc2dc87f"
+  "digest": "sha256:fe2b072cd6ec688e92cde553643d6d3e11c9852c394b65257e3baf5495867d08"
 }

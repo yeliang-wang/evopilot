@@ -49,6 +49,7 @@ export interface LlmResponseUsageMeta {
 }
 
 export function currentLlmResponseUsageMeta(): LlmResponseUsageMeta {
+  const debugMode = optionalTrimmedString(process.env.EVOPILOT_RUNTIME_MODE)?.toLowerCase() === "debug";
   const configuredProvider = optionalTrimmedString(process.env.EVOPILOT_LLM_PROVIDER_NAME);
   const configuredModel = optionalTrimmedString(process.env.EVOPILOT_LLM_MODEL_NAME);
   const metricsPath = resolveLlmMetricsPath();
@@ -67,10 +68,10 @@ export function currentLlmResponseUsageMeta(): LlmResponseUsageMeta {
   }, { calls: 0, succeeded: 0, failed: 0, totalTokens: 0, inputTokens: 0, outputTokens: 0, creditsConsumed: 0 });
   return {
     schema: "evopilot-llm-usage-meta/v1",
-    configured: Boolean(configuredProvider || configuredModel || process.env.EVOPILOT_LLM_API_KEY),
-    provider: latest?.provider || configuredProvider,
-    model: latest?.model || configuredModel,
-    version: latest?.model || configuredModel,
+    configured: Boolean(latest || (debugMode && (configuredProvider || configuredModel || process.env.EVOPILOT_LLM_API_KEY))),
+    provider: latest?.provider || (debugMode ? configuredProvider : undefined),
+    model: latest?.model || (debugMode ? configuredModel : undefined),
+    version: latest?.model || (debugMode ? configuredModel : undefined),
     metricsPath,
     creditUnit: "token",
     ...totals,

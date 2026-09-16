@@ -113,6 +113,10 @@ import {
 import { isHarnessTemplateDomainError, publishedHarnessCandidatesV5 } from "../domains/harness-template/index.js";
 import { GovernedEvolutionService } from "../domains/governed-evolution/index.js";
 import { LifecycleService } from "../domains/lifecycle/index.js";
+import {
+  isSetupOnlyHttpPath,
+  reconcileRuntimeReadiness
+} from "../domains/llm-readiness/index.js";
 import { serverCompositionRootMetadata } from "../http/composition-root.js";
 import {
   HttpError
@@ -152,6 +156,7 @@ import { handleGovernedEvolutionRoutes } from "../http/routes/governed-evolution
 import { handleHarnessRoutes } from "../http/routes/harness.js";
 import { handleLoopRuntimeRoutes } from "../http/routes/loop-runtime.js";
 import { handleLoopRoutes } from "../http/routes/loops.js";
+import { handleLlmReadinessRoutes } from "../http/routes/llm-readiness.js";
 import { handleLifecycleRoutes } from "../http/routes/lifecycles.js";
 import { handleMaturityRoutes } from "../http/routes/maturity.js";
 import { handlePlatformRoute } from "../http/routes/platform.js";
@@ -391,12 +396,13 @@ export type {
 export function createServer(options: EvoPilotServerOptions): http.Server {
   const profile = options.profile ?? domainforgeFabricProfile;
   const runtime = resolveRuntimeConfig(options);
-  const llmClient = options.llmClient ?? createLlmClientFromEnv();
+  const llmClient = runtime.mode === "debug" ? options.llmClient ?? createLlmClientFromEnv() : undefined;
   const requireLlm = runtime.requireLlm;
   const tokens = normalizeTokens(options);
   const store = new FileStore(options.dataRoot, {
     llmClient,
     requireLlm,
+    allowLegacyGlobalLlm: runtime.mode === "debug",
     harnessRegistryConfig: options.harnessRegistryConfig,
     harnessCatalogDirs: options.harnessCatalogDirs
   });
@@ -420,6 +426,12 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
   const authTokens = mergeUserTokens(tokens, users);
   const explicitAuthConfigured = tokens.length > 0 || Boolean(options.users?.length) || Boolean(parseEnvUsers(process.env.EVOPILOT_USERS)?.length);
   assertProductionRuntimeIsConfigured(runtime, authTokens, llmClient);
+  const bootstrapReadiness = reconcileRuntimeReadiness({
+    store,
+    tenantId: DEFAULT_TENANT_ID,
+    workspaceId: DEFAULT_WORKSPACE_ID,
+    actor: "runtime-bootstrap"
+  });
   const proofOpsCore = loadProofOpsCoreContract(options.proofOpsCoreContractPath);
   store.ensureRuleMemories(profile.triggerRules ?? defaultTriggerRules);
   if (runtime.autoRegisterProfileProject) {
@@ -448,7 +460,12 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
       profileId: profile.id,
       dashboardEnabled: Boolean(options.dashboardRoot),
       logging: store.readLoggingSettings(),
-      architecture: serverCompositionRootMetadata()
+      architecture: serverCompositionRootMetadata(),
+      runtimeReadiness: {
+        state: bootstrapReadiness.state,
+        nextAction: bootstrapReadiness.nextAction,
+        digest: bootstrapReadiness.digest
+      }
     }
   });
   void reconcilePendingSourceReleaseDeployFinalizers(store).catch((error) => logError("source-release.deploy-finalizer.reconcile-failed", error));
@@ -504,7 +521,13 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           authRequired: tokens.length > 0,
           ready: store.isReady(),
           schemaVersion: store.metadata().schemaVersion,
-          dashboardEnabled: Boolean(options.dashboardRoot)
+          dashboardEnabled: Boolean(options.dashboardRoot),
+          runtimeReadiness: reconcileRuntimeReadiness({
+            store,
+            tenantId: DEFAULT_TENANT_ID,
+            workspaceId: DEFAULT_WORKSPACE_ID,
+            actor: "platform-readiness"
+          }).state
         }),
         () => handlePublicAuthRoute({
           request,
@@ -587,23 +610,55 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
             setActiveLoggingSettings,
             writeJson
           }
-        }),
-        () => handleReadModelRoute({
-          request,
-          response,
-          url,
-          auth,
-          store,
-          profile,
-          deps: {
-            envelope,
-            hasRole,
-            renderMetrics,
-            writeJson,
-            writeText
-          }
         })
       ])) return;
+      if (await handleLlmReadinessRoutes({
+        request,
+        response,
+        url,
+        auth,
+        store,
+        options,
+        deps: {
+          audit,
+          envelope,
+          hasRole,
+          readJson,
+          writeJson: routeWriteJson
+        }
+      })) return;
+      const runtimeReadiness = reconcileRuntimeReadiness({
+        store,
+        tenantId: auth.tenantId,
+        workspaceId: auth.workspaceId,
+        actor: "runtime-request-gate"
+      });
+      if (runtime.mode === "prod" && runtimeReadiness.state !== "READY" && !isSetupOnlyHttpPath(url.pathname)) {
+        requestErrorCode = "LLM_PROFILE_REQUIRED";
+        return writeJson(response, 409, {
+          error: "LLM_PROFILE_REQUIRED",
+          detail: "Runtime is setup-only until an explicit governed workspace LLM profile is live-preflight READY and bound as the workspace default.",
+          readiness: runtimeReadiness
+        });
+      }
+      const requestLlmClient = runtime.mode === "debug"
+        ? llmClient
+        : store.resolveWorkspaceLlmClient(auth.tenantId, auth.workspaceId);
+      if (handleReadModelRoute({
+        request,
+        response,
+        url,
+        auth,
+        store,
+        profile,
+        deps: {
+          envelope,
+          hasRole,
+          renderMetrics,
+          writeJson,
+          writeText
+        }
+      })) return;
       if (await handleRuleRoutes({
         request,
         response,
@@ -612,7 +667,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         store,
         options,
         profile,
-        llmClient,
+        llmClient: requestLlmClient,
         requireLlm,
         deps: {
           audit,
@@ -796,6 +851,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           normalizeWorkspaceStatus,
           optionalTrimmedString,
           readJson,
+          reconcileRuntimeReadiness,
           requireBodyString,
           resolveWorkspace,
           safeFileName,
@@ -899,7 +955,7 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         options,
         runtime,
         profile,
-        llmClient,
+        llmClient: requestLlmClient,
         requireLlm,
         deps: {
           audit,

@@ -5,14 +5,10 @@ import { EVOLUTION_EXPERT_CORE, assertExpertAdapterConformance, createExpertAdap
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const failures = [];
-for (const [relative, expected] of [
-  ["package.json", "6.1.0"],
-  ["packages/core/package.json", "6.1.0"],
-  ["packages/server/package.json", "6.1.0"],
-  ["packages/adapter-mcp/package.json", "6.1.0"],
-  ["packages/adapter-opencode/package.json", "6.1.0"],
-  ["packages/evolution-expert/package.json", "2.1.0"]
-]) assertPackageVersion(relative, expected);
+const releasedRuntime = readJson("governance/targets/evopilot-v6.1.0-controlled-lifecycle-evolution.json");
+const releasedExpert = readJson("governance/targets/evopilot-evolution-expert-v2.1.0-controlled-lifecycle-evolution.json");
+if (releasedRuntime.status !== "RELEASE_AUTHORIZED" || releasedRuntime.release?.versions?.evopilot !== "6.1.0") failures.push("immutable Runtime 6.1 release Target is not terminal");
+if (releasedExpert.status !== "RELEASE_AUTHORIZED" || releasedExpert.release?.versions?.["evopilot-evolution-expert"] !== "2.1.0") failures.push("immutable Expert 2.1 release Target is not terminal");
 
 for (const relative of [
   "schemas/governed-evolution/controlled-lifecycle-observation-v1.schema.json",
@@ -47,8 +43,7 @@ for (const host of ["codex", "claude-code", "workbuddy", "generic-agent", "gener
   } catch (error) { failures.push(`${host}: ${message(error)}`); }
 }
 const guide = expertVersionGuide();
-if (guide.expertVersion !== "2.1.0" || guide.versionLines.find((line) => line.owner === "Runtime")?.current !== "6.1.0") failures.push("Expert 2.1 / Runtime 6.1 version guide mismatch");
-if (expertCompatibility(createExpertAdapter("codex"), "6.1.0", createExpertAdapter("codex").requiredCapabilities).conformanceStatus !== "CONFORMANT") failures.push("Expert 2.1 / Runtime 6.1 compatibility negotiation failed");
+if (!guide.versionLines.some((line) => line.owner === "Runtime") || !guide.versionLines.some((line) => line.owner === "Evolution Expert")) failures.push("current Expert version guide lost independent Runtime and Expert version lines");
 
 for (const relative of ["packages/core/src/controlled-lifecycle-evolution.ts", "packages/server/src/domains/governed-evolution/service.ts", "packages/server/src/http/routes/governed-evolution.ts", "packages/evolution-expert/src/index.ts"]) {
   const content = read(relative);
@@ -64,7 +59,6 @@ if (failures.length) {
 }
 console.log("EvoPilot v6.1 controlled Lifecycle evolution verification passed: project-neutral observation-to-successor-to-experiment-to-policy activation-to-idempotent rollback, DataRig 2.1.11 read-only convergence, five Host adapters, and zero legacy Suite invocation.");
 
-function assertPackageVersion(relative, expected) { try { const actual = readJson(relative).version; if (actual !== expected) failures.push(`${relative}: ${actual} != ${expected}`); } catch { failures.push(`${relative}: invalid package JSON`); } }
 function read(relative) { return fs.readFileSync(path.join(root, relative), "utf8"); }
 function readJson(relative) { return JSON.parse(read(relative)); }
 function message(error) { return error instanceof Error ? error.message : String(error); }

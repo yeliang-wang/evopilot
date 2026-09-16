@@ -3,7 +3,7 @@
   "roadmapFamily": "evopilot-series-agentic-evolution",
   "contractVersion": "4.0.0",
   "project": "evopilot",
-  "updatedAt": "2026-09-15",
+  "updatedAt": "2026-09-16",
   "ownership": {
     "owns": [
       "third-party project discovery, onboarding, and versioned EvolutionProjectDefinition",
@@ -30,7 +30,7 @@
   "versionPolicy": {
     "runtimeProduct": "evopilot-runtime",
     "publishedBaseline": "6.1.0",
-    "currentWorkingVersion": "6.1.0",
+    "currentWorkingVersion": "6.2.0",
     "versionsEvolveIndependently": true,
     "majorRequiredFor": [
       "incompatible published Harness consumption contract",
@@ -271,6 +271,171 @@
     ],
     "completionFormula": "FUNCTIONAL_100_PERCENT_AND_CAPABILITY_DISPOSITION_100_PERCENT_AND_CURRENT_E2E_100_PERCENT_AND_INHERITED_APPLICABLE_100_PERCENT_AND_IMPACT_CLOSURE_100_PERCENT_AND_NO_REGRESSION_PASSED_AND_FAILED_PENDING_STALE_GENERIC_SILENT_EXCLUSION_UNMAPPED_ALL_ZERO"
   },
+  "firstRunLlmReadinessPolicy": {
+    "schema": "evopilot-first-run-llm-readiness-policy/v1",
+    "required": true,
+    "runtimeVersion": "6.2.0",
+    "evolutionExpertVersion": "2.2.0",
+    "states": [
+      "SETUP_REQUIRED",
+      "PREFLIGHT_REQUIRED",
+      "READY",
+      "LLM_BLOCKED"
+    ],
+    "normalOperationRequires": [
+      "one active tenant/workspace-visible workspace LLM profile",
+      "server-side SecretRef resolved inside the same tenant/workspace",
+      "live provider preflight READY within the declared freshness policy",
+      "explicit WorkspaceLlmDefaultBinding",
+      "compatible Evolution Expert and MCP setup protocol"
+    ],
+    "setupOnlyAllowed": [
+      "health and readiness",
+      "authentication",
+      "Evolution Expert MCP handshake and setup status",
+      "provider capability discovery",
+      "secure SecretRef provisioning",
+      "LLM profile create, inspect, update, list, deactivate, and preflight",
+      "workspace default bind, inspect, replace, and repair",
+      "diagnostics and documentation"
+    ],
+    "blockedUntilReady": [
+      "project activation or production onboarding completion",
+      "Harness matching or HarnessExecutionBinding creation",
+      "Goal, Target, Loop, or Lifecycle execution",
+      "external Agent Runtime pendingExecution",
+      "Candidate, acceptance, release, publication, deployment, or production effects"
+    ],
+    "resolutionOrder": [
+      "run override",
+      "project default",
+      "explicit workspace default",
+      "LLM_PROFILE_REQUIRED"
+    ],
+    "forbiddenFallbacks": [
+      "implicit shell environment",
+      "Host LLM",
+      "Agent Model",
+      "Codex configuration",
+      "Claude Code configuration",
+      "WorkBuddy configuration",
+      "CodeBuddy models.json",
+      "MyGlm5",
+      "hard-coded provider preset"
+    ],
+    "readinessFailure": "Fail closed to LLM_BLOCKED, preserve durable state, allow only diagnosis and repair, and never select another profile silently.",
+    "migrationFrom61": "One unambiguous explicitly configured global provider may be converted once into governed resources with audit evidence; ambiguity returns SETUP_REQUIRED without guessing.",
+    "headlessBootstrap": "Explicit opt-in materializes a SecretRef, governed profile, live preflight, workspace binding, and audit record; environment values never remain runtime truth.",
+    "secureSecretContract": {
+      "rawSecretForbiddenIn": [
+        "conversation",
+        "prompt",
+        "Expert Core",
+        "generated Skill",
+        "MCP result",
+        "project YAML",
+        "Lifecycle YAML",
+        "Harness binding",
+        "receipt",
+        "evidence",
+        "audit metadata",
+        "logs"
+      ],
+      "allowedInputs": [
+        "Host-native secure input",
+        "no-echo trusted terminal helper",
+        "tenant/workspace secret vault",
+        "external secret manager reference",
+        "explicit headless bootstrap secret source"
+      ],
+      "persistedForm": "SecretRef only",
+      "preflight": "Resolve server-side, perform a minimum live provider call, record redacted readiness evidence, and never return the raw value."
+    },
+    "readmeArchitecture": {
+      "required": true,
+      "authoritativeAsset": "docs/assets/architecture/evopilot-agent-native-architecture.svg",
+      "fallbackAsset": "docs/assets/architecture/evopilot-agent-native-architecture.png",
+      "readmeSection": "Architecture",
+      "requiredNodes": [
+        "Human",
+        "Third-party AI Agent",
+        "Agent Host",
+        "Host LLM",
+        "Evolution Expert",
+        "MCP Client",
+        "EvoPilot Runtime — Control Plane",
+        "Runtime Readiness: SETUP_REQUIRED → PREFLIGHT_REQUIRED → READY → LLM_BLOCKED",
+        "Governed LLM Profiles",
+        "User-selected Model Providers",
+        "Qualified Agent Runtime",
+        "Agent Model",
+        "Project Systems",
+        "evopilot-harness Registry / Catalog",
+        "Published immutable HarnessBundle"
+      ],
+      "requiredEdges": [
+        "Human to Agent Host by natural language",
+        "Agent Host MCP Client to EvoPilot MCP/API by Human Interaction Protocol",
+        "EvoPilot Runtime to qualified Agent Runtime by exact pendingExecution",
+        "qualified Agent Runtime to EvoPilot Runtime by normalized receipt, trajectory, usage, and artifacts",
+        "qualified Agent Runtime to Project Systems by bounded allowed effects",
+        "evopilot-harness to EvoPilot Runtime by read-only HarnessBundle consumption",
+        "EvoPilot Runtime to user-selected model provider through explicit governed profile binding"
+      ],
+      "forbiddenImplications": [
+        "EvoPilot bundles or defaults to a provider model",
+        "EvoPilot Runtime directly modifies source",
+        "Host LLM, Agent Model, and Runtime LLM profile are the same authority",
+        "Evolution Expert owns state or approval",
+        "EvoPilot mutates Harness assets"
+      ],
+      "quality": [
+        "editable deterministic SVG",
+        "README-width legibility",
+        "GitHub light and dark readability",
+        "accessible alt text",
+        "validated local links",
+        "exact ADR terminology"
+      ]
+    },
+    "functionalAcceptance": [
+      "Runtime readiness aggregate, transitions, persistence, concurrency, audit, and tenancy",
+      "workspace default profile binding and deterministic resolution precedence",
+      "setup-only HTTP and MCP allowlist with fail-closed denial of all normal operations",
+      "secure secret input and redaction across every output surface",
+      "live provider preflight, freshness, degradation, repair, rotation, and recovery",
+      "explicit headless bootstrap and 6.1 governed migration",
+      "Expert 2.2 Agent-neutral setup, repair, explanation, and stop journeys",
+      "README architecture assets, prose, accessibility, terminology, and rendered link validation"
+    ],
+    "capabilityAcceptance": [
+      "no bundled or privileged provider",
+      "no hidden fallback or cross-tenant profile access",
+      "no raw secret reaches an LLM context",
+      "Host LLM availability cannot satisfy Runtime readiness",
+      "Agent Model availability cannot satisfy Runtime readiness",
+      "READY remains prerequisite for Harness-guided Goal Target Loop",
+      "Runtime, Expert, Agent Host, Agent Runtime, LLM provider, Project Systems, and Harness boundaries remain independent"
+    ],
+    "requiredEndToEnd": [
+      "E2E-SETUP-FRESH-INSTALL",
+      "E2E-NO-LOCAL-IMPORT",
+      "E2E-HOST-LLM-NOT-RUNTIME",
+      "E2E-EXPERT-SECURE-SETUP",
+      "E2E-PREFLIGHT-FAIL",
+      "E2E-READY-HARNESS-LOOP",
+      "E2E-RESTART-PERSISTENCE",
+      "E2E-DEGRADE-REPAIR",
+      "E2E-RESOLUTION-PRECEDENCE",
+      "E2E-TENANT-ISOLATION",
+      "E2E-V61-MIGRATION",
+      "E2E-HEADLESS-BOOTSTRAP",
+      "E2E-CROSS-HOST",
+      "E2E-README-ARCHITECTURE",
+      "E2E-NO-REGRESSION"
+    ],
+    "completionFormula": "FUNCTIONAL_100_PERCENT_AND_CAPABILITY_100_PERCENT_AND_DOCUMENTATION_100_PERCENT_AND_CURRENT_E2E_100_PERCENT_AND_INHERITED_APPLICABLE_100_PERCENT_AND_CROSS_HOST_100_PERCENT_AND_MIGRATION_100_PERCENT_AND_REAL_HARNESS_BUNDLE_100_PERCENT_AND_SECURITY_100_PERCENT_AND_IMPACT_CLOSURE_100_PERCENT_AND_NO_REGRESSION_PASSED_AND_FAILED_PENDING_STALE_GENERIC_UNMAPPED_LEAKED_SECRET_HIDDEN_FALLBACK_LEGACY_SUITE_INVOCATION_ALL_ZERO"
+  },
   "humanInteractionProtocol": {
     "owner": "evopilot-runtime",
     "canonicalOrdinaryHumanProtocol": "MCP",
@@ -291,7 +456,7 @@
     "product": "evopilot-evolution-expert",
     "proposedPackage": "@evopilot/evolution-expert",
     "publishedBaseline": "2.1.0",
-    "currentWorkingVersion": "2.1.0",
+    "currentWorkingVersion": "2.2.0",
     "lockstepWithRuntime": false,
     "mandatoryForOrdinaryHumans": true,
     "canonicalProtocol": "MCP",
@@ -983,18 +1148,96 @@
       "signals": ["Evolution Expert 2.1", "controlled lifecycle evolution expert", "lifecycle successor guidance", "pipeline evolution over MCP", "生命周期演进数字人", "项目 pipeline 演进"]
     },
     {
-      "id": "evopilot-6.2-learning-interop",
+      "id": "evopilot-6.2-first-run-llm-readiness",
       "product": "evopilot-runtime",
-      "status": "PLANNED",
+      "status": "IN_PROGRESS",
       "targetVersion": "6.2.0",
       "releaseLine": "6.2.x",
+      "objective": "Allow a fresh installation to start only as a restricted setup control plane, guide the operator to create and explicitly bind one secret-backed READY workspace LLM profile, and fail closed for every LLM-dependent project or Goal Target Loop operation until Runtime is READY.",
+      "outcomes": [
+        "tenant/workspace RuntimeReadiness with SETUP_REQUIRED, PREFLIGHT_REQUIRED, READY, and LLM_BLOCKED states plus immutable transition evidence and restart-safe persistence",
+        "explicit WorkspaceLlmDefaultBinding pinned to profile identity and digest, provider, model, SecretRef, readiness evidence, actor, reason, and time",
+        "setup-only HTTP and MCP allowlist for readiness, authentication, provider discovery, secure SecretRef provisioning, profile management, live preflight, explicit workspace binding, repair, diagnostics, and help",
+        "fail-closed denial of project activation, Harness matching or binding, Goal Target Loop or Lifecycle execution, Agent Runtime dispatch, Candidate, acceptance, release, publication, deployment, and production effects until READY",
+        "deterministic LLM resolution by run override, project default, explicit workspace default, then LLM_PROFILE_REQUIRED without hidden provider, environment, Host LLM, Agent Model, or local Agent configuration fallback",
+        "explicit headless bootstrap and one-time auditable 6.1 migration that create governed resources instead of retaining environment configuration as runtime truth",
+        "degradation to LLM_BLOCKED on invalid profile, revoked SecretRef, stale readiness, or failed provider health with repair-only access and no silent failover",
+        "provider-neutral operation with no bundled, preselected, or privileged model provider",
+        "README Architecture section and deterministic SVG and PNG assets that explain Human, Host, Host LLM, Expert, MCP, Runtime, readiness, governed profiles, providers, Agent Runtime, Agent Model, Project Systems, and read-only Harness supply"
+      ],
+      "acceptance": [
+        "all firstRunLlmReadinessPolicy functional and capability acceptance areas pass with tenant/workspace isolation and durable audit evidence",
+        "all 15 declared first-run, failure, repair, migration, cross-Host, real HarnessBundle, architecture, and no-regression E2E journeys pass",
+        "no raw secret enters conversation, prompt, Expert Core, generated Skill, MCP result, declarative project assets, Harness binding, receipt, evidence, audit metadata, or logs",
+        "Host LLM and Agent Model availability cannot satisfy Runtime readiness, and no local Host or provider configuration is silently imported",
+        "normal operation and real HarnessBundle-guided Goal Target Loop remain impossible before READY and succeed after the governed binding is READY",
+        "README architecture assets, terms, required nodes and edges, accessibility, GitHub rendering, and local links are independently verified",
+        "all applicable Runtime 6.1.0 and Expert 2.1.0 acceptance, external Agent Runtime conformance, impact closure, active soak, legacySuiteInvocationCount=0, and NO_REGRESSION pass"
+      ],
+      "signals": ["first run llm readiness", "mandatory llm profile", "workspace llm default", "runtime readiness", "setup required", "preflight required", "llm blocked", "secure secretref setup", "README architecture diagram", "首次运行 llm 配置", "工作区 llm profile", "架构图"]
+    },
+    {
+      "id": "evopilot-evolution-expert-2.2-first-run-llm-setup",
+      "product": "evopilot-evolution-expert",
+      "status": "IN_PROGRESS",
+      "targetVersion": "2.2.0",
+      "releaseLine": "2.2.x",
+      "objective": "Make one Agent-neutral Expert Core detect setup-only Runtime state and guide ordinary humans through provider choice, safe SecretRef creation, profile configuration, live preflight, explicit workspace-default confirmation, repair, rotation, and recovery without seeing raw credentials or owning Runtime state.",
+      "outcomes": [
+        "the same first-run and repair journey across Codex, Claude Code, designated-human WorkBuddy, independent Host, generic MCP, and supported headless administration",
+        "Host-native no-echo or secure-dialog secret collection with exact refusal to request or echo raw API keys in conversation",
+        "provider-neutral progressive questions for preset or custom OpenAI-compatible endpoint, base URL, model, scope, readiness, and explicit workspace default binding",
+        "exact upgrade-required response when an older Expert encounters SETUP_REQUIRED and cannot safely complete the setup protocol",
+        "no Expert-owned profile, readiness, approval, secret, provider fallback, or durable state"
+      ],
+      "acceptance": [
+        "all supported Hosts render one Agent-neutral setup and repair contract from the same Expert Core and Runtime-owned MCP facts",
+        "raw credentials are collected only through approved Host-native secure input and never enter an LLM context or Expert output",
+        "the Expert explains each readiness state, asks only unresolved safe questions, presents the explicit workspace binding decision, and preserves Runtime stop reasons",
+        "the Expert cannot claim READY, choose a fallback provider, own a SecretRef, infer authority, or persist canonical setup state",
+        "all Expert 2.2 current, inherited, cross-Host, migration, security, architecture-explanation, and NO_REGRESSION evidence passes"
+      ],
+      "signals": ["Evolution Expert 2.2", "first run llm setup expert", "secure first-run Expert setup", "secure provider setup over MCP", "llm readiness guide", "no echo secret setup", "首次运行数字人配置", "llm 配置向导"]
+    },
+    {
+      "id": "evopilot-6.2-learning-interop",
+      "product": "evopilot-runtime",
+      "status": "DEFERRED",
+      "targetVersion": "6.2.0",
+      "releaseLine": "6.2.x",
+      "standaloneReleaseEligible": false,
+      "deferredInto": "evopilot-6.3-learning-interop",
       "objective": "Expose governed learning data to external training systems while keeping model training outside EvoPilot.",
       "outcomes": ["preference and reward dataset export", "external Trainer adapter", "trained-policy provenance and evaluation re-entry", "isolated cross-round retrieval"],
       "acceptance": ["exports are consented, redacted, versioned, and reproducible", "trainer results cannot bypass evaluation or promotion", "provider, model, dataset, and policy provenance is auditable"],
       "signals": ["rl trainer", "training adapter", "preference dataset", "reward dataset", "learning interop", "训练适配器", "偏好数据集"]
+    },
+    {
+      "id": "evopilot-6.3-learning-interop",
+      "product": "evopilot-runtime",
+      "status": "PLANNED",
+      "targetVersion": "6.3.0",
+      "releaseLine": "6.3.x",
+      "inheritsMilestone": "evopilot-6.2-learning-interop",
+      "inheritedAcceptance": ["exports are consented, redacted, versioned, and reproducible", "trainer results cannot bypass evaluation or promotion", "provider, model, dataset, and policy provenance is auditable"],
+      "objective": "Expose governed learning data to external training systems while keeping model training outside EvoPilot.",
+      "outcomes": ["preference and reward dataset export", "external Trainer adapter", "trained-policy provenance and evaluation re-entry", "isolated cross-round retrieval"],
+      "acceptance": ["exports are consented, redacted, versioned, and reproducible", "trainer results cannot bypass evaluation or promotion", "provider, model, dataset, and policy provenance is auditable"],
+      "signals": ["Runtime 6.3 learning interoperability", "rl trainer", "training adapter", "preference dataset", "reward dataset", "learning interop", "训练适配器", "偏好数据集"]
     }
   ],
   "transitionPolicies": [
+    {
+      "id": "v6.2-learning-to-v6.3-inherited-transition",
+      "sourceMilestone": "evopilot-6.2-learning-interop",
+      "destinationMilestone": "evopilot-6.3-learning-interop",
+      "sourceReleaseDisposition": "DEFERRED",
+      "preserveSourceCodeAndEvidence": true,
+      "deleteSourceGuarantees": false,
+      "destinationMustRetestSourceAcceptance": true,
+      "destinationTargetRevisionRequiredAfterRoadmapChange": true,
+      "reason": "First-run LLM readiness is prerequisite operational safety and must not share one release scope with external training interoperability."
+    },
     {
       "id": "v3.2-to-v4.0-inherited-transition",
       "sourceMilestone": "evopilot-3.2-bundle-consumer-closure",

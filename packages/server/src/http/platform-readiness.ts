@@ -18,6 +18,7 @@ export interface PlatformHealthInput {
 export interface PlatformReadyInput {
   ready: boolean;
   schemaVersion: number;
+  runtimeReadiness?: string;
 }
 
 export interface PlatformVersionInput {
@@ -41,7 +42,9 @@ export function platformHealthBody(input: PlatformHealthInput): Record<string, u
 export function platformReadyBody(input: PlatformReadyInput): Record<string, unknown> {
   return {
     status: input.ready ? "READY" : "NOT_READY",
-    schemaVersion: input.schemaVersion
+    schemaVersion: input.schemaVersion,
+    runtimeReadiness: input.runtimeReadiness,
+    normalOperationsReady: input.ready && (input.runtimeReadiness === undefined || input.runtimeReadiness === "READY")
   };
 }
 

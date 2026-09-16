@@ -860,7 +860,7 @@ function createSmokeRepo(root, name) {
   return repoRoot;
 }
 
-test("rule compiler asks LLM to repair semantically invalid output before storing", async () => {
+test("injected debug rule compiler asks LLM to repair semantically invalid output before storing", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-invalid-rule-"));
   const responses = [
     {
@@ -901,7 +901,7 @@ test("rule compiler asks LLM to repair semantically invalid output before storin
   let callCount = 0;
   const server = createServer({
     dataRoot,
-    runtimeMode: "prod",
+    runtimeMode: "debug",
     requireLlm: true,
     llmClient: {
       async generate(request) {
@@ -951,12 +951,12 @@ test("rule compiler asks LLM to repair semantically invalid output before storin
   }
 });
 
-test("rule compiler rejects invalid LLM output after repair attempts are exhausted", async () => {
+test("injected debug rule compiler rejects invalid LLM output after repair attempts are exhausted", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-invalid-rule-final-"));
   let callCount = 0;
   const server = createServer({
     dataRoot,
-    runtimeMode: "prod",
+    runtimeMode: "debug",
     requireLlm: true,
     llmClient: {
       async generate(request) {
@@ -1015,11 +1015,11 @@ test("rule compiler rejects invalid LLM output after repair attempts are exhaust
   }
 });
 
-test("rule compiler applies production guardrails for empty latency threshold", async () => {
+test("injected debug rule compiler applies guardrails for empty latency threshold", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-empty-threshold-rule-"));
   const server = createServer({
     dataRoot,
-    runtimeMode: "prod",
+    runtimeMode: "debug",
     requireLlm: true,
     llmClient: {
       async generate(request) {
@@ -1078,11 +1078,11 @@ test("rule compiler applies production guardrails for empty latency threshold", 
   }
 });
 
-test("rule compiler normalizes Chinese boolean condition values", async () => {
+test("injected debug rule compiler normalizes Chinese boolean condition values", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-bool-rule-"));
   const server = createServer({
     dataRoot,
-    runtimeMode: "prod",
+    runtimeMode: "debug",
     requireLlm: true,
     llmClient: {
       async generate(request) {
@@ -1676,38 +1676,11 @@ test("release evidence endpoint persists release candidate evidence without leak
   }
 });
 
-test("prod mode disables anonymous admin, sample data, and auto project registration by default", async () => {
-  assert.throws(
-    () => createServer({ dataRoot: fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-prod-no-token-")) }),
-    /EVOPILOT_PROD_REQUIRES_LLM_PROVIDER/
-  );
-  assert.throws(
-    () => createServer({
-      dataRoot: fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-prod-no-llm-")),
-      runtimeMode: "prod",
-      tokens: [
-        { name: "admin", token: "admin-token", role: "admin" }
-      ]
-    }),
-    /EVOPILOT_PROD_REQUIRES_LLM_PROVIDER/
-  );
-
+test("prod mode requires auth and starts setup-only without an explicit governed LLM binding", async () => {
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-prod-"));
   const server = createServer({
     dataRoot,
     runtimeMode: "prod",
-    llmClient: {
-      async generate(request) {
-        return {
-          requestId: request.requestId ?? "prod-llm",
-          success: true,
-          text: "{}",
-          provider: "prod-test-llm",
-          model: "prod-test-model",
-          durationMs: 1
-        };
-      }
-    },
     tokens: [
       { name: "viewer", token: "viewer-token", role: "viewer" },
       { name: "operator", token: "operator-token", role: "operator" },
@@ -1724,22 +1697,17 @@ test("prod mode disables anonymous admin, sample data, and auto project registra
     const anonymousSummary = await fetch(`${baseUrl}/api/v1/summary`);
     assert.equal(anonymousSummary.status, 401);
 
+    const readiness = await fetch(`${baseUrl}/api/v1/runtime-readiness`, {
+      headers: { authorization: "Bearer viewer-token" }
+    });
+    assert.equal(readiness.status, 200);
+    assert.equal((await readiness.json()).data.state, "SETUP_REQUIRED");
+
     const summary = await fetch(`${baseUrl}/api/v1/summary`, {
       headers: { authorization: "Bearer viewer-token" }
     });
-    assert.equal(summary.status, 200);
-    assert.equal((await summary.json()).data.projectCount, 0);
-
-    const datasets = await fetch(`${baseUrl}/api/v1/evaluation-datasets`, {
-      headers: { authorization: "Bearer viewer-token" }
-    });
-    assert.equal(datasets.status, 200);
-    const datasetsBody = await datasets.json();
-    assert.deepEqual(datasetsBody.data.map((dataset) => dataset.id), [
-      "prod-baseline-source-to-ga",
-      "prod-baseline-tenant-rbac",
-      "prod-baseline-worker-human-gate"
-    ]);
+    assert.equal(summary.status, 409);
+    assert.equal((await summary.json()).error, "LLM_PROFILE_REQUIRED");
   } finally {
     await new Promise((resolve) => server.close(resolve));
   }

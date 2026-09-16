@@ -415,6 +415,12 @@ test("EvoPilot CLI configures project DevOps for GitHub Actions", async () => {
       "--config", configPath,
       "--json"
     ]);
+    const remoteProfilePreflight = await runCli([
+      "llm", "profile", "preflight", "remote-cli-llm",
+      "--config", configPath,
+      "--json"
+    ]);
+    assert.equal(remoteProfilePreflight.status, "READY");
     const readyProjectLlm = await runCli([
       "project", "llm", "set", "github-cli-agent",
       "--profile", "remote-cli-llm",

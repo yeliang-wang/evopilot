@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1120" viewBox="0 0 1600 1120" role="img" aria-labelledby="title description">
+  <title id="title">EvoPilot agent-native architecture</title>
+  <desc id="description">Human interaction flows through a third-party AI Agent Host and Evolution Expert over MCP to the EvoPilot Runtime control plane. Runtime uses an explicit governed LLM profile, consumes immutable HarnessBundles read-only, and delegates bounded project work to a qualified external Agent Runtime with its own Agent Model.</desc>
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#34291f" flood-opacity="0.14"/></filter>
+    <marker id="arrow" markerWidth="11" markerHeight="11" refX="9" refY="5.5" orient="auto"><path d="M0,0 L10,5.5 L0,11 z" fill="#3b3028"/></marker>
+    <style>
+      .frame{fill:#fffaf0;stroke:#33281f;stroke-width:3;rx:24;filter:url(#shadow)}
+      text{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.header{fill:#f1e7c9}.title{font-size:28px;font-weight:700;fill:#261e18}.label{font-size:21px;font-weight:700;fill:#2c241e}.text{font-size:18px;font-weight:500;fill:#3b3028}.small{font-size:15px;font-weight:500;fill:#51463c}.tiny{font-size:12px;font-weight:600;fill:#51463c}.blue{fill:#e8f0ff;stroke:#3d78d8;stroke-width:3}.green{fill:#e6f6e9;stroke:#39935c;stroke-width:3}.orange{fill:#fff0df;stroke:#d17b24;stroke-width:3}.purple{fill:#f0e8ff;stroke:#8057c8;stroke-width:3}.red{fill:#fff0ef;stroke:#c8574f;stroke-width:3}.neutral{fill:#fffdf8;stroke:#9b8c7c;stroke-width:2.5}.line{fill:none;stroke:#3b3028;stroke-width:3;marker-end:url(#arrow)}.dash{fill:none;stroke:#685b50;stroke-width:2.5;stroke-dasharray:10 8;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1600" height="1120" fill="#fbf3df"/>
+  <text x="70" y="62" class="title" style="font-size:36px">EvoPilot Agent-Native Lifecycle Control Plane</text>
+  <text x="70" y="94" class="small">No bundled LLM. One explicit Runtime profile. External Agent execution. Read-only Harness supply.</text>
+
+  <g id="agent-host">
+    <rect x="55" y="135" width="615" height="435" class="frame"/>
+    <path d="M55 159a24 24 0 0 1 24-24h567a24 24 0 0 1 24 24v50H55z" class="header"/>
+    <text x="85" y="184" class="title">Third-party AI Agent Host</text>
+    <rect x="90" y="245" width="240" height="80" rx="16" class="neutral"/><text x="210" y="294" text-anchor="middle" class="label">Human</text>
+    <rect x="390" y="245" width="240" height="80" rx="16" class="blue"/><text x="510" y="283" text-anchor="middle" class="label">Third-party AI Agent</text><text x="510" y="307" text-anchor="middle" class="small">Codex · Claude Code · WorkBuddy</text>
+    <rect x="90" y="370" width="240" height="105" rx="16" class="purple"/><text x="210" y="411" text-anchor="middle" class="label">Host LLM</text><text x="210" y="438" text-anchor="middle" class="small">conversation + tool choice</text><text x="210" y="460" text-anchor="middle" class="small">not Runtime readiness</text>
+    <rect x="390" y="355" width="240" height="80" rx="16" class="green"/><text x="510" y="393" text-anchor="middle" class="label">Evolution Expert</text><text x="510" y="418" text-anchor="middle" class="small">guide; no durable authority</text>
+    <rect x="390" y="465" width="240" height="70" rx="16" class="orange"/><text x="510" y="507" text-anchor="middle" class="label">MCP Client</text>
+    <path d="M330 285H385" class="line"/><path d="M510 325V350" class="line"/><path d="M510 435V460" class="line"/><path d="M330 420H385" class="dash"/>
+  </g>
+
+  <g id="control-plane">
+    <rect x="760" y="135" width="785" height="435" class="frame"/>
+    <path d="M760 159a24 24 0 0 1 24-24h737a24 24 0 0 1 24 24v50H760z" class="header"/>
+    <text x="790" y="184" class="title">EvoPilot Runtime — Control Plane</text>
+    <rect x="800" y="245" width="295" height="95" rx="16" class="red"/><text x="947" y="282" text-anchor="middle" class="label">RuntimeReadiness</text><text x="947" y="307" text-anchor="middle" class="tiny">SETUP_REQUIRED → PREFLIGHT_REQUIRED</text><text x="947" y="328" text-anchor="middle" class="small">READY ↔ LLM_BLOCKED</text>
+    <rect x="1210" y="245" width="295" height="95" rx="16" class="green"/><text x="1357" y="282" text-anchor="middle" class="label">Governed LLM Profiles</text><text x="1357" y="308" text-anchor="middle" class="small">SecretRef · live preflight</text><text x="1357" y="329" text-anchor="middle" class="small">explicit workspace default</text>
+    <rect x="800" y="385" width="705" height="140" rx="18" class="blue"/><text x="1152" y="425" text-anchor="middle" class="label">Harness-Guided Goal · Target · Loop</text><text x="1152" y="455" text-anchor="middle" class="text">Lifecycle Registry · bindings · evidence · recovery · release decisions</text><text x="1152" y="486" text-anchor="middle" class="small">Normal work is blocked until RuntimeReadiness = READY</text><text x="1152" y="509" text-anchor="middle" class="small">Runtime delegates execution; it does not edit project source directly</text>
+    <path d="M1095 292H1205" class="line"/><path d="M947 340V380" class="line"/>
+  </g>
+
+  <path d="M630 500C700 500 705 455 755 455" class="line"/>
+  <text x="692" y="484" text-anchor="middle" class="small">MCP / Human Interaction Protocol</text>
+
+  <g id="provider">
+    <rect x="1125" y="635" width="420" height="175" class="frame"/>
+    <path d="M1125 659a24 24 0 0 1 24-24h372a24 24 0 0 1 24 24v42h-420z" class="header"/>
+    <text x="1155" y="680" class="title">User-selected Model Provider</text>
+    <rect x="1165" y="725" width="340" height="55" rx="14" class="green"/><text x="1335" y="759" text-anchor="middle" class="label">Runtime LLM</text>
+    <text x="1335" y="800" text-anchor="middle" class="small">provider + model pinned by governed profile</text>
+  </g>
+  <path d="M1357 340C1357 470 1340 520 1340 630" class="line"/>
+  <text x="1365" y="605" class="small">explicit profile only</text>
+
+  <g id="agent-runtime">
+    <rect x="55" y="635" width="520" height="390" class="frame"/>
+    <path d="M55 659a24 24 0 0 1 24-24h472a24 24 0 0 1 24 24v50H55z" class="header"/>
+    <text x="85" y="684" class="title">Qualified External Agent Runtime</text>
+    <rect x="95" y="750" width="440" height="80" rx="16" class="orange"/><text x="315" y="786" text-anchor="middle" class="label">Exact pendingExecution</text><text x="315" y="812" text-anchor="middle" class="small">scope · capabilities · allowed effects · idempotency</text>
+    <rect x="95" y="870" width="200" height="90" rx="16" class="purple"/><text x="195" y="908" text-anchor="middle" class="label">Agent Model</text><text x="195" y="935" text-anchor="middle" class="small">bounded execution</text>
+    <rect x="335" y="870" width="200" height="90" rx="16" class="neutral"/><text x="435" y="908" text-anchor="middle" class="label">Receipts</text><text x="435" y="935" text-anchor="middle" class="small">trajectory · usage · artifacts</text>
+    <path d="M315 830L210 865" class="line"/><path d="M295 915H330" class="line"/>
+  </g>
+
+  <g id="project-harness">
+    <rect x="650" y="860" width="895" height="165" class="frame"/>
+    <rect x="690" y="905" width="350" height="75" rx="16" class="orange"/><text x="865" y="937" text-anchor="middle" class="label">Project Systems</text><text x="865" y="962" text-anchor="middle" class="small">repo · CI/CD · environments</text>
+    <rect x="1125" y="895" width="380" height="95" rx="16" class="green"/><text x="1315" y="929" text-anchor="middle" class="label">evopilot-harness Registry / Catalog</text><text x="1315" y="956" text-anchor="middle" class="small">Published immutable HarnessBundle</text><text x="1315" y="978" text-anchor="middle" class="small">read-only supply</text>
+  </g>
+  <path d="M575 790C690 790 760 760 900 570" class="line"/><text x="650" y="748" class="small">normalized receipt + evidence</text>
+  <path d="M575 915H685" class="line"/><text x="620" y="900" class="small">bounded effects</text>
+  <path d="M1315 895C1315 785 1235 670 1190 570" class="line"/><text x="1190" y="842" class="small">read-only HarnessBundle</text>
+  <path d="M1000 525C850 620 620 650 455 745" class="line"/><text x="700" y="610" class="small">exact pendingExecution</text>
+
+  <text x="70" y="1082" class="small">Authority rule: Evolution Expert presents and guides; EvoPilot Runtime owns state and decisions; Agent Runtime performs only bounded work; evopilot-harness owns Harness assets.</text>
+</svg>

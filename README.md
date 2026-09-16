@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/latest%20public-v6.0.0-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/latest%20public-v6.1.0-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -14,9 +14,9 @@ EvoPilot helps teams operate AI-agent products as releasable software. It collec
 
 It is not an agent runtime, prompt playground, generic code generator, or Harness Asset lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot reads a configured Harness Registry and the published Catalog directories it points to, then uses an open product-delivery Lifecycle Harness to execute project goals against the selected immutable HarnessBundle.
 
-## v6.1 Controlled Lifecycle Evolution
+## v6.2 First-Run LLM Readiness
 
-EvoPilot **v6.0.0 Agent-Native Lifecycle Control Plane** and Evolution Expert **v2.0.0** are public. This source tree is implementing Runtime **v6.1.0** and Evolution Expert **v2.1.0** under independently approved Targets; no Candidate, acceptance, Host installation, publication, or Release is implied. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
+EvoPilot **v6.1.0 Controlled Lifecycle Evolution** and Evolution Expert **v2.1.0** are public. This source tree is implementing Runtime **v6.2.0** and Evolution Expert **v2.2.0** under independently approved Targets; no Candidate, acceptance, Host installation, publication, or Release is implied. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
 
 ```text
 Project Definition + GoalTarget -> published HarnessProfile -> immutable HarnessBundle
@@ -25,11 +25,11 @@ Project Definition + GoalTarget -> published HarnessProfile -> immutable Harness
 
 Runtime owns a tenant/workspace Lifecycle Registry with immutable YAML revisions, active pointers, semantic diff, dependencies, usage, audit, archive/restore, and rollback. DataRig, EvoPilot, evopilot-harness, and future projects are declarations—not privileged Engine profiles. Compatible project and Pipeline revisions can evolve without a Runtime or Expert release.
 
-Runtime 6.1 adds a controlled project-Pipeline evolution loop: exact observations and user feedback become classified gaps, immutable successor proposals, comparable Champion/Challenger experiments, policy-bounded future-run activation, health monitoring, and receipt-safe rollback. A project-specific Pipeline revision normally changes only declarative resources; a missing project-neutral primitive produces a review-only Runtime or Expert Target rather than a hidden project branch. See [Controlled Lifecycle Evolution](docs/guides/controlled-lifecycle-evolution.md).
+Runtime 6.2 adds a mandatory first-run LLM readiness gate. EvoPilot ships with **no provider, model, API key, inherited Host LLM, or hidden environment fallback**. A production Runtime starts safely in `SETUP_REQUIRED`, exposes only health and setup surfaces, and unlocks normal project, Harness, Goal, Target, and Loop work only after an administrator selects a provider and model, stores the credential through Host-native secure input as a `SecretRef`, completes a live preflight, and explicitly binds that exact Profile digest as the workspace default. Evolution Expert 2.2 guides this flow over MCP without ever requesting or receiving the raw credential. See [First-Run LLM Readiness](docs/guides/first-run-llm-readiness.md).
 
 Evolution Expert is the ordinary-human entry and talks to Runtime only through MCP. It is independently installed into Codex, Claude Code, designated-human WorkBuddy, generic Agent, or generic MCP Hosts. Runtime never embeds a general-purpose coding Agent: it emits an exact `pendingExecution` to a qualified external Agent Runtime, validates the normalized receipt, and resumes from durable state.
 
-The published v6 completion baseline remains an immutable 253-item contract. Runtime 6.1 and Expert 2.1 must add their current and E2E criteria on an exact installed Candidate pair, preserve the entire baseline, close impact and `NO_REGRESSION`, and leave failed, pending, stale, warning, generic, unmapped, silent-exclusion, and legacy-Suite invocation counts at zero.
+The published v6.1 completion baseline remains immutable. Runtime 6.2 and Expert 2.2 must add first-install, headless, upgrade, degradation, repair, raw-secret refusal, cross-Host, architecture-documentation, and `NO_REGRESSION` evidence on an exact installed Candidate pair before either release can be authorized.
 
 EvoPilot Codex Suite 3.2.1 remains historical reference evidence. The exact active DataRig Codex Suite 2.1.11 snapshot is used read-only to prove production-reference convergence into independently versioned `datarig-production-delivery@1.0.0` declarations. Neither Suite is a Runtime dependency, execution path, synchronization source, or fallback. Existing installed Suites remain untouched; any real switch or retirement stays behind a separately approved post-release [Cutover](docs/guides/legacy-suite-transition.md).
 
@@ -37,8 +37,8 @@ EvoPilot Codex Suite 3.2.1 remains historical reference evidence. The exact acti
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified public package | `npm install -g @evopilot/cli@6.0.0` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.0.0/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified public package | `npm install -g @evopilot/cli@6.1.0` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.1.0/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet. The supported public entry points are the six exact-version npm packages, GitHub Release tarballs, the self-host installer, Helm, and GHCR images.
@@ -71,6 +71,8 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/path/to/evopilot-harness/harness-registry.yaml
 curl http://127.0.0.1:19876/health
 curl http://127.0.0.1:19876/ready
 ```
+
+`server:debug` is a developer-only compatibility mode. A production installation deliberately begins in `SETUP_REQUIRED`; open Evolution Expert in the Agent Host and say “检查 EvoPilot LLM readiness，并引导我安全完成首次配置。” The Expert discovers provider choices, invokes Host-native secure credential input, creates and preflights a governed Profile, binds it explicitly to the workspace, and confirms `READY`. It never treats the Host's own conversational model as EvoPilot's Runtime LLM.
 
 Run the standalone Dashboard from the
 [`yeliang-wang/evopilot-dashboard`](https://github.com/yeliang-wang/evopilot-dashboard)
@@ -140,15 +142,15 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-The latest published GitHub release is **v6.0.0**, paired with Evolution Expert **v2.0.0**. Runtime v6.1.0 and Evolution Expert v2.1.0 are under local implementation; no Candidate, acceptance, publication, Host installation, Suite change, or Cutover is implied by this source tree.
+The latest published GitHub release is **v6.1.0**, paired with Evolution Expert **v2.1.0**. Runtime v6.2.0 and Evolution Expert v2.2.0 are under local implementation; no Candidate, acceptance, publication, Host installation, Secret operation, Suite change, or Cutover is implied by this source tree.
 
 The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a standalone v3.2 release. v4.0 keeps EvoPilot's strict read-only Harness-asset boundary while adding open YAML Lifecycle execution for project goals.
 
 Release evidence:
 
-- Latest published release notes: [docs/releases/6.0.0.md](docs/releases/6.0.0.md)
-- v6.1 implementation plan: [docs/releases/6.1.0.md](docs/releases/6.1.0.md)
-- Evolution Expert 2.1.0 plan: [docs/releases/evolution-expert-2.1.0.md](docs/releases/evolution-expert-2.1.0.md)
+- Latest published release notes: [docs/releases/6.1.0.md](docs/releases/6.1.0.md)
+- v6.2 implementation plan: [docs/releases/6.2.0.md](docs/releases/6.2.0.md)
+- Evolution Expert 2.2.0 plan: [docs/releases/evolution-expert-2.2.0.md](docs/releases/evolution-expert-2.2.0.md)
 - Previous release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)
@@ -163,31 +165,19 @@ GET /api/v1/release/decisions
 
 ## Architecture
 
-EvoPilot applies Loop Engineering through a selected, immutable HarnessBundle plus an open Lifecycle definition. The Lifecycle plans and executes project-goal stages; the legacy Alpha -> Beta -> RC -> GA ladder is represented by an explicit v3 compatibility Lifecycle rather than fixed v4 Engine behavior.
+EvoPilot is an Agent-native lifecycle control plane, not the third-party Agent Runtime that edits source. A human converses with Codex, Claude Code, WorkBuddy, or another qualified Host using that Host's **Host LLM**. Evolution Expert translates the conversation into typed MCP operations. EvoPilot Runtime owns durable governance state and uses a separately configured **Runtime LLM** only through an explicit workspace Profile. When bounded source work is required, Runtime emits an exact `pendingExecution` to a qualified external Agent Runtime; that runtime may use its own **Agent Model** and must return normalized receipts. These three model identities are independent and never substitute for one another.
 
-```text
-evopilot-harness
-  lifecycle/evolution/review/publish
-              |
-              v
-Harness Registry with enabled Catalog roots
-              |
-              v
-Published Harness Catalog directory with CATALOG.md
-              |
-              v
-EvoPilot runtime reads registry and catalog at use time
-              |
-              v
-selectedHarness -> HarnessExecutionBinding + Lifecycle -> GlobalGoal -> GoalTarget -> LoopRun -> Release Decision
-                                      |
-                                      v
-                         Sandbox -> Context -> Harness -> Loop
-```
+![EvoPilot Agent-Native Lifecycle Control Plane architecture](docs/assets/architecture/evopilot-agent-native-architecture.svg)
+
+[PNG fallback](docs/assets/architecture/evopilot-agent-native-architecture.png) · [First-Run LLM Readiness](docs/guides/first-run-llm-readiness.md)
+
+The Runtime reads immutable HarnessBundles from `evopilot-harness` Registry/Catalog roots and composes them with the active human-readable Lifecycle. Evolution Expert guides; Runtime decides and records; the external Agent Runtime performs only explicitly bounded effects; `evopilot-harness` remains the independent Harness producer.
 
 Key architecture docs:
 
 - [Continuous Evolution Control Plane](docs/architecture/continuous-evolution-control-plane.md)
+- [Agent-Native Lifecycle Control Plane](docs/architecture/agent-native-lifecycle-control-plane.md)
+- [First-Run LLM Readiness](docs/guides/first-run-llm-readiness.md)
 - [Loop Runtime Architecture](docs/architecture/loop-runtime.md)
 - [ProofOps Target Loop Mode](docs/architecture/proofops-target-loop-mode.md)
 - [Dashboard Integration](docs/guides/dashboard-integration.md)

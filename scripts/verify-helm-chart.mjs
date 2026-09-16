@@ -57,14 +57,23 @@ assert.ok(productionValuesYaml.includes(`tag: "${packageJson.version}"`), "produ
 for (const forbidden of ["change-me", "replace-with", "server-side-secret"]) {
   assert.ok(!productionValuesYaml.includes(forbidden), `production values must not include ${forbidden}`);
 }
+for (const source of [valuesYaml, productionValuesYaml]) {
+  for (const forbidden of ["llm:", "providerName:", "baseUrl:", "modelName:", "apiKey:"]) {
+    assert.ok(!source.includes(forbidden), `Helm values must not preselect Runtime LLM configuration: ${forbidden}`);
+  }
+}
 
 const controlPlaneTemplate = fs.readFileSync(path.join(chartDir, "templates/control-plane-deployment.yaml"), "utf8");
 assert.ok(controlPlaneTemplate.includes("emptyDir: {}"), "control plane deployment must support persistence.enabled=false");
 assert.ok(controlPlaneTemplate.includes("EVOPILOT_LOOP_STORE_DSN"), "control plane deployment must configure the loop store DSN");
 assert.ok(controlPlaneTemplate.includes(".Values.postgres.enabled"), "control plane deployment must branch between bundled and external Postgres");
+for (const forbidden of ["EVOPILOT_LLM_PROVIDER_NAME", "EVOPILOT_LLM_BASE_URL", "EVOPILOT_LLM_MODEL_NAME", "EVOPILOT_LLM_API_KEY"]) {
+  assert.ok(!controlPlaneTemplate.includes(forbidden), `control plane deployment must start setup-only without ${forbidden}`);
+}
 
 const secretTemplate = fs.readFileSync(path.join(chartDir, "templates/secret.yaml"), "utf8");
 assert.ok(secretTemplate.includes("postgres.externalDsn is required"), "secret template must require an external DSN when bundled Postgres is disabled");
+assert.ok(!secretTemplate.includes("EVOPILOT_LLM_API_KEY"), "secret template must not create a raw LLM credential");
 
 const servicesTemplate = fs.readFileSync(path.join(chartDir, "templates/services.yaml"), "utf8");
 assert.ok(servicesTemplate.includes(".Values.service.extraPorts"), "API service must render service.extraPorts");
