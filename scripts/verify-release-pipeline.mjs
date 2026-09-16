@@ -210,6 +210,7 @@ export function validateEvolutionExpertRelease(workflow) {
   requireLiteral('^evopilot-evolution-expert-v[0-9]+\\.[0-9]+\\.[0-9]+(-[a-z0-9][a-z0-9.-]*)?$', "Expert promotion must accept only the versioned Expert Target namespace and an optional lowercase qualifier");
   requireLiteral('EXPECTED_TARGET_PREFIX="evopilot-evolution-expert-v$VERSION"', "Expert promotion must derive the Target prefix from the independent Expert package version");
   requireLiteral('[[ "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX" || "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX"-* ]]', "Expert promotion must bind the Target id or qualified Target id to the independent Expert package version");
+  requireLiteral('target.release?.versions?.["evopilot-evolution-expert"]', "Expert promotion must validate the independent Expert version key");
   requireMatch(/environment:\s*release/, "Expert GitHub promotion must use the protected release environment");
   requireMatch(/environment:\s*npm/, "Expert npm promotion must use the dedicated npm environment");
   requireMatch(/ref:\s*\$\{\{ github\.sha \}\}/, "Expert promotion mechanics must come from the workflow commit");

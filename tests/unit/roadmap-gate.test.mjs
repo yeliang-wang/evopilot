@@ -199,6 +199,41 @@ test("accepted v6 Targets validate against the immutable completion contract wit
   }
 });
 
+test("accepted v6.1 Targets validate immutable completion semantics after terminal evidence projection", () => {
+  const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-v61-accepted-contract-"));
+  const runtimeTarget = path.join(tempDirectory, "runtime-target.json");
+  const expertTarget = path.join(tempDirectory, "expert-target.json");
+  const contractPath = path.join(tempDirectory, "v61-completion-contract.json");
+  const crossPath = path.join(tempDirectory, "v61-cross-acceptance-map.json");
+  try {
+    projectAcceptedV61Target(
+      path.join(root, "governance/targets/evopilot-v6.1.0-controlled-lifecycle-evolution.json"),
+      runtimeTarget,
+      "evopilot"
+    );
+    projectAcceptedV61Target(
+      path.join(root, "governance/targets/evopilot-evolution-expert-v2.1.0-controlled-lifecycle-evolution.json"),
+      expertTarget,
+      "evopilot-evolution-expert"
+    );
+    fs.copyFileSync(path.join(root, "governance/acceptance/v61-completion-contract.json"), contractPath);
+    fs.copyFileSync(path.join(root, "governance/acceptance/runtime-6.1.0-expert-2.1.0-cross-acceptance-map.json"), crossPath);
+
+    const accepted = runV61CompletionContractCheck({ runtimeTarget, expertTarget, contractPath, crossPath });
+    assert.equal(accepted.status, 0, accepted.stderr);
+    assert.match(accepted.stdout, /immutable accepted v6\.1 completion contract verified/);
+
+    const tamperedTarget = JSON.parse(fs.readFileSync(runtimeTarget, "utf8"));
+    tamperedTarget.acceptance[0].criterion = `${tamperedTarget.acceptance[0].criterion} weakened`;
+    fs.writeFileSync(runtimeTarget, `${JSON.stringify(tamperedTarget, null, 2)}\n`);
+    const tampered = runV61CompletionContractCheck({ runtimeTarget, expertTarget, contractPath, crossPath });
+    assert.equal(tampered.status, 1, tampered.stdout);
+    assert.match(tampered.stderr, /criterion semantics changed/);
+  } finally {
+    fs.rmSync(tempDirectory, { recursive: true, force: true });
+  }
+});
+
 test("Roadmap Gate preserves AgentTrajectory work inside the completed v4 foundation", () => {
   const result = run(["--intent", "Add AgentTrajectory, RewardContract, and an approved execution feedback package"]);
   assert.equal(result.status, 0, result.stderr);
@@ -463,6 +498,20 @@ function runV6CompletionContractCheck({ runtimeTarget, expertTarget, contractPat
   });
 }
 
+function runV61CompletionContractCheck({ runtimeTarget, expertTarget, contractPath, crossPath }) {
+  return spawnSync(process.execPath, ["scripts/build-v61-completion-contract.mjs", "--check"], {
+    cwd: root,
+    encoding: "utf8",
+    env: {
+      ...process.env,
+      EVOPILOT_V61_RUNTIME_TARGET: runtimeTarget,
+      EVOPILOT_V61_EXPERT_TARGET: expertTarget,
+      EVOPILOT_V61_COMPLETION_CONTRACT: contractPath,
+      EVOPILOT_V61_CROSS_ACCEPTANCE_MAP: crossPath
+    }
+  });
+}
+
 function projectAcceptedTarget(source, destination) {
   const target = JSON.parse(fs.readFileSync(source, "utf8"));
   target.status = "RELEASE_AUTHORIZED";
@@ -474,6 +523,24 @@ function projectAcceptedTarget(source, destination) {
     authorizationDigest: `sha256:${"a".repeat(64)}`
   };
   for (const criterion of [target.acceptance, target.inheritedAcceptance, target.realCaseCoverage].flat()) {
+    criterion.status = "PASSED";
+    criterion.evidenceRefs = [`acceptance:test/${criterion.id}`];
+  }
+  fs.writeFileSync(destination, `${JSON.stringify(target, null, 2)}\n`);
+}
+
+function projectAcceptedV61Target(source, destination, versionKey) {
+  const target = JSON.parse(fs.readFileSync(source, "utf8"));
+  target.status = "RELEASE_AUTHORIZED";
+  target.noRegression = { status: "PASSED", evidenceRefs: ["acceptance:test/no-regression"] };
+  target.approvals.release = {
+    decision: "AUTHORIZED",
+    by: "test",
+    evidenceRef: "acceptance:test/release-authorization",
+    authorizationDigest: `sha256:${"a".repeat(64)}`
+  };
+  assert.ok(target.release?.versions?.[versionKey]);
+  for (const criterion of [target.acceptance, target.realCaseCoverage].flat()) {
     criterion.status = "PASSED";
     criterion.evidenceRefs = [`acceptance:test/${criterion.id}`];
   }

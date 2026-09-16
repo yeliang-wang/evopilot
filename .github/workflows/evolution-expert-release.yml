@@ -99,7 +99,7 @@ jobs:
           for (const action of ["tag", "github-release", "npm"]) {
             if (!target.release?.actions?.includes(action)) throw new Error(`Expert Target does not authorize ${action}`);
           }
-          if (target.release?.versions?.evopilot !== version) throw new Error("Expert release version mismatch");
+          if (target.release?.versions?.["evopilot-evolution-expert"] !== version) throw new Error("Expert release version mismatch");
           NODE
 
       - name: Download exact Expert Candidate release set
@@ -306,7 +306,7 @@ jobs:
           if (target.status !== "RELEASE_AUTHORIZED") throw new Error("Expert Target is not RELEASE_AUTHORIZED");
           if (target.approvals?.release?.authorizationDigest !== authorizationDigest) throw new Error("Expert npm authorization digest mismatch");
           if (!target.release?.actions?.includes("npm")) throw new Error("Expert Target does not authorize npm");
-          if (target.release?.versions?.evopilot !== version) throw new Error("Expert npm version mismatch");
+          if (target.release?.versions?.["evopilot-evolution-expert"] !== version) throw new Error("Expert npm version mismatch");
           NODE
 
       - name: Download exact Expert Candidate release set

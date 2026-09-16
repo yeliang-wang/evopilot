@@ -2,7 +2,7 @@
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-v6.1.0-controlled-lifecycle-evolution",
   "revision": 1,
-  "status": "APPROVED",
+  "status": "RELEASE_AUTHORIZED",
   "intent": "Implement Runtime 6.1.0 controlled lifecycle evolution and converge the exact DataRig Suite 2.1.11 production reference through immutable successor proposal, champion challenger validation, policy-bounded activation, monitoring, rollback, and generic-gap Target escalation.",
   "objective": "Deliver a project-neutral Runtime control plane that can learn from exact project Pipeline evidence and safely evolve independently versioned declarative Lifecycles without invoking or mutating project Suites, without self-modifying the Runtime core, and without weakening Harness or human authority.",
   "evidence": [
@@ -71,8 +71,10 @@
       "critical": true,
       "criterion": "Runtime records typed observations and deterministic gap classifications with exact project, Lifecycle, HarnessBundle, GoalTarget, Runtime, Host, Provider, environment, authority, and evidence bindings.",
       "requiredEvidence": "Schema, canonical digest, persistence, restart, drift rejection, and cross-surface contract tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC01.json@sha256:fcd0aa54702c44a57c4d8ae96837e959af8cb369033a364b2427093c59ce11ee#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC01"
+      ]
     },
     {
       "id": "R61-FUNC02",
@@ -80,8 +82,10 @@
       "critical": true,
       "criterion": "A classified project Pipeline gap produces an immutable Lifecycle successor proposal with complete provenance and never mutates the active revision or Runtime core.",
       "requiredEvidence": "Successor immutability, active-pointer stability, provenance, and zero-core-diff tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC02.json@sha256:5a81f4c45d1a9d96d13ecc51df31ddc1c1fa792adad3ac747fb213d3396f5e07#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC02"
+      ]
     },
     {
       "id": "R61-FUNC03",
@@ -89,8 +93,10 @@
       "critical": true,
       "criterion": "Every successor exposes exact semantic, authority, dependency, compatibility, impact, migration, experiment, monitoring, and rollback diffs before validation or activation.",
       "requiredEvidence": "Positive and negative semantic-diff fixtures with stable canonical output and completeness checks.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC03.json@sha256:aeeb27d012ac41842fe6febf482a210a972fee85f95cf9fde243b1bdf5e167a5#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC03"
+      ]
     },
     {
       "id": "R61-FUNC04",
@@ -98,8 +104,10 @@
       "critical": true,
       "criterion": "Champion and Challenger execute under one comparable governed context and pairwise evaluation refuses or stratifies any context mismatch.",
       "requiredEvidence": "Pairwise experiment matrix, non-comparable negative corpus, evaluator/scorer bindings, and bad-case closure evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC04.json@sha256:c8f30bbd7a142052f07de9bf7c01cd7b3f640876bb9bdc4c974675c5c4a029ee#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC04"
+      ]
     },
     {
       "id": "R61-FUNC05",
@@ -107,8 +115,10 @@
       "critical": true,
       "criterion": "Policy-bounded automatic activation succeeds only for an exact preauthorized backward-compatible, reversible, non-destructive, non-public, no-new-authority class with verified rollback and canary evidence.",
       "requiredEvidence": "Decision-table tests covering every safe predicate plus fail-closed negative cases for each absent predicate.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC05.json@sha256:a6425e9e5e97ef6588082ac72f635747f024f05030cf30dfbcacdd5ae12d3a49#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC05"
+      ]
     },
     {
       "id": "R61-FUNC06",
@@ -116,8 +126,10 @@
       "critical": true,
       "criterion": "Semantic, policy, authority, production, database, credential, destructive, acceptance, publication, deployment, and Release changes stop at an exact Runtime-owned human decision frame.",
       "requiredEvidence": "Authority matrix and adversarial tests proving no inferred approval or readiness-to-authority promotion.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC06.json@sha256:8c78a26a9abbc36fd7aab57a5ec66bd913372a7f01f3b2da02a5716578075aca#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC06"
+      ]
     },
     {
       "id": "R61-FUNC07",
@@ -125,8 +137,10 @@
       "critical": true,
       "criterion": "Activation changes only future planning; every active Goal Target Loop retains and revalidates its immutable LifecycleRevision and HarnessExecutionBinding.",
       "requiredEvidence": "Concurrent activation and active-run start, iteration, retry, resume, and rollback boundary tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC07.json@sha256:f00521ff9cef87ec006804c0294c8a4aa53bf3e0d58d3eeb8d92bb165ac8082d#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC07"
+      ]
     },
     {
       "id": "R61-FUNC08",
@@ -134,8 +148,10 @@
       "critical": true,
       "criterion": "Health monitoring evaluates declared signals and performs deterministic policy-authorized rollback with idempotent receipts and no uncertain mutation replay.",
       "requiredEvidence": "Canary, degradation, rollback, crash, receipt reconciliation, duplicate suppression, and retained-success tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC08.json@sha256:85135359ac19443d6d8b6eef16bc74372d1a66b62df85deed6332f41e52f2f4d#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC08"
+      ]
     },
     {
       "id": "R61-FUNC09",
@@ -143,8 +159,10 @@
       "critical": true,
       "criterion": "The exact DataRig Suite 2.1.11 snapshot is validated read-only and every one of 20 inventory items has exact provenance and one explicit disposition with 90 critical and 8 advisory files digest-covered.",
       "requiredEvidence": "Suite Gate PASS, manifest and content digests, item-count recomputation, disposition completeness, and no-Suite-write evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC09.json@sha256:8d9aea3bc11e74dcba3c9b7bc3cceead38d4b2becaabff2c58703117b42eec50#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC09"
+      ]
     },
     {
       "id": "R61-FUNC10",
@@ -152,8 +170,10 @@
       "critical": true,
       "criterion": "DataRig production semantics resolve as datarig-production-delivery@1.0.0 declarative resources and typed providers without a DataRig-specific Runtime branch or installed Suite invocation.",
       "requiredEvidence": "Resource graph, provider qualification, no-project-branch source scan, legacySuiteInvocationCount=0, and equivalent journey evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC10.json@sha256:d14d2bf4b5b299c388b12fa788574dfb24aa873900c682a23bb1fd15d9af778e#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC10"
+      ]
     },
     {
       "id": "R61-FUNC11",
@@ -161,8 +181,10 @@
       "critical": true,
       "criterion": "A missing project-neutral primitive creates an explicit digest-bound Target proposal and blocks unsafe activation instead of adding a hidden project branch.",
       "requiredEvidence": "Gap fixture, generated proposal, stop reason, no-core-mutation proof, and subsequent generic-primitive path test.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC11.json@sha256:549bb56d85970ce4146d3deae55ce40df9cc1b72440e1a7ff18a773122e7eca2#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC11"
+      ]
     },
     {
       "id": "R61-FUNC12",
@@ -170,8 +192,10 @@
       "critical": true,
       "criterion": "Runtime exposes project Pipeline evolution, experiment, decision, activation, monitoring, rollback, provenance, and audit through canonical MCP contracts used by Evolution Expert.",
       "requiredEvidence": "MCP schema, protocol, idempotency, authorization, error-model, and cross-Host semantic equality tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-FUNC12.json@sha256:f1fda95009b02f47b8415e75cb19ea563eaffd90b8bd91b499b434aca55e2a9d#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-FUNC12"
+      ]
     },
     {
       "id": "R61-CAP01",
@@ -179,8 +203,10 @@
       "critical": true,
       "criterion": "Runtime remains a project-neutral control plane: project Pipeline resource versions evolve independently and do not require Runtime or Expert releases unless a public generic contract changes.",
       "requiredEvidence": "Independent resource SemVer update tests, source diff checks, compatibility negotiation, and zero project-specific branch evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-CAP01.json@sha256:a7b7cfae87af056110035a2a7612d8621c0fc0af1dbedf7ecd548042b2986c69#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-CAP01"
+      ]
     },
     {
       "id": "R61-CAP02",
@@ -188,8 +214,10 @@
       "critical": true,
       "criterion": "Harness authority remains external and every controlled evolution experiment and resulting Goal Target Loop binds a real published immutable HarnessBundle without weakening its obligations.",
       "requiredEvidence": "Public HarnessBundle generation/consumption, monotonic composition, digest drift, and authority-boundary E2E evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-CAP02.json@sha256:773e11984bc14898057e73cd8b1f14eb8ef36d1260c84c9c573807b58c095daf#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-CAP02"
+      ]
     },
     {
       "id": "R61-CAP03",
@@ -197,8 +225,10 @@
       "critical": true,
       "criterion": "All mutation, experiment, activation, monitoring, and rollback operations are tenant/workspace isolated, idempotent, concurrency-safe, crash-safe, immutably audited, and SecretRef-only.",
       "requiredEvidence": "Isolation, concurrency, restart, audit, redaction, replay, and adverse-state tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-CAP03.json@sha256:c27540f6ce13300da997eb603cecf75df68babfc29781261dc16839fbb140ece#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-CAP03"
+      ]
     },
     {
       "id": "R61-CAP04",
@@ -206,8 +236,10 @@
       "critical": true,
       "criterion": "The controlled evolution loop never self-activates a semantic or authority change, never aggregates non-comparable evidence, and never exceeds an explicit recovery or experiment budget.",
       "requiredEvidence": "Property tests, policy corpus, exhaustion cases, and exact stop/next-action evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-CAP04.json@sha256:1e5067679b4fad9d05ee14c21e2a3f6cf57d04c785a8d08ee3c9b2c0d1cfc6fe#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-CAP04"
+      ]
     },
     {
       "id": "R61-CAP05",
@@ -215,8 +247,10 @@
       "critical": true,
       "criterion": "Runtime 6.1.0 acceptance closes only on exact installed Runtime 6.1.0 and Expert 2.1.0 Candidates with all current criteria, the immutable v6 253-item baseline, cross acceptance, impact closure, and NO_REGRESSION passing.",
       "requiredEvidence": "Independent completion recomputation bound to exact Candidate bytes, target digests, cross map, and zero failed, pending, stale, generic, silent-exclusion, or unmapped items.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--R61-CAP05.json@sha256:7cba8e23e4320b289e823c45215cea27a8186922bade4a9ca9d5cdfa17ac5c6a#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-R61-CAP05"
+      ]
     }
   ],
   "acceptanceLineage": [
@@ -233,8 +267,11 @@
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v6-completion-contract.json#requiredCriteria",
       "criterion": "Every one of the immutable published v6 completion contract's 253 criteria, including Runtime, Expert, inherited, E2E, cross-acceptance, impact, NO_REGRESSION, and zero legacy Suite invocation, remains applicable and must pass against the 6.1.0/2.1.0 Candidate pair.",
       "requiredEvidence": "Fresh successor validation of the full v6 completion contract with criterion-level evidence and no exclusions.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/acceptance-result.json@sha256:bc36820fd5bb3f6428558e4724137a8f5e2f9ecf1c5cc222ac5af4852903a1f1#PUBLISHED_V6_INHERITED_COMPLETION",
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/independent-completion-recompute.json@sha256:2ec0de173426354278aed3ee4ed0b891e05ab43571c3f6b3505524ec63b90998#PUBLISHED_V6_INHERITED_COMPLETION"
+      ]
     }
   ],
   "regressionImpact": [
@@ -251,114 +288,190 @@
     {
       "id": "E2E-DATARIG-211-SNAPSHOT",
       "scenario": "Bind and verify the exact active DataRig Suite 2.1.11 as read-only production reference evidence.",
-      "hosts": ["headless"],
+      "hosts": [
+        "headless"
+      ],
       "requiredEvidence": "Manifest, Suite Gate, content, file-count, repository-kernel, and no-mutation evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-DATARIG-211-SNAPSHOT.json@sha256:7c53abd5722a31257f4bc584838bdeef2066de313dfa13d6c0337f782009ad3d#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-DATARIG-211-SNAPSHOT"
+      ]
     },
     {
       "id": "E2E-DATARIG-211-CAPABILITY-MAP",
       "scenario": "Recompute all 20 inventory dispositions and prove 100-percent coverage with no silent exclusion.",
-      "hosts": ["Codex", "headless"],
+      "hosts": [
+        "Codex",
+        "headless"
+      ],
       "requiredEvidence": "Item-level provenance and disposition report with percent=100 and unmapped=0.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-DATARIG-211-CAPABILITY-MAP.json@sha256:6cc82e12657df7a776f2bb1a3af7d45f5ed1a464e128763e58ba9c979c604ecd#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-DATARIG-211-CAPABILITY-MAP"
+      ]
     },
     {
       "id": "E2E-DATARIG-211-RESOURCE-ONLY",
       "scenario": "Create and execute datarig-production-delivery@1.0.0 from declarative resources and providers without invoking the Suite or changing Runtime core.",
-      "hosts": ["Codex", "independent Agent Runtime"],
+      "hosts": [
+        "Codex",
+        "independent Agent Runtime"
+      ],
       "requiredEvidence": "Resource graph, execution receipt, repository diff, and legacySuiteInvocationCount=0.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-DATARIG-211-RESOURCE-ONLY.json@sha256:08c8c193be29095f8748c196747220fa2d90ca1dcff0fb6383ff2b3cc14dbca9#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-DATARIG-211-RESOURCE-ONLY"
+      ]
     },
     {
       "id": "E2E-DATARIG-211-GAP-TO-TARGET",
       "scenario": "Classify a deliberately missing generic primitive, generate an explicit Target proposal, and stop without project branch or unsafe activation.",
-      "hosts": ["Codex", "headless"],
+      "hosts": [
+        "Codex",
+        "headless"
+      ],
       "requiredEvidence": "Gap classification, proposal digest, stop frame, and zero source mutation.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-DATARIG-211-GAP-TO-TARGET.json@sha256:70513d0860b2f09f99222fb44e7fdd515790971b4a89de76f75efab78de0e511#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-DATARIG-211-GAP-TO-TARGET"
+      ]
     },
     {
       "id": "E2E-OBSERVE-PROPOSE",
       "scenario": "Convert exact project run evidence into an immutable Lifecycle successor proposal with semantic diff and provenance.",
-      "hosts": ["Codex", "generic MCP"],
+      "hosts": [
+        "Codex",
+        "generic MCP"
+      ],
       "requiredEvidence": "Observation, classification, successor, diff, provenance, and unchanged active revision evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-OBSERVE-PROPOSE.json@sha256:cc7d89a1a621f4412410c30104623443f81fea78e81cec2326974ea17a363a07#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-OBSERVE-PROPOSE"
+      ]
     },
     {
       "id": "E2E-CHAMPION-CHALLENGER",
       "scenario": "Run comparable Champion/Challenger replays and reject a mismatched context from mixed aggregation.",
-      "hosts": ["headless", "independent Agent Runtime"],
+      "hosts": [
+        "headless",
+        "independent Agent Runtime"
+      ],
       "requiredEvidence": "Exact bindings, pairwise scores, stratified mismatch, bad-case closure, and recommendation.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-CHAMPION-CHALLENGER.json@sha256:b997c009a07ec8b823ffebd45790a8dfe8b14b1efc58eaa667b688bf72e7733f#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-CHAMPION-CHALLENGER"
+      ]
     },
     {
       "id": "E2E-AUTO-ACTIVATE-SAFE",
       "scenario": "Automatically activate only a fully preauthorized safe successor for future planning after canary and rollback verification.",
-      "hosts": ["Codex", "generic MCP"],
+      "hosts": [
+        "Codex",
+        "generic MCP"
+      ],
       "requiredEvidence": "Matched policy predicates, activation receipt, canary proof, verified rollback, and unchanged active run.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-AUTO-ACTIVATE-SAFE.json@sha256:af04dbe9d80d745a62168b8582787e0a91301a7ff14ba4f1e88b821aa79c372e#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-AUTO-ACTIVATE-SAFE"
+      ]
     },
     {
       "id": "E2E-HUMAN-GATE-SEMANTIC",
       "scenario": "A semantic or authority change stops at one exact human decision frame and cannot infer approval from dialogue.",
-      "hosts": ["Codex", "Claude Code", "generic MCP"],
+      "hosts": [
+        "Codex",
+        "Claude Code",
+        "generic MCP"
+      ],
       "requiredEvidence": "Cross-Host decision-frame equality, negative inferred-approval proof, and finite next action.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-HUMAN-GATE-SEMANTIC.json@sha256:fdca8bb8a8aae718c425579aa43cbf8e1e3413ba82345e54dfc78518f7ccf586#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-HUMAN-GATE-SEMANTIC"
+      ]
     },
     {
       "id": "E2E-MONITOR-ROLLBACK",
       "scenario": "Detect declared post-activation degradation and perform deterministic policy-authorized rollback without duplicate or uncertain mutation.",
-      "hosts": ["headless", "independent Host"],
+      "hosts": [
+        "headless",
+        "independent Host"
+      ],
       "requiredEvidence": "Health samples, threshold decision, rollback receipt, restart reconciliation, and retained audit.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-MONITOR-ROLLBACK.json@sha256:cc73db3575bea9dedc7103512b1ed58790f0e4beab3166ee893d070b0aec7d37#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-MONITOR-ROLLBACK"
+      ]
     },
     {
       "id": "E2E-EXPERT-CROSS-HOST",
       "scenario": "Start controlled evolution in Codex, inspect in Claude Code, complete designated WorkBuddy steps, and resume through generic MCP from one Runtime truth.",
-      "hosts": ["Codex", "Claude Code", "WorkBuddy", "generic MCP", "independent Host"],
+      "hosts": [
+        "Codex",
+        "Claude Code",
+        "WorkBuddy",
+        "generic MCP",
+        "independent Host"
+      ],
       "requiredEvidence": "Exact Candidate/Core bindings, Runtime object equality, designated-human WorkBuddy declaration, and cross-Host resume.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-EXPERT-CROSS-HOST.json@sha256:4609d7572f4c1466c3af5c272404675e059161dc4df393ccd9a7c33995d89e20#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-EXPERT-CROSS-HOST"
+      ]
     },
     {
       "id": "E2E-REAL-HARNESS-BUNDLE",
       "scenario": "Use a real published HarnessBundle to guide proposal evaluation and a Goal Target Loop without changing Harness assets or weakening obligations.",
-      "hosts": ["Codex", "independent Agent Runtime"],
+      "hosts": [
+        "Codex",
+        "independent Agent Runtime"
+      ],
       "requiredEvidence": "Registry, Catalog, HarnessProfile, HarnessBundle, component, export, Loop, monotonic composition, and drift rejection chain.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-REAL-HARNESS-BUNDLE.json@sha256:28fba8306386dfe65bbb2aecc3b0531b7e0d68ab503ace6ffcde6d00d96464b9#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-REAL-HARNESS-BUNDLE"
+      ]
     },
     {
       "id": "E2E-NO-SUITE",
       "scenario": "Complete a new unknown-project Pipeline evolution journey with both legacy Suites absent from the isolated environment.",
-      "hosts": ["Codex", "headless"],
+      "hosts": [
+        "Codex",
+        "headless"
+      ],
       "requiredEvidence": "Fresh install inventory, onboarding, successor, experiment, decision, activation or stop, and legacySuiteInvocationCount=0.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-NO-SUITE.json@sha256:081e8493af01c3f16caeb1e379f89c73f57289e88ce9ef147f05d78c38ad9d8c#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-NO-SUITE"
+      ]
     },
     {
       "id": "E2E-NO-REGRESSION",
       "scenario": "Revalidate the immutable v6 253-item completion baseline plus all 6.1 current criteria and impact closure on exact installed Candidates.",
-      "hosts": ["Codex", "Claude Code", "WorkBuddy", "generic MCP", "headless", "independent Host", "independent Agent Runtime"],
+      "hosts": [
+        "Codex",
+        "Claude Code",
+        "WorkBuddy",
+        "generic MCP",
+        "headless",
+        "independent Host",
+        "independent Agent Runtime"
+      ],
       "requiredEvidence": "Independent criterion-level aggregation with passed=total and failed=pending=stale=generic=unmapped=silentExclusion=0.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/criteria/evopilot-v6.1.0-controlled-lifecycle-evolution--E2E-NO-REGRESSION.json@sha256:c554b2d4c546a26a1d93dd7ca22e22b76f509910e8b83536419d9e2ce6b112a6#evidence-evopilot-v6.1.0-controlled-lifecycle-evolution-E2E-NO-REGRESSION"
+      ]
     }
   ],
   "noRegressionRequired": true,
   "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
   "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
   "noRegression": {
-    "status": "PENDING",
-    "evidenceRefs": []
+    "status": "PASSED",
+    "evidenceRefs": [
+      "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/acceptance-result.json@sha256:bc36820fd5bb3f6428558e4724137a8f5e2f9ecf1c5cc222ac5af4852903a1f1#NO_REGRESSION",
+      "codex-evolution://evopilot/b0fb2af6a70b/acceptance/release-build-34948772314-34948776104/evidence/independent-completion-recompute.json@sha256:2ec0de173426354278aed3ee4ed0b891e05ab43571c3f6b3505524ec63b90998#NO_REGRESSION"
+    ]
   },
   "approvals": {
     "target": {
@@ -368,15 +481,23 @@
       "authorizationDigest": "sha256:3950914679e8e37b7282c631726f2d1c216c3d911822596fd0dd87c91f144228"
     },
     "release": {
-      "decision": "PENDING",
-      "by": null,
-      "evidenceRef": null,
-      "authorizationDigest": null
+      "decision": "AUTHORIZED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v6.1.0-runtime-expert-v2.1.0-release-binding-1",
+      "authorizationDigest": "sha256:ad8d88cc02e3fda8d6220c156b772dbd9183f4a3bbc99ea59b6750ca1bc2d801"
     }
   },
   "release": {
     "product": "evopilot-runtime",
-    "actions": ["commit", "push", "tag", "github-release", "npm", "ghcr", "installer"],
+    "actions": [
+      "commit",
+      "push",
+      "tag",
+      "github-release",
+      "npm",
+      "ghcr",
+      "installer"
+    ],
     "versions": {
       "evopilot": "6.1.0"
     }
