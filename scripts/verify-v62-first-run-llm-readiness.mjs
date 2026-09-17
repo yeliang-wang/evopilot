@@ -28,8 +28,9 @@ for (const [relative, expected] of [
 const runtimeTarget = readJson("governance/targets/evopilot-v6.2.0-first-run-llm-readiness.json");
 const expertTarget = readJson("governance/targets/evopilot-evolution-expert-v2.2.0-first-run-llm-setup.json");
 const crossMap = readJson("governance/acceptance/runtime-6.2.0-expert-2.2.0-cross-acceptance-map.json");
-if (runtimeTarget.status !== "APPROVED" || runtimeTarget.approvals?.target?.decision !== "APPROVED") failures.push("Runtime 6.2 Target is not implementation-approved");
-if (expertTarget.status !== "APPROVED" || expertTarget.approvals?.target?.decision !== "APPROVED") failures.push("Expert 2.2 Target is not implementation-approved");
+const implementationAuthorizedStatuses = new Set(["APPROVED", "RELEASE_AUTHORIZED"]);
+if (!implementationAuthorizedStatuses.has(runtimeTarget.status) || runtimeTarget.approvals?.target?.decision !== "APPROVED") failures.push("Runtime 6.2 Target is not implementation-authorized");
+if (!implementationAuthorizedStatuses.has(expertTarget.status) || expertTarget.approvals?.target?.decision !== "APPROVED") failures.push("Expert 2.2 Target is not implementation-authorized");
 if (runtimeTarget.acceptance?.length !== 15 || expertTarget.acceptance?.length !== 10 || crossMap.rows?.length !== 10) failures.push("v6.2 criterion or cross-map count drift");
 
 const protocol = llmSetupProtocol();

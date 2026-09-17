@@ -164,6 +164,16 @@ test("Roadmap Gate fails closed on incomplete v6.1 terminal or public evidence",
   }
 });
 
+test("Roadmap Gate fails closed when v6.2 enters COMPLETE without exact terminal evidence", () => {
+  const result = runWithRoadmap((roadmap) => {
+    roadmap.milestones.find((item) => item.id === "evopilot-6.2-first-run-llm-readiness").status = "COMPLETE";
+    roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.2-first-run-llm-setup").status = "COMPLETE";
+  });
+  assert.equal(result.status, 1, result.stderr);
+  assert.equal(result.body.classification, "INVALID");
+  assert.match(result.body.errors.join(" "), /v6\.2 terminal completion must be 355\/355/);
+});
+
 test("Roadmap Gate fails closed on incomplete v6 terminal evidence or premature Suite Cutover", () => {
   for (const [name, mutate, pattern] of [
     ["runtime count", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-6.0-agent-native-lifecycle-control-plane").completionEvidence.passed = 175; }, /176\/176/],

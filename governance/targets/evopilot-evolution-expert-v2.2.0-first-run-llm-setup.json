@@ -2,7 +2,7 @@
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-evolution-expert-v2.2.0-first-run-llm-setup",
   "revision": 1,
-  "status": "APPROVED",
+  "status": "RELEASE_AUTHORIZED",
   "intent": "Implement Evolution Expert 2.2.0 as the Agent-neutral first-run governed LLM setup and repair guide for Runtime 6.2.0 over MCP, using Host-native secure input without exposing raw credentials or owning Runtime state or authority.",
   "objective": "Let an ordinary user install EvoPilot in any supported third-party AI Agent Host and safely reach or restore Runtime READY through one clear conversational journey while keeping all profile, SecretRef, preflight, binding, decision, and durable state in Runtime authority.",
   "evidence": [
@@ -49,7 +49,9 @@
       "No Learning Interoperability implementation, legacy Suite modification or Cutover, Host or Secret operation, Candidate, E2E execution, production or database access, publication, or Release under this draft."
     ]
   },
-  "compatibilityPolicy": {"mode": "INHERIT"},
+  "compatibilityPolicy": {
+    "mode": "INHERIT"
+  },
   "acceptance": [
     {
       "id": "EX22-FUNC01",
@@ -57,8 +59,10 @@
       "critical": true,
       "criterion": "One Agent-neutral Expert Core detects and explains all four RuntimeReadiness states from Runtime-owned MCP facts and offers only state-appropriate setup, diagnosis, repair, documentation, or normal-operation next actions.",
       "requiredEvidence": "Core state-machine fixtures, MCP schema bindings, progressive-disclosure snapshots, and invalid-transition tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC01.json@sha256:a7d68b79f680f2cdc1407610c9377605e74c48a7b1046eaa8f7b448adf696ce8#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22-FUNC01"
+      ]
     },
     {
       "id": "EX22-FUNC02",
@@ -66,8 +70,10 @@
       "critical": true,
       "criterion": "Expert guides provider-neutral preset or custom endpoint, base URL, model, scope, live preflight, and explicit workspace-default confirmation without selecting a provider or default on the user's behalf.",
       "requiredEvidence": "Question graph, provider matrix, custom endpoint fixtures, explicit-decision frames, and no-default-selection tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC02.json@sha256:617ec178397a7d833cdb34e5b45ffd71a856b0849d45f5ae02034716d62f6b4b#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22-FUNC02"
+      ]
     },
     {
       "id": "EX22-FUNC03",
@@ -75,8 +81,10 @@
       "critical": true,
       "criterion": "Expert invokes only approved Host-native secure input for raw credentials, refuses conversational keys, and receives or renders only a redacted SecretRef result.",
       "requiredEvidence": "Codex, Claude Code, WorkBuddy runbook, independent Host, and generic MCP secure-input conformance plus adversarial transcript leak scans.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC03.json@sha256:9ee2e4eaa97c195c57ca6a666790c2857d002d32f32fced02ee2032db682c79d#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22-FUNC03"
+      ]
     },
     {
       "id": "EX22-FUNC04",
@@ -84,8 +92,10 @@
       "critical": true,
       "criterion": "Preflight failure, LLM_BLOCKED degradation, rotation, repair, and recovery are rendered from exact Runtime evidence with redacted diagnostics, preserved stop reason, and one finite next action and never trigger fallback.",
       "requiredEvidence": "Failure and repair fixtures, cross-Host render equality, redaction corpus, and fallback-negative tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC04.json@sha256:953fdd3b1d1d989ead96a2ff58152cdbcee10a7999021331a93928da45bffae4#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22-FUNC04"
+      ]
     },
     {
       "id": "EX22-FUNC05",
@@ -93,8 +103,10 @@
       "critical": true,
       "criterion": "Migration and headless bootstrap journeys explain what Runtime will materialize, require explicit opt-in, present resulting governed resources, and stop on ambiguity without reading or importing local Agent configuration.",
       "requiredEvidence": "Unambiguous, ambiguous, opt-in, refusal, no-local-import, and environment-cleanup journey fixtures.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC05.json@sha256:a483ab9f3c0b3782f274fcb3232b7142cebcd7de12ee58259a35f7b9a0dab81d#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22-FUNC05"
+      ]
     },
     {
       "id": "EX22-FUNC06",
@@ -102,8 +114,10 @@
       "critical": true,
       "criterion": "Version negotiation produces exact upgrade-required guidance when the installed Expert cannot safely complete Runtime 6.2 setup, while compatible versions preserve cross-Host resume from Runtime truth.",
       "requiredEvidence": "Compatibility matrix, older-Core negative fixtures, upgrade and rollback, resume, and no-chat-history-dependency tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC06.json@sha256:2f9c1db2ca82fd090f04f0c13313083ae12bc8b7ef94cd42813279d9a6fc9d6c#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22-FUNC06"
+      ]
     },
     {
       "id": "EX22-CAP01",
@@ -111,8 +125,10 @@
       "critical": true,
       "criterion": "Expert never owns or fabricates profiles, SecretRefs, readiness, bindings, provider fallback, approval, audit, Harness selection, Goal Target Loop, acceptance, release, or durable state.",
       "requiredEvidence": "Core source scan, authority matrix, adversarial dialogue corpus, persistence inspection, and zero-Expert-state evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-CAP01.json@sha256:4ee47c91b998289150b2c8ba5ac2be2c312bab6b48e330e5656b03217f4140e3#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22-CAP01"
+      ]
     },
     {
       "id": "EX22-CAP02",
@@ -120,8 +136,10 @@
       "critical": true,
       "criterion": "Codex, Claude Code, designated-human WorkBuddy, independent Host, generic MCP, and supported headless administration preserve one Core, one Runtime truth, equivalent facts and stop conditions, and Host-specific secure-input transport only.",
       "requiredEvidence": "Generated adapter digests, Host conformance, designated-human WorkBuddy declaration, cross-Host semantic equality, and resume tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-CAP02.json@sha256:3d59ce866ff02561844d44f2cf70a4ed90578b6cbbec5b51171b998e580233b8#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22-CAP02"
+      ]
     },
     {
       "id": "EX22-CAP03",
@@ -129,8 +147,10 @@
       "critical": true,
       "criterion": "Expert and architecture guidance clearly distinguish Host LLM, Runtime governed LLM profile, Agent Model, Evolution Expert, qualified Agent Runtime, Project Systems, and external Harness authority and contain none of the forbidden implications.",
       "requiredEvidence": "Explanation fixtures, README render assertions, terminology corpus, and forbidden-implication negative tests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-CAP03.json@sha256:07e16964760bf479700a0f0c964aee4f8b9ac0d7d51774d2ac72a642b420f297#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22-CAP03"
+      ]
     },
     {
       "id": "EX22-CAP04",
@@ -138,8 +158,10 @@
       "critical": true,
       "criterion": "Evolution Expert 2.2.0 acceptance closes only with exact Runtime 6.2.0 and Expert 2.2.0 Candidates, all current and cross-product criteria, immutable v61 305-item inheritance, security and leak closure, 5400-second active soak, impact closure, zero hidden fallback, zero legacy Suite invocation, and NO_REGRESSION.",
       "requiredEvidence": "Independent item-level aggregation bound to Candidate bytes, Core and Adapter digests, Target digests, cross map, soak, and every incomplete or prohibited count equal to zero.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-CAP04.json@sha256:b070ec7d1e0d2ae52f51e5892ae0a17675c4c2669b14f121d94ad248aed9720b#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22-CAP04"
+      ]
     }
   ],
   "acceptanceLineage": [
@@ -156,14 +178,19 @@
       "origin": "/Users/wangyejing/project/harness/evopilot/governance/acceptance/v61-completion-contract.json#requiredCriteria",
       "criterion": "Every one of the immutable published Runtime 6.1.0 and Expert 2.1.0 completion contract's 305 criteria remains applicable, including Agent-neutral Expert Core and generated Hosts, canonical MCP interaction, Runtime truth and authority, Harness guidance, external Agent Runtime, security, version independence, impact closure, active soak, NO_REGRESSION, and zero legacy Suite invocation.",
       "requiredEvidence": "Fresh successor validation of the complete v61 completion contract with item-level evidence and no exclusions.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/acceptance-result.json@sha256:02d2b8a7d340e00bf9640309dec0cfbda1fcdb7954ca321e36434c41675db24e#PUBLISHED_V61_INHERITED_COMPLETION",
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/independent-completion-recompute-v62.json@sha256:bfc3ee208d03735702b96bae39dc94683cc7cea693859207af099264fc87011f#PUBLISHED_V61_INHERITED_COMPLETION"
+      ]
     }
   ],
   "regressionImpact": [
     {
       "area": "Expert 2.2 becomes the ordinary-human first-run and repair entry and can affect every published Expert, MCP, Host, credential protection, Runtime authority, Harness guidance, recovery, documentation, versioning, acceptance, and release guarantee.",
-      "affectedAcceptanceIds": ["V61-PUBLISHED-COMPLETION-305"],
+      "affectedAcceptanceIds": [
+        "V61-PUBLISHED-COMPLETION-305"
+      ],
       "reason": "The immutable v61 completion-contract aggregate preserves exact item-level historical traceability and cross-product obligations."
     }
   ],
@@ -172,88 +199,153 @@
     {
       "id": "EX22E2E01",
       "scenario": "A fresh installation in SETUP_REQUIRED is explained consistently and every normal operation is refused with a finite secure setup next action.",
-      "hosts": ["Codex", "Claude Code", "generic MCP"],
+      "hosts": [
+        "Codex",
+        "Claude Code",
+        "generic MCP"
+      ],
       "requiredEvidence": "Core and adapter outputs, Runtime facts, denial equality, and no local configuration import.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E01.json@sha256:793fc500fceca4bcfad2bfcddc200ee4b488b83897c7c9d9d748d03047f8dab1#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22E2E01"
+      ]
     },
     {
       "id": "EX22E2E02",
       "scenario": "Expert completes provider-neutral secure setup to READY through no-echo input without any raw credential entering conversation or generated artifacts.",
-      "hosts": ["Codex", "Claude Code", "independent Host"],
+      "hosts": [
+        "Codex",
+        "Claude Code",
+        "independent Host"
+      ],
       "requiredEvidence": "Secure-input conformance, Runtime resources, explicit binding, preflight, transcript and artifact leak scans.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E02.json@sha256:ce9b74e4ba06e7585ffef2b0eb1089a870263e3831e5ed03ac099d4e92e91a64#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22E2E02"
+      ]
     },
     {
       "id": "EX22E2E03",
       "scenario": "A designated human performs the frozen WorkBuddy setup and cross-Host journey while Codex neither operates nor observes WorkBuddy.",
-      "hosts": ["WorkBuddy"],
+      "hosts": [
+        "WorkBuddy"
+      ],
       "requiredEvidence": "Exact Candidate-bound designated-human declaration for the frozen WorkBuddy range and secure-input behavior.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E03.json@sha256:60ed93d9dfbfb2b7ea44450b9f4b633e87407bbffe4ae150af8e627d02cc2243#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22E2E03"
+      ]
     },
     {
       "id": "EX22E2E04",
       "scenario": "Preflight failure and later LLM_BLOCKED degradation are explained and repaired without fallback, credential exposure, lost Runtime state, or duplicate effects.",
-      "hosts": ["Codex", "generic MCP", "headless"],
+      "hosts": [
+        "Codex",
+        "generic MCP",
+        "headless"
+      ],
       "requiredEvidence": "Failure and repair frames, state transitions, redaction, resume, receipt reconciliation, and hiddenFallbackCount=0.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E04.json@sha256:0d8c634d88feef2c28745fa912e0dadf61590fc40b028241bd3175e4fbead45d#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22E2E04"
+      ]
     },
     {
       "id": "EX22E2E05",
       "scenario": "Expert explains successful and ambiguous 6.1 migration plus explicit headless bootstrap while proving no local Agent configuration is read or retained.",
-      "hosts": ["Codex", "headless"],
+      "hosts": [
+        "Codex",
+        "headless"
+      ],
       "requiredEvidence": "Migration and bootstrap previews, opt-in decisions, stop frames, resource digests, audit, and environment cleanup.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E05.json@sha256:f36a49e914034ff5e9e9dbf714a661dc5e60e7e74eb877ee604bf2679629711b#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22E2E05"
+      ]
     },
     {
       "id": "EX22E2E06",
       "scenario": "A setup journey begins in Codex, is inspected in Claude Code, and resumes through an independent Host and generic MCP from Runtime truth rather than chat history.",
-      "hosts": ["Codex", "Claude Code", "independent Host", "generic MCP"],
+      "hosts": [
+        "Codex",
+        "Claude Code",
+        "independent Host",
+        "generic MCP"
+      ],
       "requiredEvidence": "Cross-Host semantic equality, exact Core and Adapter bindings, Runtime object digests, restart, and resume evidence.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E06.json@sha256:2631959c77f402876f5ea0d1170177839b59960667dc8a73f52dd14d024b38a7#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22E2E06"
+      ]
     },
     {
       "id": "EX22E2E07",
       "scenario": "An older Expert encountering Runtime 6.2 SETUP_REQUIRED stops with exact upgrade-required guidance and cannot attempt unsafe setup; compatible upgrade and rollback preserve state.",
-      "hosts": ["Codex", "Claude Code"],
+      "hosts": [
+        "Codex",
+        "Claude Code"
+      ],
       "requiredEvidence": "Version-skew matrix, stop result, upgrade, rollback, and no unsafe MCP invocation.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E07.json@sha256:91bfeda4a4702e3ffabab179c9b364291146ec644987a47f4cbb0f45822d5ca1#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22E2E07"
+      ]
     },
     {
       "id": "EX22E2E08",
       "scenario": "After READY, Expert guides a real immutable HarnessBundle-bound Goal Target Loop and explains Host LLM, Runtime LLM, Agent Model, Agent Runtime, Project Systems, and Harness authority correctly.",
-      "hosts": ["Codex", "independent Agent Runtime"],
+      "hosts": [
+        "Codex",
+        "independent Agent Runtime"
+      ],
       "requiredEvidence": "Harness asset chain, combined plan, pendingExecution and receipt, Loop evidence, architecture explanation, and no weakened obligation.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E08.json@sha256:9502f316eb649e071a20fc03ee3e300f65c97d303dcc56b3b5dbd69f67727f7a#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22E2E08"
+      ]
     },
     {
       "id": "EX22E2E09",
       "scenario": "Adversarial dialogue cannot expose a secret, claim READY, infer authority, select a fallback, invoke a legacy Suite, mutate a Harness, or publish or release any result.",
-      "hosts": ["Codex", "generic MCP"],
+      "hosts": [
+        "Codex",
+        "generic MCP"
+      ],
       "requiredEvidence": "Security and authority corpus, exact stop reasons, transcript scans, and zero prohibited effects.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E09.json@sha256:a6d19b6fd324e395bc1200aa85ccf4397e332d6abec1fb70f8cc675785704e08#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22E2E09"
+      ]
     },
     {
       "id": "EX22E2E10",
       "scenario": "Exact Runtime 6.2.0 and Expert 2.2.0 Candidates pass all current, inherited, cross-Host, security, architecture, real HarnessBundle, active-soak, impact-closure, and NO_REGRESSION obligations with every prohibited count zero.",
-      "hosts": ["Codex", "Claude Code", "WorkBuddy", "generic MCP", "headless", "independent Host", "independent Agent Runtime"],
+      "hosts": [
+        "Codex",
+        "Claude Code",
+        "WorkBuddy",
+        "generic MCP",
+        "headless",
+        "independent Host",
+        "independent Agent Runtime"
+      ],
       "requiredEvidence": "Independent item-level acceptance aggregate bound to exact Candidate, Core, Adapter, Target, and cross-map digests.",
-      "status": "PENDING",
-      "evidenceRefs": []
+      "status": "PASSED",
+      "evidenceRefs": [
+        "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/current-criteria/evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E10.json@sha256:8a99a10c9c28fcc75080c317a01daf3f7f514edb9aa1d7b7d46aa23dc68b7244#evidence-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-EX22E2E10"
+      ]
     }
   ],
   "noRegressionRequired": true,
   "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
   "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
-  "noRegression": {"status": "PENDING", "evidenceRefs": []},
+  "noRegression": {
+    "status": "PASSED",
+    "evidenceRefs": [
+      "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/acceptance-result.json@sha256:02d2b8a7d340e00bf9640309dec0cfbda1fcdb7954ca321e36434c41675db24e#NO_REGRESSION",
+      "codex-evolution://evopilot/2fd8250b2c0c/acceptance/release-build-35104248442-35104253344/evidence/independent-completion-recompute-v62.json@sha256:bfc3ee208d03735702b96bae39dc94683cc7cea693859207af099264fc87011f#NO_REGRESSION"
+    ]
+  },
   "approvals": {
     "target": {
       "decision": "APPROVED",
@@ -261,12 +353,26 @@
       "authorizationDigest": "sha256:57f633d0e8b7d8c9fa7d3f10703be4b2e4553e271eecad4c9c4f4e7b63fc1e5f",
       "evidenceRef": "conversation:approved-evopilot-evolution-expert-v2.2.0-first-run-llm-setup-target-r1@sha256:57f633d0e8b7d8c9fa7d3f10703be4b2e4553e271eecad4c9c4f4e7b63fc1e5f"
     },
-    "release": {"decision": "PENDING"}
+    "release": {
+      "decision": "AUTHORIZED",
+      "by": "user",
+      "evidenceRef": "conversation:approved-evopilot-v6.2.0-runtime-expert-v2.2.0-release-binding-1",
+      "authorizationDigest": "sha256:b7223a8823f352a4d2b5c1898cc9051dcff05262122a8df0c478788d7b130297"
+    }
   },
   "release": {
     "product": "evopilot-evolution-expert",
-    "actions": ["commit", "push", "tag", "github-release", "npm", "installer"],
-    "versions": {"evopilot-evolution-expert": "2.2.0"}
+    "actions": [
+      "commit",
+      "push",
+      "tag",
+      "github-release",
+      "npm",
+      "installer"
+    ],
+    "versions": {
+      "evopilot-evolution-expert": "2.2.0"
+    }
   },
   "designDecisions": {
     "productIdentity": "Evolution Expert 2.2.0 first-run governed LLM setup and repair guide",
