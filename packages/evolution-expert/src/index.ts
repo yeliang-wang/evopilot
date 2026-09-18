@@ -8,7 +8,7 @@ import {
   type EvoPilotRuntimeReadinessV1
 } from "@evopilot/contracts";
 
-export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "2.2.0";
+export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "2.2.1";
 export const EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA = "evopilot-evolution-expert-core/v3";
 
 export type ExpertIntent =

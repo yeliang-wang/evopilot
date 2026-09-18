@@ -41,12 +41,13 @@ Evaluation, and Catalog versions evolve independently.
 
 ## Product Direction
 
-EvoPilot v6 is an **Agent-Native Harness-Guided Lifecycle Control Plane**:
+EvoPilot v6 is an **Agent-Native, Ontology-Grounded and Harness-Powered Lifecycle Control Plane**. A governed Project Ontology tells an Agent what a third-party project's business concepts, relations, rules, events, actions, and permission semantics mean. A published immutable HarnessBundle tells it how to perform and verify professional work. EvoPilot remains the read-only consumer and binds both asset families to the Goal Target Loop without authoring, approving, mutating, or publishing either.
 
 ```text
 EvolutionProjectDefinition
   + user Goal and exact GoalTarget
   + published immutable HarnessBundle
+  + optional published immutable ProjectOntologyArtifactSet and ProjectOntologySkill
   + tenant/workspace governed immutable LifecycleRevision and Policy
   + qualified Agent Host, Agent Runtime, Provider, Environment, and Authority
     -> HarnessExecutionBinding
@@ -63,8 +64,10 @@ The primary invariant is:
 
 > No supported project Goal Target Loop executes without one exact eligible
 > published immutable `HarnessBundle` binding and one exact resolved Lifecycle
-> binding. Lifecycle strengthens and orchestrates Harness-guided execution; it
-> never replaces, weakens, authors, or publishes the Harness definition.
+> binding. When a compatible published Project Ontology is available, a new
+> project also receives one exact immutable semantic binding. Ontology supplies
+> business meaning; Harness supplies professional execution. Neither replaces
+> the other, and EvoPilot authors or publishes neither.
 
 This preserves EvoPilot's existing product center. v6 makes Runtime the durable
 project-neutral control plane; Evolution Expert over MCP becomes the only
@@ -890,9 +893,131 @@ binding. An incompatible older Expert returns an exact upgrade-required result.
 It never owns a profile, readiness state, approval, secret, provider fallback,
 or durable state and cannot claim `READY` without Runtime evidence.
 
-### v6.3.0: Learning Interoperability
+### Evolution Expert v2.2.1: Public CLI Completion Recovery
 
-Status: `PLANNED` — inherited intact from the deferred v6.2 milestone
+Status: `IN_PROGRESS` — active recovery planning; product implementation still
+requires a separately approved successor Target.
+
+Runtime 6.2.0 and Expert 2.2.0 were publicly published after the frozen
+Candidate campaign recorded 355/355 criteria, 10/10 cross-acceptance rows, and
+5400 seconds of active soak. Expert 2.2.0 nevertheless has a public CLI defect:
+doctor and compatibility supply an outdated four-capability list that omits
+the generated adapter's required secure-input capability, and their omitted
+Runtime argument defaults to unsupported 6.1.0. The release verifier also
+expects Core v2 while the accepted package contains Core v3. Published Expert
+2.2.0 is immutable and requires remediation; its old acceptance is historical
+evidence and does not prove successful public CLI operation.
+
+Expert 2.2.1 is the independent patch successor. Repair the CLI's declared
+adapter capability contract and Runtime default, check exact Core v3 and
+adapter digests, and cover codex, claude-code, workbuddy, generic-agent, and
+generic-mcp adapters. Static package checks must not claim that a real Host
+was qualified, that secure input was observed, or that Runtime readiness was
+granted. Unsupported Runtime versions and genuinely missing observed Host
+capabilities must still fail closed.
+
+Keep published Runtime 6.2.0 product bytes unchanged and do not rebuild it.
+Build a new exact Expert Candidate only under its approved successor Target.
+Partition every historical criterion into affected fresh successor evidence
+or explicitly justified, digest-verified unaffected reuse. Rerun all affected
+Expert and Runtime cross-compatibility criteria and require impact closure and
+NO_REGRESSION; never carry a blanket PASS into the successor.
+
+Release remains separately authorized. Public npm integrity, signatures,
+provenance, fresh installation, doctor, compatibility, Core v3, generated
+adapter and portable Skill checks must pass on published successor bytes
+before joint public completion is claimed. Do not overwrite, unpublish, or
+move the Expert 2.2.0 tag, and do not rewrite its historical Target approvals.
+
+The release-evidence commit `19cf025f72b81c28a63fdb8d17bee5586758e3fa`
+already projects the old campaign's acceptance. Reconcile it with the approved
+semantic convergence r2 in an isolated checkout before implementation,
+preserving both guard sets and existing user changes. This patch recovery does
+not reactivate removed Host/MCP/Runtime integrations, operate WorkBuddy,
+perform Suite Cutover, or change Harness or Dashboard. The final convergence
+set remains Harness 4.8.0, Runtime 6.3.0, and Expert 2.3.0 with optional
+Dashboard and the required Expert-driven terminal E2E.
+
+### v6.3.0: Ontology-Grounded and Harness-Powered Goal Target Loop
+
+Status: `PLANNED`
+
+- Discover and validate published immutable `ProjectOntologyArtifactSet` and `ProjectOntologySkill` assets through a read-only Registry/Catalog supply contract.
+- Add `ProjectSemanticBinding/v1`, semantic compatibility evaluation, and immutable `SemanticExecutionBinding/v1` that pins Project, GoalTarget, ontology ArtifactSet, resolved snapshot, Skill, HarnessBundle closure, LifecycleRevision, `OntologyReasoningProfile`, resolver, Runtime LLM profile, Host, Agent Runtime, environment, policy, authority, permissions, and evidence contract.
+- Add read-only `SemanticContextResolver/v1`, which creates a digest-bound minimum `SemanticContextSlice/v1` for each exact `pendingExecution` instead of loading the entire ontology into Agent context.
+- Validate both business-semantic constraints and Harness professional validators before a Goal step or Loop completes; route Ontology gaps and Harness capability gaps to different non-mutating proposal handoffs.
+- Require external semantic content to be snapshotted, grounded, reviewed, published, and digest-bound before use; a live mutable external semantic system never has active-run authority.
+- Preserve Harness-only bindings and active projects as a compatible v6.x migration path. New projects default to governed dual binding when a compatible published Project Ontology exists; a minimal reviewed project semantic map is sufficient and no complete enterprise ontology is mandatory.
+- Never author, approve, publish, or mutate Ontology or Harness assets.
+
+Removal of the Harness-only compatibility path, mandatory migration of every existing project, or incompatible replacement of the Harness-guided Goal Target Loop is reserved for a separately reviewed Runtime v7.0.0 Roadmap.
+
+### Evolution Expert v2.3.0: Project Semantic and Dual-Binding Guide
+
+Status: `PLANNED`
+
+Guide Source understanding, project-semantic availability, ontology and Harness compatibility, gaps, conflicts, binding review, semantic-slice explanation, successor selection, migration, and rollback through Runtime-owned MCP contracts. Use ordinary-human terms such as project business semantic map, business field, product or system type, semantic gap, and execution capability. Retain one Agent-neutral Core and generated Host adapters. The Expert remains stateless and cannot own, fabricate, select, approve, publish, activate, or mutate semantic assets, Harness assets, bindings, permissions, or Runtime state.
+
+Runtime 6.3 and Expert 2.3 use at most five top-level journey families with independent machine variants: semantic-map discovery; gaps/conflicts/abstention and successor handling; ArtifactSet/Skill/version/digest compatibility; one real ontology-and-Harness dual-bound Goal Target Loop; and immutable binding, minimal slicing, permission denial, restart, cross-Host resume, drift isolation, rollback, Ontology/Memory/Evidence separation, inheritance, and `NO_REGRESSION`.
+
+## EvoPilot-Series Final Semantic Design Convergence
+
+Status: `PLANNED`
+
+The final semantic product-design convergence set is exact: evopilot-harness
+must progress through 4.6.0, 4.7.0, and terminal 4.8.0; EvoPilot Runtime must
+reach 6.3.0; and Evolution Expert must reach 2.3.0. Dashboard is an optional,
+independently versioned API client outside the required convergence set.
+Runtime 6.4.0 Learning Interoperability is a later independent
+capability and is not part of this convergence baseline.
+
+Every listed version is independently governed. It requires an approved
+Evolution Target bound to its owning repository's current Roadmap digest, all
+current and inherited acceptance, real E2E coverage for that exact version,
+impact closure, `NO_REGRESSION`, and exact Candidate, artifact, dependency, and
+evidence digests. One product's evidence cannot substitute for another's
+Target, E2E, approval, publication, or Release decision.
+
+After every required version passes independently, one terminal cross-product
+E2E must bind the exact accepted artifacts and prove the complete journey:
+evopilot-harness publishes the immutable 4.8.0 ontology, index,
+reasoning-profile, Profile, Component, and Bundle closure; Runtime 6.3 consumes
+it read-only and creates the immutable ontology-and-Harness dual binding; a
+qualified external Agent Runtime executes the exact pending work; Expert 2.3
+presents facts and collects typed inputs or genuine decisions without owning
+state. Qualified third-party Agent Hosts drive Expert 2.3 through the governed
+MCP interaction with Dashboard absent: no Dashboard install, process, or upgrade
+is a prerequisite. Required Host coverage preserves Codex, designated-human
+WorkBuddy, and an independent qualified Host, with exact Host version, Adapter,
+Core, and model-route bindings. WorkBuddy remains human-operated and closes on
+the frozen final range declaration; Codex must not operate or observe WorkBuddy
+or collect its artifacts. Independent Host legs require validated adapters and
+their own evidence; no Host leg substitutes for another.
+Permission denial, restart, cross-Host resume, digest drift, rollback, defect
+routing, inherited acceptance, and `NO_REGRESSION` must pass with zero failed,
+pending, stale, generic, or unmapped evidence.
+
+This terminal Gate coordinates acceptance evidence only. It grants no approval,
+publication, deployment, or Release authority. Each product retains independent
+authority, and a failure routes to that product's separately governed repair or
+successor Target. Dashboard 3.2 remains an optional independent milestone; its
+absence, version lag, or Dashboard-owned failure blocks neither individual
+product Releases nor the whole-series convergence claim. If Dashboard evolves,
+its own Target, browser E2E, applicable inheritance, NO_REGRESSION, and separate
+Release decision remain mandatory. An optional browser projection check does
+not substitute for the terminal Agent Host / Expert journey. A failure exposing
+an EvoPilot-owned API, security, or authority defect still routes to EvoPilot
+and blocks any affected required acceptance.
+
+Revision r2 supersedes only the r1 Dashboard participation requirement and
+makes the Expert-driven terminal entry explicit. Existing release and E2E
+records, including Harness 4.6.0 through 4.8.0, remain immutable historical
+evidence. Active Targets affected by a changed Roadmap digest must be reviewed
+and rebound before execution; no prior approval silently authorizes new bytes.
+
+### v6.4.0: Learning Interoperability
+
+Status: `PLANNED` — inherited intact from the deferred v6.2 milestone formerly assigned to v6.3
 
 Export consented, redacted, reproducible preference and reward datasets to
 external Trainer systems and re-enter trained policies through provenance,
@@ -900,6 +1025,13 @@ evaluation, and promotion gates. Distributed model training remains external.
 The v6.2 objective, all four outcomes, all three acceptance guarantees, and
 their evidence obligations are preserved and must be retested; deferral deletes
 no source guarantee.
+
+## Planned Semantic Cross-Project Contracts
+
+- `project-ontology-artifact-supply/v1`: read immutable `ProjectOntologyArtifactSet` and `ProjectOntologySkill` assets without mutation authority.
+- `semantic-harness-compatibility/v1`: evaluate one HarnessBundle's semantic requirements against one exact published ontology snapshot without turning compatibility into Harness Eligibility or asset approval.
+- `ontology-grounded-goal-loop/v1`: pin semantic and Harness assets in one `SemanticExecutionBinding` and provide only digest-bound semantic slices to qualified Agent Runtimes.
+- `semantic-dashboard-projection/v1`: expose read-only API projections for Dashboard without transferring source-asset or runtime-state ownership.
 
 ## Cross-Project Feedback
 

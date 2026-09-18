@@ -20,7 +20,7 @@ export function buildEvolutionExpertArtifacts(options = {}) {
   const commit = optionalRun("git", ["rev-parse", "HEAD"]);
   const remote = optionalRun("git", ["remote", "get-url", "origin"]);
 
-  if (options.build !== false) run("npm", ["run", "build", "-w", workspace], { stdio: "inherit" });
+  if (options.build !== false) run("npm", ["run", "build:expert-only", "-w", workspace], { stdio: "inherit" });
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
   run("npm", ["pack", "-w", workspace, "--pack-destination", outDir], { stdio: "inherit" });
@@ -128,6 +128,6 @@ function optionalRun(command, args) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const result = buildEvolutionExpertArtifacts();
+  const result = buildEvolutionExpertArtifacts({ build: !process.argv.includes("--no-build") });
   console.log(JSON.stringify({ status: "PASS", ...result }));
 }

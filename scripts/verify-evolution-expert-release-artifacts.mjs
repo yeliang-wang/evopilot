@@ -34,12 +34,16 @@ export function verifyEvolutionExpertArtifacts(options = {}) {
 
   const checksumLines = fs.readFileSync(path.join(outDir, names.checksums), "utf8").trim().split(/\r?\n/).filter(Boolean);
   assert.equal(checksumLines.length, 3, "checksums must bind the tarball, SBOM, and provenance");
+  const checksumNames = [];
   for (const line of checksumLines) {
     const match = line.match(/^([a-f0-9]{64})  (.+)$/);
     assert.ok(match, `invalid checksum line: ${line}`);
     const [, expected, name] = match;
+    assert.ok([names.tarball, names.sbom, names.provenance].includes(name), "unexpected checksum path");
+    checksumNames.push(name);
     assert.equal(sha256(path.join(outDir, name)), expected, `${name} checksum mismatch`);
   }
+  assert.equal(new Set(checksumNames).size, 3, "checksums must cover each required artifact exactly once");
 
   const packedManifest = JSON.parse(execFileSync("tar", ["-xOf", path.join(outDir, names.tarball), "package/package.json"], { encoding: "utf8" }));
   assert.equal(packedManifest.name, packageJson.name);
@@ -47,6 +51,15 @@ export function verifyEvolutionExpertArtifacts(options = {}) {
   const runtimeContractRange = packageJson.dependencies?.["@evopilot/contracts"];
   assert.ok(runtimeContractRange, "Expert package must declare its compatible Runtime contract range");
   assert.equal(packedManifest.dependencies?.["@evopilot/contracts"], runtimeContractRange);
+  const members = new Set(execFileSync("tar", ["-tzf", path.join(outDir, names.tarball)], { encoding: "utf8" }).trim().split("\n"));
+  for (const required of ["package/dist/cli.js", "package/dist/index.js", "package/skill/SKILL.md"]) assert.ok(members.has(required), `Expert artifact missing ${required}`);
+  for (const host of ["codex", "claude-code", "workbuddy", "generic-agent", "generic-mcp"]) {
+    const adapter = JSON.parse(execFileSync("tar", ["-xOf", path.join(outDir, names.tarball), `package/generated/${host}/adapter.json`], { encoding: "utf8" }));
+    assert.equal(adapter.host, host);
+    assert.equal(adapter.version, version);
+    assert.ok(adapter.requiredCapabilities.includes("host-native-secure-secret-input"));
+    assert.match(adapter.coreDigest, /^sha256:[a-f0-9]{64}$/);
+  }
 
   const sbom = readJson(path.join(outDir, names.sbom));
   assert.equal(sbom.spdxVersion, "SPDX-2.3");

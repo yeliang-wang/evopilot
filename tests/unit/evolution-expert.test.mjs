@@ -16,10 +16,10 @@ test("one immutable Expert Core generates conformant Host-neutral adapters", () 
   assert.equal(createHostIntegrationBundle("codex").ordinaryHumanEntry, "EXPERT_OVER_MCP_ONLY");
 });
 
-test("Expert 2.2.0 provides version-aware doctor and an MCP-first side-effect-free tutorial", () => {
+test("Expert 2.2.1 provides version-aware doctor and an MCP-first side-effect-free tutorial", () => {
   const doctor = expertDoctor("codex", "6.2.0", createExpertAdapter("codex").requiredCapabilities);
   assert.equal(doctor.status, "READY");
-  assert.equal(doctor.expertVersion, "2.2.0");
+  assert.equal(doctor.expertVersion, "2.2.1");
   assert.equal(expertDoctor("codex", "6.1.0", createExpertAdapter("codex").requiredCapabilities).status, "INCOMPATIBLE");
   const tutorial = expertTutorial();
   assert.equal(tutorial.sideEffects, false);

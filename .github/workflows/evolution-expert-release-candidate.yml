@@ -83,10 +83,19 @@ jobs:
           cache: npm
 
       - name: Install frozen dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
-      - name: Full repository verification
-        run: npm run check
+      - name: Verify Expert recovery without rebuilding published Runtime
+        run: |
+          node scripts/materialize-expert-runtime-contract.mjs
+          node scripts/materialize-expert-runtime-fixtures.mjs
+          npm run build:expert-only -w @evopilot/evolution-expert
+          npm run roadmap:check
+          # Includes evolution-expert-cli.test.mjs and evolution-expert-public-install.test.mjs.
+          node --test tests/unit/*.test.mjs tests/functional/cli.test.mjs tests/functional/harness-catalog-consumer.test.mjs tests/functional/first-run-llm-readiness.test.mjs
+          node packages/evolution-expert/scripts/generate-adapters.mjs --check
+          node scripts/verify-v62-first-run-llm-readiness.mjs
+          node scripts/verify-expert-recovery-plan.mjs
 
       - name: Candidate readiness and release-pipeline contract
         run: |
@@ -95,7 +104,7 @@ jobs:
 
       - name: Build and verify Expert release set once
         run: |
-          npm run evolution-expert:release:artifact
+          npm run evolution-expert:release:artifact -- --no-build
           npm run verify:evolution-expert-release-artifact
 
       - name: Upload controlled Expert Candidate release set

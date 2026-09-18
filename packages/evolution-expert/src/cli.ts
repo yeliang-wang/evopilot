@@ -10,9 +10,16 @@ if (command === "--version" || command === "version") output = { product: "@evop
 else if (command === "manifest") output = EVOLUTION_EXPERT_CORE;
 else if (command === "adapter") output = createExpertAdapter(args[1] ?? "generic-agent");
 else if (command === "compatibility") {
-  const adapter = createExpertAdapter(args[1] ?? "generic-agent");
-  output = expertCompatibility(adapter, args[2] ?? "6.1.0", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation", "runtime-state-resume"]);
-} else if (command === "doctor") output = expertDoctor(args[1] ?? "generic-agent", args[2] ?? "6.1.0", ["structured-tool-results", "local-or-remote-mcp", "human-decision-presentation", "runtime-state-resume"]);
+  const { adapter, runtimeVersion } = declaredSelfCheck();
+  const result = expertCompatibility(adapter, runtimeVersion, adapter.requiredCapabilities);
+  output = result;
+  if (result.conformanceStatus !== "CONFORMANT") process.exitCode = 1;
+} else if (command === "doctor") {
+  const { adapter, runtimeVersion } = declaredSelfCheck();
+  const result = expertDoctor(adapter.host, runtimeVersion, adapter.requiredCapabilities);
+  output = result;
+  if (result.status !== "READY") process.exitCode = 1;
+}
 else if (command === "tutorial") output = expertTutorial();
 else if (command === "versions") output = expertVersionGuide();
 else if (["migration", "shadow", "cutover", "rollback"].includes(command)) output = expertMigrationGuide();
@@ -23,4 +30,17 @@ process.stdout.write(typeof output === "string" ? `${output}\n` : `${JSON.string
 function requiredArg(value: string | undefined, message: string): string {
   if (!value) throw new Error(message);
   return value;
+}
+
+// This checks a packaged adapter declaration, not observed Host capabilities or Runtime readiness.
+function declaredSelfCheck() {
+  const host = args[1] ?? "generic-agent";
+  if (!["codex", "claude-code", "workbuddy", "generic-agent", "generic-mcp"].includes(host)) {
+    throw new Error("EVOLUTION_EXPERT_UNKNOWN_PACKAGED_HOST");
+  }
+  const runtimeVersion = args[2] ?? "6.2.0";
+  if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(runtimeVersion)) {
+    throw new Error("EVOLUTION_EXPERT_INVALID_RUNTIME_VERSION: expected an exact stable version");
+  }
+  return { adapter: createExpertAdapter(host), runtimeVersion };
 }

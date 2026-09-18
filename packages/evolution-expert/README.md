@@ -1,6 +1,6 @@
 # EvoPilot Evolution Expert
 
-`@evopilot/evolution-expert` 2.2.0 is the independently versioned,
+`@evopilot/evolution-expert` 2.2.1 is the independently versioned,
 Agent-neutral interactive guide for EvoPilot Runtime 6.2.x. It helps an ordinary
 user discover and declare a project, understand Runtime-produced Harness
 matching and Lifecycle composition, operate a Goal Target Loop, follow
@@ -18,8 +18,13 @@ API, and CI without creating a silent ordinary-human fallback.
 
 ## Install and verify
 
+Version 2.2.1 is currently a development Target, not an available public release.
+The following installation examples apply only after separate Release authorization
+and verified npm publication. Pre-release acceptance installs the exact approved
+Candidate tarball instead; a source checkout is not acceptance evidence.
+
 ```bash
-npm install --global @evopilot/evolution-expert@2.2.0
+npm install --global @evopilot/evolution-expert@2.2.1
 evopilot-expert version
 evopilot-expert doctor codex 6.2.0
 evopilot-expert tutorial
@@ -28,9 +33,14 @@ evopilot-expert migration
 ```
 
 For Claude Code or WorkBuddy, replace `codex` with `claude-code` or
-`workbuddy`. `doctor` verifies the package
-version, one Core digest, protocol compatibility, Adapter digest, and required
-Host capabilities without contacting a project or causing external effects.
+`workbuddy`; `generic-agent` and `generic-mcp` are also packaged adapters.
+`doctor` and `compatibility` check the declared package/adapter contract, using
+Runtime `6.2.0` when its version is omitted. `READY` / `CONFORMANT` means only
+that declaration is compatible: neither command observes Host capabilities,
+connects to Runtime, proves Runtime LLM readiness, or grants authority.
+Actual Host qualification requires independently observed capabilities and
+the real-Host acceptance gate. Unsupported Runtime versions, malformed stable
+versions and unknown packaged Hosts return a nonzero exit status.
 
 ## Use
 
@@ -59,7 +69,7 @@ entry to a Host-native secure-input capability.
 ## Upgrade, rollback, and remove
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.2.0
+npm install --global @evopilot/evolution-expert@2.2.1
 evopilot-expert doctor codex 6.2.0
 
 npm install --global @evopilot/evolution-expert@1.0.1
@@ -79,7 +89,7 @@ A clean reinstall repeats install plus `doctor` and then resumes from Runtime.
 The portable Skill is in `skill/SKILL.md`. Codex, Claude Code, WorkBuddy,
 generic Agent, and generic MCP projections are generated under `generated/`
 from the same Core and include a `bundle.json` lifecycle contract. A new Host
-uses `createExpertAdapter(host)`, declares the four required Host
+uses `createExpertAdapter(host)`, declares the five required Host
 capabilities, and passes `assertExpertAdapterConformance`; it does not require
 an Engine or Expert Core source branch.
 

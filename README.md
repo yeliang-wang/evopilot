@@ -16,7 +16,7 @@ It is not an agent runtime, prompt playground, generic code generator, or Harnes
 
 ## v6.2 First-Run LLM Readiness
 
-EvoPilot **v6.1.0 Controlled Lifecycle Evolution** and Evolution Expert **v2.1.0** are public. This source tree is implementing Runtime **v6.2.0** and Evolution Expert **v2.2.0** under independently approved Targets; no Candidate, acceptance, Host installation, publication, or Release is implied. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
+EvoPilot Runtime **v6.2.0** and Evolution Expert **v2.2.0** have immutable published artifacts. Expert 2.2.0 requires public CLI completion recovery; this source tree implements independently approved **Expert v2.2.1**, which is not yet accepted or released. Runtime 6.2.0 bytes remain unchanged. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
 
 ```text
 Project Definition + GoalTarget -> published HarnessProfile -> immutable HarnessBundle
@@ -142,15 +142,15 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-The latest published GitHub release is **v6.1.0**, paired with Evolution Expert **v2.1.0**. Runtime v6.2.0 and Evolution Expert v2.2.0 are under local implementation; no Candidate, acceptance, publication, Host installation, Secret operation, Suite change, or Cutover is implied by this source tree.
+Runtime **v6.2.0** and Expert **v2.2.0** are published immutable history. Their completed Candidate evidence does not prove the defective public Expert CLI. The separately approved **Expert v2.2.1 public CLI recovery** is under implementation; its Candidate acceptance and Release remain pending. No Host installation, Secret operation, Suite change or Cutover is implied by this source tree.
 
 The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a standalone v3.2 release. v4.0 keeps EvoPilot's strict read-only Harness-asset boundary while adding open YAML Lifecycle execution for project goals.
 
 Release evidence:
 
-- Latest published release notes: [docs/releases/6.1.0.md](docs/releases/6.1.0.md)
-- v6.2 implementation plan: [docs/releases/6.2.0.md](docs/releases/6.2.0.md)
-- Evolution Expert 2.2.0 plan: [docs/releases/evolution-expert-2.2.0.md](docs/releases/evolution-expert-2.2.0.md)
+- Published Runtime 6.2.0 evidence: [docs/releases/6.2.0.md](docs/releases/6.2.0.md)
+- Published Expert 2.2.0 history: [docs/releases/evolution-expert-2.2.0.md](docs/releases/evolution-expert-2.2.0.md)
+- Expert 2.2.1 recovery (not released): [docs/releases/evolution-expert-2.2.1.md](docs/releases/evolution-expert-2.2.1.md)
 - Previous release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
 - Release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)
 - Production user E2E evidence: [docs/reference/production-user-e2e.md](docs/reference/production-user-e2e.md)

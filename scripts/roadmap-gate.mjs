@@ -68,7 +68,7 @@ function validateRoadmap(value) {
   required(semver(value?.evolutionExpertPolicy?.currentWorkingVersion), "evolutionExpertPolicy.currentWorkingVersion must be SemVer");
   required(value?.evolutionExpertPolicy?.lockstepWithRuntime === false, "Evolution Expert must not be version-locked to the Runtime");
   required(value?.versionPolicy?.publishedBaseline === "6.1.0" && value?.versionPolicy?.currentWorkingVersion === "6.2.0", "Runtime Roadmap must preserve public 6.1.0 and bind current 6.2.0");
-  required(value?.evolutionExpertPolicy?.publishedBaseline === "2.1.0" && value?.evolutionExpertPolicy?.currentWorkingVersion === "2.2.0", "Evolution Expert Roadmap must preserve public 2.1.0 and bind current 2.2.0");
+  required(value?.evolutionExpertPolicy?.publishedBaseline === "2.1.0" && value?.evolutionExpertPolicy?.currentWorkingVersion === "2.2.1", "Evolution Expert Roadmap must preserve the completed 2.1.0 baseline and bind 2.2.1 recovery");
   required(value?.evolutionExpertPolicy?.mandatoryForOrdinaryHumans === true, "Evolution Expert must be mandatory for ordinary-human operation");
   required(value?.evolutionExpertPolicy?.canonicalProtocol === "MCP", "Evolution Expert ordinary-human protocol must be MCP");
   required(value?.humanInteractionProtocol?.canonicalOrdinaryHumanProtocol === "MCP", "MCP must be the canonical ordinary-human protocol");
@@ -85,6 +85,36 @@ function validateRoadmap(value) {
   required(value?.harnessGuidedExecutionPolicy?.perIterationRevalidation === true, "Harness binding must be revalidated before every Loop iteration");
   required(value?.harnessGuidedExecutionPolicy?.lifecycleMayReplaceHarness === false, "Lifecycle must not replace the Harness binding");
   required(value?.harnessGuidedExecutionPolicy?.lifecycleMayWeakenHarness === false, "Lifecycle must not weaken Harness obligations");
+  const semanticConvergence = value?.semanticDesignConvergencePolicy;
+  required(semanticConvergence?.schema === "evopilot-series-semantic-design-convergence/v1", "semantic design convergence schema is invalid");
+  required(semanticConvergence?.id === "evopilot-series-semantic-design-convergence" && semanticConvergence?.status === "PLANNED", "semantic design convergence must be the PLANNED central contract");
+  required(semanticConvergence?.contractOwner === "evopilot" && semanticConvergence?.authority === "CROSS_PROJECT_ACCEPTANCE_COORDINATION_ONLY", "semantic design convergence may coordinate acceptance only");
+  required(arrayEquals(semanticConvergence?.versionSet?.["evopilot-harness"]?.requiredVersionSequence, ["4.6.0", "4.7.0", "4.8.0"]), "semantic design convergence must preserve the Harness 4.6.0 to 4.8.0 sequence");
+  required(semanticConvergence?.versionSet?.["evopilot-harness"]?.terminalVersion === "4.8.0", "Harness 4.8.0 must be the terminal semantic design convergence version");
+  required(arrayEquals(semanticConvergence?.versionSet?.["evopilot-runtime"]?.requiredVersionSequence, ["6.3.0"]), "semantic design convergence must bind Runtime 6.3.0");
+  required(arrayEquals(semanticConvergence?.versionSet?.["evopilot-evolution-expert"]?.requiredVersionSequence, ["2.3.0"]), "semantic design convergence must bind Evolution Expert 2.3.0");
+  required(semanticConvergence?.revision === 2, "semantic design convergence must bind revision 2");
+  required(arrayEquals(Object.keys(semanticConvergence?.versionSet ?? {}).sort(), ["evopilot-evolution-expert", "evopilot-harness", "evopilot-runtime"]), "required convergence version set must contain exactly Harness, Runtime, and Expert; Dashboard is optional");
+  required(semanticConvergence?.versionSet?.["evopilot-runtime"]?.terminalVersion === "6.3.0" && semanticConvergence?.versionSet?.["evopilot-evolution-expert"]?.terminalVersion === "2.3.0", "terminal Runtime and Expert versions must remain 6.3.0 and 2.3.0");
+  for (const requirement of ["one independently approved Evolution Target bound to the current owning-repository Roadmap digest", "all current and inherited acceptance", "real end-to-end coverage for that exact product version", "impact closure and NO_REGRESSION", "exact Candidate, artifact, dependency, and evidence digests"]) {
+    required(semanticConvergence?.everyVersionRequires?.includes(requirement), `semantic design convergence is missing per-version requirement: ${requirement}`);
+  }
+  const terminalConvergence = semanticConvergence?.terminalCrossProductE2E;
+  required(terminalConvergence?.required === true, "terminal cross-product convergence E2E must be required");
+  required(Array.isArray(terminalConvergence?.journey) && terminalConvergence.journey.length === 6, "terminal cross-product convergence E2E must preserve exactly six journey stages");
+  required(terminalConvergence?.dashboardAbsentRequired === true && terminalConvergence?.journey?.includes("qualified third-party Agent Hosts drive Evolution Expert 2.3.0 through the governed MCP interaction without a running, installed, or upgraded Dashboard"), "terminal convergence must prove the Expert-driven journey with Dashboard absent");
+  const hostAcceptance = terminalConvergence?.hostAcceptance;
+  required(hostAcceptance?.entry === "EVOLUTION_EXPERT_ON_QUALIFIED_THIRD_PARTY_AGENT_HOST" && arrayEquals(hostAcceptance?.requiredHostCoverage, ["Codex", "designated-human WorkBuddy", "independent qualified Host"]), "terminal convergence must preserve Codex, designated-human WorkBuddy, and independent qualified Host coverage");
+  required(hostAcceptance?.exactHostVersionAdapterCoreAndModelRouteBindingsRequired === true && hostAcceptance?.independentHostRequiresValidatedAdapter === true && hostAcceptance?.hostEvidenceSubstitutionAllowed === false, "terminal Host acceptance requires exact bindings, qualified adapters, and non-substitutable evidence");
+  required(hostAcceptance?.workbuddyOperation === "human-operated-workbuddy/v1" && hostAcceptance?.workbuddyCompletion === "designated-human-range-completion/v1" && hostAcceptance?.workbuddyObservationOrArtifactCollectionAllowed === false, "WorkBuddy must retain designated-human operation and final range completion without observation or artifact collection");
+  required(terminalConvergence?.completeWhen === "ALL_REQUIRED_VERSION_ACCEPTANCE_AND_TERMINAL_CURRENT_INHERITED_IMPACT_NO_REGRESSION_PASS_AND_FAILED_PENDING_STALE_GENERIC_UNMAPPED_ARE_ZERO", "terminal convergence completion formula must fail closed");
+  required(terminalConvergence?.grantsReleaseAuthority === false, "terminal convergence E2E must not grant release authority");
+  required(semanticConvergence?.individualProductReleaseAuthorityRemainsIndependent === true, "individual product release authority must remain independent");
+  required(semanticConvergence?.dashboardNonBlockingForIndividualProductReleases === true && semanticConvergence?.dashboardRequiredForSeriesConvergenceClaim === false, "Dashboard must be optional and non-blocking for individual releases and the series convergence claim");
+  const optionalDashboard = semanticConvergence?.optionalClients?.["evopilot-dashboard"];
+  required(optionalDashboard?.role === "READ_ONLY_EVOPILOT_API_PROJECTION" && optionalDashboard?.independentlyVersioned === true && optionalDashboard?.optionalMilestoneVersion === "3.2.0", "Dashboard must remain an independently versioned optional read-only client");
+  required(optionalDashboard?.requiredForTerminalE2E === false && optionalDashboard?.failureBlocksSeriesConvergence === false && optionalDashboard?.ownTargetBrowserE2EAndReleaseRequiredWhenEvolved === true, "optional Dashboard must not block terminal E2E and must retain its own Target, browser E2E, and release governance");
+  required(arrayEquals(semanticConvergence?.excludedVersions, ["evopilot-runtime@6.4.0"]), "Runtime 6.4.0 must remain outside the semantic convergence baseline");
   required(value?.acceptancePortfolio?.functional === 21, "v5 acceptancePortfolio.functional must be 21");
   required(value?.acceptancePortfolio?.capability === 16, "v5 acceptancePortfolio.capability must be 16");
   required(value?.acceptancePortfolio?.documentation === 13, "v5 acceptancePortfolio.documentation must be 13");
@@ -279,24 +309,54 @@ function validateRoadmap(value) {
   validateV61PublicEvidence("governance/targets/evopilot-v6.1.0-controlled-lifecycle-evolution.json", "Runtime", "6.1.0", "v6.1.0", 6, "314ec9b01024706b932b19afdc71f4c2c8f8f6ea", true);
   validateV61PublicEvidence("governance/targets/evopilot-evolution-expert-v2.1.0-controlled-lifecycle-evolution.json", "Evolution Expert", "2.1.0", "evolution-expert-v2.1.0", 1, "56e4506664a962d6f09fd0a3077a82e13bf532ff", false);
   const readinessMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.2-first-run-llm-readiness");
-  required(readinessMilestone?.targetVersion === "6.2.0" && ["IN_PROGRESS", "COMPLETE"].includes(readinessMilestone?.status), "First-Run Governed LLM Readiness must be the IN_PROGRESS or COMPLETE Runtime 6.2.0 milestone");
+  required(readinessMilestone?.targetVersion === "6.2.0" && readinessMilestone?.status === "IN_PROGRESS", "First-Run Governed LLM Readiness must be the IN_PROGRESS Runtime 6.2.0 milestone");
   const expertReadinessMilestone = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-2.2-first-run-llm-setup");
-  required(expertReadinessMilestone?.targetVersion === "2.2.0" && ["IN_PROGRESS", "COMPLETE"].includes(expertReadinessMilestone?.status), "First-Run Governed LLM Setup Guide must be the IN_PROGRESS or COMPLETE Expert 2.2.0 milestone");
-  required((readinessMilestone?.status === "COMPLETE") === (expertReadinessMilestone?.status === "COMPLETE"), "Runtime 6.2 and Evolution Expert 2.2 must enter COMPLETE together");
-  if (readinessMilestone?.status === "COMPLETE" && expertReadinessMilestone?.status === "COMPLETE") {
-    validateV62TerminalCompletion(readinessMilestone, "Runtime", "6.2.0", "v6.2.0");
-    validateV62TerminalCompletion(expertReadinessMilestone, "Evolution Expert", "2.2.0", "evolution-expert-v2.2.0");
-    validateV62PublicEvidence("governance/targets/evopilot-v6.2.0-first-run-llm-readiness.json", "Runtime", "6.2.0", "v6.2.0", 6, true);
-    validateV62PublicEvidence("governance/targets/evopilot-evolution-expert-v2.2.0-first-run-llm-setup.json", "Evolution Expert", "2.2.0", "evolution-expert-v2.2.0", 1, false);
+  required(expertReadinessMilestone?.targetVersion === "2.2.0" && expertReadinessMilestone?.status === "IN_PROGRESS", "First-Run Governed LLM Setup Guide must be the IN_PROGRESS Expert 2.2.0 milestone");
+  const expertRecovery = value?.expert22CompletionRecoveryPolicy;
+  const recoveryMilestone = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-2.2.1-public-cli-completion-recovery");
+  required(expertRecovery?.schema === "evopilot-expert-public-cli-recovery/v1" && expertRecovery?.runtimeVersion === "6.2.0" && expertRecovery?.publishedExpertPredecessor === "2.2.0" && expertRecovery?.successorExpertVersion === "2.2.1", "Expert CLI recovery must bind unchanged Runtime 6.2.0 and immutable Expert 2.2.0 to successor 2.2.1");
+  required(expertRecovery?.successorMilestone === recoveryMilestone?.id && recoveryMilestone?.targetVersion === "2.2.1" && recoveryMilestone?.status === "IN_PROGRESS", "Expert 2.2.1 recovery must be the active IN_PROGRESS milestone without granting Target or Release authority");
+  required(expertReadinessMilestone?.publicationDisposition === "PUBLISHED_IMMUTABLE_REMEDIATION_REQUIRED" && expertReadinessMilestone?.completionRecoveryMilestone === recoveryMilestone?.id, "published Expert 2.2.0 must retain remediation-required disposition");
+  required(expertRecovery?.runtimeDisposition === "PUBLISHED_BYTES_PRESERVED_PENDING_COMPATIBLE_EXPERT_CLOSURE" && expertRecovery?.predecessorDisposition === "PUBLISHED_IMMUTABLE_REMEDIATION_REQUIRED", "recovery must not claim premature public completion");
+  required(expertRecovery?.runtimeProductBytesChangeAllowed === false && expertRecovery?.runtimeRebuildAllowed === false && expertRecovery?.predecessorOverwriteUnpublishOrRetagAllowed === false && expertRecovery?.historicalTargetBindingsRemainImmutable === true, "recovery must preserve Runtime bytes, immutable predecessor publication, and historical Target bindings");
+  const recoveryHistory = expertRecovery?.historicalAcceptance;
+  required(recoveryHistory?.resultDigest === "sha256:02d2b8a7d340e00bf9640309dec0cfbda1fcdb7954ca321e36434c41675db24e" && recoveryHistory?.criteriaTotal === 355 && recoveryHistory?.criteriaPassed === 355 && recoveryHistory?.crossTotal === 10 && recoveryHistory?.crossPassed === 10 && recoveryHistory?.activeSoakSeconds === 5400, "recovery must bind exact historical 355/355, 10/10, and 5400-second evidence");
+  required(recoveryHistory?.disposition === "IMMUTABLE_HISTORICAL_EVIDENCE_NOT_SUCCESSOR_PUBLIC_CLI_PROOF" && recoveryHistory?.reusePolicy === "EXPLICIT_ITEM_LEVEL_IMPACT_MAPPING_AND_EXACT_DIGEST_REVALIDATION_ONLY" && recoveryHistory?.blanketPassCarryForwardAllowed === false, "recovery inheritance requires item-level impact mapping and exact evidence revalidation without blanket PASS");
+  required(arrayEquals(expertRecovery?.requiredPublicCli, ["doctor", "compatibility"]) && arrayEquals(expertRecovery?.requiredHosts, ["codex", "claude-code", "workbuddy", "generic-agent", "generic-mcp"]) && expertRecovery?.requiredCoreSchema === "evopilot-evolution-expert-core/v3", "recovery must cover both public CLI commands, all five adapters, and Core v3");
+  required(expertRecovery?.cliSelfCheckProvesRealHostQualification === false, "static CLI self-check must not claim real Host qualification");
+  required(expertRecovery?.separateSuccessorTargetRequired === true && expertRecovery?.separateSuccessorReleaseAuthorizationRequired === true && expertRecovery?.newExpertCandidateRequired === true, "Expert recovery requires its own Target, Candidate, and separate Release authorization");
+  required(expertRecovery?.completionPolicy === "ALL_REQUIRED_SUCCESSOR_CURRENT_INHERITED_CROSS_PUBLIC_INSTALL_IMPACT_AND_NO_REGRESSION_PASS" && expertRecovery?.terminalConvergenceR2Unchanged === true && value?.semanticDesignConvergencePolicy?.revision === 2, "Expert recovery must retain complete successor acceptance and semantic convergence r2");
+  for (const obligation of ["omitted-version defaults", "real-Host qualification claims", "no current Host integration is reactivated", "no blanket PASS", "public npm integrity", "Runtime 6.2.0 bytes"]) {
+    required(recoveryMilestone?.acceptance?.some((item) => item.includes(obligation)), `Expert recovery is missing acceptance obligation: ${obligation}`);
   }
+  required(fs.readFileSync(path.join(root, "docs/roadmap/ROADMAP.md"), "utf8").includes("### Evolution Expert v2.2.1: Public CLI Completion Recovery"), "human Roadmap must declare Expert 2.2.1 recovery");
+  const semanticRuntimeMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.3-ontology-grounded-harness-powered-goal-loop");
+  required(semanticRuntimeMilestone?.targetVersion === "6.3.0" && semanticRuntimeMilestone?.status === "PLANNED", "Ontology-Grounded and Harness-Powered Goal Target Loop must be the PLANNED Runtime 6.3.0 milestone");
+  for (const requiredOutcome of ["ProjectSemanticBinding/v1", "SemanticExecutionBinding/v1", "SemanticContextResolver/v1", "SemanticContextSlice/v1", "compatible Harness-only path"]) {
+    required(semanticRuntimeMilestone?.outcomes?.some((item) => item.includes(requiredOutcome)), `Runtime 6.3 semantic milestone must preserve: ${requiredOutcome}`);
+  }
+  required(semanticRuntimeMilestone?.acceptance?.some((item) => item.includes("five top-level journey families")), "Runtime 6.3 must bind the five-family end-to-end acceptance policy");
+  const semanticExpertMilestone = milestones.find((milestone) => milestone.id === "evopilot-evolution-expert-2.3-project-semantic-guide");
+  required(semanticExpertMilestone?.targetVersion === "2.3.0" && semanticExpertMilestone?.status === "PLANNED", "Project Semantic and Dual-Binding Guide must be the PLANNED Expert 2.3.0 milestone");
+  required(semanticExpertMilestone?.acceptance?.some((item) => item.includes("stateless")), "Expert 2.3 must remain stateless and non-authoritative");
   const learningMilestone = milestones.find((milestone) => milestone.id === "evopilot-6.2-learning-interop");
-  required(learningMilestone?.targetVersion === "6.2.0" && learningMilestone?.status === "DEFERRED" && learningMilestone?.deferredInto === "evopilot-6.3-learning-interop", "Learning Interoperability must be deferred intact from v6.2.0 to v6.3.0");
-  const learningDestination = milestones.find((milestone) => milestone.id === "evopilot-6.3-learning-interop");
-  required(learningDestination?.targetVersion === "6.3.0" && learningDestination?.status === "PLANNED", "Learning Interoperability destination must be the PLANNED Runtime 6.3.0 milestone");
+  required(learningMilestone?.targetVersion === "6.2.0" && learningMilestone?.status === "DEFERRED" && learningMilestone?.deferredInto === "evopilot-6.4-learning-interop", "Learning Interoperability must be deferred intact from v6.2.0 to v6.4.0");
+  const learningDestination = milestones.find((milestone) => milestone.id === "evopilot-6.4-learning-interop");
+  required(learningDestination?.targetVersion === "6.4.0" && learningDestination?.status === "PLANNED", "Learning Interoperability destination must be the PLANNED Runtime 6.4.0 milestone");
   required(learningDestination?.objective === learningMilestone?.objective, "Learning Interoperability objective must be preserved intact during deferral");
   required(arrayEquals(learningDestination?.outcomes, learningMilestone?.outcomes), "Learning Interoperability outcomes must be preserved intact during deferral");
   required(arrayEquals(learningDestination?.acceptance, learningMilestone?.acceptance), "Learning Interoperability acceptance must be preserved intact during deferral");
   required(arrayEquals(learningDestination?.inheritedAcceptance, learningMilestone?.acceptance), "Learning Interoperability destination must explicitly inherit every source acceptance guarantee");
+  const semanticContracts = new Map((value?.crossProjectContracts ?? []).map((contract) => [contract.id, contract]));
+  for (const [id, direction] of [
+    ["project-ontology-artifact-supply/v1", "evopilot-harness -> evopilot"],
+    ["semantic-harness-compatibility/v1", "evopilot-harness -> evopilot"],
+    ["ontology-grounded-goal-loop/v1", "evopilot-harness -> evopilot"],
+    ["semantic-dashboard-projection/v1", "evopilot -> evopilot-dashboard"]
+  ]) {
+    const contract = semanticContracts.get(id);
+    required(contract?.status === "PLANNED" && contract?.direction === direction, `semantic cross-project contract is missing or invalid: ${id}`);
+  }
   for (const milestone of milestones.filter((item) => item.status === "DEFERRED")) {
     const destination = milestones.find((item) => item.id === milestone.deferredInto);
     required(typeof milestone.deferredInto === "string" && destination != null, `DEFERRED milestone must name a declared deferredInto milestone: ${milestone.id}`);
@@ -313,8 +373,8 @@ function validateRoadmap(value) {
   required(knownVersions.has(packageVersion), `package version ${packageVersion} is not declared by the Roadmap`);
   required(fs.existsSync(path.join(root, "docs/roadmap/ROADMAP.md")), "docs/roadmap/ROADMAP.md is missing");
   const roadmapDocument = fs.readFileSync(path.join(root, "docs/roadmap/ROADMAP.md"), "utf8");
-  for (const requiredText of ["### v6.2.0: First-Run Governed LLM Readiness", "### Evolution Expert v2.2.0: First-Run Governed LLM Setup Guide", "### v6.3.0: Learning Interoperability", "docs/assets/architecture/evopilot-agent-native-architecture.svg", "E2E-README-ARCHITECTURE"]) {
-    required(roadmapDocument.includes(requiredText), `human Roadmap is missing required v6.2/v2.2 projection: ${requiredText}`);
+  for (const requiredText of ["### v6.2.0: First-Run Governed LLM Readiness", "### Evolution Expert v2.2.0: First-Run Governed LLM Setup Guide", "### v6.3.0: Ontology-Grounded and Harness-Powered Goal Target Loop", "### Evolution Expert v2.3.0: Project Semantic and Dual-Binding Guide", "## EvoPilot-Series Final Semantic Design Convergence", "### v6.4.0: Learning Interoperability", "docs/assets/architecture/evopilot-agent-native-architecture.svg", "E2E-README-ARCHITECTURE"]) {
+    required(roadmapDocument.includes(requiredText), `human Roadmap is missing required current or planned projection: ${requiredText}`);
   }
   const agents = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
   required(agents.includes("Roadmap Gate"), "AGENTS.md must require the Roadmap Gate");
@@ -431,61 +491,6 @@ function validateRoadmap(value) {
       required(evidence?.coreSchema === "evopilot-evolution-expert-core/v2" && /^sha256:[0-9a-f]{64}$/.test(evidence?.coreDigest ?? ""), "Evolution Expert v2.1 Core evidence is invalid");
       required(evidence?.skill === "PRESENT" && evidence?.mcpCompatibility === "VERIFIED", "Evolution Expert v2.1 Skill and MCP evidence are required");
       required(evidence?.runtimeCompatibility === "6.1.0_CONFORMANT", "Evolution Expert v2.1 Runtime compatibility must be conformant");
-    }
-  }
-
-  function validateV62TerminalCompletion(milestone, label, version, releaseTag) {
-    const report = milestone?.completionEvidence;
-    required(report?.schema === "evopilot-approved-scheme-completion-report/v1", `${label} v6.2 terminal completion report is required`);
-    required(report?.total === 355 && report?.passed === 355, `${label} v6.2 terminal completion must be 355/355`);
-    for (const key of ["failed", "pending", "stale", "warning", "generic", "unmapped"]) required(report?.[key] === 0, `${label} v6.2 terminal completion requires ${key}=0`);
-    required(report?.version === version, `${label} v6.2 terminal completion version must be ${version}`);
-    required(report?.acceptanceCampaignTotal === 355 && report?.acceptanceCampaignPassed === 355, `${label} v6.2 terminal completion requires campaign 355/355`);
-    required(report?.crossAcceptanceTotal === 10 && report?.crossAcceptancePassed === 10, `${label} v6.2 terminal completion requires cross-acceptance 10/10`);
-    required(report?.exactInstalledCandidatePair === "VERIFIED", `${label} v6.2 terminal completion requires the exact installed Candidate pair VERIFIED`);
-    required(report?.acceptedCandidateCommit === "8ec8f6c4def3ec3d760c7f4ec64d06bf0bba8a5e", `${label} v6.2 terminal completion must bind the accepted Candidate commit`);
-    required(report?.acceptanceResultDigest === "sha256:02d2b8a7d340e00bf9640309dec0cfbda1fcdb7954ca321e36434c41675db24e", `${label} v6.2 terminal completion must bind the acceptance result digest`);
-    required(report?.impactClosure === "PASS", `${label} v6.2 terminal completion requires impact closure PASS`);
-    required(report?.noRegression === "PASSED", `${label} v6.2 terminal completion requires NO_REGRESSION PASSED`);
-    required(report?.firstRunLlmReadiness === "VERIFIED", `${label} v6.2 terminal completion requires first-run LLM readiness VERIFIED`);
-    required(report?.readmeArchitecture === "VERIFIED", `${label} v6.2 terminal completion requires README architecture VERIFIED`);
-    const prohibitedCounts = report?.prohibitedCounts;
-    required(prohibitedCounts && Object.values(prohibitedCounts).every((count) => count === 0), `${label} v6.2 terminal completion requires every prohibited count to be zero`);
-    required(report?.publicEvidenceRef === `https://github.com/yeliang-wang/evopilot/releases/tag/${releaseTag}`, `${label} v6.2 terminal completion requires exact public Release evidence`);
-  }
-
-  function validateV62PublicEvidence(relativeTargetPath, label, version, tag, packageCount, runtime) {
-    let target;
-    try {
-      target = JSON.parse(fs.readFileSync(path.join(root, relativeTargetPath), "utf8"));
-    } catch (error) {
-      required(false, `${label} v6.2 public evidence Target cannot be read: ${error.message}`);
-      return;
-    }
-    const evidence = target?.publicEvidence;
-    required(evidence?.schema === "evopilot-public-release-evidence/v1" && evidence?.status === "VERIFIED", `${label} v6.2 public evidence must be VERIFIED`);
-    required(evidence?.version === version && evidence?.tag === tag, `${label} v6.2 public evidence must bind ${tag}`);
-    required(evidence?.acceptedProductCommit === "8ec8f6c4def3ec3d760c7f4ec64d06bf0bba8a5e", `${label} v6.2 public evidence must bind the accepted Candidate commit`);
-    required(evidence?.githubRelease === `https://github.com/yeliang-wang/evopilot/releases/tag/${tag}`, `${label} v6.2 public evidence must bind the exact GitHub Release`);
-    const packages = Array.isArray(evidence?.npmPackages) ? evidence.npmPackages : evidence?.npmPackage ? [evidence.npmPackage] : [];
-    required(packages.length === packageCount && packages.every((item) => item.endsWith(`@${version}`)), `${label} v6.2 public evidence must bind all ${packageCount} npm package(s)`);
-    required(evidence?.packageIntegrity?.startsWith("VERIFIED_AGAINST_ACCEPTED_TARBALL"), `${label} v6.2 npm integrity evidence is required`);
-    required(evidence?.registrySignatures === "CRYPTOGRAPHICALLY_VERIFIED", `${label} v6.2 registry signatures must be verified`);
-    required(evidence?.provenance === "SLSA_V1_REKOR_INTEGRITY_MATCH_AND_INCLUSION_PROOF_VERIFIED", `${label} v6.2 provenance must be verified`);
-    required(evidence?.publicInstallation === "VERIFIED_FROM_EMPTY_DIRECTORY", `${label} v6.2 public installation must be verified`);
-    required(evidence?.productBytesRebuilt === false, `${label} v6.2 public evidence must prove no rebuild`);
-    required(evidence?.acceptanceResultDigest === "sha256:02d2b8a7d340e00bf9640309dec0cfbda1fcdb7954ca321e36434c41675db24e", `${label} v6.2 public evidence must bind the acceptance result`);
-    if (runtime) {
-      required(/^sha256:[0-9a-f]{64}$/.test(evidence?.ghcrManifestDigest ?? ""), "Runtime v6.2 public evidence must bind the exact GHCR digest");
-      required(evidence?.cliEntrypoints === "VERIFIED" && evidence?.installer === "VERIFIED_DRY_RUN_FROM_PUBLIC_ACCEPTED_MANIFEST", "Runtime v6.2 CLI and installer evidence are required");
-      required(evidence?.mcpAdapter === "VERIFIED", "Runtime v6.2 MCP adapter evidence is required");
-      required(evidence?.llmReadiness === "VERIFIED_SETUP_ONLY_TO_READY_AND_FAIL_CLOSED", "Runtime v6.2 LLM readiness evidence is required");
-      required(evidence?.readmeArchitecture === "VERIFIED_SVG_PNG_LINKS_TERMINOLOGY_AND_RENDERING", "Runtime v6.2 README architecture evidence is required");
-    } else {
-      required(evidence?.coreSchema === "evopilot-evolution-expert-core/v2" && evidence?.coreDigest === "sha256:a3f71d60254d53ff9de645712eb07437a421593e26ee3c0ec342c658edcdf213", "Evolution Expert v2.2 Core evidence is invalid");
-      required(evidence?.skill === "PRESENT" && evidence?.mcpCompatibility === "VERIFIED", "Evolution Expert v2.2 Skill and MCP evidence are required");
-      required(evidence?.runtimeCompatibility === "6.2.0_CONFORMANT", "Evolution Expert v2.2 Runtime compatibility must be conformant");
-      required(evidence?.firstRunSetup === "VERIFIED_SECRETREF_ONLY_NO_HIDDEN_FALLBACK", "Evolution Expert v2.2 first-run setup evidence is required");
     }
   }
 }

@@ -4,6 +4,13 @@ All notable changes to the independently versioned `@evopilot/evolution-expert` 
 
 ## Unreleased
 
+### 2.2.1
+
+- Fixed public `doctor` and `compatibility` to use the generated adapter's complete capability declaration and default Runtime 6.2.0.
+- Added fail-closed CLI checks for unsupported/malformed Runtime versions and unknown packaged Hosts; SDK Host extension remains supported.
+- Corrected public release verification to Core v3, with accepted-byte equality, five-adapter CLI regression and tamper rejection.
+- Added an Expert-only build path using the unchanged published Runtime contract. Candidate acceptance and publication are still pending.
+
 ### 2.2.0
 
 - Added MCP-first first-run Runtime LLM readiness setup, status, degradation, repair, and v6.1 migration guidance.

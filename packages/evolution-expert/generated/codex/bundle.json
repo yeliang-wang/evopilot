@@ -1,10 +1,10 @@
 {
   "schema": "evopilot-evolution-expert-host-integration-bundle/v1",
   "id": "evopilot-evolution-expert-codex",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "host": "codex",
-  "expertCoreDigest": "sha256:a3f71d60254d53ff9de645712eb07437a421593e26ee3c0ec342c658edcdf213",
-  "adapterDigest": "sha256:4be27b8761c30f50db2461ced0ba896b8e678a9201a8635d562ebb18f85a1fd6",
+  "expertCoreDigest": "sha256:e2aae3c0edc64c368b0d93c58fad5dbcef36031a529095b791758bc90fbfb6fd",
+  "adapterDigest": "sha256:adcfdb9fff4fb359683b18ac866fe7af0d504761b3b0bf38b29c3b321dd4ad7a",
   "runtimeCompatibility": ">=6.2.0 <7.0.0",
   "ordinaryHumanEntry": "EXPERT_OVER_MCP_ONLY",
   "lifecycle": {
@@ -18,5 +18,5 @@
     "help": "host://codex/evopilot-evolution-expert/help",
     "tutorial": "host://codex/evopilot-evolution-expert/tutorial"
   },
-  "digest": "sha256:7e991064c8f0171551b6e596d6c3d2caf88ed72d56e8464fc8053ede1df70785"
+  "digest": "sha256:1e0b7abf03030d5a210e451a2b61131442a7c396c964a0264767bb06d57b7889"
 }

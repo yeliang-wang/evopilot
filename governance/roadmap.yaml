@@ -3,12 +3,13 @@
   "roadmapFamily": "evopilot-series-agentic-evolution",
   "contractVersion": "4.0.0",
   "project": "evopilot",
-  "updatedAt": "2026-09-16",
+  "updatedAt": "2026-09-18",
   "ownership": {
     "owns": [
       "third-party project discovery, onboarding, and versioned EvolutionProjectDefinition",
       "project plus GoalTarget matching to published HarnessProfile metadata",
       "immutable published HarnessBundle and HarnessComponent execution closure binding",
+      "read-only discovery and immutable binding of published ProjectOntologyArtifactSet, ProjectOntologySkill, and minimum semantic context slices",
       "tenant/workspace-scoped governed Lifecycle Registry, immutable revisions, composition, binding, activation, rollback, and execution",
       "Harness-guided Goal planning, Target decomposition, Loop execution, recovery, evidence, acceptance, and project release decisions",
       "MCP-based Human Interaction Protocol presented to ordinary users only through the independently versioned Evolution Expert",
@@ -36,7 +37,8 @@
       "incompatible published Harness consumption contract",
       "replacement of an accepted product boundary",
       "incompatible Project Definition, Lifecycle, Human Interaction, Host, Runtime, acceptance, or release contract",
-      "replacement of the Harness-guided Goal Target Loop core"
+      "replacement of the Harness-guided Goal Target Loop core",
+      "removal of the Harness-only compatibility path or mandatory incompatible migration of every existing project"
     ]
   },
   "projectDefinitionPolicy": {
@@ -456,7 +458,7 @@
     "product": "evopilot-evolution-expert",
     "proposedPackage": "@evopilot/evolution-expert",
     "publishedBaseline": "2.1.0",
-    "currentWorkingVersion": "2.2.0",
+    "currentWorkingVersion": "2.2.1",
     "lockstepWithRuntime": false,
     "mandatoryForOrdinaryHumans": true,
     "canonicalProtocol": "MCP",
@@ -715,6 +717,110 @@
     "crossProductAcceptanceBinds": ["Runtime Candidate", "Expert Candidate", "Core digest", "Host Adapter digests", "protocol versions", "Host versions", "Harness Registry and Catalog digests", "HarnessExecutionBinding"],
     "terminalPublicVerification": ["GitHub Release", "npm", "GHCR", "installer", "public installation", "default-branch Deployments"]
   },
+  "expert22CompletionRecoveryPolicy": {
+    "schema": "evopilot-expert-public-cli-recovery/v1",
+    "runtimeVersion": "6.2.0",
+    "publishedExpertPredecessor": "2.2.0",
+    "successorExpertVersion": "2.2.1",
+    "successorMilestone": "evopilot-evolution-expert-2.2.1-public-cli-completion-recovery",
+    "runtimeDisposition": "PUBLISHED_BYTES_PRESERVED_PENDING_COMPATIBLE_EXPERT_CLOSURE",
+    "predecessorDisposition": "PUBLISHED_IMMUTABLE_REMEDIATION_REQUIRED",
+    "runtimeProductBytesChangeAllowed": false,
+    "runtimeRebuildAllowed": false,
+    "predecessorOverwriteUnpublishOrRetagAllowed": false,
+    "historicalAcceptance": {
+      "resultDigest": "sha256:02d2b8a7d340e00bf9640309dec0cfbda1fcdb7954ca321e36434c41675db24e",
+      "criteriaPassed": 355,
+      "criteriaTotal": 355,
+      "crossPassed": 10,
+      "crossTotal": 10,
+      "activeSoakSeconds": 5400,
+      "disposition": "IMMUTABLE_HISTORICAL_EVIDENCE_NOT_SUCCESSOR_PUBLIC_CLI_PROOF",
+      "reusePolicy": "EXPLICIT_ITEM_LEVEL_IMPACT_MAPPING_AND_EXACT_DIGEST_REVALIDATION_ONLY",
+      "blanketPassCarryForwardAllowed": false
+    },
+    "requiredPublicCli": ["doctor", "compatibility"],
+    "requiredHosts": ["codex", "claude-code", "workbuddy", "generic-agent", "generic-mcp"],
+    "requiredCoreSchema": "evopilot-evolution-expert-core/v3",
+    "cliSelfCheckProvesRealHostQualification": false,
+    "separateSuccessorTargetRequired": true,
+    "separateSuccessorReleaseAuthorizationRequired": true,
+    "newExpertCandidateRequired": true,
+    "completionPolicy": "ALL_REQUIRED_SUCCESSOR_CURRENT_INHERITED_CROSS_PUBLIC_INSTALL_IMPACT_AND_NO_REGRESSION_PASS",
+    "historicalTargetBindingsRemainImmutable": true,
+    "sourceReconciliation": "Before implementation, reconcile release evidence commit 19cf025f72b81c28a63fdb8d17bee5586758e3fa with the approved semantic design convergence r2 in an isolated checkout; preserve both sets of guards, tests, and existing user changes.",
+    "terminalConvergenceR2Unchanged": true
+  },
+  "semanticDesignConvergencePolicy": {
+    "schema": "evopilot-series-semantic-design-convergence/v1",
+    "id": "evopilot-series-semantic-design-convergence",
+    "revision": 2,
+    "status": "PLANNED",
+    "contractOwner": "evopilot",
+    "authority": "CROSS_PROJECT_ACCEPTANCE_COORDINATION_ONLY",
+    "versionSet": {
+      "evopilot-harness": {
+        "requiredVersionSequence": ["4.6.0", "4.7.0", "4.8.0"],
+        "terminalVersion": "4.8.0"
+      },
+      "evopilot-runtime": {
+        "requiredVersionSequence": ["6.3.0"],
+        "terminalVersion": "6.3.0"
+      },
+      "evopilot-evolution-expert": {
+        "requiredVersionSequence": ["2.3.0"],
+        "terminalVersion": "2.3.0"
+      }
+    },
+    "everyVersionRequires": [
+      "one independently approved Evolution Target bound to the current owning-repository Roadmap digest",
+      "all current and inherited acceptance",
+      "real end-to-end coverage for that exact product version",
+      "impact closure and NO_REGRESSION",
+      "exact Candidate, artifact, dependency, and evidence digests"
+    ],
+    "terminalCrossProductE2E": {
+      "required": true,
+      "prerequisites": "Every required version has independently passed its own Target, current and inherited acceptance, real end-to-end coverage, impact closure, and NO_REGRESSION against exact immutable artifacts.",
+      "journey": [
+        "evopilot-harness publishes the exact immutable 4.8.0 ontology, index, reasoning-profile, HarnessProfile, HarnessComponent, and HarnessBundle closure",
+        "EvoPilot Runtime 6.3.0 consumes the published closure read-only and creates an immutable ontology-and-Harness dual binding",
+        "a qualified external Agent Runtime executes the exact pendingExecution without gaining product authority",
+        "Evolution Expert 2.3.0 presents facts and collects typed inputs or genuine decisions without owning state or approval",
+        "qualified third-party Agent Hosts drive Evolution Expert 2.3.0 through the governed MCP interaction without a running, installed, or upgraded Dashboard",
+        "permission denial, restart, cross-Host resume, digest drift, rollback, failure routing, and inherited NO_REGRESSION all pass"
+      ],
+      "completeWhen": "ALL_REQUIRED_VERSION_ACCEPTANCE_AND_TERMINAL_CURRENT_INHERITED_IMPACT_NO_REGRESSION_PASS_AND_FAILED_PENDING_STALE_GENERIC_UNMAPPED_ARE_ZERO",
+      "dashboardAbsentRequired": true,
+      "hostAcceptance": {
+        "entry": "EVOLUTION_EXPERT_ON_QUALIFIED_THIRD_PARTY_AGENT_HOST",
+        "requiredHostCoverage": ["Codex", "designated-human WorkBuddy", "independent qualified Host"],
+        "exactHostVersionAdapterCoreAndModelRouteBindingsRequired": true,
+        "workbuddyOperation": "human-operated-workbuddy/v1",
+        "workbuddyCompletion": "designated-human-range-completion/v1",
+        "workbuddyObservationOrArtifactCollectionAllowed": false,
+        "independentHostRequiresValidatedAdapter": true,
+        "hostEvidenceSubstitutionAllowed": false
+      },
+      "grantsReleaseAuthority": false,
+      "failureRouting": "Route each defect to the owning product's separately governed repair or successor Evolution Target; never waive, silently republish, or authorize another product's release."
+    },
+    "individualProductReleaseAuthorityRemainsIndependent": true,
+    "dashboardNonBlockingForIndividualProductReleases": true,
+    "dashboardRequiredForSeriesConvergenceClaim": false,
+    "optionalClients": {
+      "evopilot-dashboard": {
+        "role": "READ_ONLY_EVOPILOT_API_PROJECTION",
+        "independentlyVersioned": true,
+        "optionalMilestoneVersion": "3.2.0",
+        "requiredForTerminalE2E": false,
+        "failureBlocksSeriesConvergence": false,
+        "ownTargetBrowserE2EAndReleaseRequiredWhenEvolved": true
+      }
+    },
+    "excludedVersions": ["evopilot-runtime@6.4.0"],
+    "exclusionReason": "Runtime 6.4.0 Learning Interoperability is a later independent capability and is not part of the semantic product-design convergence baseline."
+  },
   "intentPolicy": {
     "capabilityExpansionSignals": ["add", "build", "create", "implement", "introduce", "productize", "replace", "upgrade", "新增", "创建", "实现", "引入", "替换", "升级", "公共化", "产品化"],
     "compositeCoverage": {
@@ -734,6 +840,12 @@
       "id": "evopilot-evolution-governance",
       "description": "Repository and Codex workflow governance bound to reviewed evidence, this Roadmap, an approved Evolution Target, deterministic acceptance, and separately authorized Release without changing product behavior or boundaries.",
       "signals": ["evolution governance", "roadmap governance", "roadmap binding", "evolution target", "conversational orchestrator", "演进治理", "roadmap 绑定", "演进目标", "对话式编排"],
+      "allowsCapabilityExpansion": true
+    },
+    {
+      "id": "evopilot-series-semantic-design-convergence",
+      "description": "Coordinate exact per-version evidence and one terminal cross-product E2E for the accepted semantic product-design convergence version set without transferring product or release authority.",
+      "signals": ["final product design convergence", "semantic design convergence", "terminal cross-product convergence e2e", "whole-series convergence e2e", "最终产品设计收敛", "最终跨产品 e2e", "整体 e2e"],
       "allowsCapabilityExpansion": true
     }
   ],
@@ -1180,6 +1292,8 @@
       "id": "evopilot-evolution-expert-2.2-first-run-llm-setup",
       "product": "evopilot-evolution-expert",
       "status": "IN_PROGRESS",
+      "publicationDisposition": "PUBLISHED_IMMUTABLE_REMEDIATION_REQUIRED",
+      "completionRecoveryMilestone": "evopilot-evolution-expert-2.2.1-public-cli-completion-recovery",
       "targetVersion": "2.2.0",
       "releaseLine": "2.2.x",
       "objective": "Make one Agent-neutral Expert Core detect setup-only Runtime state and guide ordinary humans through provider choice, safe SecretRef creation, profile configuration, live preflight, explicit workspace-default confirmation, repair, rotation, and recovery without seeing raw credentials or owning Runtime state.",
@@ -1200,37 +1314,105 @@
       "signals": ["Evolution Expert 2.2", "first run llm setup expert", "secure first-run Expert setup", "secure provider setup over MCP", "llm readiness guide", "no echo secret setup", "首次运行数字人配置", "llm 配置向导"]
     },
     {
+      "id": "evopilot-evolution-expert-2.2.1-public-cli-completion-recovery",
+      "product": "evopilot-evolution-expert",
+      "status": "IN_PROGRESS",
+      "targetVersion": "2.2.1",
+      "releaseLine": "2.2.x",
+      "objective": "Repair public Expert doctor and compatibility CLI conformance and exact-byte Core v3 release verification for unchanged published Runtime 6.2.0, then close the affected public distribution evidence without rewriting Expert 2.2.0.",
+      "outcomes": [
+        "doctor and compatibility CLI derive their declared adapter capability contract from the selected generated adapter and default to the supported Runtime 6.2.0 line",
+        "Core v3, exact Core and adapter digests, SecretRef-only setup protocol, portable Skill, and package identity are checked on the exact installed Expert artifact",
+        "all five generated adapters receive CLI regression coverage; static package self-check never claims observed Host capability or Runtime readiness",
+        "independent Expert 2.2.1 package version, release mechanics, notes, and exact Candidate-to-public verification",
+        "item-level successor inheritance and impact map preserves valid prior evidence and reruns every affected Expert and cross-product criterion"
+      ],
+      "acceptance": [
+        "doctor and compatibility succeed for declared compatible adapters and Runtime 6.2.0, including omitted-version defaults, while unsupported Runtime versions and genuinely missing observed capabilities remain fail-closed",
+        "codex, claude-code, workbuddy, generic-agent, and generic-mcp adapters use the same generated required-capability contract without hard-coded drift or real-Host qualification claims",
+        "fresh isolated exact Expert Candidate installation passes CLI, Core v3, digest, Skill, protocol, and Runtime 6.2.0 cross-compatibility checks; no current Host integration is reactivated",
+        "every historical criterion is explicitly mapped to fresh affected evidence or digest-verified unaffected reuse; no blanket PASS, silent exclusion, or accepted-state rewriting is allowed",
+        "after separate Release authorization, public npm integrity, signatures, provenance, fresh installation, public doctor and compatibility, exact Core binding, impact closure, and NO_REGRESSION all pass",
+        "Runtime 6.2.0 bytes and Expert 2.2.0 immutable publication remain unchanged; semantic convergence r2 and independent product and release authority remain intact"
+      ],
+      "signals": ["Evolution Expert 2.2.1", "public cli completion recovery", "Expert doctor compatibility repair", "数字专家公开 CLI 修复", "Expert 2.2.1 完成恢复"],
+      "exclusions": ["Runtime product-byte changes or rebuild", "Expert 2.2.0 overwrite or retag", "Harness or Dashboard evolution", "legacy Suite Cutover", "WorkBuddy operation or observation", "production integration reactivation", "automatic publication or Release"]
+    },
+    {
       "id": "evopilot-6.2-learning-interop",
       "product": "evopilot-runtime",
       "status": "DEFERRED",
       "targetVersion": "6.2.0",
       "releaseLine": "6.2.x",
       "standaloneReleaseEligible": false,
-      "deferredInto": "evopilot-6.3-learning-interop",
+      "deferredInto": "evopilot-6.4-learning-interop",
       "objective": "Expose governed learning data to external training systems while keeping model training outside EvoPilot.",
       "outcomes": ["preference and reward dataset export", "external Trainer adapter", "trained-policy provenance and evaluation re-entry", "isolated cross-round retrieval"],
       "acceptance": ["exports are consented, redacted, versioned, and reproducible", "trainer results cannot bypass evaluation or promotion", "provider, model, dataset, and policy provenance is auditable"],
       "signals": ["rl trainer", "training adapter", "preference dataset", "reward dataset", "learning interop", "训练适配器", "偏好数据集"]
     },
     {
-      "id": "evopilot-6.3-learning-interop",
+      "id": "evopilot-6.3-ontology-grounded-harness-powered-goal-loop",
       "product": "evopilot-runtime",
       "status": "PLANNED",
       "targetVersion": "6.3.0",
       "releaseLine": "6.3.x",
+      "objective": "Ground compatible new projects in one published immutable project business semantic map while retaining one eligible published immutable HarnessBundle as the professional execution contract for every Goal Target Loop.",
+      "outcomes": [
+        "read-only discovery and validation of ProjectOntologyArtifactSet and ProjectOntologySkill through Registry and Catalog supply",
+        "ProjectSemanticBinding/v1 and semantic compatibility evaluation between one project ontology and published HarnessBundles",
+        "immutable SemanticExecutionBinding/v1 pinning Project, GoalTarget, ontology ArtifactSet, resolved snapshot, Skill, HarnessBundle closure, LifecycleRevision, OntologyReasoningProfile, resolver, Runtime LLM profile, Host, Agent Runtime, environment, policy, authority, permissions, and evidence contract",
+        "read-only SemanticContextResolver/v1 producing a digest-bound minimum SemanticContextSlice/v1 for each exact pendingExecution",
+        "separate non-mutating proposal handoffs for Ontology gaps and Harness capability gaps",
+        "compatible Harness-only path for existing projects and dual binding by default for new projects when a compatible published Project Ontology exists"
+      ],
+      "acceptance": [
+        "both business-semantic constraints and Harness professional validators pass before a Goal step or Loop completes",
+        "live mutable external semantic systems never gain active-run authority and external semantics are snapshotted, grounded, reviewed, published, and digest-bound before use",
+        "a minimal reviewed project semantic map may satisfy binding without requiring a complete enterprise ontology",
+        "EvoPilot does not author, approve, publish, or mutate Ontology or Harness assets",
+        "five top-level journey families cover semantic-map discovery, gap and successor handling, ArtifactSet and Skill compatibility, one real dual-bound Goal Target Loop, immutable slicing and failure recovery, with all independent variants and NO_REGRESSION retained"
+      ],
+      "signals": ["ontology grounded goal loop", "project semantic binding", "semantic execution binding", "semantic context slice", "dual bound goal loop", "project business semantic map", "本体驱动 goal loop", "项目业务语义地图", "语义执行绑定"]
+    },
+    {
+      "id": "evopilot-evolution-expert-2.3-project-semantic-guide",
+      "product": "evopilot-evolution-expert",
+      "status": "PLANNED",
+      "targetVersion": "2.3.0",
+      "releaseLine": "2.3.x",
+      "objective": "Guide ordinary users through project semantic availability, ontology and Harness compatibility, dual binding, semantic slices, successors, migration, and rollback over Runtime-owned MCP contracts without owning truth or authority.",
+      "outcomes": [
+        "one Agent-neutral Core and generated Host adapters for project semantic and dual-binding guidance",
+        "ordinary-human presentation of project business semantic map, business field, product or system type, semantic gap, and execution capability",
+        "Runtime-owned handling of gaps, conflicts, binding review, successor selection, migration, and rollback"
+      ],
+      "acceptance": [
+        "the Expert remains stateless and cannot own, fabricate, select, approve, publish, activate, or mutate semantic assets, Harness assets, bindings, permissions, or Runtime state",
+        "all Hosts preserve the same Runtime facts, stop conditions, and authority boundaries",
+        "the Runtime and Expert share the five user-visible journey families while retaining independent assertions and evidence"
+      ],
+      "signals": ["Evolution Expert 2.3", "project semantic guide", "dual binding guide", "项目语义数字人", "双绑定向导"]
+    },
+    {
+      "id": "evopilot-6.4-learning-interop",
+      "product": "evopilot-runtime",
+      "status": "PLANNED",
+      "targetVersion": "6.4.0",
+      "releaseLine": "6.4.x",
       "inheritsMilestone": "evopilot-6.2-learning-interop",
       "inheritedAcceptance": ["exports are consented, redacted, versioned, and reproducible", "trainer results cannot bypass evaluation or promotion", "provider, model, dataset, and policy provenance is auditable"],
       "objective": "Expose governed learning data to external training systems while keeping model training outside EvoPilot.",
       "outcomes": ["preference and reward dataset export", "external Trainer adapter", "trained-policy provenance and evaluation re-entry", "isolated cross-round retrieval"],
       "acceptance": ["exports are consented, redacted, versioned, and reproducible", "trainer results cannot bypass evaluation or promotion", "provider, model, dataset, and policy provenance is auditable"],
-      "signals": ["Runtime 6.3 learning interoperability", "rl trainer", "training adapter", "preference dataset", "reward dataset", "learning interop", "训练适配器", "偏好数据集"]
+      "signals": ["Runtime 6.4 learning interoperability", "rl trainer", "training adapter", "preference dataset", "reward dataset", "learning interop", "训练适配器", "偏好数据集"]
     }
   ],
   "transitionPolicies": [
     {
-      "id": "v6.2-learning-to-v6.3-inherited-transition",
+      "id": "v6.2-learning-to-v6.4-inherited-transition",
       "sourceMilestone": "evopilot-6.2-learning-interop",
-      "destinationMilestone": "evopilot-6.3-learning-interop",
+      "destinationMilestone": "evopilot-6.4-learning-interop",
       "sourceReleaseDisposition": "DEFERRED",
       "preserveSourceCodeAndEvidence": true,
       "deleteSourceGuarantees": false,
@@ -1394,6 +1576,30 @@
       "status": "PLANNED",
       "direction": "evopilot-runtime <-> evopilot-evolution-expert",
       "rule": "The independently versioned mandatory ordinary-human Expert uses MCP and Runtime-owned interaction contracts with exact compatibility bindings without owning Runtime or Harness truth."
+    },
+    {
+      "id": "project-ontology-artifact-supply/v1",
+      "status": "PLANNED",
+      "direction": "evopilot-harness -> evopilot",
+      "rule": "EvoPilot reads immutable ProjectOntologyArtifactSet and ProjectOntologySkill assets without mutation authority."
+    },
+    {
+      "id": "semantic-harness-compatibility/v1",
+      "status": "PLANNED",
+      "direction": "evopilot-harness -> evopilot",
+      "rule": "EvoPilot evaluates one HarnessBundle's semantic requirements against one exact published ontology snapshot without turning compatibility into Harness Eligibility or asset approval."
+    },
+    {
+      "id": "ontology-grounded-goal-loop/v1",
+      "status": "PLANNED",
+      "direction": "evopilot-harness -> evopilot",
+      "rule": "EvoPilot pins semantic and Harness assets in one SemanticExecutionBinding and supplies only digest-bound semantic slices to qualified Agent Runtimes."
+    },
+    {
+      "id": "semantic-dashboard-projection/v1",
+      "status": "PLANNED",
+      "direction": "evopilot -> evopilot-dashboard",
+      "rule": "Dashboard renders EvoPilot-owned API projections and owns no source asset or Runtime state."
     }
   ],
   "documentationReference": {

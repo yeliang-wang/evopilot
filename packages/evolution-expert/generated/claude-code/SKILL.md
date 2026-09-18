@@ -5,8 +5,8 @@ description: Generated claude-code adapter for the independently versioned EvoPi
 
 # EvoPilot Evolution Expert — claude-code
 
-- Adapter: `evopilot-evolution-expert-claude-code@2.2.0`
-- Core: `sha256:a3f71d60254d53ff9de645712eb07437a421593e26ee3c0ec342c658edcdf213`
+- Adapter: `evopilot-evolution-expert-claude-code@2.2.1`
+- Core: `sha256:e2aae3c0edc64c368b0d93c58fad5dbcef36031a529095b791758bc90fbfb6fd`
 - Protocol: `2.2`
 
 ## Required behavior

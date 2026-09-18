@@ -2,8 +2,8 @@
   "schema": "evopilot-evolution-expert-adapter/v1",
   "id": "evopilot-evolution-expert-codex",
   "host": "codex",
-  "version": "2.2.0",
-  "coreDigest": "sha256:a3f71d60254d53ff9de645712eb07437a421593e26ee3c0ec342c658edcdf213",
+  "version": "2.2.1",
+  "coreDigest": "sha256:e2aae3c0edc64c368b0d93c58fad5dbcef36031a529095b791758bc90fbfb6fd",
   "protocolVersion": "2.2",
   "requiredCapabilities": [
     "structured-tool-results",
@@ -43,5 +43,5 @@
     "ordinary-human-cli-or-http-fallback",
     "execute-source-work"
   ],
-  "digest": "sha256:4be27b8761c30f50db2461ced0ba896b8e678a9201a8635d562ebb18f85a1fd6"
+  "digest": "sha256:adcfdb9fff4fb359683b18ac866fe7af0d504761b3b0bf38b29c3b321dd4ad7a"
 }

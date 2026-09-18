@@ -11,6 +11,14 @@ import { llmSetupProtocol } from "../packages/server/dist/index.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const failures = [];
+const roadmap = readJson("governance/roadmap.yaml");
+const recovery = roadmap.expert22CompletionRecoveryPolicy;
+const activeExpertVersion = readJson("packages/evolution-expert/package.json").version;
+const supportedExpertVersion = activeExpertVersion === "2.2.0" ? "2.2.0" : recovery?.successorExpertVersion;
+if (activeExpertVersion !== "2.2.0") {
+  const successor = readJson("governance/targets/evopilot-evolution-expert-v2.2.1-public-cli-completion-recovery.json");
+  if (successor.approvals?.target?.decision !== "APPROVED" || successor.roadmapBindings?.[0]?.targetVersion !== activeExpertVersion || successor.roadmapBindings?.[0]?.matchedMilestone !== recovery?.successorMilestone) failures.push("Expert recovery does not bind its approved successor Target");
+}
 
 for (const [relative, expected] of [
   ["package.json", "6.2.0"],
@@ -19,7 +27,7 @@ for (const [relative, expected] of [
   ["packages/adapter-mcp/package.json", "6.2.0"],
   ["packages/cli/package.json", "6.2.0"],
   ["packages/create-evopilot/package.json", "6.2.0"],
-  ["packages/evolution-expert/package.json", "2.2.0"]
+  ["packages/evolution-expert/package.json", supportedExpertVersion]
 ]) {
   const actual = readJson(relative).version;
   if (actual !== expected) failures.push(`${relative}: ${actual} != ${expected}`);

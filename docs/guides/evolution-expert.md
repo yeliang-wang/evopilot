@@ -1,6 +1,6 @@
 # EvoPilot Evolution Expert
 
-Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. Expert `2.2.0` speaks Human Interaction Protocol `2.2` to Runtime `>=6.2.0 <7.0.0` exclusively through MCP. Runtime and declarative resource versions remain independent.
+Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. Expert `2.2.1` (currently under implementation, not released) preserves Human Interaction Protocol `2.2` for Runtime `>=6.2.0 <7.0.0` exclusively through MCP. It repairs the public CLI of immutable predecessor 2.2.0. Runtime and declarative resource versions remain independent.
 
 One immutable Core generates Host Integration Bundles for Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP. Each bundle contains the same Core and Adapter digests plus install, doctor, health, version, upgrade, rollback, removal, help, and tutorial lifecycle metadata.
 
@@ -43,10 +43,13 @@ CLI, HTTP, CI, events, and webhooks remain available to administrators and machi
 
 ## Package and Host lifecycle
 
-Source implementation may verify the package without installing it into a real Host:
+After separate Release authorization and verified publication, administrators
+may use the following package-only diagnostic commands. Before publication,
+install only the exact authorized Candidate tarball in an isolated directory;
+do not request unpublished 2.2.1 from npm or activate current Host integrations.
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.2.0
+npm install --global @evopilot/evolution-expert@2.2.1
 evopilot-expert version
 evopilot-expert doctor codex 6.2.0
 evopilot-expert tutorial
@@ -54,6 +57,12 @@ evopilot-expert tutorial
 
 Use `claude-code`, `workbuddy`, `generic-agent`, or `generic-mcp` for other generated bundles. Upgrade, rollback, and removal affect only the Expert installation. They must not mutate Runtime bytes or durable Runtime objects. After restart or Host transfer, the Expert reloads the current object from Runtime instead of reconstructing state from conversation history.
 
+CLI `doctor` and `compatibility` default to Runtime `6.2.0` and check declared
+adapter capabilities, not observed Host capabilities or live Runtime readiness.
+Their `READY`/`CONFORMANT` result grants no operational or release authority.
+Malformed or incompatible stable versions and unknown packaged Hosts fail with
+a nonzero exit status. The SDK remains extensible to independently qualified Hosts.
+
 ## Third-party Host
 
-An integration author generates an Adapter and Host Integration Bundle from the public Core, exposes structured tool results, MCP, human-decision presentation, and Runtime-state resume, then passes conformance without changing Runtime or Expert Core source. Host qualification is evidence only; it is not Candidate acceptance or Release authorization.
+An integration author generates an Adapter and Host Integration Bundle from the public Core, exposes structured tool results, MCP, human-decision presentation, Runtime-state resume and Host-native secure secret input, then passes conformance without changing Runtime or Expert Core source. Host qualification is evidence only; it is not Candidate acceptance or Release authorization.

@@ -155,7 +155,13 @@ export function validateEvolutionExpertCandidate(candidate) {
   requireLiteral('EXPECTED_TARGET_PREFIX="evopilot-evolution-expert-v$VERSION"', "Expert Candidate formation must derive the Target prefix from the independent Expert package version");
   requireLiteral('[[ "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX" || "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX"-* ]]', "Expert Candidate formation must bind the Target id or qualified Target id to the independent Expert package version");
   requireMatch(/packages\/evolution-expert\/package\.json/, "Expert Candidate formation must bind the independent Expert package version");
-  requireMatch(/npm run check/, "Expert Candidate formation must run the full repository check");
+  requireMatch(/materialize-expert-runtime-contract\.mjs/, "Expert Candidate must materialize the exact published Runtime contract without rebuilding it");
+  requireMatch(/npm run build:expert-only -w @evopilot\/evolution-expert/, "Expert Candidate must build only its independent release unit");
+  requireMatch(/node --test tests\/unit\/\*\.test\.mjs/, "Expert Candidate must run all unit regressions including CLI and public verifier");
+  requireMatch(/verify-expert-recovery-plan\.mjs/, "Expert Candidate must verify complete item-level acceptance mapping");
+  requireMatch(/materialize-expert-runtime-fixtures\.mjs/, "Expert Candidate must preserve Runtime tests without rebuilding Runtime");
+  rejectMatch(/npm run check|npm run build(?:\s|$)/, "Expert recovery must not rebuild published Runtime");
+  rejectMatch(/verify:distribution|verify-distribution-readiness\.mjs/, "Expert recovery must not invoke distribution checks that rebuild Runtime");
   requireMatch(/npm run release:ready/, "Expert Candidate formation must pass repository release readiness");
   requireMatch(/npm run verify:release-pipeline/, "Expert Candidate formation must pass the combined release-pipeline contract");
   requireMatch(/npm run evolution-expert:release:artifact/, "Expert Candidate formation must build the Expert release set");
@@ -210,7 +216,7 @@ export function validateEvolutionExpertRelease(workflow) {
   requireLiteral('^evopilot-evolution-expert-v[0-9]+\\.[0-9]+\\.[0-9]+(-[a-z0-9][a-z0-9.-]*)?$', "Expert promotion must accept only the versioned Expert Target namespace and an optional lowercase qualifier");
   requireLiteral('EXPECTED_TARGET_PREFIX="evopilot-evolution-expert-v$VERSION"', "Expert promotion must derive the Target prefix from the independent Expert package version");
   requireLiteral('[[ "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX" || "$TARGET_ID" == "$EXPECTED_TARGET_PREFIX"-* ]]', "Expert promotion must bind the Target id or qualified Target id to the independent Expert package version");
-  requireLiteral('target.release?.versions?.["evopilot-evolution-expert"]', "Expert promotion must validate the independent Expert version key");
+  requireLiteral('require("./scripts/expert-release-version.cjs").verifyExpertReleaseVersion(target, version)', "Expert promotion must validate the independent Expert product and Target version");
   requireMatch(/environment:\s*release/, "Expert GitHub promotion must use the protected release environment");
   requireMatch(/environment:\s*npm/, "Expert npm promotion must use the dedicated npm environment");
   requireMatch(/ref:\s*\$\{\{ github\.sha \}\}/, "Expert promotion mechanics must come from the workflow commit");
@@ -240,6 +246,8 @@ export function validateEvolutionExpertRelease(workflow) {
   requireMatch(/skill\/SKILL\.md/, "Expert npm verification must verify the portable Skill");
   requireMatch(/generated\/codex\/adapter\.json/, "Expert npm verification must verify the Codex adapter");
   requireMatch(/conformanceStatus.*CONFORMANT/, "Expert npm verification must prove Runtime compatibility");
+  requireMatch(/evopilot-evolution-expert-core\/v3/, "Expert npm verification must validate Core v3");
+  requireMatch(/verify-expert-public-install\.mjs/, "Expert npm verification must bind installed bytes and all five adapters to the accepted tarball");
   for (const forbidden of [/npm ci/, /npm run build/, /npm pack/, /evolution-expert:release:artifact/, /docker\/build-push-action/]) {
     rejectMatch(forbidden, `Expert promotion must not rebuild accepted bytes (${forbidden.source})`);
   }

@@ -31,6 +31,10 @@ test("Evolution Expert Candidate pipeline binds its independent version and neve
   const unsafe = validateEvolutionExpertCandidate(`${workflow}\n      - run: npm publish\n`);
   assert.equal(unsafe.status, "FAIL");
   assert.ok(unsafe.failures.some((failure) => failure.includes("must not publish")));
+  assert.equal(validateEvolutionExpertCandidate(`${workflow}\n      - run: npm run check\n`).status, "FAIL");
+  assert.equal(validateEvolutionExpertCandidate(`${workflow}\n      - run: npm run verify:distribution\n`).status, "FAIL");
+  assert.equal(validateEvolutionExpertCandidate(workflow.replace("materialize-expert-runtime-contract.mjs", "missing-contract.mjs")).status, "FAIL");
+  assert.equal(validateEvolutionExpertCandidate(workflow.replace("node --test tests/unit/*.test.mjs", "node --test tests/unit/one.test.mjs")).status, "FAIL");
 
   const legacyOnly = validateEvolutionExpertCandidate(workflow.replace(
     "^evopilot-evolution-expert-v[0-9]+\\.[0-9]+\\.[0-9]+(-[a-z0-9][a-z0-9.-]*)?$",
@@ -52,8 +56,10 @@ test("Evolution Expert GA pipeline promotes accepted bytes through independent r
   const result = validateEvolutionExpertRelease(workflow);
   assert.equal(result.status, "PASS", JSON.stringify(result.failures));
 
-  assert.match(workflow, /manifest\.schema !== "evopilot-evolution-expert-core\/v2"/);
-  assert.doesNotMatch(workflow, /manifest\.schema !== "evopilot-evolution-expert-core\/v1"/);
+  assert.match(workflow, /manifest\.schema !== "evopilot-evolution-expert-core\/v3"/);
+  assert.doesNotMatch(workflow, /manifest\.schema !== "evopilot-evolution-expert-core\/v[12]"/);
+  assert.equal(validateEvolutionExpertRelease(workflow.replace("evopilot-evolution-expert-core/v3", "evopilot-evolution-expert-core/v2")).status, "FAIL");
+  assert.equal(validateEvolutionExpertRelease(workflow.replace("verify-expert-public-install.mjs", "missing-public-verifier.mjs")).status, "FAIL");
 
   const rebuilt = validateEvolutionExpertRelease(`${workflow}\n      - run: npm pack -w @evopilot/evolution-expert\n`);
   assert.equal(rebuilt.status, "FAIL");
