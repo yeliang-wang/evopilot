@@ -1,0 +1,16 @@
+{
+  "schema":"evopilot-expert-host-e2e-corpus/v1",
+  "expertVersion":"2.2.1","runtimeVersion":"6.2.0","targetRevision":2,
+  "targetAuthorizationDigest":"sha256:28c4e8b7534d3ebd32c928d5301414833950eacbe3ec66dbfc372130a4c2f6a7",
+  "status":"NOT_RUN","localSyntheticIsAcceptance":false,
+  "cases":[
+    {"id":"RC01-M3","covers":["HI-F01"],"steps":["exact Candidate fresh install","manifest/native bytes verification","isolated install and doctor","missing executable and unsupported-platform rejection"],"evidence":["candidate-binding","installation","native-digest","doctor","tamper-negative"]},
+    {"id":"RC02-M3","covers":["HI-F01","HI-C03"],"steps":["verify supplementary manifest independently","verify unchanged Core and five generated Adapter contracts","verify frozen Runtime bytes","verify r1 lineage preserved"],"evidence":["package-inventory","core-adapter-digests","runtime-digests","lineage"]},
+    {"id":"RC03-M3","covers":["HI-F02","HI-F03","HI-F04","HI-F05","HI-C01","HI-C02"],"steps":["qualified actual Host exact permission observer","non-debug isolated deployment inspection","native exact-scope confirmation","private Runtime login and Secret handoff","existing MCP Profile and live preflight","explicit default-binding decision and Runtime READY","deny/cancel/timeout/close/crash/restart/duplicate/collision/wrong-scope/auth/response-tamper negatives","scan all named observed surfaces"],"evidence":["host-qualification","permission-observation","deployment-inspection","native-invocation","private-handoff","runtime-audit","profile-preflight","binding-decision","runtime-readiness","fault-matrix","surface-scan"]},
+    {"id":"RC04-M3","covers":["HI-C03"],"steps":["all 18 current criteria","item-specific 365 inherited/cross criteria","changed-input impact closure","5400-second active soak","NO_REGRESSION"],"evidence":["current-matrix","inherited-cross-matrix","impact-closure","active-soak","no-regression"]},
+    {"id":"RC05-M3","covers":["HI-F01","HI-C03"],"steps":["isolated upgrade and rollback","recoverable component removal","preserved ledger and unrelated state","no unauthorized Candidate or Release effects"],"evidence":["upgrade","rollback","removal","unrelated-state","authority-boundaries"]}
+  ],
+  "requiredObservedSurfaces":["native-ui-echo","conversation-and-model-requests","Expert-output","MCP-arguments-and-results","process-argv","ordinary-environment","component-stdout-stderr","Host-logs","unintended-files"],
+  "workBuddyClosure":"designated-human-range-completion/v1",
+  "campaignPolicy":"separate-exact-Candidate-and-campaign-authorization-required"
+}

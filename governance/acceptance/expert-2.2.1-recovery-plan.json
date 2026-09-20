@@ -2,8 +2,8 @@
   "schema": "evopilot-expert-recovery-acceptance-plan/v1",
   "target": "governance/targets/evopilot-evolution-expert-v2.2.1-public-cli-completion-recovery.json",
   "targetId": "evopilot-evolution-expert-v2.2.1-public-cli-completion-recovery",
-  "targetRevision": 1,
-  "targetAuthorizationDigest": "sha256:29cd27518de52b619e7b5a1bda66e027aeb1ce075d092b4d6ee08c1f30004487",
+  "targetRevision": 2,
+  "targetAuthorizationDigest": "sha256:28c4e8b7534d3ebd32c928d5301414833950eacbe3ec66dbfc372130a4c2f6a7",
   "roadmapDigest": "sha256:f8a6101e517e51ac49039ab381025c24f6602965a879e649f27d58c3027ad836",
   "status": "PREPARED_NOT_EXECUTION_AUTHORIZED",
   "runtimeVersion": "6.2.0",
@@ -109,6 +109,82 @@
       "id": "EX221-C05",
       "requiredEvidence": "Boundary negatives, unchanged r2 digest-bound policy comparison, no Runtime rebuild or predecessor mutation, environment inventory and approval-stop tests.",
       "cases": [
+        "RC05"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-F01",
+      "requiredEvidence": "Artifact inventory and hash negatives; clean install/doctor/upgrade/rollback/removal in isolated roots; unchanged Core/Adapter contract checks.",
+      "cases": [
+        "RC01",
+        "RC02",
+        "RC05"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-F02",
+      "requiredEvidence": "Unit/mock permission and replay negatives plus separately authorized actual Host invocation, native UI identity and protected private-channel observations; no invisible PTY substitute.",
+      "cases": [
+        "RC03"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-F03",
+      "requiredEvidence": "Exact installed pair private-handoff evidence, wrong destination/scope/auth and response tamper negatives, redacted Runtime resource/audit readback and output-surface scans; no direct store writes.",
+      "cases": [
+        "RC03"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-F04",
+      "requiredEvidence": "Deterministic fault-injection matrix and installed integration variants covering pre/post-send windows, id collision, duplicate Host request, uncertain response, exact scoped readback, refusal to guess and terminal process cleanup.",
+      "cases": [
+        "RC03"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-F05",
+      "requiredEvidence": "Installed exact Host-to-READY success and preflight/binding refusal/degradation/restart variants with Runtime-owned request ids, resource digests and explicit human decisions.",
+      "cases": [
+        "RC03"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-C01",
+      "requiredEvidence": "Fresh exact Candidate-bound original RC03 variants plus the new secure-path variant; actual independent Host evidence and new required WorkBuddy range declaration, never automated WorkBuddy observation or machine substitution.",
+      "cases": [
+        "RC03"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-C02",
+      "requiredEvidence": "Independent finite leak scanners and adversarial controls across named observed surfaces, actual UI/terminal observations, zero real credentials in local fixtures; scoped Runtime encrypted storage is the intended exception.",
+      "cases": [
+        "RC03"
+      ],
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-C03",
+      "requiredEvidence": "Mechanical r1-to-r2 preservation proof, full changed-input impact closure and inherited matrix, 5400-second soak obligation, NO_REGRESSION, removal/rollback negatives and public-package rehearsal; no source or mock E2E substitution.",
+      "cases": [
+        "RC02",
+        "RC04",
         "RC05"
       ],
       "status": "PENDING",
@@ -5410,6 +5486,32 @@
           "requiredEvidence": "Exact Candidate/Runtime install binding, isolated environment and qualified transport; criterion-specific executable assertions and evidence references for: Unsupported version/unknown Host/missing observed capability negatives",
           "status": "PENDING",
           "evidenceRefs": []
+        },
+        {
+          "id": "RC01-M3",
+          "scenario": "Maintained component isolated install/doctor and supported-platform detection",
+          "coversAcceptanceIds": [
+            "HI-F01"
+          ],
+          "hosts": [
+            "Codex",
+            "Claude Code",
+            "independent qualified Host"
+          ],
+          "prohibitedEffects": [
+            "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
+            "No overwrite, unpublish, retag, or rewrite of Expert 2.2.0, historical Targets, approvals, evidence or published assets.",
+            "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
+            "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
+            "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
+            "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+            "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+            "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+            "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
+          ],
+          "requiredEvidence": "Artifact inventory and hash negatives; clean install/doctor/upgrade/rollback/removal in isolated roots; unchanged Core/Adapter contract checks.",
+          "status": "PENDING",
+          "evidenceRefs": []
         }
       ],
       "status": "PENDING",
@@ -5464,6 +5566,33 @@
             "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1."
           ],
           "requiredEvidence": "Exact Candidate/Runtime install binding, isolated environment and qualified transport; criterion-specific executable assertions and evidence references for: Wrong schema/version/digest tamper rejection and immutable Runtime/predecessor inventory",
+          "status": "PENDING",
+          "evidenceRefs": []
+        },
+        {
+          "id": "RC02-M3",
+          "scenario": "Packaged Host component integrity, immutable Core and Runtime, tamper and lineage",
+          "coversAcceptanceIds": [
+            "HI-F01",
+            "HI-C03"
+          ],
+          "hosts": [
+            "Codex",
+            "Claude Code",
+            "independent qualified Host"
+          ],
+          "prohibitedEffects": [
+            "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
+            "No overwrite, unpublish, retag, or rewrite of Expert 2.2.0, historical Targets, approvals, evidence or published assets.",
+            "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
+            "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
+            "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
+            "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+            "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+            "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+            "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
+          ],
+          "requiredEvidence": "Artifact inventory and hash negatives; clean install/doctor/upgrade/rollback/removal in isolated roots; unchanged Core/Adapter contract checks. Mechanical r1-to-r2 preservation proof, full changed-input impact closure and inherited matrix, 5400-second soak obligation, NO_REGRESSION, removal/rollback negatives and public-package rehearsal; no source or mock E2E substitution.",
           "status": "PENDING",
           "evidenceRefs": []
         }
@@ -5522,6 +5651,37 @@
           "requiredEvidence": "Exact Candidate/Runtime install binding, isolated environment and qualified transport; criterion-specific executable assertions and evidence references for: Independent Host plus generic MCP/headless secure-input and resume protocol conformance",
           "status": "PENDING",
           "evidenceRefs": []
+        },
+        {
+          "id": "RC03-M3",
+          "scenario": "Exact Host secure-input to actual Runtime SecretRef to READY, denial and failure variants",
+          "coversAcceptanceIds": [
+            "HI-F02",
+            "HI-F03",
+            "HI-F04",
+            "HI-F05",
+            "HI-C01",
+            "HI-C02"
+          ],
+          "hosts": [
+            "Codex",
+            "Claude Code",
+            "independent qualified Host"
+          ],
+          "prohibitedEffects": [
+            "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
+            "No overwrite, unpublish, retag, or rewrite of Expert 2.2.0, historical Targets, approvals, evidence or published assets.",
+            "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
+            "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
+            "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
+            "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+            "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+            "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+            "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
+          ],
+          "requiredEvidence": "Unit/mock permission and replay negatives plus separately authorized actual Host invocation, native UI identity and protected private-channel observations; no invisible PTY substitute. Exact installed pair private-handoff evidence, wrong destination/scope/auth and response tamper negatives, redacted Runtime resource/audit readback and output-surface scans; no direct store writes. Deterministic fault-injection matrix and installed integration variants covering pre/post-send windows, id collision, duplicate Host request, uncertain response, exact scoped readback, refusal to guess and terminal process cleanup. Installed exact Host-to-READY success and preflight/binding refusal/degradation/restart variants with Runtime-owned request ids, resource digests and explicit human decisions. Fresh exact Candidate-bound original RC03 variants plus the new secure-path variant; actual independent Host evidence and new required WorkBuddy range declaration, never automated WorkBuddy observation or machine substitution. Independent finite leak scanners and adversarial controls across named observed surfaces, actual UI/terminal observations, zero real credentials in local fixtures; scoped Runtime encrypted storage is the intended exception.",
+          "status": "PENDING",
+          "evidenceRefs": []
         }
       ],
       "status": "PENDING",
@@ -5578,6 +5738,32 @@
           "requiredEvidence": "Exact Candidate/Runtime install binding, isolated environment and qualified transport; criterion-specific executable assertions and evidence references for: 5400-second required active soak and independent zero-count/NO_REGRESSION aggregation",
           "status": "PENDING",
           "evidenceRefs": []
+        },
+        {
+          "id": "RC04-M3",
+          "scenario": "Expanded component impact closure with unchanged full inherited/cross matrix and active soak",
+          "coversAcceptanceIds": [
+            "HI-C03"
+          ],
+          "hosts": [
+            "Codex",
+            "Claude Code",
+            "independent qualified Host"
+          ],
+          "prohibitedEffects": [
+            "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
+            "No overwrite, unpublish, retag, or rewrite of Expert 2.2.0, historical Targets, approvals, evidence or published assets.",
+            "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
+            "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
+            "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
+            "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+            "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+            "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+            "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
+          ],
+          "requiredEvidence": "Mechanical r1-to-r2 preservation proof, full changed-input impact closure and inherited matrix, 5400-second soak obligation, NO_REGRESSION, removal/rollback negatives and public-package rehearsal; no source or mock E2E substitution.",
+          "status": "PENDING",
+          "evidenceRefs": []
         }
       ],
       "status": "PENDING",
@@ -5632,6 +5818,33 @@
             "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1."
           ],
           "requiredEvidence": "Exact Candidate/Runtime install binding, isolated environment and qualified transport; criterion-specific executable assertions and evidence references for: Environment cleanup, no integration mutation and distinct approval-stage guard",
+          "status": "PENDING",
+          "evidenceRefs": []
+        },
+        {
+          "id": "RC05-M3",
+          "scenario": "Isolated component uninstall/rollback and distinct Target/Candidate/Release boundaries",
+          "coversAcceptanceIds": [
+            "HI-F01",
+            "HI-C03"
+          ],
+          "hosts": [
+            "Codex",
+            "Claude Code",
+            "independent qualified Host"
+          ],
+          "prohibitedEffects": [
+            "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
+            "No overwrite, unpublish, retag, or rewrite of Expert 2.2.0, historical Targets, approvals, evidence or published assets.",
+            "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
+            "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
+            "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
+            "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+            "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+            "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+            "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
+          ],
+          "requiredEvidence": "Artifact inventory and hash negatives; clean install/doctor/upgrade/rollback/removal in isolated roots; unchanged Core/Adapter contract checks. Mechanical r1-to-r2 preservation proof, full changed-input impact closure and inherited matrix, 5400-second soak obligation, NO_REGRESSION, removal/rollback negatives and public-package rehearsal; no source or mock E2E substitution.",
           "status": "PENDING",
           "evidenceRefs": []
         }

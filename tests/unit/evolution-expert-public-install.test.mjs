@@ -12,7 +12,7 @@ function fixture(t) {
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const pkg = path.join(root, "node_modules/@evopilot/evolution-expert");
   fs.mkdirSync(pkg, { recursive: true });
-  for (const entry of ["dist", "generated", "skill", "package.json"]) fs.cpSync(new URL(`../../packages/evolution-expert/${entry}`, import.meta.url), path.join(pkg, entry), { recursive: true });
+  for (const entry of ["dist", "generated", "skill", "host-integration", "package.json"]) fs.cpSync(new URL(`../../packages/evolution-expert/${entry}`, import.meta.url), path.join(pkg, entry), { recursive: true });
   const contracts = path.join(root, "node_modules/@evopilot/contracts");
   fs.mkdirSync(contracts, { recursive: true });
   for (const entry of ["dist", "package.json"]) fs.cpSync(new URL(`../../packages/contracts/${entry}`, import.meta.url), path.join(contracts, entry), { recursive: true });

@@ -38,13 +38,14 @@ export function verifyRecoveryPlan(plan, target, roadmapBytes) {
     assert.equal(item.status, "PENDING");
     assert.deepEqual(item.cases, target.realCaseCoverage.filter(c => c.coversAcceptanceIds.includes(item.id)).map(c => c.id));
   }
+  for (const item of plan.realCases) assert.deepEqual(item.machineVariants, target.realCaseCoverage.find(c => c.id === item.id).machineVariants);
   assert.equal(plan.candidateBinding, null, "a separate append-only Candidate binding is required before execution");
   assert.equal(plan.status, "PREPARED_NOT_EXECUTION_AUTHORIZED");
   assert.equal(plan.candidatePolicy.requiresSeparateExactCommitCandidateAndCampaignAuthority, true);
   assert.equal(plan.publicRelease.authorized, false);
   assert.equal(plan.closure.activeSoakSeconds, 5400);
   assert.equal(plan.closure.noRegressionRequired, true);
-  return { status: "PASS", scope: "PLAN_STRUCTURE_ONLY_NOT_ACCEPTANCE", current: 10, inherited: 355, cross: 10, realCases: 5, productAcceptancePassed: false };
+  return { status: "PASS", scope: "PLAN_STRUCTURE_ONLY_NOT_ACCEPTANCE", current: target.acceptance.length, inherited: 355, cross: 10, realCases: 5, productAcceptancePassed: false };
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const plan = JSON.parse(fs.readFileSync(path.join(root, "governance/acceptance/expert-2.2.1-recovery-plan.json")));

@@ -13,6 +13,7 @@
     "dist",
     "generated",
     "host-adapter-kit",
+    "host-integration",
     "skill",
     "CHANGELOG.md",
     "README.md"

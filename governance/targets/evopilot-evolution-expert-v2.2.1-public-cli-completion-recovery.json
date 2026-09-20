@@ -1,10 +1,10 @@
 {
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-evolution-expert-v2.2.1-public-cli-completion-recovery",
-  "revision": 1,
+  "revision": 2,
   "status": "APPROVED",
-  "intent": "evopilot-evolution-expert 2.2.1 public CLI completion recovery",
-  "objective": "Close the immutable public Expert 2.2.0 CLI/Core-verifier defects through separately versioned Expert 2.2.1, preserve released Runtime 6.2.0 and approved convergence r2, and prove successor completeness with exact item-level evidence.",
+  "intent": "Evolution Expert 2.2.1 public CLI completion recovery plus maintained Host Integration secure-input and private Runtime SecretRef handoff delivery; preserve Runtime 6.2.0 and convergence r2",
+  "objective": "Close the immutable public Expert 2.2.0 CLI/Core-verifier defects through separately versioned Expert 2.2.1, preserve released Runtime 6.2.0 and approved convergence r2, and prove successor completeness with exact item-level evidence. Complete the already-declared Host secure-input capability as a maintained, separately executed Host Integration component distributed with the Expert release set, without moving raw inputs or Runtime authority into the conversational Expert Core.",
   "evidence": [
     {
       "authority": "APPROVED_ROADMAP_ONLY_NOT_TARGET_AUTHORITY",
@@ -13,6 +13,22 @@
     {
       "authority": "VERIFIED_HISTORICAL_EVIDENCE_NOT_SUCCESSOR_PASS",
       "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/expert221-roadmap-recovery-r1/reconciliation-evidence.json@sha256:2a56cd08c607f2aea9e992759c6a3673b4ce76494f56bb796f650ac7e133b8a7"
+    },
+    {
+      "authority": "REVIEW_EVIDENCE_NOT_IMPLEMENTATION_OR_RELEASE_AUTHORITY",
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/expert221-roadmap-recovery-r1/evolution-target.json@sha256:4fbea9143df3abab97af5695f427f8add57ef1484ac5f08a5ef66f0c01c49b09"
+    },
+    {
+      "authority": "REVIEW_EVIDENCE_NOT_IMPLEMENTATION_OR_RELEASE_AUTHORITY",
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/expert221-roadmap-recovery-r2/scope-decision.json@sha256:192b9afee66554d9bb677f08dfd018e1b74b078b88469b9ecfaa94ec683ea931"
+    },
+    {
+      "authority": "REVIEW_EVIDENCE_NOT_IMPLEMENTATION_OR_RELEASE_AUTHORITY",
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/expert221-roadmap-recovery-r2/public-version-check.json@sha256:7ebde89366520bb41b3d41396115a5e979c021b4117927ee6d4f096bec86618e"
+    },
+    {
+      "authority": "REVIEW_EVIDENCE_NOT_IMPLEMENTATION_OR_RELEASE_AUTHORITY",
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/expert221-roadmap-recovery-r1/secure-input-integration-review/result.json@sha256:96ff69291929f2c5d73f2841aea7637796825931b22f00331cbd45c236b049fb"
     }
   ],
   "roadmapBindings": [
@@ -37,7 +53,17 @@
       "Prepare one Expert-only frozen CI Candidate plan, append-only exact binding, fresh isolated install and RC01-RC05 runbooks. Candidate/campaign effects require later exact authorization; no npm lookup of unpublished 2.2.1 may substitute for private Candidate materialization.",
       "Candidate acceptance must freshly rerun all Expert criteria and all 10 cross rows against unchanged Runtime 6.2.0 plus new Expert; runtime-origin criteria require item-specific dependency/byte/evidence revalidation and rerun whenever Expert-facing, changed, unproven or stale. A shared aggregate PASS never suffices. All criteria remain PENDING until this process.",
       "Counted Host acceptance requires fresh qualified isolated automated Codex/Claude Code/independent Host paths plus generic MCP/headless coverage demanded by original criteria; no live use of current integrations. If WorkBuddy evidence is required, prepare complete RC01-RC05 human runbooks, wait for a new exact Candidate-bound final declaration; historical declarations never transfer to the new Candidate. No machine substitutes for that declaration.",
-      "Separate pre-release candidate validation from post-publication verification. Before Release require current+inherited+cross PASS, impact closure, NO_REGRESSION and the original 5400-second active-soak obligation: fresh combined-pair soak unless an item-specific unchanged-input proof permits historical Runtime-only evidence. After separately authorized publication require fresh public npm integrity/signatures/provenance/CLI/Core/impact verification; never rebuild accepted Expert bytes."
+      "Separate pre-release candidate validation from post-publication verification. Before Release require current+inherited+cross PASS, impact closure, NO_REGRESSION and the original 5400-second active-soak obligation: fresh combined-pair soak unless an item-specific unchanged-input proof permits historical Runtime-only evidence. After separately authorized publication require fresh public npm integrity/signatures/provenance/CLI/Core/impact verification; never rebuild accepted Expert bytes.",
+      "Revision r2 extends r1 delivery scope only. Preserve r1 Target file, approval and Candidate run 35303387254 as immutable history. Continue bounded local work in /private/tmp/evopilot-expert221-recovery from clean commit 26f0821cf302133233037a5d649d760756ff3175 on its existing codex branch; do not modify the user checkout. Copy r2 into its repository Target only after exact r2 approval, retaining an r1 provenance reference. No existing evidence is promoted automatically.",
+      "Implement a maintained Host-side input/transport component under packages/evolution-expert/host-integration/, co-distributed inside the existing @evopilot/evolution-expert 2.2.1 tarball and separately executed by supported Host adapters. This is not a new product, npm coordinate, Runtime dependency or Expert Core operation. Core v3 semantics, required-capability vocabulary and existing generated Adapter contracts remain unchanged. Bind supplementary Host Integration manifest and executable bytes independently.",
+      "Provide an explicit Host invocation contract with a non-sensitive purpose/request id, pinned local configuration, component digest, destination, tenant/workspace and terminal result. Implement protected interactive collection and private transport for Runtime authentication and provider input; never place raw values in conversation, model context, Expert Core, MCP arguments/results, argv, ordinary environment variables or plaintext files. The Host permission and native scope confirmation must match this exact invocation; refuse missing or replayed authority before collecting input.",
+      "Implement a usable local no-echo or secure-dialog surface for the current isolated macOS ARM64 acceptance environment, with a portable Host-neutral controller and explicit platform/capability rejection elsewhere unless independently implemented and tested. A machine-owned invisible PTY is not an ordinary-user input surface. All originally required Host and headless evidence remains mandatory; platform limitation cannot silently exclude a required journey or claim universal compatibility. The temporary AppKit diagnostic is optional reference code, not an acceptance dependency.",
+      "Use the existing Runtime authentication and /api/v1/secrets contracts through a private destination-bound channel; do not write its files/database directly. Bind identity and resource scope, forbid automatic privilege escalation, require verified TLS for real remote destinations, and allow only explicitly labeled isolated loopback synthetic fixtures in local tests. No current account, Host configuration, keychain or real provider input may be read, imported or used under implementation authority. Production-like validation must verify non-debug master-key configuration without exposing its value.",
+      "Validate Runtime replies against an output allowlist and return only the actual redacted SecretRef and fixed status. Retain Runtime ownership of encryption, profiles, readiness, explicit default binding and audit. Expert resumes the existing MCP Profile/preflight/binding/readiness journey; secure input success is not READY and does not authorize default binding. Do not invent references, provider fallback, new Runtime endpoints, one-time tokens, server idempotency or permissions absent from Runtime 6.2.0.",
+      "Implement bounded cancellation, timeout, close, crash, stale binding and duplicate-request handling. Before submission cancellation means no write. After possible submission classify unknown outcomes and inspect exact scoped metadata without replay; the existing POST may rotate an id and is not idempotent. A redacted readback that cannot prove the exact result remains UNKNOWN. Do not auto-delete or retry an uncertain resource; deterministic local mock tests must cover collision, wrong scope, response tamper and auth failure.",
+      "Deliver supplementary manifest/config schema, install/doctor/health/upgrade/rollback/removal instructions and executable isolated-directory tooling, component source and packaged digest inventory. Allow necessary files/build projections in packages/evolution-expert/package.json and scripts, Expert-only artifact verifier/workflow, tests/unit/evolution-expert-host-integration.test.mjs, tests/functional/evolution-expert-host-integration.test.mjs and docs/guides; preserve all Runtime workspace versions/dependencies and public protocol. Never install into active Host discovery or remove current integrations under this approval.",
+      "Add maintained repository E2E definitions and redacted fixtures under tests/e2e/expert-host-integration/, extending existing RC01-RC05 machine variants rather than adding human journeys. Keep formal package/Host/Runtime acceptance separate from local helper/unit/mock tests; bind artifact/installation/Host identity, exact UI invocation, private handoff, Runtime resources and all observed output surfaces. Complete whole-campaign preflight before proposing one separately authorized resumable batch; preserve designated-human WorkBuddy final-declaration authority.",
+      "Implementation authorization covers only scoped source changes and local non-deploying verification with synthetic fixtures, no real Host or Runtime startup and no interactive diagnostic popups. After changed packaged bytes pass local verification, prepare one Expert-only successor Candidate proposal and append-only binding; do not form it without the separate exact commit/build authority. Retain version 2.2.1 only while not publicly published; if observable publication or any required Runtime change is discovered, stop for governance. Preserve accepted no-rebuild promotion and all original 5400-second soak/current/inherited/cross requirements."
     ],
     "exclude": [
       "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
@@ -45,7 +71,10 @@
       "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
       "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
       "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
-      "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1."
+      "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+      "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+      "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+      "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
     ]
   },
   "compatibilityPolicy": {
@@ -212,6 +241,78 @@
       "critical": true,
       "criterion": "Recovery retains semantic convergence r2 and producer/consumer, Host/Runtime/Expert and authority boundaries; Target, Candidate/campaign and Release approvals remain distinct.",
       "requiredEvidence": "Boundary negatives, unchanged r2 digest-bound policy comparison, no Runtime rebuild or predecessor mutation, environment inventory and approval-stop tests.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-F01",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "A maintained, separately executed Host Integration component and supplementary manifest are present in the exact Expert tarball, installable into an isolated Host integration root, and missing/tampered/incompatible components fail closed without changing Core or generated Adapter semantics.",
+      "requiredEvidence": "Artifact inventory and hash negatives; clean install/doctor/upgrade/rollback/removal in isolated roots; unchanged Core/Adapter contract checks.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-F02",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Actual supported Host invocation binds the exact user-approved purpose, destination, scope, component and request identity before protected Runtime authentication and provider input; no input crosses the model-visible boundary.",
+      "requiredEvidence": "Unit/mock permission and replay negatives plus separately authorized actual Host invocation, native UI identity and protected private-channel observations; no invisible PTY substitute.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-F03",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "The Host-side component privately provisions via existing Runtime contracts and returns only a validated actual SecretRef; authentication, RBAC, tenancy, transport protection and redacted error boundaries remain enforced.",
+      "requiredEvidence": "Exact installed pair private-handoff evidence, wrong destination/scope/auth and response tamper negatives, redacted Runtime resource/audit readback and output-surface scans; no direct store writes.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-F04",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Reject/cancel before submission causes zero mutation; timeout/crash/close after possible submission preserves UNKNOWN and does not replay non-idempotent writes or erase unrelated state.",
+      "requiredEvidence": "Deterministic fault-injection matrix and installed integration variants covering pre/post-send windows, id collision, duplicate Host request, uncertain response, exact scoped readback, refusal to guess and terminal process cleanup.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-F05",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Only the actual SecretRef returns to the existing Expert-over-MCP Profile, live preflight, exact default-binding decision and readiness readback path; neither component nor Expert can mint READY or choose a hidden provider.",
+      "requiredEvidence": "Installed exact Host-to-READY success and preflight/binding refusal/degradation/restart variants with Runtime-owned request ids, resource digests and explicit human decisions.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-C01",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "The complete maintained delivery works for the original required Codex, Claude Code, independent Host, generic MCP/headless and designated-human WorkBuddy portfolio with the same Core/Runtime semantics and explicit supported-platform qualification.",
+      "requiredEvidence": "Fresh exact Candidate-bound original RC03 variants plus the new secure-path variant; actual independent Host evidence and new required WorkBuddy range declaration, never automated WorkBuddy observation or machine substitution.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-C02",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Raw Runtime authentication and provider inputs never appear in observed UI echo, conversation/model requests, Expert/MCP output, process arguments, ordinary environment, component/Host output, logs or unintended files; no total-memory-erasure claim is inferred.",
+      "requiredEvidence": "Independent finite leak scanners and adversarial controls across named observed surfaces, actual UI/terminal observations, zero real credentials in local fixtures; scoped Runtime encrypted storage is the intended exception.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "HI-C03",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Maintained integration delivery preserves all r1 acceptance, 365 inherited/cross obligations, immutable predecessor history, Runtime bytes, installation ownership, exact authorization and separate Candidate/Release boundaries.",
+      "requiredEvidence": "Mechanical r1-to-r2 preservation proof, full changed-input impact closure and inherited matrix, 5400-second soak obligation, NO_REGRESSION, removal/rollback negatives and public-package rehearsal; no source or mock E2E substitution.",
       "status": "PENDING",
       "evidenceRefs": []
     }
@@ -5744,6 +5845,76 @@
       ],
       "method": "FRESH_SUCCESSOR_VALIDATION",
       "scope": "Original meaning retained; no inherited acceptance exclusions or automatic PASS. Bind validation to this exact successor."
+    },
+    {
+      "area": "maintained-host-integration-input-and-private-handoff",
+      "affectedAcceptanceIds": [
+        "evopilot-evolution-expert-v2.0.0-agent-host-entry--EXFUNC12",
+        "evopilot-evolution-expert-v2.0.0-agent-host-entry--V1-EXFUNC12",
+        "evopilot-evolution-expert-v2.1.0-controlled-lifecycle-evolution--EX21-FUNC08",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-CAP01",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-CAP02",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-CAP03",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-CAP04",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC01",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC02",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC03",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC04",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC05",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22-FUNC06",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E01",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E02",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E03",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E04",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E05",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E06",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E07",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E08",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E09",
+        "evopilot-evolution-expert-v2.2.0-first-run-llm-setup--EX22E2E10",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-CROSS-HOST",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-DEGRADE-REPAIR",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-EXPERT-SECURE-SETUP",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-HEADLESS-BOOTSTRAP",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-HOST-LLM-NOT-RUNTIME",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-NO-LOCAL-IMPORT",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-NO-REGRESSION",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-PREFLIGHT-FAIL",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-README-ARCHITECTURE",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-READY-HARNESS-LOOP",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-RESOLUTION-PRECEDENCE",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-RESTART-PERSISTENCE",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-SETUP-FRESH-INSTALL",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-TENANT-ISOLATION",
+        "evopilot-v6.2.0-first-run-llm-readiness--E2E-V61-MIGRATION",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-CAP01",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-CAP02",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-CAP03",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-CAP04",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-CAP05",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-CAP06",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-CAP07",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-FUNC01",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-FUNC02",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-FUNC03",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-FUNC04",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-FUNC05",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-FUNC06",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-FUNC07",
+        "evopilot-v6.2.0-first-run-llm-readiness--R62-FUNC08",
+        "V62-CROSS01",
+        "V62-CROSS02",
+        "V62-CROSS03",
+        "V62-CROSS04",
+        "V62-CROSS05",
+        "V62-CROSS06",
+        "V62-CROSS07",
+        "V62-CROSS08",
+        "V62-CROSS09",
+        "V62-CROSS10"
+      ],
+      "method": "FRESH_AFFECTED_INPUT_PATH_AND_ITEM_LEVEL_DEPENDENCY_CLOSURE",
+      "scope": "All required original semantics and evidence remain. New component and changed installation invalidate affected input/Host/package evidence; retain unrelated exact-digest evidence only with item-specific proof. Current added criteria HI-F01..HI-F05 and HI-C01..HI-C03 also require fresh execution."
     }
   ],
   "excludedHistoricalAcceptance": [],
@@ -5760,7 +5931,8 @@
       "coversAcceptanceIds": [
         "EX221-F01",
         "EX221-F02",
-        "EX221-F03"
+        "EX221-F03",
+        "HI-F01"
       ],
       "startingState": "Separately authorized exact frozen Expert2.2.1 Candidate + digest-verified public Runtime6.2.0 installed freshly outside source; no current Host integration modified; machine transports prequalified and WorkBuddy human runbook independently executed.",
       "terminalState": "All mapped machine variants and required human declaration satisfied on the same Candidate, concrete evidence retained, no prohibited effects; no release/publication.",
@@ -5825,6 +5997,32 @@
           "requiredEvidence": "Exact Candidate/Runtime install binding, isolated environment and qualified transport; criterion-specific executable assertions and evidence references for: Unsupported version/unknown Host/missing observed capability negatives",
           "status": "PENDING",
           "evidenceRefs": []
+        },
+        {
+          "id": "RC01-M3",
+          "scenario": "Maintained component isolated install/doctor and supported-platform detection",
+          "coversAcceptanceIds": [
+            "HI-F01"
+          ],
+          "hosts": [
+            "Codex",
+            "Claude Code",
+            "independent qualified Host"
+          ],
+          "prohibitedEffects": [
+            "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
+            "No overwrite, unpublish, retag, or rewrite of Expert 2.2.0, historical Targets, approvals, evidence or published assets.",
+            "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
+            "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
+            "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
+            "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+            "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+            "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+            "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
+          ],
+          "requiredEvidence": "Artifact inventory and hash negatives; clean install/doctor/upgrade/rollback/removal in isolated roots; unchanged Core/Adapter contract checks.",
+          "status": "PENDING",
+          "evidenceRefs": []
         }
       ]
     },
@@ -5839,7 +6037,9 @@
       ],
       "coversAcceptanceIds": [
         "EX221-F04",
-        "EX221-F05"
+        "EX221-F05",
+        "HI-F01",
+        "HI-C03"
       ],
       "startingState": "Separately authorized exact frozen Expert2.2.1 Candidate + digest-verified public Runtime6.2.0 installed freshly outside source; no current Host integration modified; machine transports prequalified and WorkBuddy human runbook independently executed.",
       "terminalState": "All mapped machine variants and required human declaration satisfied on the same Candidate, concrete evidence retained, no prohibited effects; no release/publication.",
@@ -5902,6 +6102,33 @@
           "requiredEvidence": "Exact Candidate/Runtime install binding, isolated environment and qualified transport; criterion-specific executable assertions and evidence references for: Wrong schema/version/digest tamper rejection and immutable Runtime/predecessor inventory",
           "status": "PENDING",
           "evidenceRefs": []
+        },
+        {
+          "id": "RC02-M3",
+          "scenario": "Packaged Host component integrity, immutable Core and Runtime, tamper and lineage",
+          "coversAcceptanceIds": [
+            "HI-F01",
+            "HI-C03"
+          ],
+          "hosts": [
+            "Codex",
+            "Claude Code",
+            "independent qualified Host"
+          ],
+          "prohibitedEffects": [
+            "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
+            "No overwrite, unpublish, retag, or rewrite of Expert 2.2.0, historical Targets, approvals, evidence or published assets.",
+            "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
+            "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
+            "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
+            "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+            "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+            "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+            "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
+          ],
+          "requiredEvidence": "Artifact inventory and hash negatives; clean install/doctor/upgrade/rollback/removal in isolated roots; unchanged Core/Adapter contract checks. Mechanical r1-to-r2 preservation proof, full changed-input impact closure and inherited matrix, 5400-second soak obligation, NO_REGRESSION, removal/rollback negatives and public-package rehearsal; no source or mock E2E substitution.",
+          "status": "PENDING",
+          "evidenceRefs": []
         }
       ]
     },
@@ -5916,7 +6143,13 @@
       ],
       "coversAcceptanceIds": [
         "EX221-C01",
-        "EX221-F03"
+        "EX221-F03",
+        "HI-F02",
+        "HI-F03",
+        "HI-F04",
+        "HI-F05",
+        "HI-C01",
+        "HI-C02"
       ],
       "startingState": "Separately authorized exact frozen Expert2.2.1 Candidate + digest-verified public Runtime6.2.0 installed freshly outside source; no current Host integration modified; machine transports prequalified and WorkBuddy human runbook independently executed.",
       "terminalState": "All mapped machine variants and required human declaration satisfied on the same Candidate, concrete evidence retained, no prohibited effects; no release/publication.",
@@ -5979,6 +6212,37 @@
           "requiredEvidence": "Exact Candidate/Runtime install binding, isolated environment and qualified transport; criterion-specific executable assertions and evidence references for: Independent Host plus generic MCP/headless secure-input and resume protocol conformance",
           "status": "PENDING",
           "evidenceRefs": []
+        },
+        {
+          "id": "RC03-M3",
+          "scenario": "Exact Host secure-input to actual Runtime SecretRef to READY, denial and failure variants",
+          "coversAcceptanceIds": [
+            "HI-F02",
+            "HI-F03",
+            "HI-F04",
+            "HI-F05",
+            "HI-C01",
+            "HI-C02"
+          ],
+          "hosts": [
+            "Codex",
+            "Claude Code",
+            "independent qualified Host"
+          ],
+          "prohibitedEffects": [
+            "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
+            "No overwrite, unpublish, retag, or rewrite of Expert 2.2.0, historical Targets, approvals, evidence or published assets.",
+            "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
+            "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
+            "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
+            "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+            "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+            "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+            "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
+          ],
+          "requiredEvidence": "Unit/mock permission and replay negatives plus separately authorized actual Host invocation, native UI identity and protected private-channel observations; no invisible PTY substitute. Exact installed pair private-handoff evidence, wrong destination/scope/auth and response tamper negatives, redacted Runtime resource/audit readback and output-surface scans; no direct store writes. Deterministic fault-injection matrix and installed integration variants covering pre/post-send windows, id collision, duplicate Host request, uncertain response, exact scoped readback, refusal to guess and terminal process cleanup. Installed exact Host-to-READY success and preflight/binding refusal/degradation/restart variants with Runtime-owned request ids, resource digests and explicit human decisions. Fresh exact Candidate-bound original RC03 variants plus the new secure-path variant; actual independent Host evidence and new required WorkBuddy range declaration, never automated WorkBuddy observation or machine substitution. Independent finite leak scanners and adversarial controls across named observed surfaces, actual UI/terminal observations, zero real credentials in local fixtures; scoped Runtime encrypted storage is the intended exception.",
+          "status": "PENDING",
+          "evidenceRefs": []
         }
       ]
     },
@@ -5993,7 +6257,8 @@
       ],
       "coversAcceptanceIds": [
         "EX221-C02",
-        "EX221-C03"
+        "EX221-C03",
+        "HI-C03"
       ],
       "startingState": "Separately authorized exact frozen Expert2.2.1 Candidate + digest-verified public Runtime6.2.0 installed freshly outside source; no current Host integration modified; machine transports prequalified and WorkBuddy human runbook independently executed.",
       "terminalState": "All mapped machine variants and required human declaration satisfied on the same Candidate, concrete evidence retained, no prohibited effects; no release/publication.",
@@ -6056,6 +6321,32 @@
           "requiredEvidence": "Exact Candidate/Runtime install binding, isolated environment and qualified transport; criterion-specific executable assertions and evidence references for: 5400-second required active soak and independent zero-count/NO_REGRESSION aggregation",
           "status": "PENDING",
           "evidenceRefs": []
+        },
+        {
+          "id": "RC04-M3",
+          "scenario": "Expanded component impact closure with unchanged full inherited/cross matrix and active soak",
+          "coversAcceptanceIds": [
+            "HI-C03"
+          ],
+          "hosts": [
+            "Codex",
+            "Claude Code",
+            "independent qualified Host"
+          ],
+          "prohibitedEffects": [
+            "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
+            "No overwrite, unpublish, retag, or rewrite of Expert 2.2.0, historical Targets, approvals, evidence or published assets.",
+            "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
+            "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
+            "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
+            "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+            "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+            "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+            "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
+          ],
+          "requiredEvidence": "Mechanical r1-to-r2 preservation proof, full changed-input impact closure and inherited matrix, 5400-second soak obligation, NO_REGRESSION, removal/rollback negatives and public-package rehearsal; no source or mock E2E substitution.",
+          "status": "PENDING",
+          "evidenceRefs": []
         }
       ]
     },
@@ -6070,7 +6361,9 @@
       ],
       "coversAcceptanceIds": [
         "EX221-C04",
-        "EX221-C05"
+        "EX221-C05",
+        "HI-F01",
+        "HI-C03"
       ],
       "startingState": "Separately authorized exact frozen Expert2.2.1 Candidate + digest-verified public Runtime6.2.0 installed freshly outside source; no current Host integration modified; machine transports prequalified and WorkBuddy human runbook independently executed.",
       "terminalState": "All mapped machine variants and required human declaration satisfied on the same Candidate, concrete evidence retained, no prohibited effects; no release/publication.",
@@ -6133,6 +6426,33 @@
           "requiredEvidence": "Exact Candidate/Runtime install binding, isolated environment and qualified transport; criterion-specific executable assertions and evidence references for: Environment cleanup, no integration mutation and distinct approval-stage guard",
           "status": "PENDING",
           "evidenceRefs": []
+        },
+        {
+          "id": "RC05-M3",
+          "scenario": "Isolated component uninstall/rollback and distinct Target/Candidate/Release boundaries",
+          "coversAcceptanceIds": [
+            "HI-F01",
+            "HI-C03"
+          ],
+          "hosts": [
+            "Codex",
+            "Claude Code",
+            "independent qualified Host"
+          ],
+          "prohibitedEffects": [
+            "No Runtime 6.2.0 packaged source/bytes/version change or Runtime rebuild; no Harness, Dashboard, Suite or convergence-r2 scope change.",
+            "No overwrite, unpublish, retag, or rewrite of Expert 2.2.0, historical Targets, approvals, evidence or published assets.",
+            "No source commit/push, remote workflow dispatch, Candidate formation, counted acceptance or real Host execution until a separately authorized exact Candidate/campaign package; Target approval covers bounded local implementation and local verification only.",
+            "No publication, public prerelease, npm publish, GitHub Release, tag, installer rollout or production deployment without separate Release authorization.",
+            "No reactivation or modification of the user's removed/current Host, MCP or Runtime integrations; no current ~/.codex modification, real secrets, production/database access or Mac restart.",
+            "Never operate or observe WorkBuddy or request execution artifacts/per-case reports; any required new WorkBuddy completion uses human-operated-workbuddy/v1 and designated-human-range-completion/v1.",
+            "No separate Host-helper product, new npm package, new Runtime API, changed Core/Adapter semantics, embedded general Agent, credential vault owned by Expert, or Dashboard dependency.",
+            "No direct HTTP/headless administrator setup substituted for the required ordinary-user Host secure-input journey; no simulated capability, screenshot-only pass or diagnostic discard-only result accepted as full provisioning.",
+            "No product or native UI implementation, install, build, Host execution, credential use, acceptance closure or release is authorized by the scope-decision receipt alone; an exact revision-r2 Target decision remains required."
+          ],
+          "requiredEvidence": "Artifact inventory and hash negatives; clean install/doctor/upgrade/rollback/removal in isolated roots; unchanged Core/Adapter contract checks. Mechanical r1-to-r2 preservation proof, full changed-input impact closure and inherited matrix, 5400-second soak obligation, NO_REGRESSION, removal/rollback negatives and public-package rehearsal; no source or mock E2E substitution.",
+          "status": "PENDING",
+          "evidenceRefs": []
         }
       ]
     }
@@ -6148,8 +6468,8 @@
     "target": {
       "decision": "APPROVED",
       "by": "user",
-      "authorizationDigest": "sha256:29cd27518de52b619e7b5a1bda66e027aeb1ce075d092b4d6ee08c1f30004487",
-      "evidenceRef": "/Users/wangyejing/.codex/evolution-runs/evopilot/expert221-roadmap-recovery-r1/target-approval.json"
+      "authorizationDigest": "sha256:28c4e8b7534d3ebd32c928d5301414833950eacbe3ec66dbfc372130a4c2f6a7",
+      "evidenceRef": "/Users/wangyejing/.codex/evolution-runs/evopilot/expert221-roadmap-recovery-r2/target-approval.json"
     },
     "release": {
       "decision": "PENDING"

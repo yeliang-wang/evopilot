@@ -5,6 +5,8 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { verifyInventory } from "../packages/evolution-expert/host-integration/inventory.mjs";
+import { digest } from "../packages/evolution-expert/host-integration/contracts.mjs";
 
 const root = path.resolve(import.meta.dirname, "..");
 const workspace = "@evopilot/evolution-expert";
@@ -21,6 +23,9 @@ export function buildEvolutionExpertArtifacts(options = {}) {
   const remote = optionalRun("git", ["remote", "get-url", "origin"]);
 
   if (options.build !== false) run("npm", ["run", "build:expert-only", "-w", workspace], { stdio: "inherit" });
+  const integration = path.join(root, "packages", "evolution-expert", "host-integration");
+  const componentDigest = digest(fs.readFileSync(path.join(integration, "manifest.json")));
+  verifyInventory(integration, componentDigest);
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
   run("npm", ["pack", "-w", workspace, "--pack-destination", outDir], { stdio: "inherit" });
@@ -46,6 +51,7 @@ export function buildEvolutionExpertArtifacts(options = {}) {
     commit,
     remote,
     generatedAt: new Date().toISOString(),
+    hostIntegration: { componentDigest },
     github: {
       repository: process.env.GITHUB_REPOSITORY || null,
       runId: process.env.GITHUB_RUN_ID || null,

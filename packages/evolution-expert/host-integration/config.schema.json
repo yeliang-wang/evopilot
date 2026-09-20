@@ -1,0 +1,14 @@
+{
+  "$schema":"https://json-schema.org/draft/2020-12/schema",
+  "title":"Expert private Host integration local configuration",
+  "type":"object","additionalProperties":false,
+  "required":["schema","destination","tenantId","workspaceId","username","hostId","permissionPublicKey","deploymentPublicKey","timeoutMs","ledgerPath"],
+  "properties":{
+    "schema":{"const":"evopilot-expert-host-config/v1"},
+    "destination":{"type":"string","pattern":"^https://[^/?#@]+$"},
+    "tenantId":{"$ref":"#/$defs/id"},"workspaceId":{"$ref":"#/$defs/id"},"username":{"$ref":"#/$defs/id"},"hostId":{"$ref":"#/$defs/id"},
+    "permissionPublicKey":{"type":"string"},"deploymentPublicKey":{"type":"string"},
+    "timeoutMs":{"type":"integer","minimum":1000,"maximum":120000},"ledgerPath":{"type":"string","pattern":"^/"}
+  },
+  "$defs":{"id":{"type":"string","pattern":"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$"}}
+}

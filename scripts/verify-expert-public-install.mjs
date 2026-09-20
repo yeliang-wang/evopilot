@@ -5,6 +5,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { verifyInventory } from "../packages/evolution-expert/host-integration/inventory.mjs";
+import { digest as fileDigest } from "../packages/evolution-expert/host-integration/contracts.mjs";
 
 export const packagedHosts = ["codex", "claude-code", "workbuddy", "generic-agent", "generic-mcp"];
 const stable = value => Array.isArray(value) ? `[${value.map(stable).join(",")}]` : value && typeof value === "object"
@@ -25,12 +27,15 @@ export function verifyExpertPublicInstallation({ installDir, version, acceptedTa
   assert.equal(readJson(path.join(installDir, "node_modules/@evopilot/contracts/package.json")).version, "6.2.0");
   const members = execFileSync("tar", ["-tzf", acceptedTarball], { encoding: "utf8" }).trim().split("\n").filter(x => !x.endsWith("/"));
   assert.ok(members.includes("package/dist/cli.js") && members.includes("package/skill/SKILL.md"));
+  assert.ok(members.includes("package/host-integration/manifest.json") && members.includes("package/host-integration/dist/darwin-arm64/secure-input"), "accepted Host integration is required");
   for (const member of members) {
     assert.ok(member.startsWith("package/") && !member.split("/").includes(".."), "unsafe accepted tarball path");
     const local = path.join(pkg, member.slice("package/".length));
     assert.ok(fs.lstatSync(local).isFile(), `installed file missing or not regular: ${member}`);
     assert.deepEqual(fs.readFileSync(local), execFileSync("tar", ["-xOf", acceptedTarball, member]), `installed bytes differ from accepted tarball: ${member}`);
   }
+  const componentDigest = fileDigest(fs.readFileSync(path.join(pkg, "host-integration/manifest.json")));
+  verifyInventory(path.join(pkg, "host-integration"), componentDigest);
   const run = args => spawnSync(process.execPath, [path.join(pkg, "dist/cli.js"), ...args], { cwd: installDir, encoding: "utf8" });
   const json = args => { const result = run(args); assert.equal(result.status, 0, result.stderr); return JSON.parse(result.stdout); };
   const core = json(["manifest"]);
@@ -62,7 +67,7 @@ export function verifyExpertPublicInstallation({ installDir, version, acceptedTa
     }
   }
   for (const command of ["compatibility", "doctor"]) assert.notEqual(run([command, "unknown-host", "6.2.0"]).status, 0);
-  return { status: "PASS", version, coreDigest: core.digest, hosts: packagedHosts, scope: "ACCEPTED_BYTES_AND_DECLARED_PACKAGE_CONTRACT_ONLY", realHostQualification: "NOT_OBSERVED", runtimeReadiness: "NOT_OBSERVED" };
+  return { status: "PASS", version, coreDigest: core.digest, componentDigest, hosts: packagedHosts, scope: "ACCEPTED_BYTES_AND_DECLARED_PACKAGE_CONTRACT_ONLY", realHostQualification: "NOT_OBSERVED", runtimeReadiness: "NOT_OBSERVED" };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

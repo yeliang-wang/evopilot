@@ -6,6 +6,25 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { digest } from "../packages/evolution-expert/host-integration/contracts.mjs";
+
+export function verifyPackagedHostIntegration(tarball, members) {
+  const prefix = "package/host-integration/";
+  const bytes = execFileSync("tar", ["-xOf", tarball, `${prefix}manifest.json`]);
+  const manifest = JSON.parse(bytes);
+  assert.equal(manifest.schema, "evopilot-expert-host-integration/v1");
+  assert.equal(manifest.expertVersion, "2.2.1");
+  assert.equal(manifest.runtimeVersion, "6.2.0");
+  assert.deepEqual(manifest.platforms, ["darwin-arm64"]);
+  for (const required of ["run.mjs", "mcp.mjs", "permission-observer.mjs", "controller.mjs", "transport.mjs", "native.mjs", "native/PrivateInput.swift", "dist/darwin-arm64/secure-input", "manage.mjs", "config.schema.json", "README.md"]) assert.ok(manifest.files[required], `Missing Host integration ${required}`);
+  const actual = [...members].filter(name => name.startsWith(prefix) && !name.endsWith("/") && name !== `${prefix}manifest.json`).map(name => name.slice(prefix.length)).sort();
+  assert.deepEqual(actual, Object.keys(manifest.files).sort(), "Host integration inventory must cover every packaged file exactly");
+  for (const [name, expected] of Object.entries(manifest.files)) {
+    assert.ok(!name.startsWith("/") && !name.split("/").includes(".."));
+    assert.equal(digest(execFileSync("tar", ["-xOf", tarball, `${prefix}${name}`])), expected, `Host integration digest mismatch: ${name}`);
+  }
+  return {componentDigest:digest(bytes), fileCount:actual.length};
+}
 
 const root = path.resolve(import.meta.dirname, "..");
 const artifactPrefix = "evopilot-evolution-expert";
@@ -52,6 +71,7 @@ export function verifyEvolutionExpertArtifacts(options = {}) {
   assert.ok(runtimeContractRange, "Expert package must declare its compatible Runtime contract range");
   assert.equal(packedManifest.dependencies?.["@evopilot/contracts"], runtimeContractRange);
   const members = new Set(execFileSync("tar", ["-tzf", path.join(outDir, names.tarball)], { encoding: "utf8" }).trim().split("\n"));
+  const hostIntegration = verifyPackagedHostIntegration(path.join(outDir, names.tarball), members);
   for (const required of ["package/dist/cli.js", "package/dist/index.js", "package/skill/SKILL.md"]) assert.ok(members.has(required), `Expert artifact missing ${required}`);
   for (const host of ["codex", "claude-code", "workbuddy", "generic-agent", "generic-mcp"]) {
     const adapter = JSON.parse(execFileSync("tar", ["-xOf", path.join(outDir, names.tarball), `package/generated/${host}/adapter.json`], { encoding: "utf8" }));
@@ -73,6 +93,7 @@ export function verifyEvolutionExpertArtifacts(options = {}) {
   assert.equal(provenance.package, packageJson.name);
   assert.equal(provenance.version, version);
   assert.equal(provenance.tag, `evolution-expert-v${version}`);
+  assert.equal(provenance.hostIntegration?.componentDigest, hostIntegration.componentDigest);
   assert.deepEqual(new Set(provenance.artifacts.map((item) => item.name)), new Set([names.tarball, names.sbom]));
   for (const artifact of provenance.artifacts) {
     const filePath = path.join(outDir, artifact.name);
@@ -84,6 +105,7 @@ export function verifyEvolutionExpertArtifacts(options = {}) {
     status: "PASS",
     releaseUnit: "evolution-expert",
     version,
+    hostIntegration,
     outDir,
     files: [...expectedNames].sort()
   };
