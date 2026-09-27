@@ -15,6 +15,10 @@ const doc = (value: unknown): Doc => {requireSemantic(isRecord(value), "MATERIAL
 const text = (value: unknown): value is string => typeof value === "string" && value.trim().length > 0;
 const date = (value: unknown) => typeof value === "string" && Number.isFinite(Date.parse(value));
 const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === "string");
+// Bootstrap emits bounded server-owned IDs. URI references remain compatible
+// metadata; neither form resolves a credential or proves credential readiness.
+export const semanticLlmSecretReference = (value: unknown): value is string => typeof value === "string" &&
+  /^(?:[A-Za-z0-9][A-Za-z0-9._-]{0,127}|secret:\/\/[A-Za-z0-9._/-]+)$/.test(value);
 export function semanticTargetDefinition(target: Doc) {
   requireSemantic(target.schema === "evopilot-goal-target/v1" && text(target.id) && text(target.goalId) && text(target.projectId) &&
     text(target.releaseTargetId) && text(target.title) && typeof target.description === "string" && text(target.layer) &&
@@ -64,7 +68,7 @@ export function createSemanticRuntimeSourceReader(dataRoot: string) {
       profile.tenantId === subject.scope.tenantId && profile.workspaceId === subject.scope.workspaceId &&
       (profile.scope === "workspace" || (profile.scope === "user" && selection.source === "loop-override" && profile.ownerActor === principal.id)), "PERMISSION_DENIED");
     requireSemantic(text(profile.providerName) && text(profile.modelName) && text(profile.baseUrl) &&
-      typeof profile.apiKeyRef === "string" && /^secret:\/\/[A-Za-z0-9._/-]+$/.test(profile.apiKeyRef), "MATERIAL_INVALID");
+      semanticLlmSecretReference(profile.apiKeyRef), "MATERIAL_INVALID");
     requireSemantic(selection.provider === profile.providerName && selection.model === profile.modelName &&
       selection.baseUrl === profile.baseUrl && selection.apiKeyRef === profile.apiKeyRef, "DRIFT");
     for (const [kind, id, original] of [["projects", identity.projectId, project], ["goals", identity.goalId, goal], ["llm-profiles", selection.profileId, profile]] as const)

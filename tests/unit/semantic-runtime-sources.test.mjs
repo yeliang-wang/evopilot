@@ -88,6 +88,24 @@ test("private profile is only usable by its current owner with an explicit overr
   const f = await fixture(t); await f.change(f.profileFile, p => {p.scope = "user"; p.ownerActor = f.access.principal.id;}); assert(f.read());
   await f.change(f.goalFile, goal => {goal.llm.source = "project-default";}); assert.throws(f.read, {code: "PERMISSION_DENIED"});
 });
+test("bootstrap Secret IDs remain opaque metadata and never trigger credential resolution", async t => {
+  const f = await fixture(t), ref = "server-owned-key-id";
+  await f.change(f.profileFile, profile => {profile.apiKeyRef = ref;});
+  await f.change(f.goalFile, goal => {goal.llm.apiKeyRef = ref;});
+  const source = f.read();
+  assert.equal(source.llmProfile.apiKeyRef, ref);
+  assert.equal(source.credentialReadinessVerified, false);
+  const bound = await f.bind(), slice = await f.resolve(bound);
+  assert.equal(slice.eligibleForExecution, false);
+  assert(!JSON.stringify(slice).includes(ref));
+});
+for (const ref of ["", "../key", "/tmp/key", "https://example.invalid/key", "apiKey=raw-value", "key with spaces", "a".repeat(129)])
+  test(`semantic metadata rejects unsafe Secret reference ${JSON.stringify(ref)}`, async t => {
+    const f = await fixture(t);
+    await f.change(f.profileFile, profile => {profile.apiKeyRef = ref;});
+    await f.change(f.goalFile, goal => {goal.llm.apiKeyRef = ref;});
+    assert.throws(f.read, {code: "MATERIAL_INVALID"});
+  });
 for (const [name, mutate] of [
   ["objective", goal => {goal.objective = "changed";}],
   ["target description", goal => {goal.plan.targets[0].description = "changed";}],

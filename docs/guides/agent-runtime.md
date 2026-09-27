@@ -8,6 +8,16 @@ An `AgentRuntimeProfile` declares adapter identity, runtime version, provider, m
 
 Agent Host and Agent Runtime are different roles. Codex or Claude Code may host the Expert conversation; the exact execution runtime selected for a stage is independently bound and qualified.
 
+For semantic execution, create the governed plan with explicit active
+`semanticGovernedSources` references and the qualified executor binding. Runtime
+derives its own implementation and governance pins, including the current scoped
+principal grant. A request-authority digest from an ordinary plan cannot replace
+that grant. The separate semantic preparation and decision flow still checks the
+current observation, permissions, published materials and pending request.
+Runtime LLM references may use the server-owned Secret IDs emitted by bootstrap;
+they must match the persisted Goal/Profile owners and never resolve a credential
+inside semantic metadata validation. Credential readiness remains a separate check.
+
 ## Pending execution
 
 At an external stage, Runtime emits one immutable request binding:

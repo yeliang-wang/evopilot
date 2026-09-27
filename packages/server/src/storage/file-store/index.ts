@@ -2801,6 +2801,13 @@ export class FileStore {
       plan: {
         ...goal.plan,
         status: "APPROVED",
+        // Persist readiness at the explicit approval boundary. Read-only Goal
+        // projections must not be the only place this transition exists: strict
+        // semantic execution reads the durable record, not a hydrated view.
+        targets: goal.plan.targets.map(target => target.status === "PENDING" && !target.loopId && !target.blocker &&
+          target.dependencyIds.every(id => goal.plan.targets.some(dependency => dependency.id === id && dependency.status === "DONE"))
+          ? {...target, status: "READY" as const, nextAction: "start-target" as const}
+          : target),
         editablePlan: {
           ...(goal.plan.editablePlan ?? editablePlanPolicy()),
           status: "APPROVED",

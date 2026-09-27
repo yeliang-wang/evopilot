@@ -5,6 +5,8 @@ import type { GovernedEvolutionService } from "../../domains/governed-evolution/
 import { publishedHarnessCandidatesV5 } from "../../domains/harness-template/bundle.js";
 import type { LifecycleService } from "../../domains/lifecycle/index.js";
 import {assertNoUnintegratedSemanticExecution} from "../../domains/lifecycle/semantic-execution-guard.js";
+import {semanticPlanningGovernance} from "../../application/semantic-planning-governance.js";
+import {SemanticCatalogError} from "../../domains/harness-template/semantic-catalog-contract.js";
 
 interface GovernedEvolutionRoutesContext {
   request: http.IncomingMessage;
@@ -14,7 +16,7 @@ interface GovernedEvolutionRoutesContext {
   store: any;
   service: GovernedEvolutionService;
   lifecycleService: LifecycleService;
-  options: { maxBodyBytes?: number };
+  options: { maxBodyBytes?: number; dataRoot: string };
   deps: Record<string, any>;
 }
 
@@ -246,6 +248,11 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
       const body = await readJson(request, options.maxBodyBytes);
       assertNoUnintegratedSemanticExecution(body);
       assertScopedProject(store, auth, String(body.goalTarget?.projectId ?? ""));
+      const semanticGovernance = Object.hasOwn(body, "semanticGovernedSources")
+        ? semanticPlanningGovernance(options.dataRoot, body, body.goalTarget.projectId, () => ({
+          principal: {id: auth.actor, role: auth.role, tenantId: auth.tenantId, workspaceId: auth.workspaceId},
+          project: store.readProject(body.goalTarget.projectId)
+        })) : {};
       const lifecycle = lifecycleService.governedRegistry.resolveActive(String(body.lifecycleId ?? ""), optionalString(body.lifecycleVersion), scope);
       const plan = service.plan({
         projectDefinitionId: String(body.projectDefinitionId ?? ""),
@@ -259,7 +266,8 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
         hostDigest: body.executor ? digestExecutor(body.executor) : String(body.hostDigest ?? ""),
         runtimeDigest: String(body.runtimeDigest ?? ""),
         authorityDigest: scopedAuthorityDigest(auth),
-        evidenceDigest: String(body.evidenceDigest ?? "")
+        evidenceDigest: String(body.evidenceDigest ?? ""),
+        ...semanticGovernance
       }, scope);
       lifecycleService.governedRegistry.recordUsage({
         id: `plan-${plan.binding.digest}`,
@@ -375,6 +383,12 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
         authorityDigest: scopedAuthorityDigest(auth),
         evidenceDigest: String(body.evidenceDigest ?? "")
       };
+      if (Object.hasOwn(body, "semanticGovernedSources")) {
+        Object.assign(current, semanticPlanningGovernance(options.dataRoot, body, binding.projectDefinitionRef.id, () => ({
+          principal: {id: auth.actor, role: auth.role, tenantId: auth.tenantId, workspaceId: auth.workspaceId},
+          project: store.readProject(binding.projectDefinitionRef.id)
+        })), {hostDigest: digestExecutor(body.executor)});
+      }
       const result = service.revalidate(bindingDigest, current, scope);
       appendAudit(audit(auth, "governed-evolution.binding-revalidated", bindingDigest, { status: result.status, drift: result.drift }));
       return writeJson(response, result.status === "VALID" ? 200 : 409, envelope(result));
@@ -414,6 +428,11 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
     }
     return false;
   } catch (error) {
+    if (error instanceof SemanticCatalogError) {
+      const status = error.code === "PERMISSION_DENIED" ? 403 : error.code === "UNAVAILABLE" ? 404 :
+        ["DRIFT", "DIGEST_MISMATCH", "IDENTITY_CONFLICT"].includes(error.code) ? 409 : 400;
+      return writeJson(response, status, {error: `SEMANTIC_PLANNING_${error.code}`});
+    }
     const code = error instanceof Error ? error.message.split(":")[0] : "GOVERNED_EVOLUTION_REQUEST_INVALID";
     const status = code.includes("NOT_FOUND") ? 404 : code.includes("AMBIGUOUS") || code.includes("ABSTAINED") || code.includes("CONFLICT") || code.includes("MISMATCH") ? 409 : 400;
     return reject(status, error);

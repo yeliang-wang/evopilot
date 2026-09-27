@@ -12,7 +12,7 @@ import {SemanticBindingStore} from "../storage/semantic-binding-store.js";
 import {requireSemantic} from "../domains/harness-template/semantic-catalog-contract.js";
 import {digestObject, isRecord} from "../domains/harness-template/utils.js";
 import {freeze} from "../domains/harness-template/semantic-catalog-io.js";
-import type {SemanticRuntimeSourcePins} from "./semantic-runtime-sources.js";
+import {createSemanticRuntimeSourceReader, semanticLlmSecretReference, type SemanticRuntimeSourcePins} from "./semantic-runtime-sources.js";
 import {validateSemanticGovernedSourcePins, type SemanticGovernedSourcePins} from "./semantic-governed-sources.js";
 import {validateSemanticExecutorSourcePins, type SemanticExecutorSourcePins} from "./semantic-executor-sources.js";
 import {normalizeSemanticActionContextPlan, type SemanticActionContextPlan} from "../domains/harness-template/semantic-action-context-plan.js";
@@ -100,7 +100,14 @@ export function createSemanticExecutionBindingService(configuration: Parameters<
       llm.workspaceId === subject.scope.workspaceId && ["workspace", "user"].includes(llm.scope) &&
       (llm.scope === "workspace" || llm.ownerActor === subject.principal.id), "PERMISSION_DENIED");
     requireSemantic(semanticRequestId(llm.id) && typeof llm.providerName === "string" && llm.providerName.length > 0 &&
-      typeof llm.modelName === "string" && llm.modelName.length > 0 && /^secret:\/\/[A-Za-z0-9._/-]+$/.test(llm.apiKeyRef), "INVALID");
+      typeof llm.modelName === "string" && llm.modelName.length > 0 && semanticLlmSecretReference(llm.apiKeyRef), "INVALID");
+    if (!llm.apiKeyRef.startsWith("secret://")) {
+      // Bare IDs must come from the exact persisted Goal/Profile owners, never
+      // an adapter callback substituting a literal key. No secret is read here.
+      const source = createSemanticRuntimeSourceReader(configuration.dataRoot).read(identity, subject.principal);
+      requireSemantic(state.runtimeSourcePins && digestObject(source.pins) === digestObject(state.runtimeSourcePins) &&
+        digestObject(source.llmProfile) === digestObject(llm), "DRIFT");
+    }
     const profile = normalizeExecutionRuntimeProfile(state.agentRuntime);
     const executor = state.executor, qualification = state.qualification;
     if (state.agentAdapterProfile) assertSemanticAgentProfile(state.agentAdapterProfile, profile, executor, state.executorSourcePins?.runtime);

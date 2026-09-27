@@ -561,7 +561,7 @@ GET /api/v1/projects/{projectId}/onboarding-checklist
 
 ### Published Harness Catalog
 
-#### In-progress 6.3.0 semantic discovery (source checkout only)
+#### 6.3.0 semantic discovery
 
 `GET /api/v1/projects/{projectId}/semantic-capabilities` returns
 `data.schema=evopilot-project-semantic-capabilities/v1`, exact `projectId`, the
@@ -616,7 +616,7 @@ scope/permission denied; 404 configured Catalog/material unavailable; 408 cancel
 409 unconfigured trust, invalid material, drift or resource failure; 504 timeout.
 No partial result is returned. See the [implementation limits and remaining work](../architecture/semantic-catalog-consumer.md).
 
-#### In-progress 6.3.0 semantic compatibility (source checkout only)
+#### 6.3.0 semantic compatibility
 
 `GET /api/v1/projects/{projectId}/semantic-catalogs/{catalogId}/compatibility`
 requires exactly one `artifactSetDigest` and one `bundleDigest` query value, each
@@ -635,7 +635,7 @@ compatibility claim. Missing selected assets return 404; selection resolving to
 multiple complete sets returns 409. Nothing is silently selected or persisted.
 `bindingCreated=false` and `eligibleForExecution=false` remain mandatory even
 for `COMPATIBLE`; actual review and binding use the separate workflow below.
-Harness eligibility and semantic execution authorization remain unfinished.
+Compatibility alone supplies neither Harness eligibility nor semantic execution authorization.
 
 `GET /api/v1/projects/{projectId}/semantic-catalogs/{catalogId}/gap` uses the exact
 same pair query and scoped Catalog checks. Its `evopilot-project-semantic-gap/v1`
@@ -659,6 +659,20 @@ Stale basis, incomplete obligations, unselected concepts and executable predicat
 are rejected. Neither operation approves meaning, prepares a review, attests evidence
 or invokes an Agent; missing coverage stays empty for subsequent explicit review.
 
+Before creating that pending run, `POST /api/v1/governed-evolution/plan` may
+select `semanticGovernedSources`: exactly `policy`, `provider`, `environment`,
+`authority` and `evidence`, each an active `{id, version, digest}` resource
+reference. Supply the explicit `executor` as well. The server reads the current
+scoped resources, intersects the PolicyPack and principal's HumanAuthorityRole
+grant with deny-overrides, and derives all five governance digests plus its
+installed semantic implementation digest. Omit those raw digest fields; if
+supplied, they must match. Missing, stale, foreign or insufficient grants fail
+closed. Planning does not qualify the executor or authorize execution.
+The same selection and executor are required when revalidating a semantic plan.
+Omitting `semanticGovernedSources` preserves ordinary planning's request-authority
+context. Explicit Goal plan approval durably marks dependency-ready, unstarted
+Targets READY; it does not start a Loop or complete a Target.
+
 `POST /api/v1/projects/{projectId}/semantic-execution/mapping` accepts only
 `identity` and `bindingDigest` under the existing scoped operator/admin, readiness,
 current source and execution checks. The read-only `evopilot-semantic-outcome-mapping/v1`
@@ -668,7 +682,7 @@ It neither guesses coverage nor prepares/approves a review. Business field/produ
 type remain null; returned prose is untrusted data. This assists review of an existing
 plan, not pre-plan domain authoring. All dispatch/completion/Release authority is false.
 
-#### In-progress 6.3.0 reviewed project binding (source checkout only)
+#### 6.3.0 reviewed project binding
 
 `POST /api/v1/projects/{projectId}/semantic-binding/reviews` accepts exactly
 `catalogId`, `artifactSetDigest`, `bundleDigest` in a JSON body (2 KiB maximum).
