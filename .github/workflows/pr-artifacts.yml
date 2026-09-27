@@ -30,7 +30,11 @@ jobs:
         run: npm run release:ready
 
       - name: Build release artifacts for review
-        run: npm run release:artifact
+        # A pull-request ref (for example 8/merge) is not a release tag.
+        # Bind only this review build to the package version; no tag is created.
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          GITHUB_REF_NAME="v$VERSION" npm run release:artifact
 
       - name: Verify release artifacts
         run: npm run verify:release-artifact
