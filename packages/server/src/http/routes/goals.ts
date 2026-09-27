@@ -243,6 +243,7 @@ export async function handleGoalRoutes(context: GoalRoutesContext): Promise<bool
     const goal = store.readGoal(decodeURIComponent(goalReportMatch[1]));
     if (!goal) return writeJson(response, 404, { error: "GOAL_NOT_FOUND" });
     if (!canAccessScopedResource(auth, goal.tenantId, goal.workspaceId)) return writeJson(response, 403, { error: "FORBIDDEN" });
+    if (goal.semanticExecutionOwners !== undefined) return writeJson(response, 409, { error: "GOAL_SEMANTIC_COMPLETION_REQUIRED" });
     if (!goal.finalReport) return writeJson(response, 409, { error: "GOAL_FINAL_REPORT_PENDING" });
     return writeJson(response, 200, envelope(goal.finalReport));
   }

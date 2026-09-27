@@ -33,7 +33,13 @@ test("Evolution Expert Candidate pipeline binds its independent version and neve
   assert.ok(unsafe.failures.some((failure) => failure.includes("must not publish")));
   assert.equal(validateEvolutionExpertCandidate(`${workflow}\n      - run: npm run check\n`).status, "FAIL");
   assert.equal(validateEvolutionExpertCandidate(`${workflow}\n      - run: npm run verify:distribution\n`).status, "FAIL");
-  assert.equal(validateEvolutionExpertCandidate(workflow.replace("materialize-expert-runtime-contract.mjs", "missing-contract.mjs")).status, "FAIL");
+  assert.equal(validateEvolutionExpertCandidate(workflow.replace("validate-semantic-convergence-corpus.mjs", "missing-corpus.mjs")).status, "FAIL");
+  assert.equal(validateEvolutionExpertCandidate(workflow.replace(" tests/e2e/installed-batch.test.mjs", "")).status, "FAIL");
+  assert.equal(validateEvolutionExpertCandidate(workflow.replace(' --target "$TARGET_FILE"', ' --target "unbound.json"')).status, "FAIL");
+  assert.equal(validateEvolutionExpertCandidate(workflow.replace("npm run build\n", "true\n")).status, "FAIL");
+  for (const command of ["node scripts/materialize-expert-runtime-contract.mjs", "node scripts/materialize-expert-runtime-fixtures.mjs", "node scripts/verify-expert-recovery-plan.mjs", "npm run release:artifact"]) {
+    assert.equal(validateEvolutionExpertCandidate(`${workflow}\n      - run: ${command}\n`).status, "FAIL");
+  }
   assert.equal(validateEvolutionExpertCandidate(workflow.replace("node --test tests/unit/*.test.mjs", "node --test tests/unit/one.test.mjs")).status, "FAIL");
 
   const legacyOnly = validateEvolutionExpertCandidate(workflow.replace(

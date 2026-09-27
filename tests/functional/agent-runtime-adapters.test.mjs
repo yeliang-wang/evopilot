@@ -121,8 +121,24 @@ test("OpenCode adapter binds exact runtime/model/capabilities and reuses an immu
   assert.equal(first.receiptDigest, replay.receiptDigest);
   assert.equal(first.cost.inputTokens, 100);
   assert.equal(first.cost.outputTokens, 25);
+  assert.equal(adapter.readProcessObservation(request,first).material.usageCoverage,"COMPLETE");
   assert.equal(invocations, 1);
   assert.equal(JSON.stringify(first).includes("done"), false, "raw model output must not enter the receipt");
+});
+
+test("OpenCode receipt distinguishes missing telemetry, partial coverage and explicit zero",async t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),"evopilot-usage-"));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const profile=createOpenCodeRuntimeProfile({runtimeVersion:"synthetic-1",host:"synthetic",provider:"synthetic",model:"synthetic",capabilities:["build.execute"],workspaceRoot:root});
+  for(const [events,expected] of [
+    [[{type:"step_finish"}],"UNAVAILABLE"],
+    [[{type:"text"}],"UNAVAILABLE"],
+    [[{type:"step_finish",part:{cost:0,tokens:{input:0,output:0}}}],"COMPLETE"],
+    [[{type:"step_finish",part:{cost:0,tokens:{input:1,output:2}}},{type:"step_finish"}],"PARTIAL"]]) {
+    const adapter=createOpenCodeExecutorAdapter({profile,runner:async()=>({exitCode:0,signal:null,termination:"EXITED",stdout:events.map(e=>JSON.stringify(e)).join("\n"),stderr:""})});
+    const request=executionRequest(profile),result=await adapter.execute(request);
+    assert.equal(adapter.readProcessObservation(request,result).material.usageCoverage,expected);
+    assert.deepEqual(await adapter.execute(request),result);
+  }
 });
 
 test("OpenCode adapter fails closed on profile drift, request reuse conflict, hostile output, and uncertain execution", async () => {

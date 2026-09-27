@@ -65,6 +65,7 @@ Deep architecture notes remain in:
 - [Agent-Native Lifecycle Control Plane](agent-native-lifecycle-control-plane.md)
 - [Open Lifecycle Harness](open-lifecycle-harness.md)
 - [Published Harness Catalog](published-harness-catalog.md)
+- [Semantic Catalog Reader — Implementation Status](semantic-catalog-consumer.md) — internal 6.3.0 transport work; production integration and acceptance remain pending.
 - [Harness Template Boundary](harness-template-domain.md)
 - [Loop Runtime](loop-runtime.md)
 - [ProofOps Target Loop Mode](proofops-target-loop-mode.md)

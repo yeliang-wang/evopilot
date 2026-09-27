@@ -1,5 +1,6 @@
 import http from "node:http";
 import type { GitHubAppInstallationRecord, WorkspaceRecord } from "../../model.js";
+import { llmProfileDigest } from "../../domains/llm-readiness/index.js";
 
 interface AdminRoutesContext {
   request: http.IncomingMessage;
@@ -180,6 +181,10 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     const now = new Date().toISOString();
     const id = safeFileName(optionalTrimmedString(body.id) ?? optionalTrimmedString(body.name) ?? `secret-${Date.now()}`);
     const existing = store.readSecret(id);
+    if (existing && (existing.tenantId !== tenantId || existing.workspaceId !== workspaceId || existing.scope !== secretScope
+        || (existing.scope === "user" && existing.ownerActor !== auth.actor && !auth.platformAdmin && auth.role !== "admin"))) {
+      return writeJson(response, 403, { error: "SECRET_FORBIDDEN" });
+    }
     const secret = store.writeSecret({
       schema: "evopilot-secret/v1",
       id,
@@ -197,6 +202,14 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
       rotatedAt: existing ? now : undefined
     });
     store.appendAudit(audit(auth, existing ? "secret.rotated" : "secret.created", secret.id, { kind: secret.kind, version: secret.version }));
+    if (existing) {
+      for (const profile of store.listLlmProfiles(tenantId, workspaceId)) {
+        if (profile.apiKeyRef === secret.id && profile.lastPreflight) {
+          store.writeLlmProfile({ ...profile, lastPreflight: undefined, updatedAt: now });
+        }
+      }
+      reconcileRuntimeReadiness({ store, tenantId, workspaceId, actor: auth.actor });
+    }
     return writeJson(response, existing ? 200 : 201, envelope(maskSecret(secret)));
   }
   if (request.method === "GET" && url.pathname === "/api/v1/llm-profiles") {
@@ -208,6 +221,7 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     const body = await readJson(request, options.maxBodyBytes);
     const existingId = optionalTrimmedString(body.id) ?? optionalTrimmedString(body.profileId) ?? optionalTrimmedString(body.name);
     const existing = existingId ? store.readLlmProfile(existingId) : undefined;
+    if (existing && !canMutateLlmProfile(auth, existing)) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN" });
     const profile = normalizeLlmProfileBody(body, auth, existing);
     const workspace = store.readWorkspace(profile.workspaceId);
     if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
@@ -221,6 +235,7 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
       if (!secret || secret.scope !== "user" || secret.ownerActor !== profile.ownerActor) return writeJson(response, 403, { error: "LLM_PROFILE_SECRET_FORBIDDEN", detail: "User LLM profiles must reference a user-owned LLM secret." });
     }
     if (!profile.baseUrl || !profile.modelName || !profile.apiKeyRef) return writeJson(response, 400, { error: "LLM_PROFILE_REQUIRED", detail: "baseUrl, model/modelName, and apiKeyRef are required." });
+    if (existing && llmProfileDigest(existing) !== llmProfileDigest(profile)) profile.lastPreflight = undefined;
     const written = store.writeLlmProfile(profile);
     reconcileRuntimeReadiness({ store, tenantId: written.tenantId, workspaceId: written.workspaceId, actor: auth.actor, reason: existing ? "Workspace LLM profile changed and requires a new live preflight and explicit binding." : undefined });
     store.appendAudit(audit(auth, existing ? "llm-profile.updated" : "llm-profile.created", written.id, {
@@ -248,7 +263,14 @@ export async function handleAdminRoutes(context: AdminRoutesContext): Promise<bo
     const profileRecord = store.readLlmProfile(decodeURIComponent(llmProfilePreflightMatch[1]));
     if (!profileRecord) return writeJson(response, 404, { error: "LLM_PROFILE_NOT_FOUND" });
     if (!canReadLlmProfile(auth, profileRecord)) return writeJson(response, 403, { error: "LLM_PROFILE_FORBIDDEN" });
+    const secretBefore = JSON.stringify(store.readSecret(profileRecord.apiKeyRef));
     const readiness = await checkLlmProfileReadiness(store, profileRecord, { tenantId: profileRecord.tenantId, workspaceId: profileRecord.workspaceId });
+    const current = store.readLlmProfile(profileRecord.id);
+    if (!current || llmProfileDigest(current) !== llmProfileDigest(profileRecord)
+        || JSON.stringify(current.lastPreflight) !== JSON.stringify(profileRecord.lastPreflight)
+        || JSON.stringify(store.readSecret(profileRecord.apiKeyRef)) !== secretBefore) {
+      return writeJson(response, 409, { error: "LLM_PREFLIGHT_RESOURCE_DRIFT" });
+    }
     const updated = store.writeLlmProfile({ ...profileRecord, lastPreflight: readiness, updatedAt: new Date().toISOString() });
     reconcileRuntimeReadiness({ store, tenantId: updated.tenantId, workspaceId: updated.workspaceId, actor: auth.actor });
     if (request.method === "POST") {

@@ -73,3 +73,28 @@ test("completion rejects missing mappings, duplicate evidence, and wrong Candida
   assert.equal(wrong.status, "INCOMPLETE");
   assert.equal(wrong.counts.stale, 1);
 });
+
+for (const scenario of ['empty-required-list', 'duplicate-required-criterion', 'duplicate-validator-id']) {
+  test(`completion never closes an invalid acceptance inventory: ${scenario}`, () => {
+    const value = fixture();
+    const criterion = { targetId, criterionId: 'FUNC05' };
+    const requiredCriteria = scenario === 'empty-required-list' ? [] : scenario === 'duplicate-required-criterion' ? [criterion, { ...criterion }] : [criterion];
+    const validators = scenario === 'duplicate-validator-id' ? [...value.validators, { ...value.validators[0], criterionId: 'OTHER', command: 'node validator --criterion OTHER' }] : value.validators;
+    const report = aggregateCompletion({ inventory: value.inventory, trace: value.trace, requiredCriteria, validators, evidence: value.evidence, candidatePair: value.pair, impactClosure: 'PASS', noRegression: 'PASS' });
+    assert.equal(report.status, 'INCOMPLETE');
+    assert.ok(report.failures.length > 0);
+  });
+}
+
+test('completion preserves incomplete status with independently rebound negative evidence', () => {
+  for (const status of ['FAIL', 'PENDING', 'STALE', 'WARNING']) {
+    const value = fixture();
+    // Recompute the record digest so the test exercises the status, rather than
+    // accidentally passing because a stale recordDigest triggers another guard.
+    const evidence = [createCriterionEvidence({ ...value.evidence[0], recordDigest: undefined, status })];
+    const report = aggregateCompletion({ inventory: value.inventory, trace: value.trace, requiredCriteria: [{ targetId, criterionId: 'FUNC05' }], validators: value.validators, evidence, candidatePair: value.pair, impactClosure: 'PASS', noRegression: 'PASS' });
+    assert.equal(report.status, 'INCOMPLETE');
+    assert.equal(report.criterionResults[0].status, status);
+    assert.equal(report.failures.some(f => f.includes('RECORD_DIGEST_MISMATCH')), false);
+  }
+});

@@ -152,8 +152,16 @@ import { handleConnectorRoutes } from "../http/routes/connectors.js";
 import { handleDeliveryRoutes } from "../http/routes/delivery.js";
 import { handleEvaluationRoutes } from "../http/routes/evaluation.js";
 import { handleGoalRoutes } from "../http/routes/goals.js";
+import {handleSemanticGoalViews} from "../http/routes/semantic-goal-views.js";
 import { handleGovernedEvolutionRoutes } from "../http/routes/governed-evolution.js";
 import { handleHarnessRoutes } from "../http/routes/harness.js";
+import {handleProjectSemanticRoutes} from "../http/routes/project-semantics.js";
+import {handleSemanticExecutionRoutes} from "../http/routes/semantic-execution.js";
+import {createSemanticExecutionApplication} from "../application/semantic-execution-application.js";
+import {handleProjectSemanticBindingRoutes} from "../http/routes/project-semantic-bindings.js";
+import {createProjectSemanticBindingService} from "../application/project-semantic-binding.js";
+import {createProjectSemanticDiscoveryService} from "../application/project-semantic-discovery.js";
+import {resolveSemanticRequestPrincipal} from "./semantic-request-auth.js";
 import { handleLoopRuntimeRoutes } from "../http/routes/loop-runtime.js";
 import { handleLoopRoutes } from "../http/routes/loops.js";
 import { handleLlmReadinessRoutes } from "../http/routes/llm-readiness.js";
@@ -394,6 +402,10 @@ export type {
 } from "../model.js";
 
 export function createServer(options: EvoPilotServerOptions): http.Server {
+  const semanticDiscovery = createProjectSemanticDiscoveryService({registryConfigPath: options.harnessRegistryConfig,
+    policyPath: options.semanticCatalogPolicyPath});
+  const semanticBindings = createProjectSemanticBindingService({dataRoot: options.dataRoot,
+    registryConfigPath: options.harnessRegistryConfig, policyPath: options.semanticCatalogPolicyPath});
   const profile = options.profile ?? domainforgeFabricProfile;
   const runtime = resolveRuntimeConfig(options);
   const llmClient = runtime.mode === "debug" ? options.llmClient ?? createLlmClientFromEnv() : undefined;
@@ -408,6 +420,9 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
   });
   const lifecycleService = new LifecycleService(options.dataRoot, options.lifecycleCatalogDirs?.length ? options.lifecycleCatalogDirs : [path.resolve("lifecycles")]);
   const governedEvolutionService = new GovernedEvolutionService(options.dataRoot);
+  const semanticExecution = createSemanticExecutionApplication({dataRoot: options.dataRoot,
+    registryConfigPath: options.harnessRegistryConfig, policyPath: options.semanticCatalogPolicyPath},
+    {governed: governedEvolutionService, lifecycle: lifecycleService, adapter: options.semanticExecutorAdapter, collector: options.semanticEvidenceCollector});
   lifecycleService.configureGovernanceHooks({
     verifyBoundary: ({ tenantId, workspaceId, ...input }) => {
       const scope = { tenantId, workspaceId };
@@ -621,6 +636,10 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         options,
         deps: {
           audit,
+          canAccessWorkspace,
+          checkLlmProfileReadiness,
+          encryptSecretValue,
+          normalizeLlmProfileBody,
           envelope,
           hasRole,
           readJson,
@@ -763,6 +782,44 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           writeJson: routeWriteJson
         }
       })) return;
+      if (await handleSemanticExecutionRoutes({
+        request, response, url, requestId, service: semanticExecution, adapterConfigured: Boolean(options.semanticExecutorAdapter), collectorConfigured: Boolean(options.semanticEvidenceCollector),
+        currentAccess: (projectId) => {
+          const principal = resolveSemanticRequestPrincipal({request, options, tokens, runtime, store});
+          return {principal, project: principal ? store.readProject(projectId) : undefined};
+        },
+        setRequestErrorCode: code => {requestErrorCode = code;},
+        deps: {envelope, writeJson: routeWriteJson, readJson,
+          audit: event => store.appendAudit(audit({...auth, actor: event.principal.id, role: event.principal.role,
+            tenantId: event.principal.tenantId, workspaceId: event.principal.workspaceId},
+            `semantic-execution.${event.operation}.${event.phase.toLowerCase()}`, event.projectId,
+            {requestId: event.requestId, resultDigest: event.resultDigest, errorCode: event.errorCode}))}
+      })) return;
+      if (await handleProjectSemanticBindingRoutes({
+        request, response, url, requestId, service: semanticBindings,
+        currentAccess: (projectId) => {
+          const principal = resolveSemanticRequestPrincipal({request, options, tokens, runtime, store});
+          return {principal, project: principal ? store.readProject(projectId) : undefined};
+        },
+        setRequestErrorCode: (code) => { requestErrorCode = code; },
+        deps: {envelope, writeJson: routeWriteJson, readJson,
+          auditTransition: (record) => store.appendAudit(audit({...auth, actor: record.decision.principal.id},
+            "project-semantic-binding.transition-approved", record.review.scope.projectId,
+            {transitionDigest: record.transitionDigest, transitionReviewDigest: record.review.transitionReviewDigest,
+              action: record.review.action, decisionDigest: record.decision.decisionDigest})),
+          auditApproval: (record) => store.appendAudit(audit({...auth, actor: record.decision.principal.id},
+            "project-semantic-binding.approved", record.binding.scope.projectId,
+            {reviewDigest: record.review.reviewDigest, decisionDigest: record.decision.decisionDigest, bindingDigest: record.binding.bindingDigest}))}
+      })) return;
+      if (await handleProjectSemanticRoutes({
+        request, response, url, requestId, service: semanticDiscovery, onboarding: (input) => semanticBindings.onboarding(input),
+        currentAccess: (projectId) => {
+          const principal = resolveSemanticRequestPrincipal({request, options, tokens, runtime, store});
+          return {principal, project: principal ? store.readProject(projectId) : undefined};
+        },
+        setRequestErrorCode: (code) => { requestErrorCode = code; },
+        deps: {envelope, writeJson: routeWriteJson}
+      })) return;
       if (await handleHarnessRoutes({
         request,
         response,
@@ -781,6 +838,13 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           writeJson: routeWriteJson
         }
       })) return;
+      if (handleSemanticGoalViews({request, response, url, requestId, service: semanticExecution,
+        listVisibleGoals: () => hasRole(auth,"viewer") ? store.listGoals()
+          .filter(goal=>canAccessScopedResource(auth,goal.tenantId,goal.workspaceId)).slice(-50).reverse() : undefined,
+        currentAccess: projectId => {
+          const principal = resolveSemanticRequestPrincipal({request, options, tokens, runtime, store});
+          return {principal, project: principal ? store.readProject(projectId) : undefined};
+        }, deps: {envelope, writeJson: routeWriteJson}})) return;
       if (await handleGoalRoutes({
         request,
         response,
@@ -1154,12 +1218,13 @@ export function startServerFromEnvironment(): http.Server {
   const host = process.env.EVOPILOT_HOST ?? "127.0.0.1";
   const dashboardRoot = process.env.EVOPILOT_DASHBOARD_ROOT ? path.resolve(process.env.EVOPILOT_DASHBOARD_ROOT) : undefined;
   const harnessRegistryConfig = process.env.EVOPILOT_HARNESS_REGISTRY_CONFIG ? path.resolve(process.env.EVOPILOT_HARNESS_REGISTRY_CONFIG) : undefined;
+  const semanticCatalogPolicyPath = process.env.EVOPILOT_SEMANTIC_CATALOG_POLICY_PATH ? path.resolve(process.env.EVOPILOT_SEMANTIC_CATALOG_POLICY_PATH) : undefined;
   const harnessCatalogDirs = parseHarnessCatalogDirs(process.env.EVOPILOT_HARNESS_CATALOG_DIRS ?? process.env.EVOPILOT_HARNESS_CATALOG_DIR);
   const lifecycleCatalogDirs = parseHarnessCatalogDirs(process.env.EVOPILOT_LIFECYCLE_CATALOG_DIRS ?? process.env.EVOPILOT_LIFECYCLE_CATALOG_DIR);
   const tokens = parseEnvTokens(process.env.EVOPILOT_TOKENS);
   const users = parseEnvUsers(process.env.EVOPILOT_USERS);
   const apiToken = process.env.EVOPILOT_API_TOKEN;
-  const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens, users, harnessRegistryConfig, harnessCatalogDirs, lifecycleCatalogDirs }).listen(port, host, () => {
+  const server = createServer({ dataRoot, dashboardRoot, apiToken, tokens, users, harnessRegistryConfig, semanticCatalogPolicyPath, harnessCatalogDirs, lifecycleCatalogDirs }).listen(port, host, () => {
     const runtimeMode = process.env.EVOPILOT_RUN_MODE ?? process.env.EVOPILOT_MODE ?? (parseBoolean(process.env.EVOPILOT_DEBUG, false) ? "debug" : "prod");
     logInfo("server.started", {
       metadata: {

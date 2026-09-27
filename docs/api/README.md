@@ -114,6 +114,24 @@ POST /api/v1/lifecycle-runs/{runId}/feedback
 
 MCP 和 CLI 只是同一服务端语义的适配层。第三方 Agent Runtime 必须先通过独立资格校验，只能执行 `pendingExecution` 中声明的 scope、Lifecycle、Harness、action、capabilities、sandbox、allowed effects、SecretRefs、Runtime profile 和 binding digest；返回结果必须匹配 request/binding/idempotency digest。不能从对话推导批准。`feedback` 仅创建经过显式批准、严格脱敏、不可变且 `PRIVATE` 的反馈包，不会写入 `evopilot-harness` Catalog。
 
+Runtime 6.3.0 在途源码已新增独立的公开语义执行入口，详见下文。既有 governed `plan` / `runs` 与 Lifecycle run 创建/变更入口仍拒绝 `semanticExecutionBindingDigest`、`semanticExecutionBinding`、`semanticContextSlice`、`semanticContext`、`outcomePlan` 和 `semanticOutcomePlan`（包括空值）：governed 返回 HTTP 400，Lifecycle 返回 HTTP 409，均为 `SEMANTIC_EXECUTION_INTEGRATION_REQUIRED`。不会忽略字段后降级执行，既有 Harness-only 流程不变。
+
+独立入口为 `GET /api/v1/projects/{projectId}/semantic-execution/capabilities` 和 `POST /api/v1/projects/{projectId}/semantic-execution/{operation}`。有限操作为 `prepare`、`inspect`、`bind`、`resolve`、`review`、`approveReview`、`dispatch`、`collect`、`evaluate`、`commitStage`、`stageReceipt`、`completeTarget`、`completionReceipt`、`completionStatus`。所有操作要求当前作用域 operator/admin、生产模式 readiness 和服务端身份重验；不接受 query，POST 仅接受最多 64 KiB 的精确 JSON 字段。响应 no-store，错误脱敏并带 requestId。请求字段见 [CLI 契约](../cli/commands.md#project-semantic-execution-630-source-development)。
+
+固定应用从实际已发布 Catalog、持久化项目/Goal/Target/LLM 元数据、精确 pending Lifecycle、当前治理权限和 executor observation 重新构造状态。它不会补齐缺失批准、跟随新默认模型、解析密钥或替调用方选择 Host。创建服务器时可显式配置 `semanticExecutorAdapter`；默认无适配器，不广告 dispatch。配置存在也不代表资格通过，执行仍须匹配精确 Profile 与已批准业务规则。
+
+`review` 读取实际 Target 的全部业务验收标准并保存映射；`approveReview` 接受精确 reviewDigest 与明确 APPROVE，返回决策本身。不能从准备计划或对话推断批准。派发前持久化不可覆盖 claim，并写入服务端身份审计；审计失败不启动调用，结果审计失败不删除已有回执。CLI/MCP 不自动重试；同一已完成派发的显式精确重试可返回已有回执，未知调用结果仍需核对，禁止盲目重放。
+
+`collect` 仅在服务端显式配置 `semanticEvidenceCollector` 时广告；默认无采集器。请求仅含 `identity` 和 `bindingDigest`，不接受事实、命令、URL 或采集器选择。Runtime 从已批准规则及精确执行回执派生采集请求，校验当前激活 evidence GovernancePack 中的 `semanticCollectorPolicy` 与服务端描述符完全一致，采集前后重验权限、政策和执行绑定。不可变 claim 阻止并发重复调用或失败后的自动重试；返回摘要、种类及来源，不返回原始事实。
+
+公开 `evaluate` 分别报告业务和 Harness 结果，可以读取该采集回执，但自身不会写回完成状态。缺证据为 `INDETERMINATE`，两侧通过最多为 `DUAL_VALIDATED_NOT_COMPLETED`，始终 `eligibleForCompletion=false`。合成来源保持合成，内容摘要与请求关联不是采集真实性证明。已有语义 plan/binding 的运行也不能通过旧 `external-result` 省略语义字段来推进，返回 `LIFECYCLE_SEMANTIC_COMPLETION_REQUIRED`。以上只经本地源码、合成 Catalog 与注入适配器验证，不代表真实 Host、安装版验收或发布就绪。详见 [实现边界](../architecture/semantic-catalog-consumer.md)。
+
+完成入口需协商 `completionAvailable=true` 和 `completionScope=VALIDATED_TARGET_AND_NON_PHASE_GOAL`。`commitStage` 仅接收 identity/bindingDigest，核验当前策略及双重证据后提交阶段；`stageReceipt` 另需 runId/requestDigest，可在阶段推进后读取历史回执。`completeTarget`、`completionReceipt`、`completionStatus` 仅接收 identity/runId。完成写入重新核验当前权限与各阶段证据，phase Target 还需结构化独立证据包及显式 phaseTargetCompletion 策略；依赖前驱阶段的执行与完成要求验证阶段回执，GA/phase Goal 不因业务 Target 完成而闭合。`completionStatus` 是独立只读报告，targetPercent 是已验证必需 Target 的进度，不是发布进度；release 始终 NOT_EVALUATED。语义 Goal 的既有 GET 单目标、snapshot、evidence-matrix 和 final-report 入口现由当前 operator/admin 读取精确原始 Goal 与验证回执；非阶段 Goal 可返回只读完成报告，不写入 finalReport、不生成发布决定。GA/阶段 Goal 缺少独立最终 Goal 回执，或必需 Target 证据缺失时，final-report 仍为 409。旧证据包生成器不会因原始 DONE、伪造 phase GO 或无关成功 Loop 而通过。`completePhase` / `phaseReceipt` 仅接收 identity、runId、phaseTargetId，需协商 phaseCompletionAvailable=true；当前阶段策略、全部必需 Target 回执、经过策略批准的阶段映射及完整证据/评审/输出验证后，阶段可写入 PASSED/GO 回执。此操作不闭合 GA Goal、不生成发布决定。独立的 `completeGoal` / `goalReceipt` 仅接收 identity/runId，并要求 `goalCompletionAvailable=true`。全部必需 Target、全部声明阶段回执与同一已批准 Goal/计划匹配，且独立的当前 semanticFinalGoalCompletionPolicy 精确授权后，才可原子写入 Goal COMPLETED 和最终回执。GA 终态必须有可信 GA 阶段，ga-maturity-ladder 必须保留四阶段及前驱链；final-report 可投影已验证阶段摘要，但不伪造旧 Target 包、不写入报告、不生成发布决定。列表、图、run-status、targets、phases、timeline 使用同一已验证读取投影。列表保留既有作用域过滤、倒序和最近 50 条窗口；逐 Goal 验证，并非跨 Goal 原子快照，可见语义记录验证失败时整份响应失败。语义 run-status 返回独立 schema `evopilot-semantic-goal-run-status/v1`，包含已验证回执摘要引用，不伪造旧 Loop 链或 Target 包；`llmUsage` 为 `evopilot-semantic-execution-usage/v1`，只汇总已验证完成 Target 的外部执行回执，包含 provider/model/Host、请求及证据摘要；状态为 UNAVAILABLE（totals 为 null）、PARTIAL 或 VERIFIED_COMPLETED_TARGETS。缺失或旧用量完整性标记不当作零；不完整遥测不计入已知小计。排除未完成、失败、不确定执行、内部动作和其他 Goal，不代表供应商完整账单或结算。独立的 dispatchUsage（evopilot-semantic-dispatch-usage/v1）只读汇总当前 Goal 的已知派发请求，包括成功、失败、不确定回执；调用前持久化的精确请求/Profile 关联记录与 claim 摘要共同约束读取，分别验证 Lifecycle 和 Harness 绑定。等待回执、旧关联缺失、观察不可用均明确标识，不重放调用、不清除 claim、不闭合 Target。其小计与 llmUsage 重叠，不能相加。未决写入锁返回 HTTP 409 `SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED`，应核查保留的 claim，不得自动清锁或重放。
+
+政策、Provider、环境、权限角色和证据契约的内部元数据读取现要求精确的当前激活记录，并将资源及激活回执摘要锁入绑定；缺失指针不会自动选择最新版本。这不替代有效权限、Host 资格、环境就绪或结果校验，也不改变上述公共入口拒绝行为。
+
+内部执行器观察适配层进一步校验 Runtime 保存的精确 Host/执行器/资格/环境观察记录：必须显式激活、未过期、未撤销，并匹配当前主体与治理摘要；权限上限只能收窄当前有效权限。此处不运行真实 Host/环境探测，也未完成专用采集、审查写入和派发流程，不能作为生产执行就绪或正式验收声明。
+
 详细流程见 [Lifecycle Registry](../guides/lifecycle-registry.md) 和 [External Agent Runtime](../guides/agent-runtime.md)。
 
 ## LLM 调用与 Credits 观测
@@ -542,6 +560,167 @@ GET /api/v1/projects/{projectId}/onboarding-checklist
 `GET /api/v1/projects/{projectId}/onboarding-checklist` 复核已注册项目，会基于持久化项目、source credentials、GitHub Actions/GitLab CI 配置和项目 LLM 绑定生成同一 schema。只有 `READY_TO_RUN` 才表示项目已经具备真实源代码写回、仓库原生 DevOps 和 LLM profile 的前置条件；此时仍必须先进入 `plan-target`，由用户或项目负责人确认 phase plan。`BLOCKED` 或 `WAITING_INPUT` 不能被解释为 GA/RC/alpha 可执行完成。
 
 ### Published Harness Catalog
+
+#### In-progress 6.3.0 semantic discovery (source checkout only)
+
+`GET /api/v1/projects/{projectId}/semantic-capabilities` returns
+`data.schema=evopilot-project-semantic-capabilities/v1`, exact `projectId`, the
+implemented operations (`capabilities`, `inspect`, `compatibility`, `review`,
+`approve`, `binding`, `activation`, `transitionReview`, `transitionApprove`, `onboarding`), and
+`executionAvailable=false`, `completionAvailable=false`.
+It is authenticated, project-scoped, `no-store`, accepts no query/body and retains
+production readiness gates. Advertisement is not a role or Catalog permission grant.
+CLI `project semantic ...` and the corresponding finite MCP tools negotiate this
+surface before making the selected request; version-only or legacy fallback is
+forbidden. See the [CLI command contract](../cli/commands.md#project-semantic-discovery-and-review-630-source-development).
+
+`GET /api/v1/projects/{projectId}/semantic-catalogs/{catalogId}` returns
+`data.schema=evopilot-project-semantic-discovery/v1` and
+`status=VERIFIED_DISCOVERY_ONLY`. This is not a released capability or a binding
+operation. `eligibleForExecution=false` and `bindingCreated=false` always apply.
+CLI `project semantic inspect` and MCP `evopilot_project_semantic_inspect` expose this read-only operation.
+
+`GET /api/v1/projects/{projectId}/semantic-catalogs/{catalogId}/onboarding` returns
+`evopilot-project-semantic-onboarding/v1` under the same current scope/readiness,
+no-query/no-body/no-store rules. It never writes a binding, review, decision or
+project. A valid current binding produces `EXISTING_BINDING` with exact head and
+binding digests and no search of the requested Catalog. Otherwise a verified single
+Catalog supplies at most 64 pairs, without truncation or cross-Catalog ranking:
+`REVIEW_REQUIRED`, `SELECTION_REQUIRED`, `EVIDENCE_REQUIRED`,
+`NO_COMPATIBLE_MATCH` or `NO_PUBLISHED_CANDIDATE`. Compatible choices recommend
+`DUAL_BINDING_REVIEW`, but `selectedCandidate=null`; exact pair selection, review
+and separate human approval remain required. Existing binding corruption, permission
+loss, cancellation, resource limits and drift are errors, never absence or a legacy
+fallback. `businessField` and `productType` remain null until a supported fact source
+exists. Readiness, Harness eligibility, execution and Release are not established.
+
+Configure both `EVOPILOT_HARNESS_REGISTRY_CONFIG` and
+`EVOPILOT_SEMANTIC_CATALOG_POLICY_PATH` at server startup; the latter references
+an independent operator-owned `evopilot-harness-semantic-catalog-policy/v1` JSON
+file. Missing policy never enables a legacy-directory fallback. The consumer
+does not create grants, publish assets or edit either configuration.
+
+Use a current bearer credential with viewer/operator/admin role in the registered
+project's exact tenant/workspace. Platform-admin status does not bypass this
+scope check. Anonymous debug access, suspended/stale accounts and forced password
+changes are denied. Production setup-only readiness remains enforced. Project
+and principal state are rechecked during the read, not cached from request entry.
+
+Both path ids match `[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}`. Query parameters and
+request bodies are rejected; only GET exists. The bounded, unpaginated result
+contains validated digest references and scope, not source material, Skill prose,
+policy grants or filesystem paths. `discoveryDigest` is an evidence digest only.
+Responses are `no-store`. Errors return `error`, `requestId` and, for reader
+failures, `nextAction`: 400 invalid request; 401 missing/invalid bearer; 403 current
+scope/permission denied; 404 configured Catalog/material unavailable; 408 cancelled;
+409 unconfigured trust, invalid material, drift or resource failure; 504 timeout.
+No partial result is returned. See the [implementation limits and remaining work](../architecture/semantic-catalog-consumer.md).
+
+#### In-progress 6.3.0 semantic compatibility (source checkout only)
+
+`GET /api/v1/projects/{projectId}/semantic-catalogs/{catalogId}/compatibility`
+requires exactly one `artifactSetDigest` and one `bundleDigest` query value, each
+matching `sha256:[a-f0-9]{64}`. Select these from discovery's `sets` and each set's
+`harnessBundles`. Extra/duplicate/missing query keys and bodies return 400.
+All current-auth, registered-project scope, configured-policy, full-material,
+production readiness, cancellation and redaction checks from discovery apply.
+No request-supplied report, requirements, policy or validator is accepted.
+
+The response is `data.schema=evopilot-project-semantic-compatibility-inspect/v1`,
+with a digest-bound `report.status` of `COMPATIBLE`, `INCOMPATIBLE` or
+`INDETERMINATE`. Exact Foundation, typed concepts, prohibited ids and explicit
+directed relationships are compared. Missing Bundle requirements, unverified
+descriptive evidence requirements and external reasoning cannot yield a positive
+compatibility claim. Missing selected assets return 404; selection resolving to
+multiple complete sets returns 409. Nothing is silently selected or persisted.
+`bindingCreated=false` and `eligibleForExecution=false` remain mandatory even
+for `COMPATIBLE`; actual review and binding use the separate workflow below.
+Harness eligibility and semantic execution authorization remain unfinished.
+
+`GET /api/v1/projects/{projectId}/semantic-catalogs/{catalogId}/gap` uses the exact
+same pair query and scoped Catalog checks. Its `evopilot-project-semantic-gap/v1`
+response binds inspection/compatibility/gap digests and routes known findings to
+ontology-material, Harness-declaration, cross-contract, evidence or reasoning review.
+These are review destinations, not proof of defect ownership. Unverified requirements
+remain unresolved. No successor is selected, no producer asset is modified/published,
+and no binding/transition is written. Separate published successor compatibility,
+binding review, current activation head, explicit MIGRATE preview and exact human
+decision remain required; existing run pins stay unchanged.
+
+Pre-plan authoring uses `POST /api/v1/projects/{projectId}/semantic-execution/planning`
+with `identity`, `runId`, `requestDigest`, `goalTarget`. It reads exact current criteria,
+allowed concepts/relations and the full Harness/Lifecycle obligation union without
+selecting business rules. `POST .../semantic-execution/draft` additionally requires
+`basisDigest`, explicit `selection`, `business`, `harness` and `selections`. Runtime
+derives pins/digests and returns an unpersisted `declaration` for a separate `prepare`
+request. Both require current scoped operator/admin and preserve the existing 64 KiB
+request ceiling, bounded deadline, no-store response, audit and no-retry contract.
+Stale basis, incomplete obligations, unselected concepts and executable predicates
+are rejected. Neither operation approves meaning, prepares a review, attests evidence
+or invokes an Agent; missing coverage stays empty for subsequent explicit review.
+
+`POST /api/v1/projects/{projectId}/semantic-execution/mapping` accepts only
+`identity` and `bindingDigest` under the existing scoped operator/admin, readiness,
+current source and execution checks. The read-only `evopilot-semantic-outcome-mapping/v1`
+response has status `COVERAGE_INPUT_REQUIRED`, actual criteria/concepts, the bound
+outcome plan's separate business/Harness rules, empty `coverageInputs` and mappingDigest.
+It neither guesses coverage nor prepares/approves a review. Business field/product
+type remain null; returned prose is untrusted data. This assists review of an existing
+plan, not pre-plan domain authoring. All dispatch/completion/Release authority is false.
+
+#### In-progress 6.3.0 reviewed project binding (source checkout only)
+
+`POST /api/v1/projects/{projectId}/semantic-binding/reviews` accepts exactly
+`catalogId`, `artifactSetDigest`, `bundleDigest` in a JSON body (2 KiB maximum).
+A current operator/admin in the project's exact tenant/workspace may prepare a
+review after fresh complete material verification and `COMPATIBLE` inspection.
+It returns `data.reviewDigest`; it does not create a binding.
+
+`POST /api/v1/projects/{projectId}/semantic-binding/approvals` accepts exactly
+`reviewDigest` and `decision: "APPROVE"`. Runtime checks the same review against
+current materials, project revision and permissions, then commits its review,
+authenticated-principal decision and immutable project binding together. Caller
+actor headers, decision objects, scope, paths and authority fields are not accepted.
+Exact retries by the same current principal return the original record; another
+review/principal cannot replace it. The shared audit is at-least-once, keyed by
+the immutable decision digest. The initial record cannot be replaced; explicit
+future-plan transitions use the separate endpoints below.
+
+`GET /api/v1/projects/{projectId}/semantic-binding` permits scoped viewer or higher,
+rechecks current permission/material pins and returns `data.review`, `data.decision`
+and `data.binding`. The binding status is `REVIEWED_NOT_ACTIVATED` with
+`eligibleForExecution=false`; no Goal/Loop activation, semantic execution binding
+or new-project default is implied. All routes reject query parameters, return
+`no-store`, retain bearer authentication and production readiness. Errors include
+400 invalid request, 401 no credential, 403 permission denied, 404 missing review,
+binding or material, 408 cancellation, 409 non-compatible material, stale review,
+immutable conflict, corruption or readiness failure, and 504 read timeout.
+See [persistence, retry and execution limitations](../architecture/semantic-catalog-consumer.md).
+
+`GET .../semantic-binding/activation` returns the selected binding, `headDigest`,
+bounded transition history and `grantsExecutionAuthority=false`. A scoped viewer
+may read it. `POST .../semantic-binding/transition-reviews` requires exactly
+`action`, `expectedHeadDigest`, `destinationDigest`: `ACTIVATE` names the initial
+binding digest, `MIGRATE` names a fresh compatible review digest, and `ROLLBACK`
+names a previously used binding digest. Migration/rollback require initial
+activation. The preview contains changed fields and `FUTURE_EXECUTION_PLANS_ONLY`.
+
+`POST .../semantic-binding/transition-approvals` requires exactly
+`transitionReviewDigest` and `decision: "APPROVE"`. Current scoped operator/admin
+authority and current destination material are rechecked; a stale head never
+overwrites another decision. Same-principal retry returns the original receipt,
+without reactivating an old destination. The immutable tuple contains review,
+destination and authenticated decision; the at-least-once audit event is
+`project-semantic-binding.transition-approved`. The chain limit is 64, without
+automatic pruning. These endpoints retain the above HTTP/error/readiness rules.
+They never mutate published assets or existing execution records. Existing plans
+and subsequent stages retain the root plan's project binding; current permission
+or project drift still blocks execution. CLI `project semantic activation|transitionReview|transitionApprove`
+and MCP tools with the corresponding `evopilot_project_semantic_` suffixes expose
+these exact operations. After uncertainty, read activation history and match the
+exact transition review digest; neither transport retries automatically.
+
+#### Existing published Harness discovery
 
 `evopilot-harness` owns Harness authoring, lifecycle management, source evolution, review, approval, versioning, and publication. EvoPilot does not expose Harness lifecycle APIs or CLI commands. It only reads a Harness Registry and the published Harness Catalog directories that the server process can see.
 
@@ -1129,7 +1308,7 @@ GET /api/v1/maturity/standards/{alpha|beta|rc|ga|standard-id}
 9. `POST /api/v1/goals/{goalId}/advance` 推进一个服务端治理步骤。
 10. 目标终态后读取 `GET /api/v1/goals/{goalId}/final-report`。
 
-`GET /api/v1/goals/{goalId}/run-status` 是 Dashboard 和 CLI wrapper 共享的白盒投影。它包含 `targetPackages`、`phasePackages`、workflow `chain`、`activeTarget`、`latestLoop`、`blockers`、`evidenceMatrix`、`releaseDecision`、`finalReport` 和 `llmUsage`。Dashboard 不应自己计算 phase 进度或 release verdict。
+非语义 Goal 的 `GET /api/v1/goals/{goalId}/run-status` 是 Dashboard 和 CLI wrapper 共享的白盒投影。它包含 `targetPackages`、`phasePackages`、workflow `chain`、`activeTarget`、`latestLoop`、`blockers`、`evidenceMatrix`、`releaseDecision`、`finalReport` 和 `llmUsage`。Dashboard 不应自己计算 phase 进度或 release verdict。
 
 `TargetEvidencePackage` 返回 schema `evopilot-target-evidence-package/v1`，包含 `targetId`、`phase`、`status`、`acceptanceCriteria`、`requiredEvidence`、`reviewCapabilities`、`packageOutputs`、`loop`、`evidence`、`blockers`、`llmUsage` 和 `decision`。`LoopRun.status=SUCCEEDED` 只是证据之一；如果 source closure、DevOps、部署健康或其他必需 gate 未通过，TargetEvidencePackage 仍为 `NO-GO`，GoalTarget 不会变成 `DONE`。
 
@@ -1144,14 +1323,14 @@ GET /api/v1/maturity/standards/{alpha|beta|rc|ga|standard-id}
 
 `advance` 返回 schema `evopilot-goal-advance/v1`，其中 `nextAction` 是自动化和 Dashboard 的主要路由字段。常见值包括 `plan-goal`、`approve-plan`、`start-target`、`resume-loop`、`human-approval`、`configure-source-credentials`、`repair-project`、`repair-deploy-target`、`policy-review`、`release-decision`、`view-final-report`、`done` 和 `repair`。调用方遇到人工、凭据、部署、策略或 repair 类型动作时应停止自动推进并展示阻塞原因。
 
-`run-status` 返回 schema `evopilot-goal-run-status/v1`，是 CLI wrapper commands 和 Dashboard 白盒视图共享的聚合投影。它包含 `scope`、`goal`、`snapshot`、`graph`、`timeline`、`evidenceMatrix`、`activeTarget`、`latestLoop`、`releaseDecision`、`finalReport`、`chain`、`blockers`、`nextAction` 和 `llmUsage`。CLI 的 `target run` / `goal run` 会用这个接口打印终端版 workflow 链路和 LLM/token usage，而不是在客户端猜测状态。
+非语义 Goal 的 `run-status` 返回 schema `evopilot-goal-run-status/v1`，是 CLI wrapper commands 和 Dashboard 白盒视图共享的聚合投影。它包含 `scope`、`goal`、`snapshot`、`graph`、`timeline`、`evidenceMatrix`、`activeTarget`、`latestLoop`、`releaseDecision`、`finalReport`、`chain`、`blockers`、`nextAction` 和 `llmUsage`。CLI 的 `target run` / `goal run` 会用这个接口打印终端版 workflow 链路和 LLM/token usage，而不是在客户端猜测状态。
 
 Dashboard 的 GlobalGoal Cockpit 直接消费这些投影接口，而不是从多个 LoopRun 拼接状态：
 
 | 接口 | Dashboard 用途 |
 |---|---|
 | `snapshot` | 状态、进度、active GoalTarget、下一步动作、blockers 和 release decision 摘要。 |
-| `run-status` | CLI / Dashboard 共用的聚合运行视图，包含链路、最新 Loop、targetPackages、phasePackages、阻塞项、LLM/token usage 和 release decision。 |
+| `run-status` | 非语义 Goal：CLI / Dashboard 共用的聚合运行视图，包含链路、最新 Loop、targetPackages、phasePackages、阻塞项、LLM/token usage 和 release decision。 |
 | `phase-plan` | 执行前用户可审查和可调整的 Alpha/Beta/RC/GA plan。 |
 | `target-packages` | 每个 GoalTarget 的独立 evidence package、LoopRun/source gate/LLM usage、blockers 和 GO/NO-GO decision。 |
 | `phases` / `phase-packages` | 每个成熟度阶段的验收标准、证据、blockers、package outputs、target package 汇总和 GO/NO-GO decision。 |
@@ -1474,3 +1653,36 @@ GET /api/v1/history
 返回追加写入的审计记录，包括项目创建、运行创建、评审决策和交付执行。`limit` 是服务端读取限制，必须是正整数，超过 `1000` 会按 `1000` 处理；`order` 可为 `asc` 或 `desc`，默认 `asc`。CLI 的 `evopilot audit list --limit <n>` 会调用 `order=desc`，用于 WorkBuddy 在生产审计日志较大时只读取最新记录。
 
 `GET /api/v1/history` 是 Dashboard “审计/历史详情”的统一产品历史接口，会按当前登录用户的 tenant/workspace 权限聚合 completed run release、source release run、release decision、code upgrade run 和 audit 摘要。支持 `projectId`、`targetId` 和 `limit` 查询参数，用于发布后证据复盘。
+
+### Project definition selection concurrency
+
+The existing `POST /api/v1/evolution-project-definitions/{id}/activate` and
+`/rollback` routes accept `version` and `evidenceRef`. Expert 2.3.0 additionally
+sends both `definitionDigest` (the reviewed destination) and
+`expectedActiveDigest` (the currently selected definition digest). If either
+binding field is supplied, Runtime requires both to be SHA-256 digests and
+checks them before writing the future-planning pointer. Malformed, changed
+candidate and stale-current bindings are rejected. Existing administrator
+clients that omit both fields retain their legacy behavior; role and scope
+checks apply to both forms. Existing execution bindings are not rewritten.
+
+The public MCP tools are `evopilot_project_definition_activate` and
+`evopilot_project_definition_rollback`. Route identity stays at the top level;
+version, evidence and concurrency bindings belong under `payload`. An Expert
+exact human decision is separate from server authentication and authorization.
+
+### Scoped connected-project reads and writes
+
+`GET /api/v1/projects/{projectId}` returns the same masked project representation
+as the list endpoint, under current viewer-or-higher role and scope checks.
+Project registration and ownership changes check both destination scope and
+existing-project access before repository reads or writes. Platform administrators
+retain their explicitly declared cross-workspace authority.
+
+The MCP tools `evopilot_project_list`, `evopilot_project_inspect`,
+`evopilot_project_onboarding_plan`, `evopilot_project_register` and
+`evopilot_project_readiness` delegate to these Runtime routes and the existing
+onboarding checklist. POST bodies use `payload`; project reads take `projectId`.
+The Expert distinguishes a versioned declaration from a connected project and
+forwards only credential references. Checklist warnings remain visible, including
+local projects with unconfigured LLM; no registration result grants execution.

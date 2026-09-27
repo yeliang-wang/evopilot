@@ -106,7 +106,7 @@ jobs:
       - name: Install frozen dependencies
         run: npm ci --ignore-scripts
 
-      - name: Import the exact native component without rebuilding Runtime
+      - name: Import the exact native component
         uses: actions/download-artifact@v4
         with:
           name: evolution-expert-native-input-arm64
@@ -118,17 +118,18 @@ jobs:
           node packages/evolution-expert/scripts/build-host-integration.mjs --inventory-only
           node --test tests/unit/evolution-expert-host-integration.test.mjs tests/functional/evolution-expert-host-integration.test.mjs
 
-      - name: Verify Expert recovery without rebuilding published Runtime
+      - name: Verify the approved semantic convergence source pair
         run: |
-          node scripts/materialize-expert-runtime-contract.mjs
-          node scripts/materialize-expert-runtime-fixtures.mjs
-          npm run build:expert-only -w @evopilot/evolution-expert
+          # Source compilation is not Runtime release-set formation or publication.
+          # Historical 2.2.1 recovery materializers remain unchanged but are not
+          # the 2.3.0 / 6.3.0 successor Candidate input contract.
+          node scripts/validate-semantic-convergence-corpus.mjs --product expert --target "$TARGET_FILE"
+          npm run build
           npm run roadmap:check
           # Includes evolution-expert-cli.test.mjs and evolution-expert-public-install.test.mjs.
-          node --test tests/unit/*.test.mjs tests/functional/cli.test.mjs tests/functional/harness-catalog-consumer.test.mjs tests/functional/first-run-llm-readiness.test.mjs
+          node --test tests/unit/*.test.mjs tests/functional/*.test.mjs tests/e2e/semantic-convergence-corpus.test.mjs tests/e2e/installed-batch.test.mjs
           node packages/evolution-expert/scripts/generate-adapters.mjs --check
           node scripts/verify-v62-first-run-llm-readiness.mjs
-          node scripts/verify-expert-recovery-plan.mjs
 
       - name: Candidate readiness and release-pipeline contract
         run: |

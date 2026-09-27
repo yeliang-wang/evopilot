@@ -205,6 +205,7 @@ export function aggregateCompletion(input: {
     failures.push(error instanceof Error ? error.message : String(error));
   }
 
+  if (input.requiredCriteria.length === 0) failures.push("COMPLETION_REQUIRED_CRITERIA_EMPTY");
   const criterionKeys = input.requiredCriteria.map((item) => criterionKey(item.targetId, item.criterionId));
   try { assertUnique(criterionKeys, "REQUIRED_CRITERION"); } catch (error) { failures.push(error instanceof Error ? error.message : String(error)); }
   const validatorByCriterion = new Map<string, CriterionValidator[]>();
@@ -297,7 +298,7 @@ export function aggregateCompletion(input: {
   if (input.noRegression !== "PASS") failures.push(`COMPLETION_NO_REGRESSION_${input.noRegression}`);
   if (!traceValid) unmapped += input.inventory.requirements.length;
   const total = input.requiredCriteria.length;
-  const status = traceValid && total === passed && failed === 0 && pending === 0 && stale === 0 && warning === 0 && generic === 0 && unmapped === 0 && candidatePairVerified && input.impactClosure === "PASS" && input.noRegression === "PASS" ? "COMPLETE" as const : "INCOMPLETE" as const;
+  const status = failures.length === 0 && traceValid && total === passed && failed === 0 && pending === 0 && stale === 0 && warning === 0 && generic === 0 && unmapped === 0 && candidatePairVerified && input.impactClosure === "PASS" && input.noRegression === "PASS" ? "COMPLETE" as const : "INCOMPLETE" as const;
   return withDigest({
     schema: COMPLETION_REPORT_SCHEMA,
     status,

@@ -1,5 +1,6 @@
 import http from "node:http";
 import type { LifecycleService } from "../../domains/lifecycle/index.js";
+import {assertNoUnintegratedSemanticExecution} from "../../domains/lifecycle/semantic-execution-guard.js";
 
 interface LifecycleRoutesContext {
   request: http.IncomingMessage;
@@ -94,6 +95,7 @@ export async function handleLifecycleRoutes(context: LifecycleRoutesContext): Pr
     if (request.method === "POST" && url.pathname === "/api/v1/lifecycle-runs") {
       if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
       const body = await readJson(request, options.maxBodyBytes);
+      assertNoUnintegratedSemanticExecution(body);
       assertProjectBinding(store, auth, body);
       assertPublishedHarnessBundle(store, body.harnessBundle);
       assertGoalBinding(store, auth, body);
@@ -135,6 +137,7 @@ export async function handleLifecycleRoutes(context: LifecycleRoutesContext): Pr
       if (!existing || existing.tenantId !== auth.tenantId || existing.workspaceId !== auth.workspaceId) return writeJson(response, 404, { error: "LIFECYCLE_RUN_NOT_FOUND" });
       const action = mutationMatch[2];
       const body = await readJson(request, options.maxBodyBytes);
+      assertNoUnintegratedSemanticExecution(body);
       if (["authorize", "decision", "advance", "external-result", "feedback"].includes(action) && existing.binding) assertPublishedHarnessBundle(store, existing.binding.harnessBundle);
       let run;
       if (action === "answer") run = service.answer(id, record(body.answers), inputSources(body));

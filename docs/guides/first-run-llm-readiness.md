@@ -47,6 +47,7 @@ If a user pastes credential-like text into the conversation, Expert refuses it a
 The corresponding MCP tools are:
 
 - `runtime_readiness_inspect`
+- `llm_setup_protocol` (Runtime 6.3 read-only migration/bootstrap guidance)
 - `llm_provider_discover`
 - `llm_profile_list`
 - `llm_profile_inspect`
@@ -57,14 +58,22 @@ The corresponding MCP tools are:
 
 The administrator CLI exposes `evopilot runtime readiness`, `evopilot llm providers`, `evopilot llm workspace-default inspect`, `evopilot llm workspace-default bind`, and the explicit `evopilot llm migrate-v61` migration helper. CLI and HTTP remain diagnostic and automation surfaces; Evolution Expert over MCP is the ordinary-human entry.
 
+The unreleased 6.3 source also provides `evopilot llm bootstrap --preview` and explicit `--opt-in --input-stdin` initialization for administrators. A trusted non-echoing producer supplies one chosen provider configuration directly to stdin; Runtime creates governed resources and performs live preflight before binding. The CLI does not read Host configuration or environment defaults, create an input file, or retain a fallback. Input producer cleanup remains the caller's responsibility. See [the full command, failure and repair contract](../cli/commands.md#llm-profiles). This is not an ordinary-human Expert fallback.
+
+Expert 2.3 routes LLM migration/bootstrap questions to the read-only `evopilot_llm_setup_protocol` MCP tool. It explains only Runtime-returned resource, opt-in, ambiguity, audit and cleanup facts. If an older Runtime does not advertise that administration contract, Expert reports the limitation rather than inventing support or using a direct HTTP/CLI substitute. Sensitive bootstrap input never passes through Expert or MCP.
+
 Setup-only HTTP paths include health/readiness, authentication, LLM provider discovery, Profile and SecretRef administration, runtime readiness, workspace-default binding, and the explicit v6.1 migration endpoint. Other production requests receive `409 LLM_PROFILE_REQUIRED` until readiness is `READY`.
 
 ## Degradation and repair
 
 Runtime reconciles readiness before normal operations. Profile drift, disabled or deleted Profiles, missing or revoked SecretRefs, stale preflight evidence, and binding mismatch produce `LLM_BLOCKED`. Running work is not silently switched to another model. The Expert explains the exact failed evidence, guides repair, performs a new live preflight, and requires an explicit replacement binding when the Profile digest changes.
 
+In the 6.3 source, changing Profile material or rotating a credential invalidates the old preflight. A provider probe cannot overwrite a Profile or Secret changed while that probe was in flight. Bootstrap failure retains the newly created governed resources for inspection; retrying initialization refuses to overwrite them. Repair and rebind explicitly, including when a new preflight replaces the proof pinned by an unchanged Profile digest.
+
 ## Upgrade from 6.1
 
 Upgrade never imports a hidden global default. An administrator must explicitly choose the existing workspace Profile. If exactly one eligible Profile exists, `migrate-v61` may propose it; zero or multiple candidates stop as ambiguous. The selected Profile still needs an active SecretRef and fresh live preflight before an explicit binding can make Runtime `READY`.
+
+To convert an explicitly selected 6.1 provider rather than bind an existing Profile, the 6.3 source accepts `llm migrate-v61 --opt-in --input-stdin --profile <new-id> --secret-id <new-id> --reason <text>`. Its stdin representation is exactly one provider object (`providerName`, `baseUrl`, `modelName`, sensitive `value`); multiple candidates are refused, not ranked. It never discovers legacy global values on its own. Existing bindings are preserved, and bootstrap opt-in cannot authorize project execution or release.
 
 Debug mode retains developer-only compatibility behavior and is not production readiness evidence.

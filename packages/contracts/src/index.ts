@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
+export * from "./semantic-project.js";
 
-export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "6.2.0";
+export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "6.3.0";
 export const EVOPILOT_SERVER_VERSION_FALLBACK = "0.1.0";
-export const EVOPILOT_CLI_VERSION_FALLBACK = "6.2.0";
+export const EVOPILOT_CLI_VERSION_FALLBACK = "6.3.0";
 export const EVOPILOT_API_CONTRACT_VERSION = "v1";
 export const EVOPILOT_MINIMUM_CLI_VERSION = "5.0.0";
 
@@ -37,7 +38,7 @@ export const EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION = "2.2";
 
 export const EVOPILOT_HARNESS_GUIDED_RUNTIME_BOUNDARY = {
   schema: "evopilot-harness-guided-runtime-boundary/v1",
-  runtimeVersion: "6.2.0",
+  runtimeVersion: "6.3.0",
   invariant: "Every Goal Target Loop binds one eligible published immutable HarnessBundle plus one resolved declarative Lifecycle.",
   harnessOwnership: "evopilot-harness",
   runtimeOwnership: "evopilot",
@@ -93,7 +94,7 @@ export interface EvoPilotWorkspaceLlmDefaultBindingV1 {
 
 export interface EvoPilotLlmSetupProtocolV1 {
   schema: typeof EVOPILOT_LLM_SETUP_PROTOCOL_SCHEMA;
-  runtimeVersion: "6.2.0";
+  runtimeVersion: "6.2.0" | "6.3.0";
   expertProtocolRange: ">=2.2 <3";
   states: EvoPilotRuntimeReadinessState[];
   setupOnlyTools: string[];
@@ -102,6 +103,20 @@ export interface EvoPilotLlmSetupProtocolV1 {
     rawSecretAcceptedByExpert: false;
     persistedForm: "SecretRef only";
     hostCapability: "host-native-secure-secret-input";
+  };
+  administration?: {
+    ordinaryHumanEntry: "EXPERT_OVER_MCP_ONLY";
+    bootstrap: {
+      endpoint: "/api/v1/runtime-readiness/bootstrap";
+      authority: "ADMIN_EXPLICIT_OPT_IN";
+      sources: string[];
+      candidateCount: 1;
+      creates: string[];
+      secretTransport: "TRUSTED_STDIN_TO_ADMIN_HTTP_NOT_EXPERT_OR_MCP";
+      stopConditions: string[];
+      failureRecovery: string;
+      inputCleanup: string;
+    };
   };
 }
 
@@ -314,6 +329,7 @@ export interface EvoPilotHumanInteractionMessageV1 {
 }
 
 export interface EvoPilotEvolutionExpertCompatibilityV1 {
+  engineVersion: string;
   schema: "evopilot-evolution-expert-compatibility/v1";
   expertVersion: string;
   engineProtocolRange: string;
@@ -378,6 +394,14 @@ export interface EvoPilotAgentExecutionRequestV1Alpha1 {
   harness: { id: string; version: string; digest: string; catalogId?: string; harnessExecutionBindingDigest?: string };
   governance: { policyDigest: string; providerDigest?: string; environmentDigest?: string; authorityDigest?: string; runtimeDigest: string; evidenceDigest: string };
   inputs: Record<string, unknown>;
+  /** Runtime-prepared data, never an authority or replacement pending request. */
+  semanticContext?: {
+    schema: "evopilot-semantic-agent-context/v1";
+    sourceRequestDigest: string;
+    sourceIdempotencyKey: string;
+    executionBindingDigest: string;
+    slice: Record<string, unknown>;
+  };
   capabilities: string[];
   executor: {
     host: string;
@@ -412,7 +436,59 @@ export interface EvoPilotLifecycleExecutorAdapterV1 {
   host: string;
   capabilities: string[];
   profile: EvoPilotAgentRuntimeProfileV1;
+  semanticContextSchema?: "evopilot-semantic-agent-context/v1";
+  processObservationSchema?: "evopilot-agent-process-observation/v1";
+  /** Local adapter-owned receipt read. Never accepts facts from a model/Host request. */
+  readProcessObservation?(request: EvoPilotAgentExecutionRequestV1Alpha1, result: EvoPilotAgentExecutionResultV1Alpha1): EvoPilotAgentProcessObservationV1 | undefined;
   execute(request: EvoPilotAgentExecutionRequestV1Alpha1): Promise<EvoPilotAgentExecutionResultV1Alpha1>;
+}
+
+/** Measured process boundary only. Event counters/cost describe Agent output,
+ * not truth of that output, inner tool effects, business success or authority. */
+export interface EvoPilotAgentProcessObservationV1 {
+  schema: "evopilot-agent-process-observation/v1";
+  receiptDigest: string;
+  material: {
+    adapterId: string; profileDigest: string; requestDigest: string;
+    runtime: {name: string; version: string}; route: string;
+    origin: "NATIVE_PROCESS_RUNNER" | "SYNTHETIC_PROCESS_RUNNER";
+    invocationDigest: string;
+    termination: "EXITED" | "TIMEOUT" | "OUTPUT_LIMIT" | "SPAWN_ERROR";
+    exitCode: number | null; signal: string | null;
+    stdoutDigest: string; stderrDigest: string; sessionIdsDigest: string;
+    eventCount: number; errorEventCount: number; completionEventCount: number; parseFailures: number;
+    cost: {amount: number; currency: string; inputTokens: number; outputTokens: number};
+    /** Missing on old observations means unknown, never measured zero. */
+    usageCoverage?: "COMPLETE" | "PARTIAL" | "UNAVAILABLE";
+  };
+}
+
+export function assertAgentProcessObservation(value: EvoPilotAgentProcessObservationV1, request: EvoPilotAgentExecutionRequestV1Alpha1,
+  result: EvoPilotAgentExecutionResultV1Alpha1, profile: EvoPilotAgentRuntimeProfileV1): void {
+  const exact = (v: unknown, keys: string[]) => Boolean(v && typeof v === "object" && !Array.isArray(v) &&
+    Object.keys(v).sort().join() === [...keys].sort().join());
+  const m = value?.material;
+  if (!exact(value, ["schema", "receiptDigest", "material"]) || value.schema !== "evopilot-agent-process-observation/v1" ||
+    !exact(m, ["adapterId", "profileDigest", "requestDigest", "runtime", "route", "origin", "invocationDigest", "termination", "exitCode", "signal",
+      "stdoutDigest", "stderrDigest", "sessionIdsDigest", "eventCount", "errorEventCount", "completionEventCount", "parseFailures", "cost",
+      ...(m && Object.hasOwn(m,"usageCoverage") ? ["usageCoverage"] : [])]) ||
+    !exact(m.runtime, ["name", "version"]) || !exact(m.cost, ["amount", "currency", "inputTokens", "outputTokens"])) throw new Error("AGENT_PROCESS_OBSERVATION_INVALID");
+  if (value.receiptDigest !== result.receiptDigest || contractDigest(m) !== value.receiptDigest || m.requestDigest !== request.requestDigest ||
+    m.profileDigest !== profile.digest || request.executor.agentRuntime.profileDigest !== profile.digest || m.adapterId !== profile.adapterId ||
+    contractDigest(m.runtime) !== contractDigest(profile.runtime) || m.route !== `${profile.provider}/${profile.model}` ||
+    contractDigest(m.cost) !== contractDigest(result.cost)) throw new Error("AGENT_PROCESS_OBSERVATION_BINDING_INVALID");
+  if (!["NATIVE_PROCESS_RUNNER", "SYNTHETIC_PROCESS_RUNNER"].includes(m.origin) ||
+    (m.usageCoverage !== undefined && !["COMPLETE","PARTIAL","UNAVAILABLE"].includes(m.usageCoverage)) ||
+    !["EXITED", "TIMEOUT", "OUTPUT_LIMIT", "SPAWN_ERROR"].includes(m.termination) ||
+    !(m.exitCode === null || Number.isSafeInteger(m.exitCode) && m.exitCode >= 0 && m.exitCode <= 255) ||
+    !(m.signal === null || typeof m.signal === "string" && /^SIG[A-Z0-9]{1,16}$/.test(m.signal)) ||
+    ![m.invocationDigest, m.stdoutDigest, m.stderrDigest, m.sessionIdsDigest].every(v => typeof v === "string" && DIGEST_PATTERN.test(v)) ||
+    ![m.eventCount, m.errorEventCount, m.completionEventCount, m.parseFailures, m.cost.inputTokens, m.cost.outputTokens].every(v => Number.isSafeInteger(v) && v >= 0) ||
+    m.errorEventCount > m.eventCount || m.completionEventCount > m.eventCount || !Number.isFinite(m.cost.amount) || m.cost.amount < 0 || m.cost.currency !== "USD")
+    throw new Error("AGENT_PROCESS_OBSERVATION_INVALID");
+  const expectedStatus = m.termination === "TIMEOUT" || m.termination === "OUTPUT_LIMIT" || m.signal !== null ? "UNCERTAIN" :
+    m.termination === "SPAWN_ERROR" || m.exitCode !== 0 || m.parseFailures > 0 || m.errorEventCount > 0 || m.completionEventCount === 0 ? "FAILED" : "SUCCEEDED";
+  if (result.status !== expectedStatus) throw new Error("AGENT_PROCESS_OBSERVATION_STATUS_INVALID");
 }
 
 const DIGEST_PATTERN = /^sha256:[a-f0-9]{64}$/;
@@ -421,6 +497,8 @@ const RAW_SECRET_PATTERN = /(?:token|password|secret|api[-_]?key)\s*[=:]\s*(?!<r
 export function assertLifecycleExecutorAdapterV1(value: EvoPilotLifecycleExecutorAdapterV1): void {
   if (value?.schema !== EVOPILOT_LIFECYCLE_EXECUTOR_ADAPTER_SCHEMA) throw new Error("EXECUTOR_ADAPTER_SCHEMA_UNSUPPORTED");
   if (!value.id?.trim() || !value.host?.trim() || typeof value.execute !== "function") throw new Error("EXECUTOR_ADAPTER_IDENTITY_INVALID");
+  if ((value.processObservationSchema !== undefined || value.readProcessObservation !== undefined) &&
+    (value.processObservationSchema !== "evopilot-agent-process-observation/v1" || typeof value.readProcessObservation !== "function")) throw new Error("EXECUTOR_PROCESS_OBSERVATION_UNSUPPORTED");
   if (!Array.isArray(value.capabilities) || value.capabilities.some((capability) => !capability.trim())) throw new Error("EXECUTOR_ADAPTER_CAPABILITIES_INVALID");
   if (value.profile?.schema !== EVOPILOT_AGENT_RUNTIME_PROFILE_SCHEMA || !DIGEST_PATTERN.test(value.profile.digest) || value.profile.qualification?.status !== "QUALIFIED" || !DIGEST_PATTERN.test(value.profile.qualification.conformanceDigest)) throw new Error("AGENT_RUNTIME_PROFILE_INVALID");
   if (value.profile.adapterId !== value.id || value.profile.host !== value.host) throw new Error("AGENT_RUNTIME_PROFILE_ADAPTER_MISMATCH");
@@ -443,6 +521,37 @@ export function assertAgentExecutionRequestV1Alpha1(value: EvoPilotAgentExecutio
   if (executorDigest !== contractDigest(executorMaterial)) throw new Error("AGENT_EXECUTION_REQUEST_EXECUTOR_DIGEST_MISMATCH");
   const { requestDigest, ...requestMaterial } = value;
   if (requestDigest !== contractDigest(requestMaterial)) throw new Error("AGENT_EXECUTION_REQUEST_DIGEST_MISMATCH");
+  if (value.semanticContext !== undefined) assertSemanticAgentContext(value);
+}
+
+function assertSemanticAgentContext(request: EvoPilotAgentExecutionRequestV1Alpha1): void {
+  const context = request.semanticContext!;
+  const fail: () => never = () => { throw new Error("AGENT_EXECUTION_SEMANTIC_CONTEXT_INVALID"); };
+  if (!context || context.schema !== "evopilot-semantic-agent-context/v1" ||
+    Object.keys(context).sort().join() !== "executionBindingDigest,schema,slice,sourceIdempotencyKey,sourceRequestDigest" ||
+    !DIGEST_PATTERN.test(context.sourceRequestDigest) || !DIGEST_PATTERN.test(context.executionBindingDigest) ||
+    !context.slice || typeof context.slice !== "object" || Array.isArray(context.slice)) fail();
+  const slice = context.slice, {sliceDigest, ...body} = slice;
+  if (Buffer.byteLength(JSON.stringify(slice)) > 65536 || slice.schema !== "evopilot-semantic-context-slice/v1" ||
+    sliceDigest !== contractDigest(body) || slice.executionBindingDigest !== context.executionBindingDigest ||
+    slice.status !== "PREPARED_NOT_DISPATCHED" || slice.eligibleForExecution !== false ||
+    slice.evaluationMode !== "EXPLICIT_SNAPSHOT_FACTS_ONLY") fail();
+  const pending = slice.pendingExecution as Record<string, unknown> | undefined;
+  const pins = slice.pins as Record<string, unknown> | undefined;
+  if (!pending || !pins || pending.requestDigest !== context.sourceRequestDigest || pending.runId !== request.runId ||
+    pending.stageId !== request.stageId || pending.action !== request.action || pending.actionVersion !== request.actionVersion ||
+    pending.lifecycleBindingDigest !== request.bindingDigest || pins.harnessBindingDigest !== request.harness.harnessExecutionBindingDigest ||
+    pins.bundleDigest !== request.harness.digest ||
+    contractDigest(slice.scope) !== contractDigest({tenantId: request.scope.tenantId, workspaceId: request.scope.workspaceId, projectId: request.scope.projectId}) ||
+    contractDigest(slice.authority) !== contractDigest({semanticDataOnly: true, textIsUntrustedData: true, mayApprove: false, mayExecute: false, mayPublish: false})) fail();
+  // Reconstruct the exact owner request. Adding a slice never silently replaces
+  // Lifecycle's persisted digest, and separate ids prevent legacy receipt reuse.
+  const {semanticContext: _context, requestDigest: _digest, ...original} = request;
+  const source = {...original, id: pending.requestId, idempotencyKey: context.sourceIdempotencyKey};
+  if (typeof pending.requestId !== "string" || typeof context.sourceIdempotencyKey !== "string" ||
+    contractDigest(source) !== context.sourceRequestDigest ||
+    request.id !== `semantic-${contractDigest({sourceRequestDigest: context.sourceRequestDigest, executionBindingDigest: context.executionBindingDigest, sliceDigest}).slice(7)}` ||
+    request.idempotencyKey !== request.id) fail();
 }
 
 export function assertAgentExecutionResultV1Alpha1(value: EvoPilotAgentExecutionResultV1Alpha1, request: EvoPilotAgentExecutionRequestV1Alpha1): void {
@@ -463,6 +572,7 @@ export async function executeConformantLifecycleAdapter(
 ): Promise<EvoPilotAgentExecutionResultV1Alpha1> {
   assertLifecycleExecutorAdapterV1(adapter);
   assertAgentExecutionRequestV1Alpha1(request);
+  if (request.semanticContext && adapter.semanticContextSchema !== request.semanticContext.schema) throw new Error("EXECUTOR_SEMANTIC_CONTEXT_UNSUPPORTED");
   const result = await adapter.execute(request);
   assertAgentExecutionResultV1Alpha1(result, request);
   return result;
@@ -541,3 +651,4 @@ export const EVOPILOT_AGENT_STOP_RULES: readonly EvoPilotStopRule[] = [
   { status: "PENDING_APPROVAL", reason: "human review or policy approval is required" },
   { status: "NEXT_ACTION", reason: "server returned a nextAction boundary for the operator" }
 ] as const;
+export * from "./semantic-execution.js";

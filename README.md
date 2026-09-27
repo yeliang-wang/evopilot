@@ -16,7 +16,7 @@ It is not an agent runtime, prompt playground, generic code generator, or Harnes
 
 ## v6.2 First-Run LLM Readiness
 
-EvoPilot Runtime **v6.2.0** and Evolution Expert **v2.2.0** have immutable published artifacts. Expert 2.2.0 requires public CLI completion recovery; this source tree implements independently approved **Expert v2.2.1**, which is not yet accepted or released. Runtime 6.2.0 bytes remain unchanged. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
+EvoPilot Runtime **v6.2.0** and Evolution Expert **v2.2.0** remain immutable published history. This source tree implements the independently approved **Runtime v6.3.0 / Expert v2.3.0** convergence Targets, including the retained Expert public CLI and secure-input recovery. These new versions are **not yet accepted or released**; there is no separate Expert 2.2.1 delivery. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
 
 ```text
 Project Definition + GoalTarget -> published HarnessProfile -> immutable HarnessBundle
@@ -26,6 +26,8 @@ Project Definition + GoalTarget -> published HarnessProfile -> immutable Harness
 Runtime owns a tenant/workspace Lifecycle Registry with immutable YAML revisions, active pointers, semantic diff, dependencies, usage, audit, archive/restore, and rollback. DataRig, EvoPilot, evopilot-harness, and future projects are declarations—not privileged Engine profiles. Compatible project and Pipeline revisions can evolve without a Runtime or Expert release.
 
 Runtime 6.2 adds a mandatory first-run LLM readiness gate. EvoPilot ships with **no provider, model, API key, inherited Host LLM, or hidden environment fallback**. A production Runtime starts safely in `SETUP_REQUIRED`, exposes only health and setup surfaces, and unlocks normal project, Harness, Goal, Target, and Loop work only after an administrator selects a provider and model, stores the credential through Host-native secure input as a `SecretRef`, completes a live preflight, and explicitly binds that exact Profile digest as the workspace default. Evolution Expert 2.2 guides this flow over MCP without ever requesting or receiving the raw credential. See [First-Run LLM Readiness](docs/guides/first-run-llm-readiness.md).
+
+The 6.3 source implementation also supplies explicit administrator-only headless bootstrap and 6.1 provider conversion through bounded, non-echoing stdin. These flows do not discover Host/environment configuration or overwrite existing resources. Profile edits and credential rotation invalidate preflight, and concurrent changes stop safely. See the [CLI initialization contract](docs/cli/commands.md#llm-profiles); local source tests do not establish Candidate or Release acceptance.
 
 Evolution Expert is the ordinary-human entry and talks to Runtime only through MCP. It is independently installed into Codex, Claude Code, designated-human WorkBuddy, generic Agent, or generic MCP Hosts. Runtime never embeds a general-purpose coding Agent: it emits an exact `pendingExecution` to a qualified external Agent Runtime, validates the normalized receipt, and resumes from durable state.
 
@@ -142,7 +144,7 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-Runtime **v6.2.0** and Expert **v2.2.0** are published immutable history. Their completed Candidate evidence does not prove the defective public Expert CLI. The separately approved **Expert v2.2.1 public CLI recovery** is under implementation; its Candidate acceptance and Release remain pending. No Host installation, Secret operation, Suite change or Cutover is implied by this source tree.
+Runtime **v6.2.0** and Expert **v2.2.0** are published immutable history. Their historical evidence does not transfer a PASS to the final **Runtime 6.3.0 / Expert 2.3.0** pair. The accepted direct-delivery plan retains the Expert 2.2.1 recovery obligations in 2.3.0 without a standalone 2.2.1 release. Exact artifact acceptance and Release remain pending. No Host installation, Secret operation, Suite change or Cutover is implied by this source tree.
 
 The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a standalone v3.2 release. v4.0 keeps EvoPilot's strict read-only Harness-asset boundary while adding open YAML Lifecycle execution for project goals.
 
@@ -188,7 +190,36 @@ Primary API surfaces include health/readiness, auth and users, projects and evid
 
 See [API Reference](docs/api/README.md) and [OpenAPI](docs/api/openapi.json).
 
+The in-progress Runtime 6.3.0 source adds [semantic discovery, compatibility and reviewed project binding](docs/architecture/semantic-catalog-consumer.md).
+Explicit project activation, migration and rollback now have scoped HTTP review/approval routes and append-only receipts. New plans select the reviewed default; existing runs keep their original project binding across stages. A switch grants no execution or release authority. CLI/MCP and Expert guidance expose exact typed transition previews, separate digest-bound decisions and authoritative activation readback. Installed/real-Host migration qualification remains pending.
+
+Read-only semantic onboarding guides already registered projects toward reviewed dual binding from one selected Catalog. It preserves existing bindings and distinguishes unique, ambiguous, indeterminate and missing choices. A unique compatible pair is not auto-selected or approved; credentials, readiness and execution remain separately governed. This is source implementation, not installed/real-Host acceptance.
+
+Expert's source Core now guides the separate dual-bound execution MCP surface with exact nested inputs, independent outcome-review decisions and no automatic effect replay. It presents business and Harness validation separately and reads verified completion progress without equating a stage receipt or 100% Target progress to Goal completion or Release. Local synthetic MCP journeys are not installed-package or real-Host acceptance.
+Binding review/approval records are persisted separately from assets, but remain `REVIEWED_NOT_ACTIVATED`; execution integration and released capability are not yet complete.
+Immutable execution binding/preflight and read-only context preparation are source-tested; preparation alone grants no execution authority. Legacy Lifecycle endpoints reject explicit unsupported semantic-execution fields.
+The separate [semantic execution API and CLI](docs/cli/commands.md#project-semantic-execution-630-source-development) compose persisted Goal/Target/approval/LLM metadata, pinned action plans, current governance and explicitly configured server adapters without credential access.
+Selected policy/provider/environment/authority/evidence resources now require exact active receipts with no latest-version fallback. Metadata integrity is not a permission grant or operational-readiness check.
+Executor observation checks bind exact Host/runtime/environment evidence, explicit activation and expiry; permission ceilings only narrow current rights. Production observation/collector qualification remains unfinished.
+Source-tested HTTP/CLI/MCP operations provide exact business-rule review, dispatch, collection, dual evaluation, guarded stage commit and verified Target completion (phase-associated Targets additionally require typed package evidence and explicit policy). Evaluation alone remains `DUAL_VALIDATED_NOT_COMPLETED`; completion requires separate current scoped policy and verified evidence. Durable claims prevent automatic uncertain replay. Separate read-only completion status reports verified Target progress and phase/GA blockers, never release readiness. Existing per-Goal, snapshot, evidence-matrix and final-report reads now bridge verified non-phase completion; verified phase receipts supply aggregate GO and predecessor checks. A separate final Goal owner verifies all required Target/phase receipts and an exact current policy before atomic Goal closure and read-only final reporting; legacy package builders remain fenced and Release stays NOT_EVALUATED. Local synthetic tests are not installed-artifact, real-Host or formal acceptance evidence.
+
+The local synthetic journey now executes Alpha → Beta → RC → GA in one persisted
+Goal, retaining exact predecessor receipts through restart. Lists, graphs,
+run-status and member views share verified completion projections. Semantic
+run-status uses a distinct schema with verified completed-Target token/cost
+subtotals, route provenance and explicit coverage exclusions. Missing telemetry
+remains unknown, not zero; these subtotals are not complete provider bills.
+Production collectors and installed/real-Host journeys remain unqualified.
+An independent `dispatchUsage` read now covers known succeeded, failed and
+uncertain dispatch receipts before Target completion, with explicit waiting and
+missing-evidence states. It never retries a call; its subtotal overlaps the
+completed-Target subtotal and is not settled provider billing.
+
 ## Development
+
+The in-progress [Runtime 6.3.0 / Expert 2.3.0 versioned E2E corpus](tests/e2e/versions/README.md)
+preserves separate case definitions, local supporting suites and exact Target
+bindings. Local validation is not installed-artifact or real-Host acceptance.
 
 ```bash
 npm run build

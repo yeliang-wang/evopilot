@@ -53,7 +53,17 @@ test("installed-style stdio MCP exposes the complete lifecycle surface and deleg
   try {
     await client.connect(transport);
     const listing = await client.listTools();
-    assert.equal(listing.tools.length, 73);
+    const executionNames = ["capabilities", "planning", "draft", "prepare", "inspect", "bind", "resolve", "mapping", "review", "approveReview", "dispatch", "collect", "evaluate",
+      "commitStage", "stageReceipt", "completeTarget", "completionReceipt", "completionStatus", "completePhase", "phaseReceipt", "completeGoal", "goalReceipt"]
+      .map(operation => `evopilot_semantic_execution_${operation}`);
+    const semanticNames = ["capabilities", "inspect", "compatibility", "gap", "review", "approve", "binding", "activation", "transitionReview", "transitionApprove", "onboarding"]
+      .map(operation => `evopilot_project_semantic_${operation}`);
+    assert.equal(listing.tools.length, 80 + executionNames.length + semanticNames.length);
+    assert.equal(listing.tools.filter(tool => !tool.name.startsWith("evopilot_semantic_execution_") && !tool.name.startsWith("evopilot_project_semantic_")).length, 80);
+    assert.ok(listing.tools.some(tool => tool.name === "evopilot_llm_setup_protocol"));
+    assert.equal(listing.tools.find(tool => tool.name === "evopilot_project_definition_rollback")?._meta?.["evopilot/authority"], "EXACT_BINDING_DECISION");
+    assert.deepEqual(listing.tools.filter(tool => tool.name.startsWith("evopilot_project_semantic_")).map(tool => tool.name).sort(), semanticNames.sort());
+    assert.deepEqual(listing.tools.filter(tool => tool.name.startsWith("evopilot_semantic_execution_")).map(tool => tool.name).sort(), executionNames.sort());
     for (const name of [
       "evopilot_runtime_readiness_inspect",
       "evopilot_llm_provider_discover",

@@ -6,6 +6,7 @@ import {
 import { type LlmTaskClient } from "@evopilot/llm";
 import fs from "node:fs";
 import path from "node:path";
+import {GoalRecordStore} from "../goal-record-store.js";
 import {
   DEFAULT_MATURITY_STANDARD_SET_ID,
   DEFAULT_MATURITY_STANDARD_VERSION,
@@ -269,6 +270,7 @@ import {
 import { atomicWriteJson, atomicWriteText, safeFileName } from "../json-files.js";
 
 export class FileStore {
+  private readonly goalRevisions = new WeakMap<GlobalGoal, GlobalGoal>();
   constructor(
     private readonly dataRoot: string,
     private readonly executionRuntime: { llmClient?: LlmTaskClient; requireLlm?: boolean; allowLegacyGlobalLlm?: boolean; harnessCatalogDirs?: string[]; harnessRegistryConfig?: string } = {}
@@ -2671,20 +2673,31 @@ export class FileStore {
     return fs.readdirSync(this.goalsDir)
       .filter((file) => file.endsWith(".json"))
       .sort()
-      .map((file) => this.hydrateGoal(JSON.parse(fs.readFileSync(path.join(this.goalsDir, file), "utf8"))))
+      .map((file) => this.hydrateGoal(new GoalRecordStore(this.goalsDir).read(file.slice(0, -5))))
       .sort((left, right) => Date.parse(left.createdAt) - Date.parse(right.createdAt));
   }
 
   readGoal(id: string): GlobalGoal | undefined {
-    const file = path.join(this.goalsDir, `${safeFileName(id)}.json`);
-    if (!fs.existsSync(file)) return undefined;
-    return this.hydrateGoal(JSON.parse(fs.readFileSync(file, "utf8")), { project: false });
+    const raw = new GoalRecordStore(this.goalsDir).read(id);
+    if (!raw) return undefined;
+    const goal = this.hydrateGoal(raw, { project: false });
+    this.goalRevisions.set(goal, raw);
+    return goal;
   }
 
-  writeGoal(goal: GlobalGoal): GlobalGoal {
+  writeGoal(goal: GlobalGoal, previous?: GlobalGoal): GlobalGoal {
+    const raw = previous ? this.goalRevisions.get(previous) : undefined;
+    if (previous && (!raw || previous.id !== goal.id)) throw httpError(409, "GOAL_RECORD_REVISION_REQUIRED");
+    // A client field is never a grant. Even removal of the field cannot release
+    // persisted semantic ownership. Dedicated completion is a separate owner.
+    const current = new GoalRecordStore(this.goalsDir).read(goal.id);
+    if (goal.semanticExecutionOwners !== undefined || raw?.semanticExecutionOwners !== undefined ||
+      current?.semanticExecutionOwners !== undefined) throw httpError(409, "GOAL_SEMANTIC_COMPLETION_REQUIRED");
     const normalized = this.hydrateGoal(goal, { project: false });
-    atomicWriteJson(path.join(this.goalsDir, `${safeFileName(normalized.id)}.json`), normalized);
-    return this.hydrateGoal(normalized);
+    new GoalRecordStore(this.goalsDir).write(normalized, raw);
+    const result = this.hydrateGoal(normalized);
+    this.goalRevisions.set(result, normalized);
+    return result;
   }
 
   createGoal(input: {
@@ -2725,6 +2738,7 @@ export class FileStore {
   async generateGoalPlan(goalId: string, actor: string, options: { force?: boolean } = {}): Promise<GlobalGoal | undefined> {
     const goal = this.readGoal(goalId);
     if (!goal) return undefined;
+    if (goal.semanticExecutionOwners !== undefined) throw httpError(409, "GOAL_SEMANTIC_COMPLETION_REQUIRED");
     if (goal.plan.status === "APPROVED" && !options.force) {
       throw httpError(409, "GOAL_PLAN_ALREADY_APPROVED", "Approved goal plans cannot be regenerated without force.");
     }
@@ -2771,7 +2785,7 @@ export class FileStore {
         })
       ],
       updatedAt: now
-    });
+    }, goal);
   }
 
   approveGoalPlan(goalId: string, actor: string, confirmation: GoalPlanApprovalConfirmation): GlobalGoal | undefined {
@@ -2805,7 +2819,7 @@ export class FileStore {
         })
       ],
       updatedAt: now
-    });
+    }, goal);
   }
 
   applyGoalPlan(goalId: string, actor: string, input: unknown): GlobalGoal | undefined {
@@ -2829,12 +2843,13 @@ export class FileStore {
         })
       ],
       updatedAt: now
-    });
+    }, goal);
   }
 
   async advanceGoal(goalId: string, actor: string, input: { autoStart?: boolean; approveHumanGate?: boolean; forceDecision?: LoopDecision } = {}): Promise<GoalAdvanceResult | undefined> {
     let goal = this.readGoal(goalId);
     if (!goal) return undefined;
+    if (goal.semanticExecutionOwners !== undefined) throw httpError(409, "GOAL_SEMANTIC_COMPLETION_REQUIRED");
     const stages: GoalAdvanceResult["stages"] = [];
     const evidence: string[] = [`goal=${goal.id}`, `project=${goal.projectId}`, `releaseTarget=${goal.releaseTargetId}`];
     const pushStage = (stage: GoalAdvanceResult["stages"][number]) => {
@@ -3135,7 +3150,7 @@ export class FileStore {
         goalTimelineEvent("LOOP_BOUND", `GoalTarget ${targetId} bound to LoopRun ${loopId}.`, { actor }, targetId, loopId)
       ],
       updatedAt: now
-    });
+    }, goal);
   }
 
   touchGoalTarget(goalId: string, targetId: string, actor: string): GlobalGoal | undefined {
@@ -3157,12 +3172,13 @@ export class FileStore {
         goalTimelineEvent("TARGET_ADVANCED", `GoalTarget ${targetId} advanced by ${actor}.`, { actor }, targetId, goal.plan.targets.find((target) => target.id === targetId)?.loopId)
       ],
       updatedAt: now
-    });
+    }, goal);
   }
 
   ensureGoalCompletionReport(goalId: string, actor: string): GoalCompletionReport | undefined {
     const goal = this.readGoal(goalId);
     if (!goal) return undefined;
+    if (goal.semanticExecutionOwners !== undefined) throw httpError(409, "GOAL_SEMANTIC_COMPLETION_REQUIRED");
     if (goal.finalReport) return goal.finalReport;
     const snapshot = buildGoalSnapshot(this, goal);
     if (snapshot.status !== "COMPLETED") return undefined;
@@ -3177,7 +3193,7 @@ export class FileStore {
         goalTimelineEvent("REPORT_GENERATED", `Goal completion report generated by ${actor}.`, { status: report.status, targetSummary: report.targetSummary })
       ],
       updatedAt: now
-    });
+    }, goal);
     return report;
   }
 
@@ -3276,7 +3292,8 @@ export class FileStore {
     return {
       ...hydrated,
       status: snapshot.status,
-      plan: snapshot.goal.plan
+      plan: snapshot.goal.plan,
+      finalReport: snapshot.goal.finalReport
     };
   }
 

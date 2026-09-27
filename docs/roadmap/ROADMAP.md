@@ -895,8 +895,10 @@ or durable state and cannot claim `READY` without Runtime evidence.
 
 ### Evolution Expert v2.2.1: Public CLI Completion Recovery
 
-Status: `IN_PROGRESS` — active recovery planning; product implementation still
-requires a separately approved successor Target.
+Status: `SUPERSEDED` — no independent 2.2.1 delivery is required. Its repairs
+and applicable acceptance obligations move into Expert 2.3.0 under the direct
+convergence delivery policy below. The following recovery description is
+retained as historical planning, not authority to resume or publish 2.2.1.
 
 Runtime 6.2.0 and Expert 2.2.0 were publicly published after the frozen
 Candidate campaign recorded 355/355 criteria, 10/10 cross-acceptance rows, and
@@ -934,13 +936,46 @@ already projects the old campaign's acceptance. Reconcile it with the approved
 semantic convergence r2 in an isolated checkout before implementation,
 preserving both guard sets and existing user changes. This patch recovery does
 not reactivate removed Host/MCP/Runtime integrations, operate WorkBuddy,
-perform Suite Cutover, or change Harness or Dashboard. The final convergence
-set remains Harness 4.8.0, Runtime 6.3.0, and Expert 2.3.0 with optional
+perform Suite Cutover, or change Harness or Dashboard. The historical r2 convergence
+set was Harness 4.8.0, Runtime 6.3.0, and Expert 2.3.0 with optional
 Dashboard and the required Expert-driven terminal E2E.
+
+### Direct Convergence Delivery: Runtime 6.3.0 and Expert 2.3.0
+
+The user does not require a standalone patch for Runtime 6.2.0 users. Expert
+2.2.1 is therefore superseded as an independent delivery, not completed or
+released. Preserve its Target approvals, implementation, frozen package and
+evidence without rewriting history. Stop its standalone campaign; the pending
+Runtime 6.2.0 HTTPS qualification is not authorized or a separate prerequisite.
+Existing published Runtime 6.2.0 and Expert 2.2.0 artifacts remain immutable,
+and their unresolved public completion is not retroactively declared successful.
+
+Runtime 6.3.0 and Expert 2.3.0 become the active planning destinations. Each
+still requires its own approved Target and separate Release authorization.
+Reuse the 2.2.1 repairs, including CLI defaults/capabilities, Core v3 and adapter
+verification, maintained Host Integration secure input, cancellation and
+uncertain-result handling, through reviewed source lineage. Do not rename or
+promote the old package as 2.3.0. Revalidate reusable preparation tools against
+the final artifacts and complete the whole campaign preflight before counted E2E.
+
+Map every criterion of approved Expert 2.2.1 Target revision 2, including
+inherited and cross-product rows, to the final Targets. Retain ordinary-user
+setup, readiness, credential isolation, real qualified Hosts, independently
+human-operated WorkBuddy, the 5400-second active-soak obligation, impact closure
+and NO_REGRESSION. Adapt superseded version-specific publication checks to
+2.3.0; do not publish 2.2.1 just to satisfy an obsolete version label. Reuse
+unaffected evidence only with item-level exact-input proof; no blanket PASS,
+silent exclusion, approval transfer or implicit compatibility reset is allowed.
+
+The final version set, per-product E2E and terminal cross-product E2E remain
+unchanged. Dashboard remains optional, and Runtime 6.4.0 remains out of scope.
+Preserve the user's original checkout and isolated recovery worktree. The Mac,
+`/tmp`, model selection and budget choices remain inputs only within their
+original authority, not permission to run Hosts, deploy, or publish.
 
 ### v6.3.0: Ontology-Grounded and Harness-Powered Goal Target Loop
 
-Status: `PLANNED`
+Status: `IN_PROGRESS` — active planning; implementation requires its own approved Target.
 
 - Discover and validate published immutable `ProjectOntologyArtifactSet` and `ProjectOntologySkill` assets through a read-only Registry/Catalog supply contract.
 - Add `ProjectSemanticBinding/v1`, semantic compatibility evaluation, and immutable `SemanticExecutionBinding/v1` that pins Project, GoalTarget, ontology ArtifactSet, resolved snapshot, Skill, HarnessBundle closure, LifecycleRevision, `OntologyReasoningProfile`, resolver, Runtime LLM profile, Host, Agent Runtime, environment, policy, authority, permissions, and evidence contract.
@@ -954,7 +989,7 @@ Removal of the Harness-only compatibility path, mandatory migration of every exi
 
 ### Evolution Expert v2.3.0: Project Semantic and Dual-Binding Guide
 
-Status: `PLANNED`
+Status: `IN_PROGRESS` — active planning; implementation requires its own approved Target.
 
 Guide Source understanding, project-semantic availability, ontology and Harness compatibility, gaps, conflicts, binding review, semantic-slice explanation, successor selection, migration, and rollback through Runtime-owned MCP contracts. Use ordinary-human terms such as project business semantic map, business field, product or system type, semantic gap, and execution capability. Retain one Agent-neutral Core and generated Host adapters. The Expert remains stateless and cannot own, fabricate, select, approve, publish, activate, or mutate semantic assets, Harness assets, bindings, permissions, or Runtime state.
 
@@ -965,7 +1000,7 @@ Runtime 6.3 and Expert 2.3 use at most five top-level journey families with inde
 Status: `PLANNED`
 
 The final semantic product-design convergence set is exact: evopilot-harness
-must progress through 4.6.0, 4.7.0, and terminal 4.8.0; EvoPilot Runtime must
+must preserve 4.6.0, 4.7.0, and 4.8.0, then reach terminal repair 4.8.1; EvoPilot Runtime must
 reach 6.3.0; and Evolution Expert must reach 2.3.0. Dashboard is an optional,
 independently versioned API client outside the required convergence set.
 Runtime 6.4.0 Learning Interoperability is a later independent
@@ -980,8 +1015,8 @@ Target, E2E, approval, publication, or Release decision.
 
 After every required version passes independently, one terminal cross-product
 E2E must bind the exact accepted artifacts and prove the complete journey:
-evopilot-harness publishes the immutable 4.8.0 ontology, index,
-reasoning-profile, Profile, Component, and Bundle closure; Runtime 6.3 consumes
+evopilot-harness 4.8.1 supplies the immutable ontology, index,
+reasoning-profile, Profile, Component, and Bundle closure through semantic-catalog-supply/v1; Runtime 6.3 consumes
 it read-only and creates the immutable ontology-and-Harness dual binding; a
 qualified external Agent Runtime executes the exact pending work; Expert 2.3
 presents facts and collects typed inputs or genuine decisions without owning
@@ -1082,3 +1117,13 @@ Evolution Expert release gates use:
 ```bash
 npm run roadmap:release -- <expert-version> --release-product evopilot-evolution-expert
 ```
+
+## Semantic Catalog Supply Contract Revision r3
+
+`semantic-catalog-supply/v1` repairs the separately published semantic asset discovery gap with an additive, complete, immutable semantic index under the existing Catalog root. Registry still lists roots, not assets; old Catalog and semantic schemas remain unchanged. Only explicitly authorized Harness publication may advance the index. Runtime consumes exact published generations read-only, rejecting missing, unsupported, conflicting, stale, revoked, partial, permission-denied and unsafe-path inputs without fallback. Engine 4.8.1 and existing asset/closure versions are independent.
+
+This revision changes the terminal Engine dependency to 4.8.1 while retaining 4.6.0/4.7.0/4.8.0 history, every independent version E2E and the final series E2E. Runtime 6.3.0, Expert 2.3.0, optional Dashboard, excluded Runtime 6.4.0, secure-input inheritance, active soak and NO_REGRESSION remain unchanged. Historical r2 approvals are evidence, not authority for new bindings. Missing approval documents must be restored exactly or replaced by explicitly reviewed successor Targets; no digest may be invented. Roadmap approval does not authorize product implementation, commit, CI, real Host use, asset publication or Release.
+
+### Current convergence release: Codex-only acceptance
+
+For Harness 4.8.1, Runtime 6.3.0 and Expert 2.3.0 only, live Host acceptance requires exact-version qualified Codex. This explicit successor policy overrides inherited WorkBuddy, Claude Code, independent-Host and cross-Host execution requirements. Published historical evidence and Roadmaps keep their historical meaning. All generated adapter contracts and generic MCP/headless transport checks remain, without a real cross-Host acceptance claim. All non-Host functionality, security, exact installed artifacts, 5400-second active soak, impact closure and NO_REGRESSION remain required. Release remains separately governed.

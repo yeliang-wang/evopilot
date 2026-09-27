@@ -6,6 +6,12 @@ import { FileLifecycleCatalog } from "./catalog.js";
 import { conditionMatches, interpolateLifecycleValue, resolveLifecycleInputs } from "./core.js";
 import { GovernedLifecycleRegistry, type LifecycleRegistryScope } from "./governed-registry.js";
 import { LifecycleActionRegistry, stableJson } from "./registry.js";
+import {assertNoUnintegratedSemanticExecution} from "./semantic-execution-guard.js";
+import {SemanticBindingStore} from "../../storage/semantic-binding-store.js";
+import {LifecycleRunStore} from "../../storage/lifecycle-run-store.js";
+import {consumeSemanticStageGrant} from "./semantic-stage-grant.js";
+import {verifySemanticTerminalRun, type SemanticTerminalScope} from "./semantic-terminal.js";
+import {digestObject, isRecord} from "../harness-template/utils.js";
 import {
   LIFECYCLE_BINDING_SCHEMA,
   LIFECYCLE_RUN_SCHEMA,
@@ -49,9 +55,12 @@ export class LifecycleService {
   readonly registry: LifecycleActionRegistry;
   private readonly runsDir: string;
   private readonly feedbackDir: string;
+  private readonly semanticBindings: SemanticBindingStore;
+  private readonly runStore: LifecycleRunStore;
   private governanceHooks?: LifecycleGovernanceHooks;
 
   constructor(dataRoot: string, catalogRoots: string[]) {
+    this.semanticBindings = new SemanticBindingStore(dataRoot);
     this.registry = new LifecycleActionRegistry();
     this.catalog = new FileLifecycleCatalog(catalogRoots, this.registry);
     this.governedRegistry = new GovernedLifecycleRegistry(dataRoot, this.catalog, this.registry);
@@ -59,6 +68,7 @@ export class LifecycleService {
     this.feedbackDir = path.join(dataRoot, "lifecycle-feedback");
     fs.mkdirSync(this.runsDir, { recursive: true });
     fs.mkdirSync(this.feedbackDir, { recursive: true });
+    this.runStore = new LifecycleRunStore(this.runsDir);
   }
 
   configureGovernanceHooks(hooks: LifecycleGovernanceHooks): void {
@@ -70,6 +80,7 @@ export class LifecycleService {
   }
 
   start(input: LifecycleStartRequest): LifecycleRun {
+    assertNoUnintegratedSemanticExecution(input);
     const scope = { tenantId: input.tenantId, workspaceId: input.workspaceId };
     const revision = input.lifecycleRevision
       ? this.governedRegistry.resolveExact(input.lifecycleRevision.ref.id, input.lifecycleRevision.ref.version, input.lifecycleRevision.digest, scope)
@@ -118,6 +129,7 @@ export class LifecycleService {
 
   answer(id: string, answers: Record<string, unknown>, sources: Omit<LifecycleInputSources, "answers"> = {}): LifecycleRun {
     const run = this.require(id);
+    this.assertRunIntegrity(run);
     if (run.planAuthorization || run.stageAttempts.length > 0) throw new Error("LIFECYCLE_INPUTS_LOCKED: execution already authorized or started");
     const previous = (source: string) => Object.fromEntries(Object.entries(run.inputBinding.values).filter(([, value]) => value.source === source).map(([key, value]) => [key, value.value]));
     const inputBinding = resolveLifecycleInputs(run.revision, {
@@ -149,16 +161,18 @@ export class LifecycleService {
           })
         }
       : { ...updatedBase, binding: undefined };
-    return this.write(updated);
+    return this.write(updated, run);
   }
 
   finalizeBinding(id: string, input: Pick<LifecycleStartRequest, "policyDigest" | "providerDigest" | "environmentDigest" | "authorityDigest" | "runtimeDigest" | "evidenceDigest" | "harnessBundle" | "executor" | "harnessExecutionBindingDigest">): LifecycleRun {
+    assertNoUnintegratedSemanticExecution(input);
     const run = this.require(id);
+    this.assertRunIntegrity(run);
     if (run.inputBinding.status !== "READY_FOR_REVIEW") throw new Error("LIFECYCLE_INPUTS_INCOMPLETE");
     let updated: LifecycleRun = { ...run, binding: buildBinding(run, input), status: "WAITING_AUTHORIZATION", updatedAt: new Date().toISOString() };
     if ((updated.goalId || updated.targetId) && this.governanceHooks && !updated.binding?.harnessExecutionBindingDigest) throw new Error("HARNESS_EXECUTION_BINDING_REQUIRED");
     if (updated.binding?.harnessExecutionBindingDigest) updated = this.withBoundaryEvidence(updated, "start");
-    return this.write(updated);
+    return this.write(updated, run);
   }
 
   authorizePlan(id: string, decision: "APPROVED" | "REJECTED", actor: string, evidenceRef: string, bindingDigest: string): LifecycleRun {
@@ -176,7 +190,7 @@ export class LifecycleService {
       evidenceRef,
       decidedAt: new Date().toISOString()
     };
-    return this.write({ ...run, planAuthorization: record, status: decision === "APPROVED" ? "RUNNING" : "CANCELLED", updatedAt: record.decidedAt });
+    return this.write({ ...run, planAuthorization: record, status: decision === "APPROVED" ? "RUNNING" : "CANCELLED", updatedAt: record.decidedAt }, run);
   }
 
   decide(id: string, stageId: string, decision: "APPROVED" | "REJECTED", actor: string, evidenceRef: string, bindingDigest: string): LifecycleRun {
@@ -196,7 +210,7 @@ export class LifecycleService {
       decidedAt: new Date().toISOString()
     };
     const attempts = decision === "APPROVED" ? run.stageAttempts : [...run.stageAttempts, failedAttempt(stageId, stage.action.uses, "Human decision rejected", record.decidedAt)];
-    return this.write({ ...run, decisions: [...run.decisions, record], stageAttempts: attempts, pendingDecisionAuthority: undefined, status: decision === "APPROVED" ? "RUNNING" : "FAILED", updatedAt: record.decidedAt });
+    return this.write({ ...run, decisions: [...run.decisions, record], stageAttempts: attempts, pendingDecisionAuthority: undefined, status: decision === "APPROVED" ? "RUNNING" : "FAILED", updatedAt: record.decidedAt }, run);
   }
 
   cancel(id: string, actor: string, evidenceRef: string, bindingDigest: string): LifecycleRun {
@@ -222,7 +236,7 @@ export class LifecycleService {
       pendingExecution: undefined,
       pendingDecisionAuthority: undefined,
       updatedAt: decidedAt
-    });
+    }, run);
   }
 
   advance(id: string): LifecycleRun {
@@ -235,10 +249,10 @@ export class LifecycleService {
     const stage = run.revision.definition.stages.find((candidate) => !completed.has(candidate.id) && (candidate.needs ?? []).every((dependency) => completed.has(dependency)));
     if (!stage) {
       const unfinished = run.revision.definition.stages.some((candidate) => !completed.has(candidate.id));
-      return this.write({ ...run, status: unfinished ? "FAILED" : "SUCCEEDED", currentStageId: undefined, updatedAt: new Date().toISOString() });
+      return this.write({ ...run, status: unfinished ? "FAILED" : "SUCCEEDED", currentStageId: undefined, updatedAt: new Date().toISOString() }, run);
     }
     if (!conditionMatches(stage.when, run.inputBinding.values) || stage.decision.mode === "DISABLED") {
-      return this.write({ ...run, status: "RUNNING", currentStageId: stage.id, stageAttempts: [...run.stageAttempts, skippedAttempt(stage.id, stage.action.uses)], updatedAt: new Date().toISOString() });
+      return this.write({ ...run, status: "RUNNING", currentStageId: stage.id, stageAttempts: [...run.stageAttempts, skippedAttempt(stage.id, stage.action.uses)], updatedAt: new Date().toISOString() }, run);
     }
     const binding = run.binding;
     if (!binding) throw new Error("LIFECYCLE_BINDING_REQUIRED");
@@ -251,12 +265,11 @@ export class LifecycleService {
       for (const checkpoint of checkpoints) guardedRun = this.withBoundaryEvidence(guardedRun, checkpoint);
     }
     if (guardedRun !== run) {
-      run = guardedRun;
-      this.write(run);
+      run = this.write(guardedRun, run);
     }
     const existingDecision = run.decisions.find((decision) => decision.stageId === stage.id && decision.decision === "APPROVED" && decision.bindingDigest === binding.digest);
     if (stage.decision.mode === "HUMAN" && !existingDecision) {
-      return this.write({ ...run, status: "WAITING_DECISION", currentStageId: stage.id, updatedAt: new Date().toISOString() });
+      return this.write({ ...run, status: "WAITING_DECISION", currentStageId: stage.id, updatedAt: new Date().toISOString() }, run);
     }
     const action = this.registry.resolve(stage.action.uses)!;
     if (action.execution === "EXTERNAL_ADAPTER") {
@@ -264,7 +277,7 @@ export class LifecycleService {
       const missingCapabilities = (stage.capabilities ?? action.capabilities).filter((capability) => !binding.executor.capabilities.includes(capability));
       if (missingCapabilities.length > 0) throw new Error(`LIFECYCLE_EXECUTOR_CAPABILITY_MISMATCH: ${missingCapabilities.join(", ")}`);
       if (priorAttempts.length >= (stage.retry?.maxAttempts ?? 1)) {
-        return this.write({ ...run, status: "FAILED", currentStageId: stage.id, updatedAt: new Date().toISOString() });
+        return this.write({ ...run, status: "FAILED", currentStageId: stage.id, updatedAt: new Date().toISOString() }, run);
       }
       const actionInputs = interpolateLifecycleValue(stage.action.with ?? {}, run.inputBinding) as Record<string, unknown>;
       const requestId = `execution-${run.id}-${stage.id}-${priorAttempts.length + 1}`;
@@ -288,7 +301,7 @@ export class LifecycleService {
         executor: binding.executor
       };
       const pendingExecution: LifecycleAgentExecutionRequest = { ...pendingMaterial, requestDigest: digest(pendingMaterial) };
-      return this.write({ ...run, status: "WAITING_EXTERNAL_SIGNAL", currentStageId: stage.id, pendingExecution, updatedAt: new Date().toISOString() });
+      return this.write({ ...run, status: "WAITING_EXTERNAL_SIGNAL", currentStageId: stage.id, pendingExecution, updatedAt: new Date().toISOString() }, run);
     }
     const now = new Date().toISOString();
     const result = { stageId: stage.id, action: stage.action.uses, bindingDigest: binding.digest, inputs: interpolateLifecycleValue(stage.action.with ?? {}, run.inputBinding) };
@@ -302,14 +315,14 @@ export class LifecycleService {
       startedAt: now,
       finishedAt: now
     };
-    return this.write({ ...run, status: "RUNNING", currentStageId: stage.id, stageAttempts: [...run.stageAttempts, attempt], updatedAt: now });
+    return this.write({ ...run, status: "RUNNING", currentStageId: stage.id, stageAttempts: [...run.stageAttempts, attempt], updatedAt: now }, run);
   }
 
   advanceUntilBoundary(id: string): LifecycleRun {
     let run = this.require(id);
+    this.assertRunIntegrity(run);
     if (run.binding?.harnessExecutionBindingDigest) {
-      run = this.withBoundaryEvidence(run, "resume");
-      this.write(run);
+      run = this.write(this.withBoundaryEvidence(run, "resume"), run);
     }
     const limit = run.revision.definition.stages.length + 1;
     for (let index = 0; index < limit && run.status === "RUNNING"; index += 1) {
@@ -323,6 +336,23 @@ export class LifecycleService {
   recordExternalResult(id: string, result: LifecycleExternalResult): LifecycleRun {
     const run = this.require(id);
     this.assertRunIntegrity(run);
+    // A request owned by the semantic path cannot be completed by omitting its
+    // semantic fields from a legacy result. A dedicated completion owner must
+    // validate business + Harness evidence before it can advance this run.
+    if (run.goalId && run.targetId && run.binding?.harnessExecutionBindingDigest) {
+      const scope = {tenantId: run.tenantId, workspaceId: run.workspaceId, projectId: run.projectId};
+      const identity = {projectId: run.projectId, goalId: run.goalId, targetId: run.targetId,
+        harnessBindingDigest: run.binding.harnessExecutionBindingDigest};
+      const executionKey = {scope, goalId: run.goalId, targetId: run.targetId, harnessBindingDigest: run.binding.harnessExecutionBindingDigest};
+      const semanticProofs = run.semanticStageCompletions ?? [];
+      const executionStage = run.pendingExecution ? {runId: run.id, requestDigest: run.pendingExecution.requestDigest,
+        ...(semanticProofs.length ? {predecessorProofDigest: semanticProofs[semanticProofs.length - 1].proofDigest} : {})} : undefined;
+      if (semanticProofs.length || this.semanticBindings.read("execution-plans", {scope, identity}) !== undefined ||
+        (executionStage && this.semanticBindings.read("executions", {...executionKey, executionStage}) !== undefined) ||
+        this.semanticBindings.read("executions", {scope, goalId: run.goalId, targetId: run.targetId,
+          harnessBindingDigest: run.binding.harnessExecutionBindingDigest}) !== undefined)
+        throw new Error("LIFECYCLE_SEMANTIC_COMPLETION_REQUIRED");
+    }
     const { requestId, status, receiptDigest } = result;
     validateDigest("receiptDigest", receiptDigest);
     for (const artifact of result.artifacts ?? []) validateDigest("artifact.digest", artifact.digest);
@@ -427,7 +457,35 @@ export class LifecycleService {
       pendingExecution: undefined,
       pendingDecisionAuthority,
       updatedAt: now
-    });
+    }, run);
+  }
+
+  /** Runtime-internal stage commit. JSON, booleans and historical reports cannot
+   * act as grants. The validated proof, attempt and trajectory share one CAS write.
+   * Does not advance another stage, complete Goal/Target or grant release rights.
+   */
+  commitSemanticStage(token: unknown): LifecycleRun {
+    const {pending, proof, result, expectedRunDigest} = consumeSemanticStageGrant(token);
+    const run = this.require(proof.runId); this.assertRunIntegrity(run);
+    if (digestObject(run) !== expectedRunDigest || digest(this.readPendingExecution(run.id, pending.requestDigest, proof.scope)) !== digest(pending) ||
+      Object.entries(proof.scope).some(([key, value]) => run[key as keyof LifecycleRun] !== value)) throw new Error("LIFECYCLE_RUN_REVISION_CONFLICT");
+    if (result.bindingDigest !== pending.bindingDigest || result.effects.some(effect => !pending.executor.allowedEffects.includes(effect)) ||
+      run.semanticStageCompletions?.some(item => item.sourceRequestDigest === pending.requestDigest)) throw new Error("LIFECYCLE_SEMANTIC_GRANT_INVALID");
+    const now = new Date().toISOString();
+    const attempt: LifecycleStageAttempt = {stageId: pending.stageId, attempt: run.stageAttempts.filter(item => item.stageId === pending.stageId).length + 1,
+      status: "SUCCEEDED", action: `${pending.action}@${pending.actionVersion}`, receiptDigest: result.receiptDigest,
+      externalRequestId: pending.id, evidence: [`semantic-completion://${proof.proofDigest.slice(7)}`], startedAt: now, finishedAt: now};
+    const trajectory: LifecycleRun["trajectory"][number] = {schema: "evopilot-agent-trajectory-entry/v1alpha1", requestId: result.requestId,
+      requestDigest: result.requestDigest, idempotencyKey: result.idempotencyKey, runId: run.id, stageId: pending.stageId,
+      bindingDigest: pending.bindingDigest, host: pending.executor.host, provider: pending.executor.provider, model: pending.executor.model,
+      capabilities: [...pending.capabilities], status: "SUCCEEDED", receiptDigest: result.receiptDigest, effects: [...result.effects],
+      cost: {amount: result.cost?.amount ?? 0, currency: result.cost?.currency ?? "USD", inputTokens: result.cost?.inputTokens, outputTokens: result.cost?.outputTokens},
+      artifacts: (result.artifacts ?? []).map(item => ({ref: redactEvidence(item.ref), digest: item.digest})), evidence: attempt.evidence, recordedAt: now};
+    const next: LifecycleRun = {...run, status: "RUNNING", pendingExecution: undefined, pendingDecisionAuthority: undefined,
+      stageAttempts: [...run.stageAttempts, attempt], trajectory: [...run.trajectory, trajectory],
+      semanticStageCompletions: [...run.semanticStageCompletions ?? [], proof], updatedAt: now};
+    this.assertRunIntegrity(next);
+    return this.write(next, run);
   }
 
   createFeedbackPackage(id: string, input: { bindingDigest: string; actor: string; evidenceRef: string }): HarnessExecutionFeedbackPackage {
@@ -489,8 +547,37 @@ export class LifecycleService {
   }
 
   read(id: string): LifecycleRun | undefined {
-    const file = path.join(this.runsDir, `${safeId(id)}.json`);
-    return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) as LifecycleRun : undefined;
+    return this.runStore.read(safeId(id));
+  }
+
+  /** Historical semantic receipt readback validates stored proof sources without
+   * requiring a still-pending stage or granting any current execution authority. */
+  readVerified(id: string): LifecycleRun | undefined {
+    const run = this.read(id);
+    if (run) this.assertRunIntegrity(run);
+    return run;
+  }
+
+  /** Public receipt reads must not hide an uncertain persisted mutation. */
+  readSettledVerified(id: string): LifecycleRun | undefined {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(id)) throw new Error("LIFECYCLE_RUN_ID_INVALID");
+    this.runStore.assertSettled(id);
+    const run = this.readVerified(id);
+    this.runStore.assertSettled(id);
+    if (digestObject(this.read(id) ?? null) !== digestObject(run ?? null)) throw new Error("LIFECYCLE_RUN_REVISION_CONFLICT");
+    return run;
+  }
+
+  /** Internal, read-only terminal proof. Never substitutes for fresh Goal
+   * completion policy, current material validation or a mutation grant. */
+  readSemanticTerminal(id: string, scope: SemanticTerminalScope) {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/.test(id)) throw new Error("LIFECYCLE_RUN_ID_INVALID");
+    this.runStore.assertSettled(id);
+    const run = this.require(id); this.assertRunIntegrity(run);
+    const proof = verifySemanticTerminalRun(run, scope, this.registry);
+    this.runStore.assertSettled(id);
+    if (digestObject(this.readVerified(id)) !== proof.runDigest) throw new Error("LIFECYCLE_RUN_REVISION_CONFLICT");
+    return structuredClone({run, proof: {...proof, terminalDigest: digestObject(proof)}});
   }
 
   private require(id: string): LifecycleRun {
@@ -499,7 +586,94 @@ export class LifecycleService {
     return run;
   }
 
+  /** Read-only owner adapter for context preparation. No dispatch or state advance.
+   * Reconstruct the pending request from the persisted, integrity-checked run;
+   * a self-consistent request hash alone cannot substitute for its current stage.
+   */
+  readPendingExecution(id: string, requestDigest: string, scope: {tenantId: string; workspaceId: string; projectId: string; goalId: string; targetId: string}): LifecycleAgentExecutionRequest {
+    const run = this.require(id);
+    if (Object.entries(scope).some(([key, value]) => run[key as keyof LifecycleRun] !== value)) throw new Error("LIFECYCLE_PENDING_SCOPE_MISMATCH");
+    this.assertRunIntegrity(run);
+    const binding = run.binding, pending = run.pendingExecution;
+    if (run.status !== "WAITING_EXTERNAL_SIGNAL" || !binding || !pending) throw new Error("LIFECYCLE_EXTERNAL_SIGNAL_NOT_PENDING");
+    if (Object.entries(scope).some(([key, value]) => binding[key as keyof LifecycleBinding] !== value)) throw new Error("LIFECYCLE_PENDING_SCOPE_MISMATCH");
+    if (run.planAuthorization?.decision !== "APPROVED" || run.planAuthorization.bindingDigest !== binding.digest) throw new Error("LIFECYCLE_AUTHORIZATION_REQUIRED");
+    if (run.planAuthorization.stageId !== "$plan" || run.planAuthorization.authority !== "plan" ||
+      !run.planAuthorization.actor?.trim() || !run.planAuthorization.evidenceRef?.trim() || !Number.isFinite(Date.parse(run.planAuthorization.decidedAt))) throw new Error("LIFECYCLE_AUTHORIZATION_REQUIRED");
+    const completed = new Set(run.stageAttempts.filter(item => ["SUCCEEDED", "SKIPPED"].includes(item.status)).map(item => item.stageId));
+    const stage = run.revision.definition.stages.find(item => !completed.has(item.id) && (item.needs ?? []).every(dependency => completed.has(dependency)));
+    const action = stage && this.registry.resolve(stage.action.uses);
+    if (!stage || stage.id !== run.currentStageId || !action || action.execution !== "EXTERNAL_ADAPTER" || stage.decision.mode === "DISABLED" || !conditionMatches(stage.when, run.inputBinding.values)) throw new Error("LIFECYCLE_PENDING_STAGE_MISMATCH");
+    if (stage.decision.mode === "HUMAN" && !run.decisions.some(item => item.stageId === stage.id && item.decision === "APPROVED" && item.bindingDigest === binding.digest)) throw new Error("LIFECYCLE_AUTHORIZATION_REQUIRED");
+    const attempts = run.stageAttempts.filter(item => item.stageId === stage.id);
+    if (attempts.some(item => item.status === "SUCCEEDED") || attempts.length >= (stage.retry?.maxAttempts ?? 1)) throw new Error("LIFECYCLE_PENDING_STAGE_MISMATCH");
+    const capabilities = stage.capabilities ?? action.capabilities;
+    if (!binding.executor.allowedEffects.includes(action.effect) || capabilities.some(capability => !binding.executor.capabilities.includes(capability))) throw new Error("LIFECYCLE_EXECUTOR_CAPABILITY_MISMATCH");
+    const actionInputs = interpolateLifecycleValue(stage.action.with ?? {}, run.inputBinding) as Record<string, unknown>;
+    const requestId = `execution-${run.id}-${stage.id}-${attempts.length + 1}`;
+    const expected = {
+      schema: "evopilot-agent-execution-request/v1alpha1" as const, id: requestId, idempotencyKey: `${requestId}:${binding.digest}`,
+      runId: run.id, stageId: stage.id, action: action.id, actionVersion: action.version, bindingDigest: binding.digest,
+      scope, lifecycle: {...run.revision.ref, digest: run.revision.digest},
+      harness: {...binding.harnessBundle, ...(binding.harnessExecutionBindingDigest ? {harnessExecutionBindingDigest: binding.harnessExecutionBindingDigest} : {})},
+      governance: {policyDigest: binding.policyDigest, providerDigest: binding.providerDigest, environmentDigest: binding.environmentDigest,
+        authorityDigest: binding.authorityDigest, runtimeDigest: binding.runtimeDigest, evidenceDigest: binding.evidenceDigest},
+      inputs: action.id === "evopilot.goal-loop" ? {...actionInputs, goalId: run.goalId ?? actionInputs.goalId, targetId: run.targetId ?? actionInputs.targetId, projectId: run.projectId} : actionInputs,
+      capabilities, executor: binding.executor
+    };
+    const expectedDigest = digest(expected);
+    if (requestDigest !== expectedDigest || digest(pending) !== digest({...expected, requestDigest: expectedDigest})) throw new Error("LIFECYCLE_PENDING_DIGEST_MISMATCH");
+    return structuredClone(pending);
+  }
+
+  readPendingObligations(id: string, requestDigest: string, scope: Parameters<LifecycleService["readPendingExecution"]>[2]) {
+    const before = this.readPendingExecution(id, requestDigest, scope), run = this.require(id);
+    if (Object.entries(scope).some(([key, value]) => run[key as keyof LifecycleRun] !== value)) throw new Error("LIFECYCLE_PENDING_SCOPE_MISMATCH");
+    this.assertRunIntegrity(run);
+    const obligations = structuredClone(run.revision.definition.obligations ?? {});
+    if (run.revision.digest !== before.lifecycle.digest || digest(before) !== digest(this.readPendingExecution(id, requestDigest, scope))) throw new Error("LIFECYCLE_PENDING_DIGEST_MISMATCH");
+    return obligations;
+  }
+
+  /** Exact persisted revision for the current pending request, without Registry
+   * bootstrap, active-version selection, registration or any lifecycle write. */
+  readPendingRevision(id: string, requestDigest: string, scope: Parameters<LifecycleService["readPendingExecution"]>[2]) {
+    const before = this.readPendingExecution(id, requestDigest, scope), run = this.require(id);
+    this.assertRunIntegrity(run);
+    const revision = structuredClone(run.revision);
+    if (revision.digest !== before.lifecycle.digest || digest(before) !== digest(this.readPendingExecution(id, requestDigest, scope))) throw new Error("LIFECYCLE_PENDING_DIGEST_MISMATCH");
+    return revision;
+  }
+
   private assertRunIntegrity(run: LifecycleRun): void {
+    assertNoUnintegratedSemanticExecution(run);
+    assertNoUnintegratedSemanticExecution(run.binding);
+    assertNoUnintegratedSemanticExecution(run.pendingExecution);
+    assertNoUnintegratedSemanticExecution(run.pendingExecution?.governance);
+    const proofs = run.semanticStageCompletions ?? [];
+    if (!Array.isArray(proofs) || proofs.length > 4096 || new Set(proofs.map(p => p.sourceRequestDigest)).size !== proofs.length)
+      throw new Error("LIFECYCLE_SEMANTIC_PROOF_INVALID");
+    const scope = {tenantId: run.tenantId, workspaceId: run.workspaceId, projectId: run.projectId};
+    for (const proof of proofs) {
+      const {proofDigest, ...body} = proof;
+      const key = {scope, runId: run.id, sourceRequestDigest: proof.sourceRequestDigest};
+      const dispatch = this.semanticBindings.read("dispatch-results", key);
+      const outcome = this.semanticBindings.read("outcomes", {...key, requestDigest: proof.requestDigest, outcomeDigest: proof.outcomeDigest});
+      if (proof.schema !== "evopilot-semantic-stage-proof/v1" || digestObject(body) !== proofDigest || proof.runId !== run.id ||
+        digestObject(proof.scope) !== digestObject({...scope, goalId: run.goalId, targetId: run.targetId}) ||
+        !/^sha256:[a-f0-9]{64}$/.test(proof.completionPolicyDigest) || !isRecord(dispatch) || !isRecord(outcome) ||
+        digestObject(dispatch.result) !== proof.resultDigest || dispatch.executionBindingDigest !== proof.executionBindingDigest ||
+        outcome.outcomeDigest !== proof.outcomeDigest || outcome.resultDigest !== proof.resultDigest ||
+        outcome.outcomeReviewDigest !== proof.outcomeReviewDigest || outcome.outcomeDecisionDigest !== proof.outcomeDecisionDigest ||
+        outcome.requestDigest !== proof.requestDigest || dispatch.requestDigest !== proof.requestDigest ||
+        outcome.status !== "DUAL_VALIDATED_NOT_COMPLETED" || !isRecord(outcome.collection) || outcome.collection.origin !== "INDEPENDENT" ||
+        outcome.collection.receiptDigest !== proof.collectionReceiptDigest || !isRecord(outcome.processEvidence) || outcome.processEvidence.origin !== "NATIVE_PROCESS_RUNNER" ||
+        !run.stageAttempts.some(a => a.stageId === proof.stageId && a.status === "SUCCEEDED" && a.evidence.includes(`semantic-completion://${proofDigest.slice(7)}`)) ||
+        !run.trajectory.some(t => t.stageId === proof.stageId && t.requestDigest === proof.requestDigest && t.status === "SUCCEEDED"))
+        throw new Error("LIFECYCLE_SEMANTIC_PROOF_INVALID");
+    }
+    if (run.stageAttempts.some(a => a.evidence.some(e => e.startsWith("semantic-completion://") && !proofs.some(p => e === `semantic-completion://${p.proofDigest.slice(7)}`))))
+      throw new Error("LIFECYCLE_SEMANTIC_PROOF_INVALID");
     if (run.revision.digest !== digest(run.revision.definition)) throw new Error("LIFECYCLE_REVISION_DRIFT");
     if (run.inputBinding.lifecycleDigest !== run.revision.digest) throw new Error("LIFECYCLE_INPUT_BINDING_LIFECYCLE_DRIFT");
     const inputDigest = digest({ lifecycleDigest: run.inputBinding.lifecycleDigest, values: run.inputBinding.values, unresolved: run.inputBinding.unresolved });
@@ -530,13 +704,7 @@ export class LifecycleService {
     }
   }
 
-  private write(run: LifecycleRun): LifecycleRun {
-    const target = path.join(this.runsDir, `${safeId(run.id)}.json`);
-    const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`;
-    fs.writeFileSync(temporary, `${JSON.stringify(run, null, 2)}\n`, { mode: 0o600 });
-    fs.renameSync(temporary, target);
-    return run;
-  }
+  private write(run: LifecycleRun, previous?: LifecycleRun): LifecycleRun {return this.runStore.write(run, previous);}
 
   private withBoundaryEvidence(run: LifecycleRun, checkpoint: "start" | "resume" | "retry" | "loop-iteration"): LifecycleRun {
     if (!run.binding?.harnessExecutionBindingDigest) return run;

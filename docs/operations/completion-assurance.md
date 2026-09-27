@@ -22,6 +22,8 @@ npm run completion:contract:check
 The aggregator evaluates all 195 current, inherited, and E2E criteria. It may
 return `COMPLETE` only when:
 
+- the required-criteria list is non-empty, required Target/criterion pairs and
+  validator IDs are unique, and no validation failures are recorded;
 - `total = passed`;
 - `failed = pending = stale = warning = generic = unmapped = 0`;
 - one exact Runtime/Expert Candidate pair is verified;

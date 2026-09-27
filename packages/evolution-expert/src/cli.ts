@@ -38,7 +38,7 @@ function declaredSelfCheck() {
   if (!["codex", "claude-code", "workbuddy", "generic-agent", "generic-mcp"].includes(host)) {
     throw new Error("EVOLUTION_EXPERT_UNKNOWN_PACKAGED_HOST");
   }
-  const runtimeVersion = args[2] ?? "6.2.0";
+  const runtimeVersion = args[2] ?? "6.3.0";
   if (!/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.test(runtimeVersion)) {
     throw new Error("EVOLUTION_EXPERT_INVALID_RUNTIME_VERSION: expected an exact stable version");
   }

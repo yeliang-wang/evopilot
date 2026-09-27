@@ -43,6 +43,10 @@ export function verifySigned(envelope, publicKey, expected, now = Date.now()) {
 }
 export function verifyAuthority(config, binding, permission, deployment, now) {
   verifySigned(permission, config.permissionPublicKey, {schema:'evopilot-host-permission/v1', binding, decision:'ALLOW', hostPermissionObserved:true}, now);
+  // Exact signed deployment version, never inferred from the Expert version.
+  // 6.2 remains explicit legacy secure-setup compatibility, not semantic support.
+  const runtimeVersion = deployment?.payload?.runtimeVersion;
+  requireThat(runtimeVersion === '6.3.0' || runtimeVersion === '6.2.0');
   verifySigned(deployment, config.deploymentPublicKey, {schema:'evopilot-runtime-deployment-check/v1', destination:config.destination,
-    tenantId:config.tenantId, workspaceId:config.workspaceId, runtimeVersion:'6.2.0', nonDebugEncryption:true, loggingLevel:'info'}, now);
+    tenantId:config.tenantId, workspaceId:config.workspaceId, runtimeVersion, nonDebugEncryption:true, loggingLevel:'info'}, now);
 }

@@ -2,248 +2,1379 @@
   "openapi": "3.1.0",
   "info": {
     "title": "EvoPilot API",
-    "version": "6.2.0"
+    "version": "6.3.0"
   },
   "paths": {
+    "/api/v1/projects/{projectId}/semantic-execution/mapping": {
+      "post": {
+        "summary": "Read already-bound criterion-to-rule mapping inputs (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication.  Read-only: exact criteria, concepts, business and Harness rules; empty coverageInputs are unresolved, not suggested coverage. No business field/product type inference, review, approval or dispatch. Not pre-plan domain authoring.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "bindingDigest"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "bindingDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "no-store; data.schema=evopilot-semantic-outcome-mapping/v1, status=COVERAGE_INPUT_REQUIRED, mappingDigest; authority flags false."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-catalogs/{catalogId}/gap": {
+      "get": {
+        "summary": "Read verified compatibility gap and successor handoff (6.3.0 source)",
+        "description": "Exact published pair query under current scoped viewer/operator/admin, readiness and full Catalog validation. Review destinations distinguish ontology materials, Harness declarations, cross-contract mismatch and unresolved evidence/reasoning; not defect attribution. No writes, asset selection, publication, migration or execution.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+            }
+          },
+          {
+            "name": "catalogId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+            }
+          },
+          {
+            "name": "artifactSetDigest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            }
+          },
+          {
+            "name": "bundleDigest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "no-store; evopilot-project-semantic-gap/v1, exact inspection/compatibility/gap digests, findings and external producer review handoff; no successor selected."
+          },
+          "400": {
+            "description": "Invalid or ambiguous request parameters"
+          },
+          "401": {
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "description": "Current principal, project or Catalog permission denied"
+          },
+          "404": {
+            "description": "Selected published members unavailable"
+          },
+          "408": {
+            "description": "Read cancelled"
+          },
+          "409": {
+            "description": "Ambiguous set, invalid material, drift, limits or readiness failure"
+          },
+          "504": {
+            "description": "Shared read deadline exceeded"
+          }
+        }
+      }
+    },
     "/api/v1/evolution-project-definitions": {
-      "get": { "summary": "List immutable Evolution Project Definitions", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Project Definition list" } } },
-      "post": { "summary": "Register an immutable Evolution Project Definition", "description": "Accepts declarative project facts and SecretRefs; the same id/version cannot be overwritten.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Normalized digest-bound Project Definition" } } }
+      "get": {
+        "summary": "List immutable Evolution Project Definitions",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Project Definition list"
+          }
+        }
+      },
+      "post": {
+        "summary": "Register an immutable Evolution Project Definition",
+        "description": "Accepts declarative project facts and SecretRefs; the same id/version cannot be overwritten.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Normalized digest-bound Project Definition"
+          }
+        }
+      }
     },
     "/api/v1/evolution-project-definitions/{projectDefinitionId}": {
-      "get": { "summary": "Inspect an exact Evolution Project Definition", "description": "The optional version query selects a prior immutable definition for evidence-preserving rollback; omission resolves the latest version in the authenticated tenant/workspace.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "projectDefinitionId", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "version", "in": "query", "required": false, "schema": { "type": "string" } }], "responses": { "200": { "description": "Exact Project Definition" }, "404": { "description": "Definition not found in scope" } } }
+      "get": {
+        "summary": "Inspect an exact Evolution Project Definition",
+        "description": "The optional version query selects a prior immutable definition for evidence-preserving rollback; omission resolves the latest version in the authenticated tenant/workspace.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectDefinitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exact Project Definition"
+          },
+          "404": {
+            "description": "Definition not found in scope"
+          }
+        }
+      }
     },
     "/api/v1/evolution-project-definitions/discover": {
-      "post": { "summary": "Discover project facts and unresolved typed questions", "description": "Side-effect-free discovery. Detected values retain provenance; secrets are represented only by references.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Discovery result and next unresolved questions" } } }
+      "post": {
+        "summary": "Discover project facts and unresolved typed questions",
+        "description": "Side-effect-free discovery. Detected values retain provenance; secrets are represented only by references.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Discovery result and next unresolved questions"
+          }
+        }
+      }
     },
     "/api/v1/evolution-project-definitions/{projectDefinitionId}/diff": {
-      "get": { "summary": "Compare two immutable Project Definition versions", "description": "Returns field-level semantic changes, compatibility impact, affected bindings, and migration requirements.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "projectDefinitionId", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "from", "in": "query", "required": true, "schema": { "type": "string" } }, { "name": "to", "in": "query", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Digest-bound semantic impact" } } }
+      "get": {
+        "summary": "Compare two immutable Project Definition versions",
+        "description": "Returns field-level semantic changes, compatibility impact, affected bindings, and migration requirements.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectDefinitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Digest-bound semantic impact"
+          }
+        }
+      }
     },
     "/api/v1/evolution-project-definitions/{projectDefinitionId}/activate": {
-      "post": { "summary": "Activate one immutable Project Definition version", "description": "Requires actor and evidence; existing runs remain bound to their original definition digest.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "projectDefinitionId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Auditable active-version record" } } }
+      "post": {
+        "summary": "Activate one immutable Project Definition version",
+        "description": "Requires actor and evidence; existing runs remain bound to their original definition digest.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectDefinitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Auditable active-version record"
+          }
+        }
+      }
     },
     "/api/v1/evolution-project-definitions/{projectDefinitionId}/rollback": {
-      "post": { "summary": "Roll back the active Project Definition pointer", "description": "Selects a prior immutable version without rewriting either definition or any active run binding.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "projectDefinitionId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Auditable rollback record" } } }
+      "post": {
+        "summary": "Roll back the active Project Definition pointer",
+        "description": "Selects a prior immutable version without rewriting either definition or any active run binding.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectDefinitionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Auditable rollback record"
+          }
+        }
+      }
     },
     "/api/v1/evolution-resources": {
-      "get": { "summary": "List independently versioned governed resources", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Resource list" } } },
-      "post": { "summary": "Register one immutable governed resource", "description": "Registration preserves source provenance and does not imply activation or approval.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Normalized resource with digest" } } }
+      "get": {
+        "summary": "List independently versioned governed resources",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resource list"
+          }
+        }
+      },
+      "post": {
+        "summary": "Register one immutable governed resource",
+        "description": "Registration preserves source provenance and does not imply activation or approval.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Normalized resource with digest"
+          }
+        }
+      }
     },
     "/api/v1/evolution-resources/{kind}/{resourceId}": {
-      "get": { "summary": "Inspect one exact governed resource revision", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "kind", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "resourceId", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "version", "in": "query", "required": false, "schema": { "type": "string" } }], "responses": { "200": { "description": "Exact resource and immutable source provenance" } } }
+      "get": {
+        "summary": "Inspect one exact governed resource revision",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resourceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exact resource and immutable source provenance"
+          }
+        }
+      }
     },
     "/api/v1/evolution-resources/{kind}/{resourceId}/diff": {
-      "get": { "summary": "Compare resource revisions and version impact", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Semantic changes, compatibility, and rollback version" } } }
+      "get": {
+        "summary": "Compare resource revisions and version impact",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Semantic changes, compatibility, and rollback version"
+          }
+        }
+      }
     },
     "/api/v1/evolution-resources/{kind}/{resourceId}/activate": {
-      "post": { "summary": "Activate one exact immutable resource revision", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound activation record" } } }
+      "post": {
+        "summary": "Activate one exact immutable resource revision",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Digest-bound activation record"
+          }
+        }
+      }
     },
     "/api/v1/evolution-resources/{kind}/{resourceId}/rollback": {
-      "post": { "summary": "Roll back the active resource pointer", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound rollback record" } } }
+      "post": {
+        "summary": "Roll back the active resource pointer",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Digest-bound rollback record"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/capability-inventory/validate": {
-      "post": { "summary": "Validate complete exact-Suite capability disposition", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "100-percent mapped inventory with no hidden fallback" } } }
+      "post": {
+        "summary": "Validate complete exact-Suite capability disposition",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "100-percent mapped inventory with no hidden fallback"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/action-providers/qualify": {
-      "post": { "summary": "Qualify typed Action Provider boundaries", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Qualification result and failures" } } }
+      "post": {
+        "summary": "Qualify typed Action Provider boundaries",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Qualification result and failures"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/agent-runtimes": {
-      "get": { "summary": "List scoped external Agent Runtime profiles", "description": "Agent Runtime profiles are independently versioned governed resources and are not Agent Host identities.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Agent Runtime profile revisions" } } }
+      "get": {
+        "summary": "List scoped external Agent Runtime profiles",
+        "description": "Agent Runtime profiles are independently versioned governed resources and are not Agent Host identities.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Agent Runtime profile revisions"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/agent-runtimes/qualify": {
-      "post": { "summary": "Qualify one external Agent Runtime profile", "description": "Negotiates required capabilities and emits digest-bound qualification evidence without executing source work.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Qualification or exact missing capabilities" } } }
+      "post": {
+        "summary": "Qualify one external Agent Runtime profile",
+        "description": "Negotiates required capabilities and emits digest-bound qualification evidence without executing source work.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Qualification or exact missing capabilities"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/governance/evaluate": {
-      "post": { "summary": "Evaluate a GovernancePack against exact binding evidence", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Gate evaluation without authority inference" } } }
+      "post": {
+        "summary": "Evaluate a GovernancePack against exact binding evidence",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gate evaluation without authority inference"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/remediation-campaigns": {
-      "post": { "summary": "Start a durable bounded remediation campaign", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Campaign bound to Target, source, Candidate, and budget" } } }
+      "post": {
+        "summary": "Start a durable bounded remediation campaign",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Campaign bound to Target, source, Candidate, and budget"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/remediation-campaigns/{campaignId}": {
-      "get": { "summary": "Inspect a remediation campaign", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Campaign state, history, budget, and replacement lineage" } } }
+      "get": {
+        "summary": "Inspect a remediation campaign",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Campaign state, history, budget, and replacement lineage"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/remediation-campaigns/{campaignId}/decide": {
-      "post": { "summary": "Classify and persist one remediation decision", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Automatic continuation or exact human stop" } } }
+      "post": {
+        "summary": "Classify and persist one remediation decision",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Automatic continuation or exact human stop"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/remediation-campaigns/{campaignId}/resume": {
-      "post": { "summary": "Resume a campaign from an exact human decision", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound resumed campaign" } } }
+      "post": {
+        "summary": "Resume a campaign from an exact human decision",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Digest-bound resumed campaign"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/remediation-campaigns/{campaignId}/cancel": {
-      "post": { "summary": "Cancel a campaign with exact evidence", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound halted campaign" } } }
+      "post": {
+        "summary": "Cancel a campaign with exact evidence",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Digest-bound halted campaign"
+          }
+        }
+      }
     },
     "/api/v1/controlled-lifecycle/observations": {
-      "post": { "summary": "Record an exact Pipeline observation", "description": "Persists immutable Runtime, project, Lifecycle, HarnessBundle, GoalTarget, Host, Provider, environment, authority, evaluator, scorer, and evidence bindings. Conversation may contribute evidence but never authority.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Digest-bound observation" } } }
+      "post": {
+        "summary": "Record an exact Pipeline observation",
+        "description": "Persists immutable Runtime, project, Lifecycle, HarnessBundle, GoalTarget, Host, Provider, environment, authority, evaluator, scorer, and evidence bindings. Conversation may contribute evidence but never authority.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Digest-bound observation"
+          }
+        }
+      }
     },
     "/api/v1/controlled-lifecycle/observations/{observationId}": {
-      "get": { "summary": "Inspect an observation and classification", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Immutable observation and optional classification" } } }
+      "get": {
+        "summary": "Inspect an observation and classification",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Immutable observation and optional classification"
+          }
+        }
+      }
     },
     "/api/v1/controlled-lifecycle/observations/{observationId}/classify": {
-      "post": { "summary": "Classify a Pipeline gap without active mutation", "description": "Routes project gaps to declarative successors and missing project-neutral primitives to explicit Runtime or Expert Target proposals.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Deterministic gap classification" } } }
+      "post": {
+        "summary": "Classify a Pipeline gap without active mutation",
+        "description": "Routes project gaps to declarative successors and missing project-neutral primitives to explicit Runtime or Expert Target proposals.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Deterministic gap classification"
+          }
+        }
+      }
     },
     "/api/v1/controlled-lifecycle/successors": {
-      "post": { "summary": "Create an immutable Lifecycle successor proposal", "description": "Includes semantic, authority, dependency, compatibility, impact, migration, experiment, monitoring, rollback, safety, and provenance facts; it never changes the active pointer.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Successor proposal" } } }
+      "post": {
+        "summary": "Create an immutable Lifecycle successor proposal",
+        "description": "Includes semantic, authority, dependency, compatibility, impact, migration, experiment, monitoring, rollback, safety, and provenance facts; it never changes the active pointer.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successor proposal"
+          }
+        }
+      }
     },
     "/api/v1/controlled-lifecycle/successors/{proposalId}": {
-      "get": { "summary": "Inspect an exact Lifecycle successor", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Immutable successor proposal" } } }
+      "get": {
+        "summary": "Inspect an exact Lifecycle successor",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Immutable successor proposal"
+          }
+        }
+      }
     },
     "/api/v1/controlled-lifecycle/experiments": {
-      "post": { "summary": "Evaluate a comparable Champion/Challenger experiment", "description": "Every governed context binding must match; mismatched evidence is stratified and never pairwise aggregated.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Comparable or stratified experiment report" } } }
+      "post": {
+        "summary": "Evaluate a comparable Champion/Challenger experiment",
+        "description": "Every governed context binding must match; mismatched evidence is stratified and never pairwise aggregated.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Comparable or stratified experiment report"
+          }
+        }
+      }
     },
     "/api/v1/controlled-lifecycle/activation-decisions": {
-      "post": { "summary": "Decide policy-bounded future-run activation", "description": "Auto-activation requires the exact active PolicyPack and every safe predicate. Semantic or authority changes return an exact human decision; active runs are never rebound.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Activation decision and optional future-run pointer receipt" } } }
+      "post": {
+        "summary": "Decide policy-bounded future-run activation",
+        "description": "Auto-activation requires the exact active PolicyPack and every safe predicate. Semantic or authority changes return an exact human decision; active runs are never rebound.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activation decision and optional future-run pointer receipt"
+          }
+        }
+      }
     },
     "/api/v1/controlled-lifecycle/monitoring/evaluate": {
-      "post": { "summary": "Evaluate post-activation health and deterministic rollback", "description": "Uses immutable receipts and duplicate suppression; unknown health or uncertain prior mutations stop for exact review.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Retain, rollback, or exact human decision" } } }
+      "post": {
+        "summary": "Evaluate post-activation health and deterministic rollback",
+        "description": "Uses immutable receipts and duplicate suppression; unknown health or uncertain prior mutations stop for exact review.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retain, rollback, or exact human decision"
+          }
+        }
+      }
     },
     "/api/v1/controlled-lifecycle/target-proposals": {
-      "post": { "summary": "Propose a project-neutral Runtime or Expert primitive", "description": "Blocks unsafe activation and project-specific Core branching until a separately reviewed Target is approved and implemented.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Review-only Target proposal" } } }
+      "post": {
+        "summary": "Propose a project-neutral Runtime or Expert primitive",
+        "description": "Blocks unsafe activation and project-specific Core branching until a separately reviewed Target is approved and implemented.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Review-only Target proposal"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/plan": {
-      "post": { "summary": "Resolve and bind a Harness-guided governed evolution plan", "description": "Deterministically matches a published HarnessBundle, composes it with an open Lifecycle without weakening obligations, and persists the exact execution binding.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Harness-guided plan and immutable binding" }, "409": { "description": "Ambiguous/abstained match or composition conflict" } } }
+      "post": {
+        "summary": "Resolve and bind a Harness-guided governed evolution plan",
+        "description": "Deterministically matches a published HarnessBundle, composes it with an open Lifecycle without weakening obligations, and persists the exact execution binding. In-progress semantic execution integration is not available: explicit semanticExecutionBindingDigest, semanticExecutionBinding or semanticContextSlice request fields are rejected with SEMANTIC_EXECUTION_INTEGRATION_REQUIRED (HTTP 400), not silently ignored.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Harness-guided plan and immutable binding"
+          },
+          "409": {
+            "description": "Ambiguous/abstained match or composition conflict"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/runs": {
-      "post": { "summary": "Start an actual Lifecycle run from an exact HarnessExecutionBinding", "description": "The binding is mandatory and revalidated against immutable Project, GoalTarget, Registry/Catalog, Profile/Bundle/Components, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence identities before start.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Lifecycle run with start-boundary evidence" }, "409": { "description": "Binding or published-asset drift" } } }
+      "post": {
+        "summary": "Start an actual Lifecycle run from an exact HarnessExecutionBinding",
+        "description": "The binding is mandatory and revalidated against immutable Project, GoalTarget, Registry/Catalog, Profile/Bundle/Components, Lifecycle, Policy, Provider, Environment, Host, Runtime, authority, and evidence identities before start. In-progress semantic execution integration is not available: explicit semanticExecutionBindingDigest, semanticExecutionBinding or semanticContextSlice request fields are rejected with SEMANTIC_EXECUTION_INTEGRATION_REQUIRED (HTTP 400), not silently ignored.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Lifecycle run with start-boundary evidence"
+          },
+          "409": {
+            "description": "Binding or published-asset drift"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/revalidate": {
-      "post": { "summary": "Revalidate an exact Harness execution binding", "description": "Required at start, resume, retry, and every Loop iteration.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Binding is current" }, "409": { "description": "Bound object drift" } } }
+      "post": {
+        "summary": "Revalidate an exact Harness execution binding",
+        "description": "Required at start, resume, retry, and every Loop iteration.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Binding is current"
+          },
+          "409": {
+            "description": "Bound object drift"
+          }
+        }
+      }
     },
     "/api/v1/governed-evolution/recovery/decide": {
-      "post": { "summary": "Classify bounded automatic recovery", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Automatic repair/retry/resume, rule proposal, human decision, or fail" } } }
+      "post": {
+        "summary": "Classify bounded automatic recovery",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Automatic repair/retry/resume, rule proposal, human decision, or fail"
+          }
+        }
+      }
     },
     "/api/v1/automation-registry": {
-      "get": { "summary": "List Automation Rule proposals and current rules", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Registry projection" } } }
+      "get": {
+        "summary": "List Automation Rule proposals and current rules",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Registry projection"
+          }
+        }
+      }
     },
     "/api/v1/automation-registry/proposals": {
-      "post": { "summary": "Create a complete reusable Automation Rule proposal", "description": "Proposal creation is not activation; one exact human approval is required before future automatic reuse.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Immutable rule proposal" } } }
+      "post": {
+        "summary": "Create a complete reusable Automation Rule proposal",
+        "description": "Proposal creation is not activation; one exact human approval is required before future automatic reuse.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Immutable rule proposal"
+          }
+        }
+      }
     },
     "/api/v1/automation-registry/{ruleId}/activate": {
-      "post": { "summary": "Activate an exact Automation Rule proposal", "description": "Requires the exact proposal digest and human evidence reference. Activation remains tenant/workspace scoped and cannot automate authority-required or uncertain mutations.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "ruleId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Activated rule revision" } } }
+      "post": {
+        "summary": "Activate an exact Automation Rule proposal",
+        "description": "Requires the exact proposal digest and human evidence reference. Activation remains tenant/workspace scoped and cannot automate authority-required or uncertain mutations.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Activated rule revision"
+          }
+        }
+      }
     },
     "/api/v1/automation-registry/{ruleId}/revoke": {
-      "post": { "summary": "Revoke an Automation Rule", "description": "Creates a new auditable revoked revision in the authenticated tenant/workspace.", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "ruleId", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "Revoked rule revision" } } }
+      "post": {
+        "summary": "Revoke an Automation Rule",
+        "description": "Creates a new auditable revoked revision in the authenticated tenant/workspace.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ruleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revoked rule revision"
+          }
+        }
+      }
     },
     "/api/v1/interactions/render": {
-      "post": { "summary": "Render one Host-neutral Human Interaction Protocol message", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Digest-bound interaction object" } } }
+      "post": {
+        "summary": "Render one Host-neutral Human Interaction Protocol message",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Digest-bound interaction object"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles": {
       "get": {
         "summary": "List governed Lifecycle revisions",
         "description": "Returns tenant/workspace immutable revisions, state, active pointers, and the closed Action Registry digest.",
-        "security": [{ "bearerAuth": [] }],
-        "responses": { "200": { "description": "Lifecycle catalog" } }
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lifecycle catalog"
+          }
+        }
       },
-      "post": { "summary": "Register an immutable Lifecycle YAML revision", "description": "Registration validates the closed Action and Capability Registry and never activates the revision.", "security": [{ "bearerAuth": [] }], "responses": { "201": { "description": "Registered immutable Lifecycle revision" }, "409": { "description": "Immutable identity or version conflict" } } }
+      "post": {
+        "summary": "Register an immutable Lifecycle YAML revision",
+        "description": "Registration validates the closed Action and Capability Registry and never activates the revision.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Registered immutable Lifecycle revision"
+          },
+          "409": {
+            "description": "Immutable identity or version conflict"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/{lifecycleId}": {
-      "get": { "summary": "Inspect one exact Lifecycle revision", "security": [{ "bearerAuth": [] }], "parameters": [{ "name": "lifecycleId", "in": "path", "required": true, "schema": { "type": "string" } }, { "name": "version", "in": "query", "required": false, "schema": { "type": "string" } }], "responses": { "200": { "description": "Revision, state, provenance, and pointer" } } },
-      "delete": { "summary": "Delete only an unreferenced never-active draft", "description": "Requires exact revision digest and evidence. Published, active, archived, historical, or referenced revisions cannot be physically deleted.", "security": [{ "bearerAuth": [] }], "responses": { "204": { "description": "Draft deleted" }, "409": { "description": "Referential-integrity or lifecycle-state rejection" } } }
+      "get": {
+        "summary": "Inspect one exact Lifecycle revision",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lifecycleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Revision, state, provenance, and pointer"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete only an unreferenced never-active draft",
+        "description": "Requires exact revision digest and evidence. Published, active, archived, historical, or referenced revisions cannot be physically deleted.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Draft deleted"
+          },
+          "409": {
+            "description": "Referential-integrity or lifecycle-state rejection"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/{lifecycleId}/diff": {
-      "get": { "summary": "Compare two immutable Lifecycle revisions", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Semantic and future-planning impact" } } }
+      "get": {
+        "summary": "Compare two immutable Lifecycle revisions",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Semantic and future-planning impact"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/{lifecycleId}/activate": {
-      "post": { "summary": "Activate one exact revision for future planning", "description": "Uses expected-active-digest concurrency; existing bound runs are unchanged.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Active pointer" }, "409": { "description": "Stale active pointer" } } }
+      "post": {
+        "summary": "Activate one exact revision for future planning",
+        "description": "Uses expected-active-digest concurrency; existing bound runs are unchanged.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active pointer"
+          },
+          "409": {
+            "description": "Stale active pointer"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/{lifecycleId}/deactivate": {
-      "post": { "summary": "Deactivate future Lifecycle selection", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Inactive pointer" } } }
+      "post": {
+        "summary": "Deactivate future Lifecycle selection",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inactive pointer"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/{lifecycleId}/archive": {
-      "post": { "summary": "Archive one inactive immutable revision", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Archived state with history retained" } } }
+      "post": {
+        "summary": "Archive one inactive immutable revision",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Archived state with history retained"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/{lifecycleId}/restore": {
-      "post": { "summary": "Restore an archived revision to inactive state", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Restored state" } } }
+      "post": {
+        "summary": "Restore an archived revision to inactive state",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Restored state"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/{lifecycleId}/rollback": {
-      "post": { "summary": "Move the active pointer to a retained revision", "description": "Rollback never rewrites revisions, runs, evidence, or audit.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Rolled-back active pointer" } } }
+      "post": {
+        "summary": "Move the active pointer to a retained revision",
+        "description": "Rollback never rewrites revisions, runs, evidence, or audit.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rolled-back active pointer"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/{lifecycleId}/dependencies": {
-      "get": { "summary": "Inspect imports and dependents", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Dependency graph" } } }
+      "get": {
+        "summary": "Inspect imports and dependents",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dependency graph"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/{lifecycleId}/usage": {
-      "get": { "summary": "Inspect plan and run references", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Immutable usage records" } } }
+      "get": {
+        "summary": "Inspect plan and run references",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Immutable usage records"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/{lifecycleId}/audit": {
-      "get": { "summary": "Inspect immutable Lifecycle Registry audit", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Audit records" } } }
+      "get": {
+        "summary": "Inspect immutable Lifecycle Registry audit",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit records"
+          }
+        }
+      }
     },
     "/api/v1/lifecycles/resolve": {
       "post": {
         "summary": "Resolve a Lifecycle definition",
         "description": "Resolves an explicit id/version or metadata labels without project-specific Engine branches.",
-        "security": [{ "bearerAuth": [] }],
-        "responses": { "200": { "description": "Immutable LifecycleRevision and selection evidence" } }
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Immutable LifecycleRevision and selection evidence"
+          }
+        }
       }
     },
     "/api/v1/lifecycles/resolve-inputs": {
       "post": {
         "summary": "Resolve Lifecycle inputs",
         "description": "Uses the same typed contract as CLI, MCP, and CI; returns only the next unresolved question. Input never grants authority.",
-        "security": [{ "bearerAuth": [] }],
-        "responses": { "200": { "description": "LifecycleInputBinding preview" } }
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LifecycleInputBinding preview"
+          }
+        }
       }
     },
     "/api/v1/lifecycle-runs": {
       "get": {
         "summary": "List scoped Lifecycle runs",
-        "security": [{ "bearerAuth": [] }],
-        "responses": { "200": { "description": "Tenant/workspace scoped LifecycleRun list" } }
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tenant/workspace scoped LifecycleRun list"
+          }
+        }
       },
       "post": {
         "summary": "Create a Lifecycle run",
-        "description": "Requires a registered project and an exact published immutable HarnessBundle from a mounted Catalog; creation does not authorize execution.",
-        "security": [{ "bearerAuth": [] }],
-        "responses": { "201": { "description": "LifecycleRun awaiting input, binding review, or authorization" } }
+        "description": "Requires a registered project and an exact published immutable HarnessBundle from a mounted Catalog; creation does not authorize execution. In-progress semantic execution integration is not available: explicit semanticExecutionBindingDigest, semanticExecutionBinding or semanticContextSlice request fields are rejected with SEMANTIC_EXECUTION_INTEGRATION_REQUIRED (HTTP 409), not silently ignored.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "LifecycleRun awaiting input, binding review, or authorization"
+          }
+        }
       }
     },
     "/api/v1/lifecycle-runs/{runId}": {
       "get": {
         "summary": "Inspect a Lifecycle run",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "Authoritative LifecycleRun" }, "404": { "description": "Run not found in scope" } }
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authoritative LifecycleRun"
+          },
+          "404": {
+            "description": "Run not found in scope"
+          }
+        }
       }
     },
     "/api/v1/lifecycle-runs/{runId}/authorize": {
       "post": {
         "summary": "Authorize one exact Lifecycle binding",
-        "description": "Requires an explicit APPROVED or REJECTED decision, bindingDigest, and human evidenceRef. Generic conversation cannot satisfy this operation.",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "Digest-bound plan decision recorded" } }
+        "description": "Requires an explicit APPROVED or REJECTED decision, bindingDigest, and human evidenceRef. Generic conversation cannot satisfy this operation. In-progress semantic execution integration is not available: explicit semanticExecutionBindingDigest, semanticExecutionBinding or semanticContextSlice request fields are rejected with SEMANTIC_EXECUTION_INTEGRATION_REQUIRED (HTTP 409), not silently ignored.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Digest-bound plan decision recorded"
+          }
+        }
       }
     },
     "/api/v1/lifecycle-runs/{runId}/cancel": {
       "post": {
         "summary": "Cancel a non-terminal Lifecycle run",
-        "description": "Requires the exact bindingDigest and human evidenceRef. Cancellation is terminal, audited, and clears pending execution without granting any release authority.",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "Digest-bound cancellation decision recorded" } }
+        "description": "Requires the exact bindingDigest and human evidenceRef. Cancellation is terminal, audited, and clears pending execution without granting any release authority. In-progress semantic execution integration is not available: explicit semanticExecutionBindingDigest, semanticExecutionBinding or semanticContextSlice request fields are rejected with SEMANTIC_EXECUTION_INTEGRATION_REQUIRED (HTTP 409), not silently ignored.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Digest-bound cancellation decision recorded"
+          }
+        }
       }
     },
     "/api/v1/lifecycle-runs/{runId}/advance": {
       "post": {
         "summary": "Advance automatic Lifecycle stages",
-        "description": "Runs safe internal stages to the next external execution or genuine human authority boundary.",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "Updated LifecycleRun" } }
+        "description": "Runs safe internal stages to the next external execution or genuine human authority boundary. In-progress semantic execution integration is not available: explicit semanticExecutionBindingDigest, semanticExecutionBinding or semanticContextSlice request fields are rejected with SEMANTIC_EXECUTION_INTEGRATION_REQUIRED (HTTP 409), not silently ignored.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Updated LifecycleRun"
+          }
+        }
       }
     },
     "/api/v1/lifecycle-runs/{runId}/external-result": {
       "post": {
         "summary": "Record an external Agent execution receipt",
-        "description": "Accepts an exact request id and receipt digest. Identical replays are idempotent; conflicts fail and UNCERTAIN stops at recovery approval.",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "200": { "description": "Receipt and trajectory recorded" } }
+        "description": "Accepts an exact request id and receipt digest. Identical replays are idempotent; conflicts fail and UNCERTAIN stops at recovery approval. In-progress semantic execution integration is not available: explicit semanticExecutionBindingDigest, semanticExecutionBinding or semanticContextSlice request fields are rejected with SEMANTIC_EXECUTION_INTEGRATION_REQUIRED (HTTP 409), not silently ignored.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Receipt and trajectory recorded"
+          }
+        }
       }
     },
     "/api/v1/lifecycle-runs/{runId}/feedback": {
       "post": {
         "summary": "Create a private strict-redacted feedback package",
-        "description": "Requires exact binding approval evidence and never mutates Harness assets or publishes the package.",
-        "security": [{ "bearerAuth": [] }],
-        "parameters": [{ "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }],
-        "responses": { "201": { "description": "Immutable private HarnessExecutionFeedbackPackage" } }
+        "description": "Requires exact binding approval evidence and never mutates Harness assets or publishes the package. In-progress semantic execution integration is not available: explicit semanticExecutionBindingDigest, semanticExecutionBinding or semanticContextSlice request fields are rejected with SEMANTIC_EXECUTION_INTEGRATION_REQUIRED (HTTP 409), not silently ignored.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "runId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Immutable private HarnessExecutionFeedbackPackage"
+          }
+        }
       }
     },
     "/api/v1/audit": {
@@ -1098,7 +2229,7 @@
     "/api/v1/goals": {
       "get": {
         "summary": "列出 GlobalGoal",
-        "description": "返回当前作用域内的 GlobalGoal。GlobalGoal 位于 release target 和 LoopRun 之间，用于把业务目标拆成 Alpha -> Beta -> RC -> GA 的可观察 GoalTargets。",
+        "description": "返回当前作用域内的 GlobalGoal。GlobalGoal 位于 release target 和 LoopRun 之间，用于把业务目标拆成 Alpha -> Beta -> RC -> GA 的可观察 GoalTargets。 Semantic-owned Goals require current scoped operator/admin and exact verified completion receipts; no query/body overrides and no-store. Read-only; no completion writes, execution or release authority. Non-semantic Goals retain existing behavior. Preserve the existing scoped last-50 reverse-ordered window. Verify visible semantic Goals independently; not a cross-Goal atomic snapshot. Any visible semantic verification failure fails the whole response.",
         "security": [
           {
             "bearerAuth": []
@@ -1156,7 +2287,8 @@
           "404": {
             "description": "GlobalGoal 不存在"
           }
-        }
+        },
+        "description": " Semantic-owned Goals require current scoped operator/admin and verified completion receipts. No query/body overrides; no-store. Verified non-phase completion or a separately verified final Goal receipt permits a final report; phase/GA Goals require that final receipt and all required Target/phase evidence. Read-only: no persisted report, release decision or external effects. Unsettled writes require reconciliation without replay. Non-semantic Goals retain existing behavior."
       }
     },
     "/api/v1/goals/{goalId}/advance": {
@@ -1272,7 +2404,8 @@
           "200": {
             "description": "GoalTarget 证据矩阵"
           }
-        }
+        },
+        "description": " Semantic-owned Goals require current scoped operator/admin and verified completion receipts. No query/body overrides; no-store. Verified non-phase completion or a separately verified final Goal receipt permits a final report; phase/GA Goals require that final receipt and all required Target/phase evidence. Read-only: no persisted report, release decision or external effects. Unsettled writes require reconciliation without replay. Non-semantic Goals retain existing behavior."
       }
     },
     "/api/v1/goals/{goalId}/final-report": {
@@ -1300,7 +2433,8 @@
           "409": {
             "description": "目标尚未进入终态"
           }
-        }
+        },
+        "description": " Semantic-owned Goals require current scoped operator/admin and verified completion receipts. No query/body overrides; no-store. Verified non-phase completion or a separately verified final Goal receipt permits a final report; phase/GA Goals require that final receipt and all required Target/phase evidence. Read-only: no persisted report, release decision or external effects. Unsettled writes require reconciliation without replay. Non-semantic Goals retain existing behavior."
       }
     },
     "/api/v1/goals/{goalId}/graph": {
@@ -1325,7 +2459,8 @@
           "200": {
             "description": "GoalTarget 图"
           }
-        }
+        },
+        "description": " Semantic-owned Goals require current scoped operator/admin and exact verified completion receipts; no query/body overrides and no-store. Read-only; no completion writes, execution or release authority. Non-semantic Goals retain existing behavior."
       }
     },
     "/api/v1/goals/{goalId}/phase-packages": {
@@ -1432,7 +2567,7 @@
     "/api/v1/goals/{goalId}/phases": {
       "get": {
         "summary": "读取 GlobalGoal 阶段状态",
-        "description": "返回 Alpha、Beta、RC、GA 四个 PhaseTarget 的状态、验收标准、所需证据、review capabilities、包输出和 GO/NO-GO decision。",
+        "description": "返回 Alpha、Beta、RC、GA 四个 PhaseTarget 的状态、验收标准、所需证据、review capabilities、包输出和 GO/NO-GO decision。 Semantic-owned Goals require current scoped operator/admin and exact verified completion receipts; no query/body overrides and no-store. Read-only; no completion writes, execution or release authority. Non-semantic Goals retain existing behavior.",
         "security": [
           {
             "bearerAuth": []
@@ -1522,7 +2657,7 @@
     "/api/v1/goals/{goalId}/run-status": {
       "get": {
         "summary": "读取 GlobalGoal 运行聚合状态",
-        "description": "返回 CLI wrapper commands 和 Dashboard 共用的白盒运行投影，包含 scope、goal、snapshot、targetPackages、phasePackages、graph、timeline、evidenceMatrix、activeTarget、latestLoop、releaseDecision、finalReport、chain、blockers、nextAction 和 llmUsage。",
+        "description": "返回 CLI wrapper commands 和 Dashboard 共用的白盒运行投影，包含 scope、goal、snapshot、targetPackages、phasePackages、graph、timeline、evidenceMatrix、activeTarget、latestLoop、releaseDecision、finalReport、chain、blockers、nextAction 和 llmUsage。 Semantic-owned Goals require current scoped operator/admin and exact verified completion receipts; no query/body overrides and no-store. Read-only; no completion writes, execution or release authority. Non-semantic Goals retain existing behavior. Semantic-owned Goals return evopilot-semantic-goal-run-status/v1 with verified Goal/snapshot/graph/timeline/evidenceMatrix, semanticCompletion, Target/phase receipt digest references, optional final Goal receipt and finalReport. llmUsage uses evopilot-semantic-execution-usage/v1: verified completed-Target external-stage subtotals, exact routes and proof references. llmUsageStatus is UNAVAILABLE (null totals), PARTIAL, or VERIFIED_COMPLETED_TARGETS. Missing legacy coverage is unknown, not zero; incomplete telemetry is excluded. The completed-Target subtotal excludes pending, failed and uncertain dispatches. Separate dispatchUsage (evopilot-semantic-dispatch-usage/v1) reads known succeeded/failed/uncertain receipts through immutable pre-dispatch request/profile anchors, independently verifying Lifecycle/Harness bindings and result/observation correlation. Waiting, legacy or unavailable evidence is explicit; no replay or claim cleanup. Its subtotal overlaps llmUsage and must not be added to it. Internal actions, other Goals, unreachable records and provider billing remain excluded. No legacy Loop chain or Target packages are synthesized. release stays NOT_EVALUATED and unauthorized. Non-semantic Goals retain evopilot-goal-run-status/v1.",
         "security": [
           {
             "bearerAuth": []
@@ -1548,7 +2683,7 @@
     "/api/v1/goals/{goalId}/snapshot": {
       "get": {
         "summary": "读取 GlobalGoal 快照",
-        "description": "返回状态、进度、active GoalTarget、nextAction、blockers 和 release decision 摘要。",
+        "description": "返回状态、进度、active GoalTarget、nextAction、blockers 和 release decision 摘要。 Semantic-owned Goals require current scoped operator/admin and verified completion receipts. No query/body overrides; no-store. Verified non-phase completion or a separately verified final Goal receipt permits a final report; phase/GA Goals require that final receipt and all required Target/phase evidence. Read-only: no persisted report, release decision or external effects. Unsettled writes require reconciliation without replay. Non-semantic Goals retain existing behavior.",
         "security": [
           {
             "bearerAuth": []
@@ -1656,7 +2791,8 @@
           "200": {
             "description": "GoalTarget 列表"
           }
-        }
+        },
+        "description": " Semantic-owned Goals require current scoped operator/admin and exact verified completion receipts; no query/body overrides and no-store. Read-only; no completion writes, execution or release authority. Non-semantic Goals retain existing behavior."
       }
     },
     "/api/v1/goals/{goalId}/timeline": {
@@ -1680,6 +2816,2586 @@
         "responses": {
           "200": {
             "description": "GlobalGoal 时间线"
+          }
+        },
+        "description": " Semantic-owned Goals require current scoped operator/admin and exact verified completion receipts; no query/body overrides and no-store. Read-only; no completion writes, execution or release authority. Non-semantic Goals retain existing behavior."
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-capabilities": {
+      "get": {
+        "summary": "Negotiate implemented project semantic operations (6.3.0 source only)",
+        "description": "Authenticated scoped project, current principal and production readiness; no query or body. Advertisement is not permission, activation, execution or completion authority. Legacy clients remain independent; semantic clients must not fall back to legacy execution.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "no-store; data.schema=evopilot-project-semantic-capabilities/v1; exact projectId, operations=[capabilities,inspect,compatibility,review,approve,binding,activation,transitionReview,transitionApprove,onboarding], authority=RUNTIME_CURRENT_SCOPED_PRINCIPAL, executionAvailable=false, completionAvailable=false"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Current principal or project scope denied"
+          },
+          "409": {
+            "description": "Readiness or scope validation failure"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-catalogs/{catalogId}/onboarding": {
+      "get": {
+        "summary": "Read-only project semantic onboarding guidance (6.3.0 source only)",
+        "description": "Existing scoped project and current readiness required; strict no-query/no-body. Preserve a currently valid existing binding without searching the selected Catalog, or compare at most 64 verified published pairs from that Catalog. Recommend reviewed dual binding only for compatible choices, never select, approve or execute. Missing, ambiguous and indeterminate choices remain explicit; permission loss and drift fail closed. No legacy migration, credentials, publication or Release authority.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+            }
+          },
+          {
+            "name": "catalogId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "no-store; data.schema=evopilot-project-semantic-onboarding/v1; status=EXISTING_BINDING|REVIEW_REQUIRED|SELECTION_REQUIRED|EVIDENCE_REQUIRED|NO_COMPATIBLE_MATCH|NO_PUBLISHED_CANDIDATE; selectedCandidate=null, bindingCreated=false, eligibleForExecution=false, grantsExecutionAuthority=false"
+          },
+          "400": {
+            "description": "SEMANTIC_REQUEST_INVALID"
+          },
+          "401": {
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "description": "Current principal, project scope or Catalog permission denied"
+          },
+          "404": {
+            "description": "Configured Catalog/material unavailable"
+          },
+          "408": {
+            "description": "Semantic read cancelled"
+          },
+          "409": {
+            "description": "Trust, material, consistency, resource or production readiness gate failure"
+          },
+          "504": {
+            "description": "Shared semantic operation deadline exceeded"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-catalogs/{catalogId}": {
+      "get": {
+        "summary": "项目范围语义发现（6.3.0 开发中源码）",
+        "description": "固定 Runtime 只读校验入口。需要当前 bearer 身份及项目精确 tenant/workspace、服务端 Registry 和独立语义权限配置。禁止 query/body/path 配置注入，无 legacy fallback。返回 VERIFIED_DISCOVERY_ONLY 和 digest 引用，不返回原始材料；bindingCreated 和 eligibleForExecution 均为 false。不是发布能力、兼容性批准或执行绑定。保留生产 readiness 门禁。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+            }
+          },
+          {
+            "name": "catalogId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "no-store; data.schema=evopilot-project-semantic-discovery/v1; immutable allowlisted digest evidence, not execution authority"
+          },
+          "400": {
+            "description": "SEMANTIC_REQUEST_INVALID"
+          },
+          "401": {
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "description": "Current principal, project scope or Catalog permission denied"
+          },
+          "404": {
+            "description": "Configured Catalog/material unavailable"
+          },
+          "408": {
+            "description": "Semantic read cancelled"
+          },
+          "409": {
+            "description": "Trust, material, consistency, resource or production readiness gate failure"
+          },
+          "504": {
+            "description": "Shared semantic operation deadline exceeded"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-catalogs/{catalogId}/compatibility": {
+      "get": {
+        "summary": "精确语义资产与 Bundle 兼容性检查（6.3.0 开发中源码）",
+        "description": "重新校验当前项目权限及完整发布材料，仅比较显式 snapshot facts。返回 COMPATIBLE / INCOMPATIBLE / INDETERMINATE；无要求、未验证文本证据或外部推理不会默认为兼容。兼容性不创建绑定，不证明 Harness Eligibility，不授予执行权限。禁止额外/重复 query、body、路径/策略/validator 输入。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+            }
+          },
+          {
+            "name": "catalogId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+            }
+          },
+          {
+            "name": "artifactSetDigest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            }
+          },
+          {
+            "name": "bundleDigest",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^sha256:[a-f0-9]{64}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "no-store; data.schema=evopilot-project-semantic-compatibility-inspect/v1; report and inspection digests; bindingCreated=false, eligibleForExecution=false"
+          },
+          "400": {
+            "description": "Invalid or ambiguous request parameters"
+          },
+          "401": {
+            "description": "UNAUTHORIZED"
+          },
+          "403": {
+            "description": "Current principal, project or Catalog permission denied"
+          },
+          "404": {
+            "description": "Selected published members unavailable"
+          },
+          "408": {
+            "description": "Read cancelled"
+          },
+          "409": {
+            "description": "Ambiguous set, invalid material, drift, limits or readiness failure"
+          },
+          "504": {
+            "description": "Shared read deadline exceeded"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-binding/reviews": {
+      "post": {
+        "summary": "Prepare exact project semantic binding review (6.3.0 source only)",
+        "description": "Current scoped operator/admin; fresh complete permitted Catalog and COMPATIBLE result required. No binding/activation. JSON body max 2048 bytes; no query or authority fields.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "catalogId",
+                  "artifactSetDigest",
+                  "bundleDigest"
+                ],
+                "properties": {
+                  "catalogId": {
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}$"
+                  },
+                  "artifactSetDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "bundleDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "no-store; exact reviewDigest, bindingCreated=false"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Permission denied"
+          },
+          "404": {
+            "description": "Selection unavailable"
+          },
+          "408": {
+            "description": "Cancelled"
+          },
+          "409": {
+            "description": "Non-compatible, drift, integrity or readiness failure"
+          },
+          "504": {
+            "description": "Deadline exceeded"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-binding/approvals": {
+      "post": {
+        "summary": "Approve exact reviewed project binding (6.3.0 source only)",
+        "description": "Current scoped operator/admin, exact fresh review and immutable no-replace project slot. Server-authenticated principal only, never actor-header authority. Exact same-principal retry returns original decision. Does not activate execution; status REVIEWED_NOT_ACTIVATED. JSON max 2048 bytes, no query.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "reviewDigest",
+                  "decision"
+                ],
+                "properties": {
+                  "reviewDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "APPROVE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "no-store; data.review, data.decision, data.binding; eligibleForExecution=false"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Permission denied"
+          },
+          "404": {
+            "description": "Review/material unavailable"
+          },
+          "408": {
+            "description": "Cancelled"
+          },
+          "409": {
+            "description": "Stale review, immutable conflict, integrity or readiness failure"
+          },
+          "504": {
+            "description": "Deadline exceeded"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-binding": {
+      "get": {
+        "summary": "Inspect reviewed project binding with fresh revalidation (6.3.0 source only)",
+        "description": "Scoped authenticated viewer or above; fresh selected material and permission verification, not cached approval as authority. No query/body. Does not activate execution.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "no-store; data.review, data.decision, data.binding; REVIEWED_NOT_ACTIVATED, eligibleForExecution=false"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Permission denied"
+          },
+          "404": {
+            "description": "Binding/material unavailable"
+          },
+          "408": {
+            "description": "Cancelled"
+          },
+          "409": {
+            "description": "Pin drift, corruption or readiness failure"
+          },
+          "504": {
+            "description": "Deadline exceeded"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-binding/activation": {
+      "get": {
+        "summary": "Read project semantic activation and transition history (6.3.0 source only)",
+        "description": "Scoped viewer or above. No query/body. REVIEWED_DEFAULT or ACTIVE_FOR_FUTURE_PLANS; bounded 64-transition chain, selected binding and headDigest. Revalidates current selection; no execution grant.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "no-store; scoped verified result, no execution authority"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Permission denied"
+          },
+          "404": {
+            "description": "Record or material unavailable"
+          },
+          "408": {
+            "description": "Cancelled"
+          },
+          "409": {
+            "description": "Stale head, conflict, drift, integrity, limit or readiness failure"
+          },
+          "504": {
+            "description": "Deadline exceeded"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-binding/transition-reviews": {
+      "post": {
+        "summary": "Prepare an exact future-plan activation, migration or rollback review (6.3.0 source only)",
+        "description": "Scoped operator/admin. JSON max 2048 bytes, no query. ACTIVATE names initial binding digest; MIGRATE names fresh compatible review digest; ROLLBACK names historical binding digest. Requires exact head, current destination and no implicit selection. No execution or existing-run mutation.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "no-store; scoped verified result, no execution authority"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Permission denied"
+          },
+          "404": {
+            "description": "Record or material unavailable"
+          },
+          "408": {
+            "description": "Cancelled"
+          },
+          "409": {
+            "description": "Stale head, conflict, drift, integrity, limit or readiness failure"
+          },
+          "504": {
+            "description": "Deadline exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "action",
+                  "expectedHeadDigest",
+                  "destinationDigest"
+                ],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVATE",
+                      "MIGRATE",
+                      "ROLLBACK"
+                    ]
+                  },
+                  "expectedHeadDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "destinationDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-binding/transition-approvals": {
+      "post": {
+        "summary": "Approve an exact future-plan transition (6.3.0 source only)",
+        "description": "Scoped current operator/admin and exact current preview. Atomic append-only expected-head commit, bounded 64 transitions. Same-principal retry returns original receipt without moving head. Existing plans retain root binding. No execution, asset publication or release authority. JSON max 2048 bytes, no query.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "no-store; scoped verified result, no execution authority"
+          },
+          "400": {
+            "description": "Invalid request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Permission denied"
+          },
+          "404": {
+            "description": "Record or material unavailable"
+          },
+          "408": {
+            "description": "Cancelled"
+          },
+          "409": {
+            "description": "Stale head, conflict, drift, integrity, limit or readiness failure"
+          },
+          "504": {
+            "description": "Deadline exceeded"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "transitionReviewDigest",
+                  "decision"
+                ],
+                "properties": {
+                  "transitionReviewDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "APPROVE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/capabilities": {
+      "get": {
+        "summary": "Negotiate finite semantic execution operations (6.3.0 source)",
+        "description": "Scoped current operator/admin only. No query/body. No execution grant. Dispatch is listed only with an explicitly configured adapter; collect only with an explicitly configured evidence collector. Current qualification/policy are revalidated per request. completionAvailable=true with completionScope=VALIDATED_TARGET_AND_NON_PHASE_GOAL; phaseTargetCompletionAvailable=true, phaseCompletionAvailable=true, goalCompletionAvailable=true and releaseAvailable=false. API support is not permission or qualification.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/planning": {
+      "post": {
+        "summary": "planning read-only semantic execution authoring (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication.  Read-only pre-plan authoring. No inferred rules, persisted plan, approval, evidence attestation or dispatch. Draft requires an unchanged basisDigest and explicit rules; Runtime derives all plan pins.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "runId",
+                  "requestDigest",
+                  "goalTarget"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  },
+                  "requestDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "goalTarget": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/draft": {
+      "post": {
+        "summary": "draft read-only semantic execution authoring (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication.  Read-only pre-plan authoring. No inferred rules, persisted plan, approval, evidence attestation or dispatch. Draft requires an unchanged basisDigest and explicit rules; Runtime derives all plan pins.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "runId",
+                  "requestDigest",
+                  "goalTarget",
+                  "basisDigest",
+                  "selection",
+                  "business",
+                  "harness",
+                  "selections"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  },
+                  "requestDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "goalTarget": {
+                    "type": "object"
+                  },
+                  "basisDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "selection": {
+                    "type": "object"
+                  },
+                  "business": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 64,
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "harness": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 64,
+                    "items": {
+                      "type": "object"
+                    }
+                  },
+                  "selections": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/prepare": {
+      "post": {
+        "summary": "prepare exact semantic execution (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication. ",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "runId",
+                  "requestDigest",
+                  "goalTarget",
+                  "contextPlan",
+                  "outcomePlan",
+                  "selections"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  },
+                  "requestDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "goalTarget": {
+                    "type": "object"
+                  },
+                  "contextPlan": {
+                    "type": "object"
+                  },
+                  "outcomePlan": {
+                    "type": "object"
+                  },
+                  "selections": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/inspect": {
+      "post": {
+        "summary": "inspect exact semantic execution (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication. ",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/bind": {
+      "post": {
+        "summary": "bind exact semantic execution (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication. ",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/resolve": {
+      "post": {
+        "summary": "resolve exact semantic execution (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication. ",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "bindingDigest"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "bindingDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/review": {
+      "post": {
+        "summary": "review exact semantic execution (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication. ",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "bindingDigest",
+                  "coverage"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "bindingDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "coverage": {
+                    "type": "array",
+                    "maxItems": 1024,
+                    "items": {
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/approveReview": {
+      "post": {
+        "summary": "approveReview exact semantic execution (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication. Explicit exact business review decision; response is the decision itself.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "bindingDigest",
+                  "reviewDigest",
+                  "decision"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "bindingDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "reviewDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "decision": {
+                    "type": "string",
+                    "enum": [
+                      "APPROVE"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/dispatch": {
+      "post": {
+        "summary": "dispatch exact semantic execution (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication. ",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "bindingDigest"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "bindingDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/collect": {
+      "post": {
+        "summary": "collect exact semantic execution (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. Strict identity/binding only; no facts, commands, URLs or collector selection. Server-configured collector must match the active scoped evidence policy. Runtime derives exact correlated selectors from the reviewed plan and dispatch receipt. Redacted digest/kind/origin result only; synthetic remains synthetic. Immutable claim prevents replay; deadline 30 seconds. No completion or publication.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "bindingDigest"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "bindingDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/commitStage": {
+      "post": {
+        "summary": "commitStage semantic completion (6.3.0 source)",
+        "description": "Current scoped operator/admin, readiness and audit required. No query. Strict JSON <=65536 bytes, identity projectId must match path. No automatic retry or publication. Commit one pending stage after fresh dual validation and current scoped stage-completion policy. Does not advance subsequent stages.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "bindingDigest"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "bindingDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exact operation result; no downstream action or release authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay Retained uncertain writes return SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED and nextAction inspect-retained-write-claim-do-not-replay."
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/stageReceipt": {
+      "post": {
+        "summary": "stageReceipt semantic completion (6.3.0 source)",
+        "description": "Current scoped operator/admin, readiness and audit required. No query. Strict JSON <=65536 bytes, identity projectId must match path. No automatic retry or publication. Read the exact settled historical stage receipt; no new effects. Retained Lifecycle write claims block success.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "bindingDigest",
+                  "runId",
+                  "requestDigest"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "bindingDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  },
+                  "requestDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exact operation result; no downstream action or release authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay Retained uncertain writes return SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED and nextAction inspect-retained-write-claim-do-not-replay."
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/completeTarget": {
+      "post": {
+        "summary": "completeTarget semantic completion (6.3.0 source)",
+        "description": "Current scoped operator/admin, readiness and audit required. No query. Strict JSON <=65536 bytes, identity projectId must match path. No automatic retry or publication. Commit a terminal Target after fresh authority and every-stage evidence checks. Phase-associated Targets require a typed independent Target package and explicit phaseTargetCompletion policy. Dependent phases require a verified predecessor phase receipt; phase/GA Goals remain open. No final phase report or release decision.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "runId"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exact operation result; no downstream action or release authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay Retained uncertain writes return SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED and nextAction inspect-retained-write-claim-do-not-replay."
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/completePhase": {
+      "post": {
+        "summary": "completePhase aggregate semantic phase (6.3.0 source)",
+        "description": "Current scoped operator/admin and audited exact JSON required. Requires phaseCompletionAvailable=true. Verify every required Target receipt, typed independent phase package, policy-approved criterion coverage, evidence/reviews/outputs and current active scoped phase policy, then CAS-write phase PASSED/GO and its receipt. No Goal/GA final closure or Release authorization. Retained claims require reconciliation, never automatic replay.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "runId",
+                  "phaseTargetId"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  },
+                  "phaseTargetId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exact operation result; no downstream action or release authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay Retained uncertain writes return SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED and nextAction inspect-retained-write-claim-do-not-replay."
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/phaseReceipt": {
+      "post": {
+        "summary": "phaseReceipt aggregate semantic phase (6.3.0 source)",
+        "description": "Current scoped operator/admin and audited exact JSON required. Requires phaseCompletionAvailable=true. Read an exact settled phase receipt and verify all historical Target/package/predecessor evidence without re-execution or expired-grant renewal. No Goal/GA final closure or Release authorization. Retained claims require reconciliation, never automatic replay.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "runId",
+                  "phaseTargetId"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  },
+                  "phaseTargetId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exact operation result; no downstream action or release authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay Retained uncertain writes return SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED and nextAction inspect-retained-write-claim-do-not-replay."
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/completionReceipt": {
+      "post": {
+        "summary": "completionReceipt semantic completion (6.3.0 source)",
+        "description": "Current scoped operator/admin, readiness and audit required. No query. Strict JSON <=65536 bytes, identity projectId must match path. No automatic retry or publication. Read a settled Target completion receipt and verify historical evidence after restart; no dispatch, collection or completion replay.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "runId"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exact operation result; no downstream action or release authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay Retained uncertain writes return SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED and nextAction inspect-retained-write-claim-do-not-replay."
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/completionStatus": {
+      "post": {
+        "summary": "completionStatus semantic completion (6.3.0 source)",
+        "description": "Current scoped operator/admin, readiness and audit required. No query. Strict JSON <=65536 bytes, identity projectId must match path. No automatic retry or publication. Separate read-only semantic report derived from verified receipts, not raw status flags. targetPercent counts required Targets only; goalCompleted remains false with phase/GA blockers. Release is NOT_EVALUATED, unauthorized and unpublished. Legacy reports remain fenced.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "runId"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exact operation result; no downstream action or release authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay Retained uncertain writes return SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED and nextAction inspect-retained-write-claim-do-not-replay."
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/evaluate": {
+      "post": {
+        "summary": "evaluate exact semantic execution (6.3.0 source)",
+        "description": "Current scoped operator/admin and readiness required. No query. Strict JSON <=65536 bytes; nested owner contracts and exact persisted current sources are revalidated. Request identity projectId must equal path. Audited with server principal. No automatic retry, completion or publication. May report FAILED, INDETERMINATE or DUAL_VALIDATED_NOT_COMPLETED; eligibleForCompletion=false.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "bindingDigest"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "bindingDigest": {
+                    "type": "string",
+                    "pattern": "^sha256:[a-f0-9]{64}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operation result only; no Goal/Lifecycle completion authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay"
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
           }
         }
       }
@@ -1796,23 +5512,125 @@
       }
     },
     "/api/v1/runtime-readiness": {
-      "get": { "summary": "Inspect tenant/workspace Runtime LLM readiness", "description": "Returns SETUP_REQUIRED, PREFLIGHT_REQUIRED, READY, or LLM_BLOCKED with digest-bound evidence and one finite next action.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "RuntimeReadiness record" } } }
+      "get": {
+        "summary": "Inspect tenant/workspace Runtime LLM readiness",
+        "description": "Returns SETUP_REQUIRED, PREFLIGHT_REQUIRED, READY, or LLM_BLOCKED with digest-bound evidence and one finite next action.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RuntimeReadiness record"
+          }
+        }
+      }
     },
     "/api/v1/runtime-readiness/setup-protocol": {
-      "get": { "summary": "Inspect provider-neutral first-run setup protocol", "description": "Declares setup-only tools, forbidden fallbacks, Runtime/Expert compatibility, and SecretRef-only secure input.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "LLM setup protocol" } } }
+      "get": {
+        "summary": "Inspect provider-neutral first-run setup protocol",
+        "description": "Declares setup-only tools, forbidden fallbacks, Runtime/Expert compatibility, and SecretRef-only secure input.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "LLM setup protocol"
+          }
+        }
+      }
     },
     "/api/v1/llm-providers": {
-      "get": { "summary": "Discover selectable provider protocols", "description": "Returns provider-neutral choices with selectionRequired=true and no default provider or Profile.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Provider discovery result" } } }
+      "get": {
+        "summary": "Discover selectable provider protocols",
+        "description": "Returns provider-neutral choices with selectionRequired=true and no default provider or Profile.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider discovery result"
+          }
+        }
+      }
     },
     "/api/v1/runtime-readiness/workspace-default": {
-      "get": { "summary": "Inspect the explicit workspace Runtime LLM binding", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "WorkspaceLlmDefaultBinding" }, "404": { "description": "No explicit binding" } } },
-      "post": { "summary": "Bind an exact live-preflight workspace Profile", "description": "Requires admin authority, profileId, reason, optional expected profile digest, and optimistic binding digest. Never selects a fallback.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Binding and resulting RuntimeReadiness" }, "409": { "description": "Profile, SecretRef, preflight, digest, or concurrency failure" } } }
+      "get": {
+        "summary": "Inspect the explicit workspace Runtime LLM binding",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "WorkspaceLlmDefaultBinding"
+          },
+          "404": {
+            "description": "No explicit binding"
+          }
+        }
+      },
+      "post": {
+        "summary": "Bind an exact live-preflight workspace Profile",
+        "description": "Requires admin authority, profileId, reason, optional expected profile digest, and optimistic binding digest. Never selects a fallback.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Binding and resulting RuntimeReadiness"
+          },
+          "409": {
+            "description": "Profile, SecretRef, preflight, digest, or concurrency failure"
+          }
+        }
+      }
     },
     "/api/v1/runtime-readiness/repair": {
-      "post": { "summary": "Reconcile Runtime LLM readiness after explicit repair", "description": "Re-evaluates exact Profile, SecretRef, preflight, and binding evidence without changing provider selection.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "READY" }, "409": { "description": "Still non-operational" } } }
+      "post": {
+        "summary": "Reconcile Runtime LLM readiness after explicit repair",
+        "description": "Re-evaluates exact Profile, SecretRef, preflight, and binding evidence without changing provider selection.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "READY"
+          },
+          "409": {
+            "description": "Still non-operational"
+          }
+        }
+      }
     },
     "/api/v1/runtime-readiness/migrate-v61": {
-      "post": { "summary": "Explicitly migrate one v6.1 workspace Profile", "description": "Stops on zero or multiple candidates and never imports Host, Agent, local file, or environment configuration.", "security": [{ "bearerAuth": [] }], "responses": { "200": { "description": "Materialized explicit binding" }, "409": { "description": "Ambiguous or not ready" } } }
+      "post": {
+        "summary": "Explicitly migrate one v6.1 workspace Profile",
+        "description": "Stops on zero or multiple candidates and never imports Host, Agent, local file, or environment configuration.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Materialized explicit binding"
+          },
+          "409": {
+            "description": "Ambiguous or not ready"
+          }
+        }
+      }
     },
     "/api/v1/llm-profiles": {
       "get": {
@@ -3698,7 +7516,7 @@
             "description": "项目已创建"
           },
           "403": {
-            "description": "需要管理员角色"
+            "description": "需要管理员角色，且目标工作区与已有同名项目必须在当前权限范围内"
           }
         }
       }
@@ -4184,7 +8002,7 @@
     "/api/v1/projects/{projectId}/onboarding-checklist": {
       "get": {
         "summary": "复核已注册项目 onboarding checklist",
-        "description": "基于持久化项目、source credentials、repository topology、项目 GitHub Actions/GitLab CI 配置和项目 LLM 绑定生成 evopilot-project-onboarding-checklist/v1。READY_TO_RUN 表示真实源码写回、仓库原生 DevOps 和显式 LLM profile 前置条件已满足，但 nextAction 仍为 plan-target。Agent 必须读取 executionMode、devopsOwner、workflowRepository、claimBoundary 和 llm.profileId，不能从仓库 URL 自行推断 DevOps 权限，也不能跳过 phase plan 用户确认。",
+        "description": "基于持久化项目、source credentials、repository topology、项目 GitHub Actions/GitLab CI 配置和项目 LLM 绑定生成 evopilot-project-onboarding-checklist/v1。READY_TO_RUN 表示真实源码写回、仓库原生 DevOps 和显式 LLM profile 前置条件已满足，但 nextAction 仍为 plan-target。Agent 必须读取 executionMode、devopsOwner、workflowRepository、claimBoundary 和 llm.profileId，不能从仓库 URL 自行推断 DevOps 权限，也不能跳过 phase plan 用户确认。 local-git 且未要求 LLM ready 时可能保留 llm WARN；必须逐项读取 steps，不能从 READY_TO_RUN 标签推断实际模型配置或执行授权。",
         "security": [
           {
             "bearerAuth": []
@@ -5808,6 +9626,238 @@
         "responses": {
           "200": {
             "description": "存储已就绪"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/completeGoal": {
+      "post": {
+        "summary": "Commit verified final phase/GA Goal under exact current policy",
+        "description": "Requires goalCompletionAvailable=true, current scoped operator/admin authority, all required Target and declared phase receipts and an exact active semanticFinalGoalCompletionPolicy. Atomic Goal completion only; no release, deployment or publication.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "runId"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exact operation result; no downstream action or release authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay Retained uncertain writes return SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED and nextAction inspect-retained-write-claim-do-not-replay."
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}/semantic-execution/goalReceipt": {
+      "post": {
+        "summary": "Read verified final Goal receipt without replay",
+        "description": "Requires goalCompletionAvailable=true and current scoped operator/admin access. Reads exact historical Goal proof including all Target/phase receipts. Retained claims require reconciliation; no mutation or replay.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "identity",
+                  "runId"
+                ],
+                "properties": {
+                  "identity": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "projectId",
+                      "goalId",
+                      "targetId",
+                      "harnessBindingDigest"
+                    ],
+                    "properties": {
+                      "projectId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "goalId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "targetId": {
+                        "type": "string",
+                        "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                      },
+                      "harnessBindingDigest": {
+                        "type": "string",
+                        "pattern": "^sha256:[a-f0-9]{64}$"
+                      }
+                    }
+                  },
+                  "runId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Exact operation result; no downstream action or release authority. no-store; envelope includes requestId."
+          },
+          "400": {
+            "description": "Invalid exact JSON, identity or request bounds"
+          },
+          "401": {
+            "description": "Unauthenticated"
+          },
+          "403": {
+            "description": "Scope, current role, permission or account denied"
+          },
+          "404": {
+            "description": "Required pinned source, decision or adapter unavailable"
+          },
+          "405": {
+            "description": "Unsupported method"
+          },
+          "408": {
+            "description": "Cancelled; preserve claims and inspect before retry"
+          },
+          "409": {
+            "description": "Drift, conflict, unknown invocation, audit or readiness failure; do not blindly replay Retained uncertain writes return SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED and nextAction inspect-retained-write-claim-do-not-replay."
+          },
+          "504": {
+            "description": "Deadline exceeded; do not blindly replay"
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{projectId}": {
+      "get": {
+        "summary": "读取权限范围内的已连接项目",
+        "description": "Runtime 返回与项目列表相同的脱敏项目对象。至少 viewer 角色；非平台管理员必须匹配当前 tenant/workspace。不是项目定义或执行授权。",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "脱敏项目对象 envelope"
+          },
+          "403": {
+            "description": "角色或项目权限范围不匹配"
+          },
+          "404": {
+            "description": "项目不存在"
           }
         }
       }

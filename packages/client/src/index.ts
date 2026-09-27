@@ -12,6 +12,8 @@ export interface EvoPilotRequestOptions {
   query?: Record<string, string | number | boolean | undefined>;
   headers?: Record<string, string>;
   idempotencyKey?: string;
+  signal?: AbortSignal;
+  redirect?: RequestRedirect;
 }
 
 export interface EvoPilotResponse<T = unknown> {
@@ -84,7 +86,7 @@ export class EvoPilotClient {
       body = JSON.stringify(stripUndefined(options.body));
     }
 
-    const response = await fetch(url, { method, headers, body });
+    const response = await fetch(url, { method, headers, body, signal: options.signal, redirect: options.redirect });
     const parsed = await parseResponseBody(response);
     const result = {
       status: response.status,

@@ -56,7 +56,7 @@ test("Roadmap Gate rejects incomplete, generic, or weakened completion assurance
     ["missing semantic binding", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-6.3-ontology-grounded-harness-powered-goal-loop").outcomes = []; }, /ProjectSemanticBinding/],
     ["authoritative Expert 2.3", (roadmap) => { roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.3-project-semantic-guide").acceptance = []; }, /stateless/],
     ["missing semantic supply contract", (roadmap) => { roadmap.crossProjectContracts = roadmap.crossProjectContracts.filter((item) => item.id !== "project-ontology-artifact-supply\/v1"); }, /project-ontology-artifact-supply/],
-    ["incomplete convergence version set", (roadmap) => { roadmap.semanticDesignConvergencePolicy.versionSet["evopilot-harness"].requiredVersionSequence.pop(); }, /Harness 4\.6\.0 to 4\.8\.0 sequence/],
+    ["incomplete convergence version set", (roadmap) => { roadmap.semanticDesignConvergencePolicy.versionSet["evopilot-harness"].requiredVersionSequence.pop(); }, /Harness 4\.6\.0 to 4\.8\.1 sequence/],
     ["missing per-version real E2E", (roadmap) => { roadmap.semanticDesignConvergencePolicy.everyVersionRequires = []; }, /per-version requirement/],
     ["terminal E2E grants release authority", (roadmap) => { roadmap.semanticDesignConvergencePolicy.terminalCrossProductE2E.grantsReleaseAuthority = true; }, /must not grant release authority/],
     ["Dashboard restored as required version", (roadmap) => { roadmap.semanticDesignConvergencePolicy.versionSet["evopilot-dashboard"] = { requiredVersionSequence: ["3.2.0"], terminalVersion: "3.2.0" }; }, /exactly Harness, Runtime, and Expert/],
@@ -105,9 +105,9 @@ test("Roadmap Gate accepts current Runtime and Expert milestones in their verifi
 test("Roadmap Gate binds public v6 history, completed v6.1, active v6.2 first-run readiness, and independent Cutover", () => {
   const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
   assert.equal(roadmap.versionPolicy.publishedBaseline, "6.1.0");
-  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.2.0");
+  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.3.0");
   assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.1.0");
-  assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.2.1");
+  assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.3.0");
   assert.equal(roadmap.evolutionExpertPolicy.mandatoryForOrdinaryHumans, true);
   assert.equal(roadmap.humanInteractionProtocol.canonicalOrdinaryHumanProtocol, "MCP");
   assert.match(roadmap.lifecycleHarnessPolicy.sourceOfTruth, /Lifecycle Registry/);
@@ -152,11 +152,11 @@ test("Roadmap Gate binds public v6 history, completed v6.1, active v6.2 first-ru
   assert.equal(expertV22?.targetVersion, "2.2.0");
   const runtimeV63 = roadmap.milestones.find((item) => item.id === "evopilot-6.3-ontology-grounded-harness-powered-goal-loop");
   const expertV23 = roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.3-project-semantic-guide");
-  assert.equal(runtimeV63?.status, "PLANNED");
+  assert.equal(runtimeV63?.status, "IN_PROGRESS");
   assert.equal(runtimeV63?.targetVersion, "6.3.0");
-  assert.equal(expertV23?.status, "PLANNED");
+  assert.equal(expertV23?.status, "IN_PROGRESS");
   assert.equal(expertV23?.targetVersion, "2.3.0");
-  assert.deepEqual(roadmap.semanticDesignConvergencePolicy.versionSet["evopilot-harness"].requiredVersionSequence, ["4.6.0", "4.7.0", "4.8.0"]);
+  assert.deepEqual(roadmap.semanticDesignConvergencePolicy.versionSet["evopilot-harness"].requiredVersionSequence, ["4.6.0", "4.7.0", "4.8.0", "4.8.1"]);
   assert.equal(roadmap.semanticDesignConvergencePolicy.versionSet["evopilot-runtime"].terminalVersion, "6.3.0");
   assert.equal(roadmap.semanticDesignConvergencePolicy.versionSet["evopilot-evolution-expert"].terminalVersion, "2.3.0");
   assert.equal(roadmap.semanticDesignConvergencePolicy.versionSet["evopilot-dashboard"], undefined);
@@ -498,13 +498,37 @@ test("Roadmap Gate stops explicit milestone-order deviations", () => {
   assert.equal(result.body.boundaryImpact, "ROADMAP_REVISION_REQUIRED");
 });
 
-test("Roadmap Gate declares independent Expert 2.2.1 public CLI recovery", () => {
-  const result = run(["--intent", "Repair Evolution Expert 2.2.1 public CLI completion recovery"]);
+test("Roadmap Gate absorbs Expert recovery into 2.3 and blocks the exact 2.2.1 release despite the older 2.2.x line", () => {
+  const result = run(["--intent", "Implement Evolution Expert 2.3 project semantic guide and dual binding guide"]);
   assert.equal(result.status, 0, result.stderr);
-  assert.ok(result.body.matchedMilestones.includes("evopilot-evolution-expert-2.2.1-public-cli-completion-recovery"));
+  assert.ok(result.body.matchedMilestones.includes("evopilot-evolution-expert-2.3-project-semantic-guide"));
   const release = run(["--release-product", "evopilot-evolution-expert", "--release-version", "2.2.1"]);
-  assert.equal(release.status, 0, release.stderr);
+  assert.equal(release.status, 2, release.stderr);
+  assert.equal(release.body.classification, "UNPLANNED");
   assert.ok(release.body.matchedMilestones.includes("evopilot-evolution-expert-2.2.1-public-cli-completion-recovery"));
+  assert.match(release.body.reasons.join(" "), /broader release line cannot reactivate/);
+  assert.equal(run(["--release-product", "evopilot-evolution-expert", "--release-version", "2.3.0"]).body.classification, "ALIGNED");
+});
+
+test("Roadmap Gate rejects weakened direct convergence delivery", () => {
+  for (const [name, mutate, pattern] of [
+    ["reactivate patch", r => { r.milestones.find(m => m.targetVersion === "2.2.1").status = "IN_PROGRESS"; }, /non-releasable SUPERSEDED/],
+    ["require patch", r => { r.directSemanticConvergenceDeliveryPolicy.expert221ReleaseIsPrerequisite = true; }, /standalone Expert 2.2.1/],
+    ["allow patch", r => { r.directSemanticConvergenceDeliveryPolicy.standaloneExpert221ReleaseAllowed = true; }, /standalone Expert 2.2.1/],
+    ["transfer pass", r => { r.directSemanticConvergenceDeliveryPolicy.inheritanceSource.automaticPassTransferAllowed = true; }, /without PASS or approval transfer/],
+    ["transfer approval", r => { r.directSemanticConvergenceDeliveryPolicy.inheritanceSource.automaticApprovalTransferAllowed = true; }, /without PASS or approval transfer/],
+    ["drop secure input", r => { r.directSemanticConvergenceDeliveryPolicy.inheritanceSource.retainedRequirements.splice(2, 1); }, /retain CLI, secure input/],
+    ["drop soak", r => { r.directSemanticConvergenceDeliveryPolicy.inheritanceSource.retainedRequirements.splice(6, 1); }, /soak and NO_REGRESSION/],
+    ["drop final E2E", r => { r.directSemanticConvergenceDeliveryPolicy.executionPolicy.terminalCrossProductE2ERequired = false; }, /terminal E2E and compatibility/],
+    ["pretend completion", r => { r.directSemanticConvergenceDeliveryPolicy.priorCandidateDisposition = "ACCEPTED"; }, /without completing/],
+    ["wrong Target", r => { r.directSemanticConvergenceDeliveryPolicy.inheritanceSource.revision = 1; }, /exact approved recovery Target/],
+    ["implicit reset", r => { r.directSemanticConvergenceDeliveryPolicy.executionPolicy.compatibilityPolicy = "RESET"; }, /compatibility/],
+    ["automatic implementation", r => { r.milestones.find(m => m.targetVersion === "2.3.0").implementationAuthority = "GRANTED"; }, /own approved Target/]
+  ]) {
+    const result = runWithRoadmap(mutate);
+    assert.equal(result.status, 1, name);
+    assert.match(result.body.errors.join(" "), pattern, name);
+  }
 });
 
 test("Roadmap Gate rejects unsafe or incomplete Expert public CLI recovery", () => {
@@ -516,7 +540,7 @@ test("Roadmap Gate rejects unsafe or incomplete Expert public CLI recovery", () 
     ["blanket historical PASS", r => { r.expert22CompletionRecoveryPolicy.historicalAcceptance.blanketPassCarryForwardAllowed = true; }, /without blanket PASS/],
     ["missing release authority", r => { r.expert22CompletionRecoveryPolicy.separateSuccessorReleaseAuthorizationRequired = false; }, /separate Release/],
     ["fake Host qualification", r => { r.expert22CompletionRecoveryPolicy.cliSelfCheckProvesRealHostQualification = true; }, /must not claim real Host/],
-    ["lost convergence r2", r => { r.expert22CompletionRecoveryPolicy.terminalConvergenceR2Unchanged = false; }, /semantic convergence r2/],
+    ["lost convergence r2", r => { r.expert22CompletionRecoveryPolicy.terminalConvergenceR2Unchanged = false; }, /historical r2 invariants under convergence r3/],
     ["premature completion", r => { r.expert22CompletionRecoveryPolicy.predecessorDisposition = "COMPLETE"; }, /premature public completion/],
     ["waived default-version test", r => { r.milestones.find(m => m.id === "evopilot-evolution-expert-2.2.1-public-cli-completion-recovery").acceptance.shift(); }, /omitted-version defaults/]
   ]) {
@@ -704,3 +728,11 @@ function stable(value) {
   }
   return JSON.stringify(value);
 }
+
+test("Roadmap binds semantic Catalog supply repair without weakening authority", () => {
+  for (const key of ["schema","contract","producerVersion","runtimeVersion","expertVersion","catalogMode","registryContainsAssets","legacyCatalogBytesPreserved","existingSemanticAssetSchemasPreserved","standalonePublicationImpliesDiscovery","completeClosureRequired","independentPublicationRequired","consumerReadOnly","atomicPublicationRequired","mandatorySigning","unindexedFallbackAllowed","automaticApprovalOrPassTransfer","perVersionE2ERequired","terminalE2ERequired"]) {
+    const result = runWithRoadmap((roadmap) => { delete roadmap.semanticCatalogSupplyPolicy[key]; });
+    assert.equal(result.body.classification, "INVALID", key);
+    assert.match(result.body.errors.join(" "), /semantic Catalog supply invariant/);
+  }
+});

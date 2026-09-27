@@ -12,7 +12,7 @@ if (!process.argv.includes('--inventory-only')) {
 }
 const files = inventory(root);
 if (!files['dist/darwin-arm64/secure-input']) throw new Error('Required native artifact missing');
-const manifest = {schema:'evopilot-expert-host-integration/v1',expertVersion:'2.2.1',runtimeVersion:'6.2.0',platforms:['darwin-arm64'],files};
+const manifest = {schema:'evopilot-expert-host-integration/v1',expertVersion:'2.3.0',runtimeVersion:'6.3.0',platforms:['darwin-arm64'],files};
 const bytes = JSON.stringify(manifest,null,2)+'\n';
 fs.writeFileSync(`${root}/manifest.json`,bytes);
 console.log(JSON.stringify({status:'PASS',componentDigest:digest(bytes),fileCount:Object.keys(files).length}));

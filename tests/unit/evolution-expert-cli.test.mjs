@@ -8,14 +8,16 @@ const run = (...args) => spawnSync(process.execPath, [cli.pathname, ...args], { 
 for (const host of ["codex", "claude-code", "workbuddy", "generic-agent", "generic-mcp"]) {
   for (const command of ["compatibility", "doctor"]) {
     test(`${command} ${host}: explicit and default Runtime use all generated capabilities`, () => {
-      for (const runtime of [[], ["6.2.0"]]) {
+      for (const runtime of [[], ["6.3.0"], ["6.2.0"]]) {
         const result = run(command, host, ...runtime);
         assert.equal(result.status, 0, result.stderr);
         const value = JSON.parse(result.stdout);
         const adapter = createExpertAdapter(host);
-        const expected = command === "doctor" ? expertDoctor(host, "6.2.0", adapter.requiredCapabilities) : expertCompatibility(adapter, "6.2.0", adapter.requiredCapabilities);
+        const version = runtime[0] ?? "6.3.0";
+        const expected = command === "doctor" ? expertDoctor(host, version, adapter.requiredCapabilities) : expertCompatibility(adapter, version, adapter.requiredCapabilities);
         assert.deepEqual(value, expected);
         assert.equal((value.compatibility ?? value).conformanceStatus, "CONFORMANT");
+        assert.equal((value.compatibility ?? value).engineVersion, version);
         assert.ok(adapter.requiredCapabilities.includes("host-native-secure-secret-input"));
       }
     });

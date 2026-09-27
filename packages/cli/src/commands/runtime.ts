@@ -2,7 +2,11 @@ import { apiErrorFromResponse, EvoPilotApiError, EvoPilotClient, type EvoPilotRe
 import {
   EVOPILOT_CLI_PACKAGE_NAME,
   EVOPILOT_CLI_RUNTIME_SCHEMA,
-  EVOPILOT_CLI_VERSION_FALLBACK
+  EVOPILOT_CLI_VERSION_FALLBACK,
+  projectSemanticRequest,
+  semanticExecutionRequest,
+  requireSemanticExecutionCapability,
+  requireProjectSemanticCapability
 } from "@evopilot/contracts";
 import fs from "node:fs";
 import os from "node:os";
@@ -174,6 +178,10 @@ export async function runCli(argv: string[]): Promise<number> {
         return await projectPreflight(ctx, maybeId);
       case "project:list":
         return await projectList(ctx);
+      case "project:semantic":
+        return await projectSemantic(ctx);
+      case "project:execution":
+        return await projectExecution(ctx);
       case "project-definition:list":
         return await evolutionProjectDefinitionList(ctx);
       case "project-definition:inspect":
@@ -226,7 +234,10 @@ export async function runCli(argv: string[]): Promise<number> {
         if (maybeId === "bind") return await workspaceLlmDefaultBind(ctx);
         throw usage("Use: evopilot llm workspace-default <inspect|bind> [options]");
       case "llm:migrate-v61":
+        if (hasFlag(ctx.args, "input-stdin") || hasFlag(ctx.args, "preview")) return await llmBootstrap(ctx, "explicit-v61");
         return await llmMigrateV61(ctx);
+      case "llm:bootstrap":
+        return await llmBootstrap(ctx, "explicit-headless");
       case "maturity:standards":
         if (maybeId === "list" || maybeId === undefined) return await maturityStandardsList(ctx);
         if (maybeId === "inspect") return await maturityStandardsInspect(ctx, args.positionals[3]);
@@ -1247,6 +1258,46 @@ async function projectList(ctx: RuntimeContext): Promise<number> {
   return 0;
 }
 
+async function projectExecution(ctx: RuntimeContext): Promise<number> {
+  const [, , operation, projectId] = ctx.args.positionals;
+  if (ctx.args.positionals.length !== 4) throw usage("Use: evopilot project execution <operation> <project-id> --file <request.json> --json");
+  const allowed = ["file", "json", "server", "config", "token", "tenant", "tenant-id", "workspace", "workspace-id", "actor", "client", "client-surface", "idempotency-key"];
+  for (const [key, value] of Object.entries(ctx.args.options)) if (!allowed.includes(key) || Array.isArray(value)) throw usage(`Invalid or repeated execution option --${key}.`);
+  const file = ctx.args.options.file;
+  if (operation === "capabilities" ? file !== undefined : typeof file !== "string") throw usage("Execution operations require --file; capabilities takes no file.");
+  const request = semanticExecutionRequest(operation, projectId, typeof file === "string" ? readJson(file) : undefined);
+  const transport = {...requestOptions(ctx), signal: AbortSignal.timeout(30000), redirect: "error" as const};
+  const capability = await ctx.client.expectOk(ctx.client.get(request.capabilityPath, transport));
+  requireSemanticExecutionCapability(capability.data, projectId, operation);
+  const response = operation === "capabilities" ? capability : await ctx.client.expectOk(ctx.client.post(request.path, request.body, transport));
+  printOutput(ctx, attachRequestId(response.data, response.requestId), JSON.stringify(response.data, null, 2));
+  return 0;
+}
+
+async function projectSemantic(ctx: RuntimeContext): Promise<number> {
+  const [, , operation, projectId] = ctx.args.positionals;
+  if (ctx.args.positionals.length !== 4) throw usage("Use: evopilot project semantic <capabilities|inspect|compatibility|gap|review|approve|binding|activation|transitionReview|transitionApprove|onboarding> <project-id> [options]");
+  const names: Record<string, string> = {catalog: "catalogId", "artifact-set-digest": "artifactSetDigest", "bundle-digest": "bundleDigest", "review-digest": "reviewDigest", decision: "decision",
+    action: "action", "expected-head-digest": "expectedHeadDigest", "destination-digest": "destinationDigest", "transition-review-digest": "transitionReviewDigest"};
+  const globals = ["json", "server", "config", "token", "tenant", "tenant-id", "workspace", "workspace-id", "actor", "client", "client-surface", "idempotency-key"];
+  const input: Record<string, unknown> = {projectId};
+  for (const [key, value] of Object.entries(ctx.args.options)) {
+    if (Array.isArray(value) || (!Object.hasOwn(names, key) && !globals.includes(key))) throw usage(`Invalid or repeated semantic option --${key}.`);
+    if (Object.hasOwn(names, key)) input[names[key]] = value;
+  }
+  const request = projectSemanticRequest(operation, input);
+  const transport = {...requestOptions(ctx), signal: AbortSignal.timeout(30000), redirect: "error" as const};
+  if (request.operation !== "capabilities") {
+    const negotiated = await ctx.client.expectOk(ctx.client.get(request.capabilityPath, transport));
+    requireProjectSemanticCapability(negotiated.data, projectId, request.operation);
+  }
+  const response = await ctx.client.expectOk(request.method === "GET" ? ctx.client.get(request.path, transport) :
+    ctx.client.post(request.path, request.body, transport));
+  if (request.operation === "capabilities") requireProjectSemanticCapability(response.data, projectId, request.operation);
+  printOutput(ctx, attachRequestId(response.data, response.requestId), JSON.stringify(response.data, null, 2));
+  return 0;
+}
+
 async function projectPreflight(ctx: RuntimeContext, id?: string): Promise<number> {
   const projectId = id ?? requiredOption(ctx.args, "project");
   const response = await ctx.client.post(`/api/v1/projects/${encodeURIComponent(projectId)}/source-credentials/preflight`, {}, requestOptions(ctx));
@@ -1368,6 +1419,55 @@ async function llmMigrateV61(ctx: RuntimeContext): Promise<number> {
   const response = await ctx.client.post("/api/v1/runtime-readiness/migrate-v61", body, requestOptions(ctx));
   printOutput(ctx, response.data ?? response.body, response.ok ? "Explicit v6.1 LLM configuration migration completed." : "Migration stopped without guessing.");
   return response.ok ? 0 : 2;
+}
+
+async function llmBootstrap(ctx: RuntimeContext, source: "explicit-headless" | "explicit-v61"): Promise<number> {
+  const preview = {
+    schema: "evopilot-llm-bootstrap-preview/v1", source,
+    creates: ["encrypted SecretRef", "workspace LLM Profile", "live preflight", "workspace default binding", "audit"],
+    input: "One explicitly selected provider configuration via stdin; no Host or environment discovery",
+    requiredFields: ["providerName", "baseUrl", "modelName", "value"],
+    stopConditions: ["ambiguous-input", "existing-resource-or-binding", "preflight-failure", "concurrent-drift"],
+    failureRecovery: "Inspect retained governed resources; no automatic replay or destructive rollback",
+    optInRequired: true
+  };
+  if (hasFlag(ctx.args, "preview")) {
+    printOutput(ctx, preview, JSON.stringify(preview));
+    return 0;
+  }
+  if (!hasFlag(ctx.args, "opt-in") || !hasFlag(ctx.args, "input-stdin") || process.stdin.isTTY) {
+    throw usage("LLM bootstrap requires --opt-in --input-stdin with a non-echoing pipe. Use --preview before authorizing.");
+  }
+  if (hasAnyOption(ctx.args, ["value", "api-key", "value-file", "from-env", "file"])) {
+    throw usage("LLM bootstrap accepts sensitive configuration only on stdin, never argv, files or implicit environment discovery.");
+  }
+  const profileId = requiredOption(ctx.args, "profile"), secretId = requiredOption(ctx.args, "secret-id"), reason = requiredOption(ctx.args, "reason");
+  // Bounded pipe input; parse errors never quote sensitive bytes. No local input file is created.
+  const input = Buffer.alloc(65536);
+  let payload: Record<string, unknown> | undefined;
+  try {
+    let length = 0;
+    for await (const chunk of process.stdin) {
+      const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+      if (length + bytes.length > input.length) {
+        bytes.fill(0);
+        throw usage("LLM bootstrap stdin must contain 1–65536 bytes of JSON.");
+      }
+      bytes.copy(input, length); length += bytes.length; bytes.fill(0);
+    }
+    if (length === 0) throw usage("LLM bootstrap stdin must contain 1–65536 bytes of JSON.");
+    let parsed: unknown;
+    try { parsed = JSON.parse(input.subarray(0, length).toString("utf8")); }
+    catch { throw usage("LLM bootstrap stdin must contain valid JSON; input is not echoed."); }
+    payload = { optIn: true, source, profileId, secretId, reason, candidates: Array.isArray(parsed) ? parsed : [parsed] };
+    input.fill(0);
+    const response = await ctx.client.post("/api/v1/runtime-readiness/bootstrap", payload, requestOptions(ctx));
+    printOutput(ctx, response.data ?? response.body, response.ok ? "Governed LLM bootstrap completed." : "Bootstrap stopped; inspect governed resources before repair.");
+    return response.ok ? 0 : 2;
+  } finally {
+    input.fill(0);
+    if (Array.isArray(payload?.candidates)) for (const candidate of payload.candidates) if (isRecord(candidate)) delete candidate.value;
+  }
 }
 
 async function projectLlmSet(ctx: RuntimeContext, id?: string): Promise<number> {
@@ -4011,6 +4111,15 @@ Usage:
   evopilot project onboard <github|gitlab|local-git> [options]
   evopilot project onboard verify <project-id>
   evopilot project list
+  evopilot project semantic capabilities <project-id> [--json]
+  evopilot project semantic inspect <project-id> --catalog <id> [--json]
+  evopilot project semantic compatibility <project-id> --catalog <id> --artifact-set-digest <sha256> --bundle-digest <sha256> [--json]
+  evopilot project semantic gap <project-id> --catalog <id> --artifact-set-digest <sha256> --bundle-digest <sha256> [--json]
+  evopilot project semantic review <project-id> --catalog <id> --artifact-set-digest <sha256> --bundle-digest <sha256> [--json]
+  evopilot project semantic approve <project-id> --review-digest <sha256> --decision APPROVE [--json]
+  evopilot project semantic binding <project-id> [--json]
+  evopilot project execution capabilities <project-id> [--json]
+  evopilot project execution <planning|draft|prepare|inspect|bind|resolve|mapping|review|approveReview|dispatch|collect|evaluate|commitStage|stageReceipt|completeTarget|completionReceipt|completionStatus|completePhase|phaseReceipt|completeGoal|goalReceipt> <project-id> --file <request.json> [--json]
   evopilot project preflight <project-id>
   evopilot project-definition list
   evopilot project-definition inspect <project-id> [--version <version>]
@@ -4045,6 +4154,9 @@ Usage:
   evopilot llm workspace-default inspect
   evopilot llm workspace-default bind --profile <profile-id> --profile-digest <sha256> --reason <text>
   evopilot llm migrate-v61 [--profile <profile-id>] [--reason <text>]
+  evopilot llm bootstrap --preview
+  evopilot llm bootstrap --opt-in --input-stdin --profile <new-id> --secret-id <new-id> --reason <text>
+  evopilot llm migrate-v61 --opt-in --input-stdin --profile <new-id> --secret-id <new-id> --reason <text>
   evopilot maturity standards list
   evopilot maturity standards inspect <alpha|beta|rc|ga|standard-id>
   evopilot lifecycle list

@@ -6,6 +6,16 @@ This project follows a product-readiness changelog model: release entries should
 
 ## Unreleased
 
+### 6.3.0 Semantic Convergence (source development)
+
+- Added read-only published semantic Catalog consumption, reviewed project bindings,
+  bounded dual-bound execution, explicit domain-plan authoring and separate outcome
+  validation/completion with immutable evidence and guarded recovery.
+- Projected Runtime packages, installer declarations and defaults to 6.3.0; retained
+  readiness and secure setup behavior. Dashboard remains independently versioned.
+- Local synthetic checks are not exact installed-artifact, real-Host, active-soak
+  or terminal series acceptance. No Candidate or Release is asserted by this entry.
+
 ### 6.2.0 First-Run LLM Readiness
 
 This entry describes approved local implementation. It does not imply a

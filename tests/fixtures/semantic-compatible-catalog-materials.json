@@ -1,0 +1,1865 @@
+{
+  "generation": {
+    "catalogId": "compatibility-fixture",
+    "entries": [
+      {
+        "bytes": 9160,
+        "category": "ASSET",
+        "dependencies": [
+          "sha256:78895b3f67bc41bfde3017ca9c0bcfb924fe4255403a1c6e4c4a9e4e5b120ae2",
+          "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+          "sha256:d071fd409c815b5166deac805032c52eaaf7a65a5d006ed266a16df2c4f32daf"
+        ],
+        "fileDigest": "sha256:5135b802daabedb49c9a54edc497b6f3936619a5807d2b165b05d7550646afc8",
+        "id": "fixture-project-project-ontology-artifacts",
+        "kind": "ProjectOntologyArtifactSet",
+        "objectDigest": "sha256:e696421c090244ca36cfeb70e7a2708d69dcf2288c8488a57389093bb27604a1",
+        "parent": null,
+        "path": "semantic-catalog/materials/5135b802daabedb49c9a54edc497b6f3936619a5807d2b165b05d7550646afc8.json",
+        "provenance": {
+          "documentDigest": "sha256:e696421c090244ca36cfeb70e7a2708d69dcf2288c8488a57389093bb27604a1",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": {
+          "actor": "publisher",
+          "at": "2026-09-21T00:00:00.000Z",
+          "authorizationDigest": "sha256:72d5dece843267aeb76b5acf23d636418901c2027542d22d5e043c0e637b27ed",
+          "decision": "AUTHORIZED",
+          "version": "1.0.0"
+        },
+        "schema": "evopilot-harness-project-ontology-artifact-set/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": "1.0.0",
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 1158,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:1b42578408e2fbfc2f3f60650e2c5c6a11bbd735dad583914f2c5970b5272577",
+        "id": "SemanticComputation-fbbbedd2d06e47cca154c256",
+        "kind": "SemanticComputation",
+        "objectDigest": "sha256:fbbbedd2d06e47cca154c256b805784067e4a3940fb5122a52c805f4c7a1844a",
+        "parent": null,
+        "path": "semantic-catalog/materials/1b42578408e2fbfc2f3f60650e2c5c6a11bbd735dad583914f2c5970b5272577.json",
+        "provenance": {
+          "documentDigest": "sha256:fbbbedd2d06e47cca154c256b805784067e4a3940fb5122a52c805f4c7a1844a",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-semantic-computation/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 590,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:02e32c0abe6046842ff3e618cb1351a61c3ddf6d3c35e11fb7dba4b11e2e15a2",
+        "id": "SemanticSupportingMaterial-6c8ec674601764d8feb69256",
+        "kind": "SemanticSupportingMaterial",
+        "objectDigest": "sha256:6c8ec674601764d8feb69256702cb137b98dc890daadd934892bdf075e7fac68",
+        "parent": null,
+        "path": "semantic-catalog/materials/02e32c0abe6046842ff3e618cb1351a61c3ddf6d3c35e11fb7dba4b11e2e15a2.json",
+        "provenance": {
+          "documentDigest": "sha256:6c8ec674601764d8feb69256702cb137b98dc890daadd934892bdf075e7fac68",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-project-ontology-artifact-lifecycle/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 9160,
+        "category": "ASSET",
+        "dependencies": [
+          "sha256:e696421c090244ca36cfeb70e7a2708d69dcf2288c8488a57389093bb27604a1"
+        ],
+        "fileDigest": "sha256:5135b802daabedb49c9a54edc497b6f3936619a5807d2b165b05d7550646afc8",
+        "id": "fixture-project-project-ontology",
+        "kind": "ProjectOntologySkill",
+        "objectDigest": "sha256:959c55608bd53240c04ee4ece14538efb29be27dfc00d51cbbce35a8c7103134",
+        "parent": {
+          "artifactSetDigest": "sha256:e696421c090244ca36cfeb70e7a2708d69dcf2288c8488a57389093bb27604a1",
+          "jsonPointer": "/spec/projectOntologySkill"
+        },
+        "path": "semantic-catalog/materials/5135b802daabedb49c9a54edc497b6f3936619a5807d2b165b05d7550646afc8.json",
+        "provenance": {
+          "documentDigest": "sha256:e696421c090244ca36cfeb70e7a2708d69dcf2288c8488a57389093bb27604a1",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-project-ontology-skill/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": "1.0.0",
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 1839,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:b48ca6ac7c08d83e1063f377e864e5bfe87120e7ca13155dd264f9dd01afd2cc",
+        "id": "engineering-validation",
+        "kind": "HarnessComponent",
+        "objectDigest": "sha256:aa84fa704cdc31dbf3c1fb8ebe84e26acd2ade7a5cc364ab5c71784f05d78638",
+        "parent": null,
+        "path": "semantic-catalog/materials/b48ca6ac7c08d83e1063f377e864e5bfe87120e7ca13155dd264f9dd01afd2cc.json",
+        "provenance": {
+          "documentDigest": "sha256:aa84fa704cdc31dbf3c1fb8ebe84e26acd2ade7a5cc364ab5c71784f05d78638",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "harness.evopilot.io/v3",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 1516,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:8bed9c4e33904b60537c725a67997bb33f01456b4cfd7b8ef4ce3930193534f4",
+        "id": "SemanticRoundTripReport-309df96974987e1166938f23",
+        "kind": "SemanticRoundTripReport",
+        "objectDigest": "sha256:309df96974987e1166938f232d7d394c34abf4da53b7b2fcf2405524bcd122ae",
+        "parent": null,
+        "path": "semantic-catalog/materials/8bed9c4e33904b60537c725a67997bb33f01456b4cfd7b8ef4ce3930193534f4.json",
+        "provenance": {
+          "documentDigest": "sha256:309df96974987e1166938f232d7d394c34abf4da53b7b2fcf2405524bcd122ae",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-semantic-round-trip-report/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 1645,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:78b56d676c6f212ce1e8a5f397ff3a212ea5866d73fde789ee0dc9d333a9f2af",
+        "id": "api-gateway",
+        "kind": "HarnessProfile",
+        "objectDigest": "sha256:04924183920010c2a0da24e2f503113a27c1b750de51f320dae7a783e77bfc5d",
+        "parent": null,
+        "path": "semantic-catalog/materials/78b56d676c6f212ce1e8a5f397ff3a212ea5866d73fde789ee0dc9d333a9f2af.json",
+        "provenance": {
+          "documentDigest": "sha256:04924183920010c2a0da24e2f503113a27c1b750de51f320dae7a783e77bfc5d",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "harness.evopilot.io/v3",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 1601,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:0cbe30cb96223d8d1e479c1fc0d7291d8c76252c827a0ad07aa79d4f3f532be1",
+        "id": "SemanticIndex-58d322f36d0d6f8774cd44d0",
+        "kind": "SemanticIndex",
+        "objectDigest": "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+        "parent": null,
+        "path": "semantic-catalog/materials/0cbe30cb96223d8d1e479c1fc0d7291d8c76252c827a0ad07aa79d4f3f532be1.json",
+        "provenance": {
+          "documentDigest": "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-semantic-index/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 1932,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:6f2b3ea0ba29f0f5ee63ae0d4e70cf832ef043b5b9455f7c51b5b94264720162",
+        "id": "api-gateway",
+        "kind": "HarnessBundle",
+        "objectDigest": "sha256:7e0b49e502ce26ab290190614cacf3f64800d966304a850906c0b30ed159935a",
+        "parent": null,
+        "path": "semantic-catalog/materials/6f2b3ea0ba29f0f5ee63ae0d4e70cf832ef043b5b9455f7c51b5b94264720162.json",
+        "provenance": {
+          "documentDigest": "sha256:7e0b49e502ce26ab290190614cacf3f64800d966304a850906c0b30ed159935a",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "harness.evopilot.io/v3",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 3792,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:3c7bcb8e7d15c64e414c87195005620cc1861e302dc4b5b4ddf3df7b67416abe",
+        "id": "SemanticProjectionSet-9147941957ff5e5e03acbc9d",
+        "kind": "SemanticProjectionSet",
+        "objectDigest": "sha256:9147941957ff5e5e03acbc9d325124ec579a1bffb7987637c131290cd8b6c1d7",
+        "parent": null,
+        "path": "semantic-catalog/materials/3c7bcb8e7d15c64e414c87195005620cc1861e302dc4b5b4ddf3df7b67416abe.json",
+        "provenance": {
+          "documentDigest": "sha256:9147941957ff5e5e03acbc9d325124ec579a1bffb7987637c131290cd8b6c1d7",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-semantic-interoperability-projection-set/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 3417,
+        "category": "ASSET",
+        "dependencies": [
+          "sha256:04924183920010c2a0da24e2f503113a27c1b750de51f320dae7a783e77bfc5d",
+          "sha256:309df96974987e1166938f232d7d394c34abf4da53b7b2fcf2405524bcd122ae",
+          "sha256:32b58ebbc49b1b285d6aa78f2f3dbbafd70cff348386ca00101d492a2a85d23b",
+          "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+          "sha256:6c8ec674601764d8feb69256702cb137b98dc890daadd934892bdf075e7fac68",
+          "sha256:74d235a437c78eb286baad8604072fdde97dee3d9079eca874fcb560961a7e74",
+          "sha256:78895b3f67bc41bfde3017ca9c0bcfb924fe4255403a1c6e4c4a9e4e5b120ae2",
+          "sha256:7e0b49e502ce26ab290190614cacf3f64800d966304a850906c0b30ed159935a",
+          "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+          "sha256:9147941957ff5e5e03acbc9d325124ec579a1bffb7987637c131290cd8b6c1d7",
+          "sha256:aa84fa704cdc31dbf3c1fb8ebe84e26acd2ade7a5cc364ab5c71784f05d78638",
+          "sha256:d071fd409c815b5166deac805032c52eaaf7a65a5d006ed266a16df2c4f32daf",
+          "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6",
+          "sha256:e696421c090244ca36cfeb70e7a2708d69dcf2288c8488a57389093bb27604a1",
+          "sha256:fbbbedd2d06e47cca154c256b805784067e4a3940fb5122a52c805f4c7a1844a"
+        ],
+        "fileDigest": "sha256:0f245b1ce3d7e1afe6f96b45c8928b312901287a4c8c6ac13f71cc74ad85644a",
+        "id": "TerminalSemanticClosure-f20c7d978dcdd6de3479cfe4",
+        "kind": "TerminalSemanticClosure",
+        "objectDigest": "sha256:f20c7d978dcdd6de3479cfe47f7be7365f7ab2c1535ded2ea09f3be96fbedcd7",
+        "parent": null,
+        "path": "semantic-catalog/materials/0f245b1ce3d7e1afe6f96b45c8928b312901287a4c8c6ac13f71cc74ad85644a.json",
+        "provenance": {
+          "documentDigest": "sha256:f20c7d978dcdd6de3479cfe47f7be7365f7ab2c1535ded2ea09f3be96fbedcd7",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": {
+          "actor": "publisher",
+          "at": "2026-09-21T00:00:00.000Z",
+          "authorizationDigest": "sha256:937a714a16f873d4e346376efb1271a2411e0886b114f98135ee0933a3878cb5",
+          "decision": "AUTHORIZED",
+          "version": "4.8.0"
+        },
+        "schema": "evopilot-harness-terminal-semantic-closure/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": "4.8.0",
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 708,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:e50db2de6ff8b0c1733bc2d9e3a47f1c37c71d95137ddfb8f08b0480a3a56dbf",
+        "id": "OntologyFoundation-d071fd409c815b5166deac80",
+        "kind": "OntologyFoundation",
+        "objectDigest": "sha256:d071fd409c815b5166deac805032c52eaaf7a65a5d006ed266a16df2c4f32daf",
+        "parent": null,
+        "path": "semantic-catalog/materials/e50db2de6ff8b0c1733bc2d9e3a47f1c37c71d95137ddfb8f08b0480a3a56dbf.json",
+        "provenance": {
+          "documentDigest": "sha256:d071fd409c815b5166deac805032c52eaaf7a65a5d006ed266a16df2c4f32daf",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-ontology-foundation/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 1071,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:ddd31ca6e0af9edda9655240d97133ee4f52554c613bd1fc0e2f37794ae17be1",
+        "id": "fixture-domain",
+        "kind": "DomainOntologyPack",
+        "objectDigest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+        "parent": null,
+        "path": "semantic-catalog/materials/ddd31ca6e0af9edda9655240d97133ee4f52554c613bd1fc0e2f37794ae17be1.json",
+        "provenance": {
+          "documentDigest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "semantics.evopilot.io/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 2610,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:fc0f93ba88a4d84a67badb7c2fd20bf1a251768e7fbc77a5794abd73d450e093",
+        "id": "ProjectOntologyProposal-78895b3f67bc41bfde3017ca",
+        "kind": "ProjectOntologyProposal",
+        "objectDigest": "sha256:78895b3f67bc41bfde3017ca9c0bcfb924fe4255403a1c6e4c4a9e4e5b120ae2",
+        "parent": null,
+        "path": "semantic-catalog/materials/fc0f93ba88a4d84a67badb7c2fd20bf1a251768e7fbc77a5794abd73d450e093.json",
+        "provenance": {
+          "documentDigest": "sha256:78895b3f67bc41bfde3017ca9c0bcfb924fe4255403a1c6e4c4a9e4e5b120ae2",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-project-ontology-proposal/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 1083,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:732bce96d703dbf3a5de765b59c3129177b3b8d2286d6b27d2707c361a2f360a",
+        "id": "SemanticComputation-32b58ebbc49b1b285d6aa78f",
+        "kind": "SemanticComputation",
+        "objectDigest": "sha256:32b58ebbc49b1b285d6aa78f2f3dbbafd70cff348386ca00101d492a2a85d23b",
+        "parent": null,
+        "path": "semantic-catalog/materials/732bce96d703dbf3a5de765b59c3129177b3b8d2286d6b27d2707c361a2f360a.json",
+        "provenance": {
+          "documentDigest": "sha256:32b58ebbc49b1b285d6aa78f2f3dbbafd70cff348386ca00101d492a2a85d23b",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-semantic-computation/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 1420,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:67a8fa6629a43b3e95de75fe9b64f226e0ca8f5054a17b3c829995c017b02313",
+        "id": "SemanticSupportingMaterial-d480a854f0f7cc95ae49557f",
+        "kind": "SemanticSupportingMaterial",
+        "objectDigest": "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6",
+        "parent": null,
+        "path": "semantic-catalog/materials/67a8fa6629a43b3e95de75fe9b64f226e0ca8f5054a17b3c829995c017b02313.json",
+        "provenance": {
+          "documentDigest": "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-resolved-professional-pack-set/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      },
+      {
+        "bytes": 872,
+        "category": "DEPENDENCY",
+        "dependencies": [],
+        "fileDigest": "sha256:1e7c893a6eab2e0afc5f850b6a33c41bd8c076376c4a2b31ce4335d2f0e10670",
+        "id": "fixture-profile",
+        "kind": "OntologyReasoningProfile",
+        "objectDigest": "sha256:74d235a437c78eb286baad8604072fdde97dee3d9079eca874fcb560961a7e74",
+        "parent": null,
+        "path": "semantic-catalog/materials/1e7c893a6eab2e0afc5f850b6a33c41bd8c076376c4a2b31ce4335d2f0e10670.json",
+        "provenance": {
+          "documentDigest": "sha256:74d235a437c78eb286baad8604072fdde97dee3d9079eca874fcb560961a7e74",
+          "source": "HarnessSemanticSupply"
+        },
+        "publication": null,
+        "schema": "evopilot-harness-ontology-reasoning-profile/v1",
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "version": null,
+        "visibility": "DOMAIN"
+      }
+    ],
+    "generationDigest": "sha256:89fe3199f667a30b1e3d15e675027bd8d34688475ebeadf292b32f5227caa3ea",
+    "revokedDigests": [],
+    "schema": "evopilot-harness-semantic-catalog/v1",
+    "sets": [
+      {
+        "refs": {
+          "artifactSet": "sha256:e696421c090244ca36cfeb70e7a2708d69dcf2288c8488a57389093bb27604a1",
+          "closure": "sha256:f20c7d978dcdd6de3479cfe47f7be7365f7ab2c1535ded2ea09f3be96fbedcd7",
+          "foundation": "sha256:d071fd409c815b5166deac805032c52eaaf7a65a5d006ed266a16df2c4f32daf",
+          "full": "sha256:32b58ebbc49b1b285d6aa78f2f3dbbafd70cff348386ca00101d492a2a85d23b",
+          "harnessAssets": [
+            {
+              "entry": {
+                "assetDigest": "sha256:7e0b49e502ce26ab290190614cacf3f64800d966304a850906c0b30ed159935a",
+                "assetPath": "./assets/synthetic-only.yaml",
+                "id": "api-gateway",
+                "kind": "HarnessBundle",
+                "lifecycle": "published",
+                "version": "2.3.0"
+              },
+              "ref": "sha256:7e0b49e502ce26ab290190614cacf3f64800d966304a850906c0b30ed159935a"
+            },
+            {
+              "entry": {
+                "assetDigest": "sha256:04924183920010c2a0da24e2f503113a27c1b750de51f320dae7a783e77bfc5d",
+                "assetPath": "./assets/synthetic-only.yaml",
+                "id": "api-gateway",
+                "kind": "HarnessProfile",
+                "lifecycle": "published",
+                "version": "2.3.0"
+              },
+              "ref": "sha256:04924183920010c2a0da24e2f503113a27c1b750de51f320dae7a783e77bfc5d"
+            },
+            {
+              "entry": {
+                "assetDigest": "sha256:aa84fa704cdc31dbf3c1fb8ebe84e26acd2ade7a5cc364ab5c71784f05d78638",
+                "assetPath": "./assets/synthetic-only.yaml",
+                "id": "engineering-validation",
+                "kind": "HarnessComponent",
+                "lifecycle": "published",
+                "version": "1.0.0"
+              },
+              "ref": "sha256:aa84fa704cdc31dbf3c1fb8ebe84e26acd2ade7a5cc364ab5c71784f05d78638"
+            }
+          ],
+          "incremental": "sha256:fbbbedd2d06e47cca154c256b805784067e4a3940fb5122a52c805f4c7a1844a",
+          "index": "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+          "packs": [
+            "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591"
+          ],
+          "profile": "sha256:74d235a437c78eb286baad8604072fdde97dee3d9079eca874fcb560961a7e74",
+          "projectionSet": "sha256:9147941957ff5e5e03acbc9d325124ec579a1bffb7987637c131290cd8b6c1d7",
+          "proposal": "sha256:78895b3f67bc41bfde3017ca9c0bcfb924fe4255403a1c6e4c4a9e4e5b120ae2",
+          "roundTripReport": "sha256:309df96974987e1166938f232d7d394c34abf4da53b7b2fcf2405524bcd122ae",
+          "skill": "sha256:959c55608bd53240c04ee4ece14538efb29be27dfc00d51cbbce35a8c7103134",
+          "support": [
+            {
+              "binding": {
+                "digest": "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6",
+                "id": "lock",
+                "version": "1.0.0"
+              },
+              "ref": "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6"
+            },
+            {
+              "binding": {
+                "digest": "sha256:309df96974987e1166938f232d7d394c34abf4da53b7b2fcf2405524bcd122ae",
+                "id": "evaluation",
+                "version": "1.0.0"
+              },
+              "ref": "sha256:309df96974987e1166938f232d7d394c34abf4da53b7b2fcf2405524bcd122ae"
+            },
+            {
+              "binding": {
+                "digest": "sha256:6c8ec674601764d8feb69256702cb137b98dc890daadd934892bdf075e7fac68",
+                "id": "rollback",
+                "version": "1.0.0"
+              },
+              "ref": "sha256:6c8ec674601764d8feb69256702cb137b98dc890daadd934892bdf075e7fac68"
+            }
+          ]
+        },
+        "scope": {
+          "projectId": "fixture-project",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        }
+      }
+    ]
+  },
+  "materials": {
+    "semantic-catalog/materials/02e32c0abe6046842ff3e618cb1351a61c3ddf6d3c35e11fb7dba4b11e2e15a2.json": {
+      "artifactSetDigest": "sha256:e696421c090244ca36cfeb70e7a2708d69dcf2288c8488a57389093bb27604a1",
+      "authority": {
+        "activationIndependent": true,
+        "installationIndependent": true,
+        "rollbackIndependent": true
+      },
+      "history": [
+        {
+          "action": "INSTALL",
+          "actor": "installer",
+          "actorRole": "INSTALLER",
+          "at": "2026-09-21T00:00:00.000Z",
+          "from": "PUBLISHED",
+          "migrationPlan": null,
+          "reason": "",
+          "rollbackTarget": null,
+          "successor": null,
+          "to": "INSTALLED"
+        }
+      ],
+      "recordDigest": "sha256:6c8ec674601764d8feb69256702cb137b98dc890daadd934892bdf075e7fac68",
+      "schema": "evopilot-harness-project-ontology-artifact-lifecycle/v1",
+      "stage": "INSTALLED"
+    },
+    "semantic-catalog/materials/0cbe30cb96223d8d1e479c1fc0d7291d8c76252c827a0ad07aa79d4f3f532be1.json": {
+      "algorithm": {
+        "digest": "sha256:dbc2dac75ad620c0a695bf212da214ecccf9f0cfb53894ea64d05bc8f399f472",
+        "id": "semantic-index",
+        "version": "1.0.0"
+      },
+      "apiVersion": "semantics.evopilot.io/v1",
+      "assets": [
+        {
+          "digest": "sha256:7e0b49e502ce26ab290190614cacf3f64800d966304a850906c0b30ed159935a",
+          "id": "api-gateway",
+          "kind": "HarnessBundle",
+          "version": "2.3.0"
+        },
+        {
+          "digest": "sha256:aa84fa704cdc31dbf3c1fb8ebe84e26acd2ade7a5cc364ab5c71784f05d78638",
+          "id": "engineering-validation",
+          "kind": "HarnessComponent",
+          "version": "1.0.0"
+        },
+        {
+          "digest": "sha256:04924183920010c2a0da24e2f503113a27c1b750de51f320dae7a783e77bfc5d",
+          "id": "api-gateway",
+          "kind": "HarnessProfile",
+          "version": "2.3.0"
+        }
+      ],
+      "authority": {
+        "contentAddressed": true,
+        "mayMutateSource": false,
+        "mixedContextAllowed": false,
+        "readOnly": true,
+        "staleResultsAllowed": false
+      },
+      "cache": null,
+      "edges": [],
+      "indexDigest": "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+      "kind": "SemanticIndex",
+      "nodes": [
+        {
+          "conceptId": "fixture:entity",
+          "definitionDigest": "sha256:4f42a73427e92052a12d9587882a68f70ca61e948103b268ba4619ba38a08248",
+          "evidenceRefs": [
+            "source://synthetic"
+          ],
+          "label": "Fixture entity",
+          "metaType": "ENTITY"
+        }
+      ],
+      "policy": {
+        "digest": "sha256:5d38fd0abf6751616c87460ec0f31246f959670f267dd1be5fa2f88e16fadd14",
+        "id": "semantic-index-policy",
+        "version": "1.0.0"
+      },
+      "schema": "evopilot-harness-semantic-index/v1",
+      "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+      "statistics": {
+        "assetCount": 3,
+        "edgeCount": 0,
+        "nodeCount": 1
+      },
+      "toolchain": {
+        "digest": "sha256:c7ec4cabc7ebb563e437bbc0a0189de41505ca61aab0da25cc2d26037f4232d8",
+        "id": "evopilot-harness",
+        "version": "4.8.0"
+      }
+    },
+    "semantic-catalog/materials/0f245b1ce3d7e1afe6f96b45c8928b312901287a4c8c6ac13f71cc74ad85644a.json": {
+      "apiVersion": "semantics.evopilot.io/v1",
+      "authority": {
+        "consumerReadOnly": true,
+        "grantsConsumerApproval": false,
+        "grantsConsumerMutation": false,
+        "grantsConsumerPublication": false,
+        "grantsReleaseAuthority": false,
+        "immutable": true,
+        "liveMutableHarnessDependency": false
+      },
+      "closureDigest": "sha256:f20c7d978dcdd6de3479cfe47f7be7365f7ab2c1535ded2ea09f3be96fbedcd7",
+      "dependencyLocks": [
+        {
+          "digest": "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6",
+          "id": "lock",
+          "version": "1.0.0"
+        }
+      ],
+      "evaluations": [
+        {
+          "digest": "sha256:309df96974987e1166938f232d7d394c34abf4da53b7b2fcf2405524bcd122ae",
+          "id": "evaluation",
+          "kind": "Evaluation",
+          "version": "1.0.0"
+        }
+      ],
+      "graphIndex": {
+        "digest": "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+        "statistics": {
+          "assetCount": 3,
+          "edgeCount": 0,
+          "nodeCount": 1
+        }
+      },
+      "harnessAssets": [
+        {
+          "digest": "sha256:7e0b49e502ce26ab290190614cacf3f64800d966304a850906c0b30ed159935a",
+          "id": "api-gateway",
+          "kind": "HarnessBundle",
+          "version": "2.3.0"
+        },
+        {
+          "digest": "sha256:aa84fa704cdc31dbf3c1fb8ebe84e26acd2ade7a5cc364ab5c71784f05d78638",
+          "id": "engineering-validation",
+          "kind": "HarnessComponent",
+          "version": "1.0.0"
+        },
+        {
+          "digest": "sha256:04924183920010c2a0da24e2f503113a27c1b750de51f320dae7a783e77bfc5d",
+          "id": "api-gateway",
+          "kind": "HarnessProfile",
+          "version": "2.3.0"
+        }
+      ],
+      "kind": "TerminalSemanticClosure",
+      "projectionSet": {
+        "digest": "sha256:9147941957ff5e5e03acbc9d325124ec579a1bffb7987637c131290cd8b6c1d7",
+        "formats": [
+          {
+            "contentDigest": "sha256:b44aebcbd7340026adca9df80a1c2832eb45636bf563d12f1984c87b6ccc9bc9",
+            "format": "JSON_LD",
+            "status": "APPLICABLE"
+          },
+          {
+            "contentDigest": "sha256:998183e5066700fa7257301b98ca46e899a0768ede6ad135b36724df96503ee2",
+            "format": "PROV_O",
+            "status": "APPLICABLE"
+          },
+          {
+            "contentDigest": "sha256:4c2f6fc490857feb3548520b5adb00792d992eb73f3b4da830a28ad03a2b79ef",
+            "format": "RDF_TURTLE",
+            "status": "APPLICABLE"
+          },
+          {
+            "contentDigest": "sha256:3591690d9d9ffedf751391aa2483fffdbd002883f3b2c73b5bec6bd6e725ef84",
+            "format": "OWL",
+            "status": "APPLICABLE"
+          },
+          {
+            "contentDigest": "sha256:692bb6b12f99d4bebc1eeaaaeacc218e8d7df1574087a660c3369330041c055a",
+            "format": "SHACL",
+            "status": "APPLICABLE"
+          }
+        ]
+      },
+      "provenance": {
+        "generatedByDigest": "sha256:f16d05ec6b29248d2c61adb1e9263f78e4f7bace1b955014a2d17872cfe4064d",
+        "producer": "evopilot-harness",
+        "sourceRefs": [
+          "source://synthetic"
+        ]
+      },
+      "publication": {
+        "actor": "publisher",
+        "at": "2026-09-21T00:00:00.000Z",
+        "authorizationDigest": "sha256:937a714a16f873d4e346376efb1271a2411e0886b114f98135ee0933a3878cb5",
+        "decision": "AUTHORIZED",
+        "version": "4.8.0"
+      },
+      "reasoningProfile": {
+        "digest": "sha256:74d235a437c78eb286baad8604072fdde97dee3d9079eca874fcb560961a7e74",
+        "id": "fixture-profile",
+        "mode": "RDFS",
+        "version": "1.0.0"
+      },
+      "rollbackLinks": [
+        {
+          "digest": "sha256:6c8ec674601764d8feb69256702cb137b98dc890daadd934892bdf075e7fac68",
+          "id": "rollback",
+          "version": "1.0.0"
+        }
+      ],
+      "roundTripReport": {
+        "digest": "sha256:309df96974987e1166938f232d7d394c34abf4da53b7b2fcf2405524bcd122ae",
+        "status": "PASSED"
+      },
+      "schema": "evopilot-harness-terminal-semantic-closure/v1",
+      "semanticIndex": {
+        "digest": "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+        "statistics": {
+          "assetCount": 3,
+          "edgeCount": 0,
+          "nodeCount": 1
+        }
+      },
+      "snapshot": {
+        "digest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+        "project": {
+          "id": "fixture-project",
+          "sourceSnapshotDigest": "sha256:270c0d536da1e328c882cda409fc95a131d86851b817f538836313cad3b9ed03",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        }
+      },
+      "status": "PUBLISHED",
+      "version": "4.8.0"
+    },
+    "semantic-catalog/materials/1b42578408e2fbfc2f3f60650e2c5c6a11bbd735dad583914f2c5970b5272577.json": {
+      "affectedSubgraphDigest": "sha256:86479c9a2cd3b4503149dac057cb18b4d444b79f2403b960ba7f07736b163d13",
+      "authority": {
+        "engineValidated": true,
+        "fullRecomputeRequiredForAcceptance": true,
+        "mayApprove": false,
+        "mayMutate": false,
+        "mayPublish": false
+      },
+      "computationDigest": "sha256:fbbbedd2d06e47cca154c256b805784067e4a3940fb5122a52c805f4c7a1844a",
+      "computationMode": "INCREMENTAL",
+      "externalReasonerEvidence": null,
+      "indexDigest": "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+      "outcomeDigest": "sha256:f431762618a224276c65c4c155e497ea759406c27037f271d4a46cec6638afe1",
+      "profileDigest": "sha256:74d235a437c78eb286baad8604072fdde97dee3d9079eca874fcb560961a7e74",
+      "proofDigest": "sha256:0ec9009322a2e877b5aba03c93f307110068cee6c31f64d97862d9e87bc606fc",
+      "schema": "evopilot-harness-semantic-computation/v1",
+      "status": "COMPLETED",
+      "telemetry": {
+        "budgets": {
+          "maxCacheEntries": 20000,
+          "maxConcurrentTasks": 4,
+          "maxEdges": 50000,
+          "maxIterations": 32,
+          "maxNodes": 10000,
+          "maxWallTimeMs": 30000
+        },
+        "cacheDigest": null,
+        "cacheEntryCount": 0,
+        "concurrency": 1,
+        "edgeCount": 0,
+        "elapsedMs": 0,
+        "evaluatedConceptCount": 1,
+        "evaluatedConceptIds": [
+          "fixture:entity"
+        ],
+        "nodeCount": 1,
+        "secretsRedacted": true
+      }
+    },
+    "semantic-catalog/materials/1e7c893a6eab2e0afc5f850b6a33c41bd8c076376c4a2b31ce4335d2f0e10670.json": {
+      "apiVersion": "semantics.evopilot.io/v1",
+      "authority": {
+        "engineOwnedDecision": true,
+        "externalReasonerEvidenceOnly": false,
+        "externalReasonerMayApprove": false,
+        "externalReasonerMayMutate": false,
+        "externalReasonerMayPublish": false,
+        "unboundedReasoningAllowed": false
+      },
+      "kind": "OntologyReasoningProfile",
+      "metadata": {
+        "id": "fixture-profile",
+        "version": "1.0.0"
+      },
+      "profileDigest": "sha256:74d235a437c78eb286baad8604072fdde97dee3d9079eca874fcb560961a7e74",
+      "schema": "evopilot-harness-ontology-reasoning-profile/v1",
+      "spec": {
+        "cacheDigestRequired": true,
+        "externalReasoner": null,
+        "failurePolicy": "FAIL_CLOSED_WITH_PROOF_PATH",
+        "fullRecomputeEquivalenceRequired": true,
+        "limits": {
+          "maxCacheEntries": 20000,
+          "maxConcurrentTasks": 4,
+          "maxEdges": 50000,
+          "maxIterations": 32,
+          "maxNodes": 10000,
+          "maxWallTimeMs": 30000
+        },
+        "mode": "RDFS",
+        "supportedRules": [
+          "rdfs:domain",
+          "rdfs:range",
+          "rdfs:subClassOf",
+          "rdfs:subPropertyOf"
+        ]
+      }
+    },
+    "semantic-catalog/materials/3c7bcb8e7d15c64e414c87195005620cc1861e302dc4b5b4ddf3df7b67416abe.json": {
+      "authority": {
+        "deterministic": true,
+        "externalVocabularyInactive": true,
+        "mappingsCannotOverrideUserPacks": true,
+        "unsupportedSemanticsFailClosed": true
+      },
+      "canonicalSemanticDigest": "sha256:183252ec83124e775ba5d35f5eb5966f79195290cbc5fbf1309836c1d409ce8d",
+      "externalMappings": [],
+      "indexDigest": "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+      "multilingualTerms": [],
+      "profileDigest": "sha256:74d235a437c78eb286baad8604072fdde97dee3d9079eca874fcb560961a7e74",
+      "projectionSetDigest": "sha256:9147941957ff5e5e03acbc9d325124ec579a1bffb7987637c131290cd8b6c1d7",
+      "projections": [
+        {
+          "canonicalSemanticDigest": "sha256:183252ec83124e775ba5d35f5eb5966f79195290cbc5fbf1309836c1d409ce8d",
+          "content": "{\n  \"@context\": {\n    \"id\": \"@id\",\n    \"type\": \"@type\",\n    \"label\": {\n      \"@id\": \"http://www.w3.org/2000/01/rdf-schema#label\"\n    },\n    \"provenance\": {\n      \"@id\": \"http://www.w3.org/ns/prov#wasDerivedFrom\"\n    }\n  },\n  \"@graph\": [\n    {\n      \"id\": \"fixture:entity\",\n      \"type\": \"ENTITY\",\n      \"label\": [\n        {\n          \"@value\": \"Fixture entity\",\n          \"@language\": \"und\"\n        }\n      ],\n      \"externalMappings\": []\n    }\n  ]\n}",
+          "contentDigest": "sha256:b44aebcbd7340026adca9df80a1c2832eb45636bf563d12f1984c87b6ccc9bc9",
+          "format": "JSON_LD",
+          "mediaType": "application/ld+json",
+          "reason": null,
+          "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+          "status": "APPLICABLE"
+        },
+        {
+          "canonicalSemanticDigest": "sha256:183252ec83124e775ba5d35f5eb5966f79195290cbc5fbf1309836c1d409ce8d",
+          "content": "{\n  \"schema\": \"prov-o-compatible/v1\",\n  \"entity\": [\n    {\n      \"id\": \"fixture:entity\",\n      \"wasDerivedFrom\": [\n        \"source://synthetic\"\n      ]\n    }\n  ],\n  \"mappings\": []\n}",
+          "contentDigest": "sha256:998183e5066700fa7257301b98ca46e899a0768ede6ad135b36724df96503ee2",
+          "format": "PROV_O",
+          "mediaType": "application/json",
+          "reason": null,
+          "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+          "status": "APPLICABLE"
+        },
+        {
+          "canonicalSemanticDigest": "sha256:183252ec83124e775ba5d35f5eb5966f79195290cbc5fbf1309836c1d409ce8d",
+          "content": "<urn:evopilot:semantic:fixture%3Aentity> a <urn:evopilot:ENTITY> ; <http://www.w3.org/2000/01/rdf-schema#label> \"Fixture entity\" .",
+          "contentDigest": "sha256:4c2f6fc490857feb3548520b5adb00792d992eb73f3b4da830a28ad03a2b79ef",
+          "format": "RDF_TURTLE",
+          "mediaType": "text/turtle",
+          "reason": null,
+          "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+          "status": "APPLICABLE"
+        },
+        {
+          "canonicalSemanticDigest": "sha256:183252ec83124e775ba5d35f5eb5966f79195290cbc5fbf1309836c1d409ce8d",
+          "content": "Ontology(<urn:evopilot:project:fixture-project>\n Declaration(Class(<urn:evopilot:semantic:fixture%3Aentity>))\n\n)",
+          "contentDigest": "sha256:3591690d9d9ffedf751391aa2483fffdbd002883f3b2c73b5bec6bd6e725ef84",
+          "format": "OWL",
+          "mediaType": "application/owl+xml",
+          "reason": null,
+          "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+          "status": "APPLICABLE"
+        },
+        {
+          "canonicalSemanticDigest": "sha256:183252ec83124e775ba5d35f5eb5966f79195290cbc5fbf1309836c1d409ce8d",
+          "content": "<urn:evopilot:semantic:fixture%3AentityShape> a <http://www.w3.org/ns/shacl#NodeShape> ; <http://www.w3.org/ns/shacl#targetClass> <urn:evopilot:semantic:fixture%3Aentity> .",
+          "contentDigest": "sha256:692bb6b12f99d4bebc1eeaaaeacc218e8d7df1574087a660c3369330041c055a",
+          "format": "SHACL",
+          "mediaType": "text/turtle",
+          "reason": null,
+          "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+          "status": "APPLICABLE"
+        }
+      ],
+      "schema": "evopilot-harness-semantic-interoperability-projection-set/v1",
+      "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05"
+    },
+    "semantic-catalog/materials/5135b802daabedb49c9a54edc497b6f3936619a5807d2b165b05d7550646afc8.json": {
+      "apiVersion": "semantics.evopilot.io/v1",
+      "artifactSetDigest": "sha256:e696421c090244ca36cfeb70e7a2708d69dcf2288c8488a57389093bb27604a1",
+      "authority": {
+        "automaticallyActive": false,
+        "automaticallyInstalled": false,
+        "consumerReadOnly": true,
+        "immutable": true,
+        "mayGrantConsumerMutation": false,
+        "separatelyPublished": true
+      },
+      "kind": "ProjectOntologyArtifactSet",
+      "metadata": {
+        "id": "fixture-project-project-ontology-artifacts",
+        "projectId": "fixture-project",
+        "version": "1.0.0"
+      },
+      "schema": "evopilot-harness-project-ontology-artifact-set/v1",
+      "spec": {
+        "dependencyLock": {
+          "dependencyGraph": [
+            {
+              "imports": [],
+              "pack": "fixture-domain@1.0.0"
+            }
+          ],
+          "packSetDigest": "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6",
+          "packs": [
+            {
+              "digest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+              "id": "fixture-domain",
+              "version": "1.0.0"
+            }
+          ]
+        },
+        "foundationDigest": "sha256:d071fd409c815b5166deac805032c52eaaf7a65a5d006ed266a16df2c4f32daf",
+        "manifest": {
+          "dependencyLockDigest": "sha256:e7868042352b10228e7fe86ac0dc27b7b26b016dc755b380d725ce8ad4cc2904",
+          "foundationDigest": "sha256:d071fd409c815b5166deac805032c52eaaf7a65a5d006ed266a16df2c4f32daf",
+          "manifestDigest": "sha256:7f8f8046065adc5d61ed8a390f3e7a1ec4532a7de8fef7b282ec4b9ae8cbe2fa",
+          "packSetDigest": "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6",
+          "project": {
+            "id": "fixture-project",
+            "sourceSnapshotDigest": "sha256:270c0d536da1e328c882cda409fc95a131d86851b817f538836313cad3b9ed03",
+            "tenantId": "fixture-tenant",
+            "workspaceId": "fixture-workspace"
+          },
+          "projectionInventory": [
+            {
+              "contentDigest": "sha256:c24ed2dfc1ffe6d30f6ba1c6be08144e9d74a473ebb75aa80bce21b95f9a0bb7",
+              "format": "JSON_LD",
+              "status": "APPLICABLE"
+            },
+            {
+              "contentDigest": "sha256:3d4c447c7902f720d7f2723a9a3729ed1a83ef2854dddac59df04c3c493a769e",
+              "format": "OWL",
+              "status": "APPLICABLE"
+            },
+            {
+              "contentDigest": "sha256:b7e2cc1518fef25871dd0d554f43f1995ec0ba14e65b0549f22cf3e5154e98c9",
+              "format": "RDF_TURTLE",
+              "status": "APPLICABLE"
+            },
+            {
+              "contentDigest": "sha256:68164a545354537dbea8c56b05323a4780ea10abd10827d6ee555810fb0103eb",
+              "format": "SHACL",
+              "status": "APPLICABLE"
+            },
+            {
+              "contentDigest": null,
+              "format": "SWRL",
+              "status": "NON_APPLICABLE"
+            },
+            {
+              "contentDigest": "sha256:1f62696964b210d71733c3bd95bab31e9aa18549c3cf4756cc35c846ce21686a",
+              "format": "YAML",
+              "status": "APPLICABLE"
+            }
+          ],
+          "projectionSetDigest": "sha256:4bc1455171acc814b3b224b30492d8387b048fae190481ed7fa3a3a0813d6e54",
+          "publicationAuthorizationDigest": "sha256:72d5dece843267aeb76b5acf23d636418901c2027542d22d5e043c0e637b27ed",
+          "schema": "evopilot-harness-project-ontology-artifact-manifest/v1",
+          "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+          "version": "1.0.0"
+        },
+        "project": {
+          "id": "fixture-project",
+          "sourceSnapshotDigest": "sha256:270c0d536da1e328c882cda409fc95a131d86851b817f538836313cad3b9ed03",
+          "tenantId": "fixture-tenant",
+          "workspaceId": "fixture-workspace"
+        },
+        "projectOntologySkill": {
+          "apiVersion": "semantics.evopilot.io/v1",
+          "authority": {
+            "guidanceProjectionOnly": true,
+            "mayActivate": false,
+            "mayApprove": false,
+            "mayMutateOntology": false,
+            "mayPublish": false,
+            "soleTruthStore": false
+          },
+          "kind": "ProjectOntologySkill",
+          "metadata": {
+            "id": "fixture-project-project-ontology",
+            "projectId": "fixture-project",
+            "version": "1.0.0"
+          },
+          "schema": "evopilot-harness-project-ontology-skill/v1",
+          "skillDigest": "sha256:959c55608bd53240c04ee4ece14538efb29be27dfc00d51cbbce35a8c7103134",
+          "spec": {
+            "artifactSetManifestDigest": "sha256:7f8f8046065adc5d61ed8a390f3e7a1ec4532a7de8fef7b282ec4b9ae8cbe2fa",
+            "conceptIndex": [
+              {
+                "conceptId": "fixture:entity",
+                "definition": "Synthetic entity for local tests.",
+                "label": "Fixture entity",
+                "metaType": "ENTITY"
+              }
+            ],
+            "executable": false,
+            "instructions": [],
+            "projectionSetDigest": "sha256:4bc1455171acc814b3b224b30492d8387b048fae190481ed7fa3a3a0813d6e54",
+            "readOnly": true,
+            "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+            "truthSource": "ResolvedProjectOntologySnapshot"
+          }
+        },
+        "projectionSet": {
+          "projectionSetDigest": "sha256:4bc1455171acc814b3b224b30492d8387b048fae190481ed7fa3a3a0813d6e54",
+          "projections": [
+            {
+              "content": "{\n  \"@context\": {\n    \"id\": \"@id\",\n    \"type\": \"@type\",\n    \"label\": \"http://www.w3.org/2000/01/rdf-schema#label\"\n  },\n  \"@graph\": [\n    {\n      \"id\": \"fixture:entity\",\n      \"type\": \"ENTITY\",\n      \"label\": \"Fixture entity\",\n      \"definition\": \"Synthetic entity for local tests.\"\n    }\n  ]\n}",
+              "contentDigest": "sha256:c24ed2dfc1ffe6d30f6ba1c6be08144e9d74a473ebb75aa80bce21b95f9a0bb7",
+              "format": "JSON_LD",
+              "mediaType": "application/ld+json",
+              "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+              "status": "APPLICABLE"
+            },
+            {
+              "content": "Ontology(<urn:evopilot:project:fixture-project>\n Declaration(Class(<urn:evopilot:concept:fixture%3Aentity>))\n)",
+              "contentDigest": "sha256:3d4c447c7902f720d7f2723a9a3729ed1a83ef2854dddac59df04c3c493a769e",
+              "format": "OWL",
+              "mediaType": "application/owl+xml",
+              "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+              "status": "APPLICABLE"
+            },
+            {
+              "content": "<urn:evopilot:concept:fixture%3Aentity> a <urn:evopilot:ENTITY> ; <http://www.w3.org/2000/01/rdf-schema#label> \"Fixture entity\" .",
+              "contentDigest": "sha256:b7e2cc1518fef25871dd0d554f43f1995ec0ba14e65b0549f22cf3e5154e98c9",
+              "format": "RDF_TURTLE",
+              "mediaType": "text/turtle",
+              "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+              "status": "APPLICABLE"
+            },
+            {
+              "content": "<urn:evopilot:concept:fixture%3AentityShape> a <http://www.w3.org/ns/shacl#NodeShape> ; <http://www.w3.org/ns/shacl#targetClass> <urn:evopilot:concept:fixture%3Aentity> .",
+              "contentDigest": "sha256:68164a545354537dbea8c56b05323a4780ea10abd10827d6ee555810fb0103eb",
+              "format": "SHACL",
+              "mediaType": "text/turtle",
+              "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+              "status": "APPLICABLE"
+            },
+            {
+              "content": null,
+              "contentDigest": null,
+              "format": "SWRL",
+              "mediaType": "text/plain",
+              "reason": "The resolved snapshot contains no bounded rule relationship; content was not fabricated.",
+              "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+              "status": "NON_APPLICABLE"
+            },
+            {
+              "content": "- conceptId: \"fixture:entity\"\n  label: \"Fixture entity\"\n  metaType: \"ENTITY\"\n  definition: \"Synthetic entity for local tests.\"",
+              "contentDigest": "sha256:1f62696964b210d71733c3bd95bab31e9aa18549c3cf4756cc35c846ce21686a",
+              "format": "YAML",
+              "mediaType": "application/yaml",
+              "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+              "status": "APPLICABLE"
+            }
+          ],
+          "schema": "evopilot-harness-project-ontology-projection-set/v1",
+          "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05"
+        },
+        "provenance": [
+          {
+            "packDigest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+            "packId": "fixture-domain",
+            "packVersion": "1.0.0",
+            "provenance": {
+              "approvers": [
+                "approver"
+              ],
+              "author": "author",
+              "publishers": [
+                "publisher"
+              ],
+              "reviewers": [
+                "reviewer"
+              ],
+              "sourceRefs": [
+                "source://synthetic"
+              ]
+            }
+          }
+        ],
+        "publication": {
+          "actor": "publisher",
+          "at": "2026-09-21T00:00:00.000Z",
+          "authorizationDigest": "sha256:72d5dece843267aeb76b5acf23d636418901c2027542d22d5e043c0e637b27ed",
+          "decision": "AUTHORIZED",
+          "version": "1.0.0"
+        },
+        "snapshot": {
+          "authority": {
+            "active": false,
+            "editable": false,
+            "engineOwnedResolution": true,
+            "fullyResolved": true,
+            "immutable": true,
+            "mayActivate": false,
+            "mayApprove": false,
+            "mayPublish": false,
+            "published": false
+          },
+          "baseDigest": "sha256:a0914c39ff75c32e3356b20eda2a214ffc4dd487432b2fc1191c8fbb7ae259bc",
+          "concepts": [
+            {
+              "aliases": [],
+              "conceptDigest": "sha256:f71038440357e94007ab749f9bd2c42550ea1d7fff22721dce72fbc63401f10a",
+              "conceptId": "fixture:entity",
+              "definition": "Synthetic entity for local tests.",
+              "deprecated": false,
+              "evidenceRefs": [
+                "source://synthetic"
+              ],
+              "label": "Fixture entity",
+              "metaType": "ENTITY",
+              "packDigest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+              "packId": "fixture-domain",
+              "packVersion": "1.0.0",
+              "relationships": [],
+              "replaces": null
+            }
+          ],
+          "dependencyGraph": [
+            {
+              "imports": [],
+              "pack": "fixture-domain@1.0.0"
+            }
+          ],
+          "foundationDigest": "sha256:d071fd409c815b5166deac805032c52eaaf7a65a5d006ed266a16df2c4f32daf",
+          "overlay": null,
+          "packSetDigest": "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6",
+          "packs": [
+            {
+              "digest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+              "id": "fixture-domain",
+              "kind": "DomainOntologyPack",
+              "namespace": "fixture",
+              "provenance": {
+                "approvers": [
+                  "approver"
+                ],
+                "author": "author",
+                "publishers": [
+                  "publisher"
+                ],
+                "reviewers": [
+                  "reviewer"
+                ],
+                "sourceRefs": [
+                  "source://synthetic"
+                ]
+              },
+              "root": "DOMAIN_TEAM",
+              "version": "1.0.0",
+              "visibility": "DOMAIN"
+            }
+          ],
+          "predecessorSnapshotDigest": null,
+          "project": {
+            "id": "fixture-project",
+            "sourceSnapshotDigest": "sha256:270c0d536da1e328c882cda409fc95a131d86851b817f538836313cad3b9ed03",
+            "tenantId": "fixture-tenant",
+            "workspaceId": "fixture-workspace"
+          },
+          "proposalDigest": "sha256:78895b3f67bc41bfde3017ca9c0bcfb924fe4255403a1c6e4c4a9e4e5b120ae2",
+          "resolvedAt": "2026-09-21T00:00:00.000Z",
+          "schema": "evopilot-harness-resolved-project-ontology-snapshot/v1",
+          "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05"
+        },
+        "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05"
+      }
+    },
+    "semantic-catalog/materials/67a8fa6629a43b3e95de75fe9b64f226e0ca8f5054a17b3c829995c017b02313.json": {
+      "authority": {
+        "automaticallyActivated": false,
+        "automaticallyApproved": false,
+        "automaticallyPublished": false,
+        "automaticallyTrusted": false,
+        "declarativeOnly": true,
+        "engineResolved": true,
+        "executable": false,
+        "importedEvidenceActive": false
+      },
+      "baseDigest": "sha256:a0914c39ff75c32e3356b20eda2a214ffc4dd487432b2fc1191c8fbb7ae259bc",
+      "concepts": [
+        {
+          "aliases": [],
+          "conceptDigest": "sha256:f71038440357e94007ab749f9bd2c42550ea1d7fff22721dce72fbc63401f10a",
+          "conceptId": "fixture:entity",
+          "definition": "Synthetic entity for local tests.",
+          "deprecated": false,
+          "evidenceRefs": [
+            "source://synthetic"
+          ],
+          "label": "Fixture entity",
+          "metaType": "ENTITY",
+          "packDigest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+          "packId": "fixture-domain",
+          "packVersion": "1.0.0",
+          "relationships": [],
+          "replaces": null
+        }
+      ],
+      "conflicts": [],
+      "dependencyGraph": [
+        {
+          "imports": [],
+          "pack": "fixture-domain@1.0.0"
+        }
+      ],
+      "packSetDigest": "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6",
+      "packs": [
+        {
+          "digest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+          "id": "fixture-domain",
+          "kind": "DomainOntologyPack",
+          "namespace": "fixture",
+          "provenance": {
+            "approvers": [
+              "approver"
+            ],
+            "author": "author",
+            "publishers": [
+              "publisher"
+            ],
+            "reviewers": [
+              "reviewer"
+            ],
+            "sourceRefs": [
+              "source://synthetic"
+            ]
+          },
+          "root": "DOMAIN_TEAM",
+          "version": "1.0.0",
+          "visibility": "DOMAIN"
+        }
+      ],
+      "schema": "evopilot-harness-resolved-professional-pack-set/v1",
+      "targetRoot": "DOMAIN_TEAM"
+    },
+    "semantic-catalog/materials/6f2b3ea0ba29f0f5ee63ae0d4e70cf832ef043b5b9455f7c51b5b94264720162.json": {
+      "apiVersion": "harness.evopilot.io/v3",
+      "kind": "HarnessBundle",
+      "metadata": {
+        "description": "Immutable resolved execution package migrated from api-gateway-harness.",
+        "id": "api-gateway",
+        "labels": {
+          "migratedFrom": "api-gateway-harness"
+        },
+        "lifecycle": "published",
+        "name": "API Gateway Harness Bundle",
+        "owner": "migrated-v2",
+        "version": "2.3.0"
+      },
+      "provenance": {
+        "ontologyVersion": "software-engineering@1.0.0",
+        "policyVersion": "default-matcher@1.0.0",
+        "sourceDigests": [
+          "sha256:637e55ca3683a7e9eb0522ac7e9322575a0b05dad3d8330969f8b332fe205e95"
+        ]
+      },
+      "spec": {
+        "constraints": [
+          "Execute only administrator-approved commands in an isolated workspace.",
+          "Preserve source and credential boundaries from the source Harness contract."
+        ],
+        "evidence": [
+          "target-evidence-package",
+          "phase-package",
+          "goal-completion-report",
+          "route-table",
+          "policy-matrix",
+          "plugin-report",
+          "load-summary"
+        ],
+        "executionPlan": [
+          "discover-project-commands",
+          "run-approved-validation"
+        ],
+        "exports": [
+          {
+            "adapter": "evopilot",
+            "path": "exports/evopilot/template.yaml"
+          }
+        ],
+        "profile": {
+          "digest": "sha256:04924183920010c2a0da24e2f503113a27c1b750de51f320dae7a783e77bfc5d",
+          "id": "api-gateway",
+          "version": "2.3.0"
+        },
+        "resolvedComponents": [
+          {
+            "digest": "sha256:aa84fa704cdc31dbf3c1fb8ebe84e26acd2ade7a5cc364ab5c71784f05d78638",
+            "id": "engineering-validation",
+            "required": true,
+            "version": "1.0.0"
+          }
+        ],
+        "semanticRequirements": {
+          "authority": {
+            "descriptiveConstraintOnly": true,
+            "executable": false,
+            "mayApprove": false,
+            "mayPublish": false,
+            "provesEligibility": false
+          },
+          "evidenceRequirements": [],
+          "foundationDigest": "sha256:d071fd409c815b5166deac805032c52eaaf7a65a5d006ed266a16df2c4f32daf",
+          "prohibitedConcepts": [],
+          "relationRequirements": [],
+          "requiredConcepts": [
+            {
+              "conceptId": "fixture:entity",
+              "evidenceRefs": [],
+              "metaType": "ENTITY",
+              "rationale": ""
+            }
+          ],
+          "requirementsDigest": "sha256:a43f28f976efdd7ae01509aed44b41b7fa5c7a840b4aed3880fcc4d969eb0fd9",
+          "schema": "evopilot-harness-semantic-requirements/v1"
+        },
+        "validators": [
+          "approved-command-only",
+          "validation-exit-code"
+        ]
+      }
+    },
+    "semantic-catalog/materials/732bce96d703dbf3a5de765b59c3129177b3b8d2286d6b27d2707c361a2f360a.json": {
+      "affectedSubgraphDigest": null,
+      "authority": {
+        "engineValidated": true,
+        "fullRecomputeRequiredForAcceptance": false,
+        "mayApprove": false,
+        "mayMutate": false,
+        "mayPublish": false
+      },
+      "computationDigest": "sha256:32b58ebbc49b1b285d6aa78f2f3dbbafd70cff348386ca00101d492a2a85d23b",
+      "computationMode": "FULL",
+      "externalReasonerEvidence": null,
+      "indexDigest": "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+      "outcomeDigest": "sha256:f431762618a224276c65c4c155e497ea759406c27037f271d4a46cec6638afe1",
+      "profileDigest": "sha256:74d235a437c78eb286baad8604072fdde97dee3d9079eca874fcb560961a7e74",
+      "proofDigest": "sha256:0ec9009322a2e877b5aba03c93f307110068cee6c31f64d97862d9e87bc606fc",
+      "schema": "evopilot-harness-semantic-computation/v1",
+      "status": "COMPLETED",
+      "telemetry": {
+        "budgets": {
+          "maxCacheEntries": 20000,
+          "maxConcurrentTasks": 4,
+          "maxEdges": 50000,
+          "maxIterations": 32,
+          "maxNodes": 10000,
+          "maxWallTimeMs": 30000
+        },
+        "cacheDigest": null,
+        "cacheEntryCount": 0,
+        "concurrency": 1,
+        "edgeCount": 0,
+        "elapsedMs": 0,
+        "evaluatedConceptCount": 1,
+        "evaluatedConceptIds": [
+          "fixture:entity"
+        ],
+        "nodeCount": 1,
+        "secretsRedacted": true
+      }
+    },
+    "semantic-catalog/materials/78b56d676c6f212ce1e8a5f397ff3a212ea5866d73fde789ee0dc9d333a9f2af.json": {
+      "apiVersion": "harness.evopilot.io/v3",
+      "kind": "HarnessProfile",
+      "metadata": {
+        "description": "Domain baseline for API gateway products.",
+        "id": "api-gateway",
+        "labels": {
+          "migratedFrom": "api-gateway-harness"
+        },
+        "lifecycle": "published",
+        "name": "API Gateway Harness",
+        "owner": "migrated-v2",
+        "version": "2.3.0"
+      },
+      "provenance": {
+        "ontologyVersion": "software-engineering@1.0.0",
+        "policyVersion": "default-matcher@1.0.0",
+        "sourceDigests": [
+          "sha256:637e55ca3683a7e9eb0522ac7e9322575a0b05dad3d8330969f8b332fe205e95"
+        ]
+      },
+      "spec": {
+        "acceptance": {
+          "blockingValidators": [
+            "approved-command-only",
+            "validation-exit-code"
+          ],
+          "requiredEvidence": [
+            "target-evidence-package",
+            "phase-package",
+            "goal-completion-report",
+            "route-table",
+            "policy-matrix",
+            "plugin-report",
+            "load-summary"
+          ]
+        },
+        "boundary": {
+          "inScope": [
+            "Engineering work supported by the api-gateway-harness v2 contract."
+          ],
+          "outOfScope": [
+            "gateway timeout from downstream api",
+            "api client wrapper",
+            "http client",
+            "Capabilities not supported by source evidence or declared validators."
+          ]
+        },
+        "classification": {
+          "domain": "api-gateway",
+          "role": "api-gateway-engineering",
+          "taskClass": "domain-task"
+        },
+        "components": [
+          {
+            "id": "engineering-validation",
+            "required": true,
+            "version": "1.0.0"
+          }
+        ],
+        "evaluationPackRef": "api-gateway@2.3.0",
+        "match": {
+          "negativeConcepts": [
+            "gateway-timeout-from-downstream-api",
+            "api-client-wrapper",
+            "http-client"
+          ],
+          "positiveConcepts": [
+            "api-gateway",
+            "executable-engineering",
+            "gateway-product",
+            "ingress-controller",
+            "traffic-proxy",
+            "route-matching",
+            "upstream-selection",
+            "rate-limit",
+            "auth-policy",
+            "plugin-lifecycle",
+            "filter-chain",
+            "service-mesh-gateway",
+            "envoy",
+            "kong",
+            "apisix",
+            "signal",
+            "api"
+          ],
+          "requiredEvidenceKinds": [
+            "source-code",
+            "build-manifest"
+          ]
+        }
+      }
+    },
+    "semantic-catalog/materials/8bed9c4e33904b60537c725a67997bb33f01456b4cfd7b8ef4ce3930193534f4.json": {
+      "allApplicableDigestsPresent": true,
+      "allFormatsApplicable": true,
+      "authority": {
+        "failureMayAdvanceLifecycle": false,
+        "requiredForTerminalClosure": true
+      },
+      "bindingChecks": {
+        "indexSnapshot": true,
+        "profileConsistent": true,
+        "projectionIndex": true,
+        "projectionSnapshot": true
+      },
+      "canonicalSemanticsPreserved": true,
+      "computationEquivalence": {
+        "authority": {
+          "failureMayAdvanceLifecycle": false,
+          "requiredForIncrementalAcceptance": true
+        },
+        "equivalenceDigest": "sha256:6105295da3f703593f03eb541f3aa5f0c5405d430fd46c3b23716bafa607d1c0",
+        "equivalentAuthoritativeOutcome": true,
+        "fullComputationDigest": "sha256:32b58ebbc49b1b285d6aa78f2f3dbbafd70cff348386ca00101d492a2a85d23b",
+        "incrementalComputationDigest": "sha256:fbbbedd2d06e47cca154c256b805784067e4a3940fb5122a52c805f4c7a1844a",
+        "sameBindings": true,
+        "schema": "evopilot-harness-semantic-computation-equivalence/v1",
+        "status": "PASSED"
+      },
+      "fullComputationDigest": "sha256:32b58ebbc49b1b285d6aa78f2f3dbbafd70cff348386ca00101d492a2a85d23b",
+      "incrementalComputationDigest": "sha256:fbbbedd2d06e47cca154c256b805784067e4a3940fb5122a52c805f4c7a1844a",
+      "indexDigest": "sha256:58d322f36d0d6f8774cd44d0c78587015a11d9cadd725aaa73c0bb7b7c83a0ae",
+      "projectionSetDigest": "sha256:9147941957ff5e5e03acbc9d325124ec579a1bffb7987637c131290cd8b6c1d7",
+      "reportDigest": "sha256:309df96974987e1166938f232d7d394c34abf4da53b7b2fcf2405524bcd122ae",
+      "schema": "evopilot-harness-semantic-round-trip-report/v1",
+      "snapshotDigest": "sha256:3ced95cabd67e5d2f541e177f997f5fa3639c19c25427a3e6540f78b858a7b05",
+      "status": "PASSED",
+      "unsupportedFormats": []
+    },
+    "semantic-catalog/materials/b48ca6ac7c08d83e1063f377e864e5bfe87120e7ca13155dd264f9dd01afd2cc.json": {
+      "apiVersion": "harness.evopilot.io/v3",
+      "kind": "HarnessComponent",
+      "metadata": {
+        "description": "Reusable constrained build, test, evidence collection, and validation capability.",
+        "id": "engineering-validation",
+        "labels": {
+          "scope": "product-neutral"
+        },
+        "lifecycle": "published",
+        "name": "Engineering Validation",
+        "owner": "evopilot-harness",
+        "version": "1.0.0"
+      },
+      "provenance": {
+        "ontologyVersion": "software-engineering@1.0.0",
+        "policyVersion": "default-matcher@1.0.0",
+        "sourceDigests": []
+      },
+      "spec": {
+        "actions": [
+          {
+            "description": "Discover repository-declared build and test commands without executing untrusted code.",
+            "executor": "agent",
+            "id": "discover-project-commands",
+            "inputs": [
+              "source-snapshot"
+            ],
+            "network": "denied",
+            "outputs": [
+              "command-inventory"
+            ],
+            "timeoutSeconds": 300
+          },
+          {
+            "description": "Execute only administrator-approved validation commands in an isolated workspace.",
+            "executor": "shell",
+            "id": "run-approved-validation",
+            "inputs": [
+              "approved-command-inventory"
+            ],
+            "network": "restricted",
+            "outputs": [
+              "validation-command-log",
+              "validation-result"
+            ],
+            "timeoutSeconds": 3600
+          }
+        ],
+        "capability": "engineering-validation",
+        "constraints": [
+          "Never execute source-provided commands before explicit approval.",
+          "Never expose credentials in command output or evidence.",
+          "Release claims require real command evidence."
+        ],
+        "environment": {
+          "requiredTools": [
+            "shell",
+            "source-control"
+          ],
+          "workspaceMode": "isolated"
+        },
+        "evidence": [
+          "source-snapshot",
+          "command-inventory",
+          "validation-command-log",
+          "validation-result"
+        ],
+        "validators": [
+          {
+            "assertion": "Every executed command is present in approved-command-inventory.",
+            "blocking": true,
+            "evidenceRefs": [
+              "approved-command-inventory",
+              "validation-command-log"
+            ],
+            "id": "approved-command-only",
+            "type": "content"
+          },
+          {
+            "assertion": "Required validation commands exit successfully.",
+            "blocking": true,
+            "evidenceRefs": [
+              "validation-result"
+            ],
+            "id": "validation-exit-code",
+            "type": "exit-code"
+          }
+        ]
+      }
+    },
+    "semantic-catalog/materials/ddd31ca6e0af9edda9655240d97133ee4f52554c613bd1fc0e2f37794ae17be1.json": {
+      "apiVersion": "semantics.evopilot.io/v1",
+      "kind": "DomainOntologyPack",
+      "metadata": {
+        "digest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+        "generation": 1,
+        "id": "fixture-domain",
+        "kind": "DomainOntologyPack",
+        "labels": {},
+        "name": "Synthetic fixture",
+        "namespace": "fixture",
+        "owner": "fixture-team",
+        "provenance": {
+          "approvers": [
+            "approver"
+          ],
+          "author": "author",
+          "publishers": [
+            "publisher"
+          ],
+          "reviewers": [
+            "reviewer"
+          ],
+          "sourceRefs": [
+            "source://synthetic"
+          ]
+        },
+        "root": "DOMAIN_TEAM",
+        "version": "1.0.0",
+        "visibility": "DOMAIN"
+      },
+      "spec": {
+        "authority": {
+          "activationRequiresIndependentDecision": true,
+          "declarativeOnly": true,
+          "executable": false
+        },
+        "concepts": [
+          {
+            "aliases": [],
+            "conceptId": "fixture:entity",
+            "definition": "Synthetic entity for local tests.",
+            "deprecated": false,
+            "evidenceRefs": [
+              "source://synthetic"
+            ],
+            "label": "Fixture entity",
+            "metaType": "ENTITY",
+            "relationships": [],
+            "replaces": null
+          }
+        ],
+        "deprecations": [],
+        "equivalences": [],
+        "harnessGuidance": [],
+        "imports": [],
+        "replacements": [],
+        "rules": [],
+        "shapes": []
+      },
+      "status": {
+        "conditions": [],
+        "engineOwned": true,
+        "observedGeneration": 1,
+        "phase": "DRAFT"
+      }
+    },
+    "semantic-catalog/materials/e50db2de6ff8b0c1733bc2d9e3a47f1c37c71d95137ddfb8f08b0480a3a56dbf.json": {
+      "authority": {
+        "containsBusinessValues": false,
+        "engineOwnedMetaModel": true,
+        "executable": false,
+        "mayApprove": false,
+        "mayDecideEligibility": false,
+        "mayPublish": false
+      },
+      "foundationDigest": "sha256:d071fd409c815b5166deac805032c52eaaf7a65a5d006ed266a16df2c4f32daf",
+      "limits": {
+        "maxCandidates": 512,
+        "maxConcepts": 4096,
+        "maxEvidenceRefsPerCandidate": 64
+      },
+      "metaTypes": [
+        "ACTION",
+        "ACTOR",
+        "ATTRIBUTE",
+        "CAPABILITY",
+        "DATA_ASSET",
+        "ENTITY",
+        "EVENT",
+        "PERMISSION",
+        "RELATIONSHIP",
+        "ROLE",
+        "RULE",
+        "STATE",
+        "SYSTEM",
+        "WORKFLOW"
+      ],
+      "relationTypes": [
+        "ALTERNATIVE_TO",
+        "CONSTRAINS",
+        "IS_A",
+        "MITIGATES",
+        "PART_OF",
+        "PERFORMS",
+        "PRODUCES",
+        "RECOVERS_WITH",
+        "REQUIRES",
+        "TRIGGERS",
+        "VALIDATED_BY"
+      ],
+      "schema": "evopilot-harness-ontology-foundation/v1",
+      "version": 1
+    },
+    "semantic-catalog/materials/fc0f93ba88a4d84a67badb7c2fd20bf1a251768e7fbc77a5794abd73d450e093.json": {
+      "authority": {
+        "activationIndependent": true,
+        "approvalIndependent": true,
+        "draftOnly": false,
+        "installationIndependent": true,
+        "mayActivate": false,
+        "mayPublish": false,
+        "publicationIndependent": true
+      },
+      "baseDigest": "sha256:a0914c39ff75c32e3356b20eda2a214ffc4dd487432b2fc1191c8fbb7ae259bc",
+      "conflictSet": [],
+      "createdAt": "2026-09-21T00:00:00.000Z",
+      "createdBy": "author",
+      "decisions": [
+        {
+          "action": "APPLY",
+          "actor": "author",
+          "at": "2026-09-21T00:00:00.000Z",
+          "from": "DRAFT",
+          "reason": "",
+          "to": "APPLIED"
+        },
+        {
+          "action": "REQUEST_REVIEW",
+          "actor": "reviewer",
+          "at": "2026-09-21T00:00:00.000Z",
+          "from": "APPLIED",
+          "reason": "",
+          "to": "IN_REVIEW"
+        },
+        {
+          "action": "APPROVE",
+          "actor": "approver",
+          "at": "2026-09-21T00:00:00.000Z",
+          "from": "IN_REVIEW",
+          "reason": "",
+          "to": "APPROVED"
+        }
+      ],
+      "overlay": null,
+      "project": {
+        "id": "fixture-project",
+        "sourceSnapshotDigest": "sha256:270c0d536da1e328c882cda409fc95a131d86851b817f538836313cad3b9ed03",
+        "tenantId": "fixture-tenant",
+        "workspaceId": "fixture-workspace"
+      },
+      "proposalDigest": "sha256:78895b3f67bc41bfde3017ca9c0bcfb924fe4255403a1c6e4c4a9e4e5b120ae2",
+      "proposalId": "project-ontology-fixture-project-d9a74be835b6",
+      "resolvedPackSet": {
+        "authority": {
+          "automaticallyActivated": false,
+          "automaticallyApproved": false,
+          "automaticallyPublished": false,
+          "automaticallyTrusted": false,
+          "declarativeOnly": true,
+          "engineResolved": true,
+          "executable": false,
+          "importedEvidenceActive": false
+        },
+        "baseDigest": "sha256:a0914c39ff75c32e3356b20eda2a214ffc4dd487432b2fc1191c8fbb7ae259bc",
+        "concepts": [
+          {
+            "aliases": [],
+            "conceptDigest": "sha256:f71038440357e94007ab749f9bd2c42550ea1d7fff22721dce72fbc63401f10a",
+            "conceptId": "fixture:entity",
+            "definition": "Synthetic entity for local tests.",
+            "deprecated": false,
+            "evidenceRefs": [
+              "source://synthetic"
+            ],
+            "label": "Fixture entity",
+            "metaType": "ENTITY",
+            "packDigest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+            "packId": "fixture-domain",
+            "packVersion": "1.0.0",
+            "relationships": [],
+            "replaces": null
+          }
+        ],
+        "conflicts": [],
+        "dependencyGraph": [
+          {
+            "imports": [],
+            "pack": "fixture-domain@1.0.0"
+          }
+        ],
+        "packSetDigest": "sha256:d480a854f0f7cc95ae49557f0fc08bd50155bf1c902ee525118dd9a74be835b6",
+        "packs": [
+          {
+            "digest": "sha256:7e61783790d1958c8846aba2e1b17deb518609b164252d0439ea187018df2591",
+            "id": "fixture-domain",
+            "kind": "DomainOntologyPack",
+            "namespace": "fixture",
+            "provenance": {
+              "approvers": [
+                "approver"
+              ],
+              "author": "author",
+              "publishers": [
+                "publisher"
+              ],
+              "reviewers": [
+                "reviewer"
+              ],
+              "sourceRefs": [
+                "source://synthetic"
+              ]
+            },
+            "root": "DOMAIN_TEAM",
+            "version": "1.0.0",
+            "visibility": "DOMAIN"
+          }
+        ],
+        "schema": "evopilot-harness-resolved-professional-pack-set/v1",
+        "targetRoot": "DOMAIN_TEAM"
+      },
+      "revision": 4,
+      "schema": "evopilot-harness-project-ontology-proposal/v1",
+      "stage": "APPROVED"
+    }
+  }
+}

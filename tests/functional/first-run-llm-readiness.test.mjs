@@ -7,7 +7,7 @@ import test from "node:test";
 
 import { createServer } from "../../packages/server/dist/index.js";
 
-test("production first run stays setup-only until explicit live-preflight workspace binding", async () => {
+test("production first run stays setup-only until explicit live-preflight workspace binding", async (t) => {
   const rawCredential = "test-provider-secret-never-return-this";
   let providerCalls = 0;
   const provider = http.createServer(async (request, response) => {
@@ -28,17 +28,18 @@ test("production first run stays setup-only until explicit live-preflight worksp
   const providerBaseUrl = `http://127.0.0.1:${providerAddress.port}/v1`;
 
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-v62-readiness-"));
-  const server = createServer({
+  const serverOptions = {
     dataRoot,
     runtimeMode: "prod",
     tokens: [
       { name: "admin", token: "admin-token", role: "admin" },
       { name: "viewer", token: "viewer-token", role: "viewer" }
     ]
-  });
+  };
+  let server = createServer(serverOptions);
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address();
-  const baseUrl = `http://127.0.0.1:${address.port}`;
+  let baseUrl = `http://127.0.0.1:${address.port}`;
 
   try {
     const initial = await requestJson(`${baseUrl}/api/v1/runtime-readiness`, { token: "viewer-token" });
@@ -103,6 +104,31 @@ test("production first run stays setup-only until explicit live-preflight worksp
     const ready = await requestJson(`${baseUrl}/ready`);
     assert.equal(ready.body.runtimeReadiness, "READY");
     assert.equal(ready.body.normalOperationsReady, true);
+
+    await t.test("exact readiness and workspace binding survive a fresh server and file-store instance", async () => {
+      const beforeReadiness = await requestJson(`${baseUrl}/api/v1/runtime-readiness`, { token: "viewer-token" });
+      const beforeBinding = await requestJson(`${baseUrl}/api/v1/runtime-readiness/workspace-default`, { token: "viewer-token" });
+      assert.equal(beforeReadiness.status, 200);
+      assert.equal(beforeBinding.status, 200);
+      assert.equal(beforeReadiness.body.data.state, "READY");
+      assert.match(beforeReadiness.body.data.digest, /^sha256:[a-f0-9]{64}$/);
+      assert.match(beforeBinding.body.data.digest, /^sha256:[a-f0-9]{64}$/);
+      const previousServer = server;
+      await new Promise(resolve => server.close(resolve));
+      server = createServer(serverOptions);
+      assert.notEqual(server, previousServer);
+      await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+      baseUrl = `http://127.0.0.1:${server.address().port}`;
+      const afterReadiness = await requestJson(`${baseUrl}/api/v1/runtime-readiness`, { token: "viewer-token" });
+      const afterBinding = await requestJson(`${baseUrl}/api/v1/runtime-readiness/workspace-default`, { token: "viewer-token" });
+      assert.equal(afterReadiness.status, 200);
+      assert.equal(afterBinding.status, 200);
+      assert.deepEqual(afterReadiness.body.data, beforeReadiness.body.data);
+      assert.deepEqual(afterBinding.body.data, beforeBinding.body.data);
+      assert.doesNotMatch(JSON.stringify({ afterReadiness, afterBinding }), new RegExp(rawCredential));
+      assert.equal((await requestJson(`${baseUrl}/api/v1/summary`, { token: "viewer-token" })).status, 200);
+      assert.equal(providerCalls, 1, "restart and readback must not probe or silently select a provider");
+    });
 
     const revoked = await requestJson(`${baseUrl}/api/v1/secrets/runtime-llm-secret/revoke`, { method: "POST", token: "admin-token", body: {} });
     assert.equal(revoked.status, 200);

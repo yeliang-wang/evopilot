@@ -19,6 +19,16 @@ test('synthetic full private path returns actual SecretRef, never READY or raw v
   for(const value of Object.values(f.sentinels))assert.ok(!JSON.stringify({result,observed:f.observed}).includes(value));
   assert.deepEqual(f.observed.calls.map(c=>c.pathname),['/api/v1/auth/login','/api/v1/secrets','/api/v1/secrets']);
 });
+for(const runtimeVersion of ['6.3.0','6.2.0'])test(`explicit signed ${runtimeVersion} secure setup remains supported`,async()=>{
+  const f=fixture();const {issuedAt,expiresAt,...payload}=f.request.deployment.payload;
+  f.request.deployment=signed({...payload,runtimeVersion},f.deploymentKey.privateKey);
+  assert.equal((await provision(f.request,f.deps)).status,'SECRET_REF_CREATED');assert.equal(f.observed.posts,1);
+});
+for(const runtimeVersion of ['6.1.0','6.3.0-rc.1','6.3.0invalid','7.0.0',''])test(`signed but unsupported deployment ${runtimeVersion} cannot collect a secret`,async()=>{
+  const f=fixture();const {issuedAt,expiresAt,...payload}=f.request.deployment.payload;
+  f.request.deployment=signed({...payload,runtimeVersion},f.deploymentKey.privateKey);
+  assert.equal((await provision(f.request,f.deps)).status,'BINDING_REJECTED');assert.equal(f.observed.collected,0);assert.equal(f.observed.posts,0);
+});
 for(const [name,mutate]of [
   ['missing permission',f=>delete f.request.permission],
   ['forged permission',f=>f.request.permission.signature='A'.repeat(86)+'=='],

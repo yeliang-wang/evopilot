@@ -1,0 +1,63 @@
+import assert from 'node:assert/strict';
+import path from 'node:path';
+import {Worker} from 'node:worker_threads';
+import {verifyInstalledExpertSdk} from './installed-transport.mjs';
+import {exactKeys,probeDigest} from './probe-session.mjs';
+import {runProjectDefinitionJourney,runProjectDefinitionReadback,validateProjectJourney} from './runtime/6.3.0/project-definition-journey.mjs';
+const limited=value=>{const bytes=JSON.stringify(value);assert.ok(typeof bytes==='string'&&Buffer.byteLength(bytes)<=1048576,'PROJECT_SDK_MESSAGE_LIMIT');return JSON.parse(bytes);};
+function expectedCall(frame){
+  const p=frame.payload;
+  const payload=frame.tool.endsWith('_discover')?{payload:p.projectFacts}:frame.tool.endsWith('_register')?{payload:p.projectDefinition}:
+    ['_activate','_rollback'].some(s=>frame.tool.endsWith(s))?{projectDefinitionId:p.projectDefinitionId,payload:Object.fromEntries(['version','definitionDigest','expectedActiveDigest','evidenceRef'].map(k=>[k,p[k]]))}:p;
+  return {tool:frame.tool,payload};
+}
+/** Fixed project journey against a byte-verified installed Expert, relayed only
+ * through the campaign's independently verified MCP. No installation, default
+ * approval, credential handling, replay, Candidate or Host claim is provided. */
+async function runInstalledProject({contextBytes,expectedContextDigest,inputBytes,invokeMcp,authorizeInvocation,signal,timeoutMs=120000},journey){
+  assert.equal(typeof invokeMcp,'function');assert.equal(typeof authorizeInvocation,'function');
+  assert.ok(Number.isInteger(timeoutMs)&&timeoutMs>0&&timeoutMs<=120000);
+  assert.ok(Buffer.isBuffer(inputBytes)&&inputBytes.length<=65536);const input=JSON.parse(inputBytes);validateProjectJourney(input);
+  const installed=verifyInstalledExpertSdk({contextBytes,expectedContextDigest,sourceRoot:path.resolve(import.meta.dirname,'../../..')});
+  assert.equal(JSON.parse(contextBytes).probeInputDigest,probeDigest(input),'PROJECT_SDK_INPUT_DRIFT');
+  const controller=new AbortController();const abort=()=>controller.abort(Error('PROJECT_SDK_CANCELLED'));
+  signal?.addEventListener('abort',abort,{once:true});if(signal?.aborted)abort();const timer=setTimeout(()=>controller.abort(Error('PROJECT_SDK_TIMEOUT')),timeoutMs);
+  const verifiedTurns=[];let attemptedMutation=false;
+  try{
+    const result=await journey({input,signal:controller.signal,invokeTurn:async frame=>{
+      controller.signal.throwIfAborted();installed.verify();const expected=structuredClone(expectedCall(frame));let worker,settled=false,invoked=false,response;
+      try{return await new Promise((resolve,reject)=>{
+        const finish=(error,value)=>{if(settled)return;settled=true;controller.signal.removeEventListener('abort',cancel);if(error){controller.abort(error);reject(error);}else resolve(value);};
+        const cancel=()=>finish(controller.signal.reason);controller.signal.addEventListener('abort',cancel,{once:true});if(controller.signal.aborted){cancel();return;}
+        worker=new Worker(new URL('./expert/2.3.0/project-sdk-worker.mjs',import.meta.url),{workerData:{sdkEntry:installed.sdkEntry,turn:structuredClone(frame)},
+          env:{PATH:'/usr/bin:/bin:/usr/sbin:/sbin',LANG:'C',LC_ALL:'C'},execArgv:[],stdout:true,stderr:true,resourceLimits:{maxOldGenerationSizeMb:128,maxYoungGenerationSizeMb:32,stackSizeMb:4}});
+        let output=0;for(const stream of [worker.stdout,worker.stderr])stream.on('data',bytes=>{output+=bytes.length;if(output>1048576)finish(Error('PROJECT_SDK_OUTPUT_LIMIT'));});
+        worker.on('error',()=>finish(Error('PROJECT_SDK_WORKER_ERROR')));worker.on('exit',()=>{if(!settled)finish(Error('PROJECT_SDK_EARLY_EXIT'));});
+        worker.on('message',async raw=>{
+          if(settled)return;
+          try{const m=limited(raw);controller.signal.throwIfAborted();installed.verify();
+            if(m.type==='invoke'){
+              exactKeys(m,['type','tool','payload']);assert.equal(invoked,false,'PROJECT_SDK_EXTRA_INVOCATION');invoked=true;
+              assert.deepEqual({tool:m.tool,payload:m.payload},expected,'PROJECT_SDK_CALL_SUBSTITUTION');
+              assert.equal(await authorizeInvocation(structuredClone({...installed.identity,call:expected,effect:frame.effect,decision:frame.decision??null,commandDigest:probeDigest(expected)}),{signal:controller.signal}),true,'PROJECT_SDK_AUTHORITY_DENIED');
+              controller.signal.throwIfAborted();installed.verify();
+              attemptedMutation=!frame.effect.startsWith('READ_');
+              response=limited(await invokeMcp(structuredClone(expected),{signal:controller.signal}));controller.signal.throwIfAborted();installed.verify();
+              worker.postMessage({type:'response',value:response});
+            }else{
+              exactKeys(m,['type','response']);assert.equal(m.type,'result');assert.equal(invoked,true);assert.ok(response);assert.deepEqual(m.response,response,'PROJECT_SDK_RESPONSE_SUBSTITUTION');
+              verifiedTurns.push({tool:expected.tool,commandDigest:probeDigest(expected),responseDigest:probeDigest(response)});attemptedMutation=false;finish(null,response);
+            }
+          }catch(error){finish(error);}
+        });
+      });}finally{if(worker)await worker.terminate();}
+    }});
+    installed.verify();return {...result,installation:installed.identity,verifiedTurns,workBuddy:'NOT_OPERATED_OR_OBSERVED'};
+  }catch{
+    return {status:attemptedMutation?'UNKNOWN_OUTCOME':'PROJECT_JOURNEY_STOPPED',nextAction:'INSPECT_VERIFIED_PREFIX_AND_RUNTIME_NO_AUTOMATIC_REPLAY',verifiedTurns,
+      installation:installed.identity,targetCriteriaClosed:0,formalAcceptance:'NOT_EVALUATED',realHost:'NOT_QUALIFIED',releaseAuthorized:false};
+  }finally{clearTimeout(timer);signal?.removeEventListener('abort',abort);}
+}
+
+export const runInstalledExpertProject=options=>runInstalledProject(options,runProjectDefinitionJourney);
+export const runInstalledExpertProjectReadback=options=>runInstalledProject(options,runProjectDefinitionReadback);

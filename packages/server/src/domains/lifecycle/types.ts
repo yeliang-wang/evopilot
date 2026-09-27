@@ -277,6 +277,7 @@ export interface LifecycleRun {
   stageAttempts: LifecycleStageAttempt[];
   decisions: LifecycleDecisionRecord[];
   trajectory: LifecycleAgentTrajectoryEntry[];
+  semanticStageCompletions?: import("./semantic-stage-grant.js").SemanticStageProof[];
   pendingExecution?: LifecycleAgentExecutionRequest;
   pendingDecisionAuthority?: "stage" | "recovery";
   boundaryEvidence?: Array<{ checkpoint: "start" | "resume" | "retry" | "loop-iteration"; bindingDigest: string; evidence: string[]; checkedAt: string }>;

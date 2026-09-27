@@ -1,4 +1,5 @@
 import http from "node:http";
+import { handleLlmBootstrap } from "./llm-bootstrap.js";
 import {
   LlmReadinessError,
   createWorkspaceLlmDefaultBinding,
@@ -20,6 +21,10 @@ interface LlmReadinessRoutesContext {
 export async function handleLlmReadinessRoutes(context: LlmReadinessRoutesContext): Promise<boolean> {
   const { request, response, url, auth, store, options } = context;
   const { audit, envelope, hasRole, readJson, writeJson } = context.deps;
+
+  if (request.method === "POST" && url.pathname === "/api/v1/runtime-readiness/bootstrap") {
+    return handleLlmBootstrap(context);
+  }
 
   if (request.method === "GET" && url.pathname === "/api/v1/llm-providers") {
     if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });

@@ -361,10 +361,15 @@ export class GovernedEvolutionService {
     return compareEvolutionProjectDefinitions(from, to, affectedBindings);
   }
 
-  activateProjectDefinitionVersion(id: string, version: string, actor: string, evidenceRef: string, scope?: GovernedEvolutionScope, mode: "activate" | "rollback" = "activate") {
+  activateProjectDefinitionVersion(id: string, version: string, actor: string, evidenceRef: string, scope?: GovernedEvolutionScope, mode: "activate" | "rollback" = "activate", binding?: {definitionDigest: unknown; expectedActiveDigest: unknown}) {
     if (!actor.trim() || !evidenceRef.trim()) throw new Error("EVOLUTION_PROJECT_ACTIVATION_EVIDENCE_REQUIRED");
     const definition = this.readProjectDefinition(id, version, scope);
     if (!definition) throw new Error(`EVOLUTION_PROJECT_DEFINITION_NOT_FOUND: ${id}@${version}`);
+    if (binding) {
+      if (![binding.definitionDigest, binding.expectedActiveDigest].every(value => typeof value === "string" && /^sha256:[a-f0-9]{64}$/.test(value))) throw new Error("EVOLUTION_PROJECT_ACTIVATION_BINDING_INVALID");
+      if (definition.digest !== binding.definitionDigest) throw new Error("EVOLUTION_PROJECT_ACTIVATION_DEFINITION_MISMATCH");
+      if (this.readProjectDefinition(id, undefined, scope)?.digest !== binding.expectedActiveDigest) throw new Error("EVOLUTION_PROJECT_ACTIVATION_ACTIVE_CONFLICT");
+    }
     return this.writeActiveProjectDefinition(definition, scope, mode === "rollback" ? "explicit-rollback" : "explicit-activation", actor, evidenceRef);
   }
 

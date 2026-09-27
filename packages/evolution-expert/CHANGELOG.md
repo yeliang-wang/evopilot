@@ -4,6 +4,49 @@ All notable changes to the independently versioned `@evopilot/evolution-expert` 
 
 ## Unreleased
 
+### 2.3.0 Semantic Convergence (source development)
+
+- Reject nested raw credential fields in typed Lifecycle answers before MCP
+  invocation, consistently with project and governed guidance.
+- Added persisted observation classification/readback and immutable successor
+  inspection guidance for controlled lifecycle evolution and restart recovery.
+- Fixed remaining governed guidance requests losing their bodies at public MCP:
+  observations, successors, experiments, monitoring, inventory, planning, run
+  creation and recovery now use finite field projection. Runtime continues to
+  validate stored bindings, policy, scope and authority. Read-only LLM guidance
+  also rejects transport overrides, and new intents cannot fall back to raw input.
+- Help/tutorial and supplied acceptance, Cutover and release context now render
+  valid non-authorizing interaction messages. Recovery collects explicit budget
+  and effect facts before calling Runtime. Source-process tests cover persistence,
+  missing bindings, permission refusal and response loss without replay.
+
+- Added finite Runtime-owned semantic onboarding, compatibility, gap, authoring,
+  execution and recovery guidance in one Core v3 and five generated adapters.
+- Defaulted public self-checks to Runtime 6.3.0 while preserving explicit legacy
+  6.2.0 non-semantic compatibility and retaining the 2.2.1 recovery obligations.
+- Projected the maintained Host Integration and artifact verifiers to 2.3.0/6.3.0.
+  Exact artifact, Host and series acceptance remain pending; no publication claim.
+- Fixed English `deactivate lifecycle` being routed to activation by substring
+  matching. Activation and deactivation retain separate Runtime tools and exact
+  decision requirements; bilingual per-operation source regressions cover both.
+- Fixed flat Lifecycle SDK inputs losing their body fields at the public stdio
+  MCP boundary. Finite projection separates route/query fields from `payload`
+  and rejects undeclared fields without transferring authority to the adapter.
+- Added explicit read-only Lifecycle diff, resolution and input-resolution
+  guidance. Local process integration covers Runtime persistence, permissions,
+  immutable existing-run bindings and uncertainty without automatic replay;
+  installed Candidate and real Host acceptance remain pending.
+
+- Fixed project-definition bodies being dropped by public stdio MCP. Added
+  Runtime-owned discovery, list, inspect and diff guidance with finite inputs.
+- Separated project rollback from revision registration. Explicit activation and
+  rollback carry the reviewed definition digest, expected current definition and
+  matching decision evidence; conflicts stop before changing the pointer.
+
+- Added explicit Runtime project connection preflight, registration, scoped
+  reads and readiness guidance after declarative setup. Nested credentials and
+  scope overrides are refused before MCP; connection never implies a Goal run.
+
 ### 2.2.1
 
 - Fixed public `doctor` and `compatibility` to use the generated adapter's complete capability declaration and default Runtime 6.2.0.

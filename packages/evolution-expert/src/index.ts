@@ -1,4 +1,12 @@
+import {governedMcpInput} from './governed-guide.js';
 import { createHash } from "node:crypto";
+import {projectDefinitionMcpInput} from "./project-guide.js";
+import {projectLifecycleMcpInput} from "./lifecycle-guide.js";
+import {SEMANTIC_EXPERT_OPERATIONS, routeSemanticExpertIntent, semanticOperationForIntent, executeExpertSemanticOperation, type SemanticExpertIntent} from "./semantic-guide.js";
+export * from "./semantic-guide.js";
+import {SEMANTIC_EXECUTION_EXPERT_OPERATIONS, routeSemanticExecutionIntent, executionOperationForIntent,
+  executeExpertSemanticExecution, expertInputAt, type SemanticExecutionExpertIntent} from "./semantic-execution-guide.js";
+export * from "./semantic-execution-guide.js";
 import {
   EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION,
   EVOPILOT_HUMAN_INTERACTION_PROTOCOL_SCHEMA,
@@ -8,20 +16,37 @@ import {
   type EvoPilotRuntimeReadinessV1
 } from "@evopilot/contracts";
 
-export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "2.2.1";
+export const EVOPILOT_EVOLUTION_EXPERT_VERSION = "2.3.0";
 export const EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA = "evopilot-evolution-expert-core/v3";
 
 export type ExpertIntent =
+  | SemanticExpertIntent
+  | SemanticExecutionExpertIntent
   | "help"
   | "tutorial"
   | "llm-setup"
+  | "llm-migration"
   | "llm-status"
   | "llm-repair"
   | "project-onboard"
   | "project-adjust"
+  | "project-discover"
+  | "project-list"
+  | "project-inspect"
+  | "project-diff"
+  | "project-activate"
+  | "project-rollback"
+  | "project-connect-plan"
+  | "project-connect"
+  | "project-readiness"
+  | "project-connected-list"
+  | "project-connected-inspect"
   | "lifecycle-create"
   | "lifecycle-list"
   | "lifecycle-inspect"
+  | "lifecycle-diff"
+  | "lifecycle-resolve"
+  | "lifecycle-resolve-inputs"
   | "lifecycle-update"
   | "lifecycle-activate"
   | "lifecycle-deactivate"
@@ -32,6 +57,9 @@ export type ExpertIntent =
   | "lifecycle-usage"
   | "lifecycle-audit"
   | "production-reference"
+  | "lifecycle-classify"
+  | "lifecycle-observation-inspect"
+  | "lifecycle-successor-inspect"
   | "lifecycle-observe"
   | "lifecycle-propose"
   | "lifecycle-experiment"
@@ -120,16 +148,33 @@ export interface EvolutionExpertHostIntegrationBundle {
 }
 
 const operations: EvolutionExpertCore["operations"] = {
+  ...SEMANTIC_EXPERT_OPERATIONS,
+  ...SEMANTIC_EXECUTION_EXPERT_OPERATIONS,
   help: { tool: "evopilot_interaction_render", authority: "NONE", purpose: "Explain installed-version concepts and route the user's intent.", requiredInputs: ["sessionDigest"], nextOnSuccess: "Offer the smallest relevant next action." },
   tutorial: { tool: "evopilot_interaction_render", authority: "NONE", purpose: "Run a side-effect-free guided tutorial.", requiredInputs: ["sessionDigest"], nextOnSuccess: "Offer project discovery without registering anything." },
   "llm-setup": { tool: "evopilot_runtime_readiness_inspect", authority: "NONE", purpose: "Inspect Runtime-owned readiness, guide provider-neutral setup, and delegate raw credentials only to Host-native secure input.", requiredInputs: [], nextOnSuccess: "Follow the Runtime state-specific action; never request or echo a raw credential." },
+  "llm-migration": { tool: "evopilot_llm_setup_protocol", authority: "NONE", purpose: "Read Runtime-owned migration and headless bootstrap guidance before explaining proposed resources, explicit opt-in, ambiguity stops, audit and transient-input cleanup. Never discover or import local Agent configuration.", requiredInputs: [], nextOnSuccess: "Use only the returned Runtime contract; if administration is absent, report that limitation. Keep ordinary-human setup on Expert-over-MCP and Host-native secure input. Headless initialization belongs to an explicitly authorized administrator; do not request raw inputs, invoke its CLI/HTTP, infer opt-in, or claim completion without Runtime readiness and resource digests." },
   "llm-status": { tool: "evopilot_runtime_readiness_inspect", authority: "NONE", purpose: "Explain the exact RuntimeReadiness state, binding, freshness, and finite next action from Runtime truth.", requiredInputs: [], nextOnSuccess: "Continue only with a state-appropriate setup, repair, or normal operation." },
   "llm-repair": { tool: "evopilot_runtime_readiness_repair", authority: "NONE", purpose: "Reconcile an explicitly repaired SecretRef, profile, provider preflight, or workspace binding without selecting a fallback.", requiredInputs: [], nextOnSuccess: "Render the resulting Runtime state and stop unless it is READY." },
-  "project-onboard": { tool: "evopilot_project_definition_register", authority: "NONE", purpose: "Register one immutable declarative project definition from Runtime-owned typed questions.", requiredInputs: ["projectDiscovery", "projectDefinition"], nextOnSuccess: "Resolve a published Harness for the first GoalTarget." },
+  "project-connect-plan": { tool: "evopilot_project_onboarding_plan", authority: "NONE", purpose: "Ask Runtime to inspect the explicitly chosen project connection, source, DevOps and LLM prerequisites. Repository inspection may access that source; never infer a repository or source access authority.", requiredInputs: ["projectRegistration"], nextOnSuccess: "Render Runtime checklist, blockers and nextAction. Repair only declared missing inputs through their owning governed setup. Preflight does not register a project, approve a plan or run a Goal." },
+  "project-connect": { tool: "evopilot_project_register", authority: "NONE", purpose: "Register one explicit connected project through Runtime source validation, scope, quota and LLM-reference checks. Use reference-only credentials and do not derive registration from a declarative definition automatically.", requiredInputs: ["projectRegistration"], nextOnSuccess: "Read the connected project and readiness checklist. Once Runtime confirms the scoped projectId and the user chooses a Catalog, request semantic onboarding guidance separately. Never select assets, chain approval or execute from registration." },
+  "project-readiness": { tool: "evopilot_project_readiness", authority: "NONE", purpose: "Read Runtime source, DevOps and LLM readiness and unresolved actions for the exact connected project.", requiredInputs: ["projectId"], nextOnSuccess: "Present blockers and nextAction unchanged. READY_TO_RUN still requires the separate governed Target/plan decisions; it never grants execution or Release." },
+  "project-connected-list": { tool: "evopilot_project_list", authority: "NONE", purpose: "List connected projects visible to the current Runtime principal.", requiredInputs: [], nextOnSuccess: "Use a user-selected exact projectId; never substitute a definition id or infer ownership." },
+  "project-connected-inspect": { tool: "evopilot_project_inspect", authority: "NONE", purpose: "Inspect an exact connected project from scoped Runtime truth after connection or response loss.", requiredInputs: ["projectId"], nextOnSuccess: "Read readiness before further planning; after uncertainty do not automatically repeat project registration." },
+  "project-activate": { tool: "evopilot_project_definition_activate", authority: "EXACT_HUMAN_DECISION", purpose: "Select one reviewed immutable project-definition revision for future planning using the exact current definition digest.", requiredInputs: ["projectDefinitionId", "version", "definitionDigest", "expectedActiveDigest", "authorizationDigest", "evidenceRef"], nextOnSuccess: "Read back Runtime's selected definition. Existing execution bindings remain immutable; this is not operational onboarding, semantic binding approval or execution authority." },
+  "project-rollback": { tool: "evopilot_project_definition_rollback", authority: "EXACT_HUMAN_DECISION", purpose: "Select one exact retained project-definition revision after an explicit rollback decision and current-definition check.", requiredInputs: ["projectDefinitionId", "version", "definitionDigest", "expectedActiveDigest", "authorizationDigest", "evidenceRef"], nextOnSuccess: "Read back the retained revision and Runtime rollback result. Preserve old evidence and bindings. If the result is uncertain, inspect without replay." },
+  "project-discover": { tool: "evopilot_project_definition_discover", authority: "NONE", purpose: "Read Runtime-owned typed project questions from explicit facts; do not execute source commands or infer missing business facts.", requiredInputs: ["projectFacts"], nextOnSuccess: "Present unresolved typed questions and collect declarative answers and SecretRefs only. Discovery does not register or activate a project." },
+  "project-list": { tool: "evopilot_project_definition_list", authority: "NONE", purpose: "List Runtime-owned project definitions in the current scope.", requiredInputs: [], nextOnSuccess: "Ask for an exact existing definition and version when inspection is requested." },
+  "project-inspect": { tool: "evopilot_project_definition_inspect", authority: "NONE", purpose: "Read an exact project definition or Runtime's current selected revision after restart or response loss.", requiredInputs: ["projectDefinitionId"], nextOnSuccess: "Report persisted fields and digest. A definition is not an operational project, semantic binding, execution readiness or Release." },
+  "project-diff": { tool: "evopilot_project_definition_diff", authority: "NONE", purpose: "Read Runtime-owned impact between two registered immutable project revisions.", requiredInputs: ["projectDefinitionId", "fromVersion", "toVersion"], nextOnSuccess: "Present affected bindings, changed fields and rollback version without selecting or activating a successor." },
+  "project-onboard": { tool: "evopilot_project_definition_register", authority: "NONE", purpose: "Register one immutable declarative project definition from Runtime-owned typed questions.", requiredInputs: ["projectDiscovery", "projectDefinition"], nextOnSuccess: "Use project connection preflight and explicit connection inputs to establish the separate operational project. After Runtime confirms its scoped projectId and an explicit Catalog choice, negotiate semantic onboarding guidance for reviewed dual binding. Definition registration alone is not an operational project or execution readiness. Preserve existing legacy bindings; never infer semantic support or silently fall back when semantic work was requested." },
   "project-adjust": { tool: "evopilot_project_definition_register", authority: "NONE", purpose: "Create a new project-definition revision from Runtime-owned impact and question objects; never overwrite the old revision.", requiredInputs: ["projectImpact", "projectDefinition"], nextOnSuccess: "Show selective drift and exact rollback options." },
   "lifecycle-create": { tool: "evopilot_lifecycle_register", authority: "NONE", purpose: "Register one immutable Lifecycle YAML revision; registration never activates it.", requiredInputs: ["yaml", "evidenceRef"], nextOnSuccess: "Inspect the revision and semantic safety result before offering activation." },
   "lifecycle-list": { tool: "evopilot_lifecycle_list", authority: "NONE", purpose: "List Runtime-owned Lifecycle revisions, states, and active pointers for this tenant and workspace.", requiredInputs: [], nextOnSuccess: "Offer inspection or the smallest relevant lifecycle action." },
   "lifecycle-inspect": { tool: "evopilot_lifecycle_inspect", authority: "NONE", purpose: "Inspect one exact Lifecycle revision, provenance, state, and active pointer.", requiredInputs: ["lifecycleId"], nextOnSuccess: "Explain dependencies, usage, and safe successor or rollback options." },
+  "lifecycle-diff": { tool: "evopilot_lifecycle_diff", authority: "NONE", purpose: "Read the Runtime-computed semantic diff between two exact immutable Lifecycle revisions.", requiredInputs: ["lifecycleId", "fromVersion", "toVersion"], nextOnSuccess: "Explain exact changes, future-planning impact and unchanged running bindings; never infer activation authority." },
+  "lifecycle-resolve": { tool: "evopilot_lifecycle_resolve", authority: "NONE", purpose: "Resolve the explicitly named active Lifecycle and optional exact version from Runtime-owned state without activating it.", requiredInputs: ["lifecycleId"], nextOnSuccess: "Present the exact selection and revision returned by Runtime; inactive or unavailable selection remains stopped without fallback." },
+  "lifecycle-resolve-inputs": { tool: "evopilot_lifecycle_resolve_inputs", authority: "NONE", purpose: "Read Runtime-resolved inputs for the explicitly named active Lifecycle using only supplied facts and answers.", requiredInputs: ["lifecycleId"], nextOnSuccess: "Ask only the returned unresolved question; input readiness never authorizes a run or changes an active pointer." },
   "lifecycle-update": { tool: "evopilot_lifecycle_register", authority: "NONE", purpose: "Register a higher immutable successor revision and preserve its predecessor.", requiredInputs: ["yaml", "evidenceRef"], nextOnSuccess: "Render the exact semantic diff; do not activate implicitly." },
   "lifecycle-activate": { tool: "evopilot_lifecycle_activate", authority: "EXACT_HUMAN_DECISION", purpose: "Activate one exact revision for future planning using expected-active-digest concurrency.", requiredInputs: ["lifecycleId", "version", "expectedActiveDigest", "authorizationDigest", "evidenceRef"], nextOnSuccess: "Confirm that existing bound Loops remain unchanged." },
   "lifecycle-deactivate": { tool: "evopilot_lifecycle_deactivate", authority: "EXACT_HUMAN_DECISION", purpose: "Deactivate one exact future-planning pointer without changing bound Loops.", requiredInputs: ["lifecycleId", "expectedActiveDigest", "authorizationDigest", "evidenceRef"], nextOnSuccess: "Show the inactive state and retained rollback history." },
@@ -140,8 +185,11 @@ const operations: EvolutionExpertCore["operations"] = {
   "lifecycle-usage": { tool: "evopilot_lifecycle_usage", authority: "NONE", purpose: "Show immutable plan and run references to a Lifecycle revision.", requiredInputs: ["lifecycleId"], nextOnSuccess: "Explain which archive or deletion operations remain safe." },
   "lifecycle-audit": { tool: "evopilot_lifecycle_audit", authority: "NONE", purpose: "Show immutable Lifecycle mutation and use history.", requiredInputs: ["lifecycleId"], nextOnSuccess: "Offer inspection of any exact referenced revision." },
   "production-reference": { tool: "evopilot_capability_inventory_validate", authority: "NONE", purpose: "Validate one exact external Suite snapshot read-only and render every capability disposition and provenance binding without invoking or mutating that Suite.", requiredInputs: ["sources", "dispositions"], nextOnSuccess: "Preview independently versioned project resources and identify only genuinely missing project-neutral primitives." },
+  "lifecycle-classify": { tool: "evopilot_lifecycle_gap_classify", authority: "NONE", purpose: "Ask Runtime to classify one persisted observation using explicit gap facts and evidence; classification never activates or authorizes implementation.", requiredInputs: ["observationId", "gapClass", "rationale", "evidenceRefs"], nextOnSuccess: "Inspect Runtime's classification and route to a declarative successor or separately reviewed generic Target proposal." },
+  "lifecycle-observation-inspect": { tool: "evopilot_lifecycle_observation_inspect", authority: "NONE", purpose: "Read one persisted observation and classification after restart or response loss without repeating a write.", requiredInputs: ["observationId"], nextOnSuccess: "Use the exact returned digest and classification; a missing record remains unresolved and does not authorize replay." },
+  "lifecycle-successor-inspect": { tool: "evopilot_lifecycle_successor_inspect", authority: "NONE", purpose: "Read an immutable successor proposal and its semantic, authority, compatibility, experiment, monitoring and rollback facts from Runtime.", requiredInputs: ["proposalId"], nextOnSuccess: "Preserve the exact proposal digest; a preview grants no activation, implementation or release authority." },
   "lifecycle-observe": { tool: "evopilot_lifecycle_observation_record", authority: "NONE", purpose: "Turn exact run evidence or user feedback into an immutable Runtime-owned Pipeline observation; conversation remains evidence input, never authority.", requiredInputs: ["id", "context", "signals", "capturedAt", "provenance"], nextOnSuccess: "Classify the gap without changing the active Lifecycle." },
-  "lifecycle-propose": { tool: "evopilot_lifecycle_successor_propose", authority: "NONE", purpose: "Create an immutable Lifecycle successor with complete semantic, authority, dependency, compatibility, impact, migration, experiment, monitoring, rollback, and provenance facts.", requiredInputs: ["observationId", "id", "champion", "challenger", "safety", "monitoring", "evidenceRefs"], nextOnSuccess: "Render the exact diff and prepare a comparable Champion/Challenger evaluation; do not activate implicitly." },
+  "lifecycle-propose": { tool: "evopilot_lifecycle_successor_propose", authority: "NONE", purpose: "Create an immutable Lifecycle successor with complete semantic, authority, dependency, compatibility, impact, migration, experiment, monitoring, rollback, and provenance facts.", requiredInputs: ["observationId", "id", "champion", "challenger", "authority", "dependencies", "minimumImprovement", "rollbackVerified", "safety", "monitoring", "evidenceRefs"], nextOnSuccess: "Render the exact diff and prepare a comparable Champion/Challenger evaluation; do not activate implicitly." },
   "lifecycle-experiment": { tool: "evopilot_lifecycle_experiment_evaluate", authority: "NONE", purpose: "Compare Champion and Challenger only under identical governed context and explain any stratified non-comparable evidence.", requiredInputs: ["proposalId", "champion", "challenger"], nextOnSuccess: "Show pairwise score, bad-case closure, recommendation, and its non-authoritative status." },
   "lifecycle-evolution-decision": { tool: "evopilot_lifecycle_activation_decide", authority: "NONE", purpose: "Evaluate the exact active safe-activation policy; automatically advance only a fully preauthorized safe class and otherwise render one exact human decision or rejection.", requiredInputs: ["proposalId", "experimentDigest", "policy", "canaryEvidenceRefs"], nextOnSuccess: "For an automatic decision, confirm future-run-only activation; for a human gate, ask only the bound unresolved authority." },
   "lifecycle-monitor": { tool: "evopilot_lifecycle_monitoring_evaluate", authority: "NONE", purpose: "Interpret declared health samples and guide retained activation, deterministic idempotent rollback, or an uncertain-state human decision from Runtime truth.", requiredInputs: ["activationReceiptDigest", "lifecycleId", "activeVersion", "activeRevisionDigest", "rollbackVersion", "rollbackRevisionDigest", "samples", "requiredConsecutiveDegraded", "mutationOutcomeKnown"], nextOnSuccess: "Show the receipt, duplicate-suppression result, retained active-run bindings, and audit evidence." },
@@ -149,7 +197,7 @@ const operations: EvolutionExpertCore["operations"] = {
   "harness-explain": { tool: "evopilot_governed_evolution_plan", authority: "NONE", purpose: "Explain Runtime-produced match, rejected alternatives, immutable Bundle, and Lifecycle composition.", requiredInputs: ["projectDefinitionId", "goalTarget", "lifecycleId"], nextOnSuccess: "Present the exact binding and non-authorizing review." },
   "goal-run": { tool: "evopilot_governed_evolution_run", authority: "NONE", purpose: "Create a governed run from one exact Runtime-owned HarnessExecutionBinding without authorizing execution.", requiredInputs: ["bindingDigest", "executor"], nextOnSuccess: "Ask only unresolved inputs, then present the exact plan decision if required." },
   status: { tool: "evopilot_lifecycle_run_inspect", authority: "NONE", purpose: "Show Runtime-owned progress, evidence, blockers, and next action.", requiredInputs: ["runId"], nextOnSuccess: "Continue automatic work or explain the exact boundary." },
-  recovery: { tool: "evopilot_recovery_decide", authority: "NONE", purpose: "Classify failure and render automatic recovery, rule proposal, or exact human boundary.", requiredInputs: ["failureClass", "failureSignature", "bindingDigest"], nextOnSuccess: "Apply bounded automation or present one exact decision." },
+  recovery: { tool: "evopilot_recovery_decide", authority: "NONE", purpose: "Classify failure and render automatic recovery, rule proposal, or exact human boundary.", requiredInputs: ["failureClass", "failureSignature", "bindingDigest", "attempt", "maxAttempts", "identicalInputs", "reversible", "externalEffect"], nextOnSuccess: "Apply bounded automation or present one exact decision." },
   "version-explain": { tool: "evopilot_resource_inspect", authority: "NONE", purpose: "Explain immutable source Suite identity separately from resource, Runtime, Expert, and Harness versions.", requiredInputs: ["kind", "resourceId"], nextOnSuccess: "Show compatible upgrade and rollback paths without implying lockstep releases." },
   capability: { tool: "evopilot_capability_inventory_validate", authority: "NONE", purpose: "Show the explicit destination and validator for each frozen Suite capability without loading either Suite.", requiredInputs: ["sources", "dispositions"], nextOnSuccess: "Explain Runtime, resource, Expert, project, and Harness ownership boundaries." },
   migration: { tool: "evopilot_capability_inventory_validate", authority: "NONE", purpose: "Build a read-only migration inventory and identify missing declarative resources or evidence.", requiredInputs: ["sources", "dispositions"], nextOnSuccess: "Offer shadow comparison; do not switch, disable, or retire a Suite." },
@@ -157,15 +205,23 @@ const operations: EvolutionExpertCore["operations"] = {
   rollback: { tool: "evopilot_resource_inspect", authority: "NONE", purpose: "Show the exact immutable resource revision and rollback target without mutating Runtime state.", requiredInputs: ["kind", "resourceId", "version"], nextOnSuccess: "Route any activation or rollback to an exact Runtime operation and human evidence." },
   evidence: { tool: "evopilot_lifecycle_run_inspect", authority: "NONE", purpose: "Explain immutable Runtime evidence without creating facts.", requiredInputs: ["runId"], nextOnSuccess: "Map evidence to pending criteria." },
   acceptance: { tool: "evopilot_interaction_render", authority: "NONE", purpose: "Explain Candidate-bound acceptance readiness and missing evidence.", requiredInputs: ["sessionDigest", "acceptanceAggregate"], nextOnSuccess: "Remain stopped until every required criterion passes." },
-  release: { tool: "evopilot_interaction_render", authority: "EXACT_HUMAN_DECISION", purpose: "Render one exact release decision after accepted Candidate evidence; never publish by itself.", requiredInputs: ["sessionDigest", "releaseBinding", "authorizationDigest"], nextOnSuccess: "Return the authorized object to Runtime release mechanics." }
+  release: { tool: "evopilot_interaction_render", authority: "EXACT_HUMAN_DECISION", purpose: "Render supplied release-decision context without certifying acceptance or publishing.", requiredInputs: ["sessionDigest", "releaseBinding", "authorizationDigest"], nextOnSuccess: "Verify acceptance and exact release authority at the owning Runtime gate; this rendered explanation grants neither." }
 };
 
 const coreWithoutDigest = {
   schema: EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA as typeof EVOPILOT_EVOLUTION_EXPERT_CORE_SCHEMA,
   version: EVOPILOT_EVOLUTION_EXPERT_VERSION as typeof EVOPILOT_EVOLUTION_EXPERT_VERSION,
   protocolVersion: EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION as typeof EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION,
-  intents: ["help", "tutorial", "llm-setup", "llm-status", "llm-repair", "project-onboard", "project-adjust", "lifecycle-create", "lifecycle-list", "lifecycle-inspect", "lifecycle-update", "lifecycle-activate", "lifecycle-deactivate", "lifecycle-archive", "lifecycle-restore", "lifecycle-rollback", "lifecycle-dependencies", "lifecycle-usage", "lifecycle-audit", "production-reference", "lifecycle-observe", "lifecycle-propose", "lifecycle-experiment", "lifecycle-evolution-decision", "lifecycle-monitor", "primitive-gap", "harness-explain", "goal-run", "status", "recovery", "version-explain", "capability", "migration", "cutover", "rollback", "evidence", "acceptance", "release", "unknown"] as ExpertIntent[],
+  intents: [...Object.keys(SEMANTIC_EXPERT_OPERATIONS), ...Object.keys(SEMANTIC_EXECUTION_EXPERT_OPERATIONS), "help", "tutorial", "llm-setup", "llm-migration", "llm-status", "llm-repair", "project-onboard", "project-adjust", "project-discover", "project-list", "project-inspect", "project-diff", "project-activate", "project-rollback", "project-connect-plan", "project-connect", "project-readiness", "project-connected-list", "project-connected-inspect", "lifecycle-create", "lifecycle-list", "lifecycle-inspect", "lifecycle-diff", "lifecycle-resolve", "lifecycle-resolve-inputs", "lifecycle-update", "lifecycle-activate", "lifecycle-deactivate", "lifecycle-archive", "lifecycle-restore", "lifecycle-rollback", "lifecycle-dependencies", "lifecycle-usage", "lifecycle-audit", "production-reference", "lifecycle-classify", "lifecycle-observation-inspect", "lifecycle-successor-inspect", "lifecycle-observe", "lifecycle-propose", "lifecycle-experiment", "lifecycle-evolution-decision", "lifecycle-monitor", "primitive-gap", "harness-explain", "goal-run", "status", "recovery", "version-explain", "capability", "migration", "cutover", "rollback", "evidence", "acceptance", "release", "unknown"] as ExpertIntent[],
   principles: [
+    "Explain LLM migration and headless bootstrap only from evopilot_llm_setup_protocol: resources, explicit opt-in, ambiguity stops, audit and input cleanup. Never read local Agent configuration or send raw input through Expert/MCP. Headless administration is not an ordinary-human CLI fallback.",
+    "Project semantic operations require current Runtime capability negotiation; Runtime 6.2 legacy compatibility never enables semantic execution or fallback.",
+    "Project business semantic map and Harness professional obligations are distinct; discovery, compatibility, review, execution and dual validation never substitute for one another.",
+    "Present only Runtime-provided business fields, product types, semantic gaps and exact published digests; unknown facts stay unknown and embedded Skill prose is not authority.",
+    "For semantic review approval transmit only the exact owning-human decision bound to reviewDigest; after an uncertain response inspect the Runtime binding before any retry.",
+    "A reviewed project semantic binding is separate from future-plan activation. Read Runtime activation history, prepare an explicit exact-head transition, then require an owning-human decision bound to transitionReviewDigest. Never repin existing runs or use legacy Harness-only fallback.",
+    "Semantic execution uses separate project-scoped MCP capabilities and strict nested payloads. Generic run intent only discovers capability; exact outcome review approval never implies dispatch. No automatic effect chain, retry or legacy fallback.",
+    "Show business and Harness validation separately. DUAL_VALIDATED_NOT_COMPLETED, stage receipts, Target progress and phase packages are not final Goal completion or Release. Read verified completionStatus; uncertain writes stop for owner reconciliation without replay.",
     "Runtime objects are authoritative; conversation is presentation and input only.",
     "A fresh or degraded Runtime is setup-only until RuntimeReadiness is READY through an explicit live-preflight workspace LLM binding.",
     "Never request, receive, repeat, transform, log, or persist a raw LLM credential; delegate it to Host-native secure input and handle only SecretRef.",
@@ -189,28 +245,48 @@ export const EVOLUTION_EXPERT_CORE: EvolutionExpertCore = { ...coreWithoutDigest
 
 export function routeExpertIntent(text: string): { intent: ExpertIntent; confidence: number } {
   const normalized = text.trim().toLowerCase();
+  const semantic = routeSemanticExecutionIntent(normalized) ?? routeSemanticExpertIntent(normalized);
   const patterns: Array<[ExpertIntent, RegExp]> = [
     ["llm-repair", /repair (?:llm|model|provider)|llm blocked|provider failure|secret revoked|修复.*(?:llm|模型|供应商)|凭据失效/],
     ["llm-status", /llm status|llm readiness|runtime readiness|model readiness|llm 状态|运行时就绪|模型就绪/],
+    ["llm-migration", /(?:migrat|迁移|bootstrap|headless|无头).*(?:llm|model|provider|模型|供应商)|(?:llm|model|provider|模型|供应商).*(?:migrat|迁移|bootstrap|headless|无头)/],
     ["llm-setup", /setup (?:llm|model|provider)|configure (?:llm|model|provider)|first[- ]run|llm profile|配置.*(?:llm|模型|供应商)|(?:llm|模型|供应商).*配置|首次.*(?:llm|模型|供应商)|首次运行/],
+    ...(semantic ? [[semantic, /.*/] as [ExpertIntent, RegExp]] : []),
     ["tutorial", /tutorial|教程|入门|演示/],
     ["production-reference", /production reference|suite snapshot|生产参考|suite 快照|能力处置/],
+    ["lifecycle-classify", /classify lifecycle observation|classify pipeline gap|分类生命周期观察|流水线缺口分类/],
+    ["lifecycle-observation-inspect", /inspect lifecycle observation|查看生命周期观察/],
+    ["lifecycle-successor-inspect", /inspect lifecycle successor|查看生命周期后继/],
     ["lifecycle-observe", /observe lifecycle|pipeline observation|record feedback|观察生命周期|记录反馈|流水线观察/],
     ["lifecycle-experiment", /champion|challenger|对照实验|影子实验|可比实验/],
     ["lifecycle-evolution-decision", /safe activation|activation decision|安全激活|激活判断/],
     ["lifecycle-monitor", /monitor lifecycle|health rollback|监控生命周期|健康回滚|自动回滚/],
     ["primitive-gap", /generic primitive|core primitive|通用原语|公共原语|能力缺口/],
     ["lifecycle-propose", /propose lifecycle|lifecycle successor|pipeline successor|生命周期提案|后继生命周期|流水线后继/],
+    ["lifecycle-diff", /\b(?:diff|compare) lifecycle\b|\blifecycle (?:diff|comparison)\b|比较生命周期|生命周期差异/],
+    ["lifecycle-resolve-inputs", /\bresolve lifecycle inputs\b|\blifecycle input resolution\b|解析生命周期输入|生命周期输入解析/],
+    ["lifecycle-resolve", /\bresolve lifecycle\b|\blifecycle resolution\b|解析生命周期|生命周期解析/],
+    ["project-connect-plan", /plan project connection|project onboarding checklist|项目接入预检/],
+    ["project-readiness", /project readiness|项目就绪/],
+    ["project-connected-list", /list connected projects|已连接项目列表/],
+    ["project-connected-inspect", /inspect connected project|查看已连接项目/],
+    ["project-connect", /\bconnect project\b|连接项目/],
+    ["project-activate", /\bactivate project(?: definition)?\b|激活项目定义|启用项目定义/],
+    ["project-rollback", /\brollback project(?: definition)?\b|回滚项目/],
+    ["project-diff", /\b(?:diff|compare) project(?: definition)?(?: versions)?\b|项目差异|比较项目版本/],
+    ["project-discover", /\bdiscover project\b|发现项目|项目发现/],
+    ["project-list", /\blist project(?: definitions)?\b|项目列表/],
+    ["project-inspect", /\binspect project(?: definition)?\b|查看项目|检查项目定义/],
     ["version-explain", /version|semver|版本|升级关系/],
     ["capability", /capabilit|能力清单|能力差异/],
     ["migration", /migrat|迁移|收敛/],
     ["cutover", /cutover|shadow|切换准备|影子验证/],
     ["rollback", /rollback resource|resource rollback|资源回滚|回退资源/],
-    ["project-adjust", /adjust project|update project|rollback project|调整项目|修改项目|回滚项目/],
+    ["project-adjust", /adjust project|update project|调整项目|修改项目/],
     ["project-onboard", /onboard|register project|new project|接入项目|注册项目|新项目/],
     ["lifecycle-create", /create lifecycle|register lifecycle|创建生命周期|注册生命周期/],
     ["lifecycle-update", /update lifecycle|successor lifecycle|更新生命周期|升级生命周期/],
-    ["lifecycle-activate", /activate lifecycle|启用生命周期|激活生命周期/],
+    ["lifecycle-activate", /\bactivate lifecycle\b|启用生命周期|激活生命周期/],
     ["lifecycle-deactivate", /deactivate lifecycle|停用生命周期/],
     ["lifecycle-archive", /archive lifecycle|归档生命周期/],
     ["lifecycle-restore", /restore lifecycle|恢复生命周期/],
@@ -249,7 +325,7 @@ export function planExpertTurn(text: string, payload: Record<string, unknown> = 
   }
   const routed = routeExpertIntent(text);
   const operation = routed.intent === "unknown" ? undefined : EVOLUTION_EXPERT_CORE.operations[routed.intent];
-  const missing = operation?.requiredInputs.filter((key) => payload[key] === undefined) ?? [];
+  const missing = operation?.requiredInputs.filter((key) => expertInputAt(payload, key) === undefined) ?? [];
   const guidance = routed.intent === "unknown"
     ? ["Describe whether you want first-run LLM setup/status/repair, help, a tutorial, project onboarding, Harness explanation, a Goal run, recovery, version/capability/migration/Cutover guidance, evidence, acceptance, or release guidance."]
     : missing.length
@@ -302,7 +378,7 @@ export function expertVersionGuide() {
     schema: "evopilot-evolution-expert-version-guide/v1" as const,
     expertVersion: EVOPILOT_EVOLUTION_EXPERT_VERSION,
     versionLines: [
-      { owner: "Runtime", current: "6.2.0", changesWhen: "Runtime code, public contract, schema compatibility, or execution semantics change.", independentFrom: ["Expert", "governed resources", "Harness assets", "source Suites"] },
+      { owner: "Runtime", current: "6.3.0", changesWhen: "Runtime code, public contract, schema compatibility, or execution semantics change.", independentFrom: ["Expert", "governed resources", "Harness assets", "source Suites"] },
       { owner: "Evolution Expert", current: EVOPILOT_EVOLUTION_EXPERT_VERSION, changesWhen: "Expert interaction or adapter package behavior changes.", independentFrom: ["Runtime", "governed resources", "Harness assets", "source Suites"] },
       { owner: "governed resource", current: "resource.metadata.version", changesWhen: "The project declaration, Pack, Provider, binding, authority role, or Lifecycle resource changes.", independentFrom: ["Runtime", "Expert"] },
       { owner: "source Suite", current: "provenance.sourceVersion", changesWhen: "Never inside EvoPilot; it is immutable migration provenance.", independentFrom: ["derived resource version"] },
@@ -374,13 +450,28 @@ export function expertDoctor(host: string, engineVersion: string, hostCapabiliti
 export async function executeExpertTurn(plan: ExpertTurnPlan, transport: EvolutionExpertTransport, decision?: { authorizationDigest: string; evidenceRef: string }): Promise<unknown> {
   if (plan.coreDigest !== EVOLUTION_EXPERT_CORE.digest || plan.digest !== digest({ ...plan, digest: undefined })) throw new Error("EVOLUTION_EXPERT_TURN_DRIFT");
   if (!plan.operation) return { status: "NEEDS_CLARIFICATION", guidance: plan.guidance };
-  const missing = plan.operation.requiredInputs.filter((key) => plan.payload[key] === undefined);
+  if (plan.intent === "unknown" || digest(plan.operation) !== digest(EVOLUTION_EXPERT_CORE.operations[plan.intent])) throw new Error("EVOLUTION_EXPERT_OPERATION_DRIFT");
+  const missing = plan.operation.requiredInputs.filter((key) => expertInputAt(plan.payload, key) === undefined);
   if (missing.length) return { status: "NEEDS_INPUT", missing, guidance: plan.guidance };
   if (plan.operation.authority === "EXACT_HUMAN_DECISION") {
     if (!decision?.authorizationDigest || !/^sha256:[a-f0-9]{64}$/.test(decision.authorizationDigest) || !decision.evidenceRef?.trim()) throw new Error("EVOLUTION_EXPERT_EXACT_DECISION_REQUIRED");
-    if (plan.payload.authorizationDigest !== decision.authorizationDigest) throw new Error("EVOLUTION_EXPERT_DECISION_DIGEST_MISMATCH");
+    const approvedDigest = plan.intent === "semantic-approve" ? plan.payload.reviewDigest :
+      plan.intent === "semantic-transition-approve" ? plan.payload.transitionReviewDigest :
+      plan.intent === "semantic-execution-approveReview" ? expertInputAt(plan.payload, "payload.reviewDigest") : plan.payload.authorizationDigest;
+    if (approvedDigest !== decision.authorizationDigest) throw new Error("EVOLUTION_EXPERT_DECISION_DIGEST_MISMATCH");
   }
-  return transport.invoke(plan.operation.tool, plan.payload);
+  const execution = executionOperationForIntent(plan.intent);
+  if (execution) return executeExpertSemanticExecution(execution, plan.payload, transport, decision);
+  const semantic = semanticOperationForIntent(plan.intent);
+  if (semantic) return executeExpertSemanticOperation(semantic, plan.payload, transport, decision);
+  const lifecycleInput = projectLifecycleMcpInput(plan.intent, plan.payload);
+  const projectInput = projectDefinitionMcpInput(plan.intent, plan.payload);
+  if (plan.intent === "project-activate" || plan.intent === "project-rollback") {
+    if (plan.payload.definitionDigest !== decision?.authorizationDigest || plan.payload.evidenceRef !== decision?.evidenceRef) throw new Error("EVOLUTION_EXPERT_PROJECT_DECISION_MISMATCH");
+  }
+  const input = lifecycleInput ?? projectInput ?? governedMcpInput(plan.intent, plan.payload, plan.operation);
+  if (!input) throw new Error("EVOLUTION_EXPERT_INPUT_PROJECTION_MISSING");
+  return transport.invoke(plan.operation.tool, input);
 }
 
 export function createExpertAdapter(host: string, version = EVOPILOT_EVOLUTION_EXPERT_VERSION): EvoPilotEvolutionExpertAdapterManifestV1 {
@@ -462,11 +553,12 @@ export function qualifyExpertHostAdapter(host: string, engineVersion: string, ho
 }
 
 export function expertCompatibility(adapter: EvoPilotEvolutionExpertAdapterManifestV1, engineVersion: string, hostCapabilities: string[]): EvoPilotEvolutionExpertCompatibilityV1 {
-  const match = engineVersion.match(/^(\d+)\.(\d+)\.(\d+)/);
-  const compatibleEngine = Boolean(match && Number(match[1]) === 6 && Number(match[2]) >= 2);
+  const match = typeof engineVersion === "string" ? engineVersion.match(/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/) : null;
+  const compatibleEngine = Boolean(match && match.slice(1).every(v => Number.isSafeInteger(Number(v))) && Number(match[1]) === 6 && Number(match[2]) >= 2);
   const missing = adapter.requiredCapabilities.filter((capability) => !hostCapabilities.includes(capability));
   return {
     schema: "evopilot-evolution-expert-compatibility/v1",
+    engineVersion,
     expertVersion: EVOPILOT_EVOLUTION_EXPERT_VERSION,
     engineProtocolRange: ">=6.2.0 <7.0.0",
     expertProtocolVersion: EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION,

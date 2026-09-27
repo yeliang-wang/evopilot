@@ -4,6 +4,7 @@ import http from "node:http";
 import type { GovernedEvolutionService } from "../../domains/governed-evolution/index.js";
 import { publishedHarnessCandidatesV5 } from "../../domains/harness-template/bundle.js";
 import type { LifecycleService } from "../../domains/lifecycle/index.js";
+import {assertNoUnintegratedSemanticExecution} from "../../domains/lifecycle/semantic-execution-guard.js";
 
 interface GovernedEvolutionRoutesContext {
   request: http.IncomingMessage;
@@ -229,7 +230,8 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
       const body = await readJson(request, options.maxBodyBytes);
       const projectId = decodeURIComponent(definitionActivationMatch[1]);
       const version = String(body.version ?? "");
-      const activation = service.activateProjectDefinitionVersion(projectId, version, auth.actor, String(body.evidenceRef ?? ""), scope, definitionActivationMatch[2] as "activate" | "rollback");
+      const activation = service.activateProjectDefinitionVersion(projectId, version, auth.actor, String(body.evidenceRef ?? ""), scope, definitionActivationMatch[2] as "activate" | "rollback", body.definitionDigest !== undefined || body.expectedActiveDigest !== undefined
+        ? {definitionDigest: body.definitionDigest, expectedActiveDigest: body.expectedActiveDigest} : undefined);
       appendAudit(audit(auth, `evolution-project-definition.${definitionActivationMatch[2]}`, `${projectId}@${version}`, { definitionDigest: activation.definitionDigest, activationDigest: activation.digest }));
       return writeJson(response, 200, envelope(activation));
     }
@@ -242,6 +244,7 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
     if (request.method === "POST" && url.pathname === "/api/v1/governed-evolution/plan") {
       if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
       const body = await readJson(request, options.maxBodyBytes);
+      assertNoUnintegratedSemanticExecution(body);
       assertScopedProject(store, auth, String(body.goalTarget?.projectId ?? ""));
       const lifecycle = lifecycleService.governedRegistry.resolveActive(String(body.lifecycleId ?? ""), optionalString(body.lifecycleVersion), scope);
       const plan = service.plan({
@@ -273,6 +276,7 @@ export async function handleGovernedEvolutionRoutes(context: GovernedEvolutionRo
     if (request.method === "POST" && url.pathname === "/api/v1/governed-evolution/runs") {
       if (!hasRole(auth, "operator")) return writeJson(response, 403, { error: "FORBIDDEN" });
       const body = await readJson(request, options.maxBodyBytes);
+      assertNoUnintegratedSemanticExecution(body);
       const bindingDigest = String(body.bindingDigest ?? "");
       const binding = service.readBinding(bindingDigest, scope);
       if (!binding) return writeJson(response, 404, { error: "HARNESS_EXECUTION_BINDING_NOT_FOUND" });

@@ -30,6 +30,7 @@ export const LLM_SETUP_ONLY_PATHS = [
 
 export const LLM_SETUP_ONLY_TOOLS = [
   "evopilot_runtime_readiness_inspect",
+  "evopilot_llm_setup_protocol",
   "evopilot_llm_provider_discover",
   "evopilot_llm_profile_list",
   "evopilot_llm_profile_inspect",
@@ -67,10 +68,23 @@ export class LlmReadinessError extends Error {
   }
 }
 
+export function resolveGovernedLlmSecret(
+  store: Pick<RuntimeReadinessStore, "readSecret"> | undefined,
+  profile: LlmProfileRecord,
+  decrypt: (secret: SecretRecord) => string
+): string | undefined {
+  if (!profile.apiKeyRef || !store) return undefined;
+  const secret = store.readSecret(profile.apiKeyRef);
+  if (!secret || secret.id !== profile.apiKeyRef || secret.status !== "ACTIVE"
+      || secret.tenantId !== profile.tenantId || secret.workspaceId !== profile.workspaceId) return undefined;
+  // Unlike SCM compatibility resolution, Runtime LLM never reads process environment.
+  try { return decrypt(secret); } catch { return undefined; }
+}
+
 export function llmSetupProtocol(): EvoPilotLlmSetupProtocolV1 {
   return {
     schema: EVOPILOT_LLM_SETUP_PROTOCOL_SCHEMA,
-    runtimeVersion: "6.2.0",
+    runtimeVersion: "6.3.0",
     expertProtocolRange: ">=2.2 <3",
     states: ["SETUP_REQUIRED", "PREFLIGHT_REQUIRED", "READY", "LLM_BLOCKED"],
     setupOnlyTools: [...LLM_SETUP_ONLY_TOOLS],
@@ -79,6 +93,20 @@ export function llmSetupProtocol(): EvoPilotLlmSetupProtocolV1 {
       rawSecretAcceptedByExpert: false,
       persistedForm: "SecretRef only",
       hostCapability: "host-native-secure-secret-input"
+    },
+    administration: {
+      ordinaryHumanEntry: "EXPERT_OVER_MCP_ONLY",
+      bootstrap: {
+        endpoint: "/api/v1/runtime-readiness/bootstrap",
+        authority: "ADMIN_EXPLICIT_OPT_IN",
+        sources: ["explicit-headless", "explicit-v61"],
+        candidateCount: 1,
+        creates: ["encrypted SecretRef", "workspace Profile", "live preflight", "workspace default binding", "audit"],
+        secretTransport: "TRUSTED_STDIN_TO_ADMIN_HTTP_NOT_EXPERT_OR_MCP",
+        stopConditions: ["missing-opt-in", "ambiguous-input", "existing-resource-or-binding", "preflight-failure", "concurrent-drift"],
+        failureRecovery: "Inspect retained governed resources; repair, preflight and bind explicitly. Never automatically replay or roll back.",
+        inputCleanup: "No environment or Host configuration discovery. The CLI creates no input file, clears its transient buffer and drops parsed credential references; the input producer owns upstream cleanup."
+      }
     }
   };
 }

@@ -9,6 +9,8 @@ import {
   EVOPILOT_LIFECYCLE_EXECUTOR_ADAPTER_SCHEMA,
   assertAgentExecutionRequestV1Alpha1,
   assertAgentExecutionResultV1Alpha1,
+  assertAgentProcessObservation,
+  type EvoPilotAgentProcessObservationV1,
   type EvoPilotAgentExecutionRequestV1Alpha1,
   type EvoPilotAgentExecutionResultV1Alpha1,
   type EvoPilotAgentRuntimeProfileV1,
@@ -99,8 +101,19 @@ export function createOpenCodeExecutorAdapter(options: OpenCodeExecutorAdapterOp
   const profile = structuredClone(options.profile);
   const executable = options.executable?.trim() || "opencode";
   const runner = options.runner ?? runOpenCodeProcess;
-  const receiptStoreDir = options.receiptStoreDir ? path.resolve(options.receiptStoreDir) : undefined;
-  if (receiptStoreDir) fs.mkdirSync(receiptStoreDir, { recursive: true, mode: 0o700 });
+  const origin = options.runner ? "SYNTHETIC_PROCESS_RUNNER" as const : "NATIVE_PROCESS_RUNNER" as const;
+  const observations = new Map<string, EvoPilotAgentProcessObservationV1>();
+  let receiptStoreDir = options.receiptStoreDir ? path.resolve(options.receiptStoreDir) : undefined;
+  if (receiptStoreDir) {
+    const inside = (root: string, candidate: string) => {const relative = path.relative(root, candidate); return relative === "" || !relative.startsWith(".." + path.sep) && relative !== ".." && !path.isAbsolute(relative);};
+    if (origin === "NATIVE_PROCESS_RUNNER" && inside(profile.constraints.workspaceRoot, receiptStoreDir)) throw new Error("OPENCODE_RECEIPT_STORE_INSIDE_AGENT_WORKSPACE");
+    fs.mkdirSync(receiptStoreDir, { recursive: true, mode: 0o700 });
+    receiptStoreDir = fs.realpathSync(receiptStoreDir);
+    if (origin === "NATIVE_PROCESS_RUNNER") {
+      const workspace = fs.realpathSync(profile.constraints.workspaceRoot), stat = fs.statSync(receiptStoreDir);
+      if (inside(workspace, receiptStoreDir) || (stat.mode & 0o077) !== 0 || process.getuid && stat.uid !== process.getuid()) throw new Error("OPENCODE_RECEIPT_STORE_NOT_PRIVATE");
+    }
+  }
 
   return {
     schema: EVOPILOT_LIFECYCLE_EXECUTOR_ADAPTER_SCHEMA,
@@ -108,6 +121,16 @@ export function createOpenCodeExecutorAdapter(options: OpenCodeExecutorAdapterOp
     host: profile.host,
     capabilities: [...profile.capabilities],
     profile,
+    semanticContextSchema: "evopilot-semantic-agent-context/v1",
+    processObservationSchema: "evopilot-agent-process-observation/v1",
+    readProcessObservation(request, result) {
+      assertAgentExecutionRequestV1Alpha1(request); assertRequestMatchesProfile(request, profile);
+      assertAgentExecutionResultV1Alpha1(result, request);
+      const observation = receiptStoreDir ? readStoredReceipt(receiptStoreDir, request.id)?.processObservation : observations.get(request.id);
+      if (!observation) return undefined; // Old receipts never acquire invented provenance.
+      assertAgentProcessObservation(observation, request, result, profile);
+      return structuredClone(observation);
+    },
     async execute(request) {
       assertAgentExecutionRequestV1Alpha1(request);
       assertRequestMatchesProfile(request, profile);
@@ -156,16 +179,20 @@ export function createOpenCodeExecutorAdapter(options: OpenCodeExecutorAdapterOp
         requestDigest,
         runtime: profile.runtime,
         route,
+        origin,
+        invocationDigest: digest({executable: invocation.executable, args: invocation.args, cwd: invocation.cwd}),
         termination: processResult.termination,
         exitCode: processResult.exitCode,
         signal: processResult.signal,
         stdoutDigest: digest(processResult.stdout),
         stderrDigest: digest(processResult.stderr),
-        sessionIds: normalized.sessionIds,
+        sessionIdsDigest: digest(normalized.sessionIds),
         eventCount: normalized.eventCount,
         errorEventCount: normalized.errorEventCount,
         completionEventCount: normalized.completionEventCount,
-        cost: normalized.cost
+        parseFailures: normalized.parseFailures,
+        cost: normalized.cost,
+        usageCoverage: normalized.usageCoverage
       };
       const status = processResult.termination === "TIMEOUT" || processResult.termination === "OUTPUT_LIMIT" || processResult.signal !== null
         ? "UNCERTAIN"
@@ -195,7 +222,13 @@ export function createOpenCodeExecutorAdapter(options: OpenCodeExecutorAdapterOp
         artifacts: []
       };
       assertAgentExecutionResultV1Alpha1(result, request);
-      if (receiptStoreDir) writeStoredReceipt(receiptStoreDir, request.id, requestDigest, result);
+      const processObservation: EvoPilotAgentProcessObservationV1 = {schema: "evopilot-agent-process-observation/v1", receiptDigest: result.receiptDigest, material: receiptMaterial};
+      assertAgentProcessObservation(processObservation, request, result, profile);
+      if (receiptStoreDir) writeStoredReceipt(receiptStoreDir, request.id, requestDigest, result, processObservation);
+      else {
+        if (observations.size >= 128) observations.delete(observations.keys().next().value!);
+        observations.set(request.id, structuredClone(processObservation));
+      }
       return result;
     }
   };
@@ -257,12 +290,19 @@ function normalizeOpenCodeResult(result: OpenCodeProcessResult) {
   let amount = 0;
   let inputTokens = 0;
   let outputTokens = 0;
+  let usageEvents = 0, completeUsageEvents = 0;
   for (const event of events) {
     if (event.type === "error") errorEventCount += 1;
     const part = event.part && typeof event.part === "object" ? event.part as Record<string, unknown> : undefined;
     const state = part?.state && typeof part.state === "object" ? part.state as Record<string, unknown> : undefined;
     if (event.type === "tool_use" && state?.status === "error") errorEventCount += 1;
     if (event.type === "text" || event.type === "step_finish") completionEventCount += 1;
+    if (event.type === "step_finish") {
+      usageEvents++;
+      const t = part?.tokens && typeof part.tokens === "object" ? part.tokens as Record<string, unknown> : undefined;
+      if (typeof part?.cost === "number" && Number.isFinite(part.cost) && part.cost >= 0 &&
+        [t?.input,t?.output].every(n=>typeof n === "number" && Number.isSafeInteger(n) && n >= 0)) completeUsageEvents++;
+    }
     if (event.type === "step_finish" && part) {
       amount += finiteNumber(part.cost);
       const tokens = part.tokens && typeof part.tokens === "object" ? part.tokens as Record<string, unknown> : undefined;
@@ -271,6 +311,9 @@ function normalizeOpenCodeResult(result: OpenCodeProcessResult) {
     }
   }
   const cost = { amount, currency: "USD", inputTokens, outputTokens };
+  const usageCoverage: "COMPLETE" | "PARTIAL" | "UNAVAILABLE" = !completeUsageEvents ? "UNAVAILABLE" :
+    completeUsageEvents === usageEvents && parseFailures === 0 && Number.isFinite(amount) &&
+    Number.isSafeInteger(inputTokens) && Number.isSafeInteger(outputTokens) ? "COMPLETE" : "PARTIAL";
   return {
     eventCount: events.length,
     errorEventCount,
@@ -278,7 +321,8 @@ function normalizeOpenCodeResult(result: OpenCodeProcessResult) {
     parseFailures,
     sessionIds,
     eventsDigest: digest(events),
-    cost
+    cost,
+    usageCoverage
   };
 }
 
@@ -303,17 +347,40 @@ function validateProfile(profile: EvoPilotAgentRuntimeProfileV1): void {
   if (profile.constraints.permissionMode !== "HOST_MANAGED_DENY_UNDECLARED") throw new Error("OPENCODE_PERMISSION_MODE_UNSAFE");
 }
 
-function readStoredReceipt(receiptStoreDir: string, requestId: string): { requestDigest: string; result: EvoPilotAgentExecutionResultV1Alpha1 } | undefined {
+function readStoredReceipt(receiptStoreDir: string, requestId: string): { requestDigest: string; result: EvoPilotAgentExecutionResultV1Alpha1; processObservation?: EvoPilotAgentProcessObservationV1 } | undefined {
   const target = receiptPath(receiptStoreDir, requestId);
-  if (!fs.existsSync(target)) return undefined;
-  return JSON.parse(fs.readFileSync(target, "utf8")) as { requestDigest: string; result: EvoPilotAgentExecutionResultV1Alpha1 };
+  let fd: number;
+  try {fd = fs.openSync(target, fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK);}
+  catch (error) {if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error;}
+  try {
+    const stat = fs.fstatSync(fd);
+    if (!stat.isFile() || stat.nlink !== 1 || stat.size > 65536) throw new Error("OPENCODE_RECEIPT_FILE_INVALID");
+    const bytes = Buffer.alloc(stat.size + 1), length = fs.readSync(fd, bytes, 0, bytes.length, 0);
+    if (length !== stat.size) throw new Error("OPENCODE_RECEIPT_DRIFT");
+    return JSON.parse(bytes.subarray(0, length).toString("utf8"));
+  } finally {fs.closeSync(fd);}
 }
 
-function writeStoredReceipt(receiptStoreDir: string, requestId: string, requestDigest: string, result: EvoPilotAgentExecutionResultV1Alpha1): void {
+function writeStoredReceipt(receiptStoreDir: string, requestId: string, requestDigest: string, result: EvoPilotAgentExecutionResultV1Alpha1, processObservation: EvoPilotAgentProcessObservationV1): void {
   const target = receiptPath(receiptStoreDir, requestId);
   const temporary = `${target}.${process.pid}.${randomUUID()}.tmp`;
-  fs.writeFileSync(temporary, `${JSON.stringify({ schema: "evopilot-opencode-receipt/v1", requestDigest, result }, null, 2)}\n`, { mode: 0o600 });
-  fs.renameSync(temporary, target);
+  const bytes = JSON.stringify({ schema: "evopilot-opencode-receipt/v1", requestDigest, result, processObservation }) + "\n";
+  if (Buffer.byteLength(bytes) > 65536) throw new Error("OPENCODE_RECEIPT_FILE_INVALID");
+  const fd = fs.openSync(temporary, "wx", 0o600);
+  try {
+    fs.writeFileSync(fd, bytes); fs.fsyncSync(fd); fs.closeSync(fd);
+    try {fs.linkSync(temporary, target);} catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      const prior = readStoredReceipt(receiptStoreDir, requestId);
+      if (!prior || prior.requestDigest !== requestDigest || digest(prior.result) !== digest(result) || digest(prior.processObservation) !== digest(processObservation)) throw new Error("OPENCODE_RECEIPT_CONFLICT");
+    }
+    fs.unlinkSync(temporary);
+    const parent = fs.openSync(receiptStoreDir, fs.constants.O_RDONLY);
+    try {fs.fsyncSync(parent);} finally {fs.closeSync(parent);}
+  } finally {
+    try {fs.closeSync(fd);} catch { /* already closed */ }
+    try {fs.unlinkSync(temporary);} catch (error) {if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;}
+  }
 }
 
 function receiptPath(receiptStoreDir: string, requestId: string): string {

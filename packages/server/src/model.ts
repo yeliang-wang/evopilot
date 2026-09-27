@@ -47,6 +47,11 @@ export interface EvoPilotServerOptions {
   maxBodyBytes?: number;
   proofOpsCoreContractPath?: string;
   harnessRegistryConfig?: string;
+  /** Server-owned independent semantic read policy; never accepted from HTTP. */
+  semanticCatalogPolicyPath?: string;
+  /** Server-configured adapter; exact persisted qualification is still required per request. Never accepted from HTTP. */
+  semanticExecutorAdapter?: import("@evopilot/contracts").EvoPilotLifecycleExecutorAdapterV1;
+  semanticEvidenceCollector?: import("./application/semantic-evidence-collection.js").SemanticEvidenceCollector;
   harnessCatalogDirs?: string[];
   lifecycleCatalogDirs?: string[];
 }
@@ -1633,6 +1638,17 @@ export interface GoalCompletionReport {
 
 export interface GlobalGoal {
   schema: "evopilot-global-goal/v1";
+  /** Internal atomic Target receipts; not a publication or release decision. */
+  semanticTargetCompletions?: import("./application/semantic-goal-completion.js").SemanticTargetCompletion[];
+  semanticPhaseCompletions?: import("./application/semantic-phase-completion.js").SemanticPhaseCompletion[];
+  semanticFinalGoalCompletion?: import("./application/semantic-final-goal-completion.js").SemanticFinalGoalCompletion;
+  /** Runtime-only ownership fence; not completion evidence or release authority. */
+  semanticExecutionOwners?: Array<{
+    schema: "evopilot-semantic-goal-owner/v1";
+    targetId: string;
+    runId: string;
+    harnessBindingDigest: string;
+  }>;
   id: string;
   tenantId: string;
   workspaceId: string;

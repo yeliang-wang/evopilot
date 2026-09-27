@@ -53,14 +53,24 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
       .filter((project: any) => canAccessScopedResource(auth, project.tenantId, project.workspaceId))
       .map((project: any) => maskProject(project, store))));
   }
+  const projectInspectMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)$/);
+  if (request.method === "GET" && projectInspectMatch) {
+    if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
+    const project = store.readProject(decodeURIComponent(projectInspectMatch[1]));
+    if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+    if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
+    return writeJson(response, 200, envelope(maskProject(project, store)));
+  }
   const projectOwnershipMatch = url.pathname.match(/^\/api\/v1\/projects\/([^/]+)\/ownership$/);
   if (request.method === "PATCH" && projectOwnershipMatch) {
     if (!hasRole(auth, "admin")) return writeJson(response, 403, { error: "FORBIDDEN" });
     const project = store.readProject(decodeURIComponent(projectOwnershipMatch[1]));
     if (!project) return writeJson(response, 404, { error: "PROJECT_NOT_FOUND" });
+    if (!canAccessScopedResource(auth, project.tenantId, project.workspaceId)) return writeJson(response, 403, { error: "PROJECT_FORBIDDEN" });
     const body = await readJson(request, options.maxBodyBytes);
     const tenantId = safeFileName(optionalTrimmedString(body.tenantId) ?? project.tenantId);
     const workspaceId = safeFileName(optionalTrimmedString(body.workspaceId) ?? project.workspaceId);
+    if (!canAccessScopedResource(auth, tenantId, workspaceId)) return writeJson(response, 403, { error: "PROJECT_WORKSPACE_FORBIDDEN" });
     const workspace = store.readWorkspace(workspaceId);
     if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
     if (workspace.tenantId !== tenantId) return writeJson(response, 409, { error: "PROJECT_WORKSPACE_TENANT_MISMATCH" });
@@ -362,6 +372,9 @@ export async function handleProjectRoutes(context: ProjectRoutesContext): Promis
     const projectId = String(body.id ?? "").trim();
     const tenantId = safeFileName(optionalTrimmedString(body.tenantId) ?? auth.tenantId);
     const workspaceId = safeFileName(optionalTrimmedString(body.workspaceId) ?? auth.workspaceId);
+    if (!canAccessScopedResource(auth, tenantId, workspaceId)) return writeJson(response, 403, { error: "PROJECT_WORKSPACE_FORBIDDEN" });
+    const existingProject = store.readProject(projectId);
+    if (existingProject && !canAccessScopedResource(auth, existingProject.tenantId, existingProject.workspaceId)) return writeJson(response, 403, { error: "PROJECT_EXISTING_SCOPE_FORBIDDEN" });
     const workspace = store.readWorkspace(workspaceId);
     if (!workspace) return writeJson(response, 404, { error: "WORKSPACE_NOT_FOUND" });
     if (workspace.tenantId !== tenantId) return writeJson(response, 409, { error: "PROJECT_WORKSPACE_TENANT_MISMATCH" });

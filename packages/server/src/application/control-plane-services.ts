@@ -45,7 +45,7 @@ import {
   type HarnessTemplateProfile,
   type HarnessTemplateRef
 } from "../domains/harness-template/index.js";
-import { LLM_READINESS_FRESHNESS_MS } from "../domains/llm-readiness/index.js";
+import { LLM_READINESS_FRESHNESS_MS, resolveGovernedLlmSecret } from "../domains/llm-readiness/index.js";
 import {
   httpError
 } from "../http/errors.js";
@@ -4035,7 +4035,7 @@ export function derivePhaseTargets(goal: GlobalGoal, targets: GoalTarget[]): Pha
 }
 
 export function buildPhasePackages(goal: GlobalGoal, loopReader?: (id: string) => LoopRun | undefined): PhasePackage[] {
-  const matrix = buildGoalEvidenceMatrix(goal);
+  const matrix = buildGoalEvidenceMatrix(goal.semanticExecutionOwners !== undefined ? {...goal, plan: {...goal.plan, targets: goal.plan.targets.map(blockSemanticGoalTarget)}} : goal);
   return goal.plan.phaseTargets.map((phaseTarget) => {
     const rows = matrix.filter((row) => row.phase === phaseTarget.phase);
     const required = rows.filter((row) => row.required);
@@ -4049,7 +4049,7 @@ export function buildPhasePackages(goal: GlobalGoal, loopReader?: (id: string) =
       projectId: goal.projectId,
       releaseTargetId: goal.releaseTargetId,
       phase: phaseTarget.phase,
-      status: phaseTarget.status,
+      status: goal.semanticExecutionOwners !== undefined ? "BLOCKED" : phaseTarget.status,
       generatedAt: new Date().toISOString(),
       targetSummary: {
         total: rows.length,
@@ -4063,12 +4063,12 @@ export function buildPhasePackages(goal: GlobalGoal, loopReader?: (id: string) =
       reviewCapabilities: phaseTarget.reviewCapabilities,
       evidenceMatrix: rows,
       targetPackages,
-      blockers: uniqueStrings([
+      blockers: uniqueStrings([...(goal.semanticExecutionOwners !== undefined ? ["GOAL_SEMANTIC_PACKAGE_VERIFICATION_REQUIRED"] : []),
         ...rows.flatMap((row) => row.blocker ? [`${row.targetId}: ${row.blocker}`] : []),
         ...targetPackages.flatMap((item) => item.blockers.map((blocker) => `${item.targetId}: ${blocker}`)),
         ...(phaseTarget.packageOutputs.length > 0 && targetPackages.length === 0 ? [`${phaseTarget.phase}:TARGET_EVIDENCE_PACKAGE_REQUIRED`] : [])
       ]),
-      decision: phaseTarget.decision,
+      decision: goal.semanticExecutionOwners !== undefined ? {status: "NO-GO", rationale: "GOAL_SEMANTIC_PACKAGE_VERIFICATION_REQUIRED", evidence: []} : phaseTarget.decision,
       packageOutputs: phaseTarget.packageOutputs
     };
   });
@@ -4091,6 +4091,7 @@ export function buildTargetEvidencePackage(goal: GlobalGoal, target: GoalTarget,
   ]);
   const loopUsage = loop ? buildLoopLlmUsageSummary(loop) : emptyLlmUsageSummary(`target:${target.id}`, generatedAt);
   const blockers: string[] = [];
+  if (goal.semanticExecutionOwners !== undefined) blockers.push("GOAL_SEMANTIC_PACKAGE_VERIFICATION_REQUIRED");
   if (!loop) {
     if (target.status === "BLOCKED" || target.status === "FAILED") blockers.push("LOOP_RUN_REQUIRED");
   } else {
@@ -4297,6 +4298,7 @@ export function goalTimelineEvent(type: GoalTimelineEvent["type"], message: stri
 }
 
 export function buildGoalSnapshot(store: FileStore, goal: GlobalGoal): GoalSnapshot {
+  if (goal.semanticExecutionOwners !== undefined) return semanticGoalSnapshot(goal, targets => derivePhaseTargets(goal, targets));
   const releaseDecision = currentReleaseDecision(store.listReleaseDecisions()
     .filter((decision) => decision.projectId === goal.projectId)
     .filter((decision) => decision.targetId === goal.releaseTargetId));
@@ -4365,6 +4367,7 @@ export function buildGoalSnapshot(store: FileStore, goal: GlobalGoal): GoalSnaps
 }
 
 export function deriveGoalTarget(store: FileStore, goal: GlobalGoal, target: GoalTarget, dependenciesDone: boolean): GoalTarget {
+  if (goal.semanticExecutionOwners !== undefined) return blockSemanticGoalTarget(target);
   const now = new Date().toISOString();
   const loop = target.loopId ? store.readLoop(target.loopId) : undefined;
   if (!loop) {
@@ -4435,6 +4438,7 @@ export function goalNextActionFromLoop(loop: LoopRun, externalBlocker?: LoopExte
 }
 
 export function deriveGlobalGoalStatus(goal: GlobalGoal, targets: GoalTarget[]): GlobalGoalStatus {
+  if (goal.semanticExecutionOwners !== undefined) return "BLOCKED";
   if (goal.plan.status === "MISSING") return "DRAFT";
   if (goal.plan.status === "PENDING_APPROVAL") return "PLANNED";
   if (targets.length === 0) return "APPROVED";
@@ -5245,6 +5249,7 @@ export function normalizeReleaseTargetLevel(value: unknown): ReleaseTargetLevel 
 }
 
 export function buildGoalCompletionReport(snapshot: GoalSnapshot, actor: string): GoalCompletionReport {
+  if (snapshot.goal.semanticExecutionOwners !== undefined) throw httpError(409, "GOAL_SEMANTIC_COMPLETION_REQUIRED");
   const matrix = buildGoalEvidenceMatrix(snapshot.goal);
   const required = matrix.filter((row) => row.required);
   const done = required.filter((row) => row.status === "DONE");
@@ -5991,8 +5996,7 @@ export function normalizeLlmProfileBody(body: any, auth: AuthContext, existing?:
 }
 
 export function resolveLlmProfileApiKey(store: FileStore | undefined, profile: LlmProfileRecord): string | undefined {
-  if (!profile.apiKeyRef) return undefined;
-  return resolveTokenRef(store, profile.apiKeyRef, profile);
+  return resolveGovernedLlmSecret(store, profile, decryptSecretValue);
 }
 
 export function canReadLlmProfile(auth: AuthContext, profile: LlmProfileRecord): boolean {
@@ -13491,3 +13495,4 @@ export function extractMarkdownField(markdown: string, name: string): string | u
   const match = markdown.match(new RegExp(`^- ${escaped}：(.+)$`, "m"));
   return match?.[1]?.trim();
 }
+import {blockSemanticGoalTarget, semanticGoalSnapshot} from "./semantic-goal-projection.js";

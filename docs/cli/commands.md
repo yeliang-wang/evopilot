@@ -77,6 +77,207 @@ evopilot project credentials set <project-id> [options]
 
 `project onboard plan` is a non-mutating checklist. `project onboard` registers the project and configures source/DevOps/LLM readiness, but it does not start Goal/Loop execution.
 
+### Project semantic discovery and review (6.3.0 source development)
+
+These commands operate the current source-checkout Runtime; they are not a claim
+that 6.3.0 has been released. Prerequisites: an existing scoped project, current
+Runtime authentication/readiness, and server-configured Registry plus independent
+semantic Catalog policy. Select exact published digests returned by discovery.
+
+```text
+evopilot project semantic capabilities <project-id> --json
+evopilot project semantic onboarding <project-id> --catalog <catalog-id> --json
+evopilot project semantic inspect <project-id> --catalog <catalog-id> --json
+evopilot project semantic compatibility <project-id> --catalog <catalog-id> --artifact-set-digest <sha256> --bundle-digest <sha256> --json
+evopilot project semantic review <project-id> --catalog <catalog-id> --artifact-set-digest <sha256> --bundle-digest <sha256> --json
+evopilot project semantic approve <project-id> --review-digest <sha256> --decision APPROVE --json
+evopilot project semantic binding <project-id> --json
+evopilot project semantic activation <project-id> --json
+evopilot project semantic transitionReview <project-id> --action <ACTIVATE|MIGRATE|ROLLBACK> --expected-head-digest <sha256> --destination-digest <sha256> --json
+evopilot project semantic transitionApprove <project-id> --transition-review-digest <sha256> --decision APPROVE --json
+```
+
+Each operation first negotiates the Runtime's project-scoped semantic capability.
+A version string alone is insufficient. A legacy Runtime, missing capability or
+wrong-project response stops the command; there is no legacy execution fallback.
+Requests have a 30-second transport deadline, reject redirects and do not retry.
+Only the listed operation fields and connection/identity/output flags are accepted;
+duplicate options, arbitrary payload files, policy paths and approval shortcuts fail.
+
+Discovery and compatibility are read-only. `review` persists an immutable review
+but does not approve it. Show the exact review and digest to the owning human before
+`approve`; `--decision APPROVE` is explicit, never a default. Runtime derives the
+principal from current credentials, not `--actor`. It checks current scope, role,
+Catalog permission, material and review digests again on mutation. Approval returns
+`review`, `decision` and `binding`; `binding.eligibleForExecution` remains `false`.
+Exit zero means this HTTP operation succeeded, **not** that a Goal or release passed.
+
+`onboarding` is a read-only next-step guide for an already registered project and
+one explicitly selected Catalog. With no semantic binding it evaluates up to 64
+published ArtifactSet/Bundle pairs; larger sets fail closed without truncation.
+One compatible pair yields `REVIEW_REQUIRED`, several yield `SELECTION_REQUIRED`;
+both recommend `DUAL_BINDING_REVIEW` but leave selection empty. Supply the exact
+pair to `review` and separately approve its digest. Missing semantic declarations
+yield `EVIDENCE_REQUIRED`; incompatible or empty choices yield
+`NO_COMPATIBLE_MATCH` or `NO_PUBLISHED_CANDIDATE`. None silently falls back or
+upgrades a legacy project. An existing valid binding yields `EXISTING_BINDING`
+and is preserved (the requested Catalog is not searched in this branch); read
+activation before considering any separately approved transition. Revocation,
+project drift or missing configuration is an error, not an unbound state.
+Business field/product type remain unknown. This guide neither registers the
+project nor satisfies credentials, readiness, Harness eligibility or execution gates.
+
+After an uncertain approval response, use `binding` to inspect Runtime-owned state
+before considering an exact retry. Do not select another digest or infer failure
+from a dropped response. CLI JSON preserves `requestId`; MCP can inspect the same
+binding without repeating approval. See the [API boundary](../api/README.md) and
+[implementation status](../architecture/semantic-catalog-consumer.md).
+
+For a future-plan switch, read `activation` first. `transitionReview` requires the
+exact current head: ACTIVATE/ROLLBACK take a binding digest, while MIGRATE takes a
+prepared binding review digest. Review changed fields and the explicit action;
+`transitionApprove` needs a separate human decision bound to `transitionReviewDigest`.
+A prior binding approval is not a switch approval. After a lost switch response,
+read activation history and match that exact review digest; do not replay automatically.
+Historical receipts do not establish the current head. Existing runs keep their
+original binding pins, and current permissions still apply. No switch grants
+execution, Goal completion, asset publication or Release authority.
+
+The read-only command `evopilot project semantic gap <project-id> --catalog <id> --artifact-set-digest <sha256> --bundle-digest <sha256> --json`
+reports compatibility findings for one exact published pair. It distinguishes ontology
+material review, Harness declaration review, cross-contract mismatch and unverified
+evidence/reasoning. A review destination is not defect attribution. No successor is
+selected, published or bound; existing runs retain pins. A separately published
+successor needs exact compatibility, a prepared binding review, the current head,
+an explicit MIGRATE transition preview and separate digest-bound approval.
+
+### Project semantic execution (6.3.0 source development)
+
+This is a separate capability surface from project discovery/binding. It requires
+a current scoped operator/admin, existing reviewed project binding, a persisted
+approved pending Lifecycle request and exact current governance/executor sources.
+
+```text
+evopilot project execution capabilities <project-id> --json
+evopilot project execution <planning|draft|prepare|inspect|bind|resolve|mapping|review|approveReview|dispatch|collect|evaluate|commitStage|stageReceipt|completeTarget|completionReceipt|completionStatus|completePhase|phaseReceipt|completeGoal|goalReceipt> <project-id> --file <request.json> --json
+```
+
+The file is an exact JSON declaration, not a script. Before preparing a plan,
+`planning` takes `identity`, `runId`, `requestDigest`, `goalTarget` and returns a
+digest-bound basis: current criteria, allowed concepts/relations and the complete
+published Harness/Lifecycle obligation union. No rules or selections are inferred.
+`draft` takes those four fields plus `basisDigest`, explicit `selection`, `business`,
+`harness` rule arrays and exact governance/executor `selections`. It revalidates the
+basis and derives action/material pins and plan digests. Its `declaration` is usable
+as `prepare` input, but the draft is not persisted, approved or dispatched.
+Rules use the finite outcome predicates, must reference selected concepts, and must
+cover all Harness obligations. Domain meaning and criterion coverage still require
+the separate review after binding. Stale basis, revoked access and invented pins
+are rejected; do not automatically retry with a newer basis or invent replacement
+rules. Available choices are bounded to 128 concepts, 256 relations and 64
+obligations; output is at most 64 KiB within one bounded deadline.
+
+`prepare` accepts `identity`,
+`runId`, `requestDigest`, `goalTarget`, `contextPlan`, `outcomePlan`, `selections`.
+`inspect` and `bind` accept only `identity`. Execution operations require `identity`
+and `bindingDigest`; `review` also requires `coverage`, and `approveReview` requires
+`reviewDigest` and the explicit `decision: "APPROVE"`. Identity contains exactly
+`projectId`, `goalId`, `targetId`, `harnessBindingDigest`. The project must match
+the command argument. Nested plans and selections are validated by their Runtime
+owners; the CLI does not create domain rules or current authority.
+
+`mapping` takes only `identity` and `bindingDigest`. This read-only operation returns
+the already bound outcome plan, actual criteria and concepts, separate business and
+Harness rules, and empty `coverageInputs`. Empty rule lists are unresolved input,
+not defaults; supply explicit coverage before separate review and approval. Every
+criterion and business rule must be covered; Harness rules cannot cover business
+criteria. This is not pre-plan domain authoring. Business field/product type remain
+unknown, and concept/criterion prose is untrusted data, never executable instructions.
+
+Negotiation must advertise the exact operation. Requests are limited to 64 KiB,
+reject redirects, have a 30-second transport deadline and are never automatically
+retried. `dispatch` is advertised only when the server has an explicitly configured
+adapter; each call still revalidates its persisted qualification, permissions and
+business mapping approval. A default server does not select an adapter or Host.
+
+`collect` is advertised only with an explicitly server-configured evidence
+collector. Its payload is only `identity` and `bindingDigest`, never facts, URLs,
+commands or a collector selection. Runtime derives selectors and correlation from
+the approved plan and persisted dispatch receipt. The exact descriptor must match
+the active evidence policy. Replies contain only receipt/request digests, origin,
+kinds and non-completion authority; facts stay in private Runtime storage.
+Synthetic origin is retained through evaluation. A retained claim without a
+receipt stops for reconciliation; neither transport nor server retries it.
+
+Exit zero is operation success, not business success. `evaluate` may persist an
+`INDETERMINATE`, `FAILED` or `DUAL_VALIDATED_NOT_COMPLETED` report; completion remains
+false. After timeout or lost response, preserve the identity and binding. Do not
+automatically rerun: an explicitly requested exact dispatch retry may return a
+retained receipt, but an unresolved claim blocks pending reconciliation.
+`commitStage` accepts only `identity` and `bindingDigest`. It freshly verifies both
+validation planes, independent collection, native process evidence and current
+scoped stage-completion policy before committing the pending stage. It does not
+advance subsequent stages; use the existing governed Lifecycle advance operation.
+After an uncertain response, use `stageReceipt` with `identity`, `bindingDigest`,
+`runId` and `requestDigest` to read the exact settled historical receipt.
+
+`completeTarget`, `completionReceipt` and `completionStatus` each accept only
+`identity` and `runId`. The writer requires a terminal Lifecycle, verified evidence
+for every stage and an explicit current Target-completion policy. Phase-associated
+Targets additionally require a typed independently collected package and explicit
+phase-Target policy; dependent phases require a verified aggregate predecessor
+receipt. A non-phase Goal closes only when all required Targets have verified
+receipts; GA/phase Goals remain open. No facts, success flags or release overrides
+are accepted. Negotiation must advertise both the exact operation and
+`completionAvailable=true` with `completionScope=VALIDATED_TARGET_AND_NON_PHASE_GOAL`.
+
+`completePhase` and `phaseReceipt` additionally require `phaseTargetId` and
+`phaseCompletionAvailable=true`. The anchor identity/run must be a required member
+with a verified completion receipt and independently collected typed phase package.
+The phase writer checks every required Target receipt, reviewed aggregate mapping,
+required evidence/reviews/outputs and current scoped phase policy before one Goal
+CAS. Phase GO does not close the GA Goal or authorize Release. After uncertainty,
+read `phaseReceipt`; do not replay or clear a retained write lock automatically.
+
+`completeGoal` and `goalReceipt` take only `identity`/`runId` and additionally
+require `goalCompletionAvailable=true`. Final closure verifies all required Target
+and declared phase receipts against the same approved Goal/plan, plus a separate
+current `semanticFinalGoalCompletionPolicy`. It writes one durable Goal receipt
+and COMPLETED in a single CAS. GA requires a verified GA phase; the declared GA
+maturity ladder cannot omit or reorder predecessors. Read `goalReceipt` after an
+uncertain response. Goal completion grants no release, deployment or publication.
+
+`completionStatus` is a separate read-only semantic report. Its `targetPercent`
+counts verified required Targets, not release progress. `goalCompleted` stays false
+when phase/GA closure is pending. `release.status=NOT_EVALUATED` and all authority
+flags are false. Existing `goal list`, `goal inspect`, `goal snapshot`, `goal graph`,
+`goal evidence-matrix` and `goal final-report` reads use verified receipts for
+semantic-owned Goals and require current operator/admin. A verified non-phase Goal returns a final
+report; phase/GA Goals require the separate verified final Goal receipt, and
+missing required evidence remains blocked. Neither view replaces
+phase packages or a release decision. `completionReceipt` can
+recover a settled success after restart without dispatch, recollection or rewriting
+completion. The HTTP `run-status` read uses the separate
+`evopilot-semantic-goal-run-status/v1` schema for semantic-owned Goals, with verified
+receipt references and a typed `llmUsage` subtotal from verified completed Target
+receipts. Status is UNAVAILABLE (null totals), PARTIAL or VERIFIED_COMPLETED_TARGETS;
+missing/legacy telemetry remains unknown, not zero. Provider/model/Host routes,
+execution provenance and coverage exclusions are explicit. This excludes pending,
+failed and uncertain dispatches and is not settled provider billing.
+There is no `goal run-status` CLI command. HTTP run-status also provides `dispatchUsage` for
+reachable succeeded, failed and uncertain dispatch receipts, independently of
+Target completion. Waiting/missing/legacy evidence is explicit and never triggers
+replay. Its totals overlap `llmUsage` and must not be added to it. Neither subtotal
+is a provider bill. Lists retain the
+existing scope/order/last-50 window and fail if any visible semantic verification
+fails; they are not atomic cross-Goal snapshots.
+`SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED` means a retained uncertain
+write: stop and inspect the claim; never clear it or replay automatically.
+Production collector/Host qualification, installed-package E2E and release remain
+separate work. No publication command is exposed here.
+Legacy Lifecycle `external-result` also refuses a semantic-owned run with
+`LIFECYCLE_SEMANTIC_COMPLETION_REQUIRED`, even when semantic fields are omitted.
+
 ## Project Definitions (v5 development)
 
 Project Definitions are immutable, declarative project aggregates. YAML is the human-editable form; registration normalizes the declaration and records its canonical digest. Use an explicit `--version` to inspect or roll back to an earlier definition without rewriting history.
@@ -142,13 +343,22 @@ evopilot llm providers --json
 evopilot llm workspace-default inspect --json
 evopilot llm workspace-default bind --profile <profile-id> --profile-digest <sha256> --reason <text> --json
 evopilot llm migrate-v61 [--profile <profile-id>] [--reason <text>] --json
+evopilot llm bootstrap --preview --json
+evopilot llm bootstrap --opt-in --input-stdin --profile <new-id> --secret-id <new-id> --reason <text> --json
+evopilot llm migrate-v61 --opt-in --input-stdin --profile <new-id> --secret-id <new-id> --reason <text> --json
 evopilot project llm set <project-id> --profile <llm-profile-id> --json
 evopilot project llm inspect <project-id> --json
 evopilot project llm preflight <project-id> --json
 evopilot project llm clear <project-id> --json
 ```
 
-Runtime 6.2 starts in setup-only mode until a workspace-scoped Profile passes live preflight and an administrator explicitly binds its exact digest as the workspace default. `migrate-v61` is an explicit one-time migration helper: it never imports an Agent Host, shell, environment, or hidden global model configuration, and it stops when the eligible Profile choice is ambiguous.
+Runtime 6.3 retains the setup-only gate introduced in 6.2: a workspace-scoped Profile must pass live preflight and an administrator must explicitly bind its exact digest as the workspace default. Without `--input-stdin`, `migrate-v61` only binds an existing governed Profile and stops on ambiguous selection; it does not convert a legacy configuration.
+
+For administrator-operated headless initialization, inspect `llm bootstrap --preview` first. Then provide exactly one JSON configuration on a trusted, non-echoing stdin pipe with `providerName`, `baseUrl`, `modelName`, and `value` (the sensitive provider credential), and explicitly pass `--opt-in`. `llm migrate-v61 --input-stdin` accepts the same representation of a deliberately selected 6.1 provider. An array is accepted only when it contains exactly one candidate. Neither command discovers or reads shell/environment defaults, legacy files, or Agent Host configuration. Do not paste the sensitive input into chat, shell arguments, project files, logs, or an Expert/MCP payload.
+
+The administrator-only Runtime endpoint `POST /api/v1/runtime-readiness/bootstrap` receives `optIn: true`, `source: explicit-headless|explicit-v61`, new `profileId` and `secretId`, a `reason`, and the single-element `candidates` array. Runtime enforces the authenticated workspace, persists the encrypted SecretRef and Profile, performs live preflight, and binds the default only on success. Existing ids or a default binding cause refusal without overwrite. Provider URLs with embedded credentials, query strings, or fragments are refused. The CLI limits stdin to 64 KiB and creates no input/config file or environment fallback. Clearing its input buffer is not a guarantee of zeroized JavaScript memory, nor can the CLI erase a caller's upstream file or environment; the input producer remains responsible for those.
+
+Failure after provisioning leaves governed resources for explicit inspection and repair; it is not a transaction rollback. Repeating bootstrap will stop, not rotate or recreate those resources. Inspect the returned ids, repair via the governed Secret/Profile APIs, run a fresh Profile preflight, and explicitly bind with the expected prior binding digest. A Profile change or credential rotation invalidates old preflight; concurrent modification during a probe fails closed. A successful response includes the Profile and binding digests and Runtime readiness. These headless administration commands do not replace the Expert-over-MCP ordinary-human entry or grant project, execution, acceptance, or Release authority.
 
 ## Project LLM
 

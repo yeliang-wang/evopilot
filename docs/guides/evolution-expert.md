@@ -1,6 +1,6 @@
 # EvoPilot Evolution Expert
 
-Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. Expert `2.2.1` (currently under implementation, not released) preserves Human Interaction Protocol `2.2` for Runtime `>=6.2.0 <7.0.0` exclusively through MCP. It repairs the public CLI of immutable predecessor 2.2.0. Runtime and declarative resource versions remain independent.
+Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. This guide covers Expert `2.3.0` and Runtime `6.3.0`, currently under implementation and not accepted or released. The approved successor includes the retained public CLI and secure-input recovery work; there is no standalone Expert 2.2.1 delivery. Expert uses MCP exclusively. Explicit Runtime 6.2.0 compatibility remains available for legacy non-semantic operations; semantic operations require Runtime 6.3 capability negotiation. Runtime and declarative resource versions remain independent.
 
 One immutable Core generates Host Integration Bundles for Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP. Each bundle contains the same Core and Adapter digests plus install, doctor, health, version, upgrade, rollback, removal, help, and tutorial lifecycle metadata.
 
@@ -46,22 +46,30 @@ CLI, HTTP, CI, events, and webhooks remain available to administrators and machi
 After separate Release authorization and verified publication, administrators
 may use the following package-only diagnostic commands. Before publication,
 install only the exact authorized Candidate tarball in an isolated directory;
-do not request unpublished 2.2.1 from npm or activate current Host integrations.
+do not request unpublished 2.3.0 from npm or activate current Host integrations.
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.2.1
+npm install --global @evopilot/evolution-expert@2.3.0
 evopilot-expert version
-evopilot-expert doctor codex 6.2.0
+evopilot-expert doctor codex 6.3.0
 evopilot-expert tutorial
 ```
 
 Use `claude-code`, `workbuddy`, `generic-agent`, or `generic-mcp` for other generated bundles. Upgrade, rollback, and removal affect only the Expert installation. They must not mutate Runtime bytes or durable Runtime objects. After restart or Host transfer, the Expert reloads the current object from Runtime instead of reconstructing state from conversation history.
 
-CLI `doctor` and `compatibility` default to Runtime `6.2.0` and check declared
+For an explicit legacy declaration check, use `evopilot-expert doctor codex 6.2.0`; this does not establish support for semantic operations.
+
+CLI `doctor` and `compatibility` default to Runtime `6.3.0` and check declared
 adapter capabilities, not observed Host capabilities or live Runtime readiness.
 Their `READY`/`CONFORMANT` result grants no operational or release authority.
 Malformed or incompatible stable versions and unknown packaged Hosts fail with
 a nonzero exit status. The SDK remains extensible to independently qualified Hosts.
+
+## Source verification and release acceptance
+
+The checked-in SDK, generated adapters and local synthetic tests can verify guidance, finite MCP projections and refusal behavior. They do not prove installed-package or real-Host acceptance. Before release, bind the exact Runtime 6.3.0 / Expert 2.3.0 artifacts, complete the approved current and inherited scenario matrix, and obtain separate Release authorization. WorkBuddy execution belongs to the designated human and closes only through the required final range declaration.
+
+For maintained source-level runner scope and outstanding complete-RC coverage, see the [versioned acceptance corpus](../../tests/e2e/versions/README.md). Historical [Runtime 6 / Expert 2 acceptance](../operations/v6-acceptance.md) describes the immutable 6.0.0 / 2.0.0 baseline, not a PASS for the current pair.
 
 ## Third-party Host
 

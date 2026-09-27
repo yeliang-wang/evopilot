@@ -1,8 +1,10 @@
 # Expert private Host integration
 
-This maintained component is co-distributed with Expert 2.2.1. It runs as a
+This maintained component is prepared for co-distribution with Expert 2.3.0
+(source development; not yet accepted or released). It runs as a
 separate, trusted Host process, not in the Expert Core or an MCP tool that accepts
-credentials. It uses Runtime 6.2.0's existing login and Secret APIs. Core v3,
+credentials. It uses Runtime 6.3.0's login and Secret APIs; explicitly signed
+Runtime 6.2.0 deployment evidence retains legacy non-semantic setup support. Core v3,
 generated adapters and Runtime dependencies are unchanged.
 
 ## Support and qualification
@@ -84,7 +86,7 @@ signals the private process. Do not map this tool into Expert Core operations.
 
 `deployment` is a separately signed local operator attestation with schema
 `evopilot-runtime-deployment-check/v1`, exact `destination`, `tenantId`,
-`workspaceId`, `runtimeVersion=6.2.0`, `nonDebugEncryption=true`,
+`workspaceId`, exact `runtimeVersion=6.3.0` (or explicit legacy `6.2.0`), `nonDebugEncryption=true`,
 `loggingLevel=info`, `issuedAt`, and `expiresAt`. Its issuer must actually inspect
 the isolated Runtime deployment's effective non-debug master-key configuration
 without exporting the key. This is a Host-local prerequisite, **not a new

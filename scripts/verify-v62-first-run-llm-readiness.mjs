@@ -14,19 +14,26 @@ const failures = [];
 const roadmap = readJson("governance/roadmap.yaml");
 const recovery = roadmap.expert22CompletionRecoveryPolicy;
 const activeExpertVersion = readJson("packages/evolution-expert/package.json").version;
-const supportedExpertVersion = activeExpertVersion === "2.2.0" ? "2.2.0" : recovery?.successorExpertVersion;
-if (activeExpertVersion !== "2.2.0") {
+// Retest retained 6.2 behavior on the Roadmap's exact direct-delivery pair.
+// Historical Target bytes and evidence below remain unchanged; no PASS transfer.
+const delivery = roadmap.directSemanticConvergenceDeliveryPolicy;
+const direct = readJson("package.json").version === "6.3.0" && activeExpertVersion === "2.3.0";
+if (direct && !(delivery?.runtimeVersion === "6.3.0" && delivery?.expertVersion === "2.3.0" &&
+  delivery?.standaloneExpert221ReleaseAllowed === false && roadmap.versionPolicy.currentWorkingVersion === "6.3.0")) failures.push("Direct-delivery pair is not bound by the accepted Roadmap");
+const runtimeVersion = direct ? "6.3.0" : "6.2.0";
+const supportedExpertVersion = direct ? "2.3.0" : activeExpertVersion === "2.2.0" ? "2.2.0" : recovery?.successorExpertVersion;
+if (!direct && activeExpertVersion !== "2.2.0") {
   const successor = readJson("governance/targets/evopilot-evolution-expert-v2.2.1-public-cli-completion-recovery.json");
   if (successor.approvals?.target?.decision !== "APPROVED" || successor.roadmapBindings?.[0]?.targetVersion !== activeExpertVersion || successor.roadmapBindings?.[0]?.matchedMilestone !== recovery?.successorMilestone) failures.push("Expert recovery does not bind its approved successor Target");
 }
 
 for (const [relative, expected] of [
-  ["package.json", "6.2.0"],
-  ["packages/contracts/package.json", "6.2.0"],
-  ["packages/server/package.json", "6.2.0"],
-  ["packages/adapter-mcp/package.json", "6.2.0"],
-  ["packages/cli/package.json", "6.2.0"],
-  ["packages/create-evopilot/package.json", "6.2.0"],
+  ["package.json", runtimeVersion],
+  ["packages/contracts/package.json", runtimeVersion],
+  ["packages/server/package.json", runtimeVersion],
+  ["packages/adapter-mcp/package.json", runtimeVersion],
+  ["packages/cli/package.json", runtimeVersion],
+  ["packages/create-evopilot/package.json", runtimeVersion],
   ["packages/evolution-expert/package.json", supportedExpertVersion]
 ]) {
   const actual = readJson(relative).version;
@@ -42,7 +49,7 @@ if (!implementationAuthorizedStatuses.has(expertTarget.status) || expertTarget.a
 if (runtimeTarget.acceptance?.length !== 15 || expertTarget.acceptance?.length !== 10 || crossMap.rows?.length !== 10) failures.push("v6.2 criterion or cross-map count drift");
 
 const protocol = llmSetupProtocol();
-if (protocol.runtimeVersion !== "6.2.0" || protocol.expertProtocolRange !== ">=2.2 <3") failures.push("Runtime/Expert LLM setup protocol version drift");
+if (protocol.runtimeVersion !== runtimeVersion || protocol.expertProtocolRange !== ">=2.2 <3") failures.push("Runtime/Expert LLM setup protocol version drift");
 if (protocol.secureInput?.rawSecretAcceptedByExpert !== false || protocol.secureInput?.persistedForm !== "SecretRef only") failures.push("SecretRef-only protocol boundary missing");
 for (const state of ["SETUP_REQUIRED", "PREFLIGHT_REQUIRED", "READY", "LLM_BLOCKED"]) if (!protocol.states.includes(state)) failures.push(`Runtime readiness state missing: ${state}`);
 for (const fallback of ["Agent Host LLM", "Agent Model", "Codex configuration", "Claude Code configuration", "WorkBuddy configuration", "MyGlm5"]) if (!protocol.forbiddenFallbacks.includes(fallback)) failures.push(`forbidden LLM fallback missing: ${fallback}`);
@@ -63,6 +70,7 @@ for (const host of ["codex", "claude-code", "workbuddy", "generic-agent", "gener
     assertExpertAdapterConformance(adapter);
     if (!adapter.requiredCapabilities.includes("host-native-secure-secret-input")) failures.push(`${host}: secure input capability missing`);
     if (expertCompatibility(adapter, "6.2.0", adapter.requiredCapabilities).conformanceStatus !== "CONFORMANT") failures.push(`${host}: Runtime 6.2 compatibility failed`);
+    if (expertCompatibility(adapter, runtimeVersion, adapter.requiredCapabilities).conformanceStatus !== "CONFORMANT") failures.push(`${host}: current Runtime compatibility failed`);
     if (expertCompatibility(adapter, "6.1.0", adapter.requiredCapabilities).conformanceStatus !== "INCOMPATIBLE") failures.push(`${host}: unsafe Runtime 6.1 compatibility accepted`);
     const generated = readJson(`packages/evolution-expert/generated/${host}/adapter.json`);
     if (generated.coreDigest !== EVOLUTION_EXPERT_CORE.digest || generated.digest !== adapter.digest) failures.push(`${host}: generated adapter drift`);
