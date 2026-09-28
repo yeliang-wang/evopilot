@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { verifyInventory } from './inventory.mjs';
 import { exactKeys, requireThat } from './contracts.mjs';
+import { setupLocalTls } from './local-runtime.mjs';
 
 function owned(root) {
   requireThat(path.basename(root).startsWith('evopilot-host-isolated-'));
@@ -49,6 +50,10 @@ export function doctor(root) {
   return {status:'INTEGRITY_VERIFIED',componentDigest:state.active,platformSupported:process.platform === 'darwin' && process.arch === 'arm64',
     hostPermission:'NOT_OBSERVED',runtimeReadiness:'NOT_CHECKED'};
 }
+export function localSetup(root, upstream, port) {
+  owned(root); doctor(root);
+  return setupLocalTls(root,upstream,port);
+}
 export function upgrade(root, source, componentDigest) {
   const state = owned(root); doctor(root);
   requireThat(state.active !== componentDigest);
@@ -73,7 +78,7 @@ export function remove(root) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const [command,...args] = process.argv.slice(2);
-    const handlers = {install,doctor,health:doctor,upgrade,rollback,remove};
+    const handlers = {install,doctor,health:doctor,upgrade,rollback,remove,'local-setup':localSetup};
     const handler = handlers[command];
     requireThat(Object.hasOwn(handlers,command) && args.length === handler.length);
     console.log(JSON.stringify(handler(...args)));

@@ -17,6 +17,15 @@ export async function provision({config:rawConfig, componentDigest, requestId, p
     requireThat(await deps.integrity() === componentDigest);
     requireThat(deps.platform === 'darwin-arm64');
     timer = setTimeout(cancel, config.timeoutMs);
+    if (abort.signal.aborted) return {status:'CANCELLED'};
+    // Validate the installation-scoped TLS route before opening any secure fields.
+    if(config.localTls) {
+      stage='TRANSPORT_PREFLIGHT';
+      requireThat(typeof deps.transport.preflight==='function');
+      await deps.transport.preflight(abort.signal);
+      verifyAuthority(config, binding, permission, deployment);
+      requireThat(await deps.integrity() === componentDigest);
+    }
     secretId = `expert-${randomBytes(24).toString('hex')}`;
     stage = 'CLAIM';
     deps.ledger.claim(binding, secretId);

@@ -161,3 +161,89 @@ binds native and controller bytes independently of Core/Adapter digests.
 Native `--self-test` validates context without creating an application/window.
 Unit/mock tests and source-directory installs are not a frozen Candidate,
 actual Host execution, secure-input E2E completion or release authorization.
+
+## Local Runtime and installation-scoped TLS
+
+The ordinary Agent path remains MCP stdio to the adapter, then HTTP to the
+local Runtime (default `http://127.0.0.1:19876`). Private credential input still
+requires verified HTTPS. The isolated Host installation can create a loopback
+TLS ingress without changing Runtime, publishing a service, modifying system
+trust, or inheriting `NODE_EXTRA_CA_CERTS` into the private child.
+
+After `install` returns an owner-only installation root, run:
+
+```text
+node /absolute/installed/host-integration/manage.mjs local-setup <installation-root> http://127.0.0.1:19876 19877
+```
+
+This exclusively creates `local-tls/` with an owner-only private key, a
+30-day self-signed loopback certificate and `gateway.json`. `/usr/bin/openssl`
+is required; failure is redacted and never silently falls back to HTTP.
+A second setup against that directory refuses instead of replacing trust.
+The result includes only paths, the public certificate binding, expiration,
+and addresses. No permission or deployment attestation is generated.
+
+Start the ingress from the exact installed component slot:
+
+```text
+node /absolute/installed/host-integration/local-runtime.mjs serve <installation-root>/local-tls/gateway.json
+```
+
+The Host/operator's process supervisor owns this process. It binds only
+`127.0.0.1`; normal shutdown closes outstanding requests and listener sockets.
+A bind failure or invalid/expired certificate fails closed. Stop it when the
+installation is detached. Setup does not edit any Agent settings or auto-start
+an unreviewed background daemon. A changed installation/component slot must
+be reverified before the supervisor launches it.
+
+Use the returned HTTPS `destination` and optional `localTls` object in the
+owner-only private Host config. `localTls` has exactly `certificatePem`,
+`certificateDigest` (SHA-256 of DER certificate bytes), fixed loopback `upstream`,
+and `gatewayConfigDigest`. The config digest in
+the static launch and signed permission binds all four fields. Every request
+includes the pinned gateway-config digest; the ingress rejects a mismatch before
+reading credentials or forwarding. Restarting it with another upstream while
+retaining the certificate therefore cannot redirect an already bound request. Custom certificate trust
+is accepted only for literal `127.0.0.1`, requires a valid IP SAN and validity
+period, and checks both the TLS certificate chain and exact leaf digest. It
+never disables verification or uses operating-system trust installation.
+Existing configs without `localTls` retain the normal trusted HTTPS behavior.
+
+The ingress forwards only login POST and Secret GET/POST to the fixed literal
+HTTP loopback Runtime. It retains Runtime auth, RBAC, tenant/workspace checks,
+encrypted storage and audit; it never creates users or grants access. It does
+not follow redirects, forward cookies, support arbitrary URLs, log bodies or
+use proxies. The local HTTP hop retains the existing trusted-local-machine
+boundary; this does not protect against a compromised Runtime or same-user
+process. The signed deployment inspection must still identify the intended
+local Runtime, its scope and effective storage encryption.
+
+Before showing any private input, the production controller checks the pinned
+TLS ingress and its fixed Runtime's `/health` response. This check proves
+transport availability, not login authorization, encryption, LLM readiness or
+Host permission. A failure collects no credentials and creates no replay claim.
+The original permission and integrity checks still apply before and after input.
+
+Certificate expiry or replacement requires explicit installation maintenance,
+a new config digest, and fresh permission/deployment bindings. Do not silently
+rotate a certificate in an active request. Preserve the replay ledger and
+Runtime state when preparing the replacement installation.
+
+Socket-level tests cover scoped trust in an empty-environment child, wrong
+trust/leaf pins, drift, endpoint restrictions, redirects, Runtime unavailability,
+and real Runtime auth/RBAC/Secret persistence with synthetic input. These are
+not evidence of actual human permission or native positive input; those remain
+separate Candidate-bound Host acceptance requirements.
+
+### Codex control-channel observer SDK
+
+`codexPermissionRequest(binding)` describes a credential-free permission form.
+`codexPermissionObserver(...)` validates an actual App Server
+`mcpServer/elicitation/request` against the pinned thread, MCP server, request
+scope and exact form. Its trusted `requestHumanPermission` callback must return
+the complete displayed scope plus the human's decision. Only an exact ALLOW
+produces a short-lived signed permission; cancellation, mismatches, exceptions,
+model-supplied ALLOW fields and replay never do. No credentials enter elicitation.
+The App Server client must establish actual event provenance and a real human
+UI. Synthetic callback tests and the SDK's existence do not qualify a live Host.
+The signed receipt still stays outside model-visible MCP arguments and results.

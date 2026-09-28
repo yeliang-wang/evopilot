@@ -115,3 +115,23 @@ test('trusted observer never signs a changed scope or model-supplied ALLOW field
   assert.equal((await observe({...message,request:{...message.request,input:{...message.request.input,decision:'ALLOW'}}})).permission,null);
   assert.equal((await observe(message)).permission,null);
 });
+
+test('Codex control-event observer binds thread/server/schema and exact human response (synthetic channel)',async()=>{
+ const {codexPermissionObserver,codexPermissionRequest}=await import('../../packages/evolution-expert/host-integration/permission-observer.mjs');
+ const f=fixture(),binding=f.request.permission.payload.binding;
+ const options={binding,threadId:'thread-test',serverName:'evopilot_private_input',publicKey:f.request.config.permissionPublicKey,signingKey:f.permissionKey.privateKey};
+ const event={id:3,method:'mcpServer/elicitation/request',params:{threadId:options.threadId,serverName:options.serverName,...codexPermissionRequest(binding)}};
+ let humanCalls=0;
+ for(const change of [e=>e.params.threadId='wrong',e=>e.params.serverName='wrong',e=>e.params.message+=' changed',e=>e.params.requestedSchema.properties.password={type:'string'},e=>e.params.requestedSchema.additionalProperties=true,e=>e.id=-1,e=>e.method='tools/call']){
+  const observer=codexPermissionObserver({...options,requestHumanPermission:async exact=>{humanCalls++;return {...exact,decision:'ALLOW'};}});const bad=structuredClone(event);change(bad);assert.equal((await observer(bad)).permission,null);
+ }
+ assert.equal(humanCalls,0);
+ const projected=structuredClone(event);delete projected.params.requestedSchema.additionalProperties;
+ const nativeShape=codexPermissionObserver({...options,requestHumanPermission:async exact=>({...exact,decision:'ALLOW'})});
+ assert.ok((await nativeShape(projected)).permission);
+ const allow=codexPermissionObserver({...options,requestHumanPermission:async exact=>({...exact,decision:'ALLOW'})});
+ const result=await allow(event);assert.deepEqual(result.response,{action:'accept',content:{confirm:true}});assert.ok(result.permission.signature);assert.equal((await allow(event)).permission,null);
+ for(const reply of [()=>({decision:'ALLOW'}),exact=>({...exact,threadId:'wrong',decision:'ALLOW'}),exact=>({...exact,decision:'DENY'})]){
+  const observer=codexPermissionObserver({...options,requestHumanPermission:async exact=>reply(exact)});assert.equal((await observer({...event,decision:'ALLOW'})).permission,null);
+ }
+});
