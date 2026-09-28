@@ -5,9 +5,9 @@
   "projectionMode": "SOURCE_DEVELOPMENT_ONLY_NOT_ACCEPTANCE",
   "target": {
     "id": "evopilot-v6.3.0-semantic-convergence-successor",
-    "revision": 3,
-    "fileDigest": "sha256:16f255c53a99df7db5c92c98f27669200538b66a3817babf43d2c2fb02d86a45",
-    "authorizationDigest": "sha256:b91dd829ac447c1e1628df8614fd5e014935a147b9421356ebbd4b715ad788fc"
+    "revision": 4,
+    "fileDigest": "sha256:edb75085a57843dbfeacec2fb7a5521c428eb0e93acd7815ca4c56efc9bd2d98",
+    "authorizationDigest": "sha256:78aba330004f3fde767f73b33f7de1aac62c75d735e0e54570788f82b517c004"
   },
   "current": [
     {
@@ -115,6 +115,15 @@
       "definitionDigest": "sha256:db7cac456c52c882c9cca5235ccf740ef7718a223ed8cfb6596f8a0a81101a79",
       "criterion": "Final-pair acceptance requires active 5400-second soak, all impact reruns and NO_REGRESSION; terminal series E2E remains separately named after every independent version passes. [Current-release Host override: For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.]",
       "requiredEvidence": "Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. No failed/pending/stale/generic/unmapped rows, no hidden fallback or legacy Suite invocation; Dashboard absent from terminal E2E. Current-release evidence override: For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R-F09",
+      "targetPointer": "/acceptance/12",
+      "definitionDigest": "sha256:f53d4e91d6022184fc908a57f50882243dc8fcd8d0665721278726669812103a",
+      "criterion": "Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy.",
+      "requiredEvidence": "Real isolated HTTP matrix for four principals, spoofed scope, interleaved scopes, small ascending/descending pages, invalid legacy rows, unknown and empty scope, exact existing platform policy, restart and byte-identical read-only audit. Fresh installed successor binding.",
       "status": "PENDING",
       "evidenceRefs": []
     }
@@ -3901,7 +3910,7 @@
     {
       "id": "RC05",
       "targetPointer": "/realCaseCoverage/4",
-      "definitionDigest": "sha256:29050d63d3fe60ab5844615871bc6201213e37b0ec10151bbd67890ce760453f",
+      "definitionDigest": "sha256:def632bd2866d19514be04aa28c201706c3b0d935122f0d73479c9a36ecf63be",
       "scenario": "Immutable execution, recovery and complete convergence prerequisites",
       "hosts": [
         "Codex"
@@ -3912,7 +3921,8 @@
         "R-F08",
         "R-C01",
         "R-C03",
-        "R-C04"
+        "R-C04",
+        "R-F09"
       ],
       "requiredEvidence": "Exact Candidate, Target, fixture assets, host versions, Core/adapter, provider/model route, request/usage, scope and result binding; independent machine assertions and designated-human declaration only for WorkBuddy. Inherited journeys remain machine variants, never hidden extra human journeys. For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
       "prohibitedEffects": [
@@ -3969,6 +3979,25 @@
           ],
           "status": "PENDING",
           "evidenceRefs": []
+        },
+        {
+          "id": "RC05-M3",
+          "targetPointer": "/realCaseCoverage/4/machineVariants/2",
+          "definitionDigest": "sha256:f7670d435d5477502f87e47238ffdda2045615cb8aa3b375ce659a93ee7a4171",
+          "scenario": "Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy.",
+          "hosts": [
+            "Codex"
+          ],
+          "coversAcceptanceIds": [
+            "R-F09"
+          ],
+          "requiredEvidence": "Real isolated HTTP matrix for four principals, spoofed scope, interleaved scopes, small ascending/descending pages, invalid legacy rows, unknown and empty scope, exact existing platform policy, restart and byte-identical read-only audit. Fresh installed successor binding.",
+          "prohibitedEffects": [
+            "No Source commands or private configuration ingestion",
+            "No audit history mutation, privilege escalation, credential re-entry, automatic release or old PASS transfer"
+          ],
+          "status": "PENDING",
+          "evidenceRefs": []
         }
       ]
     }
@@ -3986,7 +4015,8 @@
     "tests/unit/project-semantic-transport-contract.test.mjs",
     "tests/functional/project-semantic-transports.test.mjs",
     "tests/functional/harness-catalog-consumer.test.mjs",
-    "tests/e2e/installed-recovery-transport.test.mjs"
+    "tests/e2e/installed-recovery-transport.test.mjs",
+    "tests/functional/audit-scope.test.mjs"
   ],
   "boundaries": {
     "localTestsCloseCriteria": false,

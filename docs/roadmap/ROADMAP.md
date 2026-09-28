@@ -1130,3 +1130,10 @@ This revision changes the terminal Engine dependency to 4.8.1 while retaining 4.
 ### Current convergence release: Codex-only acceptance
 
 For Harness 4.8.1, Runtime 6.3.0 and Expert 2.3.0 only, live Host acceptance requires exact-version qualified Codex. This explicit successor policy overrides inherited WorkBuddy, Claude Code, independent-Host and cross-Host execution requirements. Published historical evidence and Roadmaps keep their historical meaning. All generated adapter contracts and generic MCP/headless transport checks remain, without a real cross-Host acceptance claim. All non-Host functionality, security, exact installed artifacts, 5400-second active soak, impact closure and NO_REGRESSION remain required. Release remains separately governed.
+
+
+### Approved acceptance defect repair (2026-09-28)
+
+Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy.
+
+This repair retains the existing product versions and boundaries. Original acceptance and historical evidence remain intact. The current execution stops after steps 1 and 2; it does not authorize soak, formal acceptance closure, or publication.

@@ -5,9 +5,9 @@
   "projectionMode": "SOURCE_DEVELOPMENT_ONLY_NOT_ACCEPTANCE",
   "target": {
     "id": "evopilot-evolution-expert-v2.3.0-semantic-convergence-successor",
-    "revision": 4,
-    "fileDigest": "sha256:bdd3c79a6c3251cd2b08e726c3e394e0c7fbea125e59d9c07dd36e8a54f85694",
-    "authorizationDigest": "sha256:847f6a6c529b36b0f81ab71aac0684f8569135b7c21acd7f91776412361892e1"
+    "revision": 5,
+    "fileDigest": "sha256:90df4915e07aad6a026b3f9b08db7f1ba26d8190c7ebcb0ea36b807029b93a2a",
+    "authorizationDigest": "sha256:920349901bfd44824ff51f7fdaad1ac2ebd2ae5cdaa454def60beacc5361517e"
   },
   "current": [
     {

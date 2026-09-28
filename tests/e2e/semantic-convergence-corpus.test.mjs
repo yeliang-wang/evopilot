@@ -10,8 +10,8 @@ const read = product => JSON.parse(fs.readFileSync(path.join(ROOT, planPath(prod
 for (const product of ["runtime", "expert"]) {
   test(`${product}: versioned definitions retain five families, declared variants and all 388 inheritance bindings`, () => {
     const plan = read(product), before = JSON.stringify(plan), report = validateCasePlan(product, plan);
-    assert.equal(report.caseCount, 5); assert.equal(report.machineVariantCount, product === "runtime" ? 10 : 11); assert.equal(report.inheritedCriterionCount, 388);
-    assert.equal(report.currentCriterionCount, product === "runtime" ? 12 : 13);
+    assert.equal(report.caseCount, 5); assert.equal(report.machineVariantCount, 11); assert.equal(report.inheritedCriterionCount, 388);
+    assert.equal(report.currentCriterionCount, 13);
     assert.equal(new Set(plan.inherited.map(item => item.id)).size, 388);
     assert.equal(report.externalTarget, "NOT_READ"); assert.equal(report.targetCriteriaClosed, 0);
     for (const key of ["installedPackageE2E", "realHost", "activeSoak", "terminalSeriesE2E", "formalAcceptance"]) assert.equal(report[key], "NOT_RUN");

@@ -1,9 +1,9 @@
 {
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-v6.3.0-semantic-convergence-successor",
-  "revision": 3,
+  "revision": 4,
   "status": "APPROVED",
-  "intent": "ontology grounded goal loop project semantic binding",
+  "intent": "ontology grounded goal loop project semantic binding; audit history tenant and workspace isolation repair",
   "objective": "Deliver Runtime-owned semantic project and execution bindings, bounded read-only slices and real Harness-powered dual-bound Goal Loops on complete published supply.",
   "evidence": [
     {
@@ -17,16 +17,20 @@
     {
       "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/pair-inheritance-map.json@sha256:360e2e5c0ca5998d7b29e1987ff4fedb299d38d2532191a57d4c67fbb13af4cc",
       "authority": "Verified source definition lineage; no PASS/approval transfer."
+    },
+    {
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/step12-closure-20260928-source-audit/approved-repairs/user-decision.json@sha256:4358ac60d1e8dc335cb7ed3d0e3944e19b0f3c184b2f8c4f561704f92f710ead",
+      "authority": "Explicit user approval of reviewed defect repairs and associated Roadmap/Target amendments; no release authority."
     }
   ],
   "roadmapBindings": [
     {
-      "repo": "/private/tmp/evopilot-semantic-implementation-jaSySx/evopilot",
+      "repo": "/private/tmp/evopilot-token-accounting-20260928",
       "project": "evopilot",
       "matchedMilestone": "evopilot-6.3-ontology-grounded-harness-powered-goal-loop",
       "targetVersion": "6.3.0",
       "classification": "ALIGNED",
-      "roadmapDigest": "sha256:a1ef356d8707b3e29041a7cb4e4842006c1472d49c776c0d75307fd310c625fd"
+      "roadmapDigest": "sha256:d33e2f0a1e3648d771bb62c8bade6089c03bba1508af0f0ae99da9b92a44e961"
     }
   ],
   "scope": {
@@ -37,14 +41,16 @@
       "Implement and verify the exact target-contract.json @sha256:61e75701781d57735159cb4f297e0b60906dbbc22daca0dc931263a959bbb215 constraints; bind contract and inheritance definitions in implementation/acceptance validators.",
       "Create owning-product versioned tests/e2e corpus and criterion validators; prepare one frozen release build and complete campaign preflight; local Candidate formation and isolated Codex acceptance may proceed only after exact artifact, installation, model-route, Host-qualification and evidence-binding prerequisites pass. Publication remains subject to the separate passing release gate.",
       "Reconcile exact preserved source lineage and implement only in a new isolated codex/ worktree under /tmp; no edits to unrelated user files.",
-      "For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer."
+      "For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
+      "Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy. Exact approved detail: /Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/step12-closure-20260928-source-audit/tenant-isolation/audit-repair-plan.md@sha256:59e911ce65f42498f87317d56653e627169b02f3688ccbce911c53fe1f69c505"
     ],
     "exclude": [
       "Preserve current unrelated checkout changes. Owning-product implementation and verification use the existing isolated source worktrees on this Mac. Acceptance uses separately bound isolated Candidate installations. Durable Targets and evidence stay outside /tmp.",
       "No production/database mutation, semantic asset publication, public prerelease, credential export or unbounded paid-provider execution. Build, installation and Codex acceptance are conditional on their exact preflight bindings; this Target approval alone does not mark acceptance PASSED or authorize publication without the separate release gate.",
       "No Dashboard implementation or dependency, Runtime 6.4 Learning Interoperability, standalone Expert 2.2.1 publication or separate Runtime 6.2 user patch. Existing published bytes, tags and evidence remain immutable.",
       "WorkBuddy and all other live Hosts are outside this release acceptance scope. Do not operate or collect WorkBuddy execution artifacts, request WorkBuddy declarations, or claim cross-Host acceptance. Retain generated-adapter contracts and generic transport tests.",
-      "No weakened approval, mandatory signature, source-project command execution, arbitrary executable Pack, secret import, hidden provider fallback or transfer of producer/consumer ownership."
+      "No weakened approval, mandatory signature, source-project command execution, arbitrary executable Pack, secret import, hidden provider fallback or transfer of producer/consumer ownership.",
+      "Current user-authorized execution stops after step 1/2 completion. No soak, formal acceptance closure, release gate, merge, tag or publication. Existing later acceptance obligations remain pending, not waived."
     ]
   },
   "compatibilityPolicy": {
@@ -107,6 +113,30 @@
           "R-F08",
           "R-C03",
           "R-C04"
+        ]
+      },
+      {
+        "roadmapCriterionDigest": "sha256:a7d04bd7bdb48c162a6626f2ae9638f51e92a4c70d57666523e3b0da83741226",
+        "acceptanceIds": [
+          "R-F01",
+          "R-F02",
+          "R-F03",
+          "R-F04",
+          "R-F05",
+          "R-F06",
+          "R-F07",
+          "R-F08",
+          "R-C01",
+          "R-C02",
+          "R-C03",
+          "R-C04",
+          "R-F09"
+        ]
+      },
+      {
+        "roadmapCriterionDigest": "sha256:861451175c0169915eb404d7e3d2abc622e69c5a7db797da61f4f5c5664aadfd",
+        "acceptanceIds": [
+          "R-F09"
         ]
       }
     ],
@@ -236,6 +266,15 @@
       "critical": true,
       "criterion": "Final-pair acceptance requires active 5400-second soak, all impact reruns and NO_REGRESSION; terminal series E2E remains separately named after every independent version passes. [Current-release Host override: For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.]",
       "requiredEvidence": "Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. No failed/pending/stale/generic/unmapped rows, no hidden fallback or legacy Suite invocation; Dashboard absent from terminal E2E. Current-release evidence override: For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "R-F09",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy.",
+      "requiredEvidence": "Real isolated HTTP matrix for four principals, spoofed scope, interleaved scopes, small ascending/descending pages, invalid legacy rows, unknown and empty scope, exact existing platform policy, restart and byte-identical read-only audit. Fresh installed successor binding.",
       "status": "PENDING",
       "evidenceRefs": []
     }
@@ -6341,7 +6380,8 @@
         "R-F08",
         "R-C01",
         "R-C03",
-        "R-C04"
+        "R-C04",
+        "R-F09"
       ],
       "startingState": "Exact separately authorized fresh installed Runtime6.3.0 + Expert2.3.0 with exact Harness4.8.1 fixture supply; isolated /tmp roots on this Mac; all needed model/Host/source/permission bindings preflighted; no active integration reused.",
       "terminalState": "Under the current Codex-only Host policy: All assigned independent assertions and inherited variants pass with immutable exact evidence; WorkBuddy leg requires a new final declaration; no Release or implicit asset publication. For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
@@ -6395,6 +6435,23 @@
           "requiredEvidence": "Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. Growth/revoke/rollback/TOCTOU/restart/cross-Host resume and unknown-outcome reconciliation matrix. Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. All 365 baseline items plus 18 recovery criteria and five recovery journey families, no silent exclusion or PASS transfer. Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. Fresh isolated install under /tmp, real required Hosts, designated-human WorkBuddy range and exact artifact bindings. Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. No failed/pending/stale/generic/unmapped rows, no hidden fallback or legacy Suite invocation; Dashboard absent from terminal E2E. Full inherited cases mapped to this family, not sampling. For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
           "status": "PENDING",
           "evidenceRefs": []
+        },
+        {
+          "id": "RC05-M3",
+          "scenario": "Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy.",
+          "coversAcceptanceIds": [
+            "R-F09"
+          ],
+          "hosts": [
+            "Codex"
+          ],
+          "prohibitedEffects": [
+            "No Source commands or private configuration ingestion",
+            "No audit history mutation, privilege escalation, credential re-entry, automatic release or old PASS transfer"
+          ],
+          "requiredEvidence": "Real isolated HTTP matrix for four principals, spoofed scope, interleaved scopes, small ascending/descending pages, invalid legacy rows, unknown and empty scope, exact existing platform policy, restart and byte-identical read-only audit. Fresh installed successor binding.",
+          "status": "PENDING",
+          "evidenceRefs": []
         }
       ]
     }
@@ -6410,8 +6467,8 @@
     "target": {
       "decision": "APPROVED",
       "by": "user",
-      "evidenceRef": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/user-decision.json",
-      "authorizationDigest": "sha256:b91dd829ac447c1e1628df8614fd5e014935a147b9421356ebbd4b715ad788fc"
+      "evidenceRef": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/step12-closure-20260928-source-audit/approved-repairs/user-decision.json",
+      "authorizationDigest": "sha256:78aba330004f3fde767f73b33f7de1aac62c75d735e0e54570788f82b517c004"
     },
     "release": {
       "decision": "PENDING"

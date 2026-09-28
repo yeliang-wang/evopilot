@@ -7122,7 +7122,7 @@ export function historyView(store: FileStore, auth: AuthContext, url: URL) {
         artifact: run.artifacts.pullRequestUrl ?? run.artifacts.commitSha ?? run.artifacts.branchName ?? run.id,
         source: { codeUpgradeRunId: run.id, deliveryPlanId: run.deliveryPlanId }
       })),
-    ...store.listAudit()
+    ...store.listAudit({ scope: auth.platformAdmin === true ? undefined : { tenantId: auth.tenantId, workspaceId: auth.workspaceId } })
       .filter((record) => scoped(record.tenantId, record.workspaceId))
       .filter((record) => !projectId || record.target === projectId || String(record.metadata?.projectId ?? "") === projectId)
       .map((record) => ({
