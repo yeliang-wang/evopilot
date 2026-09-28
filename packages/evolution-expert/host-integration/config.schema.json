@@ -1,14 +1,141 @@
 {
-  "$schema":"https://json-schema.org/draft/2020-12/schema",
-  "title":"Expert private Host integration local configuration",
-  "type":"object","additionalProperties":false,
-  "required":["schema","destination","tenantId","workspaceId","username","hostId","permissionPublicKey","deploymentPublicKey","timeoutMs","ledgerPath"],
-  "properties":{
-    "schema":{"const":"evopilot-expert-host-config/v1"},
-    "destination":{"type":"string","pattern":"^https://[^/?#@]+$"},
-    "tenantId":{"$ref":"#/$defs/id"},"workspaceId":{"$ref":"#/$defs/id"},"username":{"$ref":"#/$defs/id"},"hostId":{"$ref":"#/$defs/id"},
-    "permissionPublicKey":{"type":"string"},"deploymentPublicKey":{"type":"string"},
-    "timeoutMs":{"type":"integer","minimum":1000,"maximum":120000},"ledgerPath":{"type":"string","pattern":"^/"}
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Expert private Host integration local configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "destination",
+    "tenantId",
+    "workspaceId",
+    "hostId",
+    "permissionPublicKey",
+    "deploymentPublicKey",
+    "timeoutMs",
+    "ledgerPath"
+  ],
+  "properties": {
+    "schema": {
+      "const": "evopilot-expert-host-config/v1"
+    },
+    "destination": {
+      "type": "string",
+      "pattern": "^https://[^/?#@]+$"
+    },
+    "tenantId": {
+      "$ref": "#/$defs/id"
+    },
+    "workspaceId": {
+      "$ref": "#/$defs/id"
+    },
+    "username": {
+      "$ref": "#/$defs/id"
+    },
+    "hostId": {
+      "$ref": "#/$defs/id"
+    },
+    "permissionPublicKey": {
+      "type": "string"
+    },
+    "deploymentPublicKey": {
+      "type": "string"
+    },
+    "timeoutMs": {
+      "type": "integer",
+      "minimum": 1000,
+      "maximum": 120000
+    },
+    "ledgerPath": {
+      "type": "string",
+      "pattern": "^/"
+    },
+    "authentication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mode",
+        "credentialId",
+        "actor",
+        "role",
+        "credentialPublicKey"
+      ],
+      "properties": {
+        "mode": {
+          "const": "local-token"
+        },
+        "credentialId": {
+          "$ref": "#/$defs/id"
+        },
+        "actor": {
+          "$ref": "#/$defs/id"
+        },
+        "role": {
+          "enum": [
+            "operator",
+            "admin"
+          ]
+        },
+        "credentialPublicKey": {
+          "type": "string"
+        }
+      }
+    },
+    "localTls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "certificatePem",
+        "certificateDigest",
+        "upstream",
+        "gatewayConfigDigest"
+      ],
+      "properties": {
+        "certificatePem": {
+          "type": "string",
+          "maxLength": 8192
+        },
+        "certificateDigest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "gatewayConfigDigest": {
+          "type": "string",
+          "pattern": "^sha256:[a-f0-9]{64}$"
+        },
+        "upstream": {
+          "type": "string",
+          "pattern": "^http://127\\.0\\.0\\.1(?::[0-9]+)?$"
+        }
+      }
+    }
   },
-  "$defs":{"id":{"type":"string","pattern":"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$"}}
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$"
+    }
+  },
+  "oneOf": [
+    {
+      "required": [
+        "username"
+      ],
+      "not": {
+        "required": [
+          "authentication"
+        ]
+      }
+    },
+    {
+      "required": [
+        "authentication",
+        "localTls"
+      ],
+      "not": {
+        "required": [
+          "username"
+        ]
+      }
+    }
+  ]
 }

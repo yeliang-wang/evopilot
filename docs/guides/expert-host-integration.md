@@ -25,3 +25,12 @@ to the private config; no public HTTPS address or system CA installation is
 required. Runtime remains the same authenticated local HTTP service. The
 private input window opens only after the scoped TLS and Runtime availability
 check succeeds. This does not substitute for real Host permission qualification.
+
+For a managed local EvoPilot Runtime, the explicitly configured `local-token`
+mode reuses a registered Runtime credential inside the trusted Host launcher.
+The user enters only the Provider API Key in the native form; no Runtime username
+or password is requested. This does not change the external Agent's login.
+Missing or stale credential registration fails closed and requires connection
+repair, not automatic account creation or password fallback. First-install
+credential provisioning remains a prerequisite. See the private integration
+README's **Managed local Runtime token mode** for trust and pipe contracts.

@@ -1,5 +1,6 @@
 // Private Host process entry. Not an Expert Core operation or an MCP credential tool.
 import fs from 'node:fs';
+import { readCredentialPipe } from './credential.mjs';
 import { provision } from './controller.mjs';
 import { verifyInventory } from './inventory.mjs';
 import { nativeCollector } from './native.mjs';
@@ -33,7 +34,7 @@ try {
   clearTimeout(watchdog);
   const result = await provision({...request, config, componentDigest}, {platform:`${process.platform}-${process.arch}`, integrity,
     ledger:ledger(config.ledgerPath), collect:nativeCollector(`${import.meta.dirname}/dist/darwin-arm64/secure-input`),
-    transport:privateTransport(config), signal:abort.signal});
+    transport:privateTransport(config), credential:signal=>readCredentialPipe(3,signal), signal:abort.signal});
   process.stdout.write(`${JSON.stringify(result)}\n`);
 } catch { process.stdout.write('{"status":"BINDING_REJECTED"}\n'); process.exitCode = 1; }
 finally { clearTimeout(watchdog); }

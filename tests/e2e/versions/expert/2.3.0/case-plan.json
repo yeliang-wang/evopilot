@@ -5,9 +5,9 @@
   "projectionMode": "SOURCE_DEVELOPMENT_ONLY_NOT_ACCEPTANCE",
   "target": {
     "id": "evopilot-evolution-expert-v2.3.0-semantic-convergence-successor",
-    "revision": 3,
-    "fileDigest": "sha256:6119dd0f6c22a28ebfb2f6a34929ac086db25e5eea02c08b94f5387d6ab78a42",
-    "authorizationDigest": "sha256:8f27ec50d13216d16b47f57e5a246a61ddf5962ab0dd013e40214335074e1e89"
+    "revision": 4,
+    "fileDigest": "sha256:bdd3c79a6c3251cd2b08e726c3e394e0c7fbea125e59d9c07dd36e8a54f85694",
+    "authorizationDigest": "sha256:847f6a6c529b36b0f81ab71aac0684f8569135b7c21acd7f91776412361892e1"
   },
   "current": [
     {
@@ -106,6 +106,24 @@
       "definitionDigest": "sha256:f2fa7c6efc5519cb866b3943fc8c52cfc3521cf70331338c17976c0d36ddc7eb",
       "criterion": "Current/inherited/cross/impact and NO_REGRESSION close only on exact final artifacts with 5400-second active soak and no leaked secret, hidden fallback or legacy Suite invocation. [Current-release Host override: For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.]",
       "requiredEvidence": "Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. Independent per-item aggregation; terminal series E2E and each product Release authorization remain separate. Current-release evidence override: For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E-TOKEN-F01",
+      "targetPointer": "/acceptance/11",
+      "definitionDigest": "sha256:ca20a7a655b80448681c09188b4e2c222a0cda74b0d979606b0e2e88e244903c",
+      "criterion": "Managed local token mode uses an explicitly configured trusted local credential source and a signed request-bound actor/role/tenant/workspace/destination/token attestation through a bounded private inherited descriptor. Native input collects provider value only; no Runtime username/password prompt or login API call.",
+      "requiredEvidence": "Actual scoped local credential provenance, installed Codex permission and native value-only input, actual Runtime SecretRef and audit.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E-TOKEN-C01",
+      "targetPointer": "/acceptance/12",
+      "definitionDigest": "sha256:e3c17bea3f0dce2c97a0b79216573424b535d723b14303ca9af18d70f3750892",
+      "criterion": "Missing, invalid, expired, changed-scope or wrong-identity credential binding fails closed before provider input. No model-directed source, ordinary environment, plaintext handoff, secret output, automatic accounts, password fallback or privilege escalation. Preserve explicit legacy password mode and all cancellation/replay/UNKNOWN and Runtime-owned authority invariants.",
+      "requiredEvidence": "Fault matrix including empty-list identity counterexample, revoked and insufficient-role token, secret-leak surface scans, bounded pipe lifetime, native positive/cancel, installed legacy regression.",
       "status": "PENDING",
       "evidenceRefs": []
     }
@@ -3608,7 +3626,7 @@
     {
       "id": "RC01",
       "targetPointer": "/realCaseCoverage/0",
-      "definitionDigest": "sha256:bc4dce728a01022e83381fac1b12735db8cfd2185023c222fb4e991990f76086",
+      "definitionDigest": "sha256:1318fd1c2b2a904a4029f3010c35bbbe226d0a2c3754038b3bfbd2a3017c4410",
       "scenario": "Published semantic map discovery and ordinary first-run setup",
       "hosts": [
         "Codex"
@@ -3619,7 +3637,9 @@
         "E-F01",
         "E-F02",
         "E-F05",
-        "E-C01"
+        "E-C01",
+        "E-TOKEN-F01",
+        "E-TOKEN-C01"
       ],
       "requiredEvidence": "Exact Candidate, Target, fixture assets, host versions, Core/adapter, provider/model route, request/usage, scope and result binding; independent machine assertions and designated-human declaration only for WorkBuddy. Inherited journeys remain machine variants, never hidden extra human journeys. For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
       "prohibitedEffects": [
@@ -3673,6 +3693,25 @@
             "No Dashboard implementation or dependency, Runtime 6.4 Learning Interoperability, standalone Expert 2.2.1 publication or separate Runtime 6.2 user patch. Existing published bytes, tags and evidence remain immutable.",
             "Never operate, observe or collect execution artifacts from WorkBuddy; designated-human complete runbooks and one final range declaration only. Other required Hosts retain independent exact-version qualification and evidence.",
             "No weakened approval, mandatory signature, source-project command execution, arbitrary executable Pack, secret import, hidden provider fallback or transfer of producer/consumer ownership."
+          ],
+          "status": "PENDING",
+          "evidenceRefs": []
+        },
+        {
+          "id": "RC01-LOCAL-TOKEN",
+          "targetPointer": "/realCaseCoverage/0/machineVariants/2",
+          "definitionDigest": "sha256:679c95e86125d9cb0fbb5d89050a2a0cd70939ba82c29f6bc34011ea865808bb",
+          "scenario": "Configured local token private-input positive and adversarial matrix; never bootstrap accounts.",
+          "hosts": [
+            "Codex"
+          ],
+          "coversAcceptanceIds": [
+            "E-TOKEN-F01",
+            "E-TOKEN-C01"
+          ],
+          "requiredEvidence": "Exact current Candidate/credential-source binding, real human permission, native input, scoped SecretRef/audit, negative matrix and legacy regression.",
+          "prohibitedEffects": [
+            "No model-visible credential, new account, password fallback, direct Runtime store write or release."
           ],
           "status": "PENDING",
           "evidenceRefs": []
@@ -3980,6 +4019,8 @@
     "tests/unit/evolution-expert-runtime-materialization.test.mjs",
     "tests/unit/evolution-expert-recovery-plan.test.mjs",
     "tests/functional/evolution-expert-host-integration.test.mjs",
+    "tests/functional/evolution-expert-local-tls.test.mjs",
+    "tests/functional/evolution-expert-token-auth.test.mjs",
     "tests/functional/project-semantic-transports.test.mjs",
     "tests/e2e/installed-expert-recovery-transport.test.mjs",
     "tests/e2e/installed-probe-transport.test.mjs"

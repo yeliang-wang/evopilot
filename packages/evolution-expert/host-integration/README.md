@@ -109,7 +109,9 @@ an exact default-binding decision and Runtime readiness readback.
 
 ## Cancellation and uncertain writes
 
-Cancel/close/timeout before native submission performs no Runtime request.
+Cancel/close/timeout before native submission performs no login or Secret write.
+Local TLS health checks and token-mode authenticated read-only preflight may
+already have occurred and may leave ordinary request logs.
 After submission to the controller, login itself can update Runtime login/audit
 metadata, even if Secret creation is later refused. There is no claim of zero
 Runtime mutation after authentication begins.
@@ -247,3 +249,61 @@ model-supplied ALLOW fields and replay never do. No credentials enter elicitatio
 The App Server client must establish actual event provenance and a real human
 UI. Synthetic callback tests and the SDK's existence do not qualify a live Host.
 The signed receipt still stays outside model-visible MCP arguments and results.
+
+### Managed local Runtime token mode
+
+An explicitly configured local token mode removes the Runtime password field.
+This authenticates **EvoPilot Runtime**, not the external coding Agent Runtime.
+The ordinary user still grants the exact Host permission and confirms the native
+scope, then enters only the Provider API Key. First installation must already
+have a registered local Runtime credential; this component does not create an
+account, discover an arbitrary administrator token, refresh credentials or fall
+back to a password prompt. Existing configs with `username` retain password mode.
+
+For local token mode, omit `username` and configure `authentication` with exactly
+`mode: "local-token"`, `credentialId`, `actor`, `role` (`operator` or `admin`) and
+`credentialPublicKey` (Ed25519 PEM). The installation-scoped `localTls` binding is
+required. Remote unmanaged token reuse is unsupported. The config digest binds
+the authentication mode, identity, source id and verification key to the request.
+The supplementary key authenticates only the local credential-source receipt;
+it does not change optional Harness signing or grant Runtime permissions.
+
+A reviewed trusted launcher may call `launchLocalTokenInput` from `launcher.mjs`
+with pinned `configPath`, `configDigest`, `componentDigest`, the original
+credential-free `request`, an abort signal and its trusted `credentialProvider`.
+The provider must inspect its own authoritative Runtime credential registration
+and confirm the real actor, role, tenant/workspace and Runtime destination. It
+must not sign caller assertions, read model-selected files, or assume an empty
+Secret list proves identity. The launcher's key and credential source are outside
+model-controlled tools. This SDK does not supply a credential store or minting CLI.
+
+The provider returns exactly `{token, attestation}`. The signed attestation uses
+the existing canonical Ed25519 envelope and at most five-minute lifetime, with:
+
+```text
+schema=evopilot-local-runtime-credential/v1
+binding=<exact requestBinding>
+credentialId=<configured source identity>
+actor=<configured actor>; role=<configured role>
+tenantId=<configured tenant>; workspaceId=<configured workspace>
+upstream=<pinned literal loopback HTTP Runtime origin>
+tokenDigest=<SHA-256 of token bytes>
+issuedAt=<epoch milliseconds>; expiresAt=<epoch milliseconds>
+```
+
+Only the inherited private descriptor 3 carries this packet to `run.mjs` (or
+through the separately reviewed `mcp.mjs` bridge). The descriptor must be a pipe
+or socket: regular files, argv, ordinary environment, stdin permission envelope,
+MCP arguments/results and plaintext handoff files are not token transports.
+Packet size and read lifetime are bounded. The native child never receives the
+token. The controller verifies the attestation before input and again after the
+human delay and before writing. A Runtime read checks availability, while the
+trusted credential source establishes identity; Runtime still enforces actual
+RBAC and membership on the write. A dishonest local signer cannot elevate a
+viewer token. An uncertain write remains `UNKNOWN`, without replay.
+
+Token-mode acceptance requires real credential-source provenance and actual
+Codex permission/provider-only native input on the exact installed Candidate.
+Synthetic signed fixtures, source tests and native self-test do not qualify that
+path. Ordinary operation continues over MCP stdio and the local HTTP Runtime;
+only the private credential channel uses the bound loopback TLS ingress.

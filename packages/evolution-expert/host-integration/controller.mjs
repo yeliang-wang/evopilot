@@ -1,10 +1,11 @@
+import { verifyCredential } from './credential.mjs';
 import { randomBytes } from 'node:crypto';
 import { validateConfig, requestBinding, verifyAuthority, requireThat, exactKeys } from './contracts.mjs';
 
 // Dependencies are trusted private Host code, never MCP/model-supplied callbacks.
 // Only run.mjs constructs production dependencies. Tests inject synthetic fixtures.
 export async function provision({config:rawConfig, componentDigest, requestId, permission, deployment}, deps) {
-  let stage = 'BINDING', credentials, token, secretId, config, binding;
+  let stage = 'BINDING', credentials, token, credential, secretId, config, binding;
   const abort = new AbortController();
   const cancel = () => abort.abort();
   deps.signal?.addEventListener('abort', cancel, {once:true});
@@ -26,28 +27,43 @@ export async function provision({config:rawConfig, componentDigest, requestId, p
       verifyAuthority(config, binding, permission, deployment);
       requireThat(await deps.integrity() === componentDigest);
     }
+    if(config.authentication) {
+      stage='AUTH';
+      requireThat(typeof deps.credential==='function');
+      credential=await deps.credential(abort.signal);
+      token=verifyCredential(config,binding,credential);
+      // A successful list is availability only, never an identity assertion.
+      const check=await deps.transport({method:'GET',pathname:'/api/v1/secrets',token,signal:abort.signal});
+      requireThat(check.status===200 && Array.isArray(check.data));
+      requireThat(check.data.every(row=>row.tenantId===config.tenantId && row.workspaceId===config.workspaceId));
+      verifyAuthority(config,binding,permission,deployment);
+      requireThat(await deps.integrity()===componentDigest);
+      token=verifyCredential(config,binding,credential);
+    }
     secretId = `expert-${randomBytes(24).toString('hex')}`;
     stage = 'CLAIM';
     deps.ledger.claim(binding, secretId);
     if (abort.signal.aborted) return {status:'CANCELLED'};
     stage = 'INPUT';
-    credentials = await deps.collect({...binding, username:config.username, timeoutMs:config.timeoutMs}, abort.signal);
+    credentials = await deps.collect({...binding, username:config.authentication?.actor??config.username, timeoutMs:config.timeoutMs, ...(config.authentication?{authMode:'local-token'}:{})}, abort.signal);
     if (!credentials || abort.signal.aborted) return {status:'CANCELLED'};
-    exactKeys(credentials, ['password', 'value', 'bindingDigest']);
+    exactKeys(credentials, [...(config.authentication?[]:['password']), 'value', 'bindingDigest']);
     const { digest } = await import('./contracts.mjs');
     requireThat(credentials.bindingDigest === digest(binding));
-    for (const key of ['password','value']) requireThat(typeof credentials[key] === 'string' && credentials[key].length > 0 && Buffer.byteLength(credentials[key]) <= 8192);
-    // Recheck after human delay and before any Runtime request (login itself audits).
+    for (const key of [...(config.authentication?[]:['password']),'value']) requireThat(typeof credentials[key] === 'string' && credentials[key].length > 0 && Buffer.byteLength(credentials[key]) <= 8192);
+    // Recheck authority after the human delay; password-mode login itself audits.
     verifyAuthority(config, binding, permission, deployment);
     requireThat(await deps.integrity() === componentDigest);
     if (abort.signal.aborted) return {status:'CANCELLED'};
     stage = 'AUTH';
-    const auth = await deps.transport({method:'POST', pathname:'/api/v1/auth/login', body:{username:config.username,password:credentials.password}, signal:abort.signal});
-    credentials.password = '';
-    requireThat(auth.status === 200 && typeof auth.data?.token === 'string' && auth.data.token.length > 0 && auth.data.token.length <= 8192);
-    const user = auth.data.user;
-    requireThat(user?.username === config.username && user.tenantId === config.tenantId && user.workspaceId === config.workspaceId && !user.mustChangePassword);
-    token = auth.data.token; auth.data.token = '';
+    if(config.authentication) { token=verifyCredential(config,binding,credential); } else {
+      const auth = await deps.transport({method:'POST', pathname:'/api/v1/auth/login', body:{username:config.username,password:credentials.password}, signal:abort.signal});
+      credentials.password = '';
+      requireThat(auth.status === 200 && typeof auth.data?.token === 'string' && auth.data.token.length > 0 && auth.data.token.length <= 8192);
+      const user = auth.data.user;
+      requireThat(user?.username === config.username && user.tenantId === config.tenantId && user.workspaceId === config.workspaceId && !user.mustChangePassword);
+      token = auth.data.token; auth.data.token = '';
+    }
     stage = 'PRE_SUBMIT';
     const before = await deps.transport({method:'GET',pathname:'/api/v1/secrets',token,signal:abort.signal});
     requireThat(before.status === 200 && Array.isArray(before.data));
@@ -56,6 +72,7 @@ export async function provision({config:rawConfig, componentDigest, requestId, p
     verifyAuthority(config, binding, permission, deployment);
     requireThat(await deps.integrity() === componentDigest);
     if (abort.signal.aborted) return {status:'CANCELLED'};
+    if(config.authentication) token=verifyCredential(config,binding,credential);
     // A connection failure can occur after Runtime commits. Never replay this POST.
     stage = 'MAY_HAVE_SUBMITTED';
     const created = await deps.transport({method:'POST',pathname:'/api/v1/secrets',token,signal:abort.signal,
@@ -81,6 +98,7 @@ export async function provision({config:rawConfig, componentDigest, requestId, p
   } finally {
     clearTimeout(timer); deps.signal?.removeEventListener('abort', cancel);
     if (credentials) { credentials.password = ''; credentials.value = ''; }
+    if(credential) credential.token='';
     token = undefined;
     // JS/OS copies are not guaranteed erased; do not claim total-memory secrecy.
   }

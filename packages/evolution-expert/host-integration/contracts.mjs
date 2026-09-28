@@ -15,7 +15,7 @@ export function exactKeys(value, keys) {
 }
 const id = value => typeof value === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$/.test(value);
 export function validateConfig(config) {
-  exactKeys(config, ['schema', 'destination', 'tenantId', 'workspaceId', 'username', 'hostId', 'permissionPublicKey', 'deploymentPublicKey', 'timeoutMs', 'ledgerPath', ...(Object.hasOwn(config,'localTls')?['localTls']:[])]);
+  exactKeys(config, ['schema', 'destination', 'tenantId', 'workspaceId', ...(Object.hasOwn(config,'authentication')?['authentication']:['username']), 'hostId', 'permissionPublicKey', 'deploymentPublicKey', 'timeoutMs', 'ledgerPath', ...(Object.hasOwn(config,'localTls')?['localTls']:[])]);
   requireThat(config.schema === 'evopilot-expert-host-config/v1');
   requireThat(typeof config.ledgerPath === 'string' && path.isAbsolute(config.ledgerPath) && path.resolve(config.ledgerPath) === config.ledgerPath);
   const url = new URL(config.destination);
@@ -32,7 +32,14 @@ export function validateConfig(config) {
     requireThat(digest(cert.raw)===config.localTls.certificateDigest && cert.checkIP('127.0.0.1')==='127.0.0.1');
     requireThat(Date.parse(cert.validFrom)<=Date.now() && Date.parse(cert.validTo)>Date.now());
   }
-  for (const key of ['tenantId', 'workspaceId', 'username', 'hostId']) requireThat(id(config[key]));
+  if (Object.hasOwn(config,'authentication')) {
+    const a=config.authentication;
+    exactKeys(a,['mode','credentialId','actor','role','credentialPublicKey']);
+    requireThat(a.mode==='local-token' && config.localTls && url.hostname==='127.0.0.1');
+    requireThat(id(a.credentialId) && id(a.actor) && ['operator','admin'].includes(a.role));
+    requireThat(createPublicKey(a.credentialPublicKey).asymmetricKeyType==='ed25519');
+  }
+  for (const key of ['tenantId', 'workspaceId', 'hostId', ...(config.authentication?[]:['username'])]) requireThat(id(config[key]));
   requireThat(Number.isInteger(config.timeoutMs) && config.timeoutMs >= 1000 && config.timeoutMs <= 120000);
   for (const key of ['permissionPublicKey', 'deploymentPublicKey']) requireThat(createPublicKey(config[key]).asymmetricKeyType === 'ed25519');
   return Object.freeze(structuredClone(config));
