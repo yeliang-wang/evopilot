@@ -22,6 +22,7 @@ export async function handleAuditHistoryRoutes(context: AuditHistoryRoutesContex
   if (request.method === "GET" && url.pathname === "/api/v1/audit") {
     if (!hasRole(auth, "viewer")) return writeJson(response, 403, { error: "FORBIDDEN" });
     return writeJson(response, 200, envelope(store.listAudit({
+      scope: auth.platformAdmin === true ? undefined : { tenantId: auth.tenantId, workspaceId: auth.workspaceId },
       limit: optionalPositiveIntegerQuery(url.searchParams.get("limit"), "limit", 1000),
       order: auditListOrder(url.searchParams.get("order"))
     })));

@@ -461,6 +461,18 @@ evopilot source-closure execute <loop-id> --json
 
 Audit API equivalent: `/api/v1/audit?limit=<n>&order=desc`.
 
+Audit and history audit entries use the authenticated tenant and workspace. A
+tenant administrator has the same scope boundary as an operator or viewer;
+only an authenticated platform administrator retains global visibility. Query
+parameters cannot widen this scope. Legacy audit rows without a valid explicit
+tenant and workspace are excluded from scoped reads and remain unchanged on
+disk.
+
+The audit limit selects the latest authorized records before ordering: `asc`
+returns that selection oldest first, while `desc` returns it newest first.
+Foreign activity does not consume the caller's limit. Omit the API limit to
+return all authorized records; use a positive limit for routine diagnostics.
+
 If the server is unreachable, commands return `SERVER_UNREACHABLE` diagnostics through `status=UNREACHABLE`.
 
 ## Harness Catalog API Projection

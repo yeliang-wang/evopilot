@@ -1909,7 +1909,8 @@
         "immutable SemanticExecutionBinding/v1 pinning Project, GoalTarget, ontology ArtifactSet, resolved snapshot, Skill, HarnessBundle closure, LifecycleRevision, OntologyReasoningProfile, resolver, Runtime LLM profile, Host, Agent Runtime, environment, policy, authority, permissions, and evidence contract",
         "read-only SemanticContextResolver/v1 producing a digest-bound minimum SemanticContextSlice/v1 for each exact pendingExecution",
         "separate non-mutating proposal handoffs for Ontology gaps and Harness capability gaps",
-        "compatible Harness-only path for existing projects and dual binding by default for new projects when a compatible published Project Ontology exists"
+        "compatible Harness-only path for existing projects and dual binding by default for new projects when a compatible published Project Ontology exists",
+        "Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy."
       ],
       "acceptance": [
         "inherit Runtime 6.2 readiness, secure-input transport compatibility, current and historical acceptance through an explicit item-level map against the final Runtime 6.3.0 and Expert 2.3.0 pair; no automatic acceptance or approval transfer",
@@ -1918,7 +1919,8 @@
         "a minimal reviewed project semantic map may satisfy binding without requiring a complete enterprise ontology",
         "EvoPilot does not author, approve, publish, or mutate Ontology or Harness assets",
         "five top-level journey families cover semantic-map discovery, gap and successor handling, ArtifactSet and Skill compatibility, one real dual-bound Goal Target Loop, immutable slicing and failure recovery, with all independent variants and NO_REGRESSION retained",
-        "For this release, releaseHostCoveragePolicy takes precedence over inherited Host execution clauses: Codex is the only real Host acceptance path; all other behavior, security, adapter-contract, transport, active-soak and NO_REGRESSION obligations remain. No cross-Host conformance claim is made."
+        "For this release, releaseHostCoveragePolicy takes precedence over inherited Host execution clauses: Codex is the only real Host acceptance path; all other behavior, security, adapter-contract, transport, active-soak and NO_REGRESSION obligations remain. No cross-Host conformance claim is made.",
+        "Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy."
       ],
       "signals": [
         "ontology grounded goal loop",
@@ -1929,7 +1931,11 @@
         "project business semantic map",
         "本体驱动 goal loop",
         "项目业务语义地图",
-        "语义执行绑定"
+        "语义执行绑定",
+        "audit history",
+        "audit scope",
+        "tenant and workspace isolation in audit",
+        "filter before pagination"
       ]
     },
     {

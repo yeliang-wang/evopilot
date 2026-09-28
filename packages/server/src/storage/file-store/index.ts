@@ -1784,34 +1784,52 @@ export class FileStore {
     });
   }
 
-  listAudit(options: { limit?: number; order?: "asc" | "desc" } = {}): AuditRecord[] {
+  listAudit(options: { limit?: number; order?: "asc" | "desc"; scope?: { tenantId: string; workspaceId: string } } = {}): AuditRecord[] {
     if (!fs.existsSync(this.auditFile)) return [];
-    const records = options.limit
-      ? this.readAuditTail(options.limit)
-      : fs.readFileSync(this.auditFile, "utf8")
-        .split("\n")
-        .filter(Boolean)
-        .map((line) => this.hydrateAuditRecord(JSON.parse(line)));
+    const records = this.readAuditTail(options.limit, options.scope);
     return options.order === "desc" ? [...records].reverse() : records;
   }
 
-  private readAuditTail(limit: number): AuditRecord[] {
+  private readAuditTail(limit?: number, scope?: { tenantId: string; workspaceId: string }): AuditRecord[] {
+    const validScopeId = (value: unknown): value is string => typeof value === "string" && /^[a-zA-Z0-9_.-]{1,160}$/.test(value);
+    if (scope && (!validScopeId(scope.tenantId) || !validScopeId(scope.workspaceId))) return [];
     const fd = fs.openSync(this.auditFile, "r");
     try {
-      const stat = fs.fstatSync(fd);
       const chunkSize = 64 * 1024;
-      let position = stat.size;
-      const chunks: Buffer[] = [];
-      let lines: string[] = [];
-      while (position > 0 && lines.length <= limit) {
+      let position = fs.fstatSync(fd).size;
+      let fragment: Buffer = Buffer.alloc(0);
+      const records: AuditRecord[] = [];
+      const enough = () => limit !== undefined && records.length >= limit;
+      const collect = (line: Buffer) => {
+        if (line.length === 0 || line.toString("utf8").trim() === "") return;
+        const record = JSON.parse(line.toString("utf8"));
+        // Scope is checked before compatibility hydration. Missing or coerced
+        // legacy identifiers must never acquire an authenticated caller's scope.
+        if (scope && (!record || typeof record !== "object" || Array.isArray(record)
+          || !validScopeId(record.tenantId) || !validScopeId(record.workspaceId)
+          || record.tenantId !== scope.tenantId || record.workspaceId !== scope.workspaceId)) return;
+        records.push(this.hydrateAuditRecord(record));
+      };
+      // Scan newest records first, retaining only selected rows and a partial
+      // line. Sparse scopes may require more I/O, but not the full foreign tail
+      // in memory. Complete byte lines preserve UTF-8 across chunk boundaries.
+      while (position > 0 && !enough()) {
         const readSize = Math.min(chunkSize, position);
         position -= readSize;
         const buffer = Buffer.allocUnsafe(readSize);
-        fs.readSync(fd, buffer, 0, readSize, position);
-        chunks.unshift(buffer);
-        lines = Buffer.concat(chunks).toString("utf8").split("\n").filter(Boolean);
+        if (fs.readSync(fd, buffer, 0, readSize, position) !== readSize) throw new Error("AUDIT_HISTORY_CHANGED_DURING_READ");
+        const bytes = fragment.length ? Buffer.concat([buffer, fragment]) : buffer;
+        let end = bytes.length;
+        let newline = bytes.lastIndexOf(10, end - 1);
+        while (newline >= 0 && !enough()) {
+          collect(bytes.subarray(newline + 1, end));
+          end = newline;
+          newline = end > 0 ? bytes.lastIndexOf(10, end - 1) : -1;
+        }
+        fragment = enough() ? Buffer.alloc(0) : Buffer.from(bytes.subarray(0, end));
       }
-      return lines.slice(-limit).map((line) => this.hydrateAuditRecord(JSON.parse(line)));
+      if (!enough() && fragment.length) collect(fragment);
+      return records.reverse();
     } finally {
       fs.closeSync(fd);
     }

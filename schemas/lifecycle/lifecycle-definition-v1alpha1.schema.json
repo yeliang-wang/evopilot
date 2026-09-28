@@ -29,6 +29,19 @@
       }
     },
     "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+    "obligations": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "requiredEvidence": { "$ref": "#/$defs/obligationStrings" },
+        "validators": { "$ref": "#/$defs/obligationStrings" },
+        "constraints": { "$ref": "#/$defs/obligationStrings" },
+        "requestedPermissions": { "$ref": "#/$defs/obligationStrings" },
+        "disabledHarnessEvidence": { "$ref": "#/$defs/obligationStrings" },
+        "disabledHarnessValidators": { "$ref": "#/$defs/obligationStrings" },
+        "weakenedHarnessConstraints": { "$ref": "#/$defs/obligationStrings" }
+      }
+    },
     "inputs": {
       "type": "array",
       "items": { "$ref": "#/$defs/input" }
@@ -40,6 +53,10 @@
     }
   },
   "$defs": {
+    "obligationStrings": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "\\S" }
+    },
     "condition": {
       "type": "object",
       "additionalProperties": false,

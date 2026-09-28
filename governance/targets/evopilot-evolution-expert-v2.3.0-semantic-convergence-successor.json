@@ -1,7 +1,7 @@
 {
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-evolution-expert-v2.3.0-semantic-convergence-successor",
-  "revision": 4,
+  "revision": 5,
   "status": "APPROVED",
   "intent": "Evolution Expert 2.3 project semantic guide and local Runtime token-bound private input",
   "objective": "Deliver stateless semantic guidance plus the retained public CLI and maintained Host Integration secure-input repairs on final version 2.3.0.",
@@ -21,6 +21,10 @@
     {
       "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/local-secure-input-repair/token-auth-review/approved-implementation/user-approval.json",
       "authority": "Explicit user approval of reviewed local token mode amendment and implementation; no release authority."
+    },
+    {
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/step12-closure-20260928-source-audit/approved-repairs/user-decision.json@sha256:4358ac60d1e8dc335cb7ed3d0e3944e19b0f3c184b2f8c4f561704f92f710ead",
+      "authority": "Mechanical binding to approved Runtime audit Roadmap amendment only; unchanged Expert scope, criteria and packaged bytes; no acceptance or release transfer."
     }
   ],
   "roadmapBindings": [
@@ -30,7 +34,7 @@
       "matchedMilestone": "evopilot-evolution-expert-2.3-project-semantic-guide",
       "targetVersion": "2.3.0",
       "classification": "ALIGNED",
-      "roadmapDigest": "sha256:526d959f2ce922c02ddd45f8b983f1e4e3f40fdd2cf1f7379d9864cec6fbb642",
+      "roadmapDigest": "sha256:d33e2f0a1e3648d771bb62c8bade6089c03bba1508af0f0ae99da9b92a44e961",
       "releaseProduct": "evopilot-evolution-expert"
     }
   ],
@@ -6437,8 +6441,8 @@
     "target": {
       "decision": "APPROVED",
       "by": "user",
-      "evidenceRef": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/local-secure-input-repair/token-auth-review/approved-implementation/user-approval.json",
-      "authorizationDigest": "sha256:847f6a6c529b36b0f81ab71aac0684f8569135b7c21acd7f91776412361892e1"
+      "evidenceRef": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/step12-closure-20260928-source-audit/approved-repairs/user-decision.json",
+      "authorizationDigest": "sha256:920349901bfd44824ff51f7fdaad1ac2ebd2ae5cdaa454def60beacc5361517e"
     },
     "release": {
       "decision": "PENDING"

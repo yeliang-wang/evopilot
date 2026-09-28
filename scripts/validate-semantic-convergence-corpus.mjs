@@ -10,14 +10,14 @@ export const ROOT = path.resolve(import.meta.dirname, "..");
 export const sha = bytes => `sha256:${crypto.createHash("sha256").update(bytes).digest("hex")}`;
 const objectDigest = value => sha(JSON.stringify(value));
 const products = {
-  runtime: {version: "6.3.0", id: "evopilot-v6.3.0-semantic-convergence-successor", revision: 3,
-    targetDigest: "sha256:16f255c53a99df7db5c92c98f27669200538b66a3817babf43d2c2fb02d86a45",
-    authorizationDigest: "sha256:b91dd829ac447c1e1628df8614fd5e014935a147b9421356ebbd4b715ad788fc",
-    planDigest: "sha256:d27036b5b573752fdfce53750095bf88c671c65a7f33cfcc3fb47ca49d52cd1b", currentCount: 12},
-  expert: {version: "2.3.0", id: "evopilot-evolution-expert-v2.3.0-semantic-convergence-successor", revision: 4,
-    targetDigest: "sha256:bdd3c79a6c3251cd2b08e726c3e394e0c7fbea125e59d9c07dd36e8a54f85694",
-    authorizationDigest: "sha256:847f6a6c529b36b0f81ab71aac0684f8569135b7c21acd7f91776412361892e1",
-    planDigest: "sha256:1615751fe969ea7864e3d7d02907e30da156708ed0a58509238a9d952cecbce9", currentCount: 13}
+  runtime: {version: "6.3.0", id: "evopilot-v6.3.0-semantic-convergence-successor", revision: 4,
+    targetDigest: "sha256:edb75085a57843dbfeacec2fb7a5521c428eb0e93acd7815ca4c56efc9bd2d98",
+    authorizationDigest: "sha256:78aba330004f3fde767f73b33f7de1aac62c75d735e0e54570788f82b517c004",
+    planDigest: "sha256:ca6af331be67724125db8b5e3f77ba61f22ab1f82ad9bfaa8e1d6c4a952808bf", currentCount: 13},
+  expert: {version: "2.3.0", id: "evopilot-evolution-expert-v2.3.0-semantic-convergence-successor", revision: 5,
+    targetDigest: "sha256:90df4915e07aad6a026b3f9b08db7f1ba26d8190c7ebcb0ea36b807029b93a2a",
+    authorizationDigest: "sha256:920349901bfd44824ff51f7fdaad1ac2ebd2ae5cdaa454def60beacc5361517e",
+    planDigest: "sha256:77e9c4e5928f88de639b025afa7d2e2e44fac7e208aa30c4d4aee1cb9b52b1f3", currentCount: 13}
 };
 const localSuites = {
   runtime: ["tests/unit/semantic-catalog-reader.test.mjs", "tests/unit/semantic-catalog-consumer.test.mjs",
@@ -26,7 +26,7 @@ const localSuites = {
     "tests/unit/semantic-execution-outcome.test.mjs", "tests/unit/semantic-outcome-review.test.mjs",
     "tests/unit/semantic-process-evidence.test.mjs", "tests/unit/project-semantic-transport-contract.test.mjs",
     "tests/functional/project-semantic-transports.test.mjs", "tests/functional/harness-catalog-consumer.test.mjs",
-    "tests/e2e/installed-recovery-transport.test.mjs"],
+    "tests/e2e/installed-recovery-transport.test.mjs", "tests/functional/audit-scope.test.mjs"],
   expert: ["tests/unit/evolution-expert-semantic.test.mjs", "tests/unit/evolution-expert.test.mjs",
     "tests/unit/evolution-expert-cli.test.mjs", "tests/unit/evolution-expert-first-run-llm.test.mjs",
     "tests/unit/evolution-expert-host-integration.test.mjs", "tests/unit/evolution-expert-public-install.test.mjs",
