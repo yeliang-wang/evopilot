@@ -68,6 +68,45 @@ test("LLM gateway retries truncated output according to output contract", async 
   assert.equal(response.text, "complete");
   assert.equal(response.truncationRetryAttempt, 2);
   assert.equal(response.finalMaxOutputTokens, 4096);
+  assert.deepEqual(response.usage, {
+    inputTokens: 40, outputTokens: 1056, totalTokens: 1096,
+    creditsConsumed: 1096, creditUnit: "token"
+  });
+});
+
+test("LLM exhausted truncation reports usage from every completed response", async () => {
+  let calls = 0;
+  const proxy = new LlmProxy(testConfig("http://llm.local"), new OpenAiCompatibleProviderAdapter(async () => {
+    calls += 1;
+    return jsonResponse({choices: [{finish_reason: "length", message: {content: "partial"}}],
+      usage: {prompt_tokens: 20, completion_tokens: 1024 * calls, total_tokens: 20 + 1024 * calls}});
+  }));
+  const response = await proxy.generate({intent: "plan.generation", outputContract: "markdown_document", maxOutputTokens: 1024, prompt: "synthetic"});
+  assert.equal(calls, 2);
+  assert.equal(response.success, false);
+  assert.equal(response.errorCode, "LLM_OUTPUT_TRUNCATED_RETRY_EXHAUSTED");
+  assert.deepEqual(response.usage, {inputTokens: 40, outputTokens: 3072, totalTokens: 3112, creditsConsumed: 3112, creditUnit: "token"});
+});
+
+test("LLM provider failure after truncation retains known usage without estimating the failed call", async t => {
+  let calls = 0;
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-retry-usage-"));
+  t.after(() => fs.rmSync(dir, {recursive: true, force: true}));
+  const metricsPath = path.join(dir, "metrics.jsonl");
+  const proxy = new LlmProxy({...testConfig("http://llm.local"), metrics: {enabled: true, path: metricsPath}}, new OpenAiCompatibleProviderAdapter(async () => {
+    calls += 1;
+    if (calls === 2) return jsonResponse({error: {message: "synthetic unavailable"}}, 503);
+    return jsonResponse({choices: [{finish_reason: "length", message: {content: "partial"}}],
+      usage: {prompt_tokens: 20, completion_tokens: 1024, total_tokens: 1044}});
+  }));
+  const response = await proxy.generate({intent: "plan.generation", outputContract: "markdown_document", maxOutputTokens: 1024, prompt: "synthetic"});
+  assert.equal(calls, 2);
+  assert.equal(response.success, false);
+  assert.equal(response.truncationRetryAttempt, 2);
+  assert.deepEqual(response.usage, {inputTokens: 20, outputTokens: 1024, totalTokens: 1044, creditsConsumed: 1044, creditUnit: "token"});
+  const metrics = fs.readFileSync(metricsPath, "utf8").trim().split("\n").map(JSON.parse);
+  assert.equal(metrics.length, 1);
+  for (const [key, value] of Object.entries(response.usage)) assert.equal(metrics[0][key], value);
 });
 
 test("LLM route resolver maps intent aliases and masker hides secrets", () => {

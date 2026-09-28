@@ -174,6 +174,8 @@ Runtime 6.3.0 在途源码已新增独立的公开语义执行入口，详见下
 
 `creditsConsumed` 当前按 `1 token = 1 LLM credit` 计量，`creditUnit` 固定为 `token`。如果 `calls=0` 或 `totalTokens=0`，只能证明 LLM 已配置，不能证明当前场景真的调用了 LLM。具体执行点还会在 `llmTrace`、Loop executor step output/evidence、code-upgrader session 中记录 `provider`、`model/version`、`usage` 和 `creditsConsumed`。
 
+单次生成因输出截断而重试时，LLM 响应和指标中的 token/credit 用量累计所有已返回用量的尝试；后续请求失败也保留此前的已知用量。未返回的供应商用量不会被估算，因此失败请求的已知用量不能作为完整账单。
+
 Goal/Loop 运行接口还会返回业务级 LLM usage summary：
 
 ```text

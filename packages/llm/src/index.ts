@@ -217,8 +217,35 @@ export class LlmProxy implements LlmTaskClient {
     const retryCap = Math.min(policy.retryCapTokens, modelCap);
     let options = initialOptions;
     let last: LlmGenerateResponse | undefined;
+    let usage: LlmUsage | undefined;
     for (let attempt = 1; attempt <= policy.maxAttempts; attempt += 1) {
-      const response = await this.adapter.generate(request, options);
+      let response: LlmGenerateResponse;
+      try {
+        response = await this.adapter.generate(request, options);
+      } catch (error) {
+        // A later failed request does not erase usage already returned by the
+        // provider. Unknown usage for the failed request remains unestimated.
+        if (!usage) throw error;
+        return {
+          ...failed(request.requestId ?? "", error instanceof LlmProxyError ? error.errorCode : "LLM_PROXY_ERROR",
+            error instanceof Error ? error.message : String(error), Date.now()),
+          provider: last?.provider,
+          model: last?.model,
+          usage,
+          truncationRetryAttempt: attempt,
+          finalMaxOutputTokens: options.maxOutputTokens
+        };
+      }
+      if (response.usage) {
+        usage = {
+          inputTokens: (usage?.inputTokens ?? 0) + response.usage.inputTokens,
+          outputTokens: (usage?.outputTokens ?? 0) + response.usage.outputTokens,
+          totalTokens: (usage?.totalTokens ?? 0) + response.usage.totalTokens,
+          creditsConsumed: (usage?.creditsConsumed ?? 0) + response.usage.creditsConsumed,
+          creditUnit: "token"
+        };
+      }
+      if (usage) response = { ...response, usage };
       response.truncationRetryAttempt = attempt;
       response.finalMaxOutputTokens = options.maxOutputTokens;
       last = response;
