@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import readline from 'node:readline';
 import { spawn } from 'node:child_process';
-import { exactKeys, requireThat } from './contracts.mjs';
+import { exactKeys, requireThat, digest, validateConfig } from './contracts.mjs';
 
 const [configPath,configDigest,componentDigest,receiptPath] = process.argv.slice(2);
 const name = 'provision_workspace_secret';
@@ -18,9 +18,14 @@ async function invoke(requestId) {
   requireThat(stat.isFile() && !stat.isSymbolicLink() && stat.uid === process.getuid() && (stat.mode & 0o077) === 0 && stat.size <= 32768);
   const receipt = JSON.parse(fs.readFileSync(receiptPath));
   exactKeys(receipt,['requestId','permission','deployment']);requireThat(receipt.requestId === requestId);
+  const configStat=fs.lstatSync(configPath);
+  requireThat(configStat.isFile() && !configStat.isSymbolicLink() && configStat.uid===process.getuid() && (configStat.mode&0o077)===0 && configStat.size<=16384);
+  const config=validateConfig(JSON.parse(fs.readFileSync(configPath)));requireThat(digest(config)===configDigest);
+  const privateFd=config.authentication?fs.fstatSync(3):null;
+  if(privateFd)requireThat(privateFd.isFIFO()||privateFd.isSocket());
   // Signed permission/attestation files contain metadata only, never credentials.
   return new Promise(resolve=>{
-    active=spawn(process.execPath,[`${import.meta.dirname}/run.mjs`,configPath,configDigest,componentDigest],{env:{},stdio:['pipe','pipe','ignore']});
+    active=spawn(process.execPath,[`${import.meta.dirname}/run.mjs`,configPath,configDigest,componentDigest],{env:{},stdio:['pipe','pipe','ignore',...(privateFd?[3]:[])]});
     let output='',overflow=false;
     const child=active;
     const timer=setTimeout(()=>{overflow=true;child.kill('SIGTERM');},130000);

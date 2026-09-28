@@ -109,7 +109,9 @@ an exact default-binding decision and Runtime readiness readback.
 
 ## Cancellation and uncertain writes
 
-Cancel/close/timeout before native submission performs no Runtime request.
+Cancel/close/timeout before native submission performs no login or Secret write.
+Local TLS health checks and token-mode authenticated read-only preflight may
+already have occurred and may leave ordinary request logs.
 After submission to the controller, login itself can update Runtime login/audit
 metadata, even if Secret creation is later refused. There is no claim of zero
 Runtime mutation after authentication begins.
@@ -161,3 +163,147 @@ binds native and controller bytes independently of Core/Adapter digests.
 Native `--self-test` validates context without creating an application/window.
 Unit/mock tests and source-directory installs are not a frozen Candidate,
 actual Host execution, secure-input E2E completion or release authorization.
+
+## Local Runtime and installation-scoped TLS
+
+The ordinary Agent path remains MCP stdio to the adapter, then HTTP to the
+local Runtime (default `http://127.0.0.1:19876`). Private credential input still
+requires verified HTTPS. The isolated Host installation can create a loopback
+TLS ingress without changing Runtime, publishing a service, modifying system
+trust, or inheriting `NODE_EXTRA_CA_CERTS` into the private child.
+
+After `install` returns an owner-only installation root, run:
+
+```text
+node /absolute/installed/host-integration/manage.mjs local-setup <installation-root> http://127.0.0.1:19876 19877
+```
+
+This exclusively creates `local-tls/` with an owner-only private key, a
+30-day self-signed loopback certificate and `gateway.json`. `/usr/bin/openssl`
+is required; failure is redacted and never silently falls back to HTTP.
+A second setup against that directory refuses instead of replacing trust.
+The result includes only paths, the public certificate binding, expiration,
+and addresses. No permission or deployment attestation is generated.
+
+Start the ingress from the exact installed component slot:
+
+```text
+node /absolute/installed/host-integration/local-runtime.mjs serve <installation-root>/local-tls/gateway.json
+```
+
+The Host/operator's process supervisor owns this process. It binds only
+`127.0.0.1`; normal shutdown closes outstanding requests and listener sockets.
+A bind failure or invalid/expired certificate fails closed. Stop it when the
+installation is detached. Setup does not edit any Agent settings or auto-start
+an unreviewed background daemon. A changed installation/component slot must
+be reverified before the supervisor launches it.
+
+Use the returned HTTPS `destination` and optional `localTls` object in the
+owner-only private Host config. `localTls` has exactly `certificatePem`,
+`certificateDigest` (SHA-256 of DER certificate bytes), fixed loopback `upstream`,
+and `gatewayConfigDigest`. The config digest in
+the static launch and signed permission binds all four fields. Every request
+includes the pinned gateway-config digest; the ingress rejects a mismatch before
+reading credentials or forwarding. Restarting it with another upstream while
+retaining the certificate therefore cannot redirect an already bound request. Custom certificate trust
+is accepted only for literal `127.0.0.1`, requires a valid IP SAN and validity
+period, and checks both the TLS certificate chain and exact leaf digest. It
+never disables verification or uses operating-system trust installation.
+Existing configs without `localTls` retain the normal trusted HTTPS behavior.
+
+The ingress forwards only login POST and Secret GET/POST to the fixed literal
+HTTP loopback Runtime. It retains Runtime auth, RBAC, tenant/workspace checks,
+encrypted storage and audit; it never creates users or grants access. It does
+not follow redirects, forward cookies, support arbitrary URLs, log bodies or
+use proxies. The local HTTP hop retains the existing trusted-local-machine
+boundary; this does not protect against a compromised Runtime or same-user
+process. The signed deployment inspection must still identify the intended
+local Runtime, its scope and effective storage encryption.
+
+Before showing any private input, the production controller checks the pinned
+TLS ingress and its fixed Runtime's `/health` response. This check proves
+transport availability, not login authorization, encryption, LLM readiness or
+Host permission. A failure collects no credentials and creates no replay claim.
+The original permission and integrity checks still apply before and after input.
+
+Certificate expiry or replacement requires explicit installation maintenance,
+a new config digest, and fresh permission/deployment bindings. Do not silently
+rotate a certificate in an active request. Preserve the replay ledger and
+Runtime state when preparing the replacement installation.
+
+Socket-level tests cover scoped trust in an empty-environment child, wrong
+trust/leaf pins, drift, endpoint restrictions, redirects, Runtime unavailability,
+and real Runtime auth/RBAC/Secret persistence with synthetic input. These are
+not evidence of actual human permission or native positive input; those remain
+separate Candidate-bound Host acceptance requirements.
+
+### Codex control-channel observer SDK
+
+`codexPermissionRequest(binding)` describes a credential-free permission form.
+`codexPermissionObserver(...)` validates an actual App Server
+`mcpServer/elicitation/request` against the pinned thread, MCP server, request
+scope and exact form. Its trusted `requestHumanPermission` callback must return
+the complete displayed scope plus the human's decision. Only an exact ALLOW
+produces a short-lived signed permission; cancellation, mismatches, exceptions,
+model-supplied ALLOW fields and replay never do. No credentials enter elicitation.
+The App Server client must establish actual event provenance and a real human
+UI. Synthetic callback tests and the SDK's existence do not qualify a live Host.
+The signed receipt still stays outside model-visible MCP arguments and results.
+
+### Managed local Runtime token mode
+
+An explicitly configured local token mode removes the Runtime password field.
+This authenticates **EvoPilot Runtime**, not the external coding Agent Runtime.
+The ordinary user still grants the exact Host permission and confirms the native
+scope, then enters only the Provider API Key. First installation must already
+have a registered local Runtime credential; this component does not create an
+account, discover an arbitrary administrator token, refresh credentials or fall
+back to a password prompt. Existing configs with `username` retain password mode.
+
+For local token mode, omit `username` and configure `authentication` with exactly
+`mode: "local-token"`, `credentialId`, `actor`, `role` (`operator` or `admin`) and
+`credentialPublicKey` (Ed25519 PEM). The installation-scoped `localTls` binding is
+required. Remote unmanaged token reuse is unsupported. The config digest binds
+the authentication mode, identity, source id and verification key to the request.
+The supplementary key authenticates only the local credential-source receipt;
+it does not change optional Harness signing or grant Runtime permissions.
+
+A reviewed trusted launcher may call `launchLocalTokenInput` from `launcher.mjs`
+with pinned `configPath`, `configDigest`, `componentDigest`, the original
+credential-free `request`, an abort signal and its trusted `credentialProvider`.
+The provider must inspect its own authoritative Runtime credential registration
+and confirm the real actor, role, tenant/workspace and Runtime destination. It
+must not sign caller assertions, read model-selected files, or assume an empty
+Secret list proves identity. The launcher's key and credential source are outside
+model-controlled tools. This SDK does not supply a credential store or minting CLI.
+
+The provider returns exactly `{token, attestation}`. The signed attestation uses
+the existing canonical Ed25519 envelope and at most five-minute lifetime, with:
+
+```text
+schema=evopilot-local-runtime-credential/v1
+binding=<exact requestBinding>
+credentialId=<configured source identity>
+actor=<configured actor>; role=<configured role>
+tenantId=<configured tenant>; workspaceId=<configured workspace>
+upstream=<pinned literal loopback HTTP Runtime origin>
+tokenDigest=<SHA-256 of token bytes>
+issuedAt=<epoch milliseconds>; expiresAt=<epoch milliseconds>
+```
+
+Only the inherited private descriptor 3 carries this packet to `run.mjs` (or
+through the separately reviewed `mcp.mjs` bridge). The descriptor must be a pipe
+or socket: regular files, argv, ordinary environment, stdin permission envelope,
+MCP arguments/results and plaintext handoff files are not token transports.
+Packet size and read lifetime are bounded. The native child never receives the
+token. The controller verifies the attestation before input and again after the
+human delay and before writing. A Runtime read checks availability, while the
+trusted credential source establishes identity; Runtime still enforces actual
+RBAC and membership on the write. A dishonest local signer cannot elevate a
+viewer token. An uncertain write remains `UNKNOWN`, without replay.
+
+Token-mode acceptance requires real credential-source provenance and actual
+Codex permission/provider-only native input on the exact installed Candidate.
+Synthetic signed fixtures, source tests and native self-test do not qualify that
+path. Ordinary operation continues over MCP stdio and the local HTTP Runtime;
+only the private credential channel uses the bound loopback TLS ingress.

@@ -1,9 +1,9 @@
 {
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-evolution-expert-v2.3.0-semantic-convergence-successor",
-  "revision": 3,
+  "revision": 4,
   "status": "APPROVED",
-  "intent": "Evolution Expert 2.3 project semantic guide",
+  "intent": "Evolution Expert 2.3 project semantic guide and local Runtime token-bound private input",
   "objective": "Deliver stateless semantic guidance plus the retained public CLI and maintained Host Integration secure-input repairs on final version 2.3.0.",
   "evidence": [
     {
@@ -17,16 +17,20 @@
     {
       "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/pair-inheritance-map.json@sha256:360e2e5c0ca5998d7b29e1987ff4fedb299d38d2532191a57d4c67fbb13af4cc",
       "authority": "Verified source definition lineage; no PASS/approval transfer."
+    },
+    {
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/local-secure-input-repair/token-auth-review/approved-implementation/user-approval.json",
+      "authority": "Explicit user approval of reviewed local token mode amendment and implementation; no release authority."
     }
   ],
   "roadmapBindings": [
     {
-      "repo": "/private/tmp/evopilot-semantic-implementation-jaSySx/evopilot",
+      "repo": "/private/tmp/evopilot-token-accounting-20260928",
       "project": "evopilot",
       "matchedMilestone": "evopilot-evolution-expert-2.3-project-semantic-guide",
       "targetVersion": "2.3.0",
       "classification": "ALIGNED",
-      "roadmapDigest": "sha256:a1ef356d8707b3e29041a7cb4e4842006c1472d49c776c0d75307fd310c625fd",
+      "roadmapDigest": "sha256:526d959f2ce922c02ddd45f8b983f1e4e3f40fdd2cf1f7379d9864cec6fbb642",
       "releaseProduct": "evopilot-evolution-expert"
     }
   ],
@@ -38,14 +42,16 @@
       "Implement and verify the exact target-contract.json @sha256:61e75701781d57735159cb4f297e0b60906dbbc22daca0dc931263a959bbb215 constraints; bind contract and inheritance definitions in implementation/acceptance validators.",
       "Create owning-product versioned tests/e2e corpus and criterion validators; prepare one frozen release build and complete campaign preflight; local Candidate formation and isolated Codex acceptance may proceed only after exact artifact, installation, model-route, Host-qualification and evidence-binding prerequisites pass. Publication remains subject to the separate passing release gate.",
       "Reconcile exact preserved source lineage and implement only in a new isolated codex/ worktree under /tmp; no edits to unrelated user files.",
-      "For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer."
+      "For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
+      "Managed local Runtime token-bound private input: ordinary users do not create or enter a Runtime username/password when a trusted local launcher has explicitly bound an existing credential to the exact Runtime, actor, role and tenant/workspace. Transfer the credential only through a private inherited pipe; native UI collects provider input only. Missing/stale binding fails closed without account creation, privilege escalation or password fallback. Preserve explicit legacy password mode, real Host permission, verified TLS, Runtime RBAC/audit, MCP stdio and all existing acceptance. First-install credential provisioning and unmanaged remote token reuse are excluded."
     ],
     "exclude": [
       "Preserve current unrelated checkout changes. Owning-product implementation and verification use the existing isolated source worktrees on this Mac. Acceptance uses separately bound isolated Candidate installations. Durable Targets and evidence stay outside /tmp.",
       "No production/database mutation, semantic asset publication, public prerelease, credential export or unbounded paid-provider execution. Build, installation and Codex acceptance are conditional on their exact preflight bindings; this Target approval alone does not mark acceptance PASSED or authorize publication without the separate release gate.",
       "No Dashboard implementation or dependency, Runtime 6.4 Learning Interoperability, standalone Expert 2.2.1 publication or separate Runtime 6.2 user patch. Existing published bytes, tags and evidence remain immutable.",
       "WorkBuddy and all other live Hosts are outside this release acceptance scope. Do not operate or collect WorkBuddy execution artifacts, request WorkBuddy declarations, or claim cross-Host acceptance. Retain generated-adapter contracts and generic transport tests.",
-      "No weakened approval, mandatory signature, source-project command execution, arbitrary executable Pack, secret import, hidden provider fallback or transfer of producer/consumer ownership."
+      "No weakened approval, mandatory signature, source-project command execution, arbitrary executable Pack, secret import, hidden provider fallback or transfer of producer/consumer ownership.",
+      "No automatic first-install credential creation, unmanaged remote bearer reuse, new Runtime APIs, auth bypass, account creation or release execution in this repair. Stop after steps1/2 as requested."
     ]
   },
   "compatibilityPolicy": {
@@ -214,6 +220,24 @@
       "critical": true,
       "criterion": "Current/inherited/cross/impact and NO_REGRESSION close only on exact final artifacts with 5400-second active soak and no leaked secret, hidden fallback or legacy Suite invocation. [Current-release Host override: For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.]",
       "requiredEvidence": "Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. Independent per-item aggregation; terminal series E2E and each product Release authorization remain separate. Current-release evidence override: For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E-TOKEN-F01",
+      "category": "FUNCTIONAL",
+      "critical": true,
+      "criterion": "Managed local token mode uses an explicitly configured trusted local credential source and a signed request-bound actor/role/tenant/workspace/destination/token attestation through a bounded private inherited descriptor. Native input collects provider value only; no Runtime username/password prompt or login API call.",
+      "requiredEvidence": "Actual scoped local credential provenance, installed Codex permission and native value-only input, actual Runtime SecretRef and audit.",
+      "status": "PENDING",
+      "evidenceRefs": []
+    },
+    {
+      "id": "E-TOKEN-C01",
+      "category": "CAPABILITY",
+      "critical": true,
+      "criterion": "Missing, invalid, expired, changed-scope or wrong-identity credential binding fails closed before provider input. No model-directed source, ordinary environment, plaintext handoff, secret output, automatic accounts, password fallback or privilege escalation. Preserve explicit legacy password mode and all cancellation/replay/UNKNOWN and Runtime-owned authority invariants.",
+      "requiredEvidence": "Fault matrix including empty-list identity counterexample, revoked and insufficient-role token, secret-leak surface scans, bounded pipe lifetime, native positive/cancel, installed legacy regression.",
       "status": "PENDING",
       "evidenceRefs": []
     }
@@ -6063,7 +6087,9 @@
         "E-F01",
         "E-F02",
         "E-F05",
-        "E-C01"
+        "E-C01",
+        "E-TOKEN-F01",
+        "E-TOKEN-C01"
       ],
       "startingState": "Exact separately authorized fresh installed Runtime6.3.0 + Expert2.3.0 with exact Harness4.8.1 fixture supply; isolated /tmp roots on this Mac; all needed model/Host/source/permission bindings preflighted; no active integration reused.",
       "terminalState": "Under the current Codex-only Host policy: All assigned independent assertions and inherited variants pass with immutable exact evidence; WorkBuddy leg requires a new final declaration; no Release or implicit asset publication. For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
@@ -6115,6 +6141,23 @@
             "No weakened approval, mandatory signature, source-project command execution, arbitrary executable Pack, secret import, hidden provider fallback or transfer of producer/consumer ownership."
           ],
           "requiredEvidence": "Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. Generated contract equality, Core and adapter digest checks and malformed/injected Runtime message negatives. Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. Cross-Host semantic equality, conflict/no-map alternatives, exact current decision frames and denial controls. Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. Original r2 native UI, install/doctor/upgrade/rollback/removal, no invisible PTY substitute; no echo/model/argv/env/file leaks and explicit platform rejection. Exact successor artifact/Target/contract/Host bindings, independent executable assertions, named negative controls and redacted evidence. Item-level verified-source mapping and fresh exact final-pair receipts; original publication history stays unchanged. Full inherited cases mapped to this family, not sampling. For this successor release only, execute real Host acceptance solely on exact-version qualified Codex. Other Host live execution, WorkBuddy human declarations and cross-Host equivalence are not claimed or required. Retain all non-Host behavior, security, generated-adapter contract, generic MCP/headless transport, installed-artifact, 5400-second active-soak, impact and NO_REGRESSION obligations. Historical published records remain immutable; no PASS transfer.",
+          "status": "PENDING",
+          "evidenceRefs": []
+        },
+        {
+          "id": "RC01-LOCAL-TOKEN",
+          "scenario": "Configured local token private-input positive and adversarial matrix; never bootstrap accounts.",
+          "coversAcceptanceIds": [
+            "E-TOKEN-F01",
+            "E-TOKEN-C01"
+          ],
+          "hosts": [
+            "Codex"
+          ],
+          "prohibitedEffects": [
+            "No model-visible credential, new account, password fallback, direct Runtime store write or release."
+          ],
+          "requiredEvidence": "Exact current Candidate/credential-source binding, real human permission, native input, scoped SecretRef/audit, negative matrix and legacy regression.",
           "status": "PENDING",
           "evidenceRefs": []
         }
@@ -6394,8 +6437,8 @@
     "target": {
       "decision": "APPROVED",
       "by": "user",
-      "evidenceRef": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/user-decision.json",
-      "authorizationDigest": "sha256:8f27ec50d13216d16b47f57e5a246a61ddf5962ab0dd013e40214335074e1e89"
+      "evidenceRef": "/Users/wangyejing/.codex/evolution-runs/evopilot/semantic-convergence-targets-r3/codex-only-execution/local-secure-input-repair/token-auth-review/approved-implementation/user-approval.json",
+      "authorizationDigest": "sha256:847f6a6c529b36b0f81ab71aac0684f8569135b7c21acd7f91776412361892e1"
     },
     "release": {
       "decision": "PENDING"

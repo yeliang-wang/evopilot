@@ -989,6 +989,9 @@ Removal of the Harness-only compatibility path, mandatory migration of every exi
 
 ### Evolution Expert v2.3.0: Project Semantic and Dual-Binding Guide
 
+Approved local authentication refinement (2026-09-28): Managed local Runtime token-bound private input: ordinary users do not create or enter a Runtime username/password when a trusted local launcher has explicitly bound an existing credential to the exact Runtime, actor, role and tenant/workspace. Transfer the credential only through a private inherited pipe; native UI collects provider input only. Missing/stale binding fails closed without account creation, privilege escalation or password fallback. Preserve explicit legacy password mode, real Host permission, verified TLS, Runtime RBAC/audit, MCP stdio and all existing acceptance. First-install credential provisioning and unmanaged remote token reuse are excluded.
+
+
 Status: `IN_PROGRESS` — active planning; implementation requires its own approved Target.
 
 Guide Source understanding, project-semantic availability, ontology and Harness compatibility, gaps, conflicts, binding review, semantic-slice explanation, successor selection, migration, and rollback through Runtime-owned MCP contracts. Use ordinary-human terms such as project business semantic map, business field, product or system type, semantic gap, and execution capability. Retain one Agent-neutral Core and generated Host adapters. The Expert remains stateless and cannot own, fabricate, select, approve, publish, activate, or mutate semantic assets, Harness assets, bindings, permissions, or Runtime state.

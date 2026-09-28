@@ -4,7 +4,7 @@ import { digest } from './contracts.mjs';
 export function nativeCollector(executable) {
   return (context, signal) => new Promise((resolve, reject) => {
     if (signal.aborted) return resolve(null);
-    const {username, timeoutMs, ...binding} = context;
+    const {username, timeoutMs, authMode, ...binding} = context;
     const child = spawn(executable, [], {env:{}, stdio:['ignore','ignore','ignore','pipe','pipe']});
     let size = 0, failed = false; const chunks = [];
     const abort = () => child.kill('SIGKILL');
@@ -26,6 +26,6 @@ export function nativeCollector(executable) {
       } catch { reject(new Error('INPUT_FAILED')); }
       finally { bytes.fill(0); for (const chunk of chunks) chunk.fill(0); }
     });
-    child.stdio[4].end(JSON.stringify({...binding, username, timeoutMs, bindingDigest:digest(binding)}));
+    child.stdio[4].end(JSON.stringify({...binding, username, timeoutMs, ...(authMode?{authMode}:{}), bindingDigest:digest(binding)}));
   });
 }

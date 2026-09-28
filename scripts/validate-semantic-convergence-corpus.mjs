@@ -14,10 +14,10 @@ const products = {
     targetDigest: "sha256:16f255c53a99df7db5c92c98f27669200538b66a3817babf43d2c2fb02d86a45",
     authorizationDigest: "sha256:b91dd829ac447c1e1628df8614fd5e014935a147b9421356ebbd4b715ad788fc",
     planDigest: "sha256:d27036b5b573752fdfce53750095bf88c671c65a7f33cfcc3fb47ca49d52cd1b", currentCount: 12},
-  expert: {version: "2.3.0", id: "evopilot-evolution-expert-v2.3.0-semantic-convergence-successor", revision: 3,
-    targetDigest: "sha256:6119dd0f6c22a28ebfb2f6a34929ac086db25e5eea02c08b94f5387d6ab78a42",
-    authorizationDigest: "sha256:8f27ec50d13216d16b47f57e5a246a61ddf5962ab0dd013e40214335074e1e89",
-    planDigest: "sha256:99aaafc6e1891c3d2809931e2be11b3c28803d1d7c49d2a98d521be0c664d9f1", currentCount: 11}
+  expert: {version: "2.3.0", id: "evopilot-evolution-expert-v2.3.0-semantic-convergence-successor", revision: 4,
+    targetDigest: "sha256:bdd3c79a6c3251cd2b08e726c3e394e0c7fbea125e59d9c07dd36e8a54f85694",
+    authorizationDigest: "sha256:847f6a6c529b36b0f81ab71aac0684f8569135b7c21acd7f91776412361892e1",
+    planDigest: "sha256:1615751fe969ea7864e3d7d02907e30da156708ed0a58509238a9d952cecbce9", currentCount: 13}
 };
 const localSuites = {
   runtime: ["tests/unit/semantic-catalog-reader.test.mjs", "tests/unit/semantic-catalog-consumer.test.mjs",
@@ -31,7 +31,8 @@ const localSuites = {
     "tests/unit/evolution-expert-cli.test.mjs", "tests/unit/evolution-expert-first-run-llm.test.mjs",
     "tests/unit/evolution-expert-host-integration.test.mjs", "tests/unit/evolution-expert-public-install.test.mjs",
     "tests/unit/evolution-expert-runtime-materialization.test.mjs", "tests/unit/evolution-expert-recovery-plan.test.mjs",
-    "tests/functional/evolution-expert-host-integration.test.mjs", "tests/functional/project-semantic-transports.test.mjs",
+    "tests/functional/evolution-expert-host-integration.test.mjs", "tests/functional/evolution-expert-local-tls.test.mjs",
+    "tests/functional/evolution-expert-token-auth.test.mjs", "tests/functional/project-semantic-transports.test.mjs",
     "tests/e2e/installed-expert-recovery-transport.test.mjs", "tests/e2e/installed-probe-transport.test.mjs"]
 };
 const ensure = (condition, code) => {if (!condition) throw Object.assign(new Error(code), {code});};

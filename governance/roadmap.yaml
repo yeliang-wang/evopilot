@@ -3,7 +3,7 @@
   "roadmapFamily": "evopilot-series-agentic-evolution",
   "contractVersion": "4.0.0",
   "project": "evopilot",
-  "updatedAt": "2026-09-21",
+  "updatedAt": "2026-09-28",
   "ownership": {
     "owns": [
       "third-party project discovery, onboarding, and versioned EvolutionProjectDefinition",
@@ -1945,21 +1945,25 @@
         "absorb public CLI and maintained Host Integration secure-input repairs from the superseded 2.2.1 work without requiring its independent publication",
         "one Agent-neutral Core and generated Host adapters for project semantic and dual-binding guidance",
         "ordinary-human presentation of project business semantic map, business field, product or system type, semantic gap, and execution capability",
-        "Runtime-owned handling of gaps, conflicts, binding review, successor selection, migration, and rollback"
+        "Runtime-owned handling of gaps, conflicts, binding review, successor selection, migration, and rollback",
+        "Managed local Runtime token-bound private input: ordinary users do not create or enter a Runtime username/password when a trusted local launcher has explicitly bound an existing credential to the exact Runtime, actor, role and tenant/workspace. Transfer the credential only through a private inherited pipe; native UI collects provider input only. Missing/stale binding fails closed without account creation, privilege escalation or password fallback. Preserve explicit legacy password mode, real Host permission, verified TLS, Runtime RBAC/audit, MCP stdio and all existing acceptance. First-install credential provisioning and unmanaged remote token reuse are excluded."
       ],
       "acceptance": [
         "all directSemanticConvergenceDeliveryPolicy retainedRequirements are explicitly mapped and validated on final-version artifacts, including public CLI, secure input, real Hosts, active soak and NO_REGRESSION; no blanket PASS or approval transfer",
         "the Expert remains stateless and cannot own, fabricate, select, approve, publish, activate, or mutate semantic assets, Harness assets, bindings, permissions, or Runtime state",
         "all Hosts preserve the same Runtime facts, stop conditions, and authority boundaries",
         "the Runtime and Expert share the five user-visible journey families while retaining independent assertions and evidence",
-        "For this release, releaseHostCoveragePolicy takes precedence over inherited Host execution clauses: Codex is the only real Host acceptance path; all other behavior, security, adapter-contract, transport, active-soak and NO_REGRESSION obligations remain. No cross-Host conformance claim is made."
+        "For this release, releaseHostCoveragePolicy takes precedence over inherited Host execution clauses: Codex is the only real Host acceptance path; all other behavior, security, adapter-contract, transport, active-soak and NO_REGRESSION obligations remain. No cross-Host conformance claim is made.",
+        "Local token-bound private input passes exact credential/identity/scope binding, no-password UI, permission, secrecy, invalid credential, cancellation/replay/UNKNOWN and legacy-password tests on the installed Candidate; no HTTP200 or empty list substitutes for identity attestation."
       ],
       "signals": [
         "Evolution Expert 2.3",
         "project semantic guide",
         "dual binding guide",
         "项目语义数字人",
-        "双绑定向导"
+        "双绑定向导",
+        "local runtime token-bound private input",
+        "ordinary users do not create or enter a runtime username/password"
       ]
     },
     {
