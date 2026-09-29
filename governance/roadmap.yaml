@@ -1920,7 +1920,8 @@
         "EvoPilot does not author, approve, publish, or mutate Ontology or Harness assets",
         "five top-level journey families cover semantic-map discovery, gap and successor handling, ArtifactSet and Skill compatibility, one real dual-bound Goal Target Loop, immutable slicing and failure recovery, with all independent variants and NO_REGRESSION retained",
         "For this release, releaseHostCoveragePolicy takes precedence over inherited Host execution clauses: Codex is the only real Host acceptance path; all other behavior, security, adapter-contract, transport, active-soak and NO_REGRESSION obligations remain. No cross-Host conformance claim is made.",
-        "Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy."
+        "Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy.",
+        "For this release only, releaseCredentialInteractionScopePolicy supersedes native credential-entry execution clauses; excluded interaction is never reported as PASS or publicly claimed as validated. All other required behavior and evidence remain mandatory."
       ],
       "signals": [
         "ontology grounded goal loop",
@@ -1960,7 +1961,8 @@
         "all Hosts preserve the same Runtime facts, stop conditions, and authority boundaries",
         "the Runtime and Expert share the five user-visible journey families while retaining independent assertions and evidence",
         "For this release, releaseHostCoveragePolicy takes precedence over inherited Host execution clauses: Codex is the only real Host acceptance path; all other behavior, security, adapter-contract, transport, active-soak and NO_REGRESSION obligations remain. No cross-Host conformance claim is made.",
-        "Local token-bound private input passes exact credential/identity/scope binding, no-password UI, permission, secrecy, invalid credential, cancellation/replay/UNKNOWN and legacy-password tests on the installed Candidate; no HTTP200 or empty list substitutes for identity attestation."
+        "Local token-bound private input passes exact credential/identity/scope binding, no-password UI, permission, secrecy, invalid credential, cancellation/replay/UNKNOWN and legacy-password tests on the installed Candidate; no HTTP200 or empty list substitutes for identity attestation.",
+        "For this release only, releaseCredentialInteractionScopePolicy supersedes native credential-entry execution clauses; excluded interaction is never reported as PASS or publicly claimed as validated. All other required behavior and evidence remain mandatory."
       ],
       "signals": [
         "Evolution Expert 2.3",
@@ -2344,5 +2346,21 @@
     "exactCodexVersionAndQualificationRequired": true,
     "activeSoakSeconds": 5400,
     "historicalPassTransferAllowed": false
+  },
+  "releaseCredentialInteractionScopePolicy": {
+    "schema": "evopilot-release-credential-interaction-scope/v1",
+    "versions": {
+      "evopilot": "6.3.0",
+      "evopilot-evolution-expert": "2.3.0"
+    },
+    "mode": "REUSE_EXISTING_SCOPED_CONFIGURATION",
+    "requiredEvidence": "Current installed configuration provenance and Runtime-owned identity/scope/SecretRef/readiness receipts, full retained non-interactive security and fault matrices.",
+    "interactiveExecution": "EXCLUDED_NOT_PASS",
+    "nonInteractiveObligationsRetained": true,
+    "nativeInputValidationClaimAllowed": false,
+    "repeatUserCredentialInputAllowed": false,
+    "changesProductBehavior": false,
+    "requiresExplicitReleaseScopeDecision": true,
+    "exception": "For Runtime 6.3.0 and Expert 2.3.0 release acceptance only, reuse the existing explicitly configured, scope-bound LLM profile and SecretRef. Current-campaign credential solicitation, native credential value entry, native positive submission and native cancel interaction are excluded from required execution and remain SKIPPED_BY_USER_NOT_PASS. This exception supersedes only those interactive evidence clauses. All non-interactive credential/identity/role/tenant/workspace/destination binding, invalid/revoked/expired credential refusal, private-transport fault, secrecy, cancellation/replay/UNKNOWN, RBAC/audit, generated-adapter, installed-artifact, real Codex, 5400-second active-soak, impact and NO_REGRESSION obligations remain mandatory. Do not claim native first-input or native cancel validation, create accounts, export credentials, change model routing, bypass authorization or infer acceptance/release approval."
   }
 }

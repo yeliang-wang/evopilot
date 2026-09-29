@@ -1137,3 +1137,17 @@ For Harness 4.8.1, Runtime 6.3.0 and Expert 2.3.0 only, live Host acceptance req
 Audit history is scoped to the authenticated tenant and workspace before ordering and pagination; scoped admin cannot widen access, request parameters cannot spoof scope, missing or invalid historical scope fails closed, and reads preserve audit bytes. Any global access requires an existing explicit platform administration policy.
 
 This repair retains the existing product versions and boundaries. Original acceptance and historical evidence remain intact. The current execution stops after steps 1 and 2; it does not authorize soak, formal acceptance closure, or publication.
+
+## Accepted credential-interaction acceptance scope for 6.3.0 / 2.3.0
+
+The user approved this acceptance-scope amendment on 2026-09-29; it grants no
+release authority. The user has
+required reuse of existing credentials and no repeated credential interaction.
+The accepted release-specific scope uses that configured profile and SecretRef
+for acceptance. Native credential value entry, positive submission and cancel
+interaction remain `SKIPPED_BY_USER_NOT_PASS`; the release must not claim those
+interactions were validated. All non-interactive credential and identity/scope
+checks, secrecy and fault controls, Codex execution, active soak, inherited
+non-interactive obligations and NO_REGRESSION remain required. Product behavior,
+versions, packaged bytes, authentication and publication authority do not change.
+The exact machine policy is `releaseCredentialInteractionScopePolicy`.
