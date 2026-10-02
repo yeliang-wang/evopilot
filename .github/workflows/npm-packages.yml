@@ -103,8 +103,8 @@ jobs:
           test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = "false"
 
           TARGET_RECORD="$RUNNER_TEMP/evopilot-npm-release-target.json"
-          gh api -X GET "repos/$GITHUB_REPOSITORY/contents/governance/targets/$TARGET_ID.json" \
-            -f ref="$GITHUB_SHA" --jq .content | base64 --decode > "$TARGET_RECORD"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          cp "governance/targets/$TARGET_ID.json" "$TARGET_RECORD"
           node - "$TARGET_RECORD" "$NPM_PUBLICATION_AUTHORIZATION_DIGEST" "$VERSION" <<'NODE'
           const fs = require("node:fs");
           const [targetPath, authorizationDigest, version] = process.argv.slice(2);
