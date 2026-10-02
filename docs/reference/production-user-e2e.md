@@ -1,5 +1,9 @@
 # 真实生产用户 E2E 场景
 
+> 历史记录：下文保留 2026-07-07 的 SaaS 评审、验收或部署口径，
+> 不代表当前 Runtime 6.3.0 / Expert 2.3.0 的验收结论或发布要求。
+> 当前版本请参阅[发布与验收记录](../releases/current-release.md)。
+
 ## 当前验收结论
 
 2026-07-07 生产环境真人/数字用户联合验收显示：EvoPilot SaaS 多租户版本已达到生产级 GA stable Release 标准。验收覆盖 Track A 功能场景和 Track B 端到端链路，共 92 项，88 PASS，0 FAIL，4 WARN，综合通过率 95.7%。

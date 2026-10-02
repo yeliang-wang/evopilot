@@ -1,6 +1,6 @@
 # EvoPilot Evolution Expert
 
-Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. This guide covers Expert `2.3.0` and Runtime `6.3.0`, currently under implementation and not accepted or released. The approved successor includes the retained public CLI and secure-input recovery work; there is no standalone Expert 2.2.1 delivery. Expert uses MCP exclusively. Explicit Runtime 6.2.0 compatibility remains available for legacy non-semantic operations; semantic operations require Runtime 6.3 capability negotiation. Runtime and declarative resource versions remain independent.
+Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. This guide covers Expert `2.3.0` and Runtime `6.3.0`, accepted and published with [verified distribution and explicit acceptance limits](../releases/current-release.md). The approved successor includes the retained public CLI and secure-input recovery work; there is no standalone Expert 2.2.1 delivery. Expert uses MCP exclusively. Explicit Runtime 6.2.0 compatibility remains available for legacy non-semantic operations; semantic operations require Runtime 6.3 capability negotiation. Runtime and declarative resource versions remain independent.
 
 One immutable Core generates Host Integration Bundles for Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP. Each bundle contains the same Core and Adapter digests plus install, doctor, health, version, upgrade, rollback, removal, help, and tutorial lifecycle metadata.
 
@@ -43,10 +43,9 @@ CLI, HTTP, CI, events, and webhooks remain available to administrators and machi
 
 ## Package and Host lifecycle
 
-After separate Release authorization and verified publication, administrators
-may use the following package-only diagnostic commands. Before publication,
-install only the exact authorized Candidate tarball in an isolated directory;
-do not request unpublished 2.3.0 from npm or activate current Host integrations.
+Expert 2.3.0 is published and verified. Administrators may use the following
+package-only diagnostic commands. Installing a package does not by itself
+activate a Host integration or establish live Host qualification.
 
 ```bash
 npm install --global @evopilot/evolution-expert@2.3.0
@@ -67,9 +66,9 @@ a nonzero exit status. The SDK remains extensible to independently qualified Hos
 
 ## Source verification and release acceptance
 
-The checked-in SDK, generated adapters and local synthetic tests can verify guidance, finite MCP projections and refusal behavior. They do not prove installed-package or real-Host acceptance. Before release, bind the exact Runtime 6.3.0 / Expert 2.3.0 artifacts, complete the approved current and inherited scenario matrix, and obtain separate Release authorization. WorkBuddy execution belongs to the designated human and closes only through the required final range declaration.
+The checked-in SDK, generated adapters and local synthetic tests can verify guidance, finite MCP projections and refusal behavior. They do not prove installed-package or real-Host acceptance. The exact Runtime 6.3.0 / Expert 2.3.0 artifacts separately passed their approved installed acceptance and were published after release authorization. Real Host acceptance is Codex-only; native credential interaction and a new 90-minute soak remain skipped, not passed. WorkBuddy and other live Host acceptance are not claimed for this delivery.
 
-For maintained source-level runner scope and outstanding complete-RC coverage, see the [versioned acceptance corpus](../../tests/e2e/versions/README.md). Historical [Runtime 6 / Expert 2 acceptance](../operations/v6-acceptance.md) describes the immutable 6.0.0 / 2.0.0 baseline, not a PASS for the current pair.
+For maintained source-level runner scope and case definitions, see the [versioned acceptance corpus](../../tests/e2e/versions/README.md). Historical [Runtime 6 / Expert 2 acceptance](../operations/v6-acceptance.md) describes the immutable 6.0.0 / 2.0.0 baseline, not a PASS for the current pair.
 
 ## Third-party Host
 

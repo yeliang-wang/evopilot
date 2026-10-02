@@ -10,12 +10,12 @@ Install the current release CLI tarball set:
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-contracts-3.1.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-client-3.1.0.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v3.1.0/evopilot-cli-3.1.0.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.3.0/evopilot-contracts-6.3.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.3.0/evopilot-client-6.3.0.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.3.0/evopilot-cli-6.3.0.tgz
 ```
 
-Use `npm install -g @evopilot/cli@3.1.0` only after public npm registry publication has been verified for that exact version.
+The public npm package is also verified: `npm install -g @evopilot/cli@6.3.0`. See [current publication and acceptance](../../docs/releases/current-release.md).
 
 ```bash
 evopilot --server https://evopilot.example.com auth login \

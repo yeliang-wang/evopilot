@@ -1,6 +1,6 @@
 # `@evopilot/adapter-opencode`
 
-In the in-progress 6.3.0 source, process observations bind optional
+In the released 6.3.0 package, process observations bind optional
 `usageCoverage=COMPLETE|PARTIAL|UNAVAILABLE` into their receipt digest. COMPLETE
 requires explicit valid cost and input/output token telemetry in every parsed
 `step_finish`; no telemetry or legacy observations must not be interpreted as

@@ -1,6 +1,6 @@
 # First-Run LLM Readiness
 
-EvoPilot Runtime 6.2.0 has no bundled, developer-owned, Host-inherited, or environment-selected LLM. A production installation may start without a configured provider so an administrator can reach the setup surfaces, but normal project, Harness, Goal, Target, Loop, and release operations remain fail-closed until Runtime readiness is `READY`.
+EvoPilot Runtime 6.3.0 retains the first-run readiness introduced in 6.2. It has no bundled, developer-owned, Host-inherited, or environment-selected LLM. A production installation may start without a configured provider so an administrator can reach the setup surfaces, but normal project, Harness, Goal, Target, Loop, and release operations remain fail-closed until Runtime readiness is `READY`.
 
 ## The three model identities
 
@@ -26,7 +26,7 @@ The Runtime persists `RuntimeReadiness` and `WorkspaceLlmDefaultBinding` as dige
 
 ## Ordinary-human setup through Evolution Expert
 
-Open Evolution Expert 2.2.0 in a supported Host and say:
+Open Evolution Expert 2.3.0 in a supported Host and say:
 
 > 检查 EvoPilot LLM readiness，并引导我安全完成首次配置。
 
@@ -58,7 +58,7 @@ The corresponding MCP tools are:
 
 The administrator CLI exposes `evopilot runtime readiness`, `evopilot llm providers`, `evopilot llm workspace-default inspect`, `evopilot llm workspace-default bind`, and the explicit `evopilot llm migrate-v61` migration helper. CLI and HTTP remain diagnostic and automation surfaces; Evolution Expert over MCP is the ordinary-human entry.
 
-The unreleased 6.3 source also provides `evopilot llm bootstrap --preview` and explicit `--opt-in --input-stdin` initialization for administrators. A trusted non-echoing producer supplies one chosen provider configuration directly to stdin; Runtime creates governed resources and performs live preflight before binding. The CLI does not read Host configuration or environment defaults, create an input file, or retain a fallback. Input producer cleanup remains the caller's responsibility. See [the full command, failure and repair contract](../cli/commands.md#llm-profiles). This is not an ordinary-human Expert fallback.
+Runtime 6.3 also provides `evopilot llm bootstrap --preview` and explicit `--opt-in --input-stdin` initialization for administrators. A trusted non-echoing producer supplies one chosen provider configuration directly to stdin; Runtime creates governed resources and performs live preflight before binding. The CLI does not read Host configuration or environment defaults, create an input file, or retain a fallback. Input producer cleanup remains the caller's responsibility. See [the full command, failure and repair contract](../cli/commands.md#llm-profiles). This is not an ordinary-human Expert fallback.
 
 Expert 2.3 routes LLM migration/bootstrap questions to the read-only `evopilot_llm_setup_protocol` MCP tool. It explains only Runtime-returned resource, opt-in, ambiguity, audit and cleanup facts. If an older Runtime does not advertise that administration contract, Expert reports the limitation rather than inventing support or using a direct HTTP/CLI substitute. Sensitive bootstrap input never passes through Expert or MCP.
 
@@ -74,6 +74,6 @@ In the 6.3 source, changing Profile material or rotating a credential invalidate
 
 Upgrade never imports a hidden global default. An administrator must explicitly choose the existing workspace Profile. If exactly one eligible Profile exists, `migrate-v61` may propose it; zero or multiple candidates stop as ambiguous. The selected Profile still needs an active SecretRef and fresh live preflight before an explicit binding can make Runtime `READY`.
 
-To convert an explicitly selected 6.1 provider rather than bind an existing Profile, the 6.3 source accepts `llm migrate-v61 --opt-in --input-stdin --profile <new-id> --secret-id <new-id> --reason <text>`. Its stdin representation is exactly one provider object (`providerName`, `baseUrl`, `modelName`, sensitive `value`); multiple candidates are refused, not ranked. It never discovers legacy global values on its own. Existing bindings are preserved, and bootstrap opt-in cannot authorize project execution or release.
+To convert an explicitly selected 6.1 provider rather than bind an existing Profile, Runtime 6.3 accepts `llm migrate-v61 --opt-in --input-stdin --profile <new-id> --secret-id <new-id> --reason <text>`. Its stdin representation is exactly one provider object (`providerName`, `baseUrl`, `modelName`, sensitive `value`); multiple candidates are refused, not ranked. It never discovers legacy global values on its own. Existing bindings are preserved, and bootstrap opt-in cannot authorize project execution or release.
 
 Debug mode retains developer-only compatibility behavior and is not production readiness evidence.

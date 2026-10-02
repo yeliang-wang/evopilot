@@ -2,9 +2,10 @@
 
 All notable changes to the independently versioned `@evopilot/evolution-expert` package are documented here. Runtime and Expert versions are compatible by declared ranges; they are not released in lockstep.
 
-## Unreleased
+## 2.3.0 — 2026-10-02 — Semantic Convergence
 
-### 2.3.0 Semantic Convergence (source development)
+Published on GitHub and npm after 400/400 applicable criteria passed. See
+[current release and acceptance limits](../../docs/releases/current-release.md).
 
 - Reject nested raw credential fields in typed Lifecycle answers before MCP
   invocation, consistently with project and governed guidance.
@@ -25,7 +26,7 @@ All notable changes to the independently versioned `@evopilot/evolution-expert` 
 - Defaulted public self-checks to Runtime 6.3.0 while preserving explicit legacy
   6.2.0 non-semantic compatibility and retaining the 2.2.1 recovery obligations.
 - Projected the maintained Host Integration and artifact verifiers to 2.3.0/6.3.0.
-  Exact artifact, Host and series acceptance remain pending; no publication claim.
+  Exact installed artifacts and the Codex-only series journey passed the approved scope; native credential interaction remains unverified.
 - Fixed English `deactivate lifecycle` being routed to activation by substring
   matching. Activation and deactivation retain separate Runtime tools and exact
   decision requirements; bilingual per-operation source regressions cover both.
@@ -35,7 +36,7 @@ All notable changes to the independently versioned `@evopilot/evolution-expert` 
 - Added explicit read-only Lifecycle diff, resolution and input-resolution
   guidance. Local process integration covers Runtime persistence, permissions,
   immutable existing-run bindings and uncertainty without automatic replay;
-  installed Candidate and real Host acceptance remain pending.
+  installed acceptance and the qualified Codex journey are recorded separately in the release ledger.
 
 - Fixed project-definition bodies being dropped by public stdio MCP. Added
   Runtime-owned discovery, list, inspect and diff guidance with finite inputs.
@@ -47,7 +48,13 @@ All notable changes to the independently versioned `@evopilot/evolution-expert` 
   reads and readiness guidance after declarative setup. Nested credentials and
   scope overrides are refused before MCP; connection never implies a Goal run.
 
-### 2.2.1
+## Historical implementation entries
+
+The entries below retain their implementation-time scope. Expert 2.2.1 was
+superseded by 2.3.0 without standalone publication; earlier 2.2.0 and 2.1.0
+releases remain immutable history.
+
+### 2.2.1 (superseded, not published)
 
 - Fixed public `doctor` and `compatibility` to use the generated adapter's complete capability declaration and default Runtime 6.2.0.
 - Added fail-closed CLI checks for unsupported/malformed Runtime versions and unknown packaged Hosts; SDK Host extension remains supported.

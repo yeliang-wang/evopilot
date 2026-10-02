@@ -9,19 +9,19 @@ explicitly bind a governed workspace Profile before normal work. See
 [First-Run LLM Readiness](../../docs/guides/first-run-llm-readiness.md).
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v3.1.0/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.0/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 # Start the setup-only control plane, then complete LLM setup through Expert.
 docker compose up -d
 ./verify.sh
 ```
 
-The tagged installer verifies the release manifest and resolves this package from the GitHub Release tarball while public npm registry packages are not published.
+The tagged installer verifies the release manifest and resolves this package from the GitHub Release tarball by default. Both GitHub and npm distribution are verified for 6.3.0; see [current publication](../../docs/releases/current-release.md).
 
-After public npm publication, npm-only bootstrap is:
+The verified npm-only bootstrap is:
 
 ```bash
-npx create-evopilot@3.1.0 self-host --dir evopilot-stack --init-env
+npx create-evopilot@6.3.0 self-host --dir evopilot-stack --init-env
 ```
 
 `--start` may safely start the production control plane without an LLM Profile,

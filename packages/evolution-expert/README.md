@@ -16,7 +16,7 @@ operation is Expert-over-MCP only. If it is absent or incompatible,
 administrators and machines can diagnose or recover Runtime through MCP, CLI,
 API, and CI without creating a silent ordinary-human fallback.
 
-### In-progress 2.3 semantic guidance
+### Released 2.3 semantic guidance
 
 The source Core now routes project semantic discovery, compatibility, exact review,
 explicit approval and binding inspection through the corresponding Runtime MCP tools.
@@ -63,10 +63,11 @@ business rules and Harness obligations, with empty coverage inputs. It never gue
 criterion-to-rule mapping or business field/product type. Supplied explicit coverage
 still needs a separate outcome review and exact human approval.
 
-This is partial source implementation toward the approved 2.3.0 Target, not a
-2.2.1 semantic release or completed 2.3.0 delivery. Source versions and distribution
-declarations now target 2.3.0 with Runtime 6.3.0; exact release artifact formation,
-production qualification and actual Host acceptance remain separate work.
+Expert 2.3.0 is published for Runtime 6.3.0 after all 400 applicable acceptance
+criteria passed. See [current publication and limits](../../docs/releases/current-release.md).
+Real Host acceptance is Codex-only, using existing configuration; native credential
+entry, submission and cancellation remain explicitly unverified for this release.
+There is no separate 2.2.1 release.
 Five Host adapters are generated from the same Core; no installed adapters or
 Host configuration are modified by source generation.
 
@@ -99,14 +100,13 @@ requests are reconciled by Runtime; restore does not implicitly activate.
 The [versioned convergence corpus](../../tests/e2e/versions/README.md) retains
 Expert 2.3.0's independent five RC families, ten machine variants and all 388
 inherited obligation bindings. Source tests cannot close installed/Host criteria;
-the installed-version runners and formal acceptance remain unfinished.
+those are separately recorded in the completed approved 2.3.0 acceptance.
 
 ## Install and verify
 
-Version 2.3.0 is currently a development Target, not an available public release.
-The following installation examples apply only after separate Release authorization
-and verified npm publication. Pre-release acceptance installs the exact approved
-Candidate tarball instead; a source checkout is not acceptance evidence.
+Version 2.3.0 is available on public npm and [GitHub Release](https://github.com/yeliang-wang/evopilot/releases/tag/evolution-expert-v2.3.0).
+Exact-version public installation, package integrity, Registry signatures/provenance
+and Runtime 6.3.0 compatibility were verified separately from Candidate acceptance.
 
 ```bash
 npm install --global @evopilot/evolution-expert@2.3.0
@@ -156,11 +156,11 @@ entry to a Host-native secure-input capability.
 ## Upgrade, rollback, and remove
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.2.1
-evopilot-expert doctor codex 6.2.0
+npm install --global @evopilot/evolution-expert@2.3.0
+evopilot-expert doctor codex 6.3.0
 
-npm install --global @evopilot/evolution-expert@1.0.1
-evopilot-expert doctor codex 5.0.1
+npm install --global @evopilot/evolution-expert@2.2.0
+evopilot-expert doctor codex 6.2.0
 
 npm uninstall --global @evopilot/evolution-expert
 evopilot --version
@@ -184,7 +184,9 @@ See the repository guides for the [Expert workflow](../../docs/guides/evolution-
 [project definitions](../../docs/guides/project-definitions.md), and
 [Harness-guided architecture](../../docs/architecture/harness-guided-governed-evolution-runtime.md).
 
-## Project definition guidance (2.3.0 source development)
+<a id="project-definition-guidance-230-source-development"></a>
+
+## Project definition guidance (2.3.0)
 
 Use “discover project” with `projectFacts` to obtain Runtime-owned questions,
 then “register project” with `projectDiscovery` and `projectDefinition`. Expert

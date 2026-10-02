@@ -2,6 +2,11 @@
 
 > EvoPilot is an evidence-driven self-evolution control plane for AI-agent products. It exposes a server-governed API and CLI for project onboarding, GlobalGoal planning, Alpha/Beta/RC/GA GoalTargets, LoopRun execution, LLM usage visibility, source closure, DevOps preflight, and auditable release decisions.
 
+Current published versions: Runtime 6.3.0 and Evolution Expert 2.3.0, consuming
+evopilot-harness 4.8.1. See [publication and acceptance limits](https://github.com/yeliang-wang/evopilot/blob/main/docs/releases/current-release.md).
+
+Ordinary users use [Evolution Expert over MCP](https://github.com/yeliang-wang/evopilot/blob/main/docs/guides/evolution-expert.md).
+
 ## Agent Entry Points
 
 - [Repository agent instructions](https://github.com/yeliang-wang/evopilot/blob/main/AGENTS.md)
@@ -24,7 +29,7 @@
 
 - Use `evopilot ... --json` for automation.
 - Treat `nextAction`, `blockers`, `TargetEvidencePackage.status`, `PhasePackage.decision.status`, and release decisions as authoritative.
-- The Goal maturity ladder is fixed: Alpha -> Beta -> RC -> GA.
+- Alpha -> Beta -> RC -> GA is the retained v3 maturity ladder. v4+ project Lifecycles are declarative and preserve the resolved Harness and policy constraints.
 - Phase plan confirmation is mandatory before execution.
 - Do not pass raw GitHub/GitLab/LLM secrets in daily loop commands; use server-side secret references and LLM profile ids.
 - Report `llmUsage.summary.provider`, `llmUsage.summary.model`, token totals, and request IDs.

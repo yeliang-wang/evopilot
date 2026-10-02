@@ -77,7 +77,9 @@ evopilot project credentials set <project-id> [options]
 
 `project onboard plan` is a non-mutating checklist. `project onboard` registers the project and configures source/DevOps/LLM readiness, but it does not start Goal/Loop execution.
 
-### Project semantic discovery and review (6.3.0 source development)
+<a id="project-semantic-discovery-and-review-630-source-development"></a>
+
+### Project semantic discovery and review (6.3.0)
 
 These commands operate the current source-checkout Runtime; they are not a claim
 that 6.3.0 has been released. Prerequisites: an existing scoped project, current
@@ -151,7 +153,9 @@ selected, published or bound; existing runs retain pins. A separately published
 successor needs exact compatibility, a prepared binding review, the current head,
 an explicit MIGRATE transition preview and separate digest-bound approval.
 
-### Project semantic execution (6.3.0 source development)
+<a id="project-semantic-execution-630-source-development"></a>
+
+### Project semantic execution (6.3.0)
 
 This is a separate capability surface from project discovery/binding. It requires
 a current scoped operator/admin, existing reviewed project binding, a persisted

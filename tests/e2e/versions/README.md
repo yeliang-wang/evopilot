@@ -1,5 +1,10 @@
 # Semantic convergence: versioned development corpus
 
+For completed 4.8.1 / 6.3.0 / 2.3.0 acceptance, public publication and explicit
+exclusions, see [the current release ledger](../../../docs/releases/current-release.md).
+The sections below document individual runners and their evidence boundaries;
+a source or synthetic runner alone is not the release acceptance verdict.
+
 This reference is for maintainers of the unreleased Runtime **6.3.0** and
 Evolution Expert **2.3.0** source work. It is not a release or installation guide.
 

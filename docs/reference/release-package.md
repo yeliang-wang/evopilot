@@ -1,5 +1,9 @@
 # SaaS 生产发布包
 
+> 历史记录：下文保留 2026-07-07 的 SaaS 评审、验收或部署口径，
+> 不代表当前 Runtime 6.3.0 / Expert 2.3.0 的验收结论或发布要求。
+> 当前版本请参阅[发布与验收记录](../releases/current-release.md)。
+
 本文档用于把 EvoPilot SaaS 多租户控制面部署到生产环境，并把文件态业务数据迁移到 Postgres business store。Dashboard 可以展示发布状态和证据，但最终发布结论仍以 `GET /api/v1/release/decisions` 为准。
 
 ## 当前发布状态

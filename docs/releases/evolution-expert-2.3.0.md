@@ -1,5 +1,9 @@
 # EvoPilot Evolution Expert 2.3.0
 
+Published and independently verified on **2026-10-02**. See the
+[current release ledger](current-release.md) for public destinations, immutable
+artifact identities and acceptance limits.
+
 Evolution Expert 2.3.0 is the third-party Agent entry for the Runtime 6.3.0 and
 evopilot-harness 4.8.1 convergence. Its local MCP adapter communicates with the
 Agent through stdio and delegates project facts, decisions and execution to
@@ -25,8 +29,6 @@ cross-Host equivalence and long-duration stability of this build are not claimed
 Other required security, transport, installed-package and regression checks
 remain part of the approved acceptance.
 
-The accepted npm package is `@evopilot/evolution-expert@2.3.0`. Publication
-requires a separate release decision and promotes the frozen tarball without
-rebuilding. A fresh public installation and Runtime 6.3.0 compatibility check
-follow publication. See [Runtime 6.3.0](6.3.0.md) and
+The accepted npm package is `@evopilot/evolution-expert@2.3.0`. The separately authorized publication promoted the frozen tarball without
+rebuilding. Fresh public installation and Runtime 6.3.0 compatibility checks passed. See [Runtime 6.3.0](6.3.0.md) and
 [release management](../operations/release-management.md).

@@ -1,7 +1,8 @@
 # Expert private Host integration
 
-This maintained component is prepared for co-distribution with Expert 2.3.0
-(source development; not yet accepted or released). It runs as a
+This maintained component is distributed with published Expert 2.3.0.
+Native credential entry, submission and cancellation were excluded from this
+release's approved acceptance and remain unverified; see [the release limits](../../../docs/releases/current-release.md). It runs as a
 separate, trusted Host process, not in the Expert Core or an MCP tool that accepts
 credentials. It uses Runtime 6.3.0's login and Secret APIs; explicitly signed
 Runtime 6.2.0 deployment evidence retains legacy non-semantic setup support. Core v3,
@@ -12,9 +13,10 @@ generated adapters and Runtime dependencies are unchanged.
 The protected input surface is AppKit on macOS ARM64 (macOS 13+). Other platforms
 fail closed. A headless Host on a logged-in macOS desktop still needs an actual
 visible native surface; a server without a desktop is not qualified. No Host is
-qualified merely by installing this component. Codex, Claude Code, independent
-Host, generic MCP/headless and the separately human-operated WorkBuddy matrix
-remain release acceptance obligations.
+qualified merely by installing this component. This release used existing
+configuration with Codex-only acceptance; it does not establish native-input
+qualification or live qualification for Claude Code, WorkBuddy or other Hosts.
+Any future native-input acceptance must bind the actual Host and exact component.
 
 ## Private invocation contract
 
@@ -234,8 +236,7 @@ Runtime state when preparing the replacement installation.
 Socket-level tests cover scoped trust in an empty-environment child, wrong
 trust/leaf pins, drift, endpoint restrictions, redirects, Runtime unavailability,
 and real Runtime auth/RBAC/Secret persistence with synthetic input. These are
-not evidence of actual human permission or native positive input; those remain
-separate Candidate-bound Host acceptance requirements.
+not evidence of actual human permission or native positive input; they remain explicitly unverified under this release scope.
 
 ### Codex control-channel observer SDK
 

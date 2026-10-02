@@ -1,6 +1,6 @@
 # EvoPilot Documentation
 
-EvoPilot documentation is organized by reader task. Start from the section that matches what you need to do.
+EvoPilot documentation is organized by reader task. Current published versions are **Runtime 6.3.0 / Evolution Expert 2.3.0**, consuming **evopilot-harness 4.8.1**. See [current publication, acceptance and explicit limits](releases/current-release.md). Start from the section that matches what you need to do.
 
 ## New Users
 
@@ -90,12 +90,14 @@ EvoPilot documentation is organized by reader task. Start from the section that 
 - [Open Source Maturity Report](reference/open-source-maturity-report.md) - public productization and top-tier gap assessment.
 - [Production User E2E](reference/production-user-e2e.md) - production user validation evidence.
 - [Release Package](reference/release-package.md) - SaaS GA release package.
-- [EvoPilot v5.0.1 Completion-Recovery Notes](releases/5.0.1.md) - unreleased criterion-specific closure plan; Candidate, acceptance, and publication remain pending.
-- [Evolution Expert v1.0.1 Completion-Recovery Notes](releases/evolution-expert-1.0.1.md) - unreleased independently versioned Expert implementation and later acceptance boundary.
+- [EvoPilot v5.0.1 Completion-Recovery Notes](releases/5.0.1.md) - historical published completion-recovery release.
+- [Evolution Expert v1.0.1 Completion-Recovery Notes](releases/evolution-expert-1.0.1.md) - historical published independently versioned Expert release.
 - [EvoPilot v5.1.0 Suite Capability Convergence](releases/5.1.0.md) - superseded, unreleased implementation history retained for traceability.
 - [Evolution Expert v1.1.0 Unified Host Entry](releases/evolution-expert-1.1.0.md) - superseded, unreleased Expert history retained for traceability.
-- [EvoPilot v6.1.0 Controlled Lifecycle Evolution](releases/6.1.0.md) - latest published Runtime baseline.
-- [Evolution Expert v2.1.0](releases/evolution-expert-2.1.0.md) - latest published controlled-evolution interaction baseline.
+- [EvoPilot Runtime v6.3.0](releases/6.3.0.md) - current published semantic convergence release.
+- [Evolution Expert v2.3.0](releases/evolution-expert-2.3.0.md) - current published MCP guidance and recovery release.
+- [EvoPilot v6.1.0 Controlled Lifecycle Evolution](releases/6.1.0.md) - historical published Runtime baseline.
+- [Evolution Expert v2.1.0](releases/evolution-expert-2.1.0.md) - historical published controlled-evolution interaction baseline.
 - [EvoPilot v6.0.0 Agent-Native Lifecycle Control Plane](releases/6.0.0.md) - published Runtime baseline.
 - [Evolution Expert v2.0.0](releases/evolution-expert-2.0.0.md) - published MCP-first Host Integration Bundle baseline.
 - [EvoPilot v5.0.0 Release Notes](releases/5.0.0.md) - published Harness-guided Runtime baseline and historical release facts; not proof of later-audited full-scheme completion.

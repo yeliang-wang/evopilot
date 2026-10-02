@@ -9,7 +9,9 @@ identity values are read from `EVOPILOT_SERVER`, `EVOPILOT_API_TOKEN`,
 `EVOPILOT_TENANT`, `EVOPILOT_WORKSPACE`, and `EVOPILOT_ACTOR`. Keep the token in the
 host's secret environment; never place it in a Lifecycle YAML file or tool argument.
 
-## Project semantic tools (6.3.0 source development)
+<a id="project-semantic-tools-630-source-development"></a>
+
+## Project semantic tools (6.3.0)
 
 The source adapter also exposes `evopilot_project_semantic_capabilities`,
 `evopilot_project_semantic_inspect`, `evopilot_project_semantic_compatibility`,
@@ -52,7 +54,9 @@ execution. These tools do not activate semantic execution, complete Goals, publi
 Harness assets or authorize Release; installed-package and real-Host acceptance
 remain separate from source-only tests.
 
-## Semantic execution tools (6.3.0 source development)
+<a id="semantic-execution-tools-630-source-development"></a>
+
+## Semantic execution tools (6.3.0)
 
 `evopilot_semantic_execution_capabilities` takes `projectId`. The operation
 tools use the same prefix with suffix `planning`, `draft`, `prepare`, `inspect`, `bind`, `resolve`, `mapping`,
@@ -97,8 +101,9 @@ verifies receipt history after restart. List/graph/run-status and member reads u
 the same verified bridge; semantic run-status has its own schema and reports
 verified completed-Target usage subtotals with explicit route/proof references
 and coverage exclusions. Missing telemetry remains null, not zero; the subtotal
-is not provider billing. Production collector qualification,
-installed-package journeys and real-Host qualification remain unfinished work.
+is not provider billing. The approved installed-package and Codex journeys passed separately; see
+[current acceptance and limits](../../docs/releases/current-release.md).
+Other live Hosts and arbitrary production collectors are not qualified by those results.
 The default server configures neither a semantic executor nor a business collector.
 HTTP run-status additionally projects known dispatch usage before Target
 completion, including failed/uncertain receipts. It requires verified private

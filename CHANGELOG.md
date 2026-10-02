@@ -4,17 +4,24 @@ All notable changes to EvoPilot are documented here.
 
 This project follows a product-readiness changelog model: release entries should summarize user-visible capability, governance impact, validation evidence, and migration notes. Do not use local tests alone as release proof.
 
-## Unreleased
+## 6.3.0 — 2026-10-02 — Semantic Convergence
 
-### 6.3.0 Semantic Convergence (source development)
+Published on GitHub, npm and GHCR after 400/400 applicable Runtime criteria
+passed. See [current release and acceptance limits](docs/releases/current-release.md).
 
 - Added read-only published semantic Catalog consumption, reviewed project bindings,
   bounded dual-bound execution, explicit domain-plan authoring and separate outcome
   validation/completion with immutable evidence and guarded recovery.
 - Projected Runtime packages, installer declarations and defaults to 6.3.0; retained
   readiness and secure setup behavior. Dashboard remains independently versioned.
-- Local synthetic checks are not exact installed-artifact, real-Host, active-soak
-  or terminal series acceptance. No Candidate or Release is asserted by this entry.
+- Exact installed acceptance and the terminal series journey passed separately
+  from local synthetic checks. Codex is the only real acceptance Host; native
+  credential interaction and a new 90-minute soak remain explicitly skipped.
+
+## Historical implementation entries
+
+The entries below preserve implementation-time evidence. They are not current
+publication status; consult the versioned release notes and current release ledger.
 
 ### 6.2.0 First-Run LLM Readiness
 

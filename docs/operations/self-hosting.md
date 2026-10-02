@@ -11,7 +11,7 @@ Use this guide when you want an external operator, administrator, or AI Agent to
 For the shortest generated stack, use the installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.1.0/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.0/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 # Review the generated authentication and database values.
 docker compose up -d
@@ -23,7 +23,7 @@ The tagged installer resolves `create-evopilot` from the release manifest. Runti
 After public npm registry publication and `npm run verify:npm-registry` pass for the exact version, operators may use npm-only bootstrap:
 
 ```bash
-npx create-evopilot@6.1.0 self-host --dir evopilot-stack --init-env
+npx create-evopilot@6.3.0 self-host --dir evopilot-stack --init-env
 ```
 
 Use the manual path below when you need to work from source checkouts.
@@ -62,7 +62,7 @@ EVOPILOT_REQUIRE_LLM=true
 EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 ```
 
-Do not add a default LLM to this file. After startup, install Evolution Expert 2.2 in a supported Agent Host and ask it to inspect Runtime readiness. The Expert delegates raw credential entry to a reviewed Host-native secure input, while Runtime persists only a `SecretRef`, a governed Profile, live preflight evidence, and an explicit workspace-default binding. See [First-Run LLM Readiness](../guides/first-run-llm-readiness.md).
+Do not add a default LLM to this file. After startup, install Evolution Expert 2.3 in a supported Agent Host and ask it to inspect Runtime readiness. The Expert delegates raw credential entry to a reviewed Host-native secure input, while Runtime persists only a `SecretRef`, a governed Profile, live preflight evidence, and an explicit workspace-default binding. See [First-Run LLM Readiness](../guides/first-run-llm-readiness.md).
 
 Start the control plane:
 
@@ -104,7 +104,7 @@ Expected:
 2. Log in with the configured EvoPilot user or platform bootstrap account.
 3. Change default bootstrap credentials immediately if they are present.
 4. Create tenant, workspace, and tenant admin users.
-5. Use Evolution Expert 2.2 over MCP to choose the Runtime provider/model, create a secure `SecretRef`, live-preflight the Profile, and explicitly bind its exact digest as the workspace default.
+5. Use Evolution Expert 2.3 over MCP to choose the Runtime provider/model, create a secure `SecretRef`, live-preflight the Profile, and explicitly bind its exact digest as the workspace default.
 6. Confirm `evopilot runtime readiness --json` returns `READY`; a working Host LLM or Agent Model does not satisfy this gate.
 7. Store GitHub, GitLab, and deploy secrets server-side through EvoPilot secret APIs or CLI.
 8. Configure a published Harness Catalog directory, register a disposable project, generate a target plan, review `selectedHarness` plus the phase plan, approve it, then run a small goal loop.

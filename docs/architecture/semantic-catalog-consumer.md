@@ -1,8 +1,10 @@
-# Semantic Catalog Reader — Implementation Status
+# Semantic Catalog Reader — Runtime 6.3.0 Reference
 
-Audience: Runtime maintainers implementing the approved 6.3.0 semantic consumer.
-This is source-checkout implementation, not a released API or
-completed semantic acceptance. Package versions have not changed. Existing
+Audience: Runtime maintainers and integration authors using the released 6.3.0
+semantic consumer. [Current publication and acceptance](../releases/current-release.md)
+records the exact installed/Codex evidence and explicit exclusions. The source
+and synthetic tests described below are supporting coverage, not a claim that
+arbitrary Hosts, collectors or business domains are qualified. Existing
 [published Harness Catalog consumption](published-harness-catalog.md) is unchanged.
 
 ## Implemented boundary
@@ -143,7 +145,7 @@ apply. Successful reads report `CONFIGURED_MATERIALS_VERIFIED`, but always retai
 `eligibleForExecution=false`: no project binding or execution decision is made.
 The lower-level transport and partial inspectors are not production eligibility
 substitutes. A read-only project-scoped HTTP endpoint now uses this fixed entry;
-CLI/MCP and execution integration remain unfinished.
+CLI/MCP discovery and the separate execution surface are described below.
 
 `project-semantic-discovery.ts` and `project-semantics.ts` compose it into
 `GET /api/v1/projects/{projectId}/semantic-catalogs/{catalogId}`. Startup options
@@ -203,7 +205,7 @@ reasoning-profile digests. Its enclosing inspection also pins project revision
 and current Catalog/policy evidence. Neither digest grants approval, eligibility,
 binding or execution authority. The separate project review/persistence workflow
 below consumes fresh inspection. Internal execution binding/preflight is described
-below; production execution integration, CLI/MCP transport and formal E2E remain unfinished.
+below, together with the separate HTTP/CLI/MCP execution and installed acceptance boundaries.
 
 ### Reviewed project binding and future-plan activation
 
@@ -312,8 +314,9 @@ The incremental change-seed proof
 is not present in the supplied fixture, so only the declared evaluated ids and
 canonical outcome are verified; external reasoner evidence is bound, not executed
 or independently proved. The consumer does not implement general OWL/SWRL
-inference. Full security/resource/variant coverage and Target acceptance remain
-unfinished; these internal source checks do not establish release readiness.
+inference. Security/resource/variant coverage and approved Target acceptance
+are recorded separately in the current release ledger; these internal source
+checks alone do not establish release readiness.
 
 ### Internal execution binding/preflight (not execution permission)
 
@@ -340,7 +343,7 @@ for persisted Runtime project/Goal/Target/LLM, active governed-resource records
 and explicitly activated executor observations are implemented below, but
 the fixed application and separate public execution transport now compose them. A bounded
 explicit-fact context preparer and internal dual-outcome evaluator now use this
-binding, as described below. Production outcome governance and completion remain unfinished.
+binding, as described below. The separate outcome review and guarded completion owners are described below.
 Existing governed Harness checks also retain whole Registry/Catalog digests;
 complete unrelated-growth/rollback behavior for active executions is not claimed.
 
@@ -440,8 +443,9 @@ execution binding; private observation payloads are not copied into these pins.
 This is verification of Runtime-owned observation evidence, not a live Host or
 environment probe. It checks the existing core qualification structure but does
 not independently run conformance tests or attest the referenced evidence. The
-qualified live collector, dedicated review/write workflow, complete production
-composition and production outcome governance are still unfinished.
+dedicated review/write workflow, configured collection and guarded completion
+are described below. Live qualification remains specific to each configured
+collector and Host; the release evidence does not qualify arbitrary integrations.
 The generic resource API is not a semantic-execution authorization API. Public
 execution refusal and `eligibleForExecution=false` remain unchanged. Tests create
 only disposable synthetic observations, with no real Host or provider calls.
@@ -452,8 +456,9 @@ only disposable synthetic observations, with no real Host or provider calls.
 Lifecycle request, fixed Catalog context preparer, semantic binding and an
 owner-configured adapter. The fixed application exposes it through separate
 HTTP/CLI/MCP operations described below; it is not wired into an automatic worker.
-Production observation/collector qualification and dual-result completion remain
-unfinished. Public operation availability is not production acceptance.
+Observation/collector qualification and dual-result completion use the separate
+owners described below. Public operation availability alone is not acceptance;
+see the exact approved installed/Codex coverage in the current release ledger.
 
 Core capability qualification and adapter transport conformance have different
 schemas and digests. An observation may now include `adapterProfile`; its exact
@@ -519,8 +524,9 @@ network or model execution is provided. There are at most 64 rules per side,
 These predicates evaluate an explicitly reviewed domain mapping; they do not
 infer professional meaning from prose or from an obligation's name. The internal
 review service below now requires complete business-criterion mapping and an
-exact product-owned review decision. Public authoring/review routes and real
-domain review remain unfinished; tests use synthetic decisions only.
+exact product-owned review decision. Public authoring/review routes are described
+below. These unit tests use synthetic decisions; the separately accepted real
+Codex repository audit does not establish universal domain-review accuracy.
 
 Result artifacts must refer to `semantic-evidence://<kind>/<sha256-hex>` and
 already exist under the Runtime-owned `semantic-outcome-evidence` store, scoped
@@ -812,7 +818,9 @@ The bounded public stage/Target completion writers are described below.
 Synthetic execution success does not grant
 production eligibility or close formal acceptance criteria.
 
-### Configured business evidence collection (source development)
+<a id="configured-business-evidence-collection-source-development"></a>
+
+### Configured business evidence collection
 
 The fixed application now exposes `collect` through HTTP, CLI and MCP. Only
 `identity` and `bindingDigest` are accepted. Server configuration supplies a
@@ -851,7 +859,9 @@ when the caller omits semantic fields. This is a fail-closed guard, not the stil
 separate guarded stage/Target completion workflow. Existing
 Harness-only runs retain the legacy path.
 
-### Guarded stage commit and single-record durability (source development)
+<a id="guarded-stage-commit-and-single-record-durability-source-development"></a>
+
+### Guarded stage commit and single-record durability
 
 `createSemanticStageCompletionService` is wired into the fixed application's
 `commitStage` method and scoped HTTP/CLI/MCP operation. A current evidence
@@ -894,7 +904,9 @@ The local tests inject storage faults and use synthetic policy/provenance
 declarations to exercise branches. They do not prove real process, collector,
 installed package or Host qualification.
 
-### Append-only stage succession (source development)
+<a id="append-only-stage-succession-source-development"></a>
+
+### Append-only stage succession
 
 The initial `execution-plans` record remains an immutable identity-to-run anchor.
 After a verified semantic commit and explicit Lifecycle advance to another pending
@@ -939,7 +951,9 @@ not silently migrated to stage-scoped bindings; stage mismatch or an existing
 dispatch claim stops execution. Fresh source fixtures or a separately governed
 migration are needed, not deletion/replay of historical claims.
 
-### Goal write and legacy completion fence (source development)
+<a id="goal-write-and-legacy-completion-fence-source-development"></a>
+
+### Goal write and legacy completion fence
 
 Every Runtime Goal writer now uses the same single-record compare-and-swap
 store. Existing updates require the exact raw revision captured when the Goal
@@ -978,7 +992,9 @@ migration; never strip ownership or replay historical dispatch to repair them.
 There is no cross-Goal/Lifecycle transaction, public completion grant, installed
 acceptance or Release in these source tests.
 
-### Terminal evidence verification (source development)
+<a id="terminal-evidence-verification-source-development"></a>
+
+### Terminal evidence verification
 
 The internal Lifecycle owner now supplies `readSemanticTerminal`, separate from
 pending-stage reads. It requires a settled, integrity-checked `SUCCEEDED` run,
@@ -1014,7 +1030,9 @@ These tests use synthetic provenance labels and domain facts. A complete local
 terminal history is not installed-package E2E, real-Host qualification, formal
 Target acceptance or a series Release.
 
-### Guarded Target completion (source development)
+<a id="guarded-target-completion-source-development"></a>
+
+### Guarded Target completion
 
 The fixed application's `completeTarget({identity, runId}, access)`
 accepts neither a success flag nor a replacement evidence report. It first
@@ -1055,7 +1073,9 @@ Before-rename failures leave the previous record unchanged. Post-rename sync
 failures retain the Goal lock and block both retry and receipt readback pending
 explicit reconciliation. Concurrent requests cannot append duplicate receipts.
 
-### Public completion receipts and separate verified status (source development)
+<a id="public-completion-receipts-and-separate-verified-status-source-development"></a>
+
+### Public completion receipts and separate verified status
 
 The fixed HTTP/CLI/MCP application exposes `commitStage`, `stageReceipt`,
 `completeTarget`, `completionReceipt` and `completionStatus` under the same current
@@ -1090,7 +1110,9 @@ and production qualification are separate. The public chain is exercised with lo
 HTTP plus actual CLI/MCP processes and synthetic source fixtures only. It does not
 establish installed-package E2E, formal Target acceptance or release readiness.
 
-### Verified existing Goal read views (source development)
+<a id="verified-existing-goal-read-views-source-development"></a>
+
+### Verified existing Goal read views
 
 For semantic-owned Goals, `GET /api/v1/goals/{goalId}` and its `snapshot`,
 `evidence-matrix` and `final-report` reads now use the same scoped operator/admin
@@ -1121,7 +1143,9 @@ below supplies Goal closure. The bridge does not synthesize either owner. Goal l
 graphs, run-status, targets, phases and timeline use the same verified read bridge;
 legacy mutation paths remain guarded.
 
-### Four-phase journey and consistent read views (source development)
+<a id="four-phase-journey-and-consistent-read-views-source-development"></a>
+
+### Four-phase journey and consistent read views
 
 The synthetic source journey executes Alpha, Beta, RC and GA in one persisted
 Goal, using a distinct exact execution binding for each Target. Each phase must
@@ -1193,7 +1217,9 @@ require current scoped operator/admin, reject query/body overrides and use
 no-store. Reads never write completion or dispatch execution. Source tests cover
 HTTP views and the existing `goal graph ... --json` CLI; no new CLI verb is added.
 
-### Typed Target packages for phase-associated Targets (source development)
+<a id="typed-target-packages-for-phase-associated-targets-source-development"></a>
+
+### Typed Target packages for phase-associated Targets
 
 Runtime source pins now bind the complete phase definitions (membership,
 dependencies, criteria, required evidence, review capabilities and package outputs).
@@ -1223,7 +1249,9 @@ or release. `dependencyPhase` requires the exact verified aggregate predecessor
 receipt, not a raw GO flag. Legacy package builders remain fenced, not repurposed as this
 verifier. Local synthetic coverage is not real collector qualification.
 
-### Aggregate phase completion and predecessor receipts (source development)
+<a id="aggregate-phase-completion-and-predecessor-receipts-source-development"></a>
+
+### Aggregate phase completion and predecessor receipts
 
 `completePhase` and `phaseReceipt` take only `identity`, `runId` and
 `phaseTargetId`. The identity/run selects a required, completed member Target
@@ -1257,7 +1285,9 @@ also check the predecessor receipt; raw GO and cyclic/missing predecessor chains
 cannot authorize a dependent phase. Phase aggregate completion does not imply
 Goal closure or production E2E is complete.
 
-### Final phase/GA Goal closure (source development)
+<a id="final-phasega-goal-closure-source-development"></a>
+
+### Final phase/GA Goal closure
 
 `completeGoal` and `goalReceipt` accept only `identity` and `runId`, selecting a
 required completed Target as the immutable policy anchor. They require explicit

@@ -2,6 +2,13 @@
 
 > Build once, accept the exact Candidate, and promote those accepted bytes without rebuilding.
 
+## Current publication
+
+Runtime **6.3.0** and Evolution Expert **2.3.0** are published and verified.
+See [the current release ledger](../releases/current-release.md) for exact tags,
+packages, image, installed acceptance and explicit exclusions. The checklist
+below governs future releases and does not create unfinished steps for this one.
+
 ## Release Policy
 
 EvoPilot release readiness has four layers:
@@ -62,9 +69,10 @@ The release pipeline is intentionally ordered as follows:
    Runtime and Expert produce separate handoffs. A joint Host campaign binds
    both exact handoffs and the declared compatibility pair; neither handoff
    grants authority to the other release unit.
-4. Run AC01-AC18, HIST01-HIST05, RC01-RC04, adapter conformance, and active
-   soak from the exact downloaded Candidate packages. A checkout build is not
-   acceptance evidence for this step.
+4. Run the exact current and inherited acceptance matrix bound by the approved
+   Target from the downloaded Candidate packages, including its required real
+   Host and duration coverage. Preserve explicitly approved exclusions as skipped,
+   never passed. A checkout build is not installed acceptance evidence.
 5. Bind the final acceptance result to the Candidate run, commit, handoff
    digest, and release-set digest. Obtain a separate Release Binding approval.
 6. After both bindings exist, create each exact pre-existing tag at its accepted

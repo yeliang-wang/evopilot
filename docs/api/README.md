@@ -1,6 +1,8 @@
 # EvoPilot API
 
-## Agent-Native Lifecycle Control Plane（v6.1 开发接口）
+## Agent-Native Lifecycle Control Plane（Runtime 6.3.0）
+
+当前发布为 Runtime 6.3.0 / Expert 2.3.0。语义 Catalog、项目绑定与独立执行接口见[语义消费者技术参考](../architecture/semantic-catalog-consumer.md)和[CLI/MCP 命令映射](../cli/commands.md)；验收范围及未验证项见[发布记录](../releases/current-release.md)。
 
 ```text
 GET  /api/v1/evolution-project-definitions
@@ -62,7 +64,7 @@ Lifecycle 的执行能力与 Harness 能力采用并集，证据、validator 和
 
 Recovery 默认自动处理可逆 mechanics、相同输入安全重试和 receipt 恢复。未知但可安全复用的情形先生成完整 Automation Rule proposal；只有一次与 proposal digest 精确绑定的人工决定能激活后续自动化。不可逆权限与结果不确定的外部 mutation 不能学习成自动规则。
 
-Evolution Expert 2.1.0 通过 MCP 成为普通用户入口；它与其他 Host adapter 只投影 Runtime 语义，不持有权威状态、源码执行或批准能力。CLI、HTTP、CI、事件和 webhook 是管理员、机器、诊断和恢复接口。资源 API 保留独立版本、来源 Suite 版本/摘要和 Runtime 兼容范围；兼容资源升级无需 Runtime 或 Expert 升级。受控演进 API 将精确观察转为分类、不可变后继、可比实验、活动策略决策、监控回滚或通用 Target 提案；对话、成功测试和推荐都不构成权限。上述新增内容处于已批准 v6.1.0/Expert 2.1.0 Targets 的本地实现阶段，不代表 Candidate、验收或发布。
+Evolution Expert 2.3.0 通过 MCP 成为普通用户入口；它与其他 Host adapter 只投影 Runtime 语义，不持有权威状态、源码执行或批准能力。CLI、HTTP、CI、事件和 webhook 是管理员、机器、诊断和恢复接口。资源 API 保留独立版本、来源 Suite 版本/摘要和 Runtime 兼容范围；兼容资源升级无需 Runtime 或 Expert 升级。受控演进 API 将精确观察转为分类、不可变后继、可比实验、活动策略决策、监控回滚或通用 Target 提案；对话、成功测试和推荐都不构成权限。这些接口由已发布基线继承到 Runtime 6.3.0；资源自身的版本和权限保持独立，接口可用不等于具体业务操作已获批准。
 
 对应的管理员和机器 CLI 使用同一 HTTP 语义，但不构成普通用户绕过 Expert 的第二入口：
 
@@ -114,9 +116,9 @@ POST /api/v1/lifecycle-runs/{runId}/feedback
 
 MCP 和 CLI 只是同一服务端语义的适配层。第三方 Agent Runtime 必须先通过独立资格校验，只能执行 `pendingExecution` 中声明的 scope、Lifecycle、Harness、action、capabilities、sandbox、allowed effects、SecretRefs、Runtime profile 和 binding digest；返回结果必须匹配 request/binding/idempotency digest。不能从对话推导批准。`feedback` 仅创建经过显式批准、严格脱敏、不可变且 `PRIVATE` 的反馈包，不会写入 `evopilot-harness` Catalog。
 
-Runtime 6.3.0 在途源码已新增独立的公开语义执行入口，详见下文。既有 governed `plan` / `runs` 与 Lifecycle run 创建/变更入口仍拒绝 `semanticExecutionBindingDigest`、`semanticExecutionBinding`、`semanticContextSlice`、`semanticContext`、`outcomePlan` 和 `semanticOutcomePlan`（包括空值）：governed 返回 HTTP 400，Lifecycle 返回 HTTP 409，均为 `SEMANTIC_EXECUTION_INTEGRATION_REQUIRED`。不会忽略字段后降级执行，既有 Harness-only 流程不变。
+Runtime 6.3.0 提供独立的公开语义执行入口，详见下文。既有 governed `plan` / `runs` 与 Lifecycle run 创建/变更入口仍拒绝 `semanticExecutionBindingDigest`、`semanticExecutionBinding`、`semanticContextSlice`、`semanticContext`、`outcomePlan` 和 `semanticOutcomePlan`（包括空值）：governed 返回 HTTP 400，Lifecycle 返回 HTTP 409，均为 `SEMANTIC_EXECUTION_INTEGRATION_REQUIRED`。不会忽略字段后降级执行，既有 Harness-only 流程不变。
 
-独立入口为 `GET /api/v1/projects/{projectId}/semantic-execution/capabilities` 和 `POST /api/v1/projects/{projectId}/semantic-execution/{operation}`。有限操作为 `prepare`、`inspect`、`bind`、`resolve`、`review`、`approveReview`、`dispatch`、`collect`、`evaluate`、`commitStage`、`stageReceipt`、`completeTarget`、`completionReceipt`、`completionStatus`。所有操作要求当前作用域 operator/admin、生产模式 readiness 和服务端身份重验；不接受 query，POST 仅接受最多 64 KiB 的精确 JSON 字段。响应 no-store，错误脱敏并带 requestId。请求字段见 [CLI 契约](../cli/commands.md#project-semantic-execution-630-source-development)。
+独立入口为 `GET /api/v1/projects/{projectId}/semantic-execution/capabilities` 和 `POST /api/v1/projects/{projectId}/semantic-execution/{operation}`。有限操作为 `planning`、`draft`、`prepare`、`inspect`、`bind`、`resolve`、`mapping`、`review`、`approveReview`、`dispatch`、`collect`、`evaluate`、`commitStage`、`stageReceipt`、`completeTarget`、`completionReceipt`、`completionStatus`、`completePhase`、`phaseReceipt`、`completeGoal`、`goalReceipt`；实际可用操作仍以当前作用域能力协商为准。所有操作要求当前作用域 operator/admin、生产模式 readiness 和服务端身份重验；不接受 query，POST 仅接受最多 64 KiB 的精确 JSON 字段。响应 no-store，错误脱敏并带 requestId。请求字段见 [CLI 契约](../cli/commands.md#project-semantic-execution-630-source-development)。
 
 固定应用从实际已发布 Catalog、持久化项目/Goal/Target/LLM 元数据、精确 pending Lifecycle、当前治理权限和 executor observation 重新构造状态。它不会补齐缺失批准、跟随新默认模型、解析密钥或替调用方选择 Host。创建服务器时可显式配置 `semanticExecutorAdapter`；默认无适配器，不广告 dispatch。配置存在也不代表资格通过，执行仍须匹配精确 Profile 与已批准业务规则。
 
@@ -124,13 +126,13 @@ Runtime 6.3.0 在途源码已新增独立的公开语义执行入口，详见下
 
 `collect` 仅在服务端显式配置 `semanticEvidenceCollector` 时广告；默认无采集器。请求仅含 `identity` 和 `bindingDigest`，不接受事实、命令、URL 或采集器选择。Runtime 从已批准规则及精确执行回执派生采集请求，校验当前激活 evidence GovernancePack 中的 `semanticCollectorPolicy` 与服务端描述符完全一致，采集前后重验权限、政策和执行绑定。不可变 claim 阻止并发重复调用或失败后的自动重试；返回摘要、种类及来源，不返回原始事实。
 
-公开 `evaluate` 分别报告业务和 Harness 结果，可以读取该采集回执，但自身不会写回完成状态。缺证据为 `INDETERMINATE`，两侧通过最多为 `DUAL_VALIDATED_NOT_COMPLETED`，始终 `eligibleForCompletion=false`。合成来源保持合成，内容摘要与请求关联不是采集真实性证明。已有语义 plan/binding 的运行也不能通过旧 `external-result` 省略语义字段来推进，返回 `LIFECYCLE_SEMANTIC_COMPLETION_REQUIRED`。以上只经本地源码、合成 Catalog 与注入适配器验证，不代表真实 Host、安装版验收或发布就绪。详见 [实现边界](../architecture/semantic-catalog-consumer.md)。
+公开 `evaluate` 分别报告业务和 Harness 结果，可以读取该采集回执，但自身不会写回完成状态。缺证据为 `INDETERMINATE`，两侧通过最多为 `DUAL_VALIDATED_NOT_COMPLETED`，始终 `eligibleForCompletion=false`。合成来源保持合成，内容摘要与请求关联不是采集真实性证明。已有语义 plan/binding 的运行也不能通过旧 `external-result` 省略语义字段来推进，返回 `LIFECYCLE_SEMANTIC_COMPLETION_REQUIRED`。本地源码、合成 Catalog 与注入适配器测试仅是支持证据；独立的安装版、Codex 与系列验收及其明确排除项见[当前发布记录](../releases/current-release.md)。详见 [实现边界](../architecture/semantic-catalog-consumer.md)。
 
 完成入口需协商 `completionAvailable=true` 和 `completionScope=VALIDATED_TARGET_AND_NON_PHASE_GOAL`。`commitStage` 仅接收 identity/bindingDigest，核验当前策略及双重证据后提交阶段；`stageReceipt` 另需 runId/requestDigest，可在阶段推进后读取历史回执。`completeTarget`、`completionReceipt`、`completionStatus` 仅接收 identity/runId。完成写入重新核验当前权限与各阶段证据，phase Target 还需结构化独立证据包及显式 phaseTargetCompletion 策略；依赖前驱阶段的执行与完成要求验证阶段回执，GA/phase Goal 不因业务 Target 完成而闭合。`completionStatus` 是独立只读报告，targetPercent 是已验证必需 Target 的进度，不是发布进度；release 始终 NOT_EVALUATED。语义 Goal 的既有 GET 单目标、snapshot、evidence-matrix 和 final-report 入口现由当前 operator/admin 读取精确原始 Goal 与验证回执；非阶段 Goal 可返回只读完成报告，不写入 finalReport、不生成发布决定。GA/阶段 Goal 缺少独立最终 Goal 回执，或必需 Target 证据缺失时，final-report 仍为 409。旧证据包生成器不会因原始 DONE、伪造 phase GO 或无关成功 Loop 而通过。`completePhase` / `phaseReceipt` 仅接收 identity、runId、phaseTargetId，需协商 phaseCompletionAvailable=true；当前阶段策略、全部必需 Target 回执、经过策略批准的阶段映射及完整证据/评审/输出验证后，阶段可写入 PASSED/GO 回执。此操作不闭合 GA Goal、不生成发布决定。独立的 `completeGoal` / `goalReceipt` 仅接收 identity/runId，并要求 `goalCompletionAvailable=true`。全部必需 Target、全部声明阶段回执与同一已批准 Goal/计划匹配，且独立的当前 semanticFinalGoalCompletionPolicy 精确授权后，才可原子写入 Goal COMPLETED 和最终回执。GA 终态必须有可信 GA 阶段，ga-maturity-ladder 必须保留四阶段及前驱链；final-report 可投影已验证阶段摘要，但不伪造旧 Target 包、不写入报告、不生成发布决定。列表、图、run-status、targets、phases、timeline 使用同一已验证读取投影。列表保留既有作用域过滤、倒序和最近 50 条窗口；逐 Goal 验证，并非跨 Goal 原子快照，可见语义记录验证失败时整份响应失败。语义 run-status 返回独立 schema `evopilot-semantic-goal-run-status/v1`，包含已验证回执摘要引用，不伪造旧 Loop 链或 Target 包；`llmUsage` 为 `evopilot-semantic-execution-usage/v1`，只汇总已验证完成 Target 的外部执行回执，包含 provider/model/Host、请求及证据摘要；状态为 UNAVAILABLE（totals 为 null）、PARTIAL 或 VERIFIED_COMPLETED_TARGETS。缺失或旧用量完整性标记不当作零；不完整遥测不计入已知小计。排除未完成、失败、不确定执行、内部动作和其他 Goal，不代表供应商完整账单或结算。独立的 dispatchUsage（evopilot-semantic-dispatch-usage/v1）只读汇总当前 Goal 的已知派发请求，包括成功、失败、不确定回执；调用前持久化的精确请求/Profile 关联记录与 claim 摘要共同约束读取，分别验证 Lifecycle 和 Harness 绑定。等待回执、旧关联缺失、观察不可用均明确标识，不重放调用、不清除 claim、不闭合 Target。其小计与 llmUsage 重叠，不能相加。未决写入锁返回 HTTP 409 `SEMANTIC_EXECUTION_RECONCILIATION_REQUIRED`，应核查保留的 claim，不得自动清锁或重放。
 
 政策、Provider、环境、权限角色和证据契约的内部元数据读取现要求精确的当前激活记录，并将资源及激活回执摘要锁入绑定；缺失指针不会自动选择最新版本。这不替代有效权限、Host 资格、环境就绪或结果校验，也不改变上述公共入口拒绝行为。
 
-内部执行器观察适配层进一步校验 Runtime 保存的精确 Host/执行器/资格/环境观察记录：必须显式激活、未过期、未撤销，并匹配当前主体与治理摘要；权限上限只能收窄当前有效权限。此处不运行真实 Host/环境探测，也未完成专用采集、审查写入和派发流程，不能作为生产执行就绪或正式验收声明。
+内部执行器观察适配层进一步校验 Runtime 保存的精确 Host/执行器/资格/环境观察记录：必须显式激活、未过期、未撤销，并匹配当前主体与治理摘要；权限上限只能收窄当前有效权限。该观察校验层本身不运行真实 Host/环境探测；专用采集、审查写入和派发由上文独立入口执行。仅持有观察元数据不能作为生产执行就绪或正式验收声明。
 
 详细流程见 [Lifecycle Registry](../guides/lifecycle-registry.md) 和 [External Agent Runtime](../guides/agent-runtime.md)。
 
