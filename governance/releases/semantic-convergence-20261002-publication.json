@@ -1,0 +1,391 @@
+{
+  "schema": "evopilot-series-publication-evidence/v1",
+  "status": "PUBLIC_DESTINATIONS_VERIFIED",
+  "recordedAt": "2026-10-02T01:23:15.332335+00:00",
+  "approvedPacketDigest": "sha256:63458b8998af64d2cf014ff46f4a71c3ea5281993ec450bfef03dd93c3597a59",
+  "acceptance": {
+    "harness": 303,
+    "runtime": 400,
+    "expert": 400,
+    "total": 1103,
+    "noRegression": "PASSED",
+    "terminalSeriesE2E": "PASSED",
+    "new90MinuteSoak": "SKIPPED_BY_USER_NOT_PASS",
+    "nativeCredentialInteraction": "SKIPPED_BY_USER_NOT_PASS",
+    "otherLiveHosts": "NOT_REQUIRED_NOT_CLAIMED",
+    "demonstrationWholeGoal": "PARTIAL_1_OF_4_NOT_COMPLETED"
+  },
+  "products": [
+    {
+      "product": "runtime",
+      "version": "6.3.0",
+      "status": "PUBLISHED_AND_VERIFIED",
+      "tag": "v6.3.0",
+      "sourceCommit": "896ba700fb232ccdc727beb287bdb4fa17be88ae",
+      "releaseUrl": "https://github.com/yeliang-wang/evopilot/releases/tag/v6.3.0",
+      "releaseAuthorizationDigest": "sha256:7298898a7e956f43f4d440975a5663d60089b10d129ccde95d3a204ac9a6eadb",
+      "immutableAssets": [
+        {
+          "name": "evopilot-cli-6.3.0.tgz",
+          "sha256": "sha256:8b3c8be4f34f1e692393cc9ceebac839543cd5dbc88b195894885d5d8378dbb9"
+        },
+        {
+          "name": "evopilot-adapter-mcp-6.3.0.tgz",
+          "sha256": "sha256:cc0d2c33ddb6a88db27a4c3f16e86677d8b42bdaff60e055486296962ad9d59e"
+        },
+        {
+          "name": "create-evopilot-6.3.0.tgz",
+          "sha256": "sha256:b1ab725ef448653f37b59550ec4bbf89eed84141b7c0bc951487a0b523ca583a"
+        },
+        {
+          "name": "evopilot-6.3.0-source.tar.gz",
+          "sha256": "sha256:61972099c76fc87496f0f4540bd525ea6cca5bf299840687711745fa097d0aa6"
+        },
+        {
+          "name": "evopilot-6.3.0-helm-chart.tgz",
+          "sha256": "sha256:c0f16c8c2a7ce3344ef0a8cb60a0d433e15d782be1df798fe9255f0ffe3f955a"
+        },
+        {
+          "name": "install.sh",
+          "sha256": "sha256:1f705792ec7a7930e6d320ce68b591dbe4cc85b9493f329fe71fbc346b904dbf"
+        },
+        {
+          "name": "evopilot-6.3.0-install-manifest.json",
+          "sha256": "sha256:973a72e7df0b1fc329685b5a60b752f2bd1ec84cb8cdf93eab20777e9ff06993"
+        },
+        {
+          "name": "evopilot-6.3.0-container-image.tar",
+          "sha256": "sha256:a7e2390f44bdde775385c2e77e0be110c47ef548de8988824a7e9f98bb52cca7"
+        },
+        {
+          "name": "install.ps1",
+          "sha256": "sha256:9ad747cda77061255377f3131f8079803358462a214095ff37508bf4ebd9ccd0"
+        },
+        {
+          "name": "evopilot-contracts-6.3.0.tgz",
+          "sha256": "sha256:3b32990b96753253831793e98e6a7f05788ceb6e9a6147f90e20c8926e46c636"
+        },
+        {
+          "name": "evopilot-client-6.3.0.tgz",
+          "sha256": "sha256:ad5e452fc6f138bc48518bd7d1b98071a894c2f12162828053600903b4b4e30f"
+        },
+        {
+          "name": "evopilot-adapter-opencode-6.3.0.tgz",
+          "sha256": "sha256:3b70c9ff1e8f50a6be9880a46deed022e989f1241dc7990210cb7487571f3e92"
+        },
+        {
+          "name": "evopilot-6.3.0-image-metadata.json",
+          "sha256": "sha256:dd7a42115116392f95b3c2d617ef802e9ce15be00add3c74f5a29157f2961ce5"
+        },
+        {
+          "name": "evopilot-6.3.0-sbom.spdx.json",
+          "sha256": "sha256:7055c5a2fd501ff40cbb5e373c501519c61bc5ebab135b8d3fdfb873c89fbac9"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "sha256:4605d0fcf7cfea50040d3ec6823384a7c37444de1315fb2cda4932cbe58750b0"
+        },
+        {
+          "name": "evopilot-6.3.0-provenance.json",
+          "sha256": "sha256:c4a5828c4fc8708b62e4a5fa9430822c06ae659cfa9cc84adaaedc95caf044ac"
+        }
+      ],
+      "npmPackages": [
+        {
+          "name": "create-evopilot",
+          "version": "6.3.0",
+          "sha256": "sha256:b1ab725ef448653f37b59550ec4bbf89eed84141b7c0bc951487a0b523ca583a",
+          "integrity": "sha512-4ML5EGki/A4aM/hHs6oxIUvGpJXXFEgNyLYsRmFMq8ILZp1jVXPC+09QfyhVBl2L/7YjVTiKfzbQ9UvXhscR4w==",
+          "tarball": "https://registry.npmjs.org/create-evopilot/-/create-evopilot-6.3.0.tgz",
+          "provenance": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/create-evopilot@6.3.0",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "signatures": [
+            {
+              "sig": "MEUCIBr4VUscLWYLOnydqVIjkWiMWXG5oaOsjJKRq5QoZ4ClAiEA1Ps63DQja7GSZ8Y8280ctU+FzeNRg/c30e/stRFtwuc=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+              "sig": "MEQCIFh0/w1LQfF4sAbEnwAarWdVinFjOBSDsTWfuzkSbO1cAiBcp94BsjXmVfA2T6rfpGmX+F+JmEgJhLZshsIWcIaFHQ=="
+            }
+          ]
+        },
+        {
+          "name": "@evopilot/adapter-mcp",
+          "version": "6.3.0",
+          "sha256": "sha256:cc0d2c33ddb6a88db27a4c3f16e86677d8b42bdaff60e055486296962ad9d59e",
+          "integrity": "sha512-8an2ql4lsdnxDs2Faaa6os/4pZtnT3Az6VvUc7+pDdZj7EnesC04b1KkUF+NvGOEEB4geZngnuTZx5cUfU4tHQ==",
+          "tarball": "https://registry.npmjs.org/@evopilot/adapter-mcp/-/adapter-mcp-6.3.0.tgz",
+          "provenance": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fadapter-mcp@6.3.0",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "signatures": [
+            {
+              "sig": "MEUCIHLM/mrYafluWktiTZD+EehUVKhPa+YQ2VcEnTrm/Nf4AiEA+ujAo2Vkn1yUPq5hne2tW4LF2m6K/VxwyPaCQCLpJe4=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+              "sig": "MEYCIQCR1hLNr30cMYbrAippVpJ/q1u9cnBhZ6jeQMrdIA+Y+wIhAKdlaC3uwqFM9/4p8RmNsrw/zaIyMKcHHM4gb1mNKhTP"
+            }
+          ]
+        },
+        {
+          "name": "@evopilot/adapter-opencode",
+          "version": "6.3.0",
+          "sha256": "sha256:3b70c9ff1e8f50a6be9880a46deed022e989f1241dc7990210cb7487571f3e92",
+          "integrity": "sha512-mqVajOUkGH7HFsLbOIrtmbzHUbIA07256RcHZ/qPQRIcwKSilXUeERka581ejHU2PYiuqOmqXLILK7EXeWml7w==",
+          "tarball": "https://registry.npmjs.org/@evopilot/adapter-opencode/-/adapter-opencode-6.3.0.tgz",
+          "provenance": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fadapter-opencode@6.3.0",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "signatures": [
+            {
+              "sig": "MEQCIB2DFlnBjnUYC9m+4+Bh67xPa1+9fnncM3rgQAMBFpgWAiBxURUhuNqwa6tpPitlrTyl6gbwIOUcZZ4Z/j0ENa8b3g==",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+              "sig": "MEUCIQCYofoRZ7v2yxjl2PjsdItKeX/y+Qri3qarL+YxU1IyawIgabdcrO6ZfnIHXuMroy9fc9180XmGYf/IP0HKKEb5Gww="
+            }
+          ]
+        },
+        {
+          "name": "@evopilot/cli",
+          "version": "6.3.0",
+          "sha256": "sha256:8b3c8be4f34f1e692393cc9ceebac839543cd5dbc88b195894885d5d8378dbb9",
+          "integrity": "sha512-t7ij+GohBn5bv5RZiU4F1qS3UFENLGy9fG0k3lhuPBeYezLaYGBU23fj7SRxEXDBDvqqW/CGT8KTMSOp83eInw==",
+          "tarball": "https://registry.npmjs.org/@evopilot/cli/-/cli-6.3.0.tgz",
+          "provenance": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fcli@6.3.0",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "signatures": [
+            {
+              "sig": "MEYCIQCM7xQNm5IdBw3QXA7ahqrf+Ciyx6Vrnnzm1FoQH6lF1AIhAJ6+v1Eq58QQDyoA1rzea0vvm+4r/+mlOoNPQwfokf37",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+              "sig": "MEUCIQDfxZ66NUUWk9GSJzI8o/3xXBTuLXusleRzpLliC+/7rQIgbKrRIlqOasa8NLpiaVBSDPf6WdVi2I9oMAcqijs30jg="
+            }
+          ]
+        },
+        {
+          "name": "@evopilot/client",
+          "version": "6.3.0",
+          "sha256": "sha256:ad5e452fc6f138bc48518bd7d1b98071a894c2f12162828053600903b4b4e30f",
+          "integrity": "sha512-CPtMIxooxMUG/EOX2iPcXoj8ARBCOoRbUVTVuVudsHoEseUpuO+9qndahqJLnUp6YBkCMkL8B8fnYWexcmUWDg==",
+          "tarball": "https://registry.npmjs.org/@evopilot/client/-/client-6.3.0.tgz",
+          "provenance": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fclient@6.3.0",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "signatures": [
+            {
+              "sig": "MEUCIQDqNCaVCn66Awk53urrkHNxfdqQaq1/wWKtcg4kf3+TpwIgDkarluZk3l4IPrCQXPQjJgUdwgI4Fl5y9Zz0RjevQQ4=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+              "sig": "MEUCIQDxdIhAn9YWTVUbdX7B+G4kOg15zHSOij01xkpNIgv8KAIgbhqFTJbl501D74ngzDs3yTXQ85CL/6FxSKHJ0iJ6RZE="
+            }
+          ]
+        },
+        {
+          "name": "@evopilot/contracts",
+          "version": "6.3.0",
+          "sha256": "sha256:3b32990b96753253831793e98e6a7f05788ceb6e9a6147f90e20c8926e46c636",
+          "integrity": "sha512-tlMSs1HBGi3cOE7+IznCNCuotUO0DplBBwjERGWpCiTjOqFqQxGafRx7Rw7p6KFxP30ycvOet/3aXi08e+510Q==",
+          "tarball": "https://registry.npmjs.org/@evopilot/contracts/-/contracts-6.3.0.tgz",
+          "provenance": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fcontracts@6.3.0",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "signatures": [
+            {
+              "sig": "MEUCIB3JYCFutaKRDYfBnQc+MfhLZ50L7SL7O20P0nbQovqqAiEApkb8HJUzUgztWvuIr0TGuwQpzw8qJ+3wCSHaDqkefV4=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+              "sig": "MEUCICDvVlHFGkC3efdqDcDFfo5OkvptZPFpzAAeM6LP4kpjAiEAs0Z9iD+BYOHyRL88Ov4Nrp1h8OlH3DgeVF9b3P2BBKg="
+            }
+          ]
+        }
+      ],
+      "freshPublicInstall": true,
+      "registrySignaturesAndProvenanceVerified": true,
+      "acceptedBytesRebuilt": false,
+      "acceptedBytesRepacked": false,
+      "tagMoved": false,
+      "promotion": {
+        "schema": "evopilot-release-promotion-record/v1",
+        "project": "evopilot",
+        "version": "6.3.0",
+        "targetId": "evopilot-v6.3.0-semantic-convergence-successor",
+        "candidate": {
+          "runId": "36406017109",
+          "commit": "896ba700fb232ccdc727beb287bdb4fa17be88ae",
+          "handoffDigest": "sha256:95fb1e92d9e6c0bc5f8a196fb7df3793e9205029c1992a68463e282263630992",
+          "releaseSetDigest": "sha256:7602bc0ee8bbe294639f03911bc3bf4618363db380d5e5fb406778cef1ce04e1"
+        },
+        "acceptanceDigest": "sha256:9f82c7e927dba0ac9f0ce8cfdc241c118091f2c3fb2819a304a54855d5133186",
+        "releaseAuthorizationDigest": "sha256:7298898a7e956f43f4d440975a5663d60089b10d129ccde95d3a204ac9a6eadb",
+        "promotion": {
+          "repository": "yeliang-wang/evopilot",
+          "workflow": ".github/workflows/release-artifacts.yml",
+          "runId": "36945254385",
+          "runAttempt": 1,
+          "generatedAt": "2026-10-02T00:17:55.941Z"
+        },
+        "authority": {
+          "source": "SEPARATE_RELEASE_BINDING_AND_GITHUB_RELEASE_ENVIRONMENT",
+          "grantsProductLifecycleAuthority": false
+        }
+      },
+      "stdio": {
+        "protocolInitialization": "PASS",
+        "toolCount": 113,
+        "newLiveHostAcceptanceClaim": false
+      },
+      "ghcr": {
+        "imageDigest": "sha256:f2f31c10d995bf7708ff5eaa31f19f145c052faca9954b7df58f13251fcba4a1",
+        "publicPullVerifiedBlobs": 17,
+        "tags": [
+          "6.3.0",
+          "896ba700fb232ccdc727beb287bdb4fa17be88ae"
+        ],
+        "remoteDeployment": false
+      },
+      "publicInstaller": {
+        "status": "PASS",
+        "scope": "Fresh isolated scaffold through public manifest and package",
+        "servicesStarted": false
+      }
+    },
+    {
+      "product": "expert",
+      "version": "2.3.0",
+      "status": "PUBLISHED_AND_VERIFIED",
+      "tag": "evolution-expert-v2.3.0",
+      "sourceCommit": "cf03ba312ef18ce9a2e7af96e2c5ca6f2f6307e1",
+      "releaseUrl": "https://github.com/yeliang-wang/evopilot/releases/tag/evolution-expert-v2.3.0",
+      "releaseAuthorizationDigest": "sha256:71bfd20fb9c80574fce02b58c59bf86f8717cf1e019f1d6be14d7ce12664dab8",
+      "immutableAssets": [
+        {
+          "name": "evopilot-evolution-expert-2.3.0-sbom.spdx.json",
+          "sha256": "sha256:4c6d37c01f1759cc1409d2a7ac463e7c5f307e1c62b6838609b8e9bd573a67ea"
+        },
+        {
+          "name": "evopilot-evolution-expert-2.3.0-provenance.json",
+          "sha256": "sha256:592bd99ef0b61fc5546006183df8f33fa392462ab2554fb41b246bc57888d44f"
+        },
+        {
+          "name": "evopilot-evolution-expert-2.3.0.tgz",
+          "sha256": "sha256:f1466dd3f1c8cbe1aa9a1c201fd8ab23bef0a368860326803d26e4d79ce4aa17"
+        },
+        {
+          "name": "SHA256SUMS",
+          "sha256": "sha256:4cfe74b27ac680670721e1fe1b566b469ceec79ebba28ed7d15ae3f7ac1c5a3e"
+        }
+      ],
+      "npmPackages": [
+        {
+          "name": "@evopilot/evolution-expert",
+          "version": "2.3.0",
+          "sha256": "sha256:f1466dd3f1c8cbe1aa9a1c201fd8ab23bef0a368860326803d26e4d79ce4aa17",
+          "integrity": "sha512-omUTB8d+8LL3w3IyDo2EFqVhUBnyw1CDl9NDe2xuntm8M3mbEaC7CQUmE33gsZR6mUexLHNPRw5XtNVCtAB0EQ==",
+          "tarball": "https://registry.npmjs.org/@evopilot/evolution-expert/-/evolution-expert-2.3.0.tgz",
+          "provenance": {
+            "url": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fevolution-expert@2.3.0",
+            "provenance": {
+              "predicateType": "https://slsa.dev/provenance/v1"
+            }
+          },
+          "signatures": [
+            {
+              "sig": "MEUCIQCH9nvkgsKMmWNRRE2Ae+ebm74cu4ug/WIMvRzarqwkdAIgJPesjsym/Xa+kDib6p/ahcwePI12vJVpBbDmTW8yKIM=",
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+            },
+            {
+              "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+              "sig": "MEUCIQCN7JDiHKpJIWRmWy/iGlc8PcUsDh0H0gv30+NeNNjLiQIgdEOFeUmQdAOxFNlayvvh0GV+8tmAPNp7Jo5H48yRmDk="
+            }
+          ]
+        }
+      ],
+      "freshPublicInstall": true,
+      "registrySignaturesAndProvenanceVerified": true,
+      "acceptedBytesRebuilt": false,
+      "acceptedBytesRepacked": false,
+      "tagMoved": false,
+      "promotion": {
+        "schema": "evopilot-release-promotion-record/v1",
+        "project": "evopilot",
+        "version": "2.3.0",
+        "targetId": "evopilot-evolution-expert-v2.3.0-semantic-convergence-successor",
+        "candidate": {
+          "runId": "36382556399",
+          "commit": "cf03ba312ef18ce9a2e7af96e2c5ca6f2f6307e1",
+          "handoffDigest": "sha256:dfec1c33b284306d5ea3a0ed7f5a942f3cc7c6a4c94478a8f74bdb7346cf64e1",
+          "releaseSetDigest": "sha256:e151c9a5350f5bf6cb50cf5414db9507f4139809abd50a610ea7d148ad8fc700"
+        },
+        "acceptanceDigest": "sha256:9f82c7e927dba0ac9f0ce8cfdc241c118091f2c3fb2819a304a54855d5133186",
+        "releaseAuthorizationDigest": "sha256:71bfd20fb9c80574fce02b58c59bf86f8717cf1e019f1d6be14d7ce12664dab8",
+        "promotion": {
+          "repository": "yeliang-wang/evopilot",
+          "workflow": ".github/workflows/evolution-expert-release.yml",
+          "runId": "36946129785",
+          "runAttempt": 1,
+          "generatedAt": "2026-10-02T00:28:18.131Z"
+        },
+        "authority": {
+          "source": "SEPARATE_RELEASE_BINDING_AND_GITHUB_RELEASE_ENVIRONMENT",
+          "grantsProductLifecycleAuthority": false
+        }
+      },
+      "runtimeCompatibility": {
+        "runtimeVersion": "6.3.0",
+        "host": "codex",
+        "status": "CONFORMANT",
+        "installedInventoryVerified": true
+      }
+    }
+  ],
+  "publicationRecovery": [
+    {
+      "workflow": "https://github.com/yeliang-wang/evopilot-harness/actions/runs/36945250848",
+      "cause": "Registry processing exceeded five-minute verifier window after successful publish",
+      "resolution": "Fresh read-only public metadata, exact tarball, signature/provenance, install and stdio verification passed; no republish"
+    },
+    {
+      "workflow": "https://github.com/yeliang-wang/evopilot/actions/runs/36945371375",
+      "cause": "GitHub contents API omits content for Target JSON over 1 MB; publication step never ran",
+      "repairCommit": "5369008ab88929ac52f8361040b58d34011fdae2",
+      "verifiedWorkflow": "https://github.com/yeliang-wang/evopilot/actions/runs/36945821823",
+      "productBytesChanged": false
+    }
+  ],
+  "terminalDeploymentReconciliation": "Separate verification-only record after this evidence commit",
+  "newProviderModelCalls": 0,
+  "sourceCommands": 0,
+  "remoteRuntimeDeployment": false,
+  "userInstalledSuiteModified": false
+}
