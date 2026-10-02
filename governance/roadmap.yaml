@@ -2362,5 +2362,21 @@
     "changesProductBehavior": false,
     "requiresExplicitReleaseScopeDecision": true,
     "exception": "For Runtime 6.3.0 and Expert 2.3.0 release acceptance only, reuse the existing explicitly configured, scope-bound LLM profile and SecretRef. Current-campaign credential solicitation, native credential value entry, native positive submission and native cancel interaction are excluded from required execution and remain SKIPPED_BY_USER_NOT_PASS. This exception supersedes only those interactive evidence clauses. All non-interactive credential/identity/role/tenant/workspace/destination binding, invalid/revoked/expired credential refusal, private-transport fault, secrecy, cancellation/replay/UNKNOWN, RBAC/audit, generated-adapter, installed-artifact, real Codex, 5400-second active-soak, impact and NO_REGRESSION obligations remain mandatory. Do not claim native first-input or native cancel validation, create accounts, export credentials, change model routing, bypass authorization or infer acceptance/release approval."
+  },
+  "releaseDurationExceptionPolicy": {
+    "schema": "evopilot-release-duration-exception/v1",
+    "versions": {
+      "evopilot-harness": "4.8.1",
+      "evopilot-runtime": "6.3.0",
+      "evopilot-evolution-expert": "2.3.0"
+    },
+    "newActiveSoakRequired": false,
+    "omittedDurationSeconds": 5400,
+    "omittedResult": "SKIPPED_BY_USER_NOT_PASS",
+    "existingEvidenceImmutable": true,
+    "historicalPassTransferAllowed": false,
+    "remainingFunctionalSecurityHostRegressionAndTerminalE2ERequired": true,
+    "releaseAuthorizationGranted": false,
+    "precedence": "For these exact releases only, this exception supersedes every requirement to execute a new 5400-second/90-minute soak, including inherited and series-terminal clauses. Original evidence remains bound to its original artifacts; no long-duration stability claim applies to untested successor bytes. All other required acceptance remains mandatory."
   }
 }

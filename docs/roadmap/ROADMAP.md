@@ -1151,3 +1151,8 @@ checks, secrecy and fault controls, Codex execution, active soak, inherited
 non-interactive obligations and NO_REGRESSION remain required. Product behavior,
 versions, packaged bytes, authentication and publication authority do not change.
 The exact machine policy is `releaseCredentialInteractionScopePolicy`.
+
+
+## 本轮发布的持续验证范围
+
+用户明确取消 Harness 4.8.1、Runtime 6.3.0、Expert 2.3.0 的新增 90 分钟（5400 秒）持续验证。机器规则以 `releaseDurationExceptionPolicy` 为准，优先于本轮 Host、继承及系列终验中的时长要求。省略项记录为 `SKIPPED_BY_USER_NOT_PASS`；保留旧结果及其原始构建绑定，不将旧结果迁移为新候选包的长时间稳定性证明。其余功能、安全、Codex Host、回归和三产品串联验收要求不变。发布仍需独立确认。
