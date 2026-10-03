@@ -187,8 +187,8 @@ a fresh public install and verifies Registry signatures, the
 Expert Core digest, and the Runtime compatibility bound to that Candidate.
 Expert **2.3.0 is already published** with verified Runtime **6.3.0** compatibility;
 see the [current release ledger](../releases/current-release.md). The current
-Runtime **6.3.1** maintenance candidate reuses that unchanged Expert release and
-requires its own exact installed compatibility checks. Preparing or validating
+Runtime 6.3.1 compatibility campaign reuses that unchanged Expert release and
+requires checks against the exact installed maintenance candidate. Preparing or validating
 that Runtime candidate does not republish Expert or establish Runtime release
 authority. The Expert Candidate workflow validates the exact
 approved Target against the versioned corpus, compiles the current Runtime and
