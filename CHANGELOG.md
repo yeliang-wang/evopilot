@@ -1,10 +1,12 @@
 # Changelog
 
-## 6.3.1 — Token-only usage (candidate)
+## 6.3.1 — Token usage and bounded execution repairs (candidate)
 
 - Preserve reported native Agent token usage without requiring monetary amounts or pricing configuration.
 - Remove monetary task freezes, release gates, schedule limits and inferred model prices; retain token/time/source/authority checks.
 - Keep v1 usage receipts readable. Project providers and native Codex execution remain independently installed extensions.
+- Fit the existing default GA evidence obligations within finite collection/evaluation limits and preserve explicitly approved managed source scopes.
+- Repair semantic Goal progression so verified Target and phase completion can ready eligible dependent Targets without automatic dispatch, completion or release authority.
 - Evolution Expert 2.3.0 and Harness 4.8.1 retain their independent versions.
 
 

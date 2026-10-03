@@ -1,7 +1,7 @@
 {
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-6.3.1-token-only-cutover",
-  "revision": 3,
+  "revision": 4,
   "status": "APPROVED",
   "intent": "token-only runtime maintenance and independent suite cutover; bounded correctness maintenance for the existing default GA semantic evidence contract; managed approved file scope repair",
   "objective": "Complete the user-delegated token-only independent product replacement on current Codex; retain old Suite files until explicit final deletion consent.",
@@ -25,11 +25,12 @@
     {
       "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/managed-scope-delegated-review.json",
       "authority": "Concrete maintenance scope decision under explicit user delegation; initial UNPLANNED outputs retained; formal Roadmap declaration and exact Target precede product edits. No individual human technical digest review or release consent claimed."
-    }
+    },
+    "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/semantic-progression-repair/delegated-review.json"
   ],
   "roadmapBindings": [
     {
-      "repo": "/Users/wangyejing/.codex/worktrees/evopilot-approved-source-scope-631/evopilot",
+      "repo": "/Users/wangyejing/.codex/worktrees/semantic-target-progression-631/evopilot",
       "project": "evopilot",
       "releaseProduct": "evopilot-runtime",
       "matchedMilestone": "evopilot-6.3.1-token-only-cutover",
@@ -38,15 +39,15 @@
       "roadmapDigest": "sha256:c703036e6c6c23a7f5fe23b042d6d921733c00ca10b9dabf94a8bcccd8b18e53",
       "maintenanceBasis": {
         "standingWork": "evopilot-maintenance",
-        "gate": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/managed-scope-declared-roadmap-gate-v2.json",
+        "gate": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/semantic-progression-repair/roadmap-gate.json",
         "boundaryImpact": "NONE",
-        "scopeReview": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/managed-scope-delegated-review.json"
+        "scopeReview": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/semantic-progression-repair/delegated-review.json"
       }
     }
   ],
   "scope": {
     "include": [
-      "Apply the exact token-only Roadmap correction and generic Runtime usage/monetary-gate corrections. Repair the reproduced finite semantic evidence-capacity mismatch in the already supported default GA completion path; retain all other security and authority bounds. Repair existing managed CodeUpgrader source-scope propagation using an explicit finite exact file list bound to the accepted owning review, project/repository/base context and proposal; protected paths, permissions and qualified provider enforcement remain mandatory.",
+      "Apply the exact token-only Roadmap correction and generic Runtime usage/monetary-gate corrections. Repair the reproduced finite semantic evidence-capacity mismatch in the already supported default GA completion path; retain all other security and authority bounds. Repair existing managed CodeUpgrader source-scope propagation using an explicit finite exact file list bound to the accepted owning review, project/repository/base context and proposal; protected paths, permissions and qualified provider enforcement remain mandatory. Correct the reproduced existing semantic Goal progression gap through completion-owner readiness updates only after verified dependency and predecessor-phase receipts; no external state writes or weakening of completion authority.",
       "Implement, package, qualify and install independently owned project resources/providers and native coding adapter; no embedded old Suite or broad Runtime assurance/journal additions.",
       "Retain public Expert 2.3.0 and Harness 4.8.1 and test their actual installed compatibility; build the Runtime successor once and perform required exact candidate verification.",
       "Finish all 29 capability dispositions and four representative paths using actual behavior and independently checked evidence. Database/publication boundary behavior is verified without granting authority to operate unrelated production systems.",
@@ -7221,7 +7222,7 @@
     {
       "id": "EVC01",
       "criterion": "The actual default phase evidence contract fits finite collection and evaluation limits, so a qualified dual-bound execution can produce verified Target, phase and final Goal receipts without weakening required evidence.",
-      "requiredEvidence": "Exact installed baseline 15/16-kind reproduction; actual default Alpha/Beta/RC/GA requirements; collection/evaluation capacity and over-limit negatives; independent semantic/Harness failures; actual Codex full-Goal journey and persistent receipt readback. No unverified package, authority or publication claim.",
+      "requiredEvidence": "Exact installed baseline 15/16-kind reproduction; actual default Alpha/Beta/RC/GA requirements; collection/evaluation capacity and over-limit negatives; independent semantic/Harness failures; actual Codex full-Goal journey and persistent receipt readback. No unverified package, authority or publication claim. Additionally reproduce the actual approved-plan PENDING dependent after the first verified native Target completion; verify same-phase readiness and cross-phase readiness only from verified dependency and predecessor-phase receipts, retaining blocked/failed/running states and current authority/CAS refusal. Complete the exact successor full twelve-Target four-phase Goal and restart.",
       "status": "PENDING",
       "evidenceRefs": []
     },
@@ -7413,7 +7414,7 @@
         "legacy Suite execution",
         "permanent Suite deletion"
       ],
-      "requiredEvidence": "Exact installed baseline 15/16-kind reproduction; actual default Alpha/Beta/RC/GA requirements; collection/evaluation capacity and over-limit negatives; independent semantic/Harness failures; actual Codex full-Goal journey and persistent receipt readback. No unverified package, authority or publication claim.",
+      "requiredEvidence": "Exact installed baseline 15/16-kind reproduction; actual default Alpha/Beta/RC/GA requirements; collection/evaluation capacity and over-limit negatives; independent semantic/Harness failures; actual Codex full-Goal journey and persistent receipt readback. No unverified package, authority or publication claim. Additionally reproduce the actual approved-plan PENDING dependent after the first verified native Target completion; verify same-phase readiness and cross-phase readiness only from verified dependency and predecessor-phase receipts, retaining blocked/failed/running states and current authority/CAS refusal. Complete the exact successor full twelve-Target four-phase Goal and restart.",
       "status": "PENDING",
       "evidenceRefs": []
     },
@@ -7451,7 +7452,7 @@
       "decision": "APPROVED",
       "by": "user",
       "evidenceRef": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/user-direction.json",
-      "authorizationDigest": "sha256:c86b1d83a2bd446d78e3600c156ca32e76081f06ab400f579cec2175a5fd889c",
+      "authorizationDigest": "sha256:dcf393a341b66320b5e4cfb6236b2a702febc0c75099d19a507855bf2762563e",
       "approvalBasis": "EXPLICIT_DELEGATION_TO_COMPLETE_SEQUENCE_AND_NECESSARY_CORRECTNESS_REPAIR_WITHOUT_INTERMEDIATE_CONFIRMATION",
       "technicalDigestMaterializedBy": "assistant under delegated maintenance decisions; not separate human review of this generated digest"
     },

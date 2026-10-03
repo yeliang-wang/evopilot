@@ -1,6 +1,9 @@
 # Evolution Expert 2.3.0 Host integration
 
-Status: implementation under the approved 2.3.0 successor Target; not released or accepted.
+Evolution Expert **2.3.0 is published**, with Runtime **6.3.0** as its verified
+release pair. The [current release ledger](../releases/current-release.md) records
+the exact artifacts and acceptance limits. Runtime **6.3.1** remains a separate
+maintenance candidate and reuses the unchanged published Expert package.
 
 The private component belongs to the Expert package, but runs outside its
 conversational Core. See the [component reference](../../packages/evolution-expert/host-integration/README.md)
@@ -8,14 +11,18 @@ for the exact invocation, local trust prerequisites, supported platform,
 cancellation semantics and isolated maintenance commands.
 
 The repository [E2E corpus](../../tests/e2e/expert-host-integration/README.md)
-extends RC01–RC05. Local synthetic tests do not satisfy the original actual Host,
-Runtime, inherited/cross-product or 5400-second active-soak requirements.
+extends RC01–RC05. Local synthetic tests are supporting controls, not actual Host
+interaction or whole-product acceptance. The published scope used Codex and
+existing configuration; native credential entry/submission/cancellation and a
+new 90-minute soak were explicitly omitted, not passed.
 
 In particular, permission and deployment signatures require trustworthy issuers
 with observed evidence. Their existence in a synthetic unit test does not
-demonstrate any third-party Host permission integration. All such qualification
-remains pending for the exact later Candidate; no current user integration is
-installed, modified or imported by this implementation.
+demonstrate any third-party Host permission integration. The release does not
+qualify arbitrary third-party Host permission integrations. Installing the
+package does not automatically configure a user's Host launcher or import its
+credentials. Reusing an already configured Runtime LLM profile does not require
+invoking the private input component.
 
 For a local Runtime, keep the ordinary MCP adapter at
 `http://127.0.0.1:19876`. The private input component can use the

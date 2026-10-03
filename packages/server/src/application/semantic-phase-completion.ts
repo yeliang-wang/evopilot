@@ -13,6 +13,7 @@ import {SemanticRuntimeSourceStore} from "../storage/semantic-runtime-source.js"
 import {requireSemantic} from "../domains/harness-template/semantic-catalog-contract.js";
 import {digestObject, isRecord} from "../domains/harness-template/utils.js";
 import {freeze} from "../domains/harness-template/semantic-catalog-io.js";
+import {advanceSemanticTargets} from "./semantic-target-progression.js";
 
 type Access = {currentAccess: () => SemanticDiscoveryAccess; signal?: AbortSignal};
 type TargetInput = {identity: SemanticExecutionIdentity; runId: string};
@@ -154,7 +155,13 @@ export function createSemanticPhaseCompletionService(dataRoot: string, owners: {
     const input = capture(value), s = subject(input.identity.projectId, access), g = goal(input, access), result = verified(input, access, g);
     requireSemantic(same(subject(input.identity.projectId, access), s) && same(goal(input, access), g), "DRIFT"); return result;
   }
-  return Object.freeze({receipt,
+  function progress(g: GlobalGoal, access: Access, completedAt: string) {
+    return advanceSemanticTargets(g, {
+      targetReceipt: r => owners.targetReceipt({identity: r.identity, runId: r.runId}, access, g),
+      phaseReceipt: r => verified({identity: r.identity, runId: r.runId, phaseTargetId: r.phaseTargetId}, access, g)
+    }, completedAt);
+  }
+  return Object.freeze({receipt, progress,
     assertPredecessor(g: GlobalGoal, targetId: string, access: Access) {
       const t = g.plan.targets.find(t => t.id === targetId); requireSemantic(t, "UNAVAILABLE");
       if (t.phase === undefined) return undefined;
@@ -180,10 +187,11 @@ export function createSemanticPhaseCompletionService(dataRoot: string, owners: {
         ...(predecessor ? {predecessorReceiptDigest: predecessor.receiptDigest} : {}), previousGoalDigest: digestObject(g), currentAuthorityDigest: digestObject(initial),
         completedBy: s.principal.id, completedAt: new Date(now()).toISOString(), goalCompleted: false as const, releaseAuthorized: false as const};
       const result = freeze({...body, receiptDigest: digestObject(body)});
-      const next: GlobalGoal = {...g, updatedAt: result.completedAt, semanticPhaseCompletions: [...(g.semanticPhaseCompletions ?? []), result],
+      const completed: GlobalGoal = {...g, updatedAt: result.completedAt, semanticPhaseCompletions: [...(g.semanticPhaseCompletions ?? []), result],
         plan: {...g.plan, phaseTargets: g.plan.phaseTargets.map(v => v.id !== p.id ? v : {...v, status: "PASSED", updatedAt: result.completedAt,
           decision: {status: "GO", rationale: "Verified semantic phase package; no Goal/GA or Release decision", evidence: [ref(result)]}})},
         timeline: [...g.timeline, {timestamp: result.completedAt, type: "TARGET_ADVANCED", message: ref(result)}]};
+      const next = progress(completed, access, result.completedAt);
       requireSemantic(same(subject(g.projectId, access), s) && same(authority(), initial), "DRIFT");
       requireSemantic(same(predecessorReceipt(g, p, access), predecessor), "DRIFT");
       goals.assertSettled(g.id); requireSemantic(!access.signal?.aborted && same(goals.read(g.id), g), "DRIFT");

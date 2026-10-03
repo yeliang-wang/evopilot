@@ -147,7 +147,7 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-The working tree prepares [Runtime 6.3.1 token-only usage](docs/releases/6.3.1.md); it is not yet published. Project extensions remain independently versioned.
+The working tree prepares [Runtime 6.3.1 token usage and bounded execution repairs](docs/releases/6.3.1.md), including semantic Target progression after verified completion; it is not yet published. Project extensions remain independently versioned.
 
 Runtime **v6.3.0** and Expert **v2.3.0** are accepted and published on GitHub and
 npm. Runtime's public GHCR image and manifest-based installer are verified.
@@ -212,6 +212,12 @@ collect evidence and validate business and Harness obligations independently.
 Goal completion each require their own verified receipts and current policy.
 Expert renders these Runtime-owned states over MCP. Uncertain effects are read
 back without automatic replay. Release authorization is a separate decision.
+
+The 6.3.1 candidate also repairs dependent semantic Target progression. A verified
+Target completion receipt can make an eligible pending successor ready; crossing
+a phase additionally requires its verified predecessor phase receipt and GO
+decision. Readiness does not dispatch the next request, complete another Target,
+or grant release authority. See [semantic progression and recovery](docs/architecture/loop-runtime.md#semantic-target-progression-and-recovery).
 
 Executor and collector qualification is bound to exact Host/runtime/environment,
 permissions, activation and expiry. Installed Codex and controlled variants passed

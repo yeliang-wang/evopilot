@@ -197,12 +197,13 @@ export function createSemanticGoalCompletionService(configuration: Configuration
         currentAuthorityDigest: digestObject(initial), previousGoalDigest: digestObject(previous), completedAt: new Date(now()).toISOString(),
         completedBy: original.principal.id, resultingGoalStatus};
       const committed = freeze({...body, receiptDigest: digestObject(body)});
-      const next: GlobalGoal = {...previous, status: resultingGoalStatus, updatedAt: body.completedAt,
+      const completed: GlobalGoal = {...previous, status: resultingGoalStatus, updatedAt: body.completedAt,
         semanticTargetCompletions: [...records, committed], plan: {...previous.plan, targets: previous.plan.targets.map(target =>
           target.id === input.identity.targetId ? {...target, status: "DONE", nextAction: "done", blocker: undefined,
             evidence: [...target.evidence, evidenceRef(committed)], updatedAt: body.completedAt} : target)},
         timeline: [...previous.timeline, {timestamp: body.completedAt, type: closesGoal ? "COMPLETED" : "TARGET_ADVANCED",
           targetId: input.identity.targetId, message: evidenceRef(committed)}]};
+      const next = phases.progress(completed, access, body.completedAt);
       // No await or callbacks after these final reads and before the shared CAS.
       requireSemantic(same(subject(input, access), original) && same(terminal.read(input, access), evidence), "DRIFT");
       requireSemantic(same(checks.map(check => check()), initial), "DRIFT");

@@ -143,6 +143,40 @@ EvoPilot can now model long tasks independently of a specific release or maturit
 
 The runtime is still intentionally conservative: it does not pretend to execute arbitrary unsafe actions without approval, and it does not replace concrete executors such as code-upgrader, GitHub Actions, or GitLab CI. It records and governs their collaboration.
 
+## Semantic Target progression and recovery
+
+The Runtime 6.3.1 candidate repairs progression inside an already approved,
+semantic-owned Goal. Previously, completing a Target could leave its dependent
+successor `PENDING`, even though the predecessor was `DONE`. That prevented the
+next exact semantic execution request from being prepared.
+
+The semantic completion owner makes an eligible pending Target `READY` only
+after checking its dependencies against verified completion receipts. A Target
+in a later phase also waits for the preceding phase's verified completion
+receipt and GO decision. This updates execution readiness within the existing
+plan; it does not change Target definitions, remove evidence obligations, mark
+another Target or phase complete, dispatch an external Agent, or grant release
+authority. Each subsequent request still passes its own current binding,
+permission, readiness and receipt checks.
+
+The repair applies when a new Target or phase completion is committed. Reading
+or retrying an already retained historical completion receipt remains read-only;
+it does not migrate a Goal left pending by an older Runtime. Successor acceptance
+uses a fresh Goal and preserves the earlier unfinished Goal and its receipts.
+
+If a completion response is lost, inspect the retained Target or phase receipt
+and current Goal state first. Reconcile the exact completion operation within
+its existing identity and authority; never replay a native dispatch to obtain
+another completion response. Semantic-owned Targets must not be advanced by
+editing stored status or by using the legacy Goal advance route. A failed or
+stale dependency, phase receipt or policy remains a blocker. Final Goal
+completion still requires every required Target and phase receipt.
+
+Source regressions verify progression and refusal cases. The candidate also
+requires exact installed multi-Target acceptance; a successful first Target or
+synthetic four-phase fixture is not whole-Goal acceptance. Public release status
+remains in the [current release ledger](../releases/current-release.md).
+
 ## Validation
 
 Use:
