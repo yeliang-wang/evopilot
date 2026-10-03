@@ -47,6 +47,17 @@ export interface CodeUpgraderRequest {
   validationPlan?: CodeUpgraderValidationPlan;
   allowedPaths?: string[];
   protectedPaths?: string[];
+  /** Internal transport constraint for a Runtime-reviewed exact file scope. */
+  managedOnly?: boolean;
+  sourceScopeBinding?: CodeUpgraderSourceScopeBinding;
+}
+
+export interface CodeUpgraderSourceScopeBinding {
+  schema: "evopilot-code-upgrade-source-binding/v1";
+  approvalDigest: string;
+  repositoryDigest: string;
+  sourceCommit: string;
+  filesDigest: string;
 }
 
 export interface CodeUpgraderValidationPlan {
@@ -69,6 +80,7 @@ export interface CodeUpgraderSession {
   workspaceId?: string;
   conversationId: string;
   status: CodeUpgraderRunStatus;
+  sourceScopeBinding?: unknown;
 }
 
 export interface CodeUpgraderRuntimeEvent {
@@ -96,9 +108,14 @@ export class CodeUpgraderClient {
     private readonly fetchFn: typeof fetch = fetch
   ) {}
 
-  async startCodeUpgrade(request: CodeUpgraderRequest): Promise<CodeUpgraderSession> {
+  async startCodeUpgrade(request: CodeUpgraderRequest, beforeManagedDispatch?: () => void): Promise<CodeUpgraderSession> {
+    if (request.sourceScopeBinding) {
+      const health = await this.fetchJson("/health").catch(() => {throw new Error("CODE_UPGRADE_SCOPE_PROVIDER_CAPABILITY_UNAVAILABLE");});
+      if (!Array.isArray(health.capabilities) || !health.capabilities.includes("evopilot-code-upgrade-source-binding/v1")) throw new Error("CODE_UPGRADE_SCOPE_PROVIDER_CAPABILITY_REQUIRED");
+    }
+    beforeManagedDispatch?.();
     const managedSession = await this.startManagedCodeUpgrade(request).catch((error) => {
-      if (isMissingManagedRuntimeRoute(error)) return undefined;
+      if (!request.managedOnly && !request.sourceScopeBinding && isMissingManagedRuntimeRoute(error)) return undefined;
       throw error;
     });
     if (managedSession) return managedSession;
@@ -127,9 +144,9 @@ export class CodeUpgraderClient {
     };
   }
 
-  async readCodeUpgradeSnapshot(conversationId: string): Promise<CodeUpgraderSnapshot> {
-    const managedSnapshot = await this.readManagedCodeUpgradeSnapshot(conversationId).catch((error) => {
-      if (isMissingManagedRuntimeRoute(error)) return undefined;
+  async readCodeUpgradeSnapshot(conversationId: string, managedOnly = false): Promise<CodeUpgraderSnapshot> {
+    const managedSnapshot = await this.readManagedCodeUpgradeSnapshot(conversationId, managedOnly).catch((error) => {
+      if (!managedOnly && isMissingManagedRuntimeRoute(error)) return undefined;
       throw error;
     });
     if (managedSnapshot) return managedSnapshot;
@@ -168,29 +185,33 @@ export class CodeUpgraderClient {
         validationPlan: request.validationPlan,
         allowedPaths: request.allowedPaths,
         protectedPaths: request.protectedPaths,
+        sourceScopeBinding: request.sourceScopeBinding,
         initialUserMessage: renderCodeUpgradePrompt(request)
       })
     });
     return {
       workspaceId: response.workspaceId,
       conversationId: String(response.conversationId ?? response.conversation_id ?? response.id),
-      status: normalizeCodeUpgraderStatus(response.status)
+      status: normalizeCodeUpgraderStatus(response.status),
+      sourceScopeBinding: response.sourceScopeBinding
     };
   }
 
-  private async readManagedCodeUpgradeSnapshot(conversationId: string): Promise<CodeUpgraderSnapshot> {
+  private async readManagedCodeUpgradeSnapshot(conversationId: string, managedOnly = false): Promise<CodeUpgraderSnapshot> {
     const response = await this.fetchJson(`/api/v1/conversations/${encodeURIComponent(conversationId)}`);
     const events = Array.isArray(response.events) ? response.events.map(normalizeManagedRuntimeEvent) : [];
     return {
       workspaceId: response.workspaceId,
       conversationId: String(response.conversationId ?? conversationId),
       status: normalizeCodeUpgraderStatus(response.status),
+      sourceScopeBinding: response.sourceScopeBinding,
       events,
       diff: typeof response.diff === "string" ? response.diff : undefined,
       branchName: response.branchName,
       commitSha: response.commitSha,
       pullRequestUrl: response.pullRequestUrl,
-      changedFiles: Array.isArray(response.changedFiles) ? response.changedFiles.map((file: unknown) => String(file)) : undefined
+      // Exact-scope evidence must reach Runtime validation without string coercion.
+      changedFiles: managedOnly ? response.changedFiles : Array.isArray(response.changedFiles) ? response.changedFiles.map((file: unknown) => String(file)) : undefined
     };
   }
 

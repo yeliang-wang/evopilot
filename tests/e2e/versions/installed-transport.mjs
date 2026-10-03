@@ -10,8 +10,8 @@ import {runtimeCapabilityCliResult} from './runtime/6.3.0/capability-probe.mjs';
 
 export const bytesDigest = value => 'sha256:' + crypto.createHash('sha256').update(value).digest('hex');
 const packages = {
-  runtime:{name:'@evopilot/cli',version:'6.3.0',entry:'dist/index.js'},
-  expert:{name:'@evopilot/evolution-expert',version:'2.3.0',entry:'dist/cli.js'}
+  runtime:{name:'@evopilot/cli',versions:['6.3.0','6.3.1'],entry:'dist/index.js'},
+  expert:{name:'@evopilot/evolution-expert',versions:['2.3.0'],entry:'dist/cli.js'}
 };
 function safeRelative(relative) {
   assert.ok(typeof relative==='string' && relative.length<=1024 && !path.isAbsolute(relative) &&
@@ -90,7 +90,7 @@ function createTransport({contextBytes,expectedContextDigest,sourceRoot,authoriz
   assert.equal(context.schema,recoverySdkMode?'evopilot-installed-expert-recovery-sdk-context/v1':recoveryMode?'evopilot-installed-runtime-recovery-context/v1':executionMode?'evopilot-installed-runtime-execution-context/v1':executionSdkMode?'evopilot-installed-expert-execution-sdk-context/v1':sdkMode?'evopilot-installed-expert-sdk-context/v1':transitionMode?'evopilot-installed-runtime-transition-context/v1':bindingMode?'evopilot-installed-runtime-binding-context/v1':'evopilot-installed-readonly-probe-context/v1');
   if(bindingMode)assert.equal(context.product,'runtime','RUNTIME_BINDING_ONLY');
   if(sdkMode)assert.equal(context.product,'expert','EXPERT_SDK_ONLY');
-  const spec=packages[context.product];assert.equal(context.version,spec.version);
+  const spec=packages[context.product];assert.ok(spec.versions.includes(context.version),'INSTALLED_VERSION_UNSUPPORTED');
   assert.ok([context.artifactSetDigest,context.acceptanceBindingDigest,context.probeInputDigest].every(isDigest),'EXTERNAL_BINDING_REFERENCE_REQUIRED');
   assert.ok(path.isAbsolute(context.installationRoot)&&path.isAbsolute(sourceRoot),'ABSOLUTE_ROOT_REQUIRED');
   const root=fs.realpathSync(context.installationRoot),source=fs.realpathSync(sourceRoot);outside(root,source);outside(source,root);
@@ -101,7 +101,7 @@ function createTransport({contextBytes,expectedContextDigest,sourceRoot,authoriz
   const verify=()=>assert.deepEqual(tree(root),expected,'INSTALLED_INVENTORY_DRIFT');verify();
   const packageRoot=path.join(root,'node_modules',spec.name);
   const manifest=JSON.parse(fileBytes(path.join(packageRoot,'package.json')));
-  assert.equal(manifest.name,spec.name);assert.equal(manifest.version,spec.version);
+  assert.equal(manifest.name,spec.name);assert.equal(manifest.version,context.version);
   const entry=path.join(packageRoot,spec.entry);fileBytes(entry);
   const identity=Object.freeze({contextDigest:expectedContextDigest,artifactSetDigest:context.artifactSetDigest,
     acceptanceBindingDigest:context.acceptanceBindingDigest,product:context.product,version:context.version,

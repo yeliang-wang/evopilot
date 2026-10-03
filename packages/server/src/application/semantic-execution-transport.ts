@@ -1,6 +1,6 @@
 import {randomUUID} from "node:crypto";
 import {assertAgentExecutionRequestV1Alpha1, assertAgentExecutionResultV1Alpha1, assertLifecycleExecutorAdapterV1,
-  assertAgentProcessObservation, type EvoPilotAgentProcessObservationV1,
+  assertAgentProcessObservation, type EvoPilotAgentProcessObservation,
   type EvoPilotAgentExecutionRequestV1Alpha1, type EvoPilotLifecycleExecutorAdapterV1} from "@evopilot/contracts";
 import {createSemanticExecutionContextService} from "./semantic-execution-context.js";
 import {createSemanticExecutionBindingService} from "./semantic-execution-binding.js";
@@ -102,7 +102,7 @@ export function createSemanticExecutionTransport(
         "receiptDigest", "effects", "evidence", "cost", "artifacts"].includes(key)), "INVALID");
       if (result.cost) requireSemantic([result.cost.inputTokens, result.cost.outputTokens].every(value =>
         value === undefined || Number.isSafeInteger(value) && value >= 0), "INVALID");
-      let processObservation: EvoPilotAgentProcessObservationV1 | undefined;
+      let processObservation: EvoPilotAgentProcessObservation | undefined;
       let processObservationStatus: "COLLECTED" | "UNAVAILABLE" | "REJECTED" | undefined;
       if (readObservation) {
         try {

@@ -112,7 +112,7 @@ export function verifyExpertPublicInstallation({ installDir, version, acceptedTa
     assert.equal(adapter.digest, digest({ ...adapter, digest: undefined }), "Adapter digest mismatch");
     assert.ok(adapter.requiredCapabilities.includes("host-native-secure-secret-input"));
     for (const command of ["compatibility", "doctor"]) {
-      for (const runtime of [[], ["6.3.0"], ["6.2.0"]]) {
+      for (const runtime of [[], ["6.3.1"], ["6.3.0"], ["6.2.0"]]) {
         const result = json([command, host, ...runtime]);
         const compatibility = command === "doctor" ? result.compatibility : result;
         assert.equal(compatibility.conformanceStatus, "CONFORMANT");

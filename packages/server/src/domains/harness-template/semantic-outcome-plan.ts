@@ -1,10 +1,11 @@
 import {digestObject, isRecord} from "./utils.js";
+import {MAX_SEMANTIC_OUTCOME_OBSERVATIONS} from "./semantic-evidence-limits.js";
 import {requireSemantic} from "./semantic-catalog-contract.js";
 import {freeze} from "./semantic-catalog-io.js";
 import {readFileSync} from "node:fs";
 import {createHash} from "node:crypto";
 
-export const semanticOutcomeEvaluatorDigest = digestObject(["./semantic-outcome-plan.js", "../../application/semantic-execution-outcome.js",
+export const semanticOutcomeEvaluatorDigest = digestObject(["./semantic-outcome-plan.js", "./semantic-evidence-limits.js", "../../application/semantic-execution-outcome.js",
   "../../application/semantic-execution-transport.js", "../../application/semantic-outcome-review.js",
   "../../application/semantic-process-evidence.js", "../../application/semantic-evidence-collection.js",
   "../../application/semantic-runtime-sources.js", "../../storage/semantic-runtime-source.js"].map(module =>
@@ -89,7 +90,7 @@ export function evaluateSemanticOutcomeRules(plan: SemanticOutcomePlan, evidence
   validators: string[]; constraints: string[]; evidence: string[];
 }, conceptIds: string[]) {
   plan = normalizeSemanticOutcomePlan(plan);
-  requireSemantic(evidence.length <= 16 && new Set(evidence.map(item => item.kind)).size === evidence.length, "IDENTITY_CONFLICT");
+  requireSemantic(evidence.length <= MAX_SEMANTIC_OUTCOME_OBSERVATIONS && new Set(evidence.map(item => item.kind)).size === evidence.length, "IDENTITY_CONFLICT");
   requireSemantic(plan.business.every(rule => conceptIds.includes(rule.conceptId)), "DRIFT");
   const requirements = [...required.validators.map(value => ({kind: "validator", value})),
     ...required.constraints.map(value => ({kind: "constraint", value})), ...required.evidence.map(value => ({kind: "evidence", value}))];

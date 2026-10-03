@@ -36,6 +36,7 @@ import {
   checkProjectDevopsReadiness,
   checkSourceCredentialReadiness,
   collectProjectCodeContext,
+  prepareReviewSourceScope,
   compileRuleWithLlm,
   createAndStoreRunFromEvidence,
   currentReleaseDecision,
@@ -119,7 +120,8 @@ import {
 } from "../domains/llm-readiness/index.js";
 import { serverCompositionRootMetadata } from "../http/composition-root.js";
 import {
-  HttpError
+  HttpError,
+  httpError
 } from "../http/errors.js";
 import {
   diagnosisForHttpStatus,
@@ -1099,6 +1101,11 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           writeJson: routeWriteJson
         }
       })) return;
+      const currentSourceScopeAuth = () => {
+        const principal = resolveSemanticRequestPrincipal({request, options, tokens, runtime, store});
+        if (!principal) throw httpError(403, "CODE_UPGRADE_SCOPE_FORBIDDEN");
+        return {...auth, actor: principal.id, role: principal.role, tenantId: principal.tenantId, workspaceId: principal.workspaceId};
+      };
       if (await handleDeliveryRoutes({
         request,
         response,
@@ -1111,9 +1118,11 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
         deps: {
           applyReviewDecision,
           audit,
+          canAccessScopedResource,
           checkProjectDevopsReadiness,
           createAndStoreRunFromEvidence,
           createReleaseReport,
+          currentSourceScopeAuth,
           envelope,
           evidenceEventsFromAgentSignals,
           evidenceEventsFromEvaluationResults,
@@ -1126,8 +1135,9 @@ export function createServer(options: EvoPilotServerOptions): http.Server {
           normalizeDecisionAction,
           normalizeDeliveryParameters,
           normalizeProjectDevopsProvider,
+          prepareReviewSourceScope,
           readJson,
-          refreshCodeUpgradeRun,
+          refreshCodeUpgradeRun: (fileStore: FileStore, id: string) => refreshCodeUpgradeRun(fileStore, id, profile, auth, currentSourceScopeAuth),
           refreshPipeline,
           startCodeUpgradeExecution,
           triggerNativeDevopsDelivery,

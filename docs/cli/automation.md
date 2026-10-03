@@ -67,6 +67,10 @@ evopilot target run \
   --json
 ```
 
+## Managed CodeUpgrader Scope
+
+Managed CodeUpgrader maintenance with an explicit exact file scope uses the authenticated [review and upgrade HTTP operations](../api/README.md#托管代码升级的精确文件范围631). The CLI does not add a review or code-upgrade flag for this administrator integration. Preserve the current review, source and proposal digests, the returned scope approval, and authoritative readbacks. A failed or uncertain upgrade is not permission to replay it. Ordinary-human interaction remains Expert over MCP.
+
 ## LLM Profile Rules
 
 Enterprise project loops must use a READY project LLM profile or run-level `--llm-profile`. The global default LLM is for local/debug validation only.

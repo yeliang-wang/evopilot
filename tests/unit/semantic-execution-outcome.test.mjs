@@ -170,6 +170,15 @@ test("rule engine refuses undeclared concept and invented Harness obligation", a
   assert.throws(() => evaluateSemanticOutcomeRules(plan, [], f.required, ["fixture:entity"]), {code: "DRIFT"});
 });
 
+test("rule engine accepts 32 distinct observations and refuses overflow or duplicate kinds", async t => {
+  const f = await fixture(t);
+  const evidence = Array.from({length: 32}, (_, i) => ({kind: "bounded-" + i, facts: {present: true}}));
+  assert.equal(evaluateSemanticOutcomeRules(f.plan, evidence, f.required, ["fixture:entity"]).status, "INDETERMINATE");
+  assert.throws(() => evaluateSemanticOutcomeRules(f.plan, [...evidence, {kind: "overflow", facts: {}}], f.required, ["fixture:entity"]), {code: "IDENTITY_CONFLICT"});
+  assert.throws(() => evaluateSemanticOutcomeRules(f.plan, [evidence[0], evidence[0]], f.required, ["fixture:entity"]), {code: "IDENTITY_CONFLICT"});
+  assert.equal(f.calls(), 0);
+});
+
 test("wrong stage outcome plan is refused before any Agent invocation", async t => {
   const f = await fixture(t, {skipReview: true, plan: p => {p.stageId = "foreign";}});
   await assert.rejects(f.dispatch(), {code: "DRIFT"}); assert.equal(f.calls(), 0);

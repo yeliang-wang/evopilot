@@ -1,9 +1,12 @@
+import {assertAgentProcessObservationV2, type EvoPilotAgentProcessObservationV2} from "./agent-process-observation-v2.js";
+export {assertAgentProcessObservationV2, type EvoPilotAgentProcessObservationV2} from "./agent-process-observation-v2.js";
+export type EvoPilotAgentProcessObservation = EvoPilotAgentProcessObservationV1 | EvoPilotAgentProcessObservationV2;
 import { createHash } from "node:crypto";
 export * from "./semantic-project.js";
 
-export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "6.3.0";
+export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "6.3.1";
 export const EVOPILOT_SERVER_VERSION_FALLBACK = "0.1.0";
-export const EVOPILOT_CLI_VERSION_FALLBACK = "6.3.0";
+export const EVOPILOT_CLI_VERSION_FALLBACK = "6.3.1";
 export const EVOPILOT_API_CONTRACT_VERSION = "v1";
 export const EVOPILOT_MINIMUM_CLI_VERSION = "5.0.0";
 
@@ -38,7 +41,7 @@ export const EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION = "2.2";
 
 export const EVOPILOT_HARNESS_GUIDED_RUNTIME_BOUNDARY = {
   schema: "evopilot-harness-guided-runtime-boundary/v1",
-  runtimeVersion: "6.3.0",
+  runtimeVersion: "6.3.1",
   invariant: "Every Goal Target Loop binds one eligible published immutable HarnessBundle plus one resolved declarative Lifecycle.",
   harnessOwnership: "evopilot-harness",
   runtimeOwnership: "evopilot",
@@ -94,7 +97,7 @@ export interface EvoPilotWorkspaceLlmDefaultBindingV1 {
 
 export interface EvoPilotLlmSetupProtocolV1 {
   schema: typeof EVOPILOT_LLM_SETUP_PROTOCOL_SCHEMA;
-  runtimeVersion: "6.2.0" | "6.3.0";
+  runtimeVersion: "6.2.0" | "6.3.0" | "6.3.1";
   expertProtocolRange: ">=2.2 <3";
   states: EvoPilotRuntimeReadinessState[];
   setupOnlyTools: string[];
@@ -437,9 +440,9 @@ export interface EvoPilotLifecycleExecutorAdapterV1 {
   capabilities: string[];
   profile: EvoPilotAgentRuntimeProfileV1;
   semanticContextSchema?: "evopilot-semantic-agent-context/v1";
-  processObservationSchema?: "evopilot-agent-process-observation/v1";
+  processObservationSchema?: "evopilot-agent-process-observation/v1" | "evopilot-agent-process-observation/v2";
   /** Local adapter-owned receipt read. Never accepts facts from a model/Host request. */
-  readProcessObservation?(request: EvoPilotAgentExecutionRequestV1Alpha1, result: EvoPilotAgentExecutionResultV1Alpha1): EvoPilotAgentProcessObservationV1 | undefined;
+  readProcessObservation?(request: EvoPilotAgentExecutionRequestV1Alpha1, result: EvoPilotAgentExecutionResultV1Alpha1): EvoPilotAgentProcessObservation | undefined;
   execute(request: EvoPilotAgentExecutionRequestV1Alpha1): Promise<EvoPilotAgentExecutionResultV1Alpha1>;
 }
 
@@ -463,8 +466,9 @@ export interface EvoPilotAgentProcessObservationV1 {
   };
 }
 
-export function assertAgentProcessObservation(value: EvoPilotAgentProcessObservationV1, request: EvoPilotAgentExecutionRequestV1Alpha1,
+export function assertAgentProcessObservation(value: EvoPilotAgentProcessObservation, request: EvoPilotAgentExecutionRequestV1Alpha1,
   result: EvoPilotAgentExecutionResultV1Alpha1, profile: EvoPilotAgentRuntimeProfileV1): void {
+  if (value?.schema === "evopilot-agent-process-observation/v2") return assertAgentProcessObservationV2(value, request, result, profile);
   const exact = (v: unknown, keys: string[]) => Boolean(v && typeof v === "object" && !Array.isArray(v) &&
     Object.keys(v).sort().join() === [...keys].sort().join());
   const m = value?.material;
@@ -498,7 +502,7 @@ export function assertLifecycleExecutorAdapterV1(value: EvoPilotLifecycleExecuto
   if (value?.schema !== EVOPILOT_LIFECYCLE_EXECUTOR_ADAPTER_SCHEMA) throw new Error("EXECUTOR_ADAPTER_SCHEMA_UNSUPPORTED");
   if (!value.id?.trim() || !value.host?.trim() || typeof value.execute !== "function") throw new Error("EXECUTOR_ADAPTER_IDENTITY_INVALID");
   if ((value.processObservationSchema !== undefined || value.readProcessObservation !== undefined) &&
-    (value.processObservationSchema !== "evopilot-agent-process-observation/v1" || typeof value.readProcessObservation !== "function")) throw new Error("EXECUTOR_PROCESS_OBSERVATION_UNSUPPORTED");
+    (!["evopilot-agent-process-observation/v1", "evopilot-agent-process-observation/v2"].includes(value.processObservationSchema ?? "") || typeof value.readProcessObservation !== "function")) throw new Error("EXECUTOR_PROCESS_OBSERVATION_UNSUPPORTED");
   if (!Array.isArray(value.capabilities) || value.capabilities.some((capability) => !capability.trim())) throw new Error("EXECUTOR_ADAPTER_CAPABILITIES_INVALID");
   if (value.profile?.schema !== EVOPILOT_AGENT_RUNTIME_PROFILE_SCHEMA || !DIGEST_PATTERN.test(value.profile.digest) || value.profile.qualification?.status !== "QUALIFIED" || !DIGEST_PATTERN.test(value.profile.qualification.conformanceDigest)) throw new Error("AGENT_RUNTIME_PROFILE_INVALID");
   if (value.profile.adapterId !== value.id || value.profile.host !== value.host) throw new Error("AGENT_RUNTIME_PROFILE_ADAPTER_MISMATCH");

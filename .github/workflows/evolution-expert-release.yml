@@ -406,7 +406,7 @@ jobs:
           npm install --ignore-scripts --no-audit --no-fund --registry "$REGISTRY" "${PACKAGE}@${VERSION}"
           npm audit signatures --registry "$REGISTRY"
           npx --no-install evopilot-expert manifest > manifest.json
-          npx --no-install evopilot-expert compatibility codex 6.3.0 > compatibility.json
+          npx --no-install evopilot-expert compatibility codex 6.3.1 > compatibility.json
           node - <<'NODE'
           const fs = require("node:fs");
           const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));

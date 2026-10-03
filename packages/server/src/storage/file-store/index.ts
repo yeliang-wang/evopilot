@@ -581,7 +581,7 @@ export class FileStore {
       errorBudgetRemaining: sloReports.length === 0 ? 100 : Math.round(sloReports.reduce((sum, report) => sum + report.errorBudgetRemaining, 0) / sloReports.length),
       failedPolicyCount: policyEvaluations.filter((policy) => policy.status === "FAILED").length,
       supplyChainRiskCount: supplyChainReports.filter((report) => report.status !== "READY").length,
-      costRiskCount: costReports.filter((report) => report.status !== "HEALTHY").length,
+      costRiskCount: 0, // Retained response field; monetary observations never establish a product budget risk.
       costHealth: costReports.length === 0 ? 100 : Math.round(costReports.reduce((sum, report) => sum + costHealthScore(report.status), 0) / costReports.length),
       releaseReadyCount: releaseReadiness.filter((report) => report.status === "READY").length,
       releaseBlockedCount: releaseReadiness.filter((report) => report.status === "BLOCKED").length,
@@ -872,7 +872,7 @@ export class FileStore {
     return schedule;
   }
 
-  upsertRecurringLoopSchedule(input: { id?: string; projectId?: string; targetId?: string; cadence?: string; maxBudgetUsd?: number; triggerRules?: string[] }): RecurringLoopSchedule {
+  upsertRecurringLoopSchedule(input: { id?: string; projectId?: string; targetId?: string; cadence?: string; triggerRules?: string[] }): RecurringLoopSchedule {
     const now = new Date().toISOString();
     const projectId = safeFileName(String(input.projectId ?? "evopilot"));
     const targetId = safeFileName(String(input.targetId ?? "discovery-skill-runtime"));
@@ -885,8 +885,7 @@ export class FileStore {
       projectId,
       targetId,
       cadence,
-      maxBudgetUsd: Math.max(0, Number(input.maxBudgetUsd ?? existing?.maxBudgetUsd ?? 5)),
-      triggerRules: normalizeStringList(input.triggerRules, existing?.triggerRules ?? ["new-evidence", "release-window-open", "budget-pass"]),
+      triggerRules: normalizeStringList(input.triggerRules, existing?.triggerRules ?? ["new-evidence", "release-window-open", "guardrail-pass"]),
       status: "ACTIVE",
       lastRunAt: existing?.lastRunAt,
       nextRunAt: nextRunAtForCadence(cadence, now),
@@ -936,7 +935,6 @@ export class FileStore {
     if (!loop) return undefined;
     const now = new Date().toISOString();
     const budgets = {
-      maxCostUsd: Math.max(0, Number(input.maxCostUsd ?? loop.context?.maxCostUsd ?? 5)),
       maxTokens: Math.max(0, Number(input.maxTokens ?? loop.context?.maxTokens ?? 100000)),
       maxDurationSeconds: Math.max(1, Number(input.maxDurationSeconds ?? loop.stopPolicy.maxDurationSeconds)),
       maxChangedFiles: Math.max(1, Number(input.maxChangedFiles ?? 20)),
@@ -946,14 +944,12 @@ export class FileStore {
     const changedFiles = new Set(loop.artifacts.map((artifact) => artifact.path).filter(Boolean)).size;
     const confidence = loop.evidenceSets.some((set) => set.status === "FAIL") ? 0.35 : loop.status === "SUCCEEDED" ? 0.9 : 0.65;
     const actual = {
-      costUsd: loop.trace.cost.estimatedUsd,
       tokens: loop.trace.cost.totalTokens,
       durationSeconds,
       changedFiles,
       confidence
     };
     const blockers = [
-      actual.costUsd > budgets.maxCostUsd ? `costUsd>${budgets.maxCostUsd}` : "",
       actual.tokens > budgets.maxTokens ? `tokens>${budgets.maxTokens}` : "",
       actual.durationSeconds > budgets.maxDurationSeconds ? `durationSeconds>${budgets.maxDurationSeconds}` : "",
       actual.changedFiles > budgets.maxChangedFiles ? `changedFiles>${budgets.maxChangedFiles}` : "",
@@ -973,7 +969,6 @@ export class FileStore {
       evidence: [
         `loop=${loop.id}`,
         `status=${loop.status}`,
-        `costUsd=${actual.costUsd}`,
         `tokens=${actual.tokens}`,
         `durationSeconds=${actual.durationSeconds}`,
         `confidence=${actual.confidence}`
@@ -2109,7 +2104,6 @@ export class FileStore {
     const scorecards = this.computeServiceScorecards();
     const sloReports = this.computeSloReports();
     const thirdPartyReports = this.computeSupplyChainReports();
-    const costReports = this.computeCostReports();
     const evaluations: GovernancePolicyEvaluation[] = [];
     for (const scorecard of scorecards) {
       evaluations.push({
@@ -2131,18 +2125,6 @@ export class FileStore {
         severity: report.status === "HEALTHY" ? "LOW" : report.status === "BURNING" ? "MEDIUM" : "HIGH",
         scope: report.projectId,
         rationale: `错误预算剩余 ${report.errorBudgetRemaining}%，延迟违规 ${report.latencyViolationCount} 次，失败发布 ${report.failedReleaseCount} 次。`,
-        recommendedAction: report.recommendedAction,
-        evaluatedAt: now
-      });
-    }
-    for (const report of costReports) {
-      evaluations.push({
-        id: `policy-cost-${safeFileName(report.projectId)}`,
-        name: "成本预算门禁",
-        status: report.status === "HEALTHY" ? "PASSED" : report.status === "WATCH" ? "WARN" : "FAILED",
-        severity: report.status === "HEALTHY" ? "LOW" : report.status === "WATCH" ? "MEDIUM" : "HIGH",
-        scope: report.projectId,
-        rationale: `累计成本 ${report.totalCost.toFixed(4)}，Token ${report.totalTokens}，高成本事件 ${report.highCostEventCount} 次。`,
         recommendedAction: report.recommendedAction,
         evaluatedAt: now
       });
@@ -2206,27 +2188,22 @@ export class FileStore {
       const totalCost = events.reduce((sum, event) => sum + eventCost(event), 0);
       const totalTokens = events.reduce((sum, event) => sum + eventTokens(event), 0);
       const highCostEventCount = events.filter((event) => eventCost(event) >= 0.5 || eventTokens(event) >= 8000 || /cost|成本/i.test(`${event.type} ${event.message}`)).length;
-      const status: CostReport["status"] = totalCost >= 10 || highCostEventCount >= 5 ? "OVER_BUDGET" : totalCost >= 2 || highCostEventCount > 0 ? "WATCH" : "HEALTHY";
+      const status: CostReport["status"] = "OBSERVED";
       return {
         projectId: project.id,
         totalCost: Number(totalCost.toFixed(6)),
         totalTokens,
         highCostEventCount,
         status,
-        recommendedAction: status === "HEALTHY" ? "保持当前模型路由和预算策略。" : status === "WATCH" ? "把高成本样本纳入评测集，并检查模型路由。" : "冻结自动进化，优先生成成本优化机会点。",
+        recommendedAction: "仅记录外部事件中已提供的历史数据；调用费用不构成执行、验收或发布门禁。",
         updatedAt: now
       };
     });
   }
 
-  projectEvolutionFreezeDiagnostic(projectId: string): EvolutionFreezeDiagnostic | undefined {
-    const costReport = this.computeCostReports().find((report) => report.projectId === projectId);
-    if (costReport?.status !== "OVER_BUDGET") return undefined;
-    return {
-      projectId,
-      costReport,
-      reason: `项目 ${projectId} 成本预算已超限：累计成本 ${costReport.totalCost}，Token ${costReport.totalTokens}，高成本事件 ${costReport.highCostEventCount} 次。已冻结普通自动进化，只允许成本优化型进化继续进入代码升级和 CI/CD。`
-    };
+  /** Legacy diagnostics compatibility: expenses never freeze project execution. */
+  projectEvolutionFreezeDiagnostic(_projectId: string): EvolutionFreezeDiagnostic | undefined {
+    return undefined;
   }
 
   computeEvolutionFreezes(): EvolutionFreezeDiagnostic[] {
@@ -2241,7 +2218,6 @@ export class FileStore {
     const codeUpgrades = this.listCodeUpgradeRuns();
     const pipelines = this.listPipelines();
     const sloByProject = new Map(this.computeSloReports().map((report) => [report.projectId, report]));
-    const costByProject = new Map(this.computeCostReports().map((report) => [report.projectId, report]));
     const supplyChainBlocked = this.computeSupplyChainReports().some((report) => report.required && report.status !== "READY");
     const now = new Date().toISOString();
     return projects.map((project) => {
@@ -2250,7 +2226,6 @@ export class FileStore {
       const successfulUpgradeCount = codeUpgrades.filter((upgrade) => upgrade.projectId === project.id && upgrade.status === "SUCCEEDED").length;
       const successfulPipelineCount = pipelines.filter((pipeline) => pipeline.projectId === project.id && pipeline.status === "SUCCEEDED").length;
       const slo = sloByProject.get(project.id);
-      const cost = costByProject.get(project.id);
       const gates: ReleaseReadinessReport["gates"] = [
         {
           name: "用户确认",
@@ -2271,11 +2246,6 @@ export class FileStore {
           name: "SLO 错误预算",
           status: slo?.status === "HEALTHY" ? "PASSED" : slo?.status === "BURNING" ? "WARN" : "FAILED",
           detail: `错误预算剩余 ${slo?.errorBudgetRemaining ?? 100}%`
-        },
-        {
-          name: "成本预算",
-          status: cost?.status === "HEALTHY" ? "PASSED" : cost?.status === "WATCH" ? "WARN" : "FAILED",
-          detail: `成本 ${cost?.totalCost ?? 0}，Token ${cost?.totalTokens ?? 0}`
         },
         {
           name: "运行时供应链",
@@ -2301,11 +2271,9 @@ export class FileStore {
   computeRolloutStrategyReports(): RolloutStrategyReport[] {
     const readiness = this.computeReleaseReadinessReports();
     const sloByProject = new Map(this.computeSloReports().map((report) => [report.projectId, report]));
-    const costByProject = new Map(this.computeCostReports().map((report) => [report.projectId, report]));
     const now = new Date().toISOString();
     return readiness.map((report) => {
       const slo = sloByProject.get(report.projectId);
-      const cost = costByProject.get(report.projectId);
       const rollbackGate = report.gates.find((gate) => gate.name === "CI/CD")?.status === "PASSED" &&
         report.gates.find((gate) => gate.name === "代码升级")?.status === "PASSED";
       const gates: RolloutStrategyReport["gates"] = [
@@ -2318,11 +2286,6 @@ export class FileStore {
           name: "SLO 灰度窗口",
           status: (slo?.errorBudgetRemaining ?? 100) >= 70 ? "PASSED" : (slo?.errorBudgetRemaining ?? 100) >= 40 ? "WARN" : "FAILED",
           detail: `错误预算剩余 ${slo?.errorBudgetRemaining ?? 100}%`
-        },
-        {
-          name: "成本灰度窗口",
-          status: cost?.status === "HEALTHY" ? "PASSED" : cost?.status === "WATCH" ? "WARN" : "FAILED",
-          detail: `成本状态 ${cost?.status ?? "HEALTHY"}`
         },
         {
           name: "回滚准备",
@@ -2341,7 +2304,7 @@ export class FileStore {
         status,
         canaryPercent,
         rollbackReady: rollbackGate,
-        recommendedAction: strategy === "CANARY" ? "从 10% Canary 开始，观察 SLO、成本和用户反馈。" : strategy === "MANUAL_APPROVAL" ? "仅允许 1% 灰度，并要求负责人确认回滚窗口。" : `先修复：${gates.find((gate) => gate.status === "FAILED")?.name ?? "灰度门禁"}。`,
+        recommendedAction: strategy === "CANARY" ? "从 10% Canary 开始，观察 SLO、token 用量和用户反馈。" : strategy === "MANUAL_APPROVAL" ? "仅允许 1% 灰度，并要求负责人确认回滚窗口。" : `先修复：${gates.find((gate) => gate.status === "FAILED")?.name ?? "灰度门禁"}。`,
         gates,
         evaluatedAt: now
       };

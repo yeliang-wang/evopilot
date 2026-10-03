@@ -1,6 +1,12 @@
 # Operate an Open Lifecycle
 
-This is the v4 development interface. It does not change the currently released v3 CLI contract and does not authorize a release.
+This guide describes the Open Lifecycle model introduced in v4 and retained in
+Runtime 6.x. Ordinary users operate through [Evolution Expert](evolution-expert.md)
+over MCP. The CLI examples below are for administrators and automation with an
+authenticated, ready Runtime and access to the declared project and published
+HarnessBundle. A successful operation returns Runtime-owned state and evidence;
+it does not authorize a release. See [Lifecycle Registry](lifecycle-registry.md)
+for the current revision, activation, archive, restore, and rollback operations.
 
 ## 1. Inspect available definitions
 

@@ -1,6 +1,6 @@
 # EvoPilot API
 
-## Agent-Native Lifecycle Control Plane（Runtime 6.3.0）
+## Agent-Native Lifecycle Control Plane（Runtime 6.3.1）
 
 当前发布为 Runtime 6.3.0 / Expert 2.3.0。语义 Catalog、项目绑定与独立执行接口见[语义消费者技术参考](../architecture/semantic-catalog-consumer.md)和[CLI/MCP 命令映射](../cli/commands.md)；验收范围及未验证项见[发布记录](../releases/current-release.md)。
 
@@ -1093,6 +1093,38 @@ POST /api/v1/reviews/{reviewId}/decision
 - `request-changes`
 - `observe-only`
 
+### 托管代码升级的精确文件范围（6.3.1）
+
+这是操作人和机器集成使用的既有 HTTP 路径；评审沿用 operator 权限，执行沿用 admin 权限，普通用户仍通过 Expert/MCP 使用产品。托管 CodeUpgrader 的维护任务可以在 `accept` 决策中附带 `codeUpgradeSourceScope`，将代码、测试、文档和治理文件一起纳入明确批准的范围。它不改变 Harness 的所有权，也不授予发布权限。
+
+提交前从 `GET /api/v1/runs/{runId}` 读取所属 `ReviewRecord` 和方案，核对项目源码提交及拟执行的完整 `proposalMarkdown`。请求结构如下，摘要和提交占位符必须替换为当前实际值：
+
+```json
+{
+  "action": "accept",
+  "note": "Approve the reviewed maintenance files for this exact proposal and source",
+  "codeUpgradeSourceScope": {
+    "schema": "evopilot-code-upgrade-source-scope/v1",
+    "expectedReviewDigest": "sha256:<current-review-digest>",
+    "sourceCommit": "<current-40-character-git-commit>",
+    "proposalDigest": "sha256:<exact-proposal-utf8-digest>",
+    "files": ["packages/server/src/example.ts", "tests/unit/example.test.mjs", "docs/guides/example.md"]
+  }
+}
+```
+
+`expectedReviewDigest` 是完整当前评审对象的递归键排序 JSON 摘要：对象键按 JavaScript `localeCompare` 排序，忽略值为 `undefined` 的对象成员，保留数组顺序，使用紧凑 JSON 的 UTF-8 字节计算 SHA-256，并添加 `sha256:` 前缀。`proposalDigest` 则直接散列完整方案字符串的 UTF-8 字节，包括换行。不要把界面中的摘要文本或另一轮评审摘要作为当前输入。
+
+`files` 包含 1–256 个精确仓库相对文件名，每项最多 1,024 字节，总计最多 65,536 字节。目录、通配符、绝对路径、遍历路径、重复或互相包含的路径、受保护路径、符号链接及非普通文件不构成有效范围。新增文件可以尚不存在。Runtime 记录经过验证并排序的文件清单，以及项目、租户、工作区、方案、仓库、源码提交和真实认证操作人；请求中的 `actor` 文本不能替代认证身份。
+
+成功响应的最新决策包含 `codeUpgradeSourceScope.approvalDigest`。下一步向 `POST /api/v1/deliveries/{deliveryId}/code-upgrade` 传递这个值作为 `sourceScopeApprovalDigest`，并使用刚才批准的完整 `proposalMarkdown`。单独提交 `allowedPaths` 不能替代评审批准。源码、方案、仓库绑定或最新评审决策变化后，原批准不再适用；必须先读取当前状态，再形成新的明确决策。未提供显式范围时，保留原有的范围推导行为。
+
+Runtime 在外部执行前验证权限、当前绑定与保护规则，并在接收结果时核对实际改动文件。`CodeUpgradeRun.sourceScope` 保留批准记录。输入错误返回 `400`，项目越权返回 `403`，项目缺失返回 `404`；陈旧源码或评审、失配摘要、缺失批准及受保护路径返回 `409` 和 `CODE_UPGRADE_SCOPE_*` 错误。保存请求 ID 和回执；超时或响应丢失后先读取所属 Run 和 CodeUpgradeRun，不能自动重发升级。
+
+托管提供方的认证 `GET /health` 必须在 `capabilities` 数组中声明 `evopilot-code-upgrade-source-binding/v1`，否则 Runtime 在发送升级请求前返回 `409 / CODE_UPGRADE_SCOPE_PROVIDER_CAPABILITY_REQUIRED` 或 `CODE_UPGRADE_SCOPE_PROVIDER_CAPABILITY_UNAVAILABLE`。外发请求附带 `sourceScopeBinding`，字段为 `schema`、`approvalDigest`、`repositoryDigest`、`sourceCommit`、`filesDigest`；最后一项是排序后的精确文件清单的规范 JSON 摘要。提供方的启动响应和每次状态快照必须原样返回该元组。提供方仍须独立保留真实 Git 基线、目标提交及验证进程回执；回显字段本身不证明执行成功。
+
+`CodeUpgradeRun` 保留 `sourceScopeBinding` 和 `sourceScopeAcknowledgement`（`startMatched`、可选的 `snapshotMatched`、`effectsUncertain`）。若外部已返回会话但缺少或失配确认，Runtime 保留 `conversationId` 并将运行记为 `FAILED / CODE_UPGRADE_SCOPE_PROVIDER_ACK_MISMATCH_UNCERTAIN`、`effectsUncertain=true`。此时应读取已有会话与运行记录核对影响，不能把失败响应视为“未执行”而重发。
+
 ## 执行交付
 
 ```http
@@ -1410,7 +1442,7 @@ Dashboard 编排入口通过 `GET /api/v1/loop-orchestration/presets` 返回可�
 
 `GET /api/v1/loop-orchestration/targets` 返回按 Sandbox、Context、Harness、Loop 四层组织的 target backlog。每个 target 包含 `status`、`nextAction`、`acceptanceCriteria`、`loopId` 和证据摘要。`POST /api/v1/loop-orchestration/advance` 会选择指定 target 或下一个待推进 target，若没有对应 LoopRun 则创建 Codex-backed target loop；若已有 LoopRun 则根据状态执行 start/resume，遇到 `WAITING_APPROVAL` 时返回 human stop condition，遇到成功但未发布时返回 source-closure next action。
 
-当前 backlog 还包含下一轮 GA 对齐 target loop：`discovery-skill-runtime`、`per-finding-worktree-handoff`、`adversarial-evaluator-agent`、`recurring-loop-scheduler`、`loop-memory-inbox` 和 `budget-and-judgment-guardrails`。这些目标分别覆盖发现技能运行时、单 finding 隔离 worktree handoff、独立对抗评估、周期性 loop 调度、产品记忆 inbox，以及成本/判断护栏。它们复用 `codex-target-loop` preset，因此 Dashboard 的 Target Loop Backlog 可以直接推进或自动驾驶，而不需要用户重新手工复制目标描述。
+当前 backlog 还包含下一轮 GA 对齐 target loop：`discovery-skill-runtime`、`per-finding-worktree-handoff`、`adversarial-evaluator-agent`、`recurring-loop-scheduler`、`loop-memory-inbox` 和 `budget-and-judgment-guardrails`。这些目标分别覆盖发现技能运行时、单 finding 隔离 worktree handoff、独立对抗评估、周期性 loop 调度、产品记忆 inbox，以及Token、时长和判断护栏。它们复用 `codex-target-loop` preset，因此 Dashboard 的 Target Loop Backlog 可以直接推进或自动驾驶，而不需要用户重新手工复制目标描述。
 
 Target backlog 也承载 EvoPilot 云服务化自进化路径。当前 SaaS ladder 包含 `tenant-workspace-model`、`workspace-rbac-and-invitation`、`github-app-onboarding`、`secret-vault-and-credential-boundary`、`project-workspace-ownership`、`quota-rate-limit-billing-foundation`、`worker-queue-and-postgres-store`、`tenant-aware-release-evidence`、`multi-tenant-security-regression-suite`、`saas-production-observability`、`saas-onboarding-dashboard`、`saas-field-e2e-source-to-ga`、`saas-release-matrix`、`saas-ga-soak-active`、`saas-ga-release-decision` 和 `announce-saas-multi-tenant-ga-stable`。当生产环境已经注册 EvoPilot GitHub 仓库为 `evopilot-github` 时，可通过 `POST /api/v1/loop-orchestration/advance` 指定任一 SaaS `targetId`、`projectId=evopilot-github` 创建或推进对应自进化 loop。
 
@@ -1617,7 +1649,7 @@ K8s/云发布执行器应接入该 deploy connector contract，而不是在 sour
 - `durable-worker-queue`：`GET /api/v1/loop-workers/queue` 返回 claimable loops、lease 过期状态、next action 和 duplicate source-closure side-effect guard；`POST /api/v1/loop-workers/claim` 支持 worker claim/renew/failover 和 crash-resume。
 - `sandbox-runtime`：创建 loop 时可传 `sandbox.runtime=host|docker|k8s`、`credentialScope`、`network`、`allowedPaths`、`deniedPaths` 和 `resourceLimits`。每个 loop 会返回 `sandboxEnforcement`；Docker/K8s 边界齐备时为 `ENFORCED`，host 为 `POLICY_ONLY`，缺少关键边界时为 `FAILED` 并阻断非审批节点。Sandbox Boundary Workbench 还会生成 Docker/K8s 可执行边界 proof，并把五类边界检查写回 LoopRun。
 - `multi-executor-coordination`：`ExecutorGraph.mode=serial|parallel`，LoopRun 会返回 `coordination.nodes[]`，包含每个 executor 的依赖、输入 schema、输出 schema 和共享 context keys；依赖会带上 edge type 与条件路由信息。
-- `loop-observability`：`GET /api/v1/loop-observability` 聚合 loop trace；`GET /api/v1/loops/{loopId}/trace` 返回单个 loop 的 executor step 数、worker lease、watchdog、成本和失败签名；`GET /api/v1/loops/{loopId}/trace-tree` 和 `GET /api/v1/loops/{loopId}/events` 支持 trace tree、streaming events、checkpoint/time-travel inspection、per-node cost/tokens、failure grouping 和 replay diff。
+- `loop-observability`：`GET /api/v1/loop-observability` 聚合 loop trace；`GET /api/v1/loops/{loopId}/trace` 返回单个 loop 的 executor step 数、worker lease、watchdog、Token 用量和失败签名；`GET /api/v1/loops/{loopId}/trace-tree` 和 `GET /api/v1/loops/{loopId}/events` 支持 trace tree、streaming events、checkpoint/time-travel inspection、per-node cost/tokens、failure grouping 和 replay diff。
 
 每轮 loop 都会生成：
 
@@ -1704,3 +1736,6 @@ onboarding checklist. POST bodies use `payload`; project reads take `projectId`.
 The Expert distinguishes a versioned declaration from a connected project and
 forwards only credential references. Checklist warnings remain visible, including
 local projects with unconfigured LLM; no registration result grants execution.
+
+
+Runtime 6.3.1 的 token 统计和已移除金额门禁见[Token usage](../architecture/token-usage.md)。新任务不要求价格、费用或金额预算；token、时长和权限限制继续生效。

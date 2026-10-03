@@ -96,7 +96,6 @@ function createLlmContextExecutorAdapter(id: string): ExecutorAdapter {
         prompt: loopLlmExecutorPrompt(input)
       });
       const totalTokens = Number(response.usage?.totalTokens ?? 0);
-      const costUsd = estimateLlmCostUsd(totalTokens);
       const commonOutput = {
         workspacePath: input.nodeWorkspace,
         executorBoundary: executorBoundaryLabel(input.node.type),
@@ -111,7 +110,6 @@ function createLlmContextExecutorAdapter(id: string): ExecutorAdapter {
         model: response.model,
         totalTokens,
         tokens: totalTokens,
-        costUsd,
         durationMs: response.durationMs,
         resolvedIntent: response.resolvedIntent,
         resolvedProfile: response.resolvedProfile,
@@ -139,7 +137,6 @@ function createLlmContextExecutorAdapter(id: string): ExecutorAdapter {
             `llm.provider=${response.provider ?? "unknown"}`,
             `llm.model=${response.model ?? "unknown"}`,
             `llm.totalTokens=${totalTokens}`,
-            `llm.costUsd=${costUsd}`,
             "llm.success=false",
             "status=FAILED"
           ],
@@ -163,7 +160,6 @@ function createLlmContextExecutorAdapter(id: string): ExecutorAdapter {
           `llm.provider=${response.provider ?? "unknown"}`,
           `llm.model=${response.model ?? "unknown"}`,
           `llm.totalTokens=${totalTokens}`,
-          `llm.costUsd=${costUsd}`,
           "llm.success=true",
           "status=SUCCEEDED"
         ]
@@ -327,11 +323,6 @@ function loopLlmExecutorPrompt(input: ExecutorAdapterExecutionInput): string {
   ].join("\n");
 }
 
-function estimateLlmCostUsd(totalTokens: number): number {
-  const pricePerThousand = Number(process.env.EVOPILOT_LLM_COST_PER_1K_TOKENS_USD ?? "0");
-  if (!Number.isFinite(pricePerThousand) || pricePerThousand <= 0 || totalTokens <= 0) return 0;
-  return Number(((totalTokens / 1000) * pricePerThousand).toFixed(6));
-}
 
 function executorBoundaryLabel(type: ExecutorNodeType): string {
   return ({

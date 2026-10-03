@@ -1,6 +1,9 @@
 # Harness-Guided Governed Evolution Runtime
 
-EvoPilot v5 keeps Harness-guided `Goal -> Loop -> Target` execution as its product core and upgrades how projects and lifecycles bind to it.
+This architecture was introduced in EvoPilot v5 and remains part of Runtime
+6.x. Harness-guided `Goal -> Loop -> Target` execution is the product core.
+The [Agent-Native Lifecycle Control Plane](agent-native-lifecycle-control-plane.md)
+defines the current Expert, Host, Runtime, and external execution boundaries.
 
 ```text
 Project Definition + GoalTarget
@@ -31,7 +34,7 @@ Candidate -> isolated acceptance -> exact-byte promotion
 | Harness assets and Catalog publication | evopilot-harness | Defines professional execution requirements. |
 | Project Definition, GoalTarget, binding, Loop, evidence, recovery, acceptance and release decision | EvoPilot Runtime | Governs actual project evolution. |
 | Lifecycle YAML | EvoPilot project configuration | Composes delivery stages without weakening Harness. |
-| Evolution Expert | Independent package | Optional conversational projection over Runtime APIs. |
+| Evolution Expert | Independent package | Ordinary-human guidance and presentation through Runtime MCP; no durable state or authority. |
 | Agent Host | Codex, WorkBuddy, or another Host | Presents tools and permissions. |
 | Execution runtime | Configured provider/model/runner | Performs declared actions under Host permissions. |
 

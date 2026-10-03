@@ -184,9 +184,13 @@ assets plus the promotion record. Its dependent `npm` Environment job publishes
 or integrity-reconciles only the accepted tarball with provenance, then performs
 a fresh public install and verifies Registry signatures, the
 `evopilot-expert` CLI, portable `skill/SKILL.md`, generated Codex adapter,
-Expert Core digest, and exact Runtime 6.3.0 compatibility for Evolution Expert
-2.3.0. This is the pending successor release contract, not a claim of publication
-or completed installation acceptance. Its Candidate workflow validates the exact
+Expert Core digest, and the Runtime compatibility bound to that Candidate.
+Expert **2.3.0 is already published** with verified Runtime **6.3.0** compatibility;
+see the [current release ledger](../releases/current-release.md). The current
+Runtime 6.3.1 compatibility campaign reuses that unchanged Expert release and
+requires checks against the exact installed maintenance candidate. Preparing or validating
+that Runtime candidate does not republish Expert or establish Runtime release
+authority. The Expert Candidate workflow validates the exact
 approved Target against the versioned corpus, compiles the current Runtime and
 Expert source for regression tests, and assembles only the independent Expert
 release set. Source compilation does not form or publish a Runtime Candidate.

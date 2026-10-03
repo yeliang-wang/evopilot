@@ -20,7 +20,7 @@ export async function semanticTerminalFixture(t, options = {}) {
     const declaration = {identity: f.identity, runId: run.id, requestDigest: pending.requestDigest, goalTarget: f.state.goalTarget,
       contextPlan, outcomePlan: {...body, planDigest: d(body)}, selections: f.selected};
     const plan = await app.prepare(declaration, access), binding = await app.bind(f.identity, access), input = {identity: f.identity, bindingDigest: binding.bindingDigest};
-    const review = await app.review({...input, coverage: f.source.acceptanceCriteria.map(c => ({criterionDigest: c.criterionDigest, ruleIds: ["units"]}))}, access);
+    const review = await app.review({...input, coverage: f.source.acceptanceCriteria.map(c => ({criterionDigest: c.criterionDigest, ruleIds: body.business.map(r => r.id)}))}, access);
     await app.approveReview({...input, decision: "APPROVE", reviewDigest: review.reviewDigest}, access);
     await app.dispatch(input, access); await app.collect(input, access); await app.commitStage(input, access);
     stages.push({plan, binding, pending, review});
