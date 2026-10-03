@@ -11,6 +11,7 @@ import {semanticProjectAccess} from "./project-semantic-discovery.js";
 import {digestObject, isRecord} from "../domains/harness-template/utils.js";
 import {evaluateSemanticOutcomeRules} from "../domains/harness-template/semantic-outcome-plan.js";
 import {freeze} from "../domains/harness-template/semantic-catalog-io.js";
+import {MAX_SEMANTIC_OUTCOME_OBSERVATIONS} from "../domains/harness-template/semantic-evidence-limits.js";
 import {createSemanticOutcomeReviewService} from "./semantic-outcome-review.js";
 import {collectSemanticProcessEvidence} from "./semantic-process-evidence.js";
 import {readSemanticEvidenceCollection, semanticCollectionCorrelation} from "./semantic-evidence-collection.js";
@@ -103,7 +104,7 @@ export function createSemanticExecutionOutcomeService(
       requireSemantic(adapterProfile && adapterProfile.digest === bound.agentRuntime.profileDigest, "DRIFT");
       const processEvidence = collectSemanticProcessEvidence(receipt, request, adapterProfile);
       if (processEvidence) observations.push({kind: processEvidence.kind, facts: processEvidence.facts, digest: processEvidence.digest});
-      requireSemantic(observations.length <= 16, "MATERIAL_LIMIT");
+      requireSemantic(observations.length <= MAX_SEMANTIC_OUTCOME_OBSERVATIONS, "MATERIAL_LIMIT");
       const checks = evaluateSemanticOutcomeRules(plan, observations, required, slice.concepts.map(concept => concept.conceptId));
       // Both sides are always reported. Agent success alone cannot pass either.
       const status = result.status === "FAILED" || checks.status === "FAILED" ? "FAILED" :

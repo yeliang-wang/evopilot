@@ -26,8 +26,12 @@ async function fixture(t, options = {}) {
   const app = createSemanticExecutionApplication(f.configuration, owners), access = {currentAccess: f.ownerInputs.currentAccess};
   const value = structuredClone({identity: f.identity, runId: f.run.id, requestDigest: f.run.pendingExecution.requestDigest,
     goalTarget: f.state.goalTarget, contextPlan: f.state.contextPlan, outcomePlan: f.state.outcomePlan, selections: f.selected});
+  if (options.configureOutcomePlan) {
+    const {planDigest, ...body} = value.outcomePlan;
+    options.configureOutcomePlan(body); value.outcomePlan = {...body, planDigest: d(body)};
+  }
   await app.prepare(value, access); const bound = await app.bind(f.identity, access), input = {identity: f.identity, bindingDigest: bound.bindingDigest};
-  const review = await app.review({...input, coverage: f.source.acceptanceCriteria.map(c => ({criterionDigest: c.criterionDigest, ruleIds: ["units"]}))}, access);
+  const review = await app.review({...input, coverage: f.source.acceptanceCriteria.map(c => ({criterionDigest: c.criterionDigest, ruleIds: value.outcomePlan.business.map(r => r.id)}))}, access);
   if (!options.skipApproval) await app.approveReview({...input, reviewDigest: review.reviewDigest, decision: "APPROVE"}, access);
   if (!options.skipDispatch && !options.skipApproval) await app.dispatch(input, access);
   return {...f, app, owners, input, access, collector, collectionCalls: () => calls, captured: () => captured,
@@ -50,6 +54,53 @@ test("configured synthetic collection survives restart, redacts facts, evaluates
 });
 test("collection is not substituted by a dispatch receipt", async t => {
   const f = await fixture(t); assert.equal((await f.evaluate()).business.status, "INDETERMINATE"); assert.equal(f.collectionCalls(), 0);
+});
+
+test("collection and evaluation preserve every default GA evidence kind and package", async t => {
+  const ga = JSON.parse(fs.readFileSync(new URL("../../standards/maturity/evopilot-default/v1/ga.json", import.meta.url)));
+  const kinds = [...new Set(["domain-checks", ...ga.requiredEvidence, ...ga.packageOutputs, "target-evidence-package", "phase-package"])];
+  assert.equal(kinds.length, 17, "The shipped GA obligations must not be replaced by a reduced fixture.");
+  const f = await fixture(t, {descriptor: {kinds}, configureOutcomePlan: plan => {
+    for (const [i, kind] of kinds.entries()) if (kind !== "domain-checks") plan.business.push({
+      id: "ga-evidence-" + i, conceptId: "fixture:entity", evidenceKind: kind, path: ["units"],
+      predicate: {op: "EQUALS", value: 5}
+    });
+  }, onCollect: ({value}) => {
+    value.observations = kinds.map(kind => ({kind, facts: {units: 5}, sourceDigests: [d("synthetic-ga-source")]}));
+  }});
+  assert.equal((await f.collect()).status, "COLLECTED_NOT_COMPLETED");
+  const report = await f.evaluate();
+  assert.equal(report.business.status, "PASSED");
+  assert.equal(report.evidenceDigests.length, kinds.length + 1);
+  assert.equal(report.authority.mayCompleteGoal, false);
+});
+
+test("31 collected observations plus Runtime process evidence reach the finite evaluation ceiling", async t => {
+  const kinds = ["domain-checks", ...Array.from({length: 30}, (_, i) => "bounded-evidence-" + i)];
+  const f = await fixture(t, {descriptor: {kinds}, configureOutcomePlan: plan => {
+    for (const [i, kind] of kinds.entries()) if (kind !== "domain-checks") plan.business.push({
+      id: "bounded-" + i, conceptId: "fixture:entity", evidenceKind: kind, path: ["units"],
+      predicate: {op: "EQUALS", value: 5}
+    });
+  }, onCollect: ({value}) => {
+    value.observations = kinds.map(kind => ({kind, facts: {units: 5}, sourceDigests: [d("synthetic-bounded-source")]}));
+  }});
+  await f.collect(); const report = await f.evaluate();
+  assert.equal(report.evidenceDigests.length, 32);
+  assert.equal(report.business.status, "PASSED");
+});
+
+test("an oversized collector declaration is rejected before invocation", async t => {
+  const f = await fixture(t, {descriptor: {kinds: ["domain-checks", ...Array.from({length: 31}, (_, i) => "overflow-" + i)]}});
+  await assert.rejects(f.collect(), {code: "MATERIAL_INVALID"}); assert.equal(f.collectionCalls(), 0);
+});
+
+test("an oversized observation response is rejected and never replayed", async t => {
+  const f = await fixture(t, {onCollect: ({value}) => {
+    value.observations = Array.from({length: 32}, (_, i) => ({kind: "overflow-" + i, facts: {units: 5}, sourceDigests: [d("overflow")]}));
+  }});
+  await assert.rejects(f.collect(), {code: "MATERIAL_INVALID"}); assert.equal(f.collectionCalls(), 1);
+  await assert.rejects(f.collect(), {code: "IDENTITY_CONFLICT"}); assert.equal(f.collectionCalls(), 1);
 });
 for (const [name, options] of [["absent collector", {noCollector: true}], ["absent policy", {noPolicy: true}],
   ["not dispatched", {skipDispatch: true}], ["unapproved review", {skipApproval: true}],

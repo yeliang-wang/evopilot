@@ -30,7 +30,8 @@ export const semanticExecutionImplementationDigest = digestObject([
   "./semantic-outcome-review.js", "./semantic-process-evidence.js", "./semantic-evidence-collection.js", "../storage/semantic-runtime-source.js", "../storage/semantic-binding-store.js",
   "../domains/lifecycle/service.js", "../domains/lifecycle/semantic-stage-grant.js", "../storage/lifecycle-run-store.js", "./semantic-stage-completion.js",
   "./semantic-goal-ownership.js", "../storage/goal-record-store.js", "./semantic-terminal-evidence.js", "../domains/lifecycle/semantic-terminal.js",
-  "./semantic-goal-completion.js", "./semantic-completion-report.js", "./semantic-goal-views.js", "./semantic-target-evidence-package.js", "./semantic-phase-completion.js", "./semantic-final-goal-completion.js", "./semantic-execution-usage.js", "./semantic-dispatch-usage.js"
+  "./semantic-goal-completion.js", "./semantic-completion-report.js", "./semantic-goal-views.js", "./semantic-target-evidence-package.js", "./semantic-phase-completion.js", "./semantic-final-goal-completion.js", "./semantic-execution-usage.js", "./semantic-dispatch-usage.js",
+  "../domains/harness-template/semantic-evidence-limits.js"
 ].map(module => ({module, digest: createHash("sha256").update(readFileSync(new URL(module, import.meta.url))).digest("hex")})).concat(
   ["@evopilot/core", "@evopilot/contracts"].map(module => ({module, digest: createHash("sha256").update(readFileSync(new URL(import.meta.resolve(module)))).digest("hex")}))
 ));
