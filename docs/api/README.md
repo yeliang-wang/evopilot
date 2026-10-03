@@ -1,6 +1,6 @@
 # EvoPilot API
 
-## Agent-Native Lifecycle Control Plane（Runtime 6.3.0）
+## Agent-Native Lifecycle Control Plane（Runtime 6.3.1）
 
 当前发布为 Runtime 6.3.0 / Expert 2.3.0。语义 Catalog、项目绑定与独立执行接口见[语义消费者技术参考](../architecture/semantic-catalog-consumer.md)和[CLI/MCP 命令映射](../cli/commands.md)；验收范围及未验证项见[发布记录](../releases/current-release.md)。
 
@@ -1092,6 +1092,38 @@ POST /api/v1/reviews/{reviewId}/decision
 - `reject`
 - `request-changes`
 - `observe-only`
+
+### 托管代码升级的精确文件范围（6.3.1）
+
+这是操作人和机器集成使用的既有 HTTP 路径；评审沿用 operator 权限，执行沿用 admin 权限，普通用户仍通过 Expert/MCP 使用产品。托管 CodeUpgrader 的维护任务可以在 `accept` 决策中附带 `codeUpgradeSourceScope`，将代码、测试、文档和治理文件一起纳入明确批准的范围。它不改变 Harness 的所有权，也不授予发布权限。
+
+提交前从 `GET /api/v1/runs/{runId}` 读取所属 `ReviewRecord` 和方案，核对项目源码提交及拟执行的完整 `proposalMarkdown`。请求结构如下，摘要和提交占位符必须替换为当前实际值：
+
+```json
+{
+  "action": "accept",
+  "note": "Approve the reviewed maintenance files for this exact proposal and source",
+  "codeUpgradeSourceScope": {
+    "schema": "evopilot-code-upgrade-source-scope/v1",
+    "expectedReviewDigest": "sha256:<current-review-digest>",
+    "sourceCommit": "<current-40-character-git-commit>",
+    "proposalDigest": "sha256:<exact-proposal-utf8-digest>",
+    "files": ["packages/server/src/example.ts", "tests/unit/example.test.mjs", "docs/guides/example.md"]
+  }
+}
+```
+
+`expectedReviewDigest` 是完整当前评审对象的递归键排序 JSON 摘要：对象键按 JavaScript `localeCompare` 排序，忽略值为 `undefined` 的对象成员，保留数组顺序，使用紧凑 JSON 的 UTF-8 字节计算 SHA-256，并添加 `sha256:` 前缀。`proposalDigest` 则直接散列完整方案字符串的 UTF-8 字节，包括换行。不要把界面中的摘要文本或另一轮评审摘要作为当前输入。
+
+`files` 包含 1–256 个精确仓库相对文件名，每项最多 1,024 字节，总计最多 65,536 字节。目录、通配符、绝对路径、遍历路径、重复或互相包含的路径、受保护路径、符号链接及非普通文件不构成有效范围。新增文件可以尚不存在。Runtime 记录经过验证并排序的文件清单，以及项目、租户、工作区、方案、仓库、源码提交和真实认证操作人；请求中的 `actor` 文本不能替代认证身份。
+
+成功响应的最新决策包含 `codeUpgradeSourceScope.approvalDigest`。下一步向 `POST /api/v1/deliveries/{deliveryId}/code-upgrade` 传递这个值作为 `sourceScopeApprovalDigest`，并使用刚才批准的完整 `proposalMarkdown`。单独提交 `allowedPaths` 不能替代评审批准。源码、方案、仓库绑定或最新评审决策变化后，原批准不再适用；必须先读取当前状态，再形成新的明确决策。未提供显式范围时，保留原有的范围推导行为。
+
+Runtime 在外部执行前验证权限、当前绑定与保护规则，并在接收结果时核对实际改动文件。`CodeUpgradeRun.sourceScope` 保留批准记录。输入错误返回 `400`，项目越权返回 `403`，项目缺失返回 `404`；陈旧源码或评审、失配摘要、缺失批准及受保护路径返回 `409` 和 `CODE_UPGRADE_SCOPE_*` 错误。保存请求 ID 和回执；超时或响应丢失后先读取所属 Run 和 CodeUpgradeRun，不能自动重发升级。
+
+托管提供方的认证 `GET /health` 必须在 `capabilities` 数组中声明 `evopilot-code-upgrade-source-binding/v1`，否则 Runtime 在发送升级请求前返回 `409 / CODE_UPGRADE_SCOPE_PROVIDER_CAPABILITY_REQUIRED` 或 `CODE_UPGRADE_SCOPE_PROVIDER_CAPABILITY_UNAVAILABLE`。外发请求附带 `sourceScopeBinding`，字段为 `schema`、`approvalDigest`、`repositoryDigest`、`sourceCommit`、`filesDigest`；最后一项是排序后的精确文件清单的规范 JSON 摘要。提供方的启动响应和每次状态快照必须原样返回该元组。提供方仍须独立保留真实 Git 基线、目标提交及验证进程回执；回显字段本身不证明执行成功。
+
+`CodeUpgradeRun` 保留 `sourceScopeBinding` 和 `sourceScopeAcknowledgement`（`startMatched`、可选的 `snapshotMatched`、`effectsUncertain`）。若外部已返回会话但缺少或失配确认，Runtime 保留 `conversationId` 并将运行记为 `FAILED / CODE_UPGRADE_SCOPE_PROVIDER_ACK_MISMATCH_UNCERTAIN`、`effectsUncertain=true`。此时应读取已有会话与运行记录核对影响，不能把失败响应视为“未执行”而重发。
 
 ## 执行交付
 

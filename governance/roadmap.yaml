@@ -2024,7 +2024,8 @@
         "Execute bounded coding and four representative project paths through exact installed Runtime, unchanged public Expert and Harness, using independent adapters.",
         "Build once, validate exact Runtime successor bytes and verify compatibility with current public Expert 2.3.0 and Harness 4.8.1.",
         "Switch current Codex default routing to the verified product combination without permanently deleting either legacy Suite.",
-        "Verify restart/resume/rollback and produce a fully evidence-backed replacement closure and exact proposed permanent-deletion inventory."
+        "Verify restart/resume/rollback and produce a fully evidence-backed replacement closure and exact proposed permanent-deletion inventory.",
+        "Managed approved file scope repair: forward an explicitly approved finite exact relative-file list through the existing managed CodeUpgrader request so code, tests, documentation and governance maintenance can execute together; retain admin review, tenant/workspace boundaries, source pins, protected paths and provider enforcement."
       ],
       "acceptance": [
         "Token-only native execution records are accepted with no monetary fields; known input/output/total tokens remain available through actual Runtime dispatch and terminal usage. Evidence: Real Codex receipt, exact profile/model/request/source bindings, process failure and replay negatives, unknown token and overflow controls.",
@@ -2033,11 +2034,20 @@
         "Execute bounded coding and four representative project paths through exact installed Runtime, unchanged public Expert and Harness, using independent adapters. Evidence: Real Codex transport and native source/test/token receipts, EvoPilot/DataRig/Harness/unknown-project journeys, invalid authority/drift/timeout/no-replay and restart cases.",
         "Build once, validate exact Runtime successor bytes and verify compatibility with current public Expert 2.3.0 and Harness 4.8.1. Evidence: Fresh isolated candidate install, immutable provenance, required targeted/full regression, exact generated/distribution identity and all enumerated inherited obligations under token-only scope.",
         "Switch current Codex default routing to the verified product combination without permanently deleting either legacy Suite. Evidence: Backups, installed file digests, actual post-switch Host routes, old entry discovery disabled reversibly, product adapters preserved, no mandatory old-Suite routing.",
-        "Verify restart/resume/rollback and produce a fully evidence-backed replacement closure and exact proposed permanent-deletion inventory. Evidence: All required criteria pass, byte-identical restoration rehearsal, current installation health, immutable archives and list of files to delete; permanent deletion authorization remains false."
+        "Verify restart/resume/rollback and produce a fully evidence-backed replacement closure and exact proposed permanent-deletion inventory. Evidence: All required criteria pass, byte-identical restoration rehearsal, current installation health, immutable archives and list of files to delete; permanent deletion authorization remains false.",
+        "Managed approved file scope repair: exact actual approved source transition succeeds under a qualified provider; invalid, broad directory/glob, absolute, traversal, duplicate, protected and stale source/review scopes refuse before external dispatch; default inferred behavior remains unchanged. No new product family, arbitrary shell, release authority or Suite execution."
       ],
       "signals": [
-        "token-only runtime maintenance and independent suite cutover"
-      ]
+        "token-only runtime maintenance and independent suite cutover",
+        "managed approved file scope repair"
+      ],
+      "maintenanceReview": {
+        "authoritySource": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/user-direction.json",
+        "reviewRecord": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/managed-scope-delegated-review.json",
+        "individualHumanTechnicalReview": false,
+        "releaseAuthority": "SEPARATE",
+        "permanentSuiteDeletionAuthorized": false
+      }
     }
   ],
   "transitionPolicies": [

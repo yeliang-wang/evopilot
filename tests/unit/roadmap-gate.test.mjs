@@ -8,6 +8,29 @@ import test from "node:test";
 
 const root = path.resolve(import.meta.dirname, "../..");
 
+test("Roadmap binds managed approved file scope repair to Runtime 6.3.1", () => {
+  const result = run(["--intent", "managed approved file scope repair"]);
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(result.body.classification, "ALIGNED");
+  assert.deepEqual(result.body.matchedMilestones, ["evopilot-6.3.1-token-only-cutover"]);
+  assert.equal(result.body.boundaryImpact, "NONE");
+});
+
+test("Roadmap rejects omission or weakening of exact managed source scope acceptance", () => {
+  for (const replacement of [null, "Managed approved file scope repair accepts any admin path without review or source validation."]) {
+    const result = runWithRoadmap((roadmap) => {
+      const milestone = roadmap.milestones.find((item) => item.id === "evopilot-6.3.1-token-only-cutover");
+      const index = milestone.acceptance.findIndex((item) => item.startsWith("Managed approved file scope repair:"));
+      assert.ok(index >= 0);
+      if (replacement === null) milestone.acceptance.splice(index, 1);
+      else milestone.acceptance[index] = replacement;
+    });
+    assert.equal(result.status, 1, result.stderr);
+    assert.equal(result.body.classification, "INVALID");
+    assert.match(result.body.errors.join(" "), /Token-only cutover acceptance drift/);
+  }
+});
+
 test("Roadmap Gate validates the contract and declared package version", () => {
   const result = run([]);
   assert.equal(result.status, 0, result.stderr);

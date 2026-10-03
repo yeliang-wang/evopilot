@@ -1,9 +1,9 @@
 {
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-6.3.1-token-only-cutover",
-  "revision": 2,
+  "revision": 3,
   "status": "APPROVED",
-  "intent": "token-only runtime maintenance and independent suite cutover; bounded correctness maintenance for the existing default GA semantic evidence contract",
+  "intent": "token-only runtime maintenance and independent suite cutover; bounded correctness maintenance for the existing default GA semantic evidence contract; managed approved file scope repair",
   "objective": "Complete the user-delegated token-only independent product replacement on current Codex; retain old Suite files until explicit final deletion consent.",
   "evidence": [
     {
@@ -21,27 +21,32 @@
     {
       "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/ga-evidence-capacity-defect.json",
       "authority": "Confirmed installed-product correctness defect; user delegates necessary repairs in the current completion sequence. No new capability or human digest review is inferred."
+    },
+    {
+      "ref": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/managed-scope-delegated-review.json",
+      "authority": "Concrete maintenance scope decision under explicit user delegation; initial UNPLANNED outputs retained; formal Roadmap declaration and exact Target precede product edits. No individual human technical digest review or release consent claimed."
     }
   ],
   "roadmapBindings": [
     {
-      "repo": "/Users/wangyejing/.codex/worktrees/evopilot-semantic-evidence-capacity-631/evopilot",
+      "repo": "/Users/wangyejing/.codex/worktrees/evopilot-approved-source-scope-631/evopilot",
       "project": "evopilot",
       "releaseProduct": "evopilot-runtime",
       "matchedMilestone": "evopilot-6.3.1-token-only-cutover",
       "targetVersion": "6.3.1",
       "classification": "ALIGNED",
-      "roadmapDigest": "sha256:8b0c367b20d4cba991c5172caca5d789c752e7b1f35e8c8e8cf32d9efb147395",
+      "roadmapDigest": "sha256:c703036e6c6c23a7f5fe23b042d6d921733c00ca10b9dabf94a8bcccd8b18e53",
       "maintenanceBasis": {
         "standingWork": "evopilot-maintenance",
-        "gate": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/ga-evidence-capacity-roadmap-gate.log",
-        "boundaryImpact": "NONE"
+        "gate": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/managed-scope-declared-roadmap-gate-v2.json",
+        "boundaryImpact": "NONE",
+        "scopeReview": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/managed-scope-delegated-review.json"
       }
     }
   ],
   "scope": {
     "include": [
-      "Apply the exact token-only Roadmap correction and generic Runtime usage/monetary-gate corrections. Repair the reproduced finite semantic evidence-capacity mismatch in the already supported default GA completion path; retain all other security and authority bounds.",
+      "Apply the exact token-only Roadmap correction and generic Runtime usage/monetary-gate corrections. Repair the reproduced finite semantic evidence-capacity mismatch in the already supported default GA completion path; retain all other security and authority bounds. Repair existing managed CodeUpgrader source-scope propagation using an explicit finite exact file list bound to the accepted owning review, project/repository/base context and proposal; protected paths, permissions and qualified provider enforcement remain mandatory.",
       "Implement, package, qualify and install independently owned project resources/providers and native coding adapter; no embedded old Suite or broad Runtime assurance/journal additions.",
       "Retain public Expert 2.3.0 and Harness 4.8.1 and test their actual installed compatibility; build the Runtime successor once and perform required exact candidate verification.",
       "Finish all 29 capability dispositions and four representative paths using actual behavior and independently checked evidence. Database/publication boundary behavior is verified without granting authority to operate unrelated production systems.",
@@ -7219,6 +7224,13 @@
       "requiredEvidence": "Exact installed baseline 15/16-kind reproduction; actual default Alpha/Beta/RC/GA requirements; collection/evaluation capacity and over-limit negatives; independent semantic/Harness failures; actual Codex full-Goal journey and persistent receipt readback. No unverified package, authority or publication claim.",
       "status": "PENDING",
       "evidenceRefs": []
+    },
+    {
+      "id": "MSC01",
+      "criterion": "The existing managed CodeUpgrader forwards only an explicit finite exact source file scope approved by the owning review and pinned to current project/source/proposal identity; approved code, test, documentation and governance maintenance can complete together without weakening existing guards.",
+      "requiredEvidence": "Reproduced current installed REQUEST_SCOPE refusal and authoritative zero-effect reconciliation; exact installed successor genuine approved-commit application and immutable process receipt; invalid/broad/absolute/traversal/duplicate/protected files, foreign tenant/workspace, stale source/review/proposal/digest, rejected/absent approval and no-scope compatibility controls. No unsupported scope widening, hidden replay, synthetic success or publication authority.",
+      "status": "PENDING",
+      "evidenceRefs": []
     }
   ],
   "realCaseCoverage": [
@@ -7404,6 +7416,27 @@
       "requiredEvidence": "Exact installed baseline 15/16-kind reproduction; actual default Alpha/Beta/RC/GA requirements; collection/evaluation capacity and over-limit negatives; independent semantic/Harness failures; actual Codex full-Goal journey and persistent receipt readback. No unverified package, authority or publication claim.",
       "status": "PENDING",
       "evidenceRefs": []
+    },
+    {
+      "id": "RC09",
+      "scenario": "The existing managed CodeUpgrader forwards only an explicit finite exact source file scope approved by the owning review and pinned to current project/source/proposal identity; approved code, test, documentation and governance maintenance can complete together without weakening existing guards.",
+      "hosts": [
+        "Codex"
+      ],
+      "coversAcceptanceIds": [
+        "MSC01"
+      ],
+      "startingState": "Current installed candidate definitively refuses out-of-scope approved documentation before provider creates any session; exact rejection and zero-effect readback retained.",
+      "terminalState": "A separately claimed exact scoped upgrade succeeds on the new installed successor through qualified independent provider; current Runtime review/source scope and immutable provider receipt agree.",
+      "prohibitedEffects": [
+        "weakened provider scope",
+        "forged owning review",
+        "silent uncertain replay",
+        "publication or permanent Suite deletion"
+      ],
+      "requiredEvidence": "Reproduced current installed REQUEST_SCOPE refusal and authoritative zero-effect reconciliation; exact installed successor genuine approved-commit application and immutable process receipt; invalid/broad/absolute/traversal/duplicate/protected files, foreign tenant/workspace, stale source/review/proposal/digest, rejected/absent approval and no-scope compatibility controls. No unsupported scope widening, hidden replay, synthetic success or publication authority.",
+      "status": "PENDING",
+      "evidenceRefs": []
     }
   ],
   "noRegressionRequired": true,
@@ -7418,9 +7451,9 @@
       "decision": "APPROVED",
       "by": "user",
       "evidenceRef": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/user-direction.json",
-      "authorizationDigest": "sha256:0dec4db5e4db2df8c7841c24e0320c9ecb167bd2a24280a654a4f81fbc8993ce",
+      "authorizationDigest": "sha256:c86b1d83a2bd446d78e3600c156ca32e76081f06ab400f579cec2175a5fd889c",
       "approvalBasis": "EXPLICIT_DELEGATION_TO_COMPLETE_SEQUENCE_AND_NECESSARY_CORRECTNESS_REPAIR_WITHOUT_INTERMEDIATE_CONFIRMATION",
-      "technicalDigestMaterializedBy": "assistant within delegated maintenance scope; no separate human review of this generated digest is claimed"
+      "technicalDigestMaterializedBy": "assistant under delegated maintenance decisions; not separate human review of this generated digest"
     },
     "release": {
       "decision": "PENDING"

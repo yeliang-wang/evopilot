@@ -1,6 +1,7 @@
-import type { CodeUpgraderConnectorConfig, CodeUpgraderRunStatus } from "@evopilot/adapter-code-upgrader";
+import type { CodeUpgraderConnectorConfig, CodeUpgraderRunStatus, CodeUpgraderSourceScopeBinding } from "@evopilot/adapter-code-upgrader";
 import type {
   DeliveryPlan,
+  CodeUpgradeSourceScopeApproval,
   EvidenceBundle,
   EvolutionOpportunity,
   EvolutionPlan,
@@ -733,6 +734,9 @@ export interface CodeUpgradeRun {
   deliveryPlanId: string;
   planId: string;
   reviewId?: string;
+  sourceScope?: CodeUpgradeSourceScopeApproval;
+  sourceScopeBinding?: CodeUpgraderSourceScopeBinding;
+  sourceScopeAcknowledgement?: {startMatched: boolean; snapshotMatched?: boolean; effectsUncertain?: boolean};
   executor: "code-upgrader";
   status: CodeUpgraderRunStatus;
   proposalMarkdown: string;

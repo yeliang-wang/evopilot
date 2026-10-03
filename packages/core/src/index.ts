@@ -339,6 +339,25 @@ export interface LearningRecord {
   createdAt: string;
 }
 
+export interface CodeUpgradeSourceScopeApproval {
+  schema: "evopilot-code-upgrade-source-scope-approval/v1";
+  expectedReviewDigest: string;
+  projectId: string;
+  planId: string;
+  reviewId: string;
+  tenantId: string;
+  workspaceId: string;
+  repositoryDigest: string;
+  planDigest: string;
+  sourceBranch: string;
+  sourceCommit: string;
+  proposalDigest: string;
+  files: string[];
+  approvedBy: string;
+  approvedAt: string;
+  approvalDigest: string;
+}
+
 export interface ReviewRecord {
   id: string;
   projectId: string;
@@ -350,6 +369,7 @@ export interface ReviewRecord {
     actor: string;
     note: string;
     decidedAt: string;
+    codeUpgradeSourceScope?: CodeUpgradeSourceScopeApproval;
   }>;
 }
 
