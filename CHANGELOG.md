@@ -1,5 +1,13 @@
 # Changelog
 
+## 6.3.1 — Token-only usage (candidate)
+
+- Preserve reported native Agent token usage without requiring monetary amounts or pricing configuration.
+- Remove monetary task freezes, release gates, schedule limits and inferred model prices; retain token/time/source/authority checks.
+- Keep v1 usage receipts readable. Project providers and native Codex execution remain independently installed extensions.
+- Evolution Expert 2.3.0 and Harness 4.8.1 retain their independent versions.
+
+
 All notable changes to EvoPilot are documented here.
 
 This project follows a product-readiness changelog model: release entries should summarize user-visible capability, governance impact, validation evidence, and migration notes. Do not use local tests alone as release proof.

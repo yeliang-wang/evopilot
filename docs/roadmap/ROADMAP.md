@@ -1156,3 +1156,11 @@ The exact machine policy is `releaseCredentialInteractionScopePolicy`.
 ## 本轮发布的持续验证范围
 
 用户明确取消 Harness 4.8.1、Runtime 6.3.0、Expert 2.3.0 的新增 90 分钟（5400 秒）持续验证。机器规则以 `releaseDurationExceptionPolicy` 为准，优先于本轮 Host、继承及系列终验中的时长要求。省略项记录为 `SKIPPED_BY_USER_NOT_PASS`；保留旧结果及其原始构建绑定，不将旧结果迁移为新候选包的长时间稳定性证明。其余功能、安全、Codex Host、回归和三产品串联验收要求不变。发布仍需独立确认。
+
+## Runtime 6.3.1: Token-only execution and independent current-Host cutover
+
+The user directs completion of current Codex replacement using independent project resources, providers and external coding adapters, while keeping Expert 2.3.0 and Harness 4.8.1. Runtime's limited change is token-only process/usage support and removal of monetary call limits, pricing requirements and cost-based freezes. Historical monetary reports remain historical data; source, permission, timeout, token, evidence and release authority checks remain. The upgrade/debug campaign budget is external and must not become a product setting.
+
+`tokenOnlyCutoverPolicy` gives this exact successor precedence over conflicting inherited monetary requirements, and retains the explicit Codex-only, no-new-90-minute-soak, no-native-credential-UI scope. All other inherited behavior and independent security, source/effect, artifact, regression and terminal E2E checks remain. No historical PASS transfers. Project validators, journal semantics and the native coding runner do not move into Runtime.
+
+The latest user instruction delegates bounded implementation, validation and local cutover decisions without repeated confirmation. Record the actual delegation source; do not claim the user separately inspected generated technical digests. Acceptance still requires actual evidence. Permanent deletion of the old Suites is expressly withheld until the user receives the complete replacement result and exact deletion inventory and agrees. Release authority is tracked separately from implementation and is never inferred from test output.

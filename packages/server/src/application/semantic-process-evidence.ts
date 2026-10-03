@@ -1,4 +1,4 @@
-import {assertAgentProcessObservation, type EvoPilotAgentProcessObservationV1, type EvoPilotAgentExecutionRequestV1Alpha1,
+import {assertAgentProcessObservation, type EvoPilotAgentProcessObservation, type EvoPilotAgentExecutionRequestV1Alpha1,
   type EvoPilotAgentExecutionResultV1Alpha1, type EvoPilotAgentRuntimeProfileV1} from "@evopilot/contracts";
 import {requireSemantic} from "../domains/harness-template/semantic-catalog-contract.js";
 import {digestObject, isRecord} from "../domains/harness-template/utils.js";
@@ -14,7 +14,7 @@ export function collectSemanticProcessEvidence(receipt: Record<string, unknown>,
     requireSemantic(receipt.processObservation === undefined, "MATERIAL_INVALID"); return undefined;
   }
   requireSemantic(receipt.processObservationStatus === "COLLECTED" && isRecord(receipt.processObservation), "MATERIAL_INVALID");
-  const observation = receipt.processObservation as unknown as EvoPilotAgentProcessObservationV1;
+  const observation = receipt.processObservation as unknown as EvoPilotAgentProcessObservation;
   requireSemantic(Buffer.byteLength(JSON.stringify(observation)) <= 16384, "MATERIAL_LIMIT");
   assertAgentProcessObservation(observation, request, receipt.result as EvoPilotAgentExecutionResultV1Alpha1, profile);
   const m = observation.material;

@@ -153,7 +153,6 @@ export async function handleLoopRuntimeRoutes(context: LoopRuntimeRoutesContext)
       projectId: optionalTrimmedString(body.projectId),
       targetId: optionalTrimmedString(body.targetId),
       cadence: optionalTrimmedString(body.cadence),
-      maxBudgetUsd: body.maxBudgetUsd === undefined ? undefined : Number(body.maxBudgetUsd),
       triggerRules: Array.isArray(body.triggerRules) ? body.triggerRules.map(String) : undefined
     });
     store.appendAudit(audit(auth, "loop-target-runtime.schedule-upserted", schedule.id, { cadence: schedule.cadence, nextRunAt: schedule.nextRunAt }));

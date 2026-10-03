@@ -147,6 +147,8 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
+The working tree prepares [Runtime 6.3.1 token-only usage](docs/releases/6.3.1.md); it is not yet published. Project extensions remain independently versioned.
+
 Runtime **v6.3.0** and Expert **v2.3.0** are accepted and published on GitHub and
 npm. Runtime's public GHCR image and manifest-based installer are verified.
 The [current release ledger](docs/releases/current-release.md) binds exact

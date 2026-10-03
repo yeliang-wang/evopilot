@@ -17,10 +17,15 @@ const activeExpertVersion = readJson("packages/evolution-expert/package.json").v
 // Retest retained 6.2 behavior on the Roadmap's exact direct-delivery pair.
 // Historical Target bytes and evidence below remain unchanged; no PASS transfer.
 const delivery = roadmap.directSemanticConvergenceDeliveryPolicy;
-const direct = readJson("package.json").version === "6.3.0" && activeExpertVersion === "2.3.0";
+const currentRuntimeVersion = readJson("package.json").version;
+const tokenPatch = currentRuntimeVersion === "6.3.1" && activeExpertVersion === "2.3.0";
+if (tokenPatch && !(roadmap.tokenOnlyCutoverPolicy?.runtimeVersion === "6.3.1" &&
+  roadmap.tokenOnlyCutoverPolicy?.expertVersion === "2.3.0" && roadmap.tokenOnlyCutoverPolicy?.monetaryAmountRequired === false &&
+  roadmap.versionPolicy.currentWorkingVersion === "6.3.1")) failures.push("Token-only patch is not bound by the accepted Roadmap");
+const direct = (currentRuntimeVersion === "6.3.0" || tokenPatch) && activeExpertVersion === "2.3.0";
 if (direct && !(delivery?.runtimeVersion === "6.3.0" && delivery?.expertVersion === "2.3.0" &&
-  delivery?.standaloneExpert221ReleaseAllowed === false && roadmap.versionPolicy.currentWorkingVersion === "6.3.0")) failures.push("Direct-delivery pair is not bound by the accepted Roadmap");
-const runtimeVersion = direct ? "6.3.0" : "6.2.0";
+  delivery?.standaloneExpert221ReleaseAllowed === false && roadmap.versionPolicy.currentWorkingVersion === currentRuntimeVersion)) failures.push("Direct-delivery pair is not bound by the accepted Roadmap");
+const runtimeVersion = direct ? currentRuntimeVersion : "6.2.0";
 const supportedExpertVersion = direct ? "2.3.0" : activeExpertVersion === "2.2.0" ? "2.2.0" : recovery?.successorExpertVersion;
 if (!direct && activeExpertVersion !== "2.2.0") {
   const successor = readJson("governance/targets/evopilot-evolution-expert-v2.2.1-public-cli-completion-recovery.json");

@@ -54,3 +54,44 @@ test("per-execution and aggregate token overflow fail closed",()=>{
   assert.throws(()=>fixture("large","COMPLETE",Number.MAX_SAFE_INTEGER,1).usage(),{code:"MATERIAL_LIMIT"});
   assert.throws(()=>aggregateSemanticUsage(["a"],[receipt("a",[fixture("1","COMPLETE",Number.MAX_SAFE_INTEGER,0).usage(),fixture("2").usage()])]),{code:"MATERIAL_LIMIT"});
 });
+
+function tokenFixture(id="tokens", inputTokens=31, outputTokens=7) {
+  const f=fixture(id);
+  const material=f.dispatch.processObservation.material;
+  delete material.cost; delete material.usageCoverage; delete f.dispatch.result.cost;
+  material.usage={inputTokens,outputTokens,cachedInputTokens:inputTokens===null?null:2,tokenCoverage:inputTokens===null?"UNAVAILABLE":"COMPLETE"};
+  f.dispatch.processObservation.schema="evopilot-agent-process-observation/v2";
+  f.seal=()=>{f.dispatch.processObservation.receiptDigest=d(material);f.dispatch.result.receiptDigest=d(material);};
+  f.seal();return f;
+}
+test("token-only observations preserve exact known tokens without money or price configuration",()=>{
+  const f=tokenFixture(),u=f.usage();
+  assert.equal(u.inputTokens,31);assert.equal(u.outputTokens,7);assert.equal(u.totalTokens,38);
+  assert.equal(Object.hasOwn(u,"reportedCost"),false);
+  const r=aggregateSemanticUsage(["a"],[receipt("a",[u])]);
+  assert.equal(r.status,"VERIFIED_COMPLETED_TARGETS");
+  assert.deepEqual(r.totals,{inputTokens:31,outputTokens:7,totalTokens:38});
+  assert.equal(Object.hasOwn(r.routes[0],"reportedCost"),false);
+});
+test("mixed legacy and token-only observations never invent a monetary total",()=>{
+  const r=aggregateSemanticUsage(["a"],[receipt("a",[fixture("legacy").usage(),tokenFixture().usage()])]);
+  assert.equal(r.totals.totalTokens,43);assert.equal(r.status,"VERIFIED_COMPLETED_TARGETS");
+  assert.equal(Object.hasOwn(r.totals,"reportedCost"),false);
+  assert.equal(Object.hasOwn(r.routes[0],"reportedCost"),false);
+});
+test("unreported tokens stay unavailable while measured zero remains zero",()=>{
+  const missing=tokenFixture("missing",null,null);
+  const u=missing.usage();assert.equal(u.totalTokens,null);
+  const zero=tokenFixture("zero",0,0);zero.dispatch.processObservation.material.usage.cachedInputTokens=0;zero.seal();
+  const r=aggregateSemanticUsage(["a"],[receipt("a",[u,zero.usage()])]);
+  assert.equal(r.status,"PARTIAL");assert.deepEqual(r.totals,{inputTokens:0,outputTokens:0,totalTokens:0});
+});
+for(const [name,mutate,reseal=true] of [
+  ["negative tokens",f=>f.dispatch.processObservation.material.usage.inputTokens=-1],
+  ["fractional tokens",f=>f.dispatch.processObservation.material.usage.outputTokens=.1],
+  ["fabricated result money",f=>f.dispatch.result.cost={amount:0,currency:"USD",inputTokens:31,outputTokens:7}],
+  ["tampered digest",f=>f.dispatch.processObservation.material.usage.inputTokens=30,false],
+  ["foreign route",f=>f.dispatch.processObservation.material.route="other/model"],
+  ["partial null",f=>f.dispatch.processObservation.material.usage.inputTokens=null],
+  ["token overflow",f=>f.dispatch.processObservation.material.usage.inputTokens=Number.MAX_SAFE_INTEGER]
+]) test(`token-only usage rejects ${name}`,()=>{const f=tokenFixture();mutate(f);if(reseal)f.seal();assert.throws(()=>f.usage());});

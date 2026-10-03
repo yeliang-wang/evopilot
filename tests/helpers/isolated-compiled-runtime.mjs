@@ -24,6 +24,7 @@ export function stageCompiledRuntime(root,input,server,token){
   }
  }visit();
  const configFile=path.join(root,'compiled-cli-config.json'),config=JSON.stringify({token});fs.writeFileSync(configFile,config,{mode:0o600,flag:'wx'});
- const context={schema:'evopilot-installed-runtime-execution-context/v1',product:'runtime',version:'6.3.0',installationRoot,files,artifactSetDigest:probeDigest(files),acceptanceBindingDigest:probeDigest('source-build-test-not-candidate'),probeInputDigest:probeDigest(input),server,configFile,configDigest:bytesDigest(config)};
+ const version=JSON.parse(fs.readFileSync(path.join(installationRoot,'node_modules/@evopilot/cli/package.json'),'utf8')).version;
+ const context={schema:'evopilot-installed-runtime-execution-context/v1',product:'runtime',version,installationRoot,files,artifactSetDigest:probeDigest(files),acceptanceBindingDigest:probeDigest('source-build-test-not-candidate'),probeInputDigest:probeDigest(input),server,configFile,configDigest:bytesDigest(config)};
  const contextBytes=Buffer.from(JSON.stringify(context));return {contextBytes,expectedContextDigest:bytesDigest(contextBytes),inputBytes:Buffer.from(JSON.stringify(input))};
 }

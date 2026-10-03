@@ -2116,7 +2116,8 @@ export interface LoopTraceSummary {
     ageSeconds: number;
   };
   cost: {
-    estimatedUsd: number;
+    /** Legacy externally reported monetary telemetry, absent for token-only runs. */
+    estimatedUsd?: number;
     totalTokens: number;
   };
   llmUsage: LlmUsageSummary;
@@ -2568,7 +2569,8 @@ export interface RecurringLoopSchedule {
   projectId: string;
   targetId: string;
   cadence: "manual" | "hourly" | "daily" | "weekly";
-  maxBudgetUsd: number;
+  /** Historical records may contain this ignored field. New schedules omit it. */
+  maxBudgetUsd?: number;
   triggerRules: string[];
   status: "ACTIVE" | "PAUSED" | "BLOCKED";
   lastRunAt?: string;
@@ -2601,14 +2603,16 @@ export interface LoopGuardrailEvaluation {
   projectId: string;
   status: "PASS" | "WARN" | "BLOCK";
   budgets: {
-    maxCostUsd: number;
+    /** Historical only; never applied as an execution limit. */
+    maxCostUsd?: number;
     maxTokens: number;
     maxDurationSeconds: number;
     maxChangedFiles: number;
     minConfidence: number;
   };
   actual: {
-    costUsd: number;
+    /** Historical only; current guardrails are token/effect based. */
+    costUsd?: number;
     tokens: number;
     durationSeconds: number;
     changedFiles: number;
@@ -2716,7 +2720,7 @@ export interface CostReport {
   totalCost: number;
   totalTokens: number;
   highCostEventCount: number;
-  status: "HEALTHY" | "WATCH" | "OVER_BUDGET";
+  status: "OBSERVED" | "HEALTHY" | "WATCH" | "OVER_BUDGET";
   recommendedAction: string;
   updatedAt: string;
 }

@@ -194,11 +194,6 @@ export async function handleDeliveryRoutes(context: DeliveryRoutesContext): Prom
     const plan = run.plans.find((item: any) => item.id === delivery.planId)!;
     const review = run.reviews.find((item: any) => item.planId === plan.id);
     const body = await readJson(request, options.maxBodyBytes);
-    const freeze = store.projectEvolutionFreezeDiagnostic(delivery.projectId);
-    if (freeze && !store.isCostOptimizationDeliveryAllowed(delivery, body)) {
-      store.appendAudit(audit(auth, "delivery.blocked-by-cost-freeze", deliveryId, { projectId: delivery.projectId, reason: freeze.reason }));
-      return writeJson(response, 409, { error: "EVOLUTION_COST_BUDGET_FROZEN", detail: freeze.reason, costReport: freeze.costReport });
-    }
     if (delivery.approvalRequired && review?.status !== "USER_CONFIRMED") {
       return writeJson(response, 409, { error: "USER_CONFIRMATION_REQUIRED" });
     }
@@ -262,11 +257,6 @@ export async function handleDeliveryRoutes(context: DeliveryRoutesContext): Prom
     const plan = run.plans.find((item: any) => item.id === delivery.planId)!;
     const review = run.reviews.find((item: any) => item.planId === plan.id);
     const body = await readJson(request, options.maxBodyBytes);
-    const freeze = store.projectEvolutionFreezeDiagnostic(delivery.projectId);
-    if (freeze && !store.isCostOptimizationDeliveryAllowed(delivery, body)) {
-      store.appendAudit(audit(auth, "code-upgrade.blocked-by-cost-freeze", deliveryId, { projectId: delivery.projectId, reason: freeze.reason }));
-      return writeJson(response, 409, { error: "EVOLUTION_COST_BUDGET_FROZEN", detail: freeze.reason, costReport: freeze.costReport });
-    }
     if (delivery.approvalRequired && review?.status !== "USER_CONFIRMED") {
       return writeJson(response, 409, { error: "USER_CONFIRMATION_REQUIRED" });
     }
@@ -291,11 +281,6 @@ export async function handleDeliveryRoutes(context: DeliveryRoutesContext): Prom
     const plan = run.plans.find((item: any) => item.id === delivery.planId)!;
     const review = run.reviews.find((item: any) => item.planId === plan.id);
     const body = await readJson(request, options.maxBodyBytes);
-    const freeze = store.projectEvolutionFreezeDiagnostic(delivery.projectId);
-    if (freeze && !store.isCostOptimizationDeliveryAllowed(delivery, body)) {
-      store.appendAudit(audit(auth, "delivery.schedule.blocked-by-cost-freeze", deliveryId, { projectId: delivery.projectId, reason: freeze.reason }));
-      return writeJson(response, 409, { error: "EVOLUTION_COST_BUDGET_FROZEN", detail: freeze.reason, costReport: freeze.costReport });
-    }
     if (delivery.approvalRequired && review?.status !== "USER_CONFIRMED") {
       return writeJson(response, 409, { error: "USER_CONFIRMATION_REQUIRED" });
     }

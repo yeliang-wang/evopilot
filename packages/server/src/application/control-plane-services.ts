@@ -7323,7 +7323,6 @@ export function emptyLoopTraceSummary(loopId: string, now: string): LoopTraceSum
       ageSeconds: 0
     },
     cost: {
-      estimatedUsd: 0,
       totalTokens: 0
     },
     llmUsage: emptyLlmUsageSummary(`loop:${loopId}`, now),
@@ -7355,7 +7354,7 @@ export function buildLoopTraceSummary(loop: LoopRun): LoopTraceSummary {
       ageSeconds
     },
     cost: {
-      estimatedUsd: Number(costFromSteps.toFixed(6)),
+      ...(steps.length > 0 && steps.every(step => typeof step.output.costUsd === "number" && Number.isFinite(step.output.costUsd)) ? {estimatedUsd: Number(costFromSteps.toFixed(6))} : {}),
       totalTokens
     },
     llmUsage: buildLoopLlmUsageSummary(loop),
@@ -11164,6 +11163,7 @@ export function eventTokens(event: RuntimeEvidenceEvent): number {
 export function costHealthScore(status: CostReport["status"]): number {
   if (status === "HEALTHY") return 100;
   if (status === "WATCH") return 70;
+  if (status === "OBSERVED") return 100;
   return 30;
 }
 

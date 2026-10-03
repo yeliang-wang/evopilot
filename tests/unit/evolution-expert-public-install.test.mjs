@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import {createRequire} from "node:module";
 import { verifyExpertPublicInstallation } from "../../scripts/verify-expert-public-install.mjs";
 import { inventory } from "../../packages/evolution-expert/host-integration/inventory.mjs";
 
@@ -26,7 +27,9 @@ function fixture(t) {
   }, null, 2) + "\n");
   const contracts = path.join(root, "node_modules/@evopilot/contracts");
   fs.mkdirSync(contracts, { recursive: true });
-  for (const entry of ["dist", "package.json"]) fs.cpSync(new URL(`../../packages/contracts/${entry}`, import.meta.url), path.join(contracts, entry), { recursive: true });
+  const expertRequire=createRequire(new URL("../../packages/evolution-expert/package.json",import.meta.url));
+  const contractsRoot=path.dirname(expertRequire.resolve("@evopilot/contracts/package.json"));
+  for (const entry of ["dist", "package.json"]) fs.cpSync(path.join(contractsRoot,entry), path.join(contracts, entry), { recursive: true });
   const acceptedTarball = path.join(root, "unit-fixture.tgz");
   const repack = () => {
     fs.cpSync(pkg, path.join(root, "package"), { recursive: true });

@@ -184,7 +184,7 @@ assets plus the promotion record. Its dependent `npm` Environment job publishes
 or integrity-reconciles only the accepted tarball with provenance, then performs
 a fresh public install and verifies Registry signatures, the
 `evopilot-expert` CLI, portable `skill/SKILL.md`, generated Codex adapter,
-Expert Core digest, and exact Runtime 6.3.0 compatibility for Evolution Expert
+Expert Core digest, and exact Runtime 6.3.1 compatibility for Evolution Expert
 2.3.0. This is the pending successor release contract, not a claim of publication
 or completed installation acceptance. Its Candidate workflow validates the exact
 approved Target against the versioned corpus, compiles the current Runtime and

@@ -154,3 +154,6 @@ npm run loop:soak
 ```
 
 The gate verifies executor graph creation, ExecutorAdapter resolution, loop creation, store runtime metadata, idempotent create/start/resume, replay with context edit, sandbox policy evidence, multi-executor coordination schemas, loop trace, observability aggregation, approval blocking, timeline, evidence, artifacts, heartbeat lease, watchdog, repeated-failure blocking, conversation command loop creation, worker-driven loop advancement, sandbox workspace creation, and IM webhook loop creation.
+
+
+Runtime 6.3.1 的 token 统计和已移除金额门禁见[Token usage](token-usage.md)。新任务不要求价格、费用或金额预算；token、时长和权限限制继续生效。

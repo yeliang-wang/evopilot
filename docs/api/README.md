@@ -1410,7 +1410,7 @@ Dashboard 编排入口通过 `GET /api/v1/loop-orchestration/presets` 返回可�
 
 `GET /api/v1/loop-orchestration/targets` 返回按 Sandbox、Context、Harness、Loop 四层组织的 target backlog。每个 target 包含 `status`、`nextAction`、`acceptanceCriteria`、`loopId` 和证据摘要。`POST /api/v1/loop-orchestration/advance` 会选择指定 target 或下一个待推进 target，若没有对应 LoopRun 则创建 Codex-backed target loop；若已有 LoopRun 则根据状态执行 start/resume，遇到 `WAITING_APPROVAL` 时返回 human stop condition，遇到成功但未发布时返回 source-closure next action。
 
-当前 backlog 还包含下一轮 GA 对齐 target loop：`discovery-skill-runtime`、`per-finding-worktree-handoff`、`adversarial-evaluator-agent`、`recurring-loop-scheduler`、`loop-memory-inbox` 和 `budget-and-judgment-guardrails`。这些目标分别覆盖发现技能运行时、单 finding 隔离 worktree handoff、独立对抗评估、周期性 loop 调度、产品记忆 inbox，以及成本/判断护栏。它们复用 `codex-target-loop` preset，因此 Dashboard 的 Target Loop Backlog 可以直接推进或自动驾驶，而不需要用户重新手工复制目标描述。
+当前 backlog 还包含下一轮 GA 对齐 target loop：`discovery-skill-runtime`、`per-finding-worktree-handoff`、`adversarial-evaluator-agent`、`recurring-loop-scheduler`、`loop-memory-inbox` 和 `budget-and-judgment-guardrails`。这些目标分别覆盖发现技能运行时、单 finding 隔离 worktree handoff、独立对抗评估、周期性 loop 调度、产品记忆 inbox，以及Token、时长和判断护栏。它们复用 `codex-target-loop` preset，因此 Dashboard 的 Target Loop Backlog 可以直接推进或自动驾驶，而不需要用户重新手工复制目标描述。
 
 Target backlog 也承载 EvoPilot 云服务化自进化路径。当前 SaaS ladder 包含 `tenant-workspace-model`、`workspace-rbac-and-invitation`、`github-app-onboarding`、`secret-vault-and-credential-boundary`、`project-workspace-ownership`、`quota-rate-limit-billing-foundation`、`worker-queue-and-postgres-store`、`tenant-aware-release-evidence`、`multi-tenant-security-regression-suite`、`saas-production-observability`、`saas-onboarding-dashboard`、`saas-field-e2e-source-to-ga`、`saas-release-matrix`、`saas-ga-soak-active`、`saas-ga-release-decision` 和 `announce-saas-multi-tenant-ga-stable`。当生产环境已经注册 EvoPilot GitHub 仓库为 `evopilot-github` 时，可通过 `POST /api/v1/loop-orchestration/advance` 指定任一 SaaS `targetId`、`projectId=evopilot-github` 创建或推进对应自进化 loop。
 
@@ -1617,7 +1617,7 @@ K8s/云发布执行器应接入该 deploy connector contract，而不是在 sour
 - `durable-worker-queue`：`GET /api/v1/loop-workers/queue` 返回 claimable loops、lease 过期状态、next action 和 duplicate source-closure side-effect guard；`POST /api/v1/loop-workers/claim` 支持 worker claim/renew/failover 和 crash-resume。
 - `sandbox-runtime`：创建 loop 时可传 `sandbox.runtime=host|docker|k8s`、`credentialScope`、`network`、`allowedPaths`、`deniedPaths` 和 `resourceLimits`。每个 loop 会返回 `sandboxEnforcement`；Docker/K8s 边界齐备时为 `ENFORCED`，host 为 `POLICY_ONLY`，缺少关键边界时为 `FAILED` 并阻断非审批节点。Sandbox Boundary Workbench 还会生成 Docker/K8s 可执行边界 proof，并把五类边界检查写回 LoopRun。
 - `multi-executor-coordination`：`ExecutorGraph.mode=serial|parallel`，LoopRun 会返回 `coordination.nodes[]`，包含每个 executor 的依赖、输入 schema、输出 schema 和共享 context keys；依赖会带上 edge type 与条件路由信息。
-- `loop-observability`：`GET /api/v1/loop-observability` 聚合 loop trace；`GET /api/v1/loops/{loopId}/trace` 返回单个 loop 的 executor step 数、worker lease、watchdog、成本和失败签名；`GET /api/v1/loops/{loopId}/trace-tree` 和 `GET /api/v1/loops/{loopId}/events` 支持 trace tree、streaming events、checkpoint/time-travel inspection、per-node cost/tokens、failure grouping 和 replay diff。
+- `loop-observability`：`GET /api/v1/loop-observability` 聚合 loop trace；`GET /api/v1/loops/{loopId}/trace` 返回单个 loop 的 executor step 数、worker lease、watchdog、Token 用量和失败签名；`GET /api/v1/loops/{loopId}/trace-tree` 和 `GET /api/v1/loops/{loopId}/events` 支持 trace tree、streaming events、checkpoint/time-travel inspection、per-node cost/tokens、failure grouping 和 replay diff。
 
 每轮 loop 都会生成：
 
@@ -1704,3 +1704,6 @@ onboarding checklist. POST bodies use `payload`; project reads take `projectId`.
 The Expert distinguishes a versioned declaration from a connected project and
 forwards only credential references. Checklist warnings remain visible, including
 local projects with unconfigured LLM; no registration result grants execution.
+
+
+Runtime 6.3.1 的 token 统计和已移除金额门禁见[Token usage](../architecture/token-usage.md)。新任务不要求价格、费用或金额预算；token、时长和权限限制继续生效。

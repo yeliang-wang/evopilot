@@ -102,10 +102,10 @@ test("Roadmap Gate accepts current Runtime and Expert milestones in their verifi
   }
 });
 
-test("Roadmap Gate binds public v6 history, completed v6.1, active v6.2 first-run readiness, and independent Cutover", () => {
+test("Roadmap Gate binds published v6 history, retained readiness, token-only patch and independent Cutover", () => {
   const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
-  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.1.0");
-  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.3.0");
+  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.3.0");
+  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.3.1");
   assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.1.0");
   assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.3.0");
   assert.equal(roadmap.evolutionExpertPolicy.mandatoryForOrdinaryHumans, true);
@@ -132,7 +132,7 @@ test("Roadmap Gate binds public v6 history, completed v6.1, active v6.2 first-ru
   assert.equal(runtimeV6?.completionEvidence.legacySuiteInvocationCount, 0);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-post-v6.0.0-legacy-suite-cutover")?.standaloneReleaseEligible, false);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-post-v6.0.0-legacy-suite-cutover")?.targetVersion, "6.0.0");
-  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.1.0");
+  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.3.0");
   assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.1.0");
   const runtimeV61 = roadmap.milestones.find((item) => item.id === "evopilot-6.1-controlled-lifecycle-evolution");
   const expertV21 = roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution");
