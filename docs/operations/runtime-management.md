@@ -113,3 +113,7 @@ npm run verify:runtime-lock:strict
 ```
 
 如果本机没有 Docker、无法拉取镜像、无法生成 SBOM 或无法完成漏洞扫描，必须将状态报告为阻塞，不能降级为 mock E2E。
+
+## Runtime 6.3.2 的 LLM 就绪状态
+
+首次或显式替换工作区默认绑定时，成功预检必须在 15 分钟内。已批准且未变化的配置可以持续使用，重启不会仅因预检变旧而要求重新输入凭据。Profile、SecretRef 或预检证据变化，以及明确预检失败，仍需要按 Runtime 返回的原因修复并显式重绑。普通 readiness 查询不触发模型调用或后台刷新。详见[首次 LLM 就绪说明](../guides/first-run-llm-readiness.md)。

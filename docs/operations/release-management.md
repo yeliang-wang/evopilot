@@ -349,3 +349,7 @@ Rollback is an operator action, not a Git-only action:
 4. Restore Postgres or file-state backup only if data migration introduced the fault.
 5. Verify `/health`, `/ready`, worker queue, Dashboard proxy, and release decisions.
 6. Record the rollback in `CHANGELOG.md` or the next release note.
+
+## Runtime 6.3.2 compatibility
+
+The readiness-continuity maintenance Candidate is verified against unchanged public Expert 2.3.0 and Harness 4.8.1. The current compatibility command is `evopilot-expert compatibility codex 6.3.2`; the public Expert package still owns its existing 6.3.0 contracts dependency and is not republished by this Runtime patch. Candidate acceptance and actual publication are recorded independently in the current release ledger.

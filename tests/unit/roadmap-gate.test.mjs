@@ -128,7 +128,7 @@ test("Roadmap Gate accepts current Runtime and Expert milestones in their verifi
 test("Roadmap Gate binds published v6 history, retained readiness, token-only patch and independent Cutover", () => {
   const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
   assert.equal(roadmap.versionPolicy.publishedBaseline, "6.3.1");
-  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.3.1");
+  assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.3.2");
   assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.1.0");
   assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.3.0");
   assert.equal(roadmap.evolutionExpertPolicy.mandatoryForOrdinaryHumans, true);

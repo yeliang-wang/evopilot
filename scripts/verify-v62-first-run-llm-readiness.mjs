@@ -18,10 +18,15 @@ const activeExpertVersion = readJson("packages/evolution-expert/package.json").v
 // Historical Target bytes and evidence below remain unchanged; no PASS transfer.
 const delivery = roadmap.directSemanticConvergenceDeliveryPolicy;
 const currentRuntimeVersion = readJson("package.json").version;
-const tokenPatch = currentRuntimeVersion === "6.3.1" && activeExpertVersion === "2.3.0";
+const readinessPatch = currentRuntimeVersion === "6.3.2" && activeExpertVersion === "2.3.0";
+if (readinessPatch && !(roadmap.llmReadinessContinuityPolicy?.runtimeVersion === "6.3.2" &&
+  roadmap.llmReadinessContinuityPolicy?.initialAndChangedDefaultBinding?.successfulLivePreflightMaximumAgeMs === 900000 &&
+  roadmap.llmReadinessContinuityPolicy?.existingUnchangedExplicitBinding?.elapsedTimeAloneRevokesReadiness === false &&
+  roadmap.llmReadinessContinuityPolicy?.normalGoalAndLoopSelection?.elapsedTimeAloneBlocks === false)) failures.push("Readiness continuity patch is not bound by the accepted Roadmap");
+const tokenPatch = (currentRuntimeVersion === "6.3.1" || readinessPatch) && activeExpertVersion === "2.3.0";
 if (tokenPatch && !(roadmap.tokenOnlyCutoverPolicy?.runtimeVersion === "6.3.1" &&
   roadmap.tokenOnlyCutoverPolicy?.expertVersion === "2.3.0" && roadmap.tokenOnlyCutoverPolicy?.monetaryAmountRequired === false &&
-  roadmap.versionPolicy.currentWorkingVersion === "6.3.1")) failures.push("Token-only patch is not bound by the accepted Roadmap");
+  roadmap.versionPolicy.currentWorkingVersion === currentRuntimeVersion)) failures.push("Token-only patch is not bound by the accepted Roadmap");
 const direct = (currentRuntimeVersion === "6.3.0" || tokenPatch) && activeExpertVersion === "2.3.0";
 if (direct && !(delivery?.runtimeVersion === "6.3.0" && delivery?.expertVersion === "2.3.0" &&
   delivery?.standaloneExpert221ReleaseAllowed === false && roadmap.versionPolicy.currentWorkingVersion === currentRuntimeVersion)) failures.push("Direct-delivery pair is not bound by the accepted Roadmap");

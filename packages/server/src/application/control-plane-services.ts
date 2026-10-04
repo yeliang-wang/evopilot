@@ -48,7 +48,7 @@ import {
   type HarnessTemplateProfile,
   type HarnessTemplateRef
 } from "../domains/harness-template/index.js";
-import { LLM_READINESS_FRESHNESS_MS, resolveGovernedLlmSecret } from "../domains/llm-readiness/index.js";
+import { resolveGovernedLlmSecret } from "../domains/llm-readiness/index.js";
 import {
   httpError
 } from "../http/errors.js";
@@ -6195,11 +6195,10 @@ export function resolveLoopLlmSelection(store: FileStore, input: {
           id: "provider-call",
           status: profile.lastPreflight?.status === "READY"
             && Number.isFinite(Date.parse(profile.lastPreflight.checkedAt))
-            && Date.parse(profile.lastPreflight.checkedAt) <= Date.now()
-            && Date.now() - Date.parse(profile.lastPreflight.checkedAt) <= LLM_READINESS_FRESHNESS_MS ? "PASS" : "FAIL",
+            && Date.parse(profile.lastPreflight.checkedAt) <= Date.now() ? "PASS" : "FAIL",
           required: true,
           evidence: profile.lastPreflight?.status === "READY"
-            ? [`lastPreflight=${profile.lastPreflight.checkedAt}`, "livePreflight=freshness-checked"]
+            ? [`lastPreflight=${profile.lastPreflight.checkedAt}`, "livePreflight=READY", "timestampPolicy=finite-nonfuture"]
             : ["livePreflight=missing-or-blocked"]
         }
       ],
