@@ -1,0 +1,30 @@
+{
+  "schema": "evopilot-runtime-release-target-gate/v1",
+  "recordedAt": "2026-10-04T05:34:04.509Z",
+  "targetId": "evopilot-6.3.2-readiness-continuity",
+  "targetRevision": 3,
+  "phase": "release",
+  "inputStatus": "VALIDATED",
+  "inputTargetDigest": "sha256:96e9cc9230963b3792a86db33039404136b95a5dc154106a363e1ceb5a5ae3d3",
+  "scopeAuthorizationDigest": "sha256:475b53ab10dd94311556190f5db32725fa90bc0e033c8c60030713a26f6d715e",
+  "releaseAuthorizationDigest": "sha256:8e0558bf05682cf70e392aa8db10dc8f229ed4f657f4f9e661ff418e030a43db",
+  "acceptance": {
+    "path": "governance/releases/runtime-6.3.2-acceptance-20261004.json",
+    "digest": "sha256:0b45a1df5107d28957c03d17490e21e86a67de61900db756738cab10ea2910b9"
+  },
+  "authorization": {
+    "path": "governance/releases/runtime-6.3.2-authorization-20261004.json",
+    "digest": "sha256:c303e70fb8995c1af2bdf546fa1251278f16b218fec02e31a2aade63008b6a36"
+  },
+  "result": {
+    "schema": "evopilot-target-assurance/v1",
+    "phase": "release",
+    "status": "PASSED",
+    "authorizationDigest": "sha256:475b53ab10dd94311556190f5db32725fa90bc0e033c8c60030713a26f6d715e",
+    "failures": [],
+    "authority": "NONE",
+    "evidenceExecutionVerified": false
+  },
+  "evidenceBoundary": "Structural gate verifies status/scope/authority. Separately retained actual cases, complete installed regression and item-specific impact observations establish execution evidence.",
+  "subsequentPromotionTargetStatus": "RELEASE_AUTHORIZED"
+}

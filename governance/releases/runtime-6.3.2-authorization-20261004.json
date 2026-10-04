@@ -1,0 +1,55 @@
+{
+  "schema": "evopilot-runtime-public-release-authorization/v1",
+  "decision": "AUTHORIZED",
+  "by": "user",
+  "recordedAt": "2026-10-04T05:34:04.509Z",
+  "decisionEvidence": {
+    "kind": "EXPLICIT_CURRENT_USER_REPAIR_RELEASE_GITHUB_AND_LOCAL_INSTALL_INSTRUCTION",
+    "evidence": {
+      "digest": "sha256:dcfcfeab46dc03d5576f1a912c3490e91082d55fed1ea774058bd7cf3f4b5e39",
+      "address": "urn:sha256:dcfcfeab46dc03d5576f1a912c3490e91082d55fed1ea774058bd7cf3f4b5e39"
+    },
+    "summary": "The user explicitly authorizes the complete repair, new release publication, GitHub push and local Codex update flow."
+  },
+  "authorizationDigest": "sha256:8e0558bf05682cf70e392aa8db10dc8f229ed4f657f4f9e661ff418e030a43db",
+  "technicalBinding": {
+    "resolvedBy": "assistant",
+    "individualHumanReviewOfGeneratedTechnicalDigest": false,
+    "basis": "Existing explicit publication authority bound to the exact newly accepted Candidate."
+  },
+  "binding": {
+    "schema": "evopilot-exact-runtime-release-binding/v1",
+    "product": "evopilot-runtime",
+    "version": "6.3.2",
+    "targetId": "evopilot-6.3.2-readiness-continuity",
+    "targetRevision": 3,
+    "approvedTargetScopeDigest": "sha256:475b53ab10dd94311556190f5db32725fa90bc0e033c8c60030713a26f6d715e",
+    "sourceCommit": "05da3339b32468f3682eea8a1c2b31880a6c38a1",
+    "candidateRunId": "37177531263",
+    "handoffDigest": "sha256:df222abf09618150fbf93c69a3d1eadef867c9684c233baa40412028b35ccfcd",
+    "releaseSetDigest": "sha256:96960ecb3ffd51f4138e37f75cacdce3cd6d4b64b53541956590a5e05befcdc7",
+    "acceptanceDigest": "sha256:0b45a1df5107d28957c03d17490e21e86a67de61900db756738cab10ea2910b9",
+    "tag": "v6.3.2",
+    "actions": [
+      "commit",
+      "push",
+      "tag",
+      "github-release",
+      "npm",
+      "ghcr",
+      "installer"
+    ],
+    "versions": {
+      "evopilot": "6.3.2"
+    }
+  },
+  "bindingDigest": "sha256:62feb3a93f71cf19b25f43df41fc75266887979d58fcf35b6f42a3102ef9e661",
+  "acceptedPublicProjection": {
+    "path": "governance/releases/runtime-6.3.2-acceptance-20261004.json",
+    "digest": "sha256:0b45a1df5107d28957c03d17490e21e86a67de61900db756738cab10ea2910b9"
+  },
+  "publicationStatus": "NOT_YET_PUBLISHED",
+  "remoteRuntimeDeploymentAuthorized": false,
+  "rebuildAuthorized": false,
+  "unchangedOtherProductRepublicationAuthorized": false
+}
