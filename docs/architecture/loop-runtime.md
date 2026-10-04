@@ -145,7 +145,7 @@ The runtime is still intentionally conservative: it does not pretend to execute 
 
 ## Semantic Target progression and recovery
 
-The Runtime 6.3.1 candidate repairs progression inside an already approved,
+Runtime 6.3.1 repairs progression inside an already approved,
 semantic-owned Goal. Previously, completing a Target could leave its dependent
 successor `PENDING`, even though the predecessor was `DONE`. That prevented the
 next exact semantic execution request from being prepared.
@@ -172,10 +172,12 @@ editing stored status or by using the legacy Goal advance route. A failed or
 stale dependency, phase receipt or policy remains a blocker. Final Goal
 completion still requires every required Target and phase receipt.
 
-Source regressions verify progression and refusal cases. The candidate also
-requires exact installed multi-Target acceptance; a successful first Target or
-synthetic four-phase fixture is not whole-Goal acceptance. Public release status
-remains in the [current release ledger](../releases/current-release.md).
+Source regressions verify progression and refusal cases. The released 6.3.1
+bytes also completed exact installed acceptance of all 12 required Targets in
+the four-phase Goal under the approved Codex-only scope. A successful first
+Target or synthetic four-phase fixture alone is not whole-Goal acceptance.
+See the [6.3.1 acceptance and explicit exclusions](../releases/6.3.1.md) and
+[current publication ledger](../releases/current-release.md).
 
 ## Validation
 

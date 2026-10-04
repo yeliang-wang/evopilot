@@ -1,6 +1,6 @@
 # EvoPilot Evolution Expert
 
-Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. This guide covers Expert `2.3.0` and Runtime `6.3.0`, accepted and published with [verified distribution and explicit acceptance limits](../releases/current-release.md). The approved successor includes the retained public CLI and secure-input recovery work; there is no standalone Expert 2.2.1 delivery. Expert uses MCP exclusively. Explicit Runtime 6.2.0 compatibility remains available for legacy non-semantic operations; semantic operations require Runtime 6.3 capability negotiation. Runtime and declarative resource versions remain independent.
+Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. This guide covers Expert `2.3.0` and Runtime `6.3.1`, accepted and published with [verified distribution and explicit acceptance limits](../releases/current-release.md). The approved successor includes the retained public CLI and secure-input recovery work; there is no standalone Expert 2.2.1 delivery. Expert uses MCP exclusively. Explicit Runtime 6.2.0 compatibility remains available for legacy non-semantic operations; semantic operations require Runtime 6.3 capability negotiation. Runtime and declarative resource versions remain independent.
 
 One immutable Core generates Host Integration Bundles for Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP. Each bundle contains the same Core and Adapter digests plus install, doctor, health, version, upgrade, rollback, removal, help, and tutorial lifecycle metadata.
 
@@ -50,7 +50,7 @@ activate a Host integration or establish live Host qualification.
 ```bash
 npm install --global @evopilot/evolution-expert@2.3.0
 evopilot-expert version
-evopilot-expert doctor codex 6.3.0
+evopilot-expert doctor codex 6.3.1
 evopilot-expert tutorial
 ```
 
@@ -66,7 +66,7 @@ a nonzero exit status. The SDK remains extensible to independently qualified Hos
 
 ## Source verification and release acceptance
 
-The checked-in SDK, generated adapters and local synthetic tests can verify guidance, finite MCP projections and refusal behavior. They do not prove installed-package or real-Host acceptance. The exact Runtime 6.3.0 / Expert 2.3.0 artifacts separately passed their approved installed acceptance and were published after release authorization. Real Host acceptance is Codex-only; native credential interaction and a new 90-minute soak remain skipped, not passed. WorkBuddy and other live Host acceptance are not claimed for this delivery.
+The checked-in SDK, generated adapters and local synthetic tests can verify guidance, finite MCP projections and refusal behavior. They do not prove installed-package or real-Host acceptance. The exact Runtime 6.3.0 / Expert 2.3.0 artifacts separately passed their approved installed acceptance and were published after release authorization. The later published Runtime 6.3.1 was independently accepted with the unchanged Expert 2.3.0 package; its 409-criterion/9-case scope does not rewrite the original Expert acceptance. Real Host acceptance is Codex-only; native credential interaction and a new 90-minute soak remain skipped, not passed. WorkBuddy and other live Host acceptance are not claimed for this delivery.
 
 For maintained source-level runner scope and case definitions, see the [versioned acceptance corpus](../../tests/e2e/versions/README.md). Historical [Runtime 6 / Expert 2 acceptance](../operations/v6-acceptance.md) describes the immutable 6.0.0 / 2.0.0 baseline, not a PASS for the current pair.
 

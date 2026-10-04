@@ -77,7 +77,7 @@ function validateRoadmap(value) {
   required(semver(value?.evolutionExpertPolicy?.publishedBaseline), "evolutionExpertPolicy.publishedBaseline must be SemVer");
   required(semver(value?.evolutionExpertPolicy?.currentWorkingVersion), "evolutionExpertPolicy.currentWorkingVersion must be SemVer");
   required(value?.evolutionExpertPolicy?.lockstepWithRuntime === false, "Evolution Expert must not be version-locked to the Runtime");
-  required(value?.versionPolicy?.publishedBaseline === "6.3.0" && value?.versionPolicy?.currentWorkingVersion === "6.3.1", "Runtime token-only successor must preserve public 6.3.0 and bind 6.3.1");
+  required(value?.versionPolicy?.publishedBaseline === "6.3.1" && value?.versionPolicy?.currentWorkingVersion === "6.3.1", "Runtime public baseline and current working version must bind published 6.3.1");
   required(value?.evolutionExpertPolicy?.publishedBaseline === "2.1.0" && value?.evolutionExpertPolicy?.currentWorkingVersion === "2.3.0", "Evolution Expert Roadmap must preserve completed 2.1.0 and bind 2.3.0 planning");
   required(value?.evolutionExpertPolicy?.mandatoryForOrdinaryHumans === true, "Evolution Expert must be mandatory for ordinary-human operation");
   required(value?.evolutionExpertPolicy?.canonicalProtocol === "MCP", "Evolution Expert ordinary-human protocol must be MCP");
@@ -278,6 +278,19 @@ function validateRoadmap(value) {
     required(["evopilot-runtime", "evopilot-evolution-expert"].includes(milestone.product), `milestone product is invalid: ${milestone.id}`);
     required(Array.isArray(milestone.signals) && milestone.signals.length > 0, `signals are required: ${milestone.id}`);
     required(Array.isArray(milestone.acceptance) && milestone.acceptance.length > 0, `acceptance is required: ${milestone.id}`);
+  }
+  // Publication bookkeeping for 6.3.1 retains its accepted historical pins.
+  const published631 = milestones.find((item) => item.id === "evopilot-6.3.1-token-only-cutover");
+  const completion631 = published631?.completionEvidence;
+  const publication631Path = "governance/releases/runtime-6.3.1-publication-20261004.json";
+  required(published631?.status === "COMPLETE" && completion631?.report === "governance/releases/runtime-6.3.1-acceptance-20261004.json" && completion631?.publicationReport === publication631Path && completion631?.total === 409 && completion631?.passed === 409 && completion631?.realCasesTotal === 9 && completion631?.realCasesPassed === 9 && completion631?.noRegression === "PASSED" && completion631?.excludedItemsCountedAsPass === false, "Runtime 6.3.1 published completion requires exact acceptance and publication evidence");
+  required(completion631?.acceptedSourceCommit === "f0adee70ac45d5da5d691cfa583eba03ee014eb0" && completion631?.candidateRunId === "37133707977" && completion631?.acceptedRoadmapDigest === "sha256:c703036e6c6c23a7f5fe23b042d6d921733c00ca10b9dabf94a8bcccd8b18e53" && completion631?.targetRevision === 4 && completion631?.approvedScopeDigest === "sha256:dcf393a341b66320b5e4cfb6236b2a702febc0c75099d19a507855bf2762563e", "Runtime 6.3.1 published completion must preserve accepted Candidate and Target history");
+  try {
+    const publication631Bytes = fs.readFileSync(path.join(root, publication631Path));
+    const publication631 = JSON.parse(publication631Bytes);
+    required(completion631?.publicationDigest === `sha256:${crypto.createHash("sha256").update(publication631Bytes).digest("hex")}` && publication631.schema === "evopilot-runtime-publication-evidence/v1" && publication631.status === "PUBLISHED_VERIFIED" && publication631.version === "6.3.1" && publication631.candidateCommit === completion631?.acceptedSourceCommit && publication631.candidateRunId === completion631?.candidateRunId && publication631.publicDistributionObservationDigest === completion631?.publicDistributionObservationDigest, "Runtime 6.3.1 published completion has stale publication binding");
+  } catch {
+    required(false, "Runtime 6.3.1 published completion requires a readable publication record");
   }
   const currentStates = new Set(["IN_PROGRESS", "COMPLETE"]);
   const currentMilestones = milestones.filter((milestone) => milestone.product === value?.versionPolicy?.runtimeProduct && currentStates.has(milestone.status) && milestone.targetVersion === value?.versionPolicy?.currentWorkingVersion);

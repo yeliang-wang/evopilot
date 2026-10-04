@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/latest%20public-v6.3.0-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/latest%20public-v6.3.1-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -16,7 +16,7 @@ It is not an agent runtime, prompt playground, generic code generator, or Harnes
 
 ## v6.3 Semantic Convergence and First-Run LLM Readiness
 
-EvoPilot Runtime **v6.3.0** and Evolution Expert **v2.3.0** are accepted and
+EvoPilot Runtime **v6.3.1** and Evolution Expert **v2.3.0** are accepted and
 published, consuming semantic supply from **evopilot-harness 4.8.1**. See
 [current releases and acceptance limits](docs/releases/current-release.md).
 There is no separate Expert 2.2.1 delivery. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
@@ -42,11 +42,27 @@ Legacy EvoPilot and DataRig Suite snapshots remain historical provenance for con
 
 | Entry | Use when | Command |
 | --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified public package | `npm install -g @evopilot/cli@6.3.0` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.0/install.sh)"` |
+| Install CLI | You already have an EvoPilot server and want the verified public package | `npm install -g @evopilot/cli@6.3.1` |
+| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.1/install.sh)"` |
 | Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
 
 Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet. The supported public entry points are the six exact-version npm packages, GitHub Release tarballs, the self-host installer, Helm, and GHCR images.
+
+Install the six public Runtime packages at the exact release version in a fresh Node project:
+
+```bash
+npm install --save-exact \
+  @evopilot/contracts@6.3.1 \
+  @evopilot/client@6.3.1 \
+  @evopilot/cli@6.3.1 \
+  @evopilot/adapter-mcp@6.3.1 \
+  @evopilot/adapter-opencode@6.3.1 \
+  create-evopilot@6.3.1
+```
+
+The [verified publication ledger](governance/releases/runtime-6.3.1-publication-20261004.json)
+binds the public packages and image to the accepted Candidate. Evolution Expert
+2.3.0 and Harness 4.8.1 keep their independent published versions.
 
 ## What You Can Do
 
@@ -147,9 +163,9 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
-[Runtime 6.3.1 token usage and bounded execution repairs](docs/releases/6.3.1.md) have completed exact installed acceptance: 409 applicable criteria and nine real cases passed, including the full 12-Target, four-phase Goal and default installation recovery. Candidate `37133707977` at `f0adee70ac45d5da5d691cfa583eba03ee014eb0` is authorized for promotion and is not yet publicly published. The same Codex-only Host scope, unverified native credential interaction and explicit 90-minute soak exclusion apply; excluded work is not counted as passed. Expert 2.3.0 and Harness 4.8.1 keep their existing public versions. The local project extensions 1.0.1 used in acceptance are an independently installed private component, not a public Runtime release asset.
+[Runtime 6.3.1 token usage and bounded execution repairs](docs/releases/6.3.1.md) have completed exact installed acceptance: 409 applicable criteria and nine real cases passed, including the full 12-Target, four-phase Goal and default installation recovery. The accepted bytes from Candidate `37133707977` at `f0adee70ac45d5da5d691cfa583eba03ee014eb0` are now publicly published and verified under [v6.3.1](https://github.com/yeliang-wang/evopilot/releases/tag/v6.3.1); the [publication ledger](governance/releases/runtime-6.3.1-publication-20261004.json) records the public readbacks. The same Codex-only Host scope, unverified native credential interaction and explicit 90-minute soak exclusion apply; excluded work is not counted as passed. Expert 2.3.0 and Harness 4.8.1 keep their existing public versions. The local project extensions 1.0.1 used in acceptance are an independently installed private component, not a public Runtime release asset.
 
-Runtime **v6.3.0** and Expert **v2.3.0** are accepted and published on GitHub and
+Runtime **v6.3.1** and Expert **v2.3.0** are accepted and published on GitHub and
 npm. Runtime's public GHCR image and manifest-based installer are verified.
 The [current release ledger](docs/releases/current-release.md) binds exact
 artifacts and preserves the approved acceptance limits. No remote Runtime
@@ -159,8 +175,8 @@ The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a stan
 
 Release evidence:
 
-- Accepted Runtime 6.3.1, awaiting public promotion: [release notes](docs/releases/6.3.1.md)
-- Current public Runtime 6.3.0: [release notes](docs/releases/6.3.0.md)
+- Current public Runtime 6.3.1: [release notes](docs/releases/6.3.1.md)
+- Historical public Runtime 6.3.0: [release notes](docs/releases/6.3.0.md)
 - Current Expert 2.3.0: [release notes](docs/releases/evolution-expert-2.3.0.md)
 - Expert 2.2.1 recovery (not released): [docs/releases/evolution-expert-2.2.1.md](docs/releases/evolution-expert-2.2.1.md)
 - Previous release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)

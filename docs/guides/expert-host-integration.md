@@ -1,9 +1,10 @@
 # Evolution Expert 2.3.0 Host integration
 
-Evolution Expert **2.3.0 is published**, with Runtime **6.3.0** as its verified
-release pair. The [current release ledger](../releases/current-release.md) records
-the exact artifacts and acceptance limits. Runtime **6.3.1** remains a separate
-maintenance candidate and reuses the unchanged published Expert package.
+Evolution Expert **2.3.0 is published**. Its original Runtime **6.3.0** release
+pair remains historical evidence. Runtime **6.3.1** is now published and verified;
+Runtime 6.3.1 compatibility uses the unchanged published Expert package. The
+[current release ledger](../releases/current-release.md) records the exact
+artifacts and acceptance limits.
 
 The private component belongs to the Expert package, but runs outside its
 conversational Core. See the [component reference](../../packages/evolution-expert/host-integration/README.md)

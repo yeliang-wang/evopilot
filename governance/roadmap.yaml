@@ -30,7 +30,7 @@
   },
   "versionPolicy": {
     "runtimeProduct": "evopilot-runtime",
-    "publishedBaseline": "6.3.0",
+    "publishedBaseline": "6.3.1",
     "currentWorkingVersion": "6.3.1",
     "versionsEvolveIndependently": true,
     "majorRequiredFor": [
@@ -2012,7 +2012,7 @@
     {
       "id": "evopilot-6.3.1-token-only-cutover",
       "product": "evopilot-runtime",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "implementationAuthority": "SEPARATELY_APPROVED_TARGET_REQUIRED",
       "targetVersion": "6.3.1",
       "releaseLine": "6.3.x",
@@ -2047,6 +2047,23 @@
         "individualHumanTechnicalReview": false,
         "releaseAuthority": "SEPARATE",
         "permanentSuiteDeletionAuthorized": false
+      },
+      "completionEvidence": {
+        "report": "governance/releases/runtime-6.3.1-acceptance-20261004.json",
+        "publicationReport": "governance/releases/runtime-6.3.1-publication-20261004.json",
+        "publicationDigest": "sha256:abb19fa345370f613b313356b6adb114c4eded59bab2615b50b5766417d6f29d",
+        "total": 409,
+        "passed": 409,
+        "realCasesTotal": 9,
+        "realCasesPassed": 9,
+        "noRegression": "PASSED",
+        "acceptedSourceCommit": "f0adee70ac45d5da5d691cfa583eba03ee014eb0",
+        "candidateRunId": "37133707977",
+        "acceptedRoadmapDigest": "sha256:c703036e6c6c23a7f5fe23b042d6d921733c00ca10b9dabf94a8bcccd8b18e53",
+        "targetRevision": 4,
+        "approvedScopeDigest": "sha256:dcf393a341b66320b5e4cfb6236b2a702febc0c75099d19a507855bf2762563e",
+        "excludedItemsCountedAsPass": false,
+        "publicDistributionObservationDigest": "sha256:643fa6aa6b128f464cc170b21f5e5dd294f3dc8d5789381e64707b71b3a53c11"
       }
     }
   ],

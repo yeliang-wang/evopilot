@@ -127,7 +127,7 @@ test("Roadmap Gate accepts current Runtime and Expert milestones in their verifi
 
 test("Roadmap Gate binds published v6 history, retained readiness, token-only patch and independent Cutover", () => {
   const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
-  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.3.0");
+  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.3.1");
   assert.equal(roadmap.versionPolicy.currentWorkingVersion, "6.3.1");
   assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.1.0");
   assert.equal(roadmap.evolutionExpertPolicy.currentWorkingVersion, "2.3.0");
@@ -155,7 +155,7 @@ test("Roadmap Gate binds published v6 history, retained readiness, token-only pa
   assert.equal(runtimeV6?.completionEvidence.legacySuiteInvocationCount, 0);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-post-v6.0.0-legacy-suite-cutover")?.standaloneReleaseEligible, false);
   assert.equal(roadmap.milestones.find((item) => item.id === "evopilot-post-v6.0.0-legacy-suite-cutover")?.targetVersion, "6.0.0");
-  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.3.0");
+  assert.equal(roadmap.versionPolicy.publishedBaseline, "6.3.1");
   assert.equal(roadmap.evolutionExpertPolicy.publishedBaseline, "2.1.0");
   const runtimeV61 = roadmap.milestones.find((item) => item.id === "evopilot-6.1-controlled-lifecycle-evolution");
   const expertV21 = roadmap.milestones.find((item) => item.id === "evopilot-evolution-expert-2.1-controlled-lifecycle-evolution");
@@ -758,4 +758,37 @@ test("Roadmap binds semantic Catalog supply repair without weakening authority",
     assert.equal(result.body.classification, "INVALID", key);
     assert.match(result.body.errors.join(" "), /semantic Catalog supply invariant/);
   }
+});
+
+
+test("Roadmap records published Runtime 6.3.1 while preserving its accepted history", () => {
+  const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
+  const milestone = roadmap.milestones.find((item) => item.id === "evopilot-6.3.1-token-only-cutover");
+  assert.equal(milestone.status, "COMPLETE");
+  assert.equal(milestone.completionEvidence.acceptedRoadmapDigest, "sha256:c703036e6c6c23a7f5fe23b042d6d921733c00ca10b9dabf94a8bcccd8b18e53");
+  assert.equal(milestone.completionEvidence.acceptedSourceCommit, "f0adee70ac45d5da5d691cfa583eba03ee014eb0");
+  assert.equal(milestone.completionEvidence.targetRevision, 4);
+  const target = JSON.parse(fs.readFileSync(path.join(root, "governance/targets/evopilot-6.3.1-token-only-cutover.json"), "utf8"));
+  assert.equal(target.roadmapBindings[0].roadmapDigest, milestone.completionEvidence.acceptedRoadmapDigest);
+  assert.equal(target.approvals.target.authorizationDigest, milestone.completionEvidence.approvedScopeDigest);
+  const release = run(["--release-version", "6.3.1"]);
+  assert.equal(release.status, 0, release.stderr);
+  assert.equal(release.body.classification, "ALIGNED");
+});
+
+test("Roadmap rejects missing or drifting Runtime 6.3.1 publication bookkeeping", () => {
+  for (const mutate of [
+    (m) => { m.status = "IN_PROGRESS"; },
+    (m) => { delete m.completionEvidence; },
+    (m) => { m.completionEvidence.publicationReport = "../../unrelated.json"; },
+    (m) => { m.completionEvidence.publicationDigest = `sha256:${"0".repeat(64)}`; },
+    (m) => { m.completionEvidence.acceptedSourceCommit = "0".repeat(40); }
+  ]) {
+    const result = runWithRoadmap((r) => mutate(r.milestones.find((m) => m.id === "evopilot-6.3.1-token-only-cutover")));
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.body.errors.join(" "), /Runtime 6\.3\.1 published completion/);
+  }
+  const badEnum = runWithRoadmap((r) => { r.milestones.find((m) => m.id === "evopilot-6.3.1-token-only-cutover").status = "COMPLETED"; });
+  assert.equal(badEnum.status, 1, badEnum.stderr);
+  assert.match(badEnum.body.errors.join(" "), /invalid milestone status/);
 });

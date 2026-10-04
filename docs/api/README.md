@@ -2,7 +2,7 @@
 
 ## Agent-Native Lifecycle Control Plane（Runtime 6.3.1）
 
-当前发布为 Runtime 6.3.0 / Expert 2.3.0。语义 Catalog、项目绑定与独立执行接口见[语义消费者技术参考](../architecture/semantic-catalog-consumer.md)和[CLI/MCP 命令映射](../cli/commands.md)；验收范围及未验证项见[发布记录](../releases/current-release.md)。
+当前发布为 Runtime 6.3.1 / Expert 2.3.0。语义 Catalog、项目绑定与独立执行接口见[语义消费者技术参考](../architecture/semantic-catalog-consumer.md)和[CLI/MCP 命令映射](../cli/commands.md)；验收范围及未验证项见[发布记录](../releases/current-release.md)。
 
 ```text
 GET  /api/v1/evolution-project-definitions

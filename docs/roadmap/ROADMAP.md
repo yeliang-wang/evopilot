@@ -1159,6 +1159,12 @@ The exact machine policy is `releaseCredentialInteractionScopePolicy`.
 
 ## Runtime 6.3.1: Token-only execution and independent current-Host cutover
 
+Status: `COMPLETE` — Runtime **6.3.1** is the current published baseline. The [publication record](../../governance/releases/runtime-6.3.1-publication-20261004.json) binds actual GitHub, GHCR and six-package npm verification to the accepted immutable Candidate. The [acceptance record](../../governance/releases/runtime-6.3.1-acceptance-20261004.json) retains 409 passed criteria, nine actual cases and `NO_REGRESSION`, with the approved Host, duration and native-credential exclusions unchanged and not counted as passed.
+
+Accepted source `f0adee70ac45d5da5d691cfa583eba03ee014eb0`, Candidate `37133707977`, Target revision 4 and its original `c703036e…18e53` Roadmap approval remain historical immutable bindings. This bookkeeping revision creates a new Roadmap digest for future work; it does not rebuild accepted assets, change old approval records or replay validators that require removed Suite paths. The later exact local Suite deletion had its own explicit authorization and is not part of Runtime publication authority.
+
+The paragraphs below retain the original campaign chronology, including the earlier withheld deletion consent and the then-future Target revisions. Revision 4 and the accepted full twelve-Target/four-phase journey are recorded by the current acceptance link above; this historical wording is not an outstanding implementation task.
+
 The user directs completion of current Codex replacement using independent project resources, providers and external coding adapters, while keeping Expert 2.3.0 and Harness 4.8.1. Runtime's limited change is token-only process/usage support and removal of monetary call limits, pricing requirements and cost-based freezes. Historical monetary reports remain historical data; source, permission, timeout, token, evidence and release authority checks remain. The upgrade/debug campaign budget is external and must not become a product setting.
 
 `tokenOnlyCutoverPolicy` gives this exact successor precedence over conflicting inherited monetary requirements, and retains the explicit Codex-only, no-new-90-minute-soak, no-native-credential-UI scope. All other inherited behavior and independent security, source/effect, artifact, regression and terminal E2E checks remain. No historical PASS transfers. Project validators, journal semantics and the native coding runner do not move into Runtime.

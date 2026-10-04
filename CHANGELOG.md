@@ -1,6 +1,6 @@
 # Changelog
 
-## 6.3.1 — Token usage and bounded execution repairs (accepted; promotion pending)
+## 6.3.1 — Token usage and bounded execution repairs (published and verified)
 
 - Preserve reported native Agent token usage without requiring monetary amounts or pricing configuration.
 - Remove monetary task freezes, release gates, schedule limits and inferred model prices; retain token/time/source/authority checks.
@@ -10,7 +10,7 @@
 - Evolution Expert 2.3.0 and Harness 4.8.1 retain their already published versions; local project extensions 1.0.1 remain an independent private component.
 - Complete exact installed acceptance: 409 applicable criteria, nine real cases and 2,403 regression tests passed, including the unchanged 12-Target/four-phase Goal and actual default apply/rollback/reapply.
 - Retain the approved Codex-only Host scope; native credential interaction remains unverified and the new 90-minute soak is excluded, not passed. Separate local Suite cleanup is not an automatic Runtime feature.
-- Public promotion is separately authorized and pending. See [6.3.1 acceptance, compatibility and upgrade notes](docs/releases/6.3.1.md); do not treat local completion as publication.
+- Promoted the accepted Candidate bytes to GitHub Release, six exact-version npm packages and GHCR without rebuilding; verified the public distribution. See the [publication ledger](governance/releases/runtime-6.3.1-publication-20261004.json) and [6.3.1 acceptance, compatibility and upgrade notes](docs/releases/6.3.1.md).
 
 
 All notable changes to EvoPilot are documented here.

@@ -1,6 +1,6 @@
 # First-Run LLM Readiness
 
-EvoPilot Runtime 6.3.0 retains the first-run readiness introduced in 6.2. It has no bundled, developer-owned, Host-inherited, or environment-selected LLM. A production installation may start without a configured provider so an administrator can reach the setup surfaces, but normal project, Harness, Goal, Target, Loop, and release operations remain fail-closed until Runtime readiness is `READY`.
+EvoPilot Runtime 6.3.1 retains the first-run readiness introduced in 6.2. It has no bundled, developer-owned, Host-inherited, or environment-selected LLM. A production installation may start without a configured provider so an administrator can reach the setup surfaces, but normal project, Harness, Goal, Target, Loop, and release operations remain fail-closed until Runtime readiness is `READY`.
 
 ## The three model identities
 

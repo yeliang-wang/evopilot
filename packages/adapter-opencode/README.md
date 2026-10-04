@@ -1,5 +1,15 @@
 # `@evopilot/adapter-opencode`
 
+The current published package is **6.3.1**. Its process-observation v2 reports
+input, output and cached input tokens without requiring monetary telemetry or
+pricing configuration. Unavailable token counts remain unavailable; measured
+zero remains zero. Cached input is part of input and is not added to the total
+again. See [token usage and v1 compatibility](../../docs/architecture/token-usage.md)
+and the [verified public release](../../docs/releases/current-release.md). This
+default-branch documentation does not rebuild or replace published tarballs.
+
+Historical 6.3.0 receipt compatibility:
+
 In the released 6.3.0 package, process observations bind optional
 `usageCoverage=COMPLETE|PARTIAL|UNAVAILABLE` into their receipt digest. COMPLETE
 requires explicit valid cost and input/output token telemetry in every parsed

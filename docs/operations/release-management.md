@@ -4,13 +4,14 @@
 
 ## Current publication
 
-Runtime **6.3.0** and Evolution Expert **2.3.0** are published and verified.
+Runtime **6.3.1** and Evolution Expert **2.3.0** are published and verified.
 See [the current release ledger](../releases/current-release.md) for exact tags,
 packages, image, installed acceptance and explicit exclusions. The checklist
 below governs future releases and does not create unfinished steps for those published versions.
 
-Runtime **6.3.1** has completed exact installed acceptance and has separate user
-authorization for publication; promotion and public verification are pending.
+Runtime **6.3.1** completed exact installed acceptance, received separate user
+authorization and has now been promoted with verified public GitHub, npm and GHCR
+readbacks in the [publication ledger](../../governance/releases/runtime-6.3.1-publication-20261004.json).
 The accepted run is `37133707977`, source
 `f0adee70ac45d5da5d691cfa583eba03ee014eb0`, with 409 applicable criteria and
 nine real cases passed. The sealed final local acceptance SHA256 is
@@ -18,8 +19,8 @@ nine real cases passed. The sealed final local acceptance SHA256 is
 See [6.3.1 release notes](../releases/6.3.1.md) for exact installed regression,
 real Goal/recovery evidence and the approved exclusions. The historical
 acceptance record is not rewritten to add later release authority or publication.
-Promote the accepted artifact set without rebuilding; update public version
-pointers only after the actual GitHub, npm and GHCR results are verified.
+The accepted artifact set was promoted without rebuilding. These public version
+pointers were updated only after the actual GitHub, npm and GHCR results were verified.
 
 This Runtime promotion reuses the existing Expert 2.3.0 and Harness 4.8.1
 releases. Independent local project extensions 1.0.1 are a private component,
@@ -170,7 +171,9 @@ append the actual cleanup and audit-relocation receipts. Do not rewrite
 historical inventories or restore deleted Suite sources to make an obsolete
 rollback gate pass. Future product recovery must bind the current installed
 artifacts, private configuration and daily data in a new explicit transaction.
-Independent project journals and credentials remain outside Suite deletion.
+The separate reference-machine cleanup removed 76 legacy Suite roots containing
+4,164 original files; the two non-Suite audit files from the failed-activation
+cleanup were retained. Independent project journals and credentials remain outside Suite deletion.
 
 ## Tag Creation
 

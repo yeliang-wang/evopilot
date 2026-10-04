@@ -11,7 +11,7 @@ Use this guide when you want an external operator, administrator, or AI Agent to
 For the shortest generated stack, use the installer:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.0/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.1/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 # Review the generated authentication and database values.
 docker compose up -d
@@ -23,7 +23,7 @@ The tagged installer resolves `create-evopilot` from the release manifest. Runti
 After public npm registry publication and `npm run verify:npm-registry` pass for the exact version, operators may use npm-only bootstrap:
 
 ```bash
-npx create-evopilot@6.3.0 self-host --dir evopilot-stack --init-env
+npx create-evopilot@6.3.1 self-host --dir evopilot-stack --init-env
 ```
 
 Use the manual path below when you need to work from source checkouts.
