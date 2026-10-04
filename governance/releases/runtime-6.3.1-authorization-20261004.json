@@ -1,0 +1,55 @@
+{
+  "schema": "evopilot-runtime-public-release-authorization/v1",
+  "decision": "AUTHORIZED",
+  "by": "user",
+  "recordedAt": "2026-10-04T00:24:58.324Z",
+  "decisionEvidence": {
+    "kind": "EXPLICIT_CURRENT_USER_INSTRUCTION",
+    "instructionDigest": "sha256:65efbad1581882953f94d6c851b6c86bdbc59e1052097d312dbfa779feb3f5e9",
+    "summary": "The user explicitly requests release publication and GitHub push for the latest previously specified EvoPilot product combination. Suite removal is a separately completed local transaction, not this publication action.",
+    "rawConversationLogIncluded": false
+  },
+  "authorizationDigest": "sha256:d51d77bec0fc14f3acde01cc16a941cd0c67a7bdac73b3b2456c6c1318eeb894",
+  "technicalBinding": {
+    "resolvedBy": "assistant",
+    "individualHumanReviewOfGeneratedTechnicalDigest": false,
+    "basis": "Current explicit publication instruction applied to the exact already accepted Runtime6.3.1 candidate; previous acceptance and local deletion did not authorize release."
+  },
+  "binding": {
+    "schema": "evopilot-exact-runtime-release-binding/v1",
+    "product": "evopilot-runtime",
+    "version": "6.3.1",
+    "targetId": "evopilot-6.3.1-token-only-cutover",
+    "targetRevision": 4,
+    "approvedTargetScopeDigest": "sha256:dcf393a341b66320b5e4cfb6236b2a702febc0c75099d19a507855bf2762563e",
+    "sourceCommit": "f0adee70ac45d5da5d691cfa583eba03ee014eb0",
+    "candidateRunId": "37133707977",
+    "handoffDigest": "sha256:057e597cd594be3e532d9309e3e8492f6fba720171c0c6eb17822c8f0f772f7a",
+    "releaseSetDigest": "sha256:21f5e64d668b2648def20d17e9af1dca0c3b6d61a29ae28b2ed8c02fd9798122",
+    "acceptanceDigest": "sha256:56b02f38262aaf332d9211a06d654a2c17eee33b66d71ede5838a99fc5650a05",
+    "historicalClosureDigest": "sha256:674cbf7ba7a16316ce9e3b8dccb4b11e882196d96f084309618ea9a33a8cf374",
+    "tag": "v6.3.1",
+    "actions": [
+      "commit",
+      "push",
+      "tag",
+      "github-release",
+      "npm",
+      "ghcr",
+      "installer"
+    ],
+    "versions": {
+      "evopilot": "6.3.1"
+    }
+  },
+  "bindingDigest": "sha256:e5bdf368866fcb76bcfcb9a92b51d59db0f0a2fd54ebceb992a375cc99fcd228",
+  "acceptedPublicProjection": {
+    "path": "governance/releases/runtime-6.3.1-acceptance-20261004.json",
+    "digest": "sha256:56b02f38262aaf332d9211a06d654a2c17eee33b66d71ede5838a99fc5650a05"
+  },
+  "publicationStatus": "NOT_YET_PUBLISHED",
+  "remoteRuntimeDeploymentAuthorized": false,
+  "rebuildAuthorized": false,
+  "unchangedOtherProductRepublicationAuthorized": false,
+  "actionsOutsideExactVersionRequireSeparateBinding": true
+}

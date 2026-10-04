@@ -7,7 +7,24 @@
 Runtime **6.3.0** and Evolution Expert **2.3.0** are published and verified.
 See [the current release ledger](../releases/current-release.md) for exact tags,
 packages, image, installed acceptance and explicit exclusions. The checklist
-below governs future releases and does not create unfinished steps for this one.
+below governs future releases and does not create unfinished steps for those published versions.
+
+Runtime **6.3.1** has completed exact installed acceptance and has separate user
+authorization for publication; promotion and public verification are pending.
+The accepted run is `37133707977`, source
+`f0adee70ac45d5da5d691cfa583eba03ee014eb0`, with 409 applicable criteria and
+nine real cases passed. The sealed final local acceptance SHA256 is
+`674cbf7ba7a16316ce9e3b8dccb4b11e882196d96f084309618ea9a33a8cf374`.
+See [6.3.1 release notes](../releases/6.3.1.md) for exact installed regression,
+real Goal/recovery evidence and the approved exclusions. The historical
+acceptance record is not rewritten to add later release authority or publication.
+Promote the accepted artifact set without rebuilding; update public version
+pointers only after the actual GitHub, npm and GHCR results are verified.
+
+This Runtime promotion reuses the existing Expert 2.3.0 and Harness 4.8.1
+releases. Independent local project extensions 1.0.1 are a private component,
+not a public npm/GitHub release in this set. No new repository or public
+extension publication is implied.
 
 ## Release Policy
 
@@ -24,9 +41,11 @@ Do not claim a public release from `npm run check` alone. `npm run check` proves
 
 This repository pipeline governs EvoPilot's own GitHub project release. It is
 not an EvoPilot product `LifecycleDefinition`, `LifecycleRevision`,
-`LifecycleBinding`, or `LifecycleRun`. The external EvoPilot Codex Suite may
-orchestrate the repository's evolution and acceptance, but its state,
-approvals, and versions do not become product Lifecycle state.
+`LifecycleBinding`, or `LifecycleRun`. Evolution Expert uses the installed
+MCP products and qualified independent project providers to operate Runtime
+and collect evidence. Provider output and repository automation do not become
+product Lifecycle state or release authority. Retired Skill Suites are not an
+operating entry or fallback.
 
 ## Versioning
 
@@ -72,7 +91,11 @@ The release pipeline is intentionally ordered as follows:
 4. Run the exact current and inherited acceptance matrix bound by the approved
    Target from the downloaded Candidate packages, including its required real
    Host and duration coverage. Preserve explicitly approved exclusions as skipped,
-   never passed. A checkout build is not installed acceptance evidence.
+   never passed. For the accepted 6.3.1 scope, Codex is the sole real Host;
+   native credential interaction is unverified and a new 90-minute soak is
+   explicitly excluded. Do not rerun an excluded duration check as an implicit
+   publication prerequisite or generalize that exception to another release.
+   A checkout build is not installed acceptance evidence.
 5. Bind the final acceptance result to the Candidate run, commit, handoff
    digest, and release-set digest. Obtain a separate Release Binding approval.
 6. After both bindings exist, create each exact pre-existing tag at its accepted
@@ -114,7 +137,10 @@ npm run verify:release-pipeline
 git diff --check
 ```
 
-For broader product release evidence, also run the applicable production or staging gates:
+For broader product release evidence, use only the production or staging gates
+required by that exact approved Target. The commands below are examples; the
+6.3.1 duration exclusion means `release:soak:ga:active` is not a pending step
+for this promotion:
 
 ```bash
 npm run test:e2e:production
@@ -133,6 +159,18 @@ npm run verify:npm-registry -- --version 4.0.0
 ```
 
 For v4.0.0, the Candidate installable path was the frozen GitHub Actions artifact set recorded in its Candidate handoff. Those accepted bytes are now public through GitHub Release, GHCR, and six exact-version npm packages. Future versions must repeat the same Candidate, acceptance, promotion, and public-verification sequence.
+
+## Local installation and retirement boundaries
+
+Publication does not install a user Host, deploy a remote Runtime or remove
+legacy Suites. The reference installation separately completed default
+apply/rollback/reapply and later performed explicitly authorized permanent
+Suite cleanup. Preserve the original acceptance and transition records, then
+append the actual cleanup and audit-relocation receipts. Do not rewrite
+historical inventories or restore deleted Suite sources to make an obsolete
+rollback gate pass. Future product recovery must bind the current installed
+artifacts, private configuration and daily data in a new explicit transaction.
+Independent project journals and credentials remain outside Suite deletion.
 
 ## Tag Creation
 
@@ -187,9 +225,10 @@ a fresh public install and verifies Registry signatures, the
 Expert Core digest, and the Runtime compatibility bound to that Candidate.
 Expert **2.3.0 is already published** with verified Runtime **6.3.0** compatibility;
 see the [current release ledger](../releases/current-release.md). The current
-Runtime 6.3.1 compatibility campaign reuses that unchanged Expert release and
-requires checks against the exact installed maintenance candidate. Preparing or validating
-that Runtime candidate does not republish Expert or establish Runtime release
+Runtime 6.3.1 compatibility campaign has verified that unchanged Expert release
+against the exact installed maintenance candidate. Runtime promotion does not
+republish Expert; its existing public tarball, tag and provenance remain
+immutable. Compatibility evidence does not itself establish Runtime release
 authority. The Expert Candidate workflow validates the exact
 approved Target against the versioned corpus, compiles the current Runtime and
 Expert source for regression tests, and assembles only the independent Expert
