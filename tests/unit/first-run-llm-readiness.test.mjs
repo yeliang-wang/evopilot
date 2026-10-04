@@ -81,7 +81,7 @@ test("fresh Runtime starts setup-only and the protocol declares no hidden fallba
   assert.equal(readiness.state, "SETUP_REQUIRED");
   assert.equal(readiness.nextAction, "configure-secret-ref");
   const protocol = llmSetupProtocol();
-  assert.equal(protocol.runtimeVersion, "6.3.1");
+  assert.equal(protocol.runtimeVersion, "6.3.2");
   assert.equal(protocol.secureInput.rawSecretAcceptedByExpert, false);
   assert.ok(protocol.forbiddenFallbacks.includes("Agent Host LLM"));
   assert.ok(protocol.forbiddenFallbacks.includes("MyGlm5"));
@@ -157,7 +157,7 @@ test("selection never falls back to environment or an implicit global model", ()
   }
 });
 
-test("profile drift, SecretRef revocation, and stale proof fail closed", () => {
+test("profile drift and SecretRef revocation fail closed while unchanged proof remains usable", () => {
   const f = fixture();
   f.state.profiles.push(f.profile);
   createWorkspaceLlmDefaultBinding({ store: f.store, tenantId: f.tenantId, workspaceId: f.workspaceId, profileId: f.profile.id, actor: "admin", reason: "bind", now: f.now });
@@ -168,7 +168,7 @@ test("profile drift, SecretRef revocation, and stale proof fail closed", () => {
   f.secret.status = "REVOKED";
   assert.equal(reconcileRuntimeReadiness({ store: f.store, tenantId: f.tenantId, workspaceId: f.workspaceId, actor: "test", now: f.now }).state, "LLM_BLOCKED");
   f.secret.status = "ACTIVE";
-  assert.equal(reconcileRuntimeReadiness({ store: f.store, tenantId: f.tenantId, workspaceId: f.workspaceId, actor: "test", now: new Date(f.now.getTime() + LLM_READINESS_FRESHNESS_MS + 1) }).state, "LLM_BLOCKED");
+  assert.equal(reconcileRuntimeReadiness({ store: f.store, tenantId: f.tenantId, workspaceId: f.workspaceId, actor: "test", now: new Date(f.now.getTime() + LLM_READINESS_FRESHNESS_MS + 1) }).state, "READY");
 });
 
 test("cross-scope, non-workspace, and stale Profiles cannot be bound", () => {

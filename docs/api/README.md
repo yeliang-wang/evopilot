@@ -316,7 +316,7 @@ Content-Type: application/json
 }
 ```
 
-只有 workspace Profile 处于 ACTIVE、SecretRef 同 scope 且有效、实时 preflight 为 READY 且未过期时，管理员才能通过 `POST /api/v1/runtime-readiness/workspace-default` 将精确 Profile digest 绑定为 Runtime workspace default。Profile 漂移、SecretRef 撤销或 preflight 过期会将 Runtime 降级为 `LLM_BLOCKED`，不会静默切换模型。
+只有 workspace Profile 处于 ACTIVE、SecretRef 同 scope 且有效、实时 preflight 为 READY 且未过期时，管理员才能通过 `POST /api/v1/runtime-readiness/workspace-default` 将精确 Profile digest 绑定为 Runtime workspace default。Runtime 6.3.2 中，15 分钟新鲜度只用于首次或显式替换绑定；已批准且 Profile、SecretRef 和成功预检证据均未变化的绑定，不会仅因时间经过而失效，重启后仍可使用。`binding.readiness.expiresAt` 保留创建绑定时的预检新鲜度截止时间，不代表该绑定的有效期。Profile 漂移、SecretRef 撤销、失败或变化的预检、非法或未来时间及作用域不匹配仍会降级为 `LLM_BLOCKED`。读取 readiness 不调用模型或自动重绑；真实模型请求失败照常报告。
 
 绑定项目默认 LLM：
 

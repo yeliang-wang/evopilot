@@ -1,6 +1,6 @@
 # First-Run LLM Readiness
 
-EvoPilot Runtime 6.3.1 retains the first-run readiness introduced in 6.2. It has no bundled, developer-owned, Host-inherited, or environment-selected LLM. A production installation may start without a configured provider so an administrator can reach the setup surfaces, but normal project, Harness, Goal, Target, Loop, and release operations remain fail-closed until Runtime readiness is `READY`.
+EvoPilot Runtime 6.3.2 retains the first-run readiness introduced in 6.2. It has no bundled, developer-owned, Host-inherited, or environment-selected LLM. A production installation may start without a configured provider so an administrator can reach the setup surfaces, but normal project, Harness, Goal, Target, Loop, and release operations remain fail-closed until Runtime readiness is `READY`.
 
 ## The three model identities
 
@@ -17,12 +17,18 @@ None is copied or inferred from another. EvoPilot never defaults to the develope
 ```text
 SETUP_REQUIRED
   -> PREFLIGHT_REQUIRED     Profile exists but is not explicitly bound with fresh proof
-  -> READY                  exact Profile digest + active SecretRef + fresh live preflight + explicit workspace binding
-  -> LLM_BLOCKED            binding drift, revoked SecretRef, disabled Profile, or stale/failed preflight
+  -> READY                  exact Profile digest + active SecretRef + matching successful proof + explicit workspace binding
+  -> LLM_BLOCKED            binding drift, revoked SecretRef, disabled Profile, or changed/invalid/failed preflight
   -> READY                  explicit repair and revalidation
 ```
 
 The Runtime persists `RuntimeReadiness` and `WorkspaceLlmDefaultBinding` as digest-bound records. A binding pins tenant, workspace, Profile ID and digest, provider, model, SecretRef, preflight evidence, actor, reason, and previous binding digest. Cross-tenant or cross-workspace reuse is rejected.
+
+## Initial freshness and continued use
+
+Initial or explicitly replaced workspace-default bindings require a successful live preflight no more than 15 minutes old. Once that exact binding is approved, elapsed time alone does not revoke it. Runtime 6.3.2 keeps unchanged valid bindings usable across restart, including Goal and Loop model selection. Existing 6.3.1 binding records work without a new credential or binding solely because their proof has aged.
+
+The retained `readiness.expiresAt` field records the freshness deadline of the proof used to create the binding; it is not the lifetime of an unchanged approved binding. Readiness inspection does not call the provider, refresh the proof, rebind the Profile or start a background timer. It also does not guarantee that the upstream service is currently healthy: real model-request errors remain request failures. An explicitly failed preflight blocks readiness, and replacing the pinned proof requires explicit rebind.
 
 ## Ordinary-human setup through Evolution Expert
 
@@ -66,7 +72,7 @@ Setup-only HTTP paths include health/readiness, authentication, LLM provider dis
 
 ## Degradation and repair
 
-Runtime reconciles readiness before normal operations. Profile drift, disabled or deleted Profiles, missing or revoked SecretRefs, stale preflight evidence, and binding mismatch produce `LLM_BLOCKED`. Running work is not silently switched to another model. The Expert explains the exact failed evidence, guides repair, performs a new live preflight, and requires an explicit replacement binding when the Profile digest changes.
+Runtime reconciles readiness before normal operations. Profile drift, disabled or deleted Profiles, missing or revoked SecretRefs, failed or changed preflight evidence, malformed or future proof times, and binding mismatch produce `LLM_BLOCKED`. Running work is not silently switched to another model. The Expert explains the exact failed evidence, guides repair, performs a new live preflight, and requires an explicit replacement binding when the Profile digest changes.
 
 In the 6.3 source, changing Profile material or rotating a credential invalidates the old preflight. A provider probe cannot overwrite a Profile or Secret changed while that probe was in flight. Bootstrap failure retains the newly created governed resources for inspection; retrying initialization refuses to overwrite them. Repair and rebind explicitly, including when a new preflight replaces the proof pinned by an unchanged Profile digest.
 

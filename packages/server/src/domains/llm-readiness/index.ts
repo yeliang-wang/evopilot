@@ -84,7 +84,7 @@ export function resolveGovernedLlmSecret(
 export function llmSetupProtocol(): EvoPilotLlmSetupProtocolV1 {
   return {
     schema: EVOPILOT_LLM_SETUP_PROTOCOL_SCHEMA,
-    runtimeVersion: "6.3.1",
+    runtimeVersion: "6.3.2",
     expertProtocolRange: ">=2.2 <3",
     states: ["SETUP_REQUIRED", "PREFLIGHT_REQUIRED", "READY", "LLM_BLOCKED"],
     setupOnlyTools: [...LLM_SETUP_ONLY_TOOLS],
@@ -213,14 +213,18 @@ export function reconcileRuntimeReadiness(input: {
     const secret = profile ? input.store.readSecret(profile.apiKeyRef) : undefined;
     const profileMatches = Boolean(profile && llmProfileDigest(profile) === binding.profileDigest && profile.tenantId === input.tenantId && profile.workspaceId === input.workspaceId && profile.scope === "workspace" && profile.status === "ACTIVE");
     const secretMatches = Boolean(secret && secret.status === "ACTIVE" && secret.tenantId === input.tenantId && secret.workspaceId === input.workspaceId && profile?.apiKeyRef === binding.secretRef);
-    const preflightMatches = Boolean(profile?.lastPreflight?.status === "READY" && profile.lastPreflight.checkedAt === binding.readiness.checkedAt && isFresh(binding.readiness.checkedAt, now));
+    const preflightMatches = Boolean(profile?.lastPreflight?.status === "READY"
+      && Number.isFinite(Date.parse(profile.lastPreflight.checkedAt))
+      && Date.parse(profile.lastPreflight.checkedAt) <= now.getTime()
+      && profile.lastPreflight.checkedAt === binding.readiness.checkedAt
+      && digest(profile.lastPreflight) === binding.readiness.evidenceDigest);
     evidenceRefs.push(`binding:${binding.digest}`, `profile:${binding.profileId}@${binding.profileDigest}`, `preflight:${binding.readiness.evidenceDigest}`);
     if (profileMatches && secretMatches && preflightMatches) {
       state = "READY";
       reason = "Explicit workspace LLM default is live-preflight READY.";
     } else {
       state = "LLM_BLOCKED";
-      reason = !profileMatches ? "Bound profile drifted or is unavailable." : !secretMatches ? "Bound SecretRef is unavailable or out of scope." : "Bound live preflight is stale or invalid.";
+      reason = !profileMatches ? "Bound profile drifted or is unavailable." : !secretMatches ? "Bound SecretRef is unavailable or out of scope." : "Bound live preflight proof failed, changed, or is invalid.";
     }
   }
 

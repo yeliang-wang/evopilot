@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.3.2 — LLM readiness continuity
+
+- Keep unchanged approved workspace LLM bindings usable after the original 15-minute preflight freshness window, including ordinary Goal/Loop selection and restart.
+- Preserve fresh initial/explicit replacement binding requirements, full pinned-proof matching, failed or invalid proof refusal, credential/profile drift, scope and authorization checks.
+- Retain existing credentials and independent Expert 2.3.0/Harness 4.8.1 versions. Readiness queries do not refresh or rebind implicitly. See [6.3.2 notes](docs/releases/6.3.2.md) for exact acceptance and publication status.
+
 ## 6.3.1 — Token usage and bounded execution repairs (published and verified)
 
 - Preserve reported native Agent token usage without requiring monetary amounts or pricing configuration.

@@ -31,7 +31,7 @@
   "versionPolicy": {
     "runtimeProduct": "evopilot-runtime",
     "publishedBaseline": "6.3.1",
-    "currentWorkingVersion": "6.3.1",
+    "currentWorkingVersion": "6.3.2",
     "versionsEvolveIndependently": true,
     "majorRequiredFor": [
       "incompatible published Harness consumption contract",
@@ -2065,6 +2065,47 @@
         "excludedItemsCountedAsPass": false,
         "publicDistributionObservationDigest": "sha256:643fa6aa6b128f464cc170b21f5e5dd294f3dc8d5789381e64707b71b3a53c11"
       }
+    },
+    {
+      "id": "evopilot-6.3.2-readiness-continuity",
+      "product": "evopilot-runtime",
+      "status": "IN_PROGRESS",
+      "implementationAuthority": "SEPARATELY_APPROVED_TARGET_REQUIRED",
+      "targetVersion": "6.3.2",
+      "releaseLine": "6.3.x",
+      "objective": "Fix the 15-minute LLM preflight expiration blocking unchanged valid configuration, publish Runtime 6.3.2, push GitHub, and update current Codex through the complete validated release flow.",
+      "outcomes": [
+        "Fresh live preflight remains mandatory for initial or changed explicit workspace-default binding.",
+        "An unchanged, successfully verified explicit workspace binding remains usable across elapsed time and restart without automatic provider calls or rebindings.",
+        "Configuration/SecretRef/proof changes, real failures and independent scope/authority constraints remain fail closed.",
+        "Exact Candidate patch acceptance, public promotion without rebuild and a fresh product-only current-Codex installation transaction; prior Suite migration and deletion remain historical."
+      ],
+      "acceptance": [
+        "Unchanged explicit workspace bindings with successful matching preflight evidence remain READY after the 15-minute initial-binding freshness window. Evidence: Exact installed domain and HTTP/MCP observations at boundary and beyond it; preserve profile/SecretRef/binding/evidence digests; no timestamp rewrites or implicit preflight.",
+        "Ordinary Goal/Loop model selection and an actual model request use the previously selected governed profile after that evidence age exceeds 15 minutes. Evidence: Actual current installed Codex MCP request, Runtime-owned Loop request/receipt and token usage; original successful preflight timestamp older than 15 minutes; no preflight/rebind inserted solely to pass this case; independent controlled selectors are supplemental only.",
+        "Initial binding and explicitly changed binding still require a successful live preflight at most 15 minutes old and exact current profile/binding CAS. Evidence: Exact installed boundary controls for missing, 900000ms, 900001ms, malformed and future timestamps; current profile/SecretRef checks, stale expected digests and unauthorized/cross-scope attempts rejected before effects.",
+        "Actual failed preflight and invalid, changed, revoked or cross-scope profile/SecretRef/proof still block operation; elapsed-time continuity does not hide failure. Evidence: Actual candidate HTTP failure path against a declared independently controlled provider fault and persisted failure evidence; named negative controls for profile/model/baseUrl/apiKeyRef/status/SecretRef/scope/proof drift. Never mutate the daily provider or fabricate an upstream failure.",
+        "Readiness inspection neither performs implicit model calls nor automatically rebinds or starts a refresh timer; request permission, token/time limits and unknown-outcome non-replay remain intact. Evidence: Before/after provider call counts, exact binding/readiness audit and request receipts for repeated reads and restart; current named scope/CAS/no-replay/token-only controls; no product currency setting.",
+        "Previously persisted 6.3.1 explicit successful bindings work after upgrade and restart without credential reentry, timestamp fabrication or a new binding solely due to age. Evidence: Isolated exact 6.3.1→6.3.2 install/data compatibility using retained actual binding input and current authenticated reads; source data/credentials preserved; restart owner and readback receipts; no hidden Host or legacy Suite fallback.",
+        "The patch preserves inherited Runtime behavior and unchanged Expert 2.3.0, Harness 4.8.1 and independent extensions 1.0.1 contracts through current impact-specific evidence. Evidence: All 409 published 6.3.1 criterion definitions pinned and individually dispositioned; affected assertions and fresh full candidate regression; justified unchanged executable-input reuse only. One-time migration/deletion remains historical, never newly executed or claimed as 6.3.2 activity.",
+        "Build the accepted 6.3.2 Candidate once, verify its exact installed bytes and release artifacts, and qualify the scoped patch operation through actual Codex. Evidence: Exact source/Target/Roadmap/build-run/handoff/releaseSet and artifact/library pins; fresh isolated Candidate install, full required check/release-ready/distribution/architecture/security/generic adapter controls and actual bounded MCP/model case.",
+        "Candidate upgrade, product-only rollback/reapply and restart preserve existing credentials, daily data and independent resource identities. Evidence: New finite 6.3.1↔6.3.2 isolated product transaction and raw before/after hashes; after publication use a separate fresh current-Codex transaction. No old 631 cutover claim, removed Suite path or permanent-deletion gate replay.",
+        "Docs and protocol descriptions accurately distinguish initial freshness from durable unchanged binding, actual failures and explicit repair; published-version pointers follow actual publication. Evidence: Current README/readiness/API/operation guidance and exact protocol output, links and compatibility controls; no claim of perpetual provider health, no credential prompts for unchanged configuration, no publication or omitted-test PASS before observation."
+      ],
+      "signals": [
+        "15-minute LLM preflight expiration",
+        "LLM readiness continuity",
+        "15分钟LLM预检过期",
+        "修复15分钟预检过期阻塞",
+        "Runtime LLM readiness maintenance repair: prevent unchanged explicitly bound profiles from becoming blocked solely by elapsed preflight freshness; preserve first-run live preflight, credential and profile drift, provider failure handling. Release Runtime 6.3.2 patch and update existing Codex installation."
+      ],
+      "maintenanceBasis": "evopilot-maintenance",
+      "scopeAuthority": {
+        "sourceInstructionDigest": "sha256:e5e1564059d09426ca6ad0a4d744d7fcf407120cde3f836a40fc0262ff6a0a6f",
+        "authorityRecordDigest": "sha256:dcfcfeab46dc03d5576f1a912c3490e91082d55fed1ea774058bd7cf3f4b5e39",
+        "technicalBindingResolvedBy": "assistant under explicit user repair/publication/installation authorization",
+        "individualHumanReviewOfFutureTechnicalDigests": false
+      }
     }
   ],
   "transitionPolicies": [
@@ -2460,5 +2501,35 @@
     "historicalPassTransferAllowed": false,
     "permanentSuiteDeletionAuthorized": false,
     "precedence": "User token-only product requirements supersede historical monetary gate, price setting and cost-completeness requirements. Prior money reports remain immutable legacy evidence; token correctness, source/effect restrictions, auth/scope, retry/time/token safety bounds and separate action authority remain. Retain Codex-only live qualification, generic/generated adapters, real installed artifact and terminal E2E; new 90-minute soak and native credential UI stay explicitly omitted."
+  },
+  "llmReadinessContinuityPolicy": {
+    "schema": "evopilot-llm-readiness-continuity/v1",
+    "runtimeVersion": "6.3.2",
+    "initialAndChangedDefaultBinding": {
+      "requiresExplicitAction": true,
+      "successfulLivePreflightMaximumAgeMs": 900000,
+      "futureOrMalformedProofAccepted": false
+    },
+    "existingUnchangedExplicitBinding": {
+      "elapsedTimeAloneRevokesReadiness": false,
+      "unchangedSuccessfulPreflightEvidenceRequired": true,
+      "matchingActiveProfileAndSecretRequired": true,
+      "sameTenantWorkspaceRequired": true,
+      "futureOrMalformedProofAccepted": false,
+      "latestExplicitFailedPreflightBlocks": true
+    },
+    "normalGoalAndLoopSelection": {
+      "elapsedTimeAloneBlocks": false,
+      "initialUnboundProfileStillBlocks": true,
+      "actualProviderFailuresRemainVisible": true,
+      "requestPermissionScopeAndTokenTimeLimitsRemain": true
+    },
+    "automaticTimerOrBackgroundPreflight": false,
+    "implicitRebinding": false,
+    "implicitLlmCallsDuringReadinessInspection": false,
+    "implicitCredentialCollection": false,
+    "hostOrEnvironmentModelFallback": false,
+    "historicalBindingSchemaCompatible": true,
+    "precedence": "For Runtime 6.3.2, the prior normal-operation freshness wording requires fresh successful live evidence for initial or changed explicit binding. Elapsed time alone does not revoke an unchanged, successfully verified existing binding. Actual failed proof, profile/SecretRef changes, unavailable/revoked resources, tenant/workspace mismatch, malformed or future evidence and independent request authority remain fail closed."
   }
 }
