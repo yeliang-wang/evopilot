@@ -1,8 +1,8 @@
 # Evolution Expert 2.3.0 Host integration
 
 Evolution Expert **2.3.0 is published**. Its original Runtime **6.3.0** release
-pair remains historical evidence. Runtime **6.3.1** is now published and verified;
-Runtime 6.3.1 compatibility uses the unchanged published Expert package. The
+pair remains historical evidence. Runtime **6.3.2** is now published and verified;
+Runtime 6.3.2 compatibility uses the unchanged published Expert package. The
 [current release ledger](../releases/current-release.md) records the exact
 artifacts and acceptance limits.
 
@@ -42,3 +42,5 @@ Missing or stale credential registration fails closed and requires connection
 repair, not automatic account creation or password fallback. First-install
 credential provisioning remains a prerequisite. See the private integration
 README's **Managed local Runtime token mode** for trust and pipe contracts.
+
+Runtime **6.3.2** independently verifies LLM readiness continuity with this unchanged public Expert 2.3.0 package. Its patch-specific acceptance preserves the earlier Expert and Runtime 6.3.1 evidence; it does not rerun or relabel their original campaigns. See [current publication and limits](../releases/current-release.md).

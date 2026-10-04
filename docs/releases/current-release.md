@@ -1,76 +1,42 @@
-# Current published release: Runtime 6.3.1 and Evolution Expert 2.3.0
+# Current published release: Runtime 6.3.2 and Evolution Expert 2.3.0
 
-Runtime **6.3.1** is published and verified. The [publication evidence](../../governance/releases/runtime-6.3.1-publication-20261004.json)
-binds the actual public GitHub, npm and GHCR readbacks to accepted Candidate
-`37133707977`, source `f0adee70ac45d5da5d691cfa583eba03ee014eb0`.
-Evolution Expert **2.3.0** and evopilot-harness **4.8.1** retain their already
-published versions; this Runtime patch does not republish them.
+Runtime **6.3.2** is published and verified. The [publication evidence](../../governance/releases/runtime-6.3.2-publication-20261004.json) binds public GitHub, npm and GHCR readbacks to Candidate `37177531263`, source `05da3339b32468f3682eea8a1c2b31880a6c38a1`. Evolution Expert **2.3.0** and evopilot-harness **4.8.1** retain their existing published versions.
 
 ## Public distribution
 
-| Product | Public stable release | npm packages |
+| Product | Stable release | Packages |
 | --- | --- | --- |
-| Runtime 6.3.1 | [v6.3.1](https://github.com/yeliang-wang/evopilot/releases/tag/v6.3.1) | `@evopilot/contracts`, `@evopilot/client`, `@evopilot/cli`, `@evopilot/adapter-mcp`, `@evopilot/adapter-opencode`, `create-evopilot`, all `6.3.1` |
+| Runtime 6.3.2 | [v6.3.2](https://github.com/yeliang-wang/evopilot/releases/tag/v6.3.2) | Six Runtime npm packages, all `6.3.2` |
 | Evolution Expert 2.3.0 | [evolution-expert-v2.3.0](https://github.com/yeliang-wang/evopilot/releases/tag/evolution-expert-v2.3.0) | `@evopilot/evolution-expert@2.3.0` |
-
-Install all six public Runtime packages into a fresh Node project:
+| Harness 4.8.1 | [v4.8.1](https://github.com/yeliang-wang/evopilot-harness/releases/tag/v4.8.1) | Independently published Harness product |
 
 ```bash
 npm install --save-exact \
-  @evopilot/contracts@6.3.1 \
-  @evopilot/client@6.3.1 \
-  @evopilot/cli@6.3.1 \
-  @evopilot/adapter-mcp@6.3.1 \
-  @evopilot/adapter-opencode@6.3.1 \
-  create-evopilot@6.3.1
+  @evopilot/contracts@6.3.2 \
+  @evopilot/client@6.3.2 \
+  @evopilot/cli@6.3.2 \
+  @evopilot/adapter-mcp@6.3.2 \
+  @evopilot/adapter-opencode@6.3.2 \
+  create-evopilot@6.3.2
 ```
 
-For the standalone CLI, use `npm install -g @evopilot/cli@6.3.1`. The public
-self-host installer is
-[`v6.3.1/install.sh`](https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.1/install.sh).
-The public image is `ghcr.io/yeliang-wang/evopilot:6.3.1`; obtain its immutable
-digest and the verified installer/package evidence from the publication ledger.
-The sixteen accepted Runtime assets retain their Candidate hashes; generated
-promotion metadata is additional to that frozen set.
+The standalone CLI installs with `npm install -g @evopilot/cli@6.3.2`. The [tagged self-host installer](https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.2/install.sh) and `ghcr.io/yeliang-wang/evopilot:6.3.2` are public; the ledger contains the immutable image digest and all sixteen accepted artifact hashes. Promotion metadata is additional to those frozen files.
 
-The series consumes [evopilot-harness 4.8.1](https://github.com/yeliang-wang/evopilot-harness/releases/tag/v4.8.1).
-The ordinary Agent connection remains local MCP stdio. The adapter calls
-EvoPilot Runtime over HTTP, by default `http://127.0.0.1:19876`.
-Dashboard remains independently versioned. The independent local project
-extensions **1.0.1** used in reference acceptance remain a private, separately
-installed component, not a public Runtime asset.
+The Agent connection remains local MCP stdio. The MCP adapter calls EvoPilot Runtime over HTTP, by default `http://127.0.0.1:19876`. Dashboard remains independently versioned. Independent local project extensions **1.0.1** remain private and separately installed.
 
 ## Current acceptance and explicit limits
 
-Runtime 6.3.1 passed **409/409 applicable criteria, 9/9 real cases and 2,403
-exact installed regression tests**. The actual Codex campaign completed all
-12 required Targets across Alpha/Beta/RC/GA and verified the retained completion
-receipts after restart. Default installation apply, rollback and reapply were
-separately verified. See [6.3.1 acceptance and upgrade notes](6.3.1.md).
+The patch passed **10 new criteria, four current cases and 2,414 exact installed regression tests**, with item-specific current impact review of all **409 inherited criteria**. Actual checks include an already aged unchanged Profile, fresh Codex MCP reads, one governed GLM call with token receipts, restart, product rollback/reapply, and isolated controlled provider-failure refusal and explicit repair. See [6.3.2 acceptance and upgrade notes](6.3.2.md).
 
-Real Host acceptance is **Codex-only**. Native credential entry, submission and
-cancellation remain **unverified**; the new 90-minute / 5,400-second soak was
-excluded and remains `SKIPPED_BY_USER_NOT_PASS`. Neither exclusion is counted
-as a passed criterion. Other live Hosts, cross-Host equivalence and a new
-long-duration stability result are not claimed. Existing private configuration
-was reused; source scope and business collectors still need qualification for
-each applicable project. Runtime usage is measured in tokens, without product
-monetary limits.
+The earlier [6.3.1 campaign](6.3.1.md) remains historical: its 409 criteria, nine cases, 2,403 tests and twelve-Target Goal are not presented as newly executed 6.3.2 work. Historical one-time migration and deletion transactions were not repeated. Unchanged companion input reuse is justified per inherited item, rather than transferring previous PASS statuses.
 
-Publication did not deploy a remote Runtime, install a user Host or delete a
-user's Suites. The reference machine's separately authorized cleanup removed
-**76 legacy Suite roots and 4,164 original files**, preserving necessary
-non-Suite audit records, including two audit files from the failed-activation
-cleanup. It is not an automatic Runtime removal feature. Credentials and
-independent journals remain outside Suite deletion.
+Real Host acceptance remains **Codex-only**. Native credential input, submission and cancellation are **unverified**; the new 90-minute / 5,400-second soak is `SKIPPED_BY_USER_NOT_PASS`. Neither is counted as passed. Other live Hosts and a new long-duration stability result are not claimed. Existing private configuration is reused; source scopes and providers still require qualification for each applicable project. Usage is measured in tokens, without a product currency limit.
+
+Publication does not deploy a remote Runtime, install a user's Host or delete their Suites. The reference machine's separately authorized historical cleanup removed 76 legacy Suite roots and 4,164 original files; retained audit and independent resources remain outside deletion. The current-machine update is a separate product-only installation transaction.
 
 ## Documentation and immutable artifacts
 
-Current operating guidance lives on the default branch. This documentation
-update follows verified publication; it does not rebuild, republish or replace
-existing tags, source archives, npm tarballs or their embedded documentation.
-The local acceptance record preserves its original pre-publication authority
-fields. The later publication ledger supplies the actual public result.
+Current operating guidance lives on the default branch. These pointers follow verified publication and do not rebuild or replace accepted tags, source archives, images or npm tarballs. Original pre-publication records remain immutable; the publication ledger supplies subsequent public observations.
 
 ## Historical 6.3.0 / Expert 2.3.0 baseline
 

@@ -30,7 +30,7 @@
   },
   "versionPolicy": {
     "runtimeProduct": "evopilot-runtime",
-    "publishedBaseline": "6.3.1",
+    "publishedBaseline": "6.3.2",
     "currentWorkingVersion": "6.3.2",
     "versionsEvolveIndependently": true,
     "majorRequiredFor": [
@@ -2069,7 +2069,7 @@
     {
       "id": "evopilot-6.3.2-readiness-continuity",
       "product": "evopilot-runtime",
-      "status": "IN_PROGRESS",
+      "status": "COMPLETE",
       "implementationAuthority": "SEPARATELY_APPROVED_TARGET_REQUIRED",
       "targetVersion": "6.3.2",
       "releaseLine": "6.3.x",
@@ -2105,6 +2105,32 @@
         "authorityRecordDigest": "sha256:dcfcfeab46dc03d5576f1a912c3490e91082d55fed1ea774058bd7cf3f4b5e39",
         "technicalBindingResolvedBy": "assistant under explicit user repair/publication/installation authorization",
         "individualHumanReviewOfFutureTechnicalDigests": false
+      },
+      "completionEvidence": {
+        "report": "governance/releases/runtime-6.3.2-acceptance-20261004.json",
+        "publicationReport": "governance/releases/runtime-6.3.2-publication-20261004.json",
+        "authorizationReport": "governance/releases/runtime-6.3.2-authorization-20261004.json",
+        "targetReleaseGateReport": "governance/releases/runtime-6.3.2-target-release-gate-20261004.json",
+        "publicationDigest": "sha256:e7ed2dfcad8666e0616c42c7f1973e5ebba8f3f8a9aa234156cc38213d11220a",
+        "acceptanceDigest": "sha256:0b45a1df5107d28957c03d17490e21e86a67de61900db756738cab10ea2910b9",
+        "authorizationRecordDigest": "sha256:c303e70fb8995c1af2bdf546fa1251278f16b218fec02e31a2aade63008b6a36",
+        "targetReleaseGateDigest": "sha256:9151b579c126e831dc765d60c208cb0ca00af9ff57429c21f4603cca74d2aa4e",
+        "total": 419,
+        "passed": 419,
+        "newCriteria": 10,
+        "inheritedImpactCriteria": 409,
+        "realCasesTotal": 4,
+        "realCasesPassed": 4,
+        "installedRegressionPassed": 2414,
+        "noRegression": "PASSED",
+        "acceptedSourceCommit": "05da3339b32468f3682eea8a1c2b31880a6c38a1",
+        "candidateRunId": "37177531263",
+        "acceptedRoadmapDigest": "sha256:02ed37a3f0a77d97b6f4b2bee1c43e98fc001d0e40a6ff49b2074c0c640ccdc7",
+        "targetRevision": 3,
+        "approvedScopeDigest": "sha256:475b53ab10dd94311556190f5db32725fa90bc0e033c8c60030713a26f6d715e",
+        "releaseAuthorizationDigest": "sha256:8e0558bf05682cf70e392aa8db10dc8f229ed4f657f4f9e661ff418e030a43db",
+        "excludedItemsCountedAsPass": false,
+        "publicDistributionObservationDigest": "sha256:dff1d3014a354b8f87d5b2bd956c248462913919572ab8f1376c6fd064ff5f58"
       }
     }
   ],

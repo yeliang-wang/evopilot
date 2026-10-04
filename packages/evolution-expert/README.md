@@ -1,7 +1,7 @@
 # EvoPilot Evolution Expert
 
 `@evopilot/evolution-expert` 2.3.0 is the independently versioned,
-Agent-neutral interactive guide with published EvoPilot Runtime 6.3.1 compatibility. It helps an ordinary
+Agent-neutral interactive guide with published EvoPilot Runtime 6.3.2 compatibility. It helps an ordinary
 user discover and declare a project, understand Runtime-produced Harness
 matching and Lifecycle composition, operate a Goal Target Loop, follow
 automatic recovery, inspect evidence and readiness, and understand resource
@@ -113,7 +113,7 @@ and Runtime 6.3.0 compatibility were verified separately from Candidate acceptan
 ```bash
 npm install --global @evopilot/evolution-expert@2.3.0
 evopilot-expert version
-evopilot-expert doctor codex 6.3.1
+evopilot-expert doctor codex 6.3.2
 evopilot-expert tutorial
 evopilot-expert versions
 evopilot-expert migration
@@ -159,7 +159,7 @@ entry to a Host-native secure-input capability.
 
 ```bash
 npm install --global @evopilot/evolution-expert@2.3.0
-evopilot-expert doctor codex 6.3.1
+evopilot-expert doctor codex 6.3.2
 
 npm install --global @evopilot/evolution-expert@2.2.0
 evopilot-expert doctor codex 6.2.0
@@ -240,3 +240,5 @@ binding validation; conversational `serverUrl`, actor and scope overrides are
 rejected. Recovery needs explicit attempt/budget and effect facts. Rendering
 help or supplied acceptance, Cutover and release context produces `authority:
 NONE`; it neither verifies that context nor grants execution or publication.
+
+Runtime **6.3.2** independently verifies LLM readiness continuity with this unchanged public Expert 2.3.0 package. Its patch-specific acceptance preserves the earlier Expert and Runtime 6.3.1 evidence; it does not rerun or relabel their original campaigns. See [current publication and limits](../../docs/releases/current-release.md).

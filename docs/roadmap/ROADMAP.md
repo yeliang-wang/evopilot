@@ -1159,7 +1159,7 @@ The exact machine policy is `releaseCredentialInteractionScopePolicy`.
 
 ## Runtime 6.3.1: Token-only execution and independent current-Host cutover
 
-Status: `COMPLETE` — Runtime **6.3.1** is the current published baseline. The [publication record](../../governance/releases/runtime-6.3.1-publication-20261004.json) binds actual GitHub, GHCR and six-package npm verification to the accepted immutable Candidate. The [acceptance record](../../governance/releases/runtime-6.3.1-acceptance-20261004.json) retains 409 passed criteria, nine actual cases and `NO_REGRESSION`, with the approved Host, duration and native-credential exclusions unchanged and not counted as passed.
+Status: `COMPLETE` — Runtime **6.3.1** is a historical published baseline. The [publication record](../../governance/releases/runtime-6.3.1-publication-20261004.json) binds actual GitHub, GHCR and six-package npm verification to the accepted immutable Candidate. The [acceptance record](../../governance/releases/runtime-6.3.1-acceptance-20261004.json) retains 409 passed criteria, nine actual cases and `NO_REGRESSION`, with the approved Host, duration and native-credential exclusions unchanged and not counted as passed.
 
 Accepted source `f0adee70ac45d5da5d691cfa583eba03ee014eb0`, Candidate `37133707977`, Target revision 4 and its original `c703036e…18e53` Roadmap approval remain historical immutable bindings. This bookkeeping revision creates a new Roadmap digest for future work; it does not rebuild accepted assets, change old approval records or replay validators that require removed Suite paths. The later exact local Suite deletion had its own explicit authorization and is not part of Runtime publication authority.
 
@@ -1178,7 +1178,7 @@ Acceptance also reproduced a managed upgrade scope defect: Runtime inferred only
 
 ## Runtime6.3.2: LLM readiness continuity
 
-Status: `IN_PROGRESS`; public Runtime baseline remains6.3.1. The user explicitly authorized this bounded defect repair, public release/GitHub push and current-Codex installation. The new Target binds the finalized file scope and this revised Roadmap; it does not rewrite the accepted6.3.1 Target or its409-criterion evidence.
+Status: `COMPLETE` — Runtime **6.3.2** is the current verified published baseline. The [publication record](../../governance/releases/runtime-6.3.2-publication-20261004.json) binds public GitHub, npm and GHCR observations to immutable Candidate `37177531263`, source `05da3339b32468f3682eea8a1c2b31880a6c38a1`. The [acceptance record](../../governance/releases/runtime-6.3.2-acceptance-20261004.json) retains 10 new criteria, individual impact closure of 409 inherited criteria (419 total), four current cases and 2,414 exact installed regression tests, with `NO_REGRESSION`. Original accepted Roadmap/Target/source/build pins remain unchanged. The earlier 6.3.1 campaign and its one-time transactions remain historical; the separately authorized current-machine upgrade is a fresh product-only transaction.
 
 Fresh successful live preflight remains mandatory within15minutes for initial or changed explicit workspace-default binding. An existing unchanged, successful explicit binding remains usable after that interval and across restart, including ordinary Goal/Loop selection. Actual failed preflight, profile or SecretRef change/revocation, scope/CAS violation, malformed or future proof still blocks. There is no background refresh timer, automatic rebind or implicit model call during a readiness read.
 

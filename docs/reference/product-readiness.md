@@ -1,7 +1,7 @@
 # EvoPilot 产品评审
 
 > 历史记录：下文保留 2026-07-07 的 SaaS 评审、验收或部署口径，
-> 不代表当前 Runtime 6.3.1 / Expert 2.3.0 的验收结论或发布要求。
+> 不代表当前 Runtime 6.3.2 / Expert 2.3.0 的验收结论或发布要求。
 > 当前版本请参阅[发布与验收记录](../releases/current-release.md)。
 
 ## 评审结论

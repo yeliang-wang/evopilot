@@ -6,20 +6,20 @@ EvoPilot distribution has three supported entry points. These labels match the r
 
 | README CTA | Audience | Command |
 | --- | --- | --- |
-| Install CLI | Operators, CI jobs, and AI agents that already have a server | `npm install -g @evopilot/cli@6.3.1` |
-| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.1/install.sh)"` |
+| Install CLI | Operators, CI jobs, and AI agents that already have a server | `npm install -g @evopilot/cli@6.3.2` |
+| Self-host now | New operators bringing up a complete stack | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.2/install.sh)"` |
 | Kubernetes | Platform teams running EvoPilot on Kubernetes | `helm install evopilot ./charts/evopilot` |
 
 The CLI, stdio MCP adapter, OpenCode runtime adapter, and installer are release artifacts. They do not replace server-side RBAC, tenant/workspace scope, approval gates, source closure, release policy, or audit.
 
-The latest published release set and public npm registry contain `@evopilot/adapter-mcp@6.3.1`. Install that exact public version in a third-party Agent host environment to obtain the `evopilot-mcp` executable. The published 6.3.1 package was verified by a fresh public installation; pre-release acceptance separately used exact frozen Candidate tarballs.
+The latest published release set and public npm registry contain `@evopilot/adapter-mcp@6.3.2`. Install that exact public version in a third-party Agent host environment to obtain the `evopilot-mcp` executable. The published 6.3.2 package was verified by a fresh public installation; pre-release acceptance separately used exact frozen Candidate tarballs.
 
 The same release set contains `evopilot-adapter-opencode-<version>.tgz`. The
 adapter does not bundle OpenCode or provider credentials. Candidate acceptance
 binds an exact external `opencode-ai` version and provider/model route, while
 credentials remain in OpenCode's or the Host's configured secret environment.
 
-Desktop installer and hosted Cloud trial are not published EvoPilot distribution surfaces in this version. Runtime 6.3.1 is the verified public baseline. See [the current release ledger](../releases/current-release.md) for exact artifacts, npm packages, image identity and acceptance limits.
+Desktop installer and hosted Cloud trial are not published EvoPilot distribution surfaces in this version. Runtime 6.3.2 is the verified public baseline. See [the current release ledger](../releases/current-release.md) for exact artifacts, npm packages, image identity and acceptance limits.
 
 ## CLI Release Tarballs
 
@@ -27,17 +27,17 @@ Install the CLI from the GitHub Release tarball set when you already have an Evo
 
 ```bash
 npm install -g \
-  https://github.com/yeliang-wang/evopilot/releases/download/v6.3.1/evopilot-contracts-6.3.1.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v6.3.1/evopilot-client-6.3.1.tgz \
-  https://github.com/yeliang-wang/evopilot/releases/download/v6.3.1/evopilot-cli-6.3.1.tgz
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-contracts-6.3.2.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-client-6.3.2.tgz \
+  https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-cli-6.3.2.tgz
 evopilot --help
 evopilot status --server https://evopilot.example.com --json
 ```
 
-The public npm registry is also verified for v6.3.1:
+The public npm registry is also verified for v6.3.2:
 
 ```bash
-npm install -g @evopilot/cli@6.3.1
+npm install -g @evopilot/cli@6.3.2
 evopilot --help
 ```
 
@@ -46,14 +46,14 @@ evopilot --help
 Bootstrap from the tagged POSIX installer. It downloads the release manifest first, verifies the requested package/version boundary, and resolves `create-evopilot` to the matching GitHub Release tarball by default:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.1/install.sh | bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.2/install.sh | bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
 
 Windows operators can use the tagged PowerShell entrypoint:
 
 ```powershell
-iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.1/install.ps1 -OutFile install.ps1
+iwr https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.2/install.ps1 -OutFile install.ps1
 .\install.ps1 -Dir evopilot-stack
 ```
 
@@ -62,8 +62,8 @@ The manifest is published at `installers/manifest.json` in the release tag and a
 Operators may explicitly select the verified public registry package:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.1/install.sh \
-  | EVOPILOT_INSTALL_PACKAGE_SPEC=create-evopilot@6.3.1 bash -s -- --dir evopilot-stack
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.2/install.sh \
+  | EVOPILOT_INSTALL_PACKAGE_SPEC=create-evopilot@6.3.2 bash -s -- --dir evopilot-stack
 cd evopilot-stack
 ```
 
@@ -77,7 +77,7 @@ docker compose up -d
 After authentication and database values are ready, the installer can start and verify the setup-only stack:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.1/install.sh | bash -s -- --dir evopilot-stack --start
+curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.2/install.sh | bash -s -- --dir evopilot-stack --start
 ```
 
 The generated stack starts:
@@ -133,7 +133,7 @@ Release artifacts also include package tarballs (including the installable stdio
 After npm publication, verify the public registry path separately:
 
 ```bash
-npm run verify:npm-registry -- --version 6.3.1
+npm run verify:npm-registry -- --version 6.3.2
 ```
 
 This command checks exact-version npm metadata for all six packages, installs them into an empty project from the public registry, then verifies the `evopilot` and `create-evopilot` binaries.

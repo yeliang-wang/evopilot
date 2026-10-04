@@ -1,6 +1,6 @@
 # EvoPilot Documentation
 
-EvoPilot documentation is organized by reader task. Current published versions are **Runtime 6.3.1 / Evolution Expert 2.3.0**, consuming **evopilot-harness 4.8.1**. See [current publication, acceptance and explicit limits](releases/current-release.md). Start from the section that matches what you need to do.
+EvoPilot documentation is organized by reader task. Current published versions are **Runtime 6.3.2 / Evolution Expert 2.3.0**, consuming **evopilot-harness 4.8.1**. See [current publication, acceptance and explicit limits](releases/current-release.md). Start from the section that matches what you need to do.
 
 ## New Users
 
@@ -94,7 +94,8 @@ EvoPilot documentation is organized by reader task. Current published versions a
 - [Evolution Expert v1.0.1 Completion-Recovery Notes](releases/evolution-expert-1.0.1.md) - historical published independently versioned Expert release.
 - [EvoPilot v5.1.0 Suite Capability Convergence](releases/5.1.0.md) - superseded, unreleased implementation history retained for traceability.
 - [Evolution Expert v1.1.0 Unified Host Entry](releases/evolution-expert-1.1.0.md) - superseded, unreleased Expert history retained for traceability.
-- [EvoPilot Runtime v6.3.1](releases/6.3.1.md) - current published token-usage and bounded-execution maintenance release.
+- [EvoPilot Runtime v6.3.2](releases/6.3.2.md) - current published LLM readiness continuity patch.
+- [EvoPilot Runtime v6.3.1](releases/6.3.1.md) - historical published token-usage and bounded-execution maintenance release.
 - [EvoPilot Runtime v6.3.0](releases/6.3.0.md) - historical published semantic convergence baseline.
 - [Evolution Expert v2.3.0](releases/evolution-expert-2.3.0.md) - current published MCP guidance and recovery release.
 - [EvoPilot v6.1.0 Controlled Lifecycle Evolution](releases/6.1.0.md) - historical published Runtime baseline.

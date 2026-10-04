@@ -4,12 +4,14 @@
 
 ## Current publication
 
-Runtime **6.3.1** and Evolution Expert **2.3.0** are published and verified.
+Runtime **6.3.2** and Evolution Expert **2.3.0** are published and verified.
 See [the current release ledger](../releases/current-release.md) for exact tags,
 packages, image, installed acceptance and explicit exclusions. The checklist
 below governs future releases and does not create unfinished steps for those published versions.
 
-Runtime **6.3.1** completed exact installed acceptance, received separate user
+Runtime **6.3.2** passed ten new criteria, four current cases, 2,414 exact installed regression tests and individual impact review of 409 inherited criteria. Candidate `37177531263`, source `05da3339b32468f3682eea8a1c2b31880a6c38a1`, is published with unchanged accepted bytes. See the [6.3.2 publication ledger](../../governance/releases/runtime-6.3.2-publication-20261004.json). The existing Codex-only and omitted-soak/native-input scope remains explicit.
+
+The following **6.3.1 historical campaign** remains immutable. Runtime **6.3.1** completed exact installed acceptance, received separate user
 authorization and has now been promoted with verified public GitHub, npm and GHCR
 readbacks in the [publication ledger](../../governance/releases/runtime-6.3.1-publication-20261004.json).
 The accepted run is `37133707977`, source
@@ -227,7 +229,7 @@ a fresh public install and verifies Registry signatures, the
 `evopilot-expert` CLI, portable `skill/SKILL.md`, generated Codex adapter,
 Expert Core digest, and the Runtime compatibility bound to that Candidate.
 Expert **2.3.0 is already published** with verified Runtime **6.3.0** compatibility;
-see the [current release ledger](../releases/current-release.md). The current
+see the [current release ledger](../releases/current-release.md). The historical
 Runtime 6.3.1 compatibility campaign has verified that unchanged Expert release
 against the exact installed maintenance candidate. Runtime promotion does not
 republish Expert; its existing public tarball, tag and provenance remain

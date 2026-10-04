@@ -1,0 +1,255 @@
+{
+  "schema": "evopilot-runtime-publication-evidence/v1",
+  "status": "PUBLISHED_VERIFIED",
+  "recordedAt": "2026-10-04T05:44:38.248300+00:00",
+  "product": "evopilot-runtime",
+  "version": "6.3.2",
+  "candidateCommit": "05da3339b32468f3682eea8a1c2b31880a6c38a1",
+  "candidateRunId": "37177531263",
+  "publicDistributionObservationDigest": "sha256:dff1d3014a354b8f87d5b2bd956c248462913919572ab8f1376c6fd064ff5f58",
+  "publicArtifactDownloadObservationDigest": "sha256:4ab06fc0eb2d013ebf5766860a9fd97e84ab624cb767ddc0c2e4b563b28d5784",
+  "acceptanceDigest": "sha256:0b45a1df5107d28957c03d17490e21e86a67de61900db756738cab10ea2910b9",
+  "authorizationRecordDigest": "sha256:c303e70fb8995c1af2bdf546fa1251278f16b218fec02e31a2aade63008b6a36",
+  "targetRecordDigest": "sha256:87efd50af59cce8f6125c38a8bef846c892e203117501f9b3e876c68c3fb5f61",
+  "releaseAuthorizationDigest": "sha256:8e0558bf05682cf70e392aa8db10dc8f229ed4f657f4f9e661ff418e030a43db",
+  "targetReleaseGateDigest": "sha256:9151b579c126e831dc765d60c208cb0ca00af9ff57429c21f4603cca74d2aa4e",
+  "acceptedRoadmapDigest": "sha256:02ed37a3f0a77d97b6f4b2bee1c43e98fc001d0e40a6ff49b2074c0c640ccdc7",
+  "candidateHandoffDigest": "sha256:df222abf09618150fbf93c69a3d1eadef867c9684c233baa40412028b35ccfcd",
+  "releaseSetDigest": "sha256:96960ecb3ffd51f4138e37f75cacdce3cd6d4b64b53541956590a5e05befcdc7",
+  "githubRelease": "https://github.com/yeliang-wang/evopilot/releases/tag/v6.3.2",
+  "releaseId": 402860566,
+  "publishedAt": "2026-10-04T05:36:51Z",
+  "tag": {
+    "name": "v6.3.2",
+    "commit": "05da3339b32468f3682eea8a1c2b31880a6c38a1"
+  },
+  "anonymousReleaseVisible": true,
+  "assets": [
+    {
+      "name": "SHA256SUMS",
+      "size": 1411,
+      "digest": "sha256:ab77b622d1c54652ea17d35a55c193c72b87a43ee0a003ebf89d09751602545b",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/SHA256SUMS"
+    },
+    {
+      "name": "create-evopilot-6.3.2.tgz",
+      "size": 4888,
+      "digest": "sha256:4627559aebb12a1b2c1661ad796397892930bd4b71c7240519500df69ac07d35",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/create-evopilot-6.3.2.tgz"
+    },
+    {
+      "name": "evopilot-6.3.2-container-image.tar",
+      "size": 101934592,
+      "digest": "sha256:d2bb34bf027f99b11fea03bb204de5e66cf79c2dfe602dc958c201a2ef3f0c77",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-6.3.2-container-image.tar"
+    },
+    {
+      "name": "evopilot-6.3.2-helm-chart.tgz",
+      "size": 3693,
+      "digest": "sha256:731ecdcdc430a18ac7809a77d8d7fc9c1082b8c1ac7351787a044ecd6e721995",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-6.3.2-helm-chart.tgz"
+    },
+    {
+      "name": "evopilot-6.3.2-image-metadata.json",
+      "size": 593,
+      "digest": "sha256:e866481fd4d493884121d44896957f646eacf9f923fd466fb5e6350777dd9f59",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-6.3.2-image-metadata.json"
+    },
+    {
+      "name": "evopilot-6.3.2-install-manifest.json",
+      "size": 3924,
+      "digest": "sha256:1a6a3bd70f05055ad805b0e58504b612e475e1ada389684750e41c37c81fb721",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-6.3.2-install-manifest.json"
+    },
+    {
+      "name": "evopilot-6.3.2-provenance.json",
+      "size": 2883,
+      "digest": "sha256:26319f886e62850ffc97f651734a294a8f0f3a108a3268374c5e1e6e1ef33945",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-6.3.2-provenance.json"
+    },
+    {
+      "name": "evopilot-6.3.2-sbom.spdx.json",
+      "size": 36111,
+      "digest": "sha256:537c56cc855bef89f4afd2e4d728484f4453deeee10a2ef95fb81369ded1d605",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-6.3.2-sbom.spdx.json"
+    },
+    {
+      "name": "evopilot-6.3.2-source.tar.gz",
+      "size": 3489609,
+      "digest": "sha256:da75e527de8846f59108ab52884aa4ad766084c3478064bb8857079bc1d31dc6",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-6.3.2-source.tar.gz"
+    },
+    {
+      "name": "evopilot-adapter-mcp-6.3.2.tgz",
+      "size": 12164,
+      "digest": "sha256:8b57f54e912c6cc32c4debc5e2646a5b40fb94508ccba6aed536d8f62fb5cba7",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-adapter-mcp-6.3.2.tgz"
+    },
+    {
+      "name": "evopilot-adapter-opencode-6.3.2.tgz",
+      "size": 7714,
+      "digest": "sha256:094713f89810a1b651f4223330843a3600804fabfe7168d7acbf18778eb1c46b",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-adapter-opencode-6.3.2.tgz"
+    },
+    {
+      "name": "evopilot-cli-6.3.2.tgz",
+      "size": 41214,
+      "digest": "sha256:f68a2a5c1713e5f5e89e8f1ba2e05dd0a78e9dfc99ca964f08714fc202bb8ca4",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-cli-6.3.2.tgz"
+    },
+    {
+      "name": "evopilot-client-6.3.2.tgz",
+      "size": 2377,
+      "digest": "sha256:28b89dd065a7cb730d637315be9a54ad4830dc92181170b7d055b137b36706f0",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-client-6.3.2.tgz"
+    },
+    {
+      "name": "evopilot-contracts-6.3.2.tgz",
+      "size": 14881,
+      "digest": "sha256:79454bd8336e9f427e947b7a3b85f853491d25a149bf5c7d0d9128971b3a475f",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-contracts-6.3.2.tgz"
+    },
+    {
+      "name": "install.ps1",
+      "size": 3366,
+      "digest": "sha256:d9cdb5b98e9a9ff8b397a2300a7b21c53886794a31add4ad8983aa0b152772d5",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/install.ps1"
+    },
+    {
+      "name": "install.sh",
+      "size": 4151,
+      "digest": "sha256:378c013f777734c734fd598c511161ddb4f75a5d710161106a353968dd4964a6",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/install.sh"
+    }
+  ],
+  "promotionRecordAsset": {
+    "name": "evopilot-6.3.2-release-promotion.json",
+    "size": 1020,
+    "digest": "sha256:bef2ec9aa534c9fb25313cfded58c8941c40677c121fa26fcbeadc6e40a07f7d",
+    "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-6.3.2-release-promotion.json"
+  },
+  "images": [
+    {
+      "reference": "ghcr.io/yeliang-wang/evopilot:6.3.2",
+      "digest": "sha256:4d75a3223f15c6c81704ff148866ef18666f0acbe453548f6d8fe652fd3afb4d",
+      "anonymousPullManifest": true
+    },
+    {
+      "reference": "ghcr.io/yeliang-wang/evopilot:05da3339b32468f3682eea8a1c2b31880a6c38a1",
+      "digest": "sha256:4d75a3223f15c6c81704ff148866ef18666f0acbe453548f6d8fe652fd3afb4d",
+      "anonymousPullManifest": true
+    }
+  ],
+  "npm": [
+    {
+      "name": "@evopilot/contracts",
+      "version": "6.3.2",
+      "tarball": "https://registry.npmjs.org/@evopilot/contracts/-/contracts-6.3.2.tgz",
+      "integrity": "sha512-JI19TtAgnBBz8pflXBhumWqGY9rUClMnC6KXBNCUsxj7GO0bOA39aSZzj3SJV04LoH80eyDmjM2xfdLL6+zjTQ==",
+      "attestations": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fcontracts@6.3.2"
+    },
+    {
+      "name": "@evopilot/client",
+      "version": "6.3.2",
+      "tarball": "https://registry.npmjs.org/@evopilot/client/-/client-6.3.2.tgz",
+      "integrity": "sha512-PeXfOaGgo8R+7HzvsXYx3/ZdmbgDurmjr0F2mGVsic2MpXYpCsrMtIPuBvwK0ECtTs5EbDzPFNdNwo4x7ugFDw==",
+      "attestations": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fclient@6.3.2"
+    },
+    {
+      "name": "@evopilot/adapter-mcp",
+      "version": "6.3.2",
+      "tarball": "https://registry.npmjs.org/@evopilot/adapter-mcp/-/adapter-mcp-6.3.2.tgz",
+      "integrity": "sha512-XbsMKRxtXH9muhmluaGGBg9VlX1In0C/FyVqslnhUuj+zOuY8v1w6veWp+bbLRa42tq1A1GIS7EEBcNhTQmbEw==",
+      "attestations": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fadapter-mcp@6.3.2"
+    },
+    {
+      "name": "@evopilot/adapter-opencode",
+      "version": "6.3.2",
+      "tarball": "https://registry.npmjs.org/@evopilot/adapter-opencode/-/adapter-opencode-6.3.2.tgz",
+      "integrity": "sha512-+YhFs1ii3IYMC+Elf/m8L4YMMmtmte1Hv0xRhg+uCpBvro2fbap4lR1rTDmdxUNEN9wH2OhOcr8lF0E6MKfhdw==",
+      "attestations": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fadapter-opencode@6.3.2"
+    },
+    {
+      "name": "@evopilot/cli",
+      "version": "6.3.2",
+      "tarball": "https://registry.npmjs.org/@evopilot/cli/-/cli-6.3.2.tgz",
+      "integrity": "sha512-d6+wr5jEBtvtw/lFVouoVvBsqkmR46lIrI00oOXN+NxvbL/GJ5XklEMbc45W2eorA3BVnSq1c7/VXt0PSOngTg==",
+      "attestations": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fcli@6.3.2"
+    },
+    {
+      "name": "create-evopilot",
+      "version": "6.3.2",
+      "tarball": "https://registry.npmjs.org/create-evopilot/-/create-evopilot-6.3.2.tgz",
+      "integrity": "sha512-wGtcE4J9QLV0yEK0UNHIqyV4OT7XYmAxa+QEzR/BX5U0Uc+WPXQvM8zFVUUz7wEp+tjqTEeq4AAIEY8Tf4pgdQ==",
+      "attestations": "https://registry.npmjs.org/-/npm/v1/attestations/create-evopilot@6.3.2"
+    }
+  ],
+  "promotionWorkflowCommit": "2fa37cde8c1e491ba7c8be6d93dedbdd78d5794f",
+  "npmWorkflowCommit": "2fa37cde8c1e491ba7c8be6d93dedbdd78d5794f",
+  "promotionRuns": {
+    "githubAndGhcr": {
+      "runId": "37180363990",
+      "url": "https://github.com/yeliang-wang/evopilot/actions/runs/37180363990",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "workflow": ".github/workflows/release-artifacts.yml",
+      "rawObservationDigest": "sha256:0179c5413a7c7e5610d6401083a8e04f69ad2f64f49971c7e6f210a1b16a4dd9"
+    },
+    "npm": {
+      "runId": "37180453332",
+      "url": "https://github.com/yeliang-wang/evopilot/actions/runs/37180453332",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "workflow": ".github/workflows/npm-packages.yml",
+      "rawObservationDigest": "sha256:067b4f051a531cb3df219c63bc3641d3c7379b468057074e9ff8a6a898d7d870"
+    }
+  },
+  "verification": {
+    "frozenAssetCount": 16,
+    "additionalPromotionRecordCount": 1,
+    "githubAssetsDownloadedAndExactDigestsVerified": true,
+    "anonymousGhcrManifestDigestVerified": true,
+    "publicNpmIntegrityAndProvenanceMetadataVerified": true,
+    "candidateRebuilt": false,
+    "acceptedTargetApprovalRewritten": false,
+    "historicalAcceptanceRewritten": false,
+    "localDefaultInstallation": "SEPARATE_POST_PUBLICATION_TRANSACTION_NOT_CLAIMED_BY_THIS_RECORD"
+  },
+  "acceptance": {
+    "applicableCriteriaPassed": 419,
+    "newCriteriaPassed": 10,
+    "inheritedImpactCriteriaPassed": 409,
+    "realCasesPassed": 4,
+    "exactInstalledRegressionPassed": 2414,
+    "noRegression": "PASSED",
+    "hostScope": "CODEX_ONLY",
+    "nativeCredentialInteraction": "UNVERIFIED_SKIPPED_BY_USER_NOT_PASS",
+    "newNinetyMinuteSoak": "SKIPPED_BY_USER_NOT_PASS",
+    "excludedItemsCountedAsPass": false,
+    "newExecutionOfHistoricalJourneys": false,
+    "oldPassTransferred": false
+  },
+  "unchangedSeriesReleases": [
+    {
+      "product": "evolution-expert",
+      "version": "2.3.0",
+      "release": "https://github.com/yeliang-wang/evopilot/releases/tag/evolution-expert-v2.3.0"
+    },
+    {
+      "product": "evopilot-harness",
+      "version": "4.8.1",
+      "release": "https://github.com/yeliang-wang/evopilot-harness/releases/tag/v4.8.1"
+    }
+  ],
+  "independentLocalProjectExtensions": {
+    "version": "1.0.1",
+    "publicRelease": false,
+    "ownership": "PRIVATE_SEPARATELY_INSTALLED_COMPONENT"
+  },
+  "authority": {
+    "basis": "SEPARATE_USER_RELEASE_AUTHORIZATION",
+    "publicationGrantsProductExecutionAuthority": false,
+    "localSuiteCleanupIsSeparate": true,
+    "remoteRuntimeDeployed": false
+  }
+}

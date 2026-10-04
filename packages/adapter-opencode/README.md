@@ -1,6 +1,6 @@
 # `@evopilot/adapter-opencode`
 
-The current published package is **6.3.1**. Its process-observation v2 reports
+The current published package is **6.3.2**. Its process-observation v2 reports
 input, output and cached input tokens without requiring monetary telemetry or
 pricing configuration. Unavailable token counts remain unavailable; measured
 zero remains zero. Cached input is part of input and is not added to the total
