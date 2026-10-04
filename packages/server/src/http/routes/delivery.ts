@@ -19,9 +19,11 @@ export async function handleDeliveryRoutes(context: DeliveryRoutesContext): Prom
   const {
     applyReviewDecision,
     audit,
+    canAccessScopedResource,
     checkProjectDevopsReadiness,
     createAndStoreRunFromEvidence,
     createReleaseReport,
+    currentSourceScopeAuth,
     envelope,
     evidenceEventsFromAgentSignals,
     evidenceEventsFromEvaluationResults,
@@ -34,6 +36,7 @@ export async function handleDeliveryRoutes(context: DeliveryRoutesContext): Prom
     normalizeDecisionAction,
     normalizeDeliveryParameters,
     normalizeProjectDevopsProvider,
+    prepareReviewSourceScope,
     readJson,
     refreshCodeUpgradeRun,
     refreshPipeline,
@@ -172,7 +175,15 @@ export async function handleDeliveryRoutes(context: DeliveryRoutesContext): Prom
     const run = store.findRunByReviewId(reviewId);
     if (!run) return writeJson(response, 404, { error: "REVIEW_NOT_FOUND" });
     const reviewIndex = run.reviews.findIndex((review: any) => review.id === reviewId);
+    const reviewProject = store.readProject(run.reviews[reviewIndex].projectId);
+    if (!reviewProject || !canAccessScopedResource(auth, reviewProject.tenantId, reviewProject.workspaceId)) return writeJson(response, 403, {error: "FORBIDDEN"});
     const body = await readJson(request, options.maxBodyBytes);
+    if (Object.hasOwn(body, "codeUpgradeSourceScope")) {
+      if (body.action !== "accept") return writeJson(response, 400, {error: "CODE_UPGRADE_SCOPE_ACCEPT_REQUIRED"});
+      const updated = await prepareReviewSourceScope({store, auth: currentSourceScopeAuth(), currentAuth: currentSourceScopeAuth, reviewId, input: body.codeUpgradeSourceScope, profile, runtime,
+        decidedAt: new Date().toISOString(), note: String(body.note ?? "")});
+      return writeJson(response, 200, envelope(updated));
+    }
     const updated = applyReviewDecision(run.reviews[reviewIndex], {
       action: normalizeDecisionAction(body.action),
       actor: String(body.actor ?? "user"),
@@ -194,11 +205,6 @@ export async function handleDeliveryRoutes(context: DeliveryRoutesContext): Prom
     const plan = run.plans.find((item: any) => item.id === delivery.planId)!;
     const review = run.reviews.find((item: any) => item.planId === plan.id);
     const body = await readJson(request, options.maxBodyBytes);
-    const freeze = store.projectEvolutionFreezeDiagnostic(delivery.projectId);
-    if (freeze && !store.isCostOptimizationDeliveryAllowed(delivery, body)) {
-      store.appendAudit(audit(auth, "delivery.blocked-by-cost-freeze", deliveryId, { projectId: delivery.projectId, reason: freeze.reason }));
-      return writeJson(response, 409, { error: "EVOLUTION_COST_BUDGET_FROZEN", detail: freeze.reason, costReport: freeze.costReport });
-    }
     if (delivery.approvalRequired && review?.status !== "USER_CONFIRMED") {
       return writeJson(response, 409, { error: "USER_CONFIRMATION_REQUIRED" });
     }
@@ -261,16 +267,14 @@ export async function handleDeliveryRoutes(context: DeliveryRoutesContext): Prom
     const delivery = run.deliveryPlans.find((item: any) => item.id === deliveryId)!;
     const plan = run.plans.find((item: any) => item.id === delivery.planId)!;
     const review = run.reviews.find((item: any) => item.planId === plan.id);
+    const upgradeProject = store.readProject(delivery.projectId);
+    if (!upgradeProject || !canAccessScopedResource(auth, upgradeProject.tenantId, upgradeProject.workspaceId)) return writeJson(response, 403, {error: "FORBIDDEN"});
     const body = await readJson(request, options.maxBodyBytes);
-    const freeze = store.projectEvolutionFreezeDiagnostic(delivery.projectId);
-    if (freeze && !store.isCostOptimizationDeliveryAllowed(delivery, body)) {
-      store.appendAudit(audit(auth, "code-upgrade.blocked-by-cost-freeze", deliveryId, { projectId: delivery.projectId, reason: freeze.reason }));
-      return writeJson(response, 409, { error: "EVOLUTION_COST_BUDGET_FROZEN", detail: freeze.reason, costReport: freeze.costReport });
-    }
     if (delivery.approvalRequired && review?.status !== "USER_CONFIRMED") {
       return writeJson(response, 409, { error: "USER_CONFIRMATION_REQUIRED" });
     }
-    const codeUpgrade = await startCodeUpgradeExecution({ store, auth, run, delivery, plan, review, body, profile, runtime });
+    const explicitScope = Object.hasOwn(body, "sourceScopeApprovalDigest");
+    const codeUpgrade = await startCodeUpgradeExecution({ store, auth: explicitScope ? currentSourceScopeAuth() : auth, currentAuth: explicitScope ? currentSourceScopeAuth : undefined, run, delivery, plan, review, body, profile, runtime });
     if (body.batchId) {
       store.updateEvolutionBatch(String(body.batchId), {
         status: "CODE_UPGRADING",
@@ -291,11 +295,6 @@ export async function handleDeliveryRoutes(context: DeliveryRoutesContext): Prom
     const plan = run.plans.find((item: any) => item.id === delivery.planId)!;
     const review = run.reviews.find((item: any) => item.planId === plan.id);
     const body = await readJson(request, options.maxBodyBytes);
-    const freeze = store.projectEvolutionFreezeDiagnostic(delivery.projectId);
-    if (freeze && !store.isCostOptimizationDeliveryAllowed(delivery, body)) {
-      store.appendAudit(audit(auth, "delivery.schedule.blocked-by-cost-freeze", deliveryId, { projectId: delivery.projectId, reason: freeze.reason }));
-      return writeJson(response, 409, { error: "EVOLUTION_COST_BUDGET_FROZEN", detail: freeze.reason, costReport: freeze.costReport });
-    }
     if (delivery.approvalRequired && review?.status !== "USER_CONFIRMED") {
       return writeJson(response, 409, { error: "USER_CONFIRMATION_REQUIRED" });
     }

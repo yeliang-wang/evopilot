@@ -81,7 +81,7 @@ test("fresh Runtime starts setup-only and the protocol declares no hidden fallba
   assert.equal(readiness.state, "SETUP_REQUIRED");
   assert.equal(readiness.nextAction, "configure-secret-ref");
   const protocol = llmSetupProtocol();
-  assert.equal(protocol.runtimeVersion, "6.3.0");
+  assert.equal(protocol.runtimeVersion, "6.3.1");
   assert.equal(protocol.secureInput.rawSecretAcceptedByExpert, false);
   assert.ok(protocol.forbiddenFallbacks.includes("Agent Host LLM"));
   assert.ok(protocol.forbiddenFallbacks.includes("MyGlm5"));

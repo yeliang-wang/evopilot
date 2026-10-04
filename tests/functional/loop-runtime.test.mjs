@@ -880,6 +880,7 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(schedule.status, 201);
     assert.equal(schedule.body.data.schema, "evopilot-recurring-loop-schedule/v1");
     assert.equal(schedule.body.data.cadence, "daily");
+    assert.equal(Object.hasOwn(schedule.body.data, "maxBudgetUsd"), false);
     assert.match(schedule.body.data.idempotencyKey, /recurring:workbuddy:recurring-loop-scheduler:daily/);
 
     const inbox = await jsonFetch(`${baseUrl}/api/v1/loop-target-runtime/memory-inbox`, {
@@ -904,6 +905,9 @@ test("EvoPilot Loop Runtime supports long-task loop engineering controls", async
     assert.equal(guardrail.status, 200);
     assert.equal(guardrail.body.data.schema, "evopilot-budget-judgment-guardrail/v1");
     assert.notEqual(guardrail.body.data.releaseJudgment, "BLOCK");
+    assert.equal(Object.hasOwn(guardrail.body.data.budgets, "maxCostUsd"), false);
+    assert.equal(Object.hasOwn(guardrail.body.data.actual, "costUsd"), false);
+    assert.equal(guardrail.body.data.budgets.maxTokens, 100000);
 
     const runtimeSummary = await jsonFetch(`${baseUrl}/api/v1/loop-target-runtime/summary`, {
       token: "viewer-token"
@@ -1294,9 +1298,9 @@ test("injected debug loop llm executor calls the provided llm client and records
     assert.equal(llmStep.output.provider, "zhipu");
     assert.equal(llmStep.output.model, "glm-5.1");
     assert.equal(llmStep.output.totalTokens, 1500);
-    assert.equal(llmStep.output.costUsd, 0.003);
+    assert.equal(Object.hasOwn(llmStep.output, "costUsd"), false);
     assert.equal(started.body.data.trace.totalTokens, undefined);
-    assert.deepEqual(started.body.data.trace.cost, { estimatedUsd: 0.003, totalTokens: 1500 });
+    assert.deepEqual(started.body.data.trace.cost, { totalTokens: 1500 });
     assert.equal(started.body.data.trace.llmUsage.schema, "evopilot-llm-usage-summary/v1");
     assert.equal(started.body.data.trace.llmUsage.provider, "zhipu");
     assert.equal(started.body.data.trace.llmUsage.model, "glm-5.1");

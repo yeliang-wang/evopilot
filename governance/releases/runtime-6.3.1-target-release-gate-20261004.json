@@ -1,0 +1,41 @@
+{
+  "schema": "evopilot-runtime-release-target-gate/v1",
+  "recordedAt": "2026-10-04T00:24:58.324Z",
+  "targetId": "evopilot-6.3.1-token-only-cutover",
+  "targetRevision": 4,
+  "phase": "release",
+  "inputStatus": "VALIDATED",
+  "inputTargetDigest": "sha256:2f0a7c47bb19b735327d71e819f6fd63722920297e16096c134ea4881906e05b",
+  "scopeAuthorizationDigest": "sha256:dcf393a341b66320b5e4cfb6236b2a702febc0c75099d19a507855bf2762563e",
+  "releaseAuthorizationDigest": "sha256:d51d77bec0fc14f3acde01cc16a941cd0c67a7bdac73b3b2456c6c1318eeb894",
+  "acceptance": {
+    "path": "governance/releases/runtime-6.3.1-acceptance-20261004.json",
+    "digest": "sha256:56b02f38262aaf332d9211a06d654a2c17eee33b66d71ede5838a99fc5650a05"
+  },
+  "authorization": {
+    "path": "governance/releases/runtime-6.3.1-authorization-20261004.json",
+    "digest": "sha256:65ced1cf4df810ef6b702846b583be0f87b88b76b2abcecb1876227e0da962d1"
+  },
+  "validator": {
+    "package": "@evopilot/local-project-extensions",
+    "version": "1.0.1",
+    "function": "validateEvolutionTarget",
+    "moduleDigest": "sha256:a0a09b9c016821f26561788a201b7e438f526a3cc5315579cc94a41b0280afbc",
+    "privatePackage": true
+  },
+  "result": {
+    "schema": "evopilot-target-assurance/v1",
+    "phase": "release",
+    "status": "PASSED",
+    "authorizationDigest": "sha256:dcf393a341b66320b5e4cfb6236b2a702febc0c75099d19a507855bf2762563e",
+    "failures": [],
+    "authority": "NONE",
+    "evidenceExecutionVerified": false
+  },
+  "evidenceBoundary": "This gate verifies structure, scope, status and separate authorization. Actual evidence execution is the separately sealed 409-criterion/9-case acceptance, not a claim granted by this validator.",
+  "currentScopeAndRoadmapUnchanged": true,
+  "subsequentPromotionTargetStatus": "RELEASE_AUTHORIZED",
+  "runtimeMutations": 0,
+  "modelCalls": 0,
+  "legacySuiteLoads": 0
+}

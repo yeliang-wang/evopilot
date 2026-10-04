@@ -12,7 +12,7 @@ const kinds = ["domain-checks", "target-evidence-package", "phase-package", "goa
 // independent labels exercise policy branches, not real process/Host qualification.
 export async function stageCompletionFixture(t, options = {}) {
   const descriptor = {id: "source-fixture-collector", implementationDigest: d("synthetic-code"), qualificationDigest: d("synthetic-qualification"),
-    origin: options.syntheticCollector ? "SYNTHETIC" : "INDEPENDENT", mode: "READ_ONLY", kinds};
+    origin: options.syntheticCollector ? "SYNTHETIC" : "INDEPENDENT", mode: "READ_ONLY", kinds: options.collectorKinds ?? kinds};
   const f = await semanticCurrentOwnerFixture(t, {collectorDescriptor: descriptor, stageCompletionPolicy: !options.noPolicy,
     sharedProject: options.sharedProject, projectRecord: options.projectRecord, targetId: options.targetId, reuseGoal: options.reuseGoal,
     goalCompletionPolicy: options.goalCompletionPolicy, phaseCompletionPolicy: options.phaseCompletionPolicy, finalGoalCompletionPolicy: options.finalGoalCompletionPolicy, beforeSource: options.beforeSource, additionalStage: options.additionalStage, terminalControls: options.terminalControls,

@@ -12,7 +12,7 @@ import {digestObject as d} from "../../packages/server/dist/domains/harness-temp
 async function fixture(t,options={}) {
   const f=await semanticCurrentOwnerFixture(t,{publishedMaterials:true,runtimeDigest:semanticExecutionImplementationDigest});
   const observed=new Map();let calls=0;
-  const adapter={...f.owners.adapter,execute:async request=>{
+  const adapter={...f.owners.adapter,...(options.tokenOnly?{processObservationSchema:"evopilot-agent-process-observation/v2"}:{}),execute:async request=>{
     calls++;
     if(options.waiting)throw Error("SYNTHETIC_RESPONSE_LOST");
     const result=await f.owners.adapter.execute(request),observation=f.owners.adapter.readProcessObservation(request,result),m=observation.material;
@@ -21,6 +21,14 @@ async function fixture(t,options={}) {
     if(options.status==="FAILED"){result.status="FAILED";m.exitCode=1;}
     if(options.status==="UNCERTAIN"){result.status="UNCERTAIN";m.termination="TIMEOUT";}
     result.cost=structuredClone(m.cost);observation.receiptDigest=d(m);result.receiptDigest=observation.receiptDigest;
+    if(options.tokenOnly){
+      observation.schema="evopilot-agent-process-observation/v2";
+      delete m.cost;delete m.usageCoverage;delete result.cost;
+      m.warningEventCount=0;
+      m.source={beforeDigest:d("before"),afterDigest:d("after"),manifestDigest:d("manifest"),changedCount:0,prohibitedCount:0};
+      m.usage={inputTokens:62209,outputTokens:611,cachedInputTokens:null,tokenCoverage:"COMPLETE"};
+      result.effects=[];observation.receiptDigest=d(m);result.receiptDigest=observation.receiptDigest;
+    }
     observed.set(request.id,observation);return result;
   },readProcessObservation:request=>options.noObservation?undefined:observed.get(request.id)};
   const owners={governed:f.governed,lifecycle:f.lifecycleService,adapter,now:f.time.get},restart=()=>createSemanticExecutionApplication(f.configuration,owners),app=restart();
@@ -90,4 +98,13 @@ test("HTTP run-status exposes failed dispatch usage only to current scoped opera
   assert.equal(body.release.authorized,false);assert.equal(body.status,"BLOCKED");
   for(const token of ["synthetic-viewer","synthetic-foreign"])assert.equal((await fetch(url,{headers:{authorization:"Bearer "+token}})).status,403);
   assert.equal(f.calls(),1);
+});
+
+for(const status of ["SUCCEEDED","FAILED","UNCERTAIN"]) test(`token-only ${status} dispatch usage survives restart without a money field`,async t=>{
+  const f=await fixture(t,{status,tokenOnly:true});await f.dispatch();const view=f.view();
+  assert.equal(view.dispatchUsage.status,"VERIFIED_KNOWN_DISPATCHES");
+  assert.deepEqual(view.dispatchUsage.totals,{inputTokens:62209,outputTokens:611,totalTokens:62820});
+  assert.equal(view.dispatchUsage.entries[0].state,status);
+  assert.deepEqual(f.view(f.restart()).dispatchUsage,view.dispatchUsage);assert.equal(f.calls(),1);
+  assert.equal(view.release.authorized,false);
 });

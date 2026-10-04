@@ -11,6 +11,7 @@ import {semanticProjectAccess} from "./project-semantic-discovery.js";
 import {requireSemantic} from "../domains/harness-template/semantic-catalog-contract.js";
 import {digestObject, isRecord} from "../domains/harness-template/utils.js";
 import {freeze} from "../domains/harness-template/semantic-catalog-io.js";
+import {MAX_SEMANTIC_COLLECTED_OBSERVATIONS} from "../domains/harness-template/semantic-evidence-limits.js";
 
 type Bound = Awaited<ReturnType<ReturnType<typeof createSemanticExecutionBindingService>["inspect"]>>;
 type Input = Parameters<ReturnType<typeof createSemanticExecutionContextService>["resolve"]>[0];
@@ -44,7 +45,7 @@ function descriptor(value: unknown): SemanticEvidenceCollectorDescriptor {
   exact(value, ["id", "implementationDigest", "qualificationDigest", "origin", "mode", "kinds"]);
   requireSemantic(id(value.id) && hash(value.implementationDigest) && hash(value.qualificationDigest) &&
     ["SYNTHETIC", "INDEPENDENT"].includes(value.origin) && value.mode === "READ_ONLY" && Array.isArray(value.kinds) &&
-    value.kinds.length > 0 && value.kinds.length <= 15 && value.kinds.every((v: unknown) => id(v) && v !== "agent-process") &&
+    value.kinds.length > 0 && value.kinds.length <= MAX_SEMANTIC_COLLECTED_OBSERVATIONS && value.kinds.every((v: unknown) => id(v) && v !== "agent-process") &&
     new Set(value.kinds).size === value.kinds.length, "MATERIAL_INVALID");
   return structuredClone(value) as SemanticEvidenceCollectorDescriptor;
 }
@@ -87,7 +88,7 @@ function observation(value: unknown, request: CollectionRequest, startedAt: numb
   requireSemantic(Buffer.byteLength(JSON.stringify(value)) <= 196608 && value.schema === "evopilot-semantic-collector-observation/v1" &&
     value.collectionRequestDigest === request.collectionRequestDigest && typeof value.observedAt === "string" &&
     startedAt <= Date.parse(value.observedAt) && Date.parse(value.observedAt) <= now && Array.isArray(value.observations) &&
-    value.observations.length > 0 && value.observations.length <= 15, "MATERIAL_INVALID");
+    value.observations.length > 0 && value.observations.length <= MAX_SEMANTIC_COLLECTED_OBSERVATIONS, "MATERIAL_INVALID");
   const kinds = new Set<string>(); let nodes = 0;
   function facts(v: unknown, depth = 0): void {
     requireSemantic(++nodes <= 4096 && depth <= 16, "MATERIAL_LIMIT");

@@ -30,8 +30,8 @@
   },
   "versionPolicy": {
     "runtimeProduct": "evopilot-runtime",
-    "publishedBaseline": "6.1.0",
-    "currentWorkingVersion": "6.3.0",
+    "publishedBaseline": "6.3.0",
+    "currentWorkingVersion": "6.3.1",
     "versionsEvolveIndependently": true,
     "majorRequiredFor": [
       "incompatible published Harness consumption contract",
@@ -2008,6 +2008,46 @@
         "训练适配器",
         "偏好数据集"
       ]
+    },
+    {
+      "id": "evopilot-6.3.1-token-only-cutover",
+      "product": "evopilot-runtime",
+      "status": "IN_PROGRESS",
+      "implementationAuthority": "SEPARATELY_APPROVED_TARGET_REQUIRED",
+      "targetVersion": "6.3.1",
+      "releaseLine": "6.3.x",
+      "objective": "Complete delegated token-only Runtime repair and independent current-Codex Suite replacement without permanent deletion.",
+      "outcomes": [
+        "Token-only native execution records are accepted with no monetary fields; known input/output/total tokens remain available through actual Runtime dispatch and terminal usage.",
+        "Formal Runtime has no LLM call expense settings or expense-based execution/release freeze.",
+        "Implement all nine EvoPilot and twenty DataRig capability dispositions using independent resources/providers and existing product operations, with no old Suite execution.",
+        "Execute bounded coding and four representative project paths through exact installed Runtime, unchanged public Expert and Harness, using independent adapters.",
+        "Build once, validate exact Runtime successor bytes and verify compatibility with current public Expert 2.3.0 and Harness 4.8.1.",
+        "Switch current Codex default routing to the verified product combination without permanently deleting either legacy Suite.",
+        "Verify restart/resume/rollback and produce a fully evidence-backed replacement closure and exact proposed permanent-deletion inventory.",
+        "Managed approved file scope repair: forward an explicitly approved finite exact relative-file list through the existing managed CodeUpgrader request so code, tests, documentation and governance maintenance can execute together; retain admin review, tenant/workspace boundaries, source pins, protected paths and provider enforcement."
+      ],
+      "acceptance": [
+        "Token-only native execution records are accepted with no monetary fields; known input/output/total tokens remain available through actual Runtime dispatch and terminal usage. Evidence: Real Codex receipt, exact profile/model/request/source bindings, process failure and replay negatives, unknown token and overflow controls.",
+        "Formal Runtime has no LLM call expense settings or expense-based execution/release freeze. Evidence: Legacy maxCost/maxBudget/pricing inputs cannot impose money limits; high-cost observations cannot bypass or block independent source/approval gates; remaining safety boundaries verified.",
+        "Implement all nine EvoPilot and twenty DataRig capability dispositions using independent resources/providers and existing product operations, with no old Suite execution. Evidence: Per-capability behavior assertions, owning repository validators and schemas, journal provenance/export, Harness-owned operations, release and DB authority refusal, actual durable evidence; schema-only rows identified.",
+        "Execute bounded coding and four representative project paths through exact installed Runtime, unchanged public Expert and Harness, using independent adapters. Evidence: Real Codex transport and native source/test/token receipts, EvoPilot/DataRig/Harness/unknown-project journeys, invalid authority/drift/timeout/no-replay and restart cases.",
+        "Build once, validate exact Runtime successor bytes and verify compatibility with current public Expert 2.3.0 and Harness 4.8.1. Evidence: Fresh isolated candidate install, immutable provenance, required targeted/full regression, exact generated/distribution identity and all enumerated inherited obligations under token-only scope.",
+        "Switch current Codex default routing to the verified product combination without permanently deleting either legacy Suite. Evidence: Backups, installed file digests, actual post-switch Host routes, old entry discovery disabled reversibly, product adapters preserved, no mandatory old-Suite routing.",
+        "Verify restart/resume/rollback and produce a fully evidence-backed replacement closure and exact proposed permanent-deletion inventory. Evidence: All required criteria pass, byte-identical restoration rehearsal, current installation health, immutable archives and list of files to delete; permanent deletion authorization remains false.",
+        "Managed approved file scope repair: exact actual approved source transition succeeds under a qualified provider; invalid, broad directory/glob, absolute, traversal, duplicate, protected and stale source/review scopes refuse before external dispatch; default inferred behavior remains unchanged. No new product family, arbitrary shell, release authority or Suite execution."
+      ],
+      "signals": [
+        "token-only runtime maintenance and independent suite cutover",
+        "managed approved file scope repair"
+      ],
+      "maintenanceReview": {
+        "authoritySource": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/user-direction.json",
+        "reviewRecord": "/Users/wangyejing/.codex/evolution-runs/evopilot/current-codex-cutover-20261002/autonomous-cutover-20261003/managed-scope-delegated-review.json",
+        "individualHumanTechnicalReview": false,
+        "releaseAuthority": "SEPARATE",
+        "permanentSuiteDeletionAuthorized": false
+      }
     }
   ],
   "transitionPolicies": [
@@ -2378,5 +2418,30 @@
     "remainingFunctionalSecurityHostRegressionAndTerminalE2ERequired": true,
     "releaseAuthorizationGranted": false,
     "precedence": "For these exact releases only, this exception supersedes every requirement to execute a new 5400-second/90-minute soak, including inherited and series-terminal clauses. Original evidence remains bound to its original artifacts; no long-duration stability claim applies to untested successor bytes. All other required acceptance remains mandatory."
+  },
+  "tokenOnlyCutoverPolicy": {
+    "schema": "evopilot-token-only-cutover-policy/v1",
+    "runtimeVersion": "6.3.1",
+    "expertVersion": "2.3.0",
+    "harnessVersion": "4.8.1",
+    "tokenUsageRequiredWhenReported": true,
+    "monetaryAmountRequired": false,
+    "productMonetaryBudgetAllowed": false,
+    "productPricingConfigurationRequired": false,
+    "missingAmountBlocksExecution": false,
+    "debugBudgetOwner": "EXTERNAL_ACCEPTANCE_CAMPAIGN_ONLY",
+    "projectVariabilityOwner": "INDEPENDENT_RESOURCES_PROVIDERS_AND_ADAPTERS",
+    "embeddedProjectProvidersAllowed": false,
+    "embeddedCodexRunnerAllowed": false,
+    "credentialReentryRequired": false,
+    "requiredHosts": [
+      "Codex"
+    ],
+    "newActiveSoakRequired": false,
+    "nativeCredentialInteractionRequired": false,
+    "omittedValidationCountsAsPass": false,
+    "historicalPassTransferAllowed": false,
+    "permanentSuiteDeletionAuthorized": false,
+    "precedence": "User token-only product requirements supersede historical monetary gate, price setting and cost-completeness requirements. Prior money reports remain immutable legacy evidence; token correctness, source/effect restrictions, auth/scope, retry/time/token safety bounds and separate action authority remain. Retain Codex-only live qualification, generic/generated adapters, real installed artifact and terminal E2E; new 90-minute soak and native credential UI stay explicitly omitted."
   }
 }

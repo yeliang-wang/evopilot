@@ -36,7 +36,7 @@ Evolution Expert is the ordinary-human entry and talks to Runtime only through M
 
 Earlier published baselines remain immutable. Runtime 6.3.0 and Expert 2.3.0 each passed 400 applicable current and inherited acceptance criteria with `NO_REGRESSION`. Real Host acceptance is Codex-only; native credential interaction and a new 90-minute soak were explicitly excluded, not passed.
 
-EvoPilot Codex Suite 3.2.1 remains historical reference evidence. The exact active DataRig Codex Suite 2.1.11 snapshot is used read-only to prove production-reference convergence into independently versioned `datarig-production-delivery@1.0.0` declarations. Neither Suite is a Runtime dependency, execution path, synchronization source, or fallback. Existing installed Suites remain untouched; any real switch or retirement stays behind a separately approved post-release [Cutover](docs/guides/legacy-suite-transition.md).
+Legacy EvoPilot and DataRig Suite snapshots remain historical provenance for convergence into independent project resources, including `datarig-production-delivery@1.0.0`. Evolution Expert and the configured MCP products are the current operating entry; retired Suites are not Runtime dependencies, execution paths, synchronization sources or fallbacks. Installation does not delete existing Suites. Migration and permanent removal are separate, explicitly authorized local operations; historical acceptance records remain immutable. See [legacy transition boundaries](docs/guides/legacy-suite-transition.md).
 
 ## Start Here
 
@@ -147,6 +147,8 @@ EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
 
 ## Release Status
 
+[Runtime 6.3.1 token usage and bounded execution repairs](docs/releases/6.3.1.md) have completed exact installed acceptance: 409 applicable criteria and nine real cases passed, including the full 12-Target, four-phase Goal and default installation recovery. Candidate `37133707977` at `f0adee70ac45d5da5d691cfa583eba03ee014eb0` is authorized for promotion and is not yet publicly published. The same Codex-only Host scope, unverified native credential interaction and explicit 90-minute soak exclusion apply; excluded work is not counted as passed. Expert 2.3.0 and Harness 4.8.1 keep their existing public versions. The local project extensions 1.0.1 used in acceptance are an independently installed private component, not a public Runtime release asset.
+
 Runtime **v6.3.0** and Expert **v2.3.0** are accepted and published on GitHub and
 npm. Runtime's public GHCR image and manifest-based installer are verified.
 The [current release ledger](docs/releases/current-release.md) binds exact
@@ -157,7 +159,8 @@ The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a stan
 
 Release evidence:
 
-- Current Runtime 6.3.0: [release notes](docs/releases/6.3.0.md)
+- Accepted Runtime 6.3.1, awaiting public promotion: [release notes](docs/releases/6.3.1.md)
+- Current public Runtime 6.3.0: [release notes](docs/releases/6.3.0.md)
 - Current Expert 2.3.0: [release notes](docs/releases/evolution-expert-2.3.0.md)
 - Expert 2.2.1 recovery (not released): [docs/releases/evolution-expert-2.2.1.md](docs/releases/evolution-expert-2.2.1.md)
 - Previous release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
@@ -211,14 +214,23 @@ Goal completion each require their own verified receipts and current policy.
 Expert renders these Runtime-owned states over MCP. Uncertain effects are read
 back without automatic replay. Release authorization is a separate decision.
 
+Runtime 6.3.1 also repairs dependent semantic Target progression. A verified
+Target completion receipt can make an eligible pending successor ready; crossing
+a phase additionally requires its verified predecessor phase receipt and GO
+decision. Readiness does not dispatch the next request, complete another Target,
+or grant release authority. See [semantic progression and recovery](docs/architecture/loop-runtime.md#semantic-target-progression-and-recovery).
+
 Executor and collector qualification is bound to exact Host/runtime/environment,
 permissions, activation and expiry. Installed Codex and controlled variants passed
 the [approved release scope](docs/releases/current-release.md); this does not
-qualify arbitrary external Hosts or collectors. Token/cost views retain explicit
-coverage and provenance: missing telemetry is unknown, and overlapping subtotals
-are not a settled provider bill. The real series demonstration completed one of
-four Targets and preserved its receipt after restart; whole-Goal completion was
-not claimed for that demonstration.
+qualify arbitrary external Hosts or collectors. Runtime 6.3.1 preserves reported
+token counts without requiring prices or monetary budgets; missing telemetry
+remains unknown. Historical monetary observations stay readable without
+controlling execution or release decisions. The earlier 6.3.0 series demonstration
+completed one of four Targets. The separate 6.3.1 installed campaign completed
+all 12 required Targets and four phases, with verified Goal completion and
+restart receipts; that evidence is bound to its exact candidate and configured
+project, not every future installation.
 
 ## Development
 

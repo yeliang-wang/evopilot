@@ -155,7 +155,7 @@ test("self-learning discovery generates evaluation datasets and opportunity insi
     const policies = await getWithToken(`${baseUrl}/api/v1/governance/policy-evaluations`, "viewer-token");
     assert.ok(policies.data.some((policy) => policy.name === "SLO 错误预算门禁"));
     assert.ok(policies.data.some((policy) => policy.id === "policy-runtime-supply-chain" && policy.status === "PASSED"));
-    assert.ok(policies.data.some((policy) => policy.name === "成本预算门禁" && policy.status !== "PASSED"));
+    assert.equal(policies.data.some((policy) => policy.name === "成本预算门禁"), false);
 
     const supplyChain = await getWithToken(`${baseUrl}/api/v1/supply-chain/reports`, "viewer-token");
     assert.ok(supplyChain.data.some((report) => report.implementation === "EvoPilot Code Upgrader" && report.status === "READY"));
@@ -172,7 +172,7 @@ test("self-learning discovery generates evaluation datasets and opportunity insi
     const readiness = readinessReports.data.find((report) => report.projectId === "domainforge-fabric");
     assert.equal(readiness.status, "BLOCKED");
     assert.ok(readiness.gates.some((gate) => gate.name === "运行时供应链" && gate.status === "PASSED"));
-    assert.ok(readiness.gates.some((gate) => gate.name === "成本预算" && gate.status === "WARN"));
+    assert.equal(readiness.gates.some((gate) => gate.name === "成本预算"), false);
 
     const rolloutReports = await getWithToken(`${baseUrl}/api/v1/rollout/strategies`, "viewer-token");
     const rollout = rolloutReports.data.find((report) => report.projectId === "domainforge-fabric");
@@ -189,8 +189,8 @@ test("self-learning discovery generates evaluation datasets and opportunity insi
     assert.ok(summary.data.sloHealth <= 100);
     assert.equal(summary.data.failedPolicyCount, 0);
     assert.equal(summary.data.supplyChainRiskCount, 0);
-    assert.ok(summary.data.costRiskCount >= 1);
-    assert.ok(summary.data.costHealth < 100);
+    assert.equal(summary.data.costRiskCount, 0);
+    assert.equal(summary.data.costHealth, 100);
     assert.ok(summary.data.releaseBlockedCount >= 1);
     assert.ok(summary.data.releaseReadinessScore < 100);
     assert.ok(summary.data.rolloutBlockedCount >= 1);
@@ -619,7 +619,7 @@ test("triggers repository-native DevOps after review gate and closes delivery fr
   }
 });
 
-test("cost over budget freezes standard evolution but allows cost optimization delivery", async () => {
+test("monetary observations do not freeze evolution or bypass review", async () => {
   const codeUpgrader = await startFakeCodeUpgrader();
   const github = await startFakeGitHubActions();
   const dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-cost-freeze-"));
@@ -687,7 +687,8 @@ test("cost over budget freezes standard evolution but allows cost optimization d
 
     const costReports = await getWithToken(`${baseUrl}/api/v1/cost/reports`, "viewer-token");
     const costReport = costReports.data.find((report) => report.projectId === "domainforge-fabric");
-    assert.equal(costReport.status, "OVER_BUDGET");
+    assert.equal(costReport.status, "OBSERVED");
+    assert.equal(costReport.totalTokens, 45000);
 
     await postWithToken(`${baseUrl}/api/v1/evaluation-datasets/autogenerate`, {}, "operator-token");
     const scan = await postWithToken(`${baseUrl}/api/v1/evolution-batches/scan`, {
@@ -699,52 +700,30 @@ test("cost over budget freezes standard evolution but allows cost optimization d
     assert.equal(scan.data.created[0].intent, "cost-optimization");
     assert.ok(scan.data.created[0].datasetIds.length >= 1);
 
+    const unreviewed = await fetch(`${baseUrl}/api/v1/deliveries/${encodeURIComponent(run.data.deliveryPlans[0].id)}/code-upgrade`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: "Bearer admin-token" },
+      body: JSON.stringify({ connectorId: "default", proposalMarkdown: "# Ordinary change" })
+    });
+    assert.equal(unreviewed.status, 409);
+    assert.equal((await unreviewed.json()).error, "USER_CONFIRMATION_REQUIRED");
     await postWithToken(`${baseUrl}/api/v1/reviews/${encodeURIComponent(run.data.reviews[0].id)}/decision`, {
-      action: "accept",
-      actor: "tester",
-      note: "超预算后只允许成本优化批次进入代码升级。"
+      action: "accept", actor: "tester", note: "Review authorizes ordinary delivery independently of monetary observations."
     }, "operator-token");
-
-    const blockedUpgrade = await fetch(`${baseUrl}/api/v1/deliveries/${encodeURIComponent(run.data.deliveryPlans[0].id)}/code-upgrade`, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: "Bearer admin-token" },
-      body: JSON.stringify({ connectorId: "default", proposalMarkdown: "# 成本超预算测试" })
-    });
-    assert.equal(blockedUpgrade.status, 409);
-    const blockedUpgradeBody = await blockedUpgrade.json();
-    assert.equal(blockedUpgradeBody.error, "EVOLUTION_COST_BUDGET_FROZEN");
-    assert.equal(blockedUpgradeBody.costReport.status, "OVER_BUDGET");
-
-    const costOptimizationUpgrade = await postWithToken(`${baseUrl}/api/v1/deliveries/${encodeURIComponent(run.data.deliveryPlans[0].id)}/code-upgrade`, {
-      connectorId: "default",
-      proposalMarkdown: "# 成本优化方案\n\n优化模型路由、上下文压缩和工具调用次数。",
-      validationCommands: ["npm test"],
-      batchId: scan.data.created[0].id
+    const upgrade = await postWithToken(`${baseUrl}/api/v1/deliveries/${encodeURIComponent(run.data.deliveryPlans[0].id)}/code-upgrade`, {
+      connectorId: "default", proposalMarkdown: "# Ordinary change", validationCommands: ["npm test"]
     }, "admin-token");
-    assert.equal(costOptimizationUpgrade.data.codeUpgradeRun.status, "SUCCEEDED");
-    assert.match(codeUpgrader.prompt, /成本优化方案/);
-
-    const blockedDelivery = await fetch(`${baseUrl}/api/v1/deliveries/${encodeURIComponent(run.data.deliveryPlans[0].id)}/execute`, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: "Bearer admin-token" },
-      body: JSON.stringify({ executor: "github-actions" })
-    });
-    assert.equal(blockedDelivery.status, 409);
-    const blockedDeliveryBody = await blockedDelivery.json();
-    assert.equal(blockedDeliveryBody.error, "EVOLUTION_COST_BUDGET_FROZEN");
-
-    const costOptimizationDelivery = await postWithToken(`${baseUrl}/api/v1/deliveries/${encodeURIComponent(run.data.deliveryPlans[0].id)}/execute`, {
-      executor: "github-actions",
-      parameters: { VERSION: "cost-optimization-e2e" },
-      batchId: scan.data.created[0].id
+    assert.equal(upgrade.data.codeUpgradeRun.status, "SUCCEEDED");
+    assert.match(codeUpgrader.prompt, /Ordinary change/);
+    const delivery = await postWithToken(`${baseUrl}/api/v1/deliveries/${encodeURIComponent(run.data.deliveryPlans[0].id)}/execute`, {
+      executor: "github-actions", parameters: { VERSION: "token-only-e2e" }
     }, "admin-token");
-    assert.equal(costOptimizationDelivery.data.pipelineRun.status, "SUCCEEDED");
-    const pipeline = await getWithToken(`${baseUrl}/api/v1/pipelines/${encodeURIComponent(costOptimizationDelivery.data.pipelineRun.id)}`, "viewer-token");
+    assert.equal(delivery.data.pipelineRun.status, "SUCCEEDED");
+    const pipeline = await getWithToken(`${baseUrl}/api/v1/pipelines/${encodeURIComponent(delivery.data.pipelineRun.id)}`, "viewer-token");
     assert.equal(pipeline.data.status, "SUCCEEDED");
-
     const summary = await getWithToken(`${baseUrl}/api/v1/summary`, "viewer-token");
-    assert.equal(summary.data.frozenProjectCount, 1);
-    assert.equal(summary.data.costOptimizationEvolutionBatchCount, 1);
+    assert.equal(summary.data.frozenProjectCount, 0);
+
   } finally {
     await new Promise((resolve) => server.close(resolve));
     await codeUpgrader.close();

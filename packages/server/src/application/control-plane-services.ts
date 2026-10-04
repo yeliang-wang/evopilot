@@ -1,8 +1,11 @@
 import { CodeUpgraderClient, type CodeUpgraderRunStatus } from "@evopilot/adapter-code-upgrader";
+import { assertSourceFilesOnDisk, assertSourceScopeAccess, resolveSourceScope, sourceScopeBindingMatches, sourceScopeDigest, sourceScopeProviderBinding } from "./code-upgrade-source-scope.js";
+import { prepareReviewSourceScopeWithContext, refreshCodeUpgradeRunWithDependencies, type ReviewSourceScopeArgs } from "./code-upgrade-execution-runtime.js";
 import { GitHubHttpAdapter, type GitHubPullRequestDraft } from "@evopilot/adapter-github";
 import { GitLabHttpAdapter } from "@evopilot/adapter-gitlab";
 import { listRepositoryFiles } from "@evopilot/adapter-local-git";
 import {
+  applyReviewDecision,
   createPipelineRun,
   createReleaseReport,
   defaultTriggerRules,
@@ -7323,7 +7326,6 @@ export function emptyLoopTraceSummary(loopId: string, now: string): LoopTraceSum
       ageSeconds: 0
     },
     cost: {
-      estimatedUsd: 0,
       totalTokens: 0
     },
     llmUsage: emptyLlmUsageSummary(`loop:${loopId}`, now),
@@ -7355,7 +7357,7 @@ export function buildLoopTraceSummary(loop: LoopRun): LoopTraceSummary {
       ageSeconds
     },
     cost: {
-      estimatedUsd: Number(costFromSteps.toFixed(6)),
+      ...(steps.length > 0 && steps.every(step => typeof step.output.costUsd === "number" && Number.isFinite(step.output.costUsd)) ? {estimatedUsd: Number(costFromSteps.toFixed(6))} : {}),
       totalTokens
     },
     llmUsage: buildLoopLlmUsageSummary(loop),
@@ -10518,25 +10520,44 @@ export async function startCodeUpgradeExecution(args: {
   body: any;
   profile: ProjectProfile;
   runtime: RuntimeConfig;
+  currentAuth?: () => AuthContext;
 }): Promise<CodeUpgradeRun> {
   const { store, auth, run, delivery, plan, review, body, profile, runtime } = args;
+  const explicitScope = Object.hasOwn(body, "sourceScopeApprovalDigest");
+  const proposalMarkdown = String(body.proposalMarkdown ?? body.PROPOSAL_MARKDOWN ?? renderPlanMarkdown(plan));
+  const currentScope = (sourceCommit?: string) => {
+    const principal = args.currentAuth?.() ?? auth;
+    if (principal.role !== "admin") throw httpError(403, "CODE_UPGRADE_SCOPE_FORBIDDEN");
+    const latestRun = store.findRunByDeliveryId(delivery.id);
+    const currentDelivery = latestRun?.deliveryPlans.find(item => item.id === delivery.id);
+    const currentPlan = latestRun?.plans.find(item => item.id === currentDelivery?.planId);
+    const currentReview = latestRun?.reviews.find(item => item.planId === currentPlan?.id);
+    const currentProject = store.readProject(delivery.projectId);
+    assertSourceScopeAccess(principal, currentProject);
+    if (!currentPlan || !currentReview || currentDelivery?.projectId !== currentProject.id || currentReview.id !== review?.id) throw httpError(409, "CODE_UPGRADE_SCOPE_OWNER_MISMATCH");
+    return resolveSourceScope({auth: principal, project: currentProject, plan: currentPlan, review: currentReview, profile, approvalDigest: body.sourceScopeApprovalDigest, proposalMarkdown, sourceCommit});
+  };
+  let sourceScope = explicitScope ? currentScope() : undefined;
   const connectorId = requireBodyString(body.connectorId, "CODE_UPGRADE_CONNECTOR_ID_REQUIRED", runtime, "default");
   const connector = store.readCodeUpgraderConnector(connectorId);
   if (!connector) throw new Error("CODE_UPGRADER_CONNECTOR_NOT_CONFIGURED");
   const project = store.readProject(delivery.projectId);
   if (!project?.repository && runtime.mode === "prod") throw new Error("PROJECT_REPOSITORY_NOT_CONFIGURED");
-  const proposalMarkdown = String(body.proposalMarkdown ?? body.PROPOSAL_MARKDOWN ?? renderPlanMarkdown(plan));
   const validationPlan = resolveProjectValidationPlan(project, body);
   const validationCommands = validationPlanToCommands(validationPlan, normalizeValidationCommands(body.validationCommands ?? plan.validationContract.commands));
   const diagnostic = await diagnoseProjectRuntime({ store, project, runtime });
+  if (explicitScope) sourceScope = currentScope();
   const blockingDiagnostic = codeUpgradeBlockingDiagnostic(diagnostic);
   if (blockingDiagnostic) throw new Error(`PROJECT_RUNTIME_DIAGNOSTIC_FAILED: ${blockingDiagnostic.remediation ?? blockingDiagnostic.detail}`);
-  const codeContext = await collectProjectCodeContext({ store, project, runtime, profile, focusFiles: codeUpgradeFocusFiles(run) });
+  const codeContext = await collectProjectCodeContext({ store, project, runtime, profile, focusFiles: codeUpgradeFocusFiles(run), sourceScopeFiles: sourceScope?.files });
+  if (explicitScope && codeContext.status !== "AVAILABLE") throw httpError(409, "CODE_UPGRADE_SCOPE_SOURCE_UNAVAILABLE");
   if (runtime.mode === "prod" && codeContext.status !== "AVAILABLE") {
     throw new Error(`PROJECT_CODE_CONTEXT_UNAVAILABLE: ${codeContext.unavailableReason ?? codeContext.summary}`);
   }
-  const allowedPaths = inferCodeUpgradeAllowedPaths(codeContext, codeUpgradeFocusFiles(run));
+  if (explicitScope) sourceScope = currentScope(codeContext.commitSha);
+  const allowedPaths = sourceScope?.files ?? inferCodeUpgradeAllowedPaths(codeContext, codeUpgradeFocusFiles(run));
   const branchStrategy = createBranchStrategy({ projectId: delivery.projectId, sourceBranch: project?.repository?.defaultBranch, delivery, plan, body });
+  if (sourceScope && branchStrategy.sourceBranch !== sourceScope.sourceBranch) throw httpError(409, "CODE_UPGRADE_SCOPE_SOURCE_BRANCH_MISMATCH");
   logInfo("code-upgrade.starting", {
     actor: auth.actor,
     target: delivery.id,
@@ -10548,9 +10569,11 @@ export async function startCodeUpgradeExecution(args: {
       sourceBranch: branchStrategy.sourceBranch,
       upgradeBranch: branchStrategy.upgradeBranch,
       validationCommandCount: validationCommands.length,
-      allowedPaths
+      allowedPaths,
+      ...(sourceScope ? {sourceScopeApprovalDigest: sourceScope.approvalDigest, sourceCommit: sourceScope.sourceCommit, repositoryDigest: sourceScope.repositoryDigest} : {})
     }
   });
+  const sourceScopeBinding = sourceScope ? sourceScopeProviderBinding(sourceScope) : undefined;
   const session = await new CodeUpgraderClient(connector).startCodeUpgrade({
     projectId: delivery.projectId,
     repository: project?.repository ? {
@@ -10571,8 +10594,13 @@ export async function startCodeUpgradeExecution(args: {
     validationCommands,
     validationPlan,
     allowedPaths,
-    protectedPaths: profile.policy.protectedPaths
+    protectedPaths: profile.policy.protectedPaths,
+    managedOnly: Boolean(sourceScope), sourceScopeBinding
+  }, sourceScope ? () => {currentScope(codeContext.commitSha);} : undefined).catch(error => {
+    if (sourceScope && error instanceof Error && /^CODE_UPGRADE_SCOPE_PROVIDER_CAPABILITY_(REQUIRED|UNAVAILABLE)$/.test(error.message)) throw httpError(409, error.message);
+    throw error;
   });
+  const startAcknowledged = !sourceScopeBinding || sourceScopeBindingMatches(sourceScopeBinding, session.sourceScopeBinding);
   const now = new Date().toISOString();
   const codeUpgrade: CodeUpgradeRun = {
     id: `code-upgrade-${delivery.id}-${Date.now()}`,
@@ -10581,7 +10609,9 @@ export async function startCodeUpgradeExecution(args: {
     planId: plan.id,
     reviewId: review?.id,
     executor: "code-upgrader",
-    status: session.status,
+    status: !startAcknowledged ? "FAILED" : sourceScope && session.status === "SUCCEEDED" ? "RUNNING" : session.status,
+    ...(sourceScope ? {sourceScope, sourceScopeBinding, sourceScopeAcknowledgement: {startMatched: startAcknowledged, ...(!startAcknowledged ? {effectsUncertain: true} : {})}} : {}),
+    ...(!startAcknowledged ? {failureReason: "CODE_UPGRADE_SCOPE_PROVIDER_ACK_MISMATCH_UNCERTAIN", error: "Provider session may have effects. Inspect the retained conversation; do not redispatch."} : {}),
     proposalMarkdown,
     validationCommands,
     branchStrategy,
@@ -10604,7 +10634,8 @@ export async function startCodeUpgradeExecution(args: {
     level: "info",
     message: `用户确认进化方案后，EvoPilot 已创建代码升级任务，升级分支：${branchStrategy.upgradeBranch}。`
   });
-  store.appendAudit(audit(auth, "code-upgrade.started", codeUpgrade.id, { deliveryId: delivery.id, connectorId, conversationId: session.conversationId, branchStrategy }));
+  store.appendAudit(audit(auth, "code-upgrade.started", codeUpgrade.id, { deliveryId: delivery.id, connectorId, conversationId: session.conversationId, branchStrategy,
+    ...(sourceScope ? {sourceScopeApprovalDigest: sourceScope.approvalDigest, sourceCommit: sourceScope.sourceCommit, repositoryDigest: sourceScope.repositoryDigest, fileListDigest: sourceScopeDigest(sourceScope.files), fileCount: sourceScope.files.length} : {}) }));
   logInfo("code-upgrade.started", {
     actor: auth.actor,
     target: codeUpgrade.id,
@@ -10616,7 +10647,11 @@ export async function startCodeUpgradeExecution(args: {
       status: codeUpgrade.status
     }
   });
-  return refreshCodeUpgradeRun(store, codeUpgrade.id).then((updated) => updated ?? codeUpgrade);
+  return refreshCodeUpgradeRun(store, codeUpgrade.id, profile, auth, args.currentAuth).then((updated) => updated ?? codeUpgrade);
+}
+
+export async function prepareReviewSourceScope(args: ReviewSourceScopeArgs) {
+  return prepareReviewSourceScopeWithContext(args, collectProjectCodeContext);
 }
 
 export function codeUpgradeBlockingDiagnostic(diagnostic: ProjectRuntimeDiagnostic): ProjectRuntimeDiagnostic["checks"][number] | undefined {
@@ -10704,65 +10739,8 @@ export function createAndStoreRunFromEvidence(args: {
   return run;
 }
 
-export async function refreshCodeUpgradeRun(store: FileStore, codeUpgradeRunId: string): Promise<CodeUpgradeRun | undefined> {
-  const run = store.readCodeUpgradeRun(codeUpgradeRunId);
-  if (!run) return undefined;
-  if (run.status === "SUCCEEDED" || run.status === "FAILED" || run.status === "CANCELED") return run;
-  const connector = store.readCodeUpgraderConnector(run.codeUpgrader.connectorId);
-  if (!connector) return run;
-  const snapshot = await new CodeUpgraderClient(connector).readCodeUpgradeSnapshot(run.codeUpgrader.conversationId);
-  const events = [
-    ...store.listCodeUpgradeEvents(run.id).filter((event) => event.source === "evopilot"),
-    ...snapshot.events.map((event, index): CodeUpgradeEvent => ({
-      id: event.id || `code-upgrader-${run.id}-${index}`,
-      codeUpgradeRunId: run.id,
-      timestamp: event.timestamp ?? new Date().toISOString(),
-      source: event.source ?? "code-upgrader",
-      phase: event.phase ?? inferCodeUpgradePhase(event.message),
-      level: event.level ?? "info",
-      message: event.message,
-      raw: event.raw
-    }))
-  ];
-  const updated: CodeUpgradeRun = {
-    ...run,
-    status: snapshot.status,
-    codeUpgrader: {
-      ...run.codeUpgrader,
-      workspaceId: snapshot.workspaceId ?? run.codeUpgrader.workspaceId
-    },
-    artifacts: {
-      ...run.artifacts,
-      diffPath: snapshot.diff ? store.writeCodeUpgradeDiff(run.id, snapshot.diff) : run.artifacts.diffPath,
-      branchName: snapshot.branchName ?? run.artifacts.branchName,
-      commitSha: snapshot.commitSha ?? run.artifacts.commitSha,
-      pullRequestUrl: snapshot.pullRequestUrl ?? run.artifacts.pullRequestUrl,
-      changedFiles: snapshot.changedFiles ?? run.artifacts.changedFiles
-    },
-    failureReason: terminalCodeUpgradeFailureReason(snapshot.status, events) ?? run.failureReason,
-    error: terminalCodeUpgradeError(snapshot.status, events) ?? run.error,
-    updatedAt: new Date().toISOString()
-  };
-  store.writeCodeUpgradeRun(updated);
-  store.writeCodeUpgradeEvents(run.id, dedupeEvents(events));
-  if (updated.status !== run.status) {
-    logInfo("code-upgrade.status-changed", {
-      target: updated.id,
-      metadata: {
-        projectId: updated.projectId,
-        deliveryPlanId: updated.deliveryPlanId,
-        previousStatus: run.status,
-        status: updated.status,
-        conversationId: updated.codeUpgrader.conversationId,
-        changedFileCount: updated.artifacts.changedFiles?.length ?? 0,
-        commitSha: updated.artifacts.commitSha,
-        pullRequestUrl: updated.artifacts.pullRequestUrl,
-        failureReason: updated.failureReason,
-        error: updated.error
-      }
-    });
-  }
-  return updated;
+export async function refreshCodeUpgradeRun(store: FileStore, codeUpgradeRunId: string, profile?: ProjectProfile, auth?: AuthContext, currentAuth?: () => AuthContext): Promise<CodeUpgradeRun | undefined> {
+  return refreshCodeUpgradeRunWithDependencies({inferCodeUpgradePhase, terminalCodeUpgradeFailureReason, terminalCodeUpgradeError, dedupeEvents}, store, codeUpgradeRunId, profile, auth, currentAuth);
 }
 
 export function terminalCodeUpgradeFailureReason(status: CodeUpgraderRunStatus, events: CodeUpgradeEvent[]): string | undefined {
@@ -11164,6 +11142,7 @@ export function eventTokens(event: RuntimeEvidenceEvent): number {
 export function costHealthScore(status: CostReport["status"]): number {
   if (status === "HEALTHY") return 100;
   if (status === "WATCH") return 70;
+  if (status === "OBSERVED") return 100;
   return 30;
 }
 
@@ -11455,6 +11434,7 @@ export async function collectProjectCodeContext(args: {
   runtime: RuntimeConfig;
   profile: ProjectProfile;
   focusFiles?: string[];
+  sourceScopeFiles?: string[];
 }): Promise<ProjectCodeContext> {
   const project = args.project;
   if (!project) return unavailableProjectCodeContext("unknown", "项目未注册，无法读取当前代码基线。");
@@ -11463,7 +11443,7 @@ export async function collectProjectCodeContext(args: {
 
   if (project.repository.provider === "local-git") {
     if (!project.repository.root) return unavailableProjectCodeContext(project.id, "local-git 项目缺少 repository.root。");
-    return collectCodeContextFromWorktree({ project, repoRoot: project.repository.root, source: "local-git", profile: args.profile, focusFiles: args.focusFiles });
+    return collectCodeContextFromWorktree({ project, repoRoot: project.repository.root, source: "local-git", profile: args.profile, focusFiles: args.focusFiles, sourceScopeFiles: args.sourceScopeFiles });
   }
 
   if (!project.repository.gitUrl) return unavailableProjectCodeContext(project.id, "远程 Git 项目缺少 gitUrl，无法克隆当前代码基线。");
@@ -11476,7 +11456,7 @@ export async function collectProjectCodeContext(args: {
       env: { ...process.env, GIT_ASKPASS: askpass, GIT_TERMINAL_PROMPT: "0" }
     });
     if (result.code !== 0) return unavailableProjectCodeContext(project.id, `克隆当前代码基线失败：${result.stderr || result.stdout}`);
-    return await collectCodeContextFromWorktree({ project, repoRoot, source: "git-clone", profile: args.profile, focusFiles: args.focusFiles });
+    return await collectCodeContextFromWorktree({ project, repoRoot, source: "git-clone", profile: args.profile, focusFiles: args.focusFiles, sourceScopeFiles: args.sourceScopeFiles });
   } finally {
     fs.rmSync(askpass, { force: true });
     fs.rmSync(tempRoot, { recursive: true, force: true });
@@ -11501,15 +11481,21 @@ export async function collectCodeContextFromWorktree(args: {
   source: ProjectCodeContext["source"];
   profile: ProjectProfile;
   focusFiles?: string[];
+  sourceScopeFiles?: string[];
 }): Promise<ProjectCodeContext> {
   if (!fs.existsSync(args.repoRoot)) return unavailableProjectCodeContext(args.project.id, `代码目录不存在：${args.repoRoot}`);
   const branch = await gitOutput(["-C", args.repoRoot, "rev-parse", "--abbrev-ref", "HEAD"]).catch(() => args.project.repository?.defaultBranch ?? "unknown");
   const commitSha = await gitOutput(["-C", args.repoRoot, "rev-parse", "HEAD"]).catch(() => undefined);
+  if (args.sourceScopeFiles) {
+    if (!commitSha || !/^[a-f0-9]{40}$/.test(commitSha) || await gitOutput(["-C", args.repoRoot, "status", "--porcelain", "--untracked-files=all"])) throw httpError(409, "CODE_UPGRADE_SCOPE_SOURCE_DIRTY");
+    assertSourceFilesOnDisk(args.repoRoot, args.sourceScopeFiles);
+  }
   const trackedFiles = await listTrackedFiles(args.repoRoot);
   const selectedPaths = selectCodeContextFiles(trackedFiles, args.profile.policy.protectedPaths, args.focusFiles);
   const selectedFiles = selectedPaths.map((relativePath) => readContextFile(args.repoRoot, relativePath)).filter(Boolean) as ProjectCodeContext["selectedFiles"];
   if (selectedFiles.length === 0) return unavailableProjectCodeContext(args.project.id, "当前代码基线没有可用于架构分析的文本文件。");
   const writableRoots = inferWritableCodeRoots(trackedFiles, args.profile.policy.protectedPaths);
+  if (args.sourceScopeFiles && (await gitOutput(["-C", args.repoRoot, "rev-parse", "HEAD"]) !== commitSha || await gitOutput(["-C", args.repoRoot, "status", "--porcelain", "--untracked-files=all"]))) throw httpError(409, "CODE_UPGRADE_SCOPE_SOURCE_STALE");
   return {
     status: "AVAILABLE",
     source: args.source,
