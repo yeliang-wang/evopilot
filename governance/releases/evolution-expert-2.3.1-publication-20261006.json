@@ -1,0 +1,239 @@
+{
+  "schema": "evopilot-evolution-expert-publication-evidence/v1",
+  "status": "PUBLISHED_VERIFIED",
+  "recordedAt": "2026-10-06T05:05:47.665408+00:00",
+  "product": "evopilot-evolution-expert",
+  "version": "2.3.1",
+  "candidateCommit": "4c7c09b8be221d2feedef8fa5f12b00883ee33fc",
+  "candidateRunId": "37407240219",
+  "publicDistributionObservationDigest": "sha256:fcbca238f1bf29f70c0f92fae1051256236c193df9f51e2345ab5ca7666d607e",
+  "publicArtifactDownloadObservationDigest": "sha256:fcbca238f1bf29f70c0f92fae1051256236c193df9f51e2345ab5ca7666d607e",
+  "acceptanceDigest": "sha256:2fd74a0ed8f854867174d362f3c88a61b967756283fb23554a4890f6040bcee1",
+  "authorizationRecordDigest": "sha256:3b5f6df4e81c4b26f2e054d01fbe363d689d681d040d5d2fbdc985b27132ce8f",
+  "targetRecordDigest": "sha256:422e99f1b6d7c2f7f94fc5f94e2796723d267a8b4eabc6ef106cdd3b71605c46",
+  "approvedSourceTargetDigest": "sha256:7e4b51da9dc9ccbc7ec85aef6a07aa4843b8487a9db9aa25e991e340ad178544",
+  "releaseAuthorizationDigest": "sha256:a6d196f7e19ff9117fa506532b2f8a87f18fc5adb3fd4ab213292e56eecc3924",
+  "technicalBindingDigest": "sha256:e5557194c52c43a17c5f578f8f19d09a7b6edb188842087601f9c89bf3d7345b",
+  "targetReleaseGateDigest": "sha256:68375b542e3e272568fe247457f294bba57044d5e657f411e2689ebf30c649bc",
+  "acceptedRoadmapDigest": "sha256:ed948bddea726a6fe1838202ff4394eb42626164dac7a66a9778f0dceb12b17b",
+  "candidateHandoffDigest": "sha256:f0a3b264260105f600dfa18bb7a49cb74f9b3116e3c7aee156c1a561bee79185",
+  "releaseSetDigest": "sha256:6a8b5705074a323d9156db57556f2049c5a494b2f13b362d51cdfcf2337bb28f",
+  "githubRelease": "https://github.com/yeliang-wang/evopilot/releases/tag/evolution-expert-v2.3.1",
+  "releaseId": 404330625,
+  "publishedAt": "2026-10-06T04:57:53Z",
+  "tag": {
+    "name": "evolution-expert-v2.3.1",
+    "commit": "4c7c09b8be221d2feedef8fa5f12b00883ee33fc"
+  },
+  "githubReadbackMethod": "Authenticated GitHub API and fresh asset download; stable non-draft public repository release. No separate anonymous GitHub request is claimed.",
+  "assets": [
+    {
+      "name": "SHA256SUMS",
+      "size": 329,
+      "digest": "sha256:270b67a673205e7f63952bf0cb8008e0f52ac321bb60ff89377b7825a6332cad",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/evolution-expert-v2.3.1/SHA256SUMS"
+    },
+    {
+      "name": "evopilot-evolution-expert-2.3.1-provenance.json",
+      "size": 1161,
+      "digest": "sha256:f4d6a69c5f197012821ae046d9f4ec588870cb811ae81f12c7bfa8905d2375f3",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/evolution-expert-v2.3.1/evopilot-evolution-expert-2.3.1-provenance.json"
+    },
+    {
+      "name": "evopilot-evolution-expert-2.3.1-sbom.spdx.json",
+      "size": 1349,
+      "digest": "sha256:6d09f3020ac85dafefd0878b9be39cf8c2e48a0890d444d3ec5ac89e2c12ed98",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/evolution-expert-v2.3.1/evopilot-evolution-expert-2.3.1-sbom.spdx.json"
+    },
+    {
+      "name": "evopilot-evolution-expert-2.3.1.tgz",
+      "size": 99880,
+      "digest": "sha256:5732feaaed5fe87b4a2e6bebf808534510b66831d7b56da9065f343130c8a9c9",
+      "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/evolution-expert-v2.3.1/evopilot-evolution-expert-2.3.1.tgz"
+    }
+  ],
+  "promotionRecordAsset": {
+    "name": "evopilot-evolution-expert-2.3.1-release-promotion.json",
+    "size": 1049,
+    "digest": "sha256:31ee8ca69cbc0c40d6ca54d56ad49fb31fcaeb7643ae86dd71a50b904d607b29",
+    "browser_download_url": "https://github.com/yeliang-wang/evopilot/releases/download/evolution-expert-v2.3.1/evopilot-evolution-expert-2.3.1-release-promotion.json"
+  },
+  "images": [],
+  "npm": [
+    {
+      "name": "@evopilot/evolution-expert",
+      "version": "2.3.1",
+      "tarball": "https://registry.npmjs.org/@evopilot/evolution-expert/-/evolution-expert-2.3.1.tgz",
+      "integrity": "sha512-UHO58PcQ587x8gZFvTkNjkbEeCSTd2AelFnoETLevmH/fUP1AYV5sO+YpBtDK16hYa28+Oz8eX2efLIfX1vxMw==",
+      "sha256": "sha256:5732feaaed5fe87b4a2e6bebf808534510b66831d7b56da9065f343130c8a9c9",
+      "attestations": "https://registry.npmjs.org/-/npm/v1/attestations/@evopilot%2fevolution-expert@2.3.1",
+      "provenancePredicateType": "https://slsa.dev/provenance/v1",
+      "signatures": [
+        {
+          "sig": "MEYCIQCCQv8zqt25wIf8lm8jf4roMi16I8Rszlx4LEsv++bj6AIhANuNlR/zxr+rAKVNncTW+1k+0ecG+MBW4eeqTyQy4p9w",
+          "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+        },
+        {
+          "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+          "sig": "MEQCIFU4kBYWbBQTZ3zBNg/WUj43dHsNB/r/4lxTK+Ml2j1XAiB/SdrCzvbRcd4Na5BL7CzVohHpvMk377X9bdKKEJLK6w=="
+        }
+      ],
+      "distTags": {
+        "latest": "2.3.1"
+      },
+      "signatureAudit": {
+        "registrySignedPackagesVerified": 2,
+        "attestedPackagesVerified": 2,
+        "receipt": {
+          "digest": "sha256:26ce9d3f88431a4cbf7987a92e3c0d9eba4a2e53e0ff2d8601c4ffe077554d04",
+          "address": "urn:sha256:26ce9d3f88431a4cbf7987a92e3c0d9eba4a2e53e0ff2d8601c4ffe077554d04"
+        }
+      },
+      "slsa": {
+        "sourceWorkflow": ".github/workflows/evolution-expert-release.yml",
+        "promotionCommit": "61118032ddf600e3374880da34599c33688034a9",
+        "invocation": "https://github.com/yeliang-wang/evopilot/actions/runs/37416168623/attempts/1",
+        "subjectSha512MatchesAcceptedTarball": true,
+        "statementReceipt": {
+          "digest": "sha256:b737168012b0c07ed24d5cb8ef3ae866c4f4087d84bf0bd60f5c974a5e09c9c9",
+          "address": "urn:sha256:b737168012b0c07ed24d5cb8ef3ae866c4f4087d84bf0bd60f5c974a5e09c9c9"
+        },
+        "sigstoreBundleReceipt": {
+          "digest": "sha256:722162052ec02c0aa6601c77ccb0246fe7383f90d40fe1111bd1e65be0137a2b",
+          "address": "urn:sha256:722162052ec02c0aa6601c77ccb0246fe7383f90d40fe1111bd1e65be0137a2b"
+        }
+      }
+    }
+  ],
+  "promotionWorkflowCommit": "61118032ddf600e3374880da34599c33688034a9",
+  "npmWorkflowCommit": "61118032ddf600e3374880da34599c33688034a9",
+  "promotionRuns": {
+    "githubAndNpm": {
+      "runId": "37416168623",
+      "url": "https://github.com/yeliang-wang/evopilot/actions/runs/37416168623",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "workflow": ".github/workflows/evolution-expert-release.yml",
+      "rawObservationDigest": "sha256:51eb160f66b07e75f9e6a80a741c931c9003ec9ae9227cf8e4d8c739b3099c15",
+      "jobs": [
+        {
+          "id": 112115146753,
+          "name": "Promote accepted Expert bytes to GitHub Release",
+          "conclusion": "success",
+          "url": "https://github.com/yeliang-wang/evopilot/actions/runs/37416168623/job/112115146753"
+        },
+        {
+          "id": 112115234425,
+          "name": "Publish accepted Expert tarball to npm",
+          "conclusion": "success",
+          "url": "https://github.com/yeliang-wang/evopilot/actions/runs/37416168623/job/112115234425"
+        }
+      ]
+    }
+  },
+  "verification": {
+    "frozenAssetCount": 4,
+    "additionalPromotionRecordCount": 1,
+    "githubAssetsDownloadedAndExactDigestsVerified": true,
+    "promotionRecordExactBindingVerified": true,
+    "publicNpmIntegrityAndProvenanceMetadataVerified": true,
+    "publicNpmTarballBytesEqualAcceptedCandidate": true,
+    "publicNpmRegistrySignaturesAndAttestationsVerified": true,
+    "candidateRebuilt": false,
+    "acceptedTargetScopeRewritten": false,
+    "historicalAcceptanceRewritten": false,
+    "structuralGateEvidenceExecutionVerified": false,
+    "localDefaultInstallation": "NOT_PERFORMED_BY_THIS_CAMPAIGN",
+    "fixedNode": {
+      "version": "22.23.3",
+      "binaryDigest": "sha256:68f4d07ca49e0500cc135c7e0a445093e228e42e126ac22306d045f0a8c2636b"
+    },
+    "fixedNpm": {
+      "version": "11.9.0",
+      "cliDigest": "sha256:8e5f6f3429f8cdbe693cdc29904e9d5a7b127a494bd15c804bd54c7403bfcbe7"
+    }
+  },
+  "freshIsolatedInstallation": {
+    "installedExpertFiles": 52,
+    "coreDigest": "sha256:5774f5c9f1609f0e40c0ce6e3faa1faa3f26a57be0b20aff2015021f55836a44",
+    "contractsDependencyVersion": "6.3.0",
+    "contractsDependencyFullAcceptedTreeEquivalence": "SEPARATE_ACCEPTANCE_EVIDENCE_NOT_REESTABLISHED_BY_THIS_PUBLIC_CHECK",
+    "publicInstallVerifier": {
+      "digest": "sha256:a1c662d69e4d427570060c5c6dc9c81b2134510fe2000886e01333098f0b5140",
+      "address": "urn:sha256:a1c662d69e4d427570060c5c6dc9c81b2134510fe2000886e01333098f0b5140"
+    },
+    "directCompatibilityCodex632": {
+      "digest": "sha256:6cf5804a261a659db6c7e963ee9d7b406d2b46a1a9c38f74a7f0d158f6ae69fb",
+      "address": "urn:sha256:6cf5804a261a659db6c7e963ee9d7b406d2b46a1a9c38f74a7f0d158f6ae69fb"
+    },
+    "lockfile": {
+      "digest": "sha256:f8a3834f2742aa24a60c5f334ad62f6c114c3ac65797937ec822072bf290c215",
+      "address": "urn:sha256:f8a3834f2742aa24a60c5f334ad62f6c114c3ac65797937ec822072bf290c215"
+    },
+    "scope": "ACCEPTED_BYTES_AND_DECLARED_PACKAGE_CONTRACT_ONLY",
+    "declaredRuntimeVersions": [
+      "6.3.3",
+      "6.3.2",
+      "6.3.1",
+      "6.3.0",
+      "6.2.0"
+    ],
+    "generatedHostDeclarations": [
+      "codex",
+      "claude-code",
+      "workbuddy",
+      "generic-agent",
+      "generic-mcp"
+    ],
+    "realHostQualification": "NOT_OBSERVED_BY_THIS_READBACK",
+    "runtimeReadiness": "NOT_OBSERVED_BY_THIS_READBACK"
+  },
+  "acceptance": {
+    "newCriteriaPassed": 6,
+    "inheritedImpactCriteriaPassed": 400,
+    "realCasesPassed": 3,
+    "exactInstalledRegressionPassed": 2505,
+    "noRegression": "PASSED",
+    "hostScope": "CODEX_ONLY_BOUNDED_STDIO_SKILL_READONLY_AND_RESTART",
+    "nativeCredentialInteraction": "UNVERIFIED_NOT_EXECUTED",
+    "newNinetyMinuteSoak": "NOT_EXECUTED_NOT_PASS",
+    "otherLiveHosts": "NOT_CLAIMED",
+    "realModelCalls": 0,
+    "totalTokens": 0,
+    "excludedItemsCountedAsPass": false,
+    "newExecutionOfHistoricalJourneys": false,
+    "oldPassTransferred": false
+  },
+  "records": {
+    "acceptance": {
+      "path": "governance/releases/evolution-expert-2.3.1-acceptance-20261006.json",
+      "digest": "sha256:2fd74a0ed8f854867174d362f3c88a61b967756283fb23554a4890f6040bcee1"
+    },
+    "authorization": {
+      "path": "governance/releases/evolution-expert-2.3.1-authorization-20261006.json",
+      "digest": "sha256:3b5f6df4e81c4b26f2e054d01fbe363d689d681d040d5d2fbdc985b27132ce8f"
+    },
+    "targetReleaseGate": {
+      "path": "governance/releases/evolution-expert-2.3.1-target-release-gate-20261006.json",
+      "digest": "sha256:68375b542e3e272568fe247457f294bba57044d5e657f411e2689ebf30c649bc"
+    },
+    "independentPublicReadback": {
+      "digest": "sha256:fcbca238f1bf29f70c0f92fae1051256236c193df9f51e2345ab5ca7666d607e",
+      "address": "urn:sha256:fcbca238f1bf29f70c0f92fae1051256236c193df9f51e2345ab5ca7666d607e"
+    }
+  },
+  "independentLocalProjectExtensions": {
+    "version": "1.0.1",
+    "publicRelease": false,
+    "ownership": "PRIVATE_SEPARATELY_INSTALLED_COMPONENT"
+  },
+  "authority": {
+    "basis": "EXISTING_EXPLICIT_USER_RELEASE_AUTHORIZATION_WITH_SEPARATE_EXACT_TECHNICAL_BINDING",
+    "publicationGrantsProductExecutionAuthority": false,
+    "publicationIsSeparateFromRuntime633AndHarness482Authority": true,
+    "remoteRuntimeDeployed": false,
+    "dailyInstallationChanged": false,
+    "dailyConfigurationChanged": false,
+    "retiredSuitesRestored": false
+  }
+}
