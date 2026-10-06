@@ -7,6 +7,9 @@ import {probeDigest} from '../e2e/versions/probe-session.mjs';
 // Source-build integration fixture only: no release build, publication, npm
 // scripts, network install or real Host qualification is performed here.
 export function stageCompiledExpert(root,input){
+ const expertManifest=JSON.parse(fs.readFileSync(path.resolve('packages/evolution-expert/package.json')));
+ assert.equal(expertManifest.name,'@evopilot/evolution-expert','COMPILED_EXPERT_PACKAGE_REQUIRED');
+ assert.ok(['2.3.0','2.3.1'].includes(expertManifest.version),'COMPILED_EXPERT_VERSION_UNSUPPORTED');
  const installationRoot=path.join(root,'compiled-installation');
  assert.equal(fs.existsSync(installationRoot),false,'COMPILED_FIXTURE_MUST_BE_FRESH');
  for(const name of ['contracts','evolution-expert']){
@@ -20,6 +23,6 @@ export function stageCompiledExpert(root,input){
    if(stat.isDirectory())visit(name);else files.push({path:name,digest:bytesDigest(fs.readFileSync(file))});
   }
  }visit();
- const context={schema:'evopilot-installed-expert-sdk-context/v1',product:'expert',version:'2.3.0',installationRoot,files,artifactSetDigest:probeDigest(files),acceptanceBindingDigest:probeDigest('source-build-test-not-candidate'),probeInputDigest:probeDigest(input)};
+ const context={schema:'evopilot-installed-expert-sdk-context/v1',product:'expert',version:expertManifest.version,installationRoot,files,artifactSetDigest:probeDigest(files),acceptanceBindingDigest:probeDigest('source-build-test-not-candidate'),probeInputDigest:probeDigest(input)};
  const contextBytes=Buffer.from(JSON.stringify(context));return {installationRoot,options:{contextBytes,expectedContextDigest:bytesDigest(contextBytes),inputBytes:Buffer.from(JSON.stringify(input))}};
 }

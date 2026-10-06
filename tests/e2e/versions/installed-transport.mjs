@@ -11,7 +11,7 @@ import {runtimeCapabilityCliResult} from './runtime/6.3.0/capability-probe.mjs';
 export const bytesDigest = value => 'sha256:' + crypto.createHash('sha256').update(value).digest('hex');
 const packages = {
   runtime:{name:'@evopilot/cli',versions:['6.3.0','6.3.1','6.3.2','6.3.3'],entry:'dist/index.js'},
-  expert:{name:'@evopilot/evolution-expert',versions:['2.3.0'],entry:'dist/cli.js'}
+  expert:{name:'@evopilot/evolution-expert',versions:['2.3.0','2.3.1'],entry:'dist/cli.js'}
 };
 function safeRelative(relative) {
   assert.ok(typeof relative==='string' && relative.length<=1024 && !path.isAbsolute(relative) &&
@@ -101,7 +101,7 @@ function createTransport({contextBytes,expectedContextDigest,sourceRoot,authoriz
   const verify=()=>assert.deepEqual(tree(root),expected,'INSTALLED_INVENTORY_DRIFT');verify();
   const packageRoot=path.join(root,'node_modules',spec.name);
   const manifest=JSON.parse(fileBytes(path.join(packageRoot,'package.json')));
-  assert.equal(manifest.name,spec.name);assert.equal(manifest.version,context.version);
+  assert.equal(manifest.name,spec.name);assert.equal(manifest.version,context.version,'INSTALLED_PACKAGE_VERSION_MISMATCH');
   const entry=path.join(packageRoot,spec.entry);fileBytes(entry);
   const identity=Object.freeze({contextDigest:expectedContextDigest,artifactSetDigest:context.artifactSetDigest,
     acceptanceBindingDigest:context.acceptanceBindingDigest,product:context.product,version:context.version,

@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { expertPublicCompatibilityChecks } from "./lib/expert-public-compatibility-contract.mjs";
 
 const root = process.cwd();
 const packageJson = readJson("package.json");
@@ -69,8 +70,9 @@ requireContent(".github/workflows/evolution-expert-release-candidate.yml", /evol
 requireContent(".github/workflows/evolution-expert-release-candidate.yml", /project-candidate-handoff\.mjs build/, "Expert Candidate workflow must create an immutable handoff");
 requireContent(".github/workflows/evolution-expert-release.yml", /project-candidate-handoff\.mjs verify/, "Expert release workflow must verify the accepted handoff");
 requireContent(".github/workflows/evolution-expert-release.yml", /npm publish "\$TARBALL" --access public --provenance/, "Expert release workflow must promote the accepted tarball with provenance");
-const runtimeCompatibility = new RegExp(`evopilot-expert compatibility codex ${escapeRegExp(version)}`);
-requireContent(".github/workflows/evolution-expert-release.yml", runtimeCompatibility, "Expert release workflow must verify the current Runtime version from a public install");
+checks.push(...expertPublicCompatibilityChecks(
+  fs.readFileSync(path.join(root, ".github/workflows/evolution-expert-release.yml"), "utf8"),
+  fs.readFileSync(path.join(root, "scripts/verify-expert-public-install.mjs"), "utf8"), version));
 requireContent("docs/operations/release-management.md", new RegExp(`Runtime ${escapeRegExp(version)} compatibility`), "release management must document current Runtime compatibility for the Expert");
 requireContent("packages/evolution-expert/CHANGELOG.md", new RegExp(escapeRegExp(readJson("packages/evolution-expert/package.json").version)), "Expert changelog must mention its package version");
 requireContent(".github/workflows/release-artifacts.yml", /actions\/download-artifact@v4/, "Release workflow must consume the Candidate release set");

@@ -6,31 +6,31 @@
   "targets": [
     {
       "id": "evopilot-6.3.3-documentation-onboarding",
-      "revision": 1,
+      "revision": 2,
       "product": "evopilot-runtime",
       "version": "6.3.3",
       "targetPath": "governance/targets/evopilot-6.3.3-documentation-onboarding.json",
-      "approvedTargetFileDigest": "sha256:31e998b16154c7feda749311dfdabbf83d76379ac182c4c8036379973c355891",
-      "approvedScopeDigest": "sha256:6368549fe5bd41082319cad26308250cbb4b467a99e347f3d7a213963781b664",
+      "approvedTargetFileDigest": "sha256:ec33b48a1c9c8a92874a8e2d537b0f899142f8797562980a1ceeb12b31be252b",
+      "approvedScopeDigest": "sha256:bd3c84441ddb52f03ef7808eec33f6144de538243190e171aee13d7fb1d6bc5d",
       "baselineTarget": "governance/targets/evopilot-6.3.2-readiness-continuity.json",
       "baselineTargetDigest": "sha256:87efd50af59cce8f6125c38a8bef846c892e203117501f9b3e876c68c3fb5f61",
       "inheritedCriterionCount": 419,
       "sourceAuthorityDigest": "sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39",
-      "roadmapDigest": "sha256:c1e7983c20129ca1d54e34987757d8f5e9155cbfa955ec14e9355652accd459c"
+      "roadmapDigest": "sha256:de52153f6a804d67676c8a591a641d11897c8eafdedd743368589ae1d92f8fb5"
     },
     {
       "id": "evopilot-evolution-expert-v2.3.1-documentation-onboarding",
-      "revision": 1,
+      "revision": 2,
       "product": "evopilot-evolution-expert",
       "version": "2.3.1",
       "targetPath": "governance/targets/evopilot-evolution-expert-v2.3.1-documentation-onboarding.json",
-      "approvedTargetFileDigest": "sha256:bf1016726be2709fcca054e1f296b962e260450ce6d5a163d8e28e8a6cf2a016",
-      "approvedScopeDigest": "sha256:6c9532da6de0f2d68ac370f2a0f8c2ec9bdd295625f3ffc92f8442c6863c816b",
+      "approvedTargetFileDigest": "sha256:55bf2d02812b61220f88248c166c12c27eb2fb49a30b8a6c7962e6e5e1270bf3",
+      "approvedScopeDigest": "sha256:e2ce3758e8a5d4b1e049acbf52578ca4864a10baa8d6484b5dee9fed4dc8d1d9",
       "baselineTarget": "governance/targets/evopilot-evolution-expert-v2.3.0-semantic-convergence-successor.json",
       "baselineTargetDigest": "sha256:1871ddafd5581317dbe1f3bbef08a5b57f85fb41fcc81d101430ecb0401dd714",
       "inheritedCriterionCount": 400,
       "sourceAuthorityDigest": "sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39",
-      "roadmapDigest": "sha256:c1e7983c20129ca1d54e34987757d8f5e9155cbfa955ec14e9355652accd459c"
+      "roadmapDigest": "sha256:de52153f6a804d67676c8a591a641d11897c8eafdedd743368589ae1d92f8fb5"
     }
   ],
   "technicalDigestIndividuallyReviewedByUser": false,

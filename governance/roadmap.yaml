@@ -2625,14 +2625,14 @@
     "targets": [
       {
         "id": "evopilot-6.3.3-documentation-onboarding",
-        "revision": 1,
+        "revision": 2,
         "product": "evopilot-runtime",
         "version": "6.3.3",
         "path": "governance/targets/evopilot-6.3.3-documentation-onboarding.json"
       },
       {
         "id": "evopilot-evolution-expert-v2.3.1-documentation-onboarding",
-        "revision": 1,
+        "revision": 2,
         "product": "evopilot-evolution-expert",
         "version": "2.3.1",
         "path": "governance/targets/evopilot-evolution-expert-v2.3.1-documentation-onboarding.json"

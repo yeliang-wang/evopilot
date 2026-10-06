@@ -355,3 +355,9 @@ Rollback is an operator action, not a Git-only action:
 ## Runtime 6.3.2 compatibility
 
 The readiness-continuity maintenance Candidate is verified against unchanged public Expert 2.3.0 and Harness 4.8.1. The current compatibility command is `evopilot-expert compatibility codex 6.3.2`; the public Expert package still owns its existing 6.3.0 contracts dependency and is not republished by this Runtime patch. Candidate acceptance and actual publication are recorded independently in the current release ledger.
+
+## Runtime 6.3.3 compatibility
+
+The documentation maintenance pair is Runtime 6.3.3 and independently versioned Expert 2.3.1. Expert promotion invokes `scripts/verify-expert-public-install.mjs` on the public installation and exact accepted tarball. That verifier runs `compatibility` and `doctor` for the current Runtime and retained 6.3.2, 6.3.1, 6.3.0 and 6.2.0 versions across all five generated Host contracts, checking Runtime, Expert, Core and adapter identities. The workflow's direct 6.3.2 command remains an additional compatibility check. These declaration checks do not establish live acceptance of other Hosts.
+
+New maintenance Targets bind current acceptance independently from the immutable historical semantic corpus. The release-readiness wiring check verifies the actual public-install verifier invocation and its current-version assertions. Publication status and exact Candidate identities remain in the [current release ledger](../releases/current-release.md).

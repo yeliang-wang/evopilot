@@ -1,7 +1,7 @@
 {
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-6.3.3-documentation-onboarding",
-  "revision": 1,
+  "revision": 2,
   "status": "APPROVED",
   "intent": "Documentation synchronization: evopilot-runtime 6.3.3 maintenance patch for the approved onboarding documentation and necessary release identity/validation projections, without behavior or authority changes.",
   "objective": "Publish the approved packaged documentation improvements as evopilot-runtime 6.3.3, preserving independently versioned products and all accepted product boundaries.",
@@ -27,7 +27,7 @@
       "matchedMilestone": "evopilot-6.3.3-documentation-onboarding",
       "targetVersion": "6.3.3",
       "classification": "ALIGNED",
-      "roadmapDigest": "sha256:c1e7983c20129ca1d54e34987757d8f5e9155cbfa955ec14e9355652accd459c",
+      "roadmapDigest": "sha256:de52153f6a804d67676c8a591a641d11897c8eafdedd743368589ae1d92f8fb5",
       "maintenanceBasis": {
         "standingWork": "evopilot-maintenance",
         "gate": "runtime-intent.json"
@@ -37,10 +37,11 @@
   "scope": {
     "include": [
       "Documentation-only maintenance patch 6.3.3; semantic identity, generated metadata and finite release validation compatibility adjustments only.",
-      "Finite repository paths: CHANGELOG.md, README.md, charts/evopilot/Chart.yaml, charts/evopilot/values.production.example.yaml, charts/evopilot/values.yaml, docs/README.md, docs/architecture/README.md, docs/development/documentation-checks.md, docs/guides/agent-host-installation.md, docs/guides/agent-runtime.md, docs/guides/evolution-expert.md, docs/guides/first-task.md, docs/operations/distribution.md, docs/operations/release-management.md, docs/operations/runtime-management.md, docs/operations/troubleshooting.md, docs/quickstart.md, docs/reference/release-package.md, docs/releases/6.3.3.md, docs/releases/README.md, docs/releases/current-release.md, docs/roadmap/ROADMAP.md, governance/releases/documentation-onboarding-20261006-authority.json, governance/releases/documentation-onboarding-20261006-target-bindings.json, governance/releases/runtime-6.3.3-acceptance-20261006.json, governance/releases/runtime-6.3.3-authorization-20261006.json, governance/releases/runtime-6.3.3-publication-20261006.json, governance/releases/runtime-6.3.3-target-release-gate-20261006.json, governance/roadmap.yaml, governance/targets/evopilot-6.3.3-documentation-onboarding.json, install.ps1, install.sh, installers/manifest.json, package-lock.json, package.json, packages/adapter-ci/package.json, packages/adapter-code-upgrader/package.json, packages/adapter-github/package.json, packages/adapter-gitlab/package.json, packages/adapter-local-git/package.json, packages/adapter-mcp/README.md, packages/adapter-mcp/package.json, packages/adapter-opencode/README.md, packages/adapter-opencode/package.json, packages/cli/README.md, packages/cli/package.json, packages/client/package.json, packages/contracts/package.json, packages/contracts/src/index.ts, packages/core/package.json, packages/create-evopilot/README.md, packages/create-evopilot/package.json, packages/create-evopilot/src/index.ts, packages/evolution-expert/README.md, packages/llm/package.json, packages/profile-domainforge-fabric/package.json, packages/server/package.json, packages/server/src/domains/llm-readiness/index.ts, packages/worker-runtime/package.json, scripts/README.md, scripts/check-package-doc-links.mjs, scripts/roadmap-gate.mjs, scripts/verify-expert-public-install.mjs, scripts/verify-v62-first-run-llm-readiness.mjs, tests/e2e/versions/installed-transport.mjs, tests/unit/first-run-llm-readiness.test.mjs, tests/unit/package-doc-links.test.mjs, tests/unit/roadmap-gate.test.mjs, tests/unit/semantic-version-projection.test.mjs",
+      "Finite repository paths: CHANGELOG.md, README.md, charts/evopilot/Chart.yaml, charts/evopilot/values.production.example.yaml, charts/evopilot/values.yaml, docs/README.md, docs/architecture/README.md, docs/development/documentation-checks.md, docs/guides/agent-host-installation.md, docs/guides/agent-runtime.md, docs/guides/evolution-expert.md, docs/guides/first-task.md, docs/operations/distribution.md, docs/operations/release-management.md, docs/operations/runtime-management.md, docs/operations/troubleshooting.md, docs/quickstart.md, docs/reference/release-package.md, docs/releases/6.3.3.md, docs/releases/README.md, docs/releases/current-release.md, docs/roadmap/ROADMAP.md, governance/releases/documentation-onboarding-20261006-authority.json, governance/releases/documentation-onboarding-20261006-target-bindings.json, governance/releases/runtime-6.3.3-acceptance-20261006.json, governance/releases/runtime-6.3.3-authorization-20261006.json, governance/releases/runtime-6.3.3-publication-20261006.json, governance/releases/runtime-6.3.3-target-release-gate-20261006.json, governance/roadmap.yaml, governance/targets/evopilot-6.3.3-documentation-onboarding.json, install.ps1, install.sh, installers/manifest.json, package-lock.json, package.json, packages/adapter-ci/package.json, packages/adapter-code-upgrader/package.json, packages/adapter-github/package.json, packages/adapter-gitlab/package.json, packages/adapter-local-git/package.json, packages/adapter-mcp/README.md, packages/adapter-mcp/package.json, packages/adapter-opencode/README.md, packages/adapter-opencode/package.json, packages/cli/README.md, packages/cli/package.json, packages/client/package.json, packages/contracts/package.json, packages/contracts/src/index.ts, packages/core/package.json, packages/create-evopilot/README.md, packages/create-evopilot/package.json, packages/create-evopilot/src/index.ts, packages/evolution-expert/README.md, packages/llm/package.json, packages/profile-domainforge-fabric/package.json, packages/server/package.json, packages/server/src/domains/llm-readiness/index.ts, packages/worker-runtime/package.json, scripts/README.md, scripts/check-package-doc-links.mjs, scripts/lib/expert-public-compatibility-contract.mjs, scripts/release-ready.mjs, scripts/roadmap-gate.mjs, scripts/verify-expert-public-install.mjs, scripts/verify-v62-first-run-llm-readiness.mjs, tests/e2e/versions/installed-transport.mjs, tests/unit/first-run-llm-readiness.test.mjs, tests/unit/package-doc-links.test.mjs, tests/unit/release-ready-compatibility.test.mjs, tests/unit/roadmap-gate.test.mjs, tests/unit/semantic-version-projection.test.mjs",
       "Individually review all 419 effective baseline definitions, preserving text/hash and collecting current impact-specific evidence.",
       "Build-once Candidate, independent handoff, exact accepted artifact promotion and GitHub source push under the existing explicit release instruction.",
-      "Public current-version pointers and publication ledgers may be written only after actual independently verified public promotion; preparation never asserts publication in advance."
+      "Public current-version pointers and publication ledgers may be written only after actual independently verified public promotion; preparation never asserts publication in advance.",
+      "Finite source-test and release-readiness projections recognize the actual current-version public-install verifier and compiled Expert package identity. Historical fixtures and direct 6.3.2 compatibility checks remain intact; no workflow permission change or weaker acceptance."
     ],
     "exclude": [
       "No product capability, runtime authority, transport, credentials, authentication, lifecycle or readiness behavior changes.",
@@ -6514,13 +6515,13 @@
       "decision": "APPROVED",
       "by": "user",
       "evidenceRef": "governance/releases/documentation-onboarding-20261006-authority.json",
-      "authorizationDigest": "sha256:6368549fe5bd41082319cad26308250cbb4b467a99e347f3d7a213963781b664"
+      "authorizationDigest": "sha256:bd3c84441ddb52f03ef7808eec33f6144de538243190e171aee13d7fb1d6bc5d"
     },
     "release": {
       "decision": "AUTHORIZED",
       "by": "user",
       "evidenceRef": "governance/releases/documentation-onboarding-20261006-authority.json",
-      "authorizationDigest": "sha256:72383d69d06bdef5548e6046d4e733c61ca26cad5be532ccb6a3404486bea72a",
+      "authorizationDigest": "sha256:813595f2e564527fd86828a0f0cf3c7c9ade31d35c0e643c37826478cdf2d846",
       "conditionalOn": "Exact current Candidate acceptance, separate technical binding and passing release gate; no publication before these observations."
     }
   },
