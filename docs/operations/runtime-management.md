@@ -1,10 +1,21 @@
-# EvoPilot 托管运行时管理
+# EvoPilot Runtime 与执行器运行管理
 
 ## 定位
 
-EvoPilot 的生产产品形态不是把第三方组件塞进主进程。代码升级执行器属于 EvoPilot 的核心能力，随产品套件托管运行；GitHub Actions 和 GitLab CI 属于项目仓库的原生 DevOps 边界，由项目 DevOps 配置接入。
+先区分控制面和执行器：**EvoPilot Runtime** 保存项目、Goal、Loop、凭据引用、证据和决策；**外部 Agent Runtime** 执行一个已绑定且具备资格的请求。Expert 是加载到 Host 的指引适配器，Harness 是独立的资产产品。它们不是三个同类的后台 Runtime。
 
-生产形态是：
+本地 Agent Host 的连接通常是：
+
+```text
+Host + Evolution Expert → MCP stdio → evopilot-mcp → HTTP → EvoPilot Runtime
+Host + Harness Digital Expert → MCP stdio → evopilot-harness
+```
+
+本地 Runtime 常用地址为 `http://127.0.0.1:19876`。Host 的 stdio 连接不要求为本地 Runtime 配置一个远程 HTTPS 服务。已有部署应复用其服务管理器、数据目录和私有连接配置；用户正常使用不需要重复创建账号、输入凭据或启动另一套服务。安装步骤见[组合安装](../guides/agent-host-installation.md)。
+
+执行器按项目单独绑定。Runtime 不内置通用编码 Agent；原生 Agent 执行路径见[外部 Agent Runtime](../guides/agent-runtime.md)。默认服务器没有语义执行适配器或业务证据收集器，管理员必须配置与项目范围匹配的实现，且通过实际资格与证据校验。
+
+下文的 **Code Upgrader** 是现有自托管 Compose/K8s/Helm 提供的托管执行选项，其部署和镜像锁检查适用于选择这条路径的环境；它不是所有本地 stdio 安装都必须再启动的组件。该托管形态为：
 
 ```text
 EvoPilot 产品套件
@@ -50,7 +61,7 @@ npm run verify:runtime-lock:strict
 - 漏洞扫描报告状态为 `PASSED`。
 - 健康端点是明确的 HTTP/HTTPS 地址。
 
-任何一项不满足，都不能声明产品生产级发布完成。
+选择该托管部署路径时，任何一项不满足，都不能声明该部署的运行时锁验证完成。外部 Agent Runtime 路径使用自身的精确版本、资格、范围和回执验证，不能拿另一条路径的镜像锁结果替代。
 
 ## 项目 DevOps
 
@@ -112,7 +123,7 @@ kubectl apply -f deploy/k8s/
 npm run verify:runtime-lock:strict
 ```
 
-如果本机没有 Docker、无法拉取镜像、无法生成 SBOM 或无法完成漏洞扫描，必须将状态报告为阻塞，不能降级为 mock E2E。
+对于所选容器部署，缺少 Docker、镜像、SBOM 或漏洞扫描时应报告该部署验证受阻，不能降级为 mock E2E。这不表示已配置的本地 Runtime 与 stdio Host 连接也必须改用 Docker。
 
 ## Runtime 6.3.2 的 LLM 就绪状态
 

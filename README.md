@@ -8,11 +8,25 @@
 [![Release](https://img.shields.io/badge/latest%20public-v6.3.2-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
-[Quick Start](#quick-start) | [Distribution](docs/operations/distribution.md) | [CLI](docs/cli/README.md) | [Self-Hosting](docs/operations/self-hosting.md) | [API](docs/api/README.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
+[Install in an Agent Host](docs/guides/agent-host-installation.md) | [First Task](docs/guides/first-task.md) | [Troubleshooting](docs/operations/troubleshooting.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
 
 EvoPilot helps teams operate AI-agent products as releasable software. It collects evidence from runtime events, traces, evaluations, CI/CD, source changes, LLM calls, and user feedback; turns that evidence into reviewable evolution opportunities; then governs goal planning, loop execution, source closure, delivery, and product-native `GO` / `NO-GO` release decisions.
 
 It is not an agent runtime, prompt playground, generic code generator, or Harness Asset lifecycle manager. Harness definitions are authored, evolved, reviewed, versioned, and published by the independent `evopilot-harness` project. EvoPilot reads a configured Harness Registry and the published Catalog directories it points to, then uses an open product-delivery Lifecycle Harness to execute project goals against the selected immutable HarnessBundle.
+
+## Start Here
+
+Use EvoPilot from your AI Agent Host with the independently installed Evolution Expert and MCP connections. The current combination is **Runtime 6.3.2 + Expert 2.3.0 + Harness 4.8.1**; the products evolve independently.
+
+| Your task | Start with | Success signal |
+| --- | --- | --- |
+| Install the combination in Codex or another Host | [Agent Host installation](docs/guides/agent-host-installation.md) | Expert loaded, stdio tools discovered, actual Runtime connection checked |
+| Use an existing installation | [First task](docs/guides/first-task.md) | Read-only inspection of the current setup and its remaining prerequisites |
+| Diagnose a stopped task | [Layered troubleshooting](docs/operations/troubleshooting.md) | Identify the failing Host, MCP, Runtime, model, or execution layer |
+| Provision or administer a Runtime | [Self-hosting](docs/operations/self-hosting.md), [distribution](docs/operations/distribution.md), [CLI](docs/cli/README.md) | A configured, reachable control plane |
+| Develop from source | [Developer quickstart](docs/quickstart.md), [architecture](docs/architecture/README.md) | Build and local API checks pass |
+
+Codex has recorded live Host acceptance. Other generated adapters have separate installation and qualification requirements; see the [Host support matrix](docs/guides/agent-host-installation.md#host-support-matrix). Desktop installers and a hosted Cloud trial are not published surfaces. Installing npm packages alone does not configure a Runtime, activate an Expert in the Host, or qualify a project executor.
 
 ## v6.3 Semantic Convergence and First-Run LLM Readiness
 
@@ -40,32 +54,6 @@ Earlier published baselines remain immutable. Runtime 6.3.0 and Expert 2.3.0 eac
 
 Legacy EvoPilot and DataRig Suite snapshots remain historical provenance for convergence into independent project resources, including `datarig-production-delivery@1.0.0`. Evolution Expert and the configured MCP products are the current operating entry; retired Suites are not Runtime dependencies, execution paths, synchronization sources or fallbacks. Installation does not delete existing Suites. Migration and permanent removal are separate, explicitly authorized local operations; historical acceptance records remain immutable. See [legacy transition boundaries](docs/guides/legacy-suite-transition.md).
 
-## Start Here
-
-| Entry | Use when | Command |
-| --- | --- | --- |
-| Install CLI | You already have an EvoPilot server and want the verified public package | `npm install -g @evopilot/cli@6.3.2` |
-| Self-host now | You want the API, worker, code-upgrader, Postgres, and Dashboard together | `bash -c "$(curl -fsSL https://raw.githubusercontent.com/yeliang-wang/evopilot/v6.3.2/install.sh)"` |
-| Kubernetes | You run EvoPilot on a cluster | `helm install evopilot ./charts/evopilot --namespace evopilot --create-namespace` |
-
-Desktop installer and hosted Cloud trial are not published EvoPilot surfaces yet. The supported public entry points are the six exact-version npm packages, GitHub Release tarballs, the self-host installer, Helm, and GHCR images.
-
-Install the six public Runtime packages at the exact release version in a fresh Node project:
-
-```bash
-npm install --save-exact \
-  @evopilot/contracts@6.3.2 \
-  @evopilot/client@6.3.2 \
-  @evopilot/cli@6.3.2 \
-  @evopilot/adapter-mcp@6.3.2 \
-  @evopilot/adapter-opencode@6.3.2 \
-  create-evopilot@6.3.2
-```
-
-The [verified publication ledger](governance/releases/runtime-6.3.2-publication-20261004.json)
-binds the public packages and image to the accepted Candidate. Evolution Expert
-2.3.0 and Harness 4.8.1 keep their independent published versions.
-
 ## What You Can Do
 
 | Area | What EvoPilot provides |
@@ -85,60 +73,37 @@ binds the public packages and image to the accepted Candidate. Evolution Expert
 
 ## Quick Start
 
-For local development:
+With an [installed Agent Host combination](docs/guides/agent-host-installation.md), ask:
 
-```bash
-npm install
-npm run build
-EVOPILOT_HARNESS_REGISTRY_CONFIG=/path/to/evopilot-harness/harness-registry.yaml npm run server:debug
-curl http://127.0.0.1:19876/health
-curl http://127.0.0.1:19876/ready
-```
+> Use Evolution Expert to inspect the connected EvoPilot Runtime and its current LLM readiness. Reuse existing configuration. Report the component versions, available tools, and any missing prerequisites before starting a project task.
 
-`server:debug` is a developer-only compatibility mode. A production installation deliberately begins in `SETUP_REQUIRED`; open Evolution Expert in the Agent Host and say “检查 EvoPilot LLM readiness，并引导我安全完成首次配置。” The Expert discovers provider choices, invokes Host-native secure credential input, creates and preflights a governed Profile, binds it explicitly to the workspace, and confirms `READY`. It never treats the Host's own conversational model as EvoPilot's Runtime LLM.
+Follow the [first-task tutorial](docs/guides/first-task.md) for the expected read-only results and the separate transition to project work. Runtime LLM readiness, published Harness eligibility, executor qualification and independent business evidence are distinct checks. A connected MCP server is the first checkpoint, not proof that an arbitrary project is ready to execute.
 
-Run the standalone Dashboard from the
-[`yeliang-wang/evopilot-dashboard`](https://github.com/yeliang-wang/evopilot-dashboard)
-sibling repository:
-
-```bash
-cd ../evopilot-dashboard
-EVOPILOT_API_BASE_URL=http://127.0.0.1:19876 npm run dev
-```
-
-To supply Harness definitions, publish them in `evopilot-harness` and point EvoPilot at the published directory:
-
-```bash
-cd ../evopilot-harness
-evopilot-harness evolve --source-project /path/to/source-project --goal "Create or evolve the domain harness." --approve-and-publish --confirmed-by platform-admin --confirmation "Reviewed source coverage and generated pack." --json
-evopilot-harness registry publish --catalog published --registry harness-registry.yaml --json
-evopilot-harness registry validate --registry harness-registry.yaml --json
-
-cd ../evopilot
-EVOPILOT_HARNESS_REGISTRY_CONFIG=../evopilot-harness/harness-registry.yaml npm run server:debug
-```
-
-EvoPilot reads `harness-registry.yaml`, then each enabled Catalog's `CATALOG.md`, at use time. It does not import, mount, approve, publish, or evolve Harness definitions.
+The Host connects to `evopilot-mcp` through **stdio**; that adapter connects to the EvoPilot Runtime over HTTP, commonly `http://127.0.0.1:19876` on a local installation. The Host also connects to the independent Harness MCP server through stdio. Expert is guidance loaded in the Host, not another background Runtime. See [architecture and ownership](docs/architecture/README.md).
 
 ## Administrator And Machine CLI
 
-The CLI is an HTTP client for remote EvoPilot API servers. In v6 it is for administrators, machines, diagnostics, and recovery—not the direct ordinary-human path. Ordinary users install the [Evolution Expert Host Integration Bundle](docs/guides/evolution-expert.md) in their Agent Host and converse through MCP.
+The CLI is an HTTP client for local or remote EvoPilot Runtime. Administrators and automation use its JSON interfaces for diagnosis and governed operations. With an already configured connection:
 
 ```bash
-export EVOPILOT_SERVER="https://evopilot.example.com"
-export EVOPILOT_API_TOKEN="<operator-or-admin-token>"
-export EVOPILOT_TENANT="tenant-production"
-export EVOPILOT_WORKSPACE="workspace-agent-products"
-
 evopilot status --json
-evopilot target plan --project <project-id> --objective "<business objective>" --llm-profile <llm-profile-id> --json
-evopilot target plan approve <goal-id> --confirmed-by "<project-owner>" --confirmation "<phase plan reviewed and approved>" --json
-evopilot target run --project <project-id> --objective "<business objective>" --llm-profile <llm-profile-id> --json
+evopilot runtime readiness --json
 ```
 
-`evopilot harness ...` authoring and publication commands are intentionally absent from EvoPilot Runtime. Use `evopilot-harness` for the independent Harness asset lifecycle; EvoPilot only discovers, matches, binds, and consumes published assets.
+For installation, authentication and exact command schemas, use [CLI setup](docs/cli/README.md), [CLI Agent Instructions](docs/cli/AGENTS.md), [CLI Automation](docs/cli/automation.md) and the [command reference](docs/cli/commands.md). Existing private configuration should be reused; authentication setup is not a daily-use prerequisite.
 
-Start with [AGENTS.md](AGENTS.md), then use [docs/cli/AGENTS.md](docs/cli/AGENTS.md), [CLI Quickstart](docs/cli/quickstart.md), [CLI Automation](docs/cli/automation.md), and the [AI Agent Runbook](docs/guides/ai-agent-runbook.md).
+For authorized administrative planning on an already onboarded project, bind the
+configured project LLM Profile explicitly:
+
+```bash
+evopilot target plan --project <project-id> --objective "<business objective>" --llm-profile <llm-profile-id> --json
+```
+
+This creates a plan and may call the model. Review its exact asset bindings and
+follow the returned approval requirements before execution; it is not part of
+the read-only first-task check.
+
+`evopilot harness ...` authoring and publication commands are intentionally absent. Harness lifecycle work belongs to [evopilot-harness](https://github.com/yeliang-wang/evopilot-harness); Runtime only consumes its published Registry, Catalogs and immutable Bundle closure. Asset publication and project release require their own exact review and authority.
 
 ## Self-Hosting And Distribution
 
@@ -150,18 +115,7 @@ For production, use the documented install and release paths rather than ad hoc 
 - [Release Management](docs/operations/release-management.md)
 - [Troubleshooting](docs/operations/troubleshooting.md)
 
-Immutable ECS deployment uses the image reference recorded in the GitHub Release image metadata:
-
-```bash
-export EVOPILOT_IMAGE='ghcr.io/yeliang-wang/evopilot@sha256:<digest>'
-docker compose -p evopilot --env-file .env.production -f deploy/ecs/compose.immutable.yaml up -d --no-build
-```
-
-For production Harness consumption, mount the Registry file and published Catalog directory into the container and set:
-
-```bash
-EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml
-```
+Release operations are local-first. Docker Compose, Helm and remote deployment are administrator choices described in the linked guides; they are not prerequisites for using an existing local Host installation. For Harness consumption, configure `EVOPILOT_HARNESS_REGISTRY_CONFIG` to a readable, published Registry and its Catalog roots. See [published Harness consumption](docs/architecture/published-harness-catalog.md).
 
 ## Release Status
 

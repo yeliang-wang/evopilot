@@ -1,165 +1,92 @@
-# Getting Started
+# Developer Quickstart
 
-> The fastest source-development path for administrators. In Runtime 6, ordinary users interact through an Evolution Expert Host Integration Bundle over MCP; direct CLI and HTTP remain machine, diagnostics, and recovery surfaces.
-
-EvoPilot is the backend control plane for AI Agent product evolution. It owns API state, CLI execution, release governance, evidence, audit, GlobalGoal planning, LoopRun execution, and release decisions. Dashboard UI is a separate client that consumes the EvoPilot API.
+Build EvoPilot from source and verify an isolated local API. This guide is for
+contributors and administrators. To use published products in an AI Agent Host,
+start with [Agent Host installation](guides/agent-host-installation.md) and
+[your first task](guides/first-task.md).
 
 ## Prerequisites
 
-- Node.js 22+
-- npm
-- Git
+- Node.js 22+, npm and Git.
+- A checkout of this repository and an unused local port (the example uses 19877).
+- A separate development data directory. Keep daily Runtime data and credentials
+  in their existing installation; do not point this development server at them.
 
-## Run The API Server
+## Build And Run The API Server
+
+From the repository root:
+
+Use a development terminal without production `EVOPILOT_*` or provider variables
+injected. The explicit empty env files below prevent the startup loader from
+importing repository or LLM configuration files.
 
 ```bash
-npm install
+npm ci
 npm run build
 
-EVOPILOT_PORT=19876 \
+EVOPILOT_DATA_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/evopilot-dev.XXXXXX")" \
+EVOPILOT_ENV_FILE=/dev/null \
+EVOPILOT_LLM_ENV_FILE=/dev/null \
+EVOPILOT_HOST=127.0.0.1 \
+EVOPILOT_PORT=19877 \
 EVOPILOT_RUN_MODE=debug \
-EVOPILOT_USERS=admin:change-me-admin-password:admin:tenant-production:workspace-agent-products:PlatformAdmin \
-EVOPILOT_TOKENS=admin:change-me-admin-token:admin,operator:change-me-operator-token:operator,viewer:change-me-viewer-token:viewer \
 npm run server
 ```
 
-Verify readiness:
+Keep that terminal open. In another terminal, check:
 
 ```bash
-curl -fsS http://127.0.0.1:19876/health
-curl -fsS http://127.0.0.1:19876/ready
+curl -fsS http://127.0.0.1:19877/health
+curl -fsS http://127.0.0.1:19877/ready
 ```
 
-## Connect Evolution Expert For Ordinary Users
-
-Install a compatible `@evopilot/evolution-expert` Host Integration Bundle in Codex, Claude Code, WorkBuddy, or another conformant Agent Host. Connect its local or remote MCP transport to this Runtime, then ask:
-
-> Check EvoPilot health and compatibility, show the side-effect-free tutorial, then help me register this project.
-
-The Expert asks only unresolved schema fields. It never stores canonical state, collects raw credentials, executes source work, or infers approval. See [Evolution Expert](guides/evolution-expert.md).
+Success means the built development server answers both health endpoints.
+`debug` permits development compatibility behavior, including anonymous local
+administration, sample data and mock integrations. It is not production LLM
+readiness, project acceptance or a release result. Do not expose this server to
+other machines. Stop it with Ctrl-C when finished.
 
 ## Use The CLI For Administration Or Automation
 
-```bash
-npm run cli -- status \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --json
-```
-
-For a new project, configure the published Harness Registry when the server starts. The Registry and Catalog directories are produced by `evopilot-harness`; EvoPilot only reads `harness-registry.yaml` and `CATALOG.md` indexes dynamically.
+From the repository root, inspect this development server:
 
 ```bash
-EVOPILOT_HARNESS_REGISTRY_CONFIG=/opt/evopilot-harness/harness-registry.yaml \
-npm run server
+npm run cli -- status --server http://127.0.0.1:19877 --json
 ```
 
-Generate and approve the phase plan before running a project. EvoPilot automatically selects a published Harness from the configured Catalogs and records it as `plan.selectedHarness`; normal operators do not choose or publish Harness definitions from the EvoPilot CLI.
+Read the returned API version, mode, status and diagnosis. If another Runtime is
+already installed, use its configured CLI or MCP connection instead; installing
+or updating a client does not require creating another account.
 
-```bash
-npm run cli -- target plan \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --project my-agent \
-  --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --json
+## Connect Evolution Expert For Ordinary Users
 
-# STOP: show the phase plan to the user or project owner; continue only after explicit confirmation.
-# Include plan.selectedHarness id/version/catalog/digest in the review summary.
-npm run cli -- target plan approve <goal-id> \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --confirmed-by "project-owner" \
-  --confirmation "Project owner reviewed and approved the Alpha/Beta/RC/GA phase plan" \
-  --json
-```
+Follow [Host installation](guides/agent-host-installation.md) to load the generated
+Expert adapter and configure the stdio MCP entry. The EvoPilot stdio adapter
+connects to the separate Runtime HTTP service. Installing the Expert package
+alone does not activate it in the Host.
 
-Then run the approved goal. If the plan is not approved yet, the wrapper stops at `PENDING_PLAN_APPROVAL`:
+Production Runtime starts in `SETUP_REQUIRED` until an explicitly selected LLM
+Profile and SecretRef pass preflight and workspace binding. Reuse an existing
+valid configuration; see [first-run readiness and repair](guides/first-run-llm-readiness.md).
+The Host conversational model does not become Runtime's model automatically.
 
-```bash
-npm run cli -- target run \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --project my-agent \
-  --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --max-steps 20 \
-  --json
-```
+## Continue With A Project
 
-For a new GitHub or GitLab project, ask for the onboarding checklist before mutating state:
+Use [project definitions](guides/project-definitions.md) and the
+[published Harness Catalog](architecture/published-harness-catalog.md) to prepare
+the required project and asset bindings. Harness owns asset publication; Runtime
+reads the Registry and its enabled Catalogs. A connected API does not create an
+eligible Bundle, a qualified executor or an independent business collector.
+See [external execution prerequisites](guides/agent-runtime.md).
 
-```bash
-npm run cli -- project onboard plan github \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --repo owner/my-agent \
-  --id my-agent \
-  --token-ref GITHUB_TOKEN_MY_AGENT \
-  --execution-mode owned-repository \
-  --devops-owner owner \
-  --ci-workflow ci.yml \
-  --ci-required-check build \
-  --cd-workflow deploy-prod.yml \
-  --deploy-environment production \
-  --health-url https://my-agent.example.com/health \
-  --llm-profile my-agent-llm \
-  --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --json
-```
-
-Then run `project onboard` after the server can resolve the source tokenRef and LLM profile, verify with `project onboard verify`, and start Goal/Loop execution with `target plan` followed by `target run` after phase-plan confirmation. See [CLI Workflows](cli/workflows.md).
-
-## Configure A Project LLM
-
-Use the server global LLM only for quick local/debug validation. For a GitHub/GitLab enterprise real loop, register an explicit LLM profile before onboarding or running the target:
-
-```bash
-export LLM_API_KEY_MY_AGENT="<real-llm-api-key>"
-
-npm run cli -- secret set \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --id LLM_API_KEY_MY_AGENT \
-  --kind llm-key \
-  --scope workspace \
-  --from-env LLM_API_KEY_MY_AGENT \
-  --json
-
-npm run cli -- llm profile set my-agent-llm \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --scope workspace \
-  --provider-preset custom \
-  --provider-name qwen-private \
-  --base-url https://llm.example.com/v1 \
-  --model qwen2.5-coder-32b \
-  --api-key-ref LLM_API_KEY_MY_AGENT \
-  --json
-
-npm run cli -- project llm set my-agent \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --profile my-agent-llm \
-  --json
-```
-
-After the phase plan has been reviewed and approved, wrapper commands can use the project default or override it:
-
-```bash
-npm run cli -- target run \
-  --server http://127.0.0.1:19876 \
-  --token change-me-admin-token \
-  --project my-agent \
-  --objective "Enable tenant onboarding, lifecycle workflow visibility, and operator repair guidance for My Agent" \
-  --llm-profile my-agent-llm \
-  --json
-```
-
-See [CLI](cli/README.md) for setup, [CLI Workflows](cli/workflows.md) for guided scenarios, and [CLI Commands](cli/commands.md) for the full command list.
+Administrative project and Goal examples belong in [CLI workflows](cli/workflows.md)
+and the [command reference](cli/commands.md). Follow the current plan, exact
+approval and receipt requirements there. Do not turn a source-development smoke
+check into a claim of business completion.
 
 ## Connect A Dashboard
 
-Official Dashboard source lives in `yeliang-wang/evopilot-dashboard`. Any custom Dashboard can connect to EvoPilot when it follows the API, auth, and governance contract.
-
-Read [Dashboard Integration](guides/dashboard-integration.md) before building a custom UI.
-Read `evopilot-dashboard/docs/README.md` for Dashboard page operations, digital human simulation, and browser workflow docs.
+Dashboard source lives in the separate
+[evopilot-dashboard repository](https://github.com/yeliang-wang/evopilot-dashboard).
+Read [Dashboard integration](guides/dashboard-integration.md) for the API, auth and
+governance contract. Dashboard deployment is optional for the Expert-over-MCP path.

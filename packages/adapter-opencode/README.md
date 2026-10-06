@@ -4,8 +4,8 @@ The current published package is **6.3.2**. Its process-observation v2 reports
 input, output and cached input tokens without requiring monetary telemetry or
 pricing configuration. Unavailable token counts remain unavailable; measured
 zero remains zero. Cached input is part of input and is not added to the total
-again. See [token usage and v1 compatibility](../../docs/architecture/token-usage.md)
-and the [verified public release](../../docs/releases/current-release.md). This
+again. See [token usage and v1 compatibility](https://github.com/yeliang-wang/evopilot/blob/41e45117e545a768b728ac96cf3a470b3fd789c0/docs/architecture/token-usage.md)
+and the [verified public release](https://github.com/yeliang-wang/evopilot/blob/41e45117e545a768b728ac96cf3a470b3fd789c0/docs/releases/current-release.md). This
 default-branch documentation does not rebuild or replace published tarballs.
 
 Historical 6.3.0 receipt compatibility:
@@ -47,4 +47,4 @@ files are bounded, synced and inserted without replacement; symlinks and hardlin
 are refused. The Host still owns real filesystem isolation. In-memory observations
 are capped at 128; restart/eviction means unavailable observation, not permission
 to rerun a request. Legacy receipts gain no invented provenance. See the
-[Runtime collection boundary](../../docs/architecture/semantic-catalog-consumer.md#adapter-process-observation-and-finite-runtime-collection).
+[Runtime collection boundary](https://github.com/yeliang-wang/evopilot/blob/41e45117e545a768b728ac96cf3a470b3fd789c0/docs/architecture/semantic-catalog-consumer.md#adapter-process-observation-and-finite-runtime-collection).

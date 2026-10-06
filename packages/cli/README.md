@@ -15,15 +15,19 @@ npm install -g \
   https://github.com/yeliang-wang/evopilot/releases/download/v6.3.2/evopilot-cli-6.3.2.tgz
 ```
 
-The public npm package is also verified: `npm install -g @evopilot/cli@6.3.2`. See [current publication and acceptance](../../docs/releases/current-release.md).
+The public npm package is also verified: `npm install -g @evopilot/cli@6.3.2`. See [current publication and acceptance](https://github.com/yeliang-wang/evopilot/blob/41e45117e545a768b728ac96cf3a470b3fd789c0/docs/releases/current-release.md).
+
+With an existing private connection configuration:
 
 ```bash
-evopilot --server https://evopilot.example.com auth login \
-  --username <user> \
-  --password <password>
-
 evopilot status --json
+evopilot runtime readiness --json
 ```
+
+Authentication is configured by the Runtime operator. Reuse that configuration;
+installing or updating the CLI does not require creating another account. For a
+new connection, follow [CLI setup](https://github.com/yeliang-wang/evopilot/blob/41e45117e545a768b728ac96cf3a470b3fd789c0/docs/cli/README.md).
+Ordinary users follow the maintained [Agent Host installation guide](https://github.com/yeliang-wang/evopilot/blob/main/docs/guides/agent-host-installation.md).
 
 For short-lived automation, pass a bearer token through the environment:
 

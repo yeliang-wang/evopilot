@@ -4,6 +4,12 @@ Evolution Expert is the independently versioned ordinary-human entry for EvoPilo
 
 One immutable Core generates Host Integration Bundles for Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP. Each bundle contains the same Core and Adapter digests plus install, doctor, health, version, upgrade, rollback, removal, help, and tutorial lifecycle metadata.
 
+## Start here
+
+For a new Host, follow [Agent Host installation](agent-host-installation.md): install the exact packages, activate the generated Skill, and connect the local stdio adapter to the existing Runtime. For a connected Host, go directly to [Your first task](first-task.md) for an authenticated read-only setup/readiness check. Reuse existing Runtime credentials and the current valid workspace LLM binding; restarting Expert does not require entering them again.
+
+The [Host support matrix](agent-host-installation.md#host-support-matrix) separates generated bundles, installation mechanisms and the release's Codex-only live acceptance. Installing the npm package or passing `doctor` does not activate a Host Skill. The concrete Codex copy/activation procedure is in the installation guide; npm upgrades do not refresh a copied Skill automatically.
+
 ## Conversation model
 
 Users can start without knowing commands:
@@ -54,7 +60,7 @@ evopilot-expert doctor codex 6.3.2
 evopilot-expert tutorial
 ```
 
-Use `claude-code`, `workbuddy`, `generic-agent`, or `generic-mcp` for other generated bundles. Upgrade, rollback, and removal affect only the Expert installation. They must not mutate Runtime bytes or durable Runtime objects. After restart or Host transfer, the Expert reloads the current object from Runtime instead of reconstructing state from conversation history.
+Use `claude-code`, `workbuddy`, `generic-agent`, or `generic-mcp` for declaration checks of the other generated bundles; this is not a live support claim. The bundle `host://` lifecycle entries are metadata, not executable installers. Upgrade, rollback, and removal affect only the Expert installation. They must not mutate Runtime bytes or durable Runtime objects. After restart or Host transfer, the Expert reloads the current object from Runtime instead of reconstructing state from conversation history.
 
 For an explicit legacy declaration check, use `evopilot-expert doctor codex 6.2.0`; this does not establish support for semantic operations.
 
