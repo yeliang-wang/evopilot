@@ -15,6 +15,8 @@ The existing CI runs `npm run check`, which includes this package-documentation 
 
 The first command checks the root README of every public workspace package. It obtains each file inventory using `npm pack --json --dry-run --ignore-scripts --offline --workspaces=false` in that package directory. It does not build, invoke lifecycle hooks, write tarballs, publish, or fetch external URLs. npm's local cache and logging behavior still apply.
 
+Packages with a nonempty `prepare` script are rejected before npm starts, on every npm version. npm 10 can execute `prepare` even with `--ignore-scripts`, so the checker reports `READ_ONLY_INVENTORY_UNSUPPORTED` instead of risking an execution. The current public workspaces have no `prepare` scripts. `prepack` and `postpack` remain suppressed by `--ignore-scripts`; regression tests check both suppression and the explicit `prepare` refusal.
+
 To select a package or obtain machine-readable results:
 
 ```bash

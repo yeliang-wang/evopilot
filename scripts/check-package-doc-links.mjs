@@ -8,6 +8,12 @@ import { pathToFileURL } from "node:url";
 // This check deliberately uses npm's file selection, not the source checkout's
 // existence checks. No lifecycle hook, build, tarball write or registry read runs.
 export function packInventory(packageRoot) {
+  // npm 10's bundled pacote runs prepare even with --ignore-scripts. Reject
+  // before spawning npm on every version rather than relying on that flag.
+  const manifest = JSON.parse(fs.readFileSync(path.join(packageRoot, "package.json"), "utf8"));
+  if (manifest.scripts?.prepare) {
+    throw new Error("READ_ONLY_INVENTORY_UNSUPPORTED: package defines a prepare script; npm pack may execute it despite --ignore-scripts");
+  }
   const args = ["pack", "--json", "--dry-run", "--ignore-scripts", "--offline", "--workspaces=false"];
   const command = process.env.npm_execpath ? process.execPath : "npm";
   const commandArgs = process.env.npm_execpath ? [process.env.npm_execpath, ...args] : args;

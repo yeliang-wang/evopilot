@@ -40,12 +40,35 @@ test("npm inventory catches a source document excluded from the published packag
   assert.equal(result.localLinksChecked, 2);
 });
 
-test("dry-run pack never invokes lifecycle hooks or writes a tarball", (t) => {
+test("dry-run pack never invokes prepack/postpack hooks or writes a tarball", (t) => {
   const hook = 'node -e "require(\'node:fs\').writeFileSync(\'hook-ran\', \'unexpected\')"';
-  const root = fixture(t, { "README.md": "# Package\n" }, { scripts: { prepare: hook, prepack: hook, postpack: hook } });
+  const root = fixture(t, { "README.md": "# Package\n" }, { scripts: { prepack: hook, postpack: hook } });
   assert.equal(packInventory(root).files.some((file) => file.path === "README.md"), true);
   assert.equal(fs.existsSync(path.join(root, "hook-ran")), false);
   assert.deepEqual(fs.readdirSync(root).filter((name) => name.endsWith(".tgz")), []);
+});
+
+test("prepare scripts are refused before npm can execute them, including through the CLI", (t) => {
+  const hook = 'node -e "require(\'node:fs\').writeFileSync(\'hook-ran\', \'unexpected\')"';
+  const root = fixture(t, { "README.md": "# Package\n" }, { scripts: { prepare: hook } });
+  const before = fs.readFileSync(path.join(root, "package.json"));
+  assert.throws(() => packInventory(root), /READ_ONLY_INVENTORY_UNSUPPORTED: package defines a prepare script/);
+  assert.throws(() => execFileSync(process.execPath, [checker, "--package-root", root, "--json"], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }), (error) => {
+    assert.equal(error.status, 1);
+    const report = JSON.parse(error.stdout);
+    assert.equal(report.failures, 1);
+    assert.equal(report.packages[0].errors[0].code, "PACKAGE_CHECK_FAILED");
+    assert.match(report.packages[0].errors[0].message, /READ_ONLY_INVENTORY_UNSUPPORTED/);
+    return true;
+  });
+  assert.equal(fs.existsSync(path.join(root, "hook-ran")), false);
+  assert.deepEqual(fs.readdirSync(root).filter((name) => name.endsWith(".tgz")), []);
+  assert.deepEqual(fs.readFileSync(path.join(root, "package.json")), before);
+});
+
+test("a whitespace-only prepare hook is also refused", (t) => {
+  const root = fixture(t, { "README.md": "# Package\n" }, { scripts: { prepare: "   " } });
+  assert.throws(() => packInventory(root), /READ_ONLY_INVENTORY_UNSUPPORTED/);
 });
 
 test("packed Markdown links support fragments, encoded spaces, directories and explicit anchors", (t) => {
