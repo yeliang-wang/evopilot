@@ -1,7 +1,7 @@
 {
   "schema": "evopilot-evolution-target/v1",
   "id": "evopilot-6.3.3-documentation-onboarding",
-  "revision": 2,
+  "revision": 3,
   "status": "APPROVED",
   "intent": "Documentation synchronization: evopilot-runtime 6.3.3 maintenance patch for the approved onboarding documentation and necessary release identity/validation projections, without behavior or authority changes.",
   "objective": "Publish the approved packaged documentation improvements as evopilot-runtime 6.3.3, preserving independently versioned products and all accepted product boundaries.",
@@ -27,7 +27,7 @@
       "matchedMilestone": "evopilot-6.3.3-documentation-onboarding",
       "targetVersion": "6.3.3",
       "classification": "ALIGNED",
-      "roadmapDigest": "sha256:de52153f6a804d67676c8a591a641d11897c8eafdedd743368589ae1d92f8fb5",
+      "roadmapDigest": "sha256:ed948bddea726a6fe1838202ff4394eb42626164dac7a66a9778f0dceb12b17b",
       "maintenanceBasis": {
         "standingWork": "evopilot-maintenance",
         "gate": "runtime-intent.json"
@@ -41,7 +41,8 @@
       "Individually review all 419 effective baseline definitions, preserving text/hash and collecting current impact-specific evidence.",
       "Build-once Candidate, independent handoff, exact accepted artifact promotion and GitHub source push under the existing explicit release instruction.",
       "Public current-version pointers and publication ledgers may be written only after actual independently verified public promotion; preparation never asserts publication in advance.",
-      "Finite source-test and release-readiness projections recognize the actual current-version public-install verifier and compiled Expert package identity. Historical fixtures and direct 6.3.2 compatibility checks remain intact; no workflow permission change or weaker acceptance."
+      "Finite source-test and release-readiness projections recognize the actual current-version public-install verifier and compiled Expert package identity. Historical fixtures and direct 6.3.2 compatibility checks remain intact; no workflow permission change or weaker acceptance.",
+      "An independent Expert 2.3.1 declaration probe covers the actual current source CLI and its finite supported Runtime matrix; the immutable 2.3.0 probe and corpus remain byte-for-byte unchanged. Source probe assertions do not establish installed package or live Host acceptance."
     ],
     "exclude": [
       "No product capability, runtime authority, transport, credentials, authentication, lifecycle or readiness behavior changes.",
@@ -6515,13 +6516,13 @@
       "decision": "APPROVED",
       "by": "user",
       "evidenceRef": "governance/releases/documentation-onboarding-20261006-authority.json",
-      "authorizationDigest": "sha256:bd3c84441ddb52f03ef7808eec33f6144de538243190e171aee13d7fb1d6bc5d"
+      "authorizationDigest": "sha256:89cd7775f79d12e99c2150852a41c608d49067db11b6d24444e90e57b26459ed"
     },
     "release": {
       "decision": "AUTHORIZED",
       "by": "user",
       "evidenceRef": "governance/releases/documentation-onboarding-20261006-authority.json",
-      "authorizationDigest": "sha256:813595f2e564527fd86828a0f0cf3c7c9ade31d35c0e643c37826478cdf2d846",
+      "authorizationDigest": "sha256:7a5d949351c0ebb4c34b77e0dcb87feba84ea64192da10daafa7baec1bb6e608",
       "conditionalOn": "Exact current Candidate acceptance, separate technical binding and passing release gate; no publication before these observations."
     }
   },

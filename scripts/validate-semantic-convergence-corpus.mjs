@@ -164,11 +164,11 @@ export function validateMaintenanceTarget(product, plan, targetBytes, root = ROO
   const c = maintenance[product], targetPath = `governance/targets/${c.id}.json`;
   ensure(targetBytes.length <= 33554432, "TARGET_SIZE_LIMIT");
   const target = JSON.parse(targetBytes);
-  ensure(target.schema === "evopilot-evolution-target/v1" && target.id === c.id && target.revision === 2,
+  ensure(target.schema === "evopilot-evolution-target/v1" && target.id === c.id && target.revision === 3,
     "MAINTENANCE_TARGET_IDENTITY_MISMATCH");
   const roadmapBytes = boundedRepositoryBytes(root, "governance/roadmap.yaml");
   const roadmap = JSON.parse(roadmapBytes), policy = roadmap.documentationMaintenancePatchPolicy;
-  const declaration = {id: c.id, revision: 2, product: c.product, version: c.version, path: targetPath};
+  const declaration = {id: c.id, revision: 3, product: c.product, version: c.version, path: targetPath};
   ensure(policy?.schema === "evopilot-documentation-maintenance-patch-policy/v1" &&
     policy.id === "documentation-onboarding-20261006" && policy.standingWork === "evopilot-maintenance" &&
     policy.authorityRecord === maintenanceAuthority && policy.targetBindingsRecord === maintenanceRegistry &&
@@ -185,7 +185,7 @@ export function validateMaintenanceTarget(product, plan, targetBytes, root = ROO
     registry.technicalDigestIndividuallyReviewedByUser === false && registry.targets?.filter(x => x.id === c.id).length === 1,
     "MAINTENANCE_REGISTRY_MISMATCH");
   const binding = registry.targets.find(x => x.id === c.id);
-  ensure(binding.revision === 2 && binding.product === c.product && binding.version === c.version && binding.targetPath === targetPath &&
+  ensure(binding.revision === 3 && binding.product === c.product && binding.version === c.version && binding.targetPath === targetPath &&
     binding.baselineTarget === c.baseline && binding.inheritedCriterionCount === c.count &&
     digestPattern.test(binding.approvedTargetFileDigest) && digestPattern.test(binding.approvedScopeDigest), "MAINTENANCE_REGISTRY_BINDING_MISMATCH");
   ensure(sha(targetBytes) === binding.approvedTargetFileDigest &&

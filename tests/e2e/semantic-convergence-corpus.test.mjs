@@ -129,7 +129,7 @@ function maintenanceFixture(t, product) {
     documentationMaintenancePatchPolicy: {schema: "evopilot-documentation-maintenance-patch-policy/v1", id: "documentation-onboarding-20261006",
       standingWork: "evopilot-maintenance", authorityRecord: maintenanceAuthorityPath, authorityRecordDigest: authorityDigest,
       targetBindingsRecord: maintenanceRegistryPath, boundaryChange: false, productBehaviorChange: false, historicalEvidenceImmutable: true,
-      historicalPassTransferAllowed: false, targets: [{id: c.id, revision: 2, product: c.product, version: c.version, path: targetPath}]}};
+      historicalPassTransferAllowed: false, targets: [{id: c.id, revision: 3, product: c.product, version: c.version, path: targetPath}]}};
   write("governance/roadmap.yaml", roadmap);
   const registry = JSON.parse(fs.readFileSync(path.join(ROOT, maintenanceRegistryPath)));
   const binding = registry.targets.find(x => x.id === c.id);
@@ -172,7 +172,7 @@ for (const product of ["runtime", "expert"]) {
     ["claimed case evidence", f => {f.target.realCaseCoverage[0].evidenceRefs = ["not-observed"]; f.saveTarget();}, "MAINTENANCE_PREMATURE_ACCEPTANCE"],
     ["unapproved status", f => {f.target.status = "DRAFT"; f.saveTarget();}, "MAINTENANCE_TARGET_APPROVAL_MISMATCH"],
     ["later released status on Candidate path", f => {f.target.status = "RELEASE_AUTHORIZED"; f.saveTarget();}, "MAINTENANCE_TARGET_APPROVAL_MISMATCH"],
-    ["wrong revision", f => {f.target.revision = 3; f.saveTarget();}, "MAINTENANCE_TARGET_IDENTITY_MISMATCH"],
+    ["wrong revision", f => {f.target.revision = 4; f.saveTarget();}, "MAINTENANCE_TARGET_IDENTITY_MISMATCH"],
     ["wrong release product", f => {f.target.release.product = "unrelated"; f.saveTarget();}, "MAINTENANCE_TARGET_ROADMAP_MISMATCH"],
     ["wrong release version", f => {f.target.release.versions.evopilot = "99.0.0"; f.saveTarget();}, "MAINTENANCE_TARGET_ROADMAP_MISMATCH"],
     ["wrong roadmap digest", f => {f.target.roadmapBindings[0].roadmapDigest = "sha256:" + "0".repeat(64); f.saveTarget();}, "MAINTENANCE_TARGET_ROADMAP_MISMATCH"],
@@ -198,7 +198,7 @@ for (const product of ["runtime", "expert"]) {
   });
   test(`${product}: matching-looking header and undeclared patch never bypass exact registration`, t => {
     const f = maintenanceFixture(t, product);
-    const header = {schema: "evopilot-evolution-target/v1", id: f.target.id, revision: 2, status: "APPROVED", approvals: f.target.approvals};
+    const header = {schema: "evopilot-evolution-target/v1", id: f.target.id, revision: 3, status: "APPROVED", approvals: f.target.approvals};
     assert.throws(() => validateCandidateTarget(product, f.plan, Buffer.from(JSON.stringify(header)), f.root), {code: "MAINTENANCE_APPROVED_TARGET_BYTES_MISMATCH"});
     header.id += "-undeclared";
     assert.throws(() => validateCandidateTarget(product, f.plan, Buffer.from(JSON.stringify(header)), f.root), {code: "TARGET_DIGEST_MISMATCH"});
