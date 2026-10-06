@@ -115,8 +115,10 @@ those are separately recorded in the completed approved 2.3.0 acceptance.
 ## Install and verify
 
 Install this package version **2.3.1** with the command below. Check [current publication and acceptance limits](https://github.com/yeliang-wang/evopilot/blob/main/docs/releases/current-release.md) for availability and the exact released artifacts.
-Exact-version public installation, package integrity, Registry signatures/provenance
-and Runtime 6.3.0 compatibility were verified separately from Candidate acceptance.
+For the historical 2.3.0 release, exact-version public installation, package
+integrity, Registry signatures/provenance and Runtime 6.3.0 compatibility were
+verified separately from Candidate acceptance. Each later release requires its
+own verification of the published artifacts; see the current publication record.
 
 ```bash
 npm install --global @evopilot/evolution-expert@2.3.1
