@@ -18,20 +18,26 @@ const activeExpertVersion = readJson("packages/evolution-expert/package.json").v
 // Historical Target bytes and evidence below remain unchanged; no PASS transfer.
 const delivery = roadmap.directSemanticConvergenceDeliveryPolicy;
 const currentRuntimeVersion = readJson("package.json").version;
-const readinessPatch = currentRuntimeVersion === "6.3.2" && activeExpertVersion === "2.3.0";
+const documentationPatch = currentRuntimeVersion === "6.3.3" && activeExpertVersion === "2.3.1";
+if (documentationPatch && !(roadmap.documentationMaintenancePatchPolicy?.id === "documentation-onboarding-20261006" &&
+  roadmap.documentationMaintenancePatchPolicy?.productBehaviorChange === false &&
+  roadmap.documentationMaintenancePatchPolicy?.targets?.some(t => t.id === "evopilot-6.3.3-documentation-onboarding" && t.version === currentRuntimeVersion) &&
+  roadmap.documentationMaintenancePatchPolicy?.targets?.some(t => t.id === "evopilot-evolution-expert-v2.3.1-documentation-onboarding" && t.version === activeExpertVersion) &&
+  roadmap.evolutionExpertPolicy.currentWorkingVersion === activeExpertVersion)) failures.push("Documentation patch is not bound by the accepted Roadmap");
+const readinessPatch = (currentRuntimeVersion === "6.3.2" && activeExpertVersion === "2.3.0") || documentationPatch;
 if (readinessPatch && !(roadmap.llmReadinessContinuityPolicy?.runtimeVersion === "6.3.2" &&
   roadmap.llmReadinessContinuityPolicy?.initialAndChangedDefaultBinding?.successfulLivePreflightMaximumAgeMs === 900000 &&
   roadmap.llmReadinessContinuityPolicy?.existingUnchangedExplicitBinding?.elapsedTimeAloneRevokesReadiness === false &&
   roadmap.llmReadinessContinuityPolicy?.normalGoalAndLoopSelection?.elapsedTimeAloneBlocks === false)) failures.push("Readiness continuity patch is not bound by the accepted Roadmap");
-const tokenPatch = (currentRuntimeVersion === "6.3.1" || readinessPatch) && activeExpertVersion === "2.3.0";
+const tokenPatch = (currentRuntimeVersion === "6.3.1" || readinessPatch) && (activeExpertVersion === "2.3.0" || documentationPatch);
 if (tokenPatch && !(roadmap.tokenOnlyCutoverPolicy?.runtimeVersion === "6.3.1" &&
   roadmap.tokenOnlyCutoverPolicy?.expertVersion === "2.3.0" && roadmap.tokenOnlyCutoverPolicy?.monetaryAmountRequired === false &&
   roadmap.versionPolicy.currentWorkingVersion === currentRuntimeVersion)) failures.push("Token-only patch is not bound by the accepted Roadmap");
-const direct = (currentRuntimeVersion === "6.3.0" || tokenPatch) && activeExpertVersion === "2.3.0";
+const direct = (currentRuntimeVersion === "6.3.0" || tokenPatch) && (activeExpertVersion === "2.3.0" || documentationPatch);
 if (direct && !(delivery?.runtimeVersion === "6.3.0" && delivery?.expertVersion === "2.3.0" &&
   delivery?.standaloneExpert221ReleaseAllowed === false && roadmap.versionPolicy.currentWorkingVersion === currentRuntimeVersion)) failures.push("Direct-delivery pair is not bound by the accepted Roadmap");
 const runtimeVersion = direct ? currentRuntimeVersion : "6.2.0";
-const supportedExpertVersion = direct ? "2.3.0" : activeExpertVersion === "2.2.0" ? "2.2.0" : recovery?.successorExpertVersion;
+const supportedExpertVersion = direct ? (documentationPatch ? "2.3.1" : "2.3.0") : activeExpertVersion === "2.2.0" ? "2.2.0" : recovery?.successorExpertVersion;
 if (!direct && activeExpertVersion !== "2.2.0") {
   const successor = readJson("governance/targets/evopilot-evolution-expert-v2.2.1-public-cli-completion-recovery.json");
   if (successor.approvals?.target?.decision !== "APPROVED" || successor.roadmapBindings?.[0]?.targetVersion !== activeExpertVersion || successor.roadmapBindings?.[0]?.matchedMilestone !== recovery?.successorMilestone) failures.push("Expert recovery does not bind its approved successor Target");

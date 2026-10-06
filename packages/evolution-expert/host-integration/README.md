@@ -1,8 +1,8 @@
 # Expert private Host integration
 
-This maintained component is distributed with published Expert 2.3.0.
+This maintained component carries Expert 2.3.1 metadata. Native input and credential/permission behavior remain unchanged.
 Native credential entry, submission and cancellation were excluded from this
-release's approved acceptance and remain unverified; see [the release limits](../../../docs/releases/current-release.md). It runs as a
+release's approved acceptance and remain unverified; see [the release limits](https://github.com/yeliang-wang/evopilot/blob/main/docs/releases/current-release.md). It runs as a
 separate, trusted Host process, not in the Expert Core or an MCP tool that accepts
 credentials. It uses Runtime 6.3.0's login and Secret APIs; explicitly signed
 Runtime 6.2.0 deployment evidence retains legacy non-semantic setup support. Core v3,

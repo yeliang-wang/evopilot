@@ -3,7 +3,7 @@ fullnameOverride: ""
 
 image:
   repository: ghcr.io/yeliang-wang/evopilot
-  tag: "6.3.2"
+  tag: "6.3.3"
   pullPolicy: IfNotPresent
 
 dashboard:

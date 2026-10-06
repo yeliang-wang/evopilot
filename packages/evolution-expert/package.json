@@ -1,6 +1,6 @@
 {
   "name": "@evopilot/evolution-expert",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Independent Agent-neutral interactive expert for EvoPilot Harness-guided governed evolution.",
   "license": "Apache-2.0",
   "type": "module",

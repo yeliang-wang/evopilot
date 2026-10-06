@@ -2,27 +2,30 @@
 
 EvoPilot documentation is organized by reader task. Current published versions are **Runtime 6.3.2 / Evolution Expert 2.3.0**, consuming **evopilot-harness 4.8.1**. See [current publication, acceptance and explicit limits](releases/current-release.md). Start from the section that matches what you need to do.
 
-## New Users
+## Start In Your Agent Host
 
-- [Quick Start](quickstart.md) - install, run locally, and verify the API.
-- [Self-Hosting](operations/self-hosting.md) - run the API server, loop worker, code-upgrader, Postgres, and standalone Dashboard.
-- [Distribution](operations/distribution.md) - GitHub Release CLI tarball, manifest-verified installers, Helm chart entry points, and post-publish npm verification.
-- [Control Plane User Guide](guides/user-guide.md) - operate projects, credentials, goals, loops, releases, and audit through API/CLI semantics.
-- [Published Harness Catalog](architecture/published-harness-catalog.md) - EvoPilot v3 read-only consumption of Harness definitions published by `evopilot-harness`.
+- [Agent Host Installation](guides/agent-host-installation.md) - install the Runtime client, Evolution Expert and Harness combination, activate the Host entries, and distinguish adapter support from live qualification.
+- [First Task](guides/first-task.md) - reuse an existing configuration, inspect the real connection and readiness, then identify the prerequisites for a project task.
+- [Evolution Expert](guides/evolution-expert.md) - conversational guidance, generated Host adapters and Runtime-owned decisions.
+- [Troubleshooting](operations/troubleshooting.md) - locate failures across Host, MCP, Runtime, LLM, assets and execution.
+- [First-Run LLM Readiness](guides/first-run-llm-readiness.md) - new workspace setup and explicit repair; an unchanged approved configuration is reused.
+
+## Understand And Operate A Project
+
+- [Published Harness Catalog](architecture/published-harness-catalog.md) - read-only consumption of definitions published by `evopilot-harness`.
 - [Open Lifecycle Harness](guides/open-lifecycle-harness.md) - v4 development flow for declarative project lifecycles, interactive inputs, bounded authorization, and Agent-host execution.
 - [Project Definitions](guides/project-definitions.md) - v5 project-neutral declarative onboarding and immutable adjustment.
 - [Governed Resource Versioning](guides/resource-versioning.md) - independently versioned Packs, Providers, bindings, activation, diff, and rollback.
 - [Suite Convergence Migration](guides/suite-convergence-migration.md) - exact latest Suite provenance, full capability disposition, shadow validation, and post-release Cutover boundary.
-- [Evolution Expert](guides/evolution-expert.md) - ordinary-human conversational entry for Codex, Claude Code, WorkBuddy, generic Agents, and MCP Hosts.
-- [First-Run LLM Readiness](guides/first-run-llm-readiness.md) - mandatory provider/model selection, SecretRef-safe setup, live preflight, workspace binding, degradation, repair, and v6.1 migration.
 - [Lifecycle Registry](guides/lifecycle-registry.md) - create, inspect, update, activate, deactivate, archive, restore, and roll back project Pipelines.
 - [Controlled Lifecycle Evolution](guides/controlled-lifecycle-evolution.md) - turn exact evidence and user feedback into classified gaps, immutable Pipeline successors, comparable experiments, policy-bounded activation, monitoring, and rollback.
 - [External Agent Runtime](guides/agent-runtime.md) - qualification, exact pending execution, receipts, effects, and recovery.
 - [v6 Acceptance](operations/v6-acceptance.md) - exact installed-Candidate evidence and 100-percent completion semantics.
 - [v5 Completion Assurance](operations/completion-assurance.md) - criterion-specific evidence, exact Candidate binding, impact closure, and 100% hard-gate semantics.
 
-## AI Agents And CLI Automation
+## Administrators, AI Agents And CLI Automation
 
+- [Control Plane User Guide](guides/user-guide.md) - API/CLI administration of projects, credentials, goals, evidence and release decisions.
 - [Repository Agent Instructions](../AGENTS.md) - root instructions for AI agents reading this repository.
 - [CLI Agent Instructions](cli/AGENTS.md) - shortest WorkBuddy-safe reading path and non-negotiable CLI rules.
 - [CLI Quickstart For AI Agents](cli/quickstart.md) - minimal production-safe command sequence.
@@ -57,7 +60,10 @@ EvoPilot documentation is organized by reader task. Current published versions a
 - [Test Matrix](operations/test-matrix.md) - failure recovery, release readiness, PR artifacts, and release gate evidence.
 - [Troubleshooting](operations/troubleshooting.md) - common incidents and diagnostic commands.
 
-## Repository Operators
+## Developers And Repository Operators
+
+- [Developer Quickstart](quickstart.md) - build source and run the development API; not the ordinary-user installation path.
+- [Documentation Checks](development/documentation-checks.md) - check source links and actual npm package documentation before distribution.
 
 - [Engineering Scripts](../scripts/README.md) - production runtime, verification, release, soak, real-boundary E2E, and maintenance script map.
 - [Selected Harness Binding](reference/selected-harness-binding.md) - evidence fields AI Agents must report after planning.
@@ -74,8 +80,8 @@ EvoPilot documentation is organized by reader task. Current published versions a
 - [Suite Capability Convergence](architecture/suite-capability-convergence.md) - v5.1 DDD ownership, resource registry, provider, migration, and version boundaries.
 - [Controlled Lifecycle Evolution Architecture](architecture/controlled-lifecycle-evolution.md) - v6.1 observation, proposal, experiment, decision, monitoring, and project-neutral Core boundaries.
 - [Agent-Native Lifecycle Control Plane](architecture/agent-native-lifecycle-control-plane.md) - v6 DDD ownership across Host, Expert, Runtime, Lifecycle Registry, Harness, and external Agent Runtime.
-- [EvoPilot v6.2.0 First-Run LLM Readiness](releases/6.2.0.md) - current implementation line for fail-closed first run and architecture documentation.
-- [Evolution Expert v2.2.0](releases/evolution-expert-2.2.0.md) - current setup-guidance interaction line.
+- [EvoPilot v6.2.0 First-Run LLM Readiness](releases/6.2.0.md) - historical introduction of first-run readiness; current behavior is documented for Runtime 6.3.2.
+- [Evolution Expert v2.2.0](releases/evolution-expert-2.2.0.md) - historical introduction of setup guidance; current Expert is 2.3.0.
 - [Agent-Native Security Boundaries](security/agent-native-boundaries.md) - permissions, SecretRefs, authority, and fail-closed execution rules.
 - [v6 Migration](migrations/v6-agent-native.md) - move from Suite-shaped operation to declaration-only project Pipelines without pre-release Cutover.
 - [Action Providers](reference/action-providers.md) - typed external actions, qualification, SecretRefs, receipts, rollback, and authority intersection.

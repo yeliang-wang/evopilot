@@ -22,7 +22,7 @@ function fixture(t) {
   fs.writeFileSync(native, "synthetic NOT executable native artifact\n");
   fs.chmodSync(native, 0o600);
   fs.writeFileSync(path.join(integration, "manifest.json"), JSON.stringify({
-    schema: "evopilot-expert-host-integration/v1", expertVersion: "2.3.0", runtimeVersion: "6.3.0",
+    schema: "evopilot-expert-host-integration/v1", expertVersion: "2.3.1", runtimeVersion: "6.3.0",
     platforms: ["darwin-arm64"], files: inventory(integration),
   }, null, 2) + "\n");
   const contracts = path.join(root, "node_modules/@evopilot/contracts");
@@ -36,7 +36,7 @@ function fixture(t) {
     execFileSync("tar", ["-czf", acceptedTarball, "-C", root, "package"]);
   };
   repack();
-  return { root, pkg, repack, options: { installDir: root, version: "2.3.0", acceptedTarball } };
+  return { root, pkg, repack, options: { installDir: root, version: "2.3.1", acceptedTarball } };
 }
 
 test("public verifier accepts Core v3 exact bytes and all five declared CLI adapters", t => {

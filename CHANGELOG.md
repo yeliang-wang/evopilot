@@ -1,5 +1,11 @@
 # Changelog
 
+## 6.3.3 — Documentation and onboarding maintenance
+
+- Ship Host installation, safe first-task and troubleshooting guidance in installable packages.
+- Validate packaged README links without running lifecycle hooks or writing tarballs.
+- Synchronize Runtime distribution identities and retain existing product behavior. See [release notes](docs/releases/6.3.3.md) for scope and actual publication status.
+
 ## 6.3.2 — LLM readiness continuity
 
 - Keep unchanged approved workspace LLM bindings usable after the original 15-minute preflight freshness window, including ordinary Goal/Loop selection and restart.

@@ -26,6 +26,7 @@ These scripts are part of the production service set. They run beside `evopilot-
 | `verify-open-source-governance.mjs` | `npm run verify:oss-governance` | Verifies Apache-2.0 governance files and public repository governance links. |
 | `verify-architecture-boundaries.mjs` | `npm run verify:architecture` | Verifies package-boundary packages, runtime launcher delegation, and contracts wiring. |
 | `verify-runtime-lock.mjs` | `npm run verify:runtime-lock` | Checks runtime lock, SBOM, license, vulnerability, and health endpoint metadata. |
+| `check-package-doc-links.mjs` | `npm run verify:package-doc-links` | Checks packaged README links against offline `npm pack --dry-run` inventories, including package boundaries and local Markdown fragments. See [documentation checks](../docs/development/documentation-checks.md). |
 
 Use these scripts before release-impacting documentation, runtime, deployment, or open-source packaging changes. `npm run check` calls the production asset, governance, and architecture checks after build and test.
 

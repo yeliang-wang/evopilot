@@ -64,7 +64,7 @@ tools use the same prefix with suffix `planning`, `draft`, `prepare`, `inspect`,
 `stageReceipt`, `completeTarget`, `completionReceipt`, `completionStatus`, `completePhase`,
 `phaseReceipt`, `completeGoal` or `goalReceipt`. They accept only `projectId`
 and the operation's exact JSON `payload` (plus connection/idempotency options).
-See the [request fields](../../docs/cli/commands.md#project-semantic-execution-630-source-development).
+See the [request fields](https://github.com/yeliang-wang/evopilot/blob/41e45117e545a768b728ac96cf3a470b3fd789c0/docs/cli/commands.md#project-semantic-execution-630-source-development).
 `approveReview` requires an explicit exact-digest business mapping decision.
 `planning` reads current authoring choices; `draft` compiles explicitly supplied
 rules against that exact basis. Neither persists a plan nor approves or dispatches.
@@ -102,7 +102,7 @@ the same verified bridge; semantic run-status has its own schema and reports
 verified completed-Target usage subtotals with explicit route/proof references
 and coverage exclusions. Missing telemetry remains null, not zero; the subtotal
 is not provider billing. The approved installed-package and Codex journeys passed separately; see
-[current acceptance and limits](../../docs/releases/current-release.md).
+[current acceptance and limits](https://github.com/yeliang-wang/evopilot/blob/41e45117e545a768b728ac96cf3a470b3fd789c0/docs/releases/current-release.md).
 Other live Hosts and arbitrary production collectors are not qualified by those results.
 The default server configures neither a semantic executor nor a business collector.
 HTTP run-status additionally projects known dispatch usage before Target

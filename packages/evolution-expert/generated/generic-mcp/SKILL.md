@@ -5,8 +5,8 @@ description: Generated generic-mcp adapter for the independently versioned EvoPi
 
 # EvoPilot Evolution Expert — generic-mcp
 
-- Adapter: `evopilot-evolution-expert-generic-mcp@2.3.0`
-- Core: `sha256:1c561242683c5c3469a57dcc3c11c68385791be2b0f5dc9c72aa7bc99e1e0021`
+- Adapter: `evopilot-evolution-expert-generic-mcp@2.3.1`
+- Core: `sha256:5774f5c9f1609f0e40c0ce6e3faa1faa3f26a57be0b20aff2015021f55836a44`
 - Protocol: `2.2`
 
 ## Required behavior

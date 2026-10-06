@@ -1,18 +1,35 @@
 # Architecture
 
-> EvoPilot is an API and CLI control plane for governed AI Agent product evolution.
+> EvoPilot is an Agent-native control plane for governed product evolution. Evolution Expert guides the conversation; Runtime owns durable state and decisions.
 
 ## Product Split
 
-```text
-AI Agent / CI / Operator
-        |
-        v
-EvoPilot CLI  --->  EvoPilot API Server  ---> Evidence / Audit / Release State
-                         ^
-                         |
-                 EvoPilot Dashboard
+```mermaid
+flowchart LR
+  Human[User] --> Host[AI Agent Host + Evolution Expert]
+  Host -->|MCP stdio| MCP[evopilot-mcp adapter]
+  MCP -->|HTTP: local or configured server| Runtime[EvoPilot Runtime]
+  Host -->|MCP stdio| Harness[evopilot-harness]
+  Harness -->|independent publication| Catalog[Published Registry / Catalog / Bundle]
+  Catalog -->|read-only consumption| Runtime
+  Runtime --> State[Projects / Goals / evidence / audit / decisions]
+  Runtime -->|exact pendingExecution| Agent[Qualified external Agent Runtime]
+  Agent -->|scoped receipts and evidence| Runtime
+  Admin[Administrator / CI / Dashboard] -->|CLI or HTTP| Runtime
 ```
+
+The installed Host-facing servers use stdio. The EvoPilot MCP adapter bridges
+that transport to the separate Runtime HTTP service; a local Runtime commonly
+listens at `http://127.0.0.1:19876`. Expert is a generated guidance adapter loaded
+by the Host, not a separate server process. Harness has its own MCP server and
+asset lifecycle. It does not own project execution or Runtime release decisions.
+
+The Host LLM, Runtime LLM Profile, and external executor's Agent Model are
+independently configured. Connecting the Host does not import its model or
+credentials into Runtime. Project resources, execution providers and independent
+evidence collectors must be configured for the actual project; they are not
+created by tool discovery. See [installation](../guides/agent-host-installation.md)
+and [external execution](../guides/agent-runtime.md).
 
 EvoPilot owns the domain model and execution state. The Dashboard is a replaceable UI client that consumes the API.
 
@@ -28,6 +45,14 @@ The current TypeScript workspace is split by control-plane responsibility:
 | `@evopilot/worker-runtime` | Loop worker polling, heartbeat, watchdog, and start/resume API loop. |
 | `@evopilot/cli` | HTTP adapter CLI for agent-safe JSON and operator output. |
 | `@evopilot/client` | HTTP request helper for CLI and integrations. |
+| `@evopilot/adapter-mcp` | Host-facing stdio tools forwarding typed requests to Runtime HTTP; no independent authority. |
+| `@evopilot/evolution-expert` | Independently versioned conversational Core and generated Host guidance adapters. |
+
+`@evopilot/harness` lives in its own repository and owns asset authoring,
+review, versioning and publication. A **HarnessBundle** is a published immutable
+asset closure; a Runtime **Lifecycle** orchestrates a project around that closure.
+The **Evolution Expert** guides project work, while Harness's **Digital Expert**
+guides Harness asset production. These are distinct responsibilities.
 
 See [Package Boundaries](package-boundaries.md) for ownership rules, transitional hotspots, and validation commands.
 

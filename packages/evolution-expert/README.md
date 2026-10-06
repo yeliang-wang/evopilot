@@ -1,7 +1,7 @@
 # EvoPilot Evolution Expert
 
-`@evopilot/evolution-expert` 2.3.0 is the independently versioned,
-Agent-neutral interactive guide with published EvoPilot Runtime 6.3.2 compatibility. It helps an ordinary
+`@evopilot/evolution-expert` 2.3.1 is the independently versioned,
+Agent-neutral interactive guide with EvoPilot Runtime 6.3.3 compatibility. It helps an ordinary
 user discover and declare a project, understand Runtime-produced Harness
 matching and Lifecycle composition, operate a Goal Target Loop, follow
 automatic recovery, inspect evidence and readiness, and understand resource
@@ -15,6 +15,14 @@ policy, acceptance verdict, publication, or Release authority. Ordinary-human
 operation is Expert-over-MCP only. If it is absent or incompatible,
 administrators and machines can diagnose or recover Runtime through MCP, CLI,
 API, and CI without creating a silent ordinary-human fallback.
+
+## Start with the installed Host
+
+Expert 2.3.1 supplies guidance; an Agent Host also needs its generated Skill and a working Runtime MCP connection. Use the [Agent Host installation guide (maintained source documentation)](https://github.com/yeliang-wang/evopilot/blob/main/docs/guides/agent-host-installation.md) for the complete Runtime/Expert/Harness setup, absolute-path Codex stdio configuration, and Host support matrix. Then follow [Your first task (maintained source documentation)](https://github.com/yeliang-wang/evopilot/blob/main/docs/guides/first-task.md) for a read-only readiness/discovery result. These guides are maintained source documentation on `main`; they are not bundled in this npm package.
+
+Already connected? Keep the existing Runtime launcher, credentials and valid LLM Profile binding. The local API address may remain `http://127.0.0.1:19876`: the Host uses MCP **stdio** to the adapter, and the adapter calls that Runtime over HTTP. This is not a public HTTPS requirement or a Streamable HTTP MCP URL.
+
+For a new Codex integration, the installed package's `generated/codex/` directory contains `SKILL.md`, `adapter.json` and `bundle.json`. Copy the complete directory into a new `~/.agents/skills/evopilot-evolution-expert-codex/` directory, preserving any existing installation for review. Select that Skill in Codex; CLI/IDE users can mention `$evopilot-evolution-expert-codex`. Installing npm bytes alone does not activate it. A later npm upgrade does not update the copied directory automatically. The bundle's `host://` entries describe lifecycle metadata; the CLI has no `install` command.
 
 ### Released 2.3 semantic guidance
 
@@ -63,12 +71,12 @@ business rules and Harness obligations, with empty coverage inputs. It never gue
 criterion-to-rule mapping or business field/product type. Supplied explicit coverage
 still needs a separate outcome review and exact human approval.
 
-Expert 2.3.0 is published for Runtime 6.3.0 after all 400 applicable acceptance
+The historical Expert 2.3.0 was published for Runtime 6.3.0 after all 400 applicable acceptance
 criteria passed. The later Runtime 6.3.1 maintenance release was separately accepted
-with these unchanged Expert 2.3.0 bytes; the historical 400-criterion Expert result
-is not replaced by Runtime's 409-criterion result. See [current publication and limits](../../docs/releases/current-release.md).
+with those unchanged Expert 2.3.0 bytes; the historical 400-criterion Expert result
+is not replaced by Runtime's 409-criterion result. See [current publication and limits](https://github.com/yeliang-wang/evopilot/blob/main/docs/releases/current-release.md).
 Real Host acceptance is Codex-only, using existing configuration; native credential
-entry, submission and cancellation remain explicitly unverified for this release.
+entry, submission and cancellation remained explicitly unverified in that release. This documentation patch does not claim new native-input or cross-Host qualification.
 There is no separate 2.2.1 release.
 Five Host adapters are generated from the same Core; no installed adapters or
 Host configuration are modified by source generation.
@@ -99,28 +107,31 @@ acceptance and real third-party Host execution are not established by this test.
 An uncertain write is surfaced without automatic replay. Explicit repeated
 requests are reconciled by Runtime; restore does not implicitly activate.
 
-The [versioned convergence corpus](../../tests/e2e/versions/README.md) retains
+The [versioned convergence corpus](https://github.com/yeliang-wang/evopilot/blob/v6.3.2/tests/e2e/versions/README.md) retains
 Expert 2.3.0's independent five RC families, ten machine variants and all 388
 inherited obligation bindings. Source tests cannot close installed/Host criteria;
 those are separately recorded in the completed approved 2.3.0 acceptance.
 
 ## Install and verify
 
-Version 2.3.0 is available on public npm and [GitHub Release](https://github.com/yeliang-wang/evopilot/releases/tag/evolution-expert-v2.3.0).
-Exact-version public installation, package integrity, Registry signatures/provenance
-and Runtime 6.3.0 compatibility were verified separately from Candidate acceptance.
+Install this package version **2.3.1** with the command below. Check [current publication and acceptance limits](https://github.com/yeliang-wang/evopilot/blob/main/docs/releases/current-release.md) for availability and the exact released artifacts.
+For the historical 2.3.0 release, exact-version public installation, package
+integrity, Registry signatures/provenance and Runtime 6.3.0 compatibility were
+verified separately from Candidate acceptance. Each later release requires its
+own verification of the published artifacts; see the current publication record.
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.3.0
+npm install --global @evopilot/evolution-expert@2.3.1
 evopilot-expert version
-evopilot-expert doctor codex 6.3.2
+evopilot-expert doctor codex 6.3.3
 evopilot-expert tutorial
 evopilot-expert versions
 evopilot-expert migration
 ```
 
-For Claude Code or WorkBuddy, replace `codex` with `claude-code` or
-`workbuddy`; `generic-agent` and `generic-mcp` are also packaged adapters.
+For declaration checks of Claude Code or WorkBuddy, replace `codex` with
+`claude-code` or `workbuddy`; `generic-agent` and `generic-mcp` are also packaged
+adapters. This does not install those Hosts or establish their live qualification.
 `doctor` and `compatibility` check the declared package/adapter contract, using
 Runtime `6.3.0` when its version is omitted; the response reports that exact
 `engineVersion`. Explicit `6.2.0` retains legacy non-semantic support, while semantic
@@ -149,17 +160,19 @@ Secret values are never entered; declarations contain `secret://`, `env://`,
 or `vault://` references. Registration, adjustment, semantic diff, activation,
 and rollback remain Runtime operations.
 
-On first run, ask the Expert to inspect Runtime LLM readiness. Runtime stays
-setup-only until a user-selected workspace Profile has an active SecretRef, a
-fresh live preflight, and an explicit digest-bound workspace-default binding.
+On first run, ask the Expert to inspect Runtime LLM readiness. Reuse an existing
+valid binding. Initial or explicitly replaced workspace bindings require a
+user-selected Profile, active SecretRef, successful fresh preflight and exact
+digest-bound decision. Runtime 6.3.2 does not expire an unchanged valid binding
+solely because its original proof has aged; the read does not probe a provider.
 The Expert refuses raw credentials in conversation and delegates credential
 entry to a Host-native secure-input capability.
 
 ## Upgrade, rollback, and remove
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.3.0
-evopilot-expert doctor codex 6.3.2
+npm install --global @evopilot/evolution-expert@2.3.1
+evopilot-expert doctor codex 6.3.3
 
 npm install --global @evopilot/evolution-expert@2.2.0
 evopilot-expert doctor codex 6.2.0
@@ -182,9 +195,9 @@ uses `createExpertAdapter(host)`, declares the five required Host
 capabilities, and passes `assertExpertAdapterConformance`; it does not require
 an Engine or Expert Core source branch.
 
-See the repository guides for the [Expert workflow](../../docs/guides/evolution-expert.md),
-[project definitions](../../docs/guides/project-definitions.md), and
-[Harness-guided architecture](../../docs/architecture/harness-guided-governed-evolution-runtime.md).
+See the repository guides for the [Expert workflow](https://github.com/yeliang-wang/evopilot/blob/v6.3.2/docs/guides/evolution-expert.md),
+[project definitions](https://github.com/yeliang-wang/evopilot/blob/v6.3.2/docs/guides/project-definitions.md), and
+[Harness-guided architecture](https://github.com/yeliang-wang/evopilot/blob/v6.3.2/docs/architecture/harness-guided-governed-evolution-runtime.md).
 
 <a id="project-definition-guidance-230-source-development"></a>
 
@@ -241,4 +254,4 @@ rejected. Recovery needs explicit attempt/budget and effect facts. Rendering
 help or supplied acceptance, Cutover and release context produces `authority:
 NONE`; it neither verifies that context nor grants execution or publication.
 
-Runtime **6.3.2** independently verifies LLM readiness continuity with this unchanged public Expert 2.3.0 package. Its patch-specific acceptance preserves the earlier Expert and Runtime 6.3.1 evidence; it does not rerun or relabel their original campaigns. See [current publication and limits](../../docs/releases/current-release.md).
+Runtime **6.3.2** independently verifies LLM readiness continuity with the unchanged public Expert 2.3.0 package. Its patch-specific acceptance preserves the earlier Expert and Runtime 6.3.1 evidence; it does not rerun or relabel their original campaigns. See [current publication and limits](https://github.com/yeliang-wang/evopilot/blob/main/docs/releases/current-release.md).

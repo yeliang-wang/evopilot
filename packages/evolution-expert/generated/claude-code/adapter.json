@@ -2,8 +2,8 @@
   "schema": "evopilot-evolution-expert-adapter/v1",
   "id": "evopilot-evolution-expert-claude-code",
   "host": "claude-code",
-  "version": "2.3.0",
-  "coreDigest": "sha256:1c561242683c5c3469a57dcc3c11c68385791be2b0f5dc9c72aa7bc99e1e0021",
+  "version": "2.3.1",
+  "coreDigest": "sha256:5774f5c9f1609f0e40c0ce6e3faa1faa3f26a57be0b20aff2015021f55836a44",
   "protocolVersion": "2.2",
   "requiredCapabilities": [
     "structured-tool-results",
@@ -51,5 +51,5 @@
     "ordinary-human-cli-or-http-fallback",
     "execute-source-work"
   ],
-  "digest": "sha256:52feff4f5ecf92d2da4e59bee114cf44a2e05102d28af05a145b2841b896f450"
+  "digest": "sha256:7ef1b5405e4188a72c4bdd9bbe35b6d3371b5c35fa6123bcc10981a823ca0017"
 }

@@ -13,7 +13,7 @@ export function verifyPackagedHostIntegration(tarball, members) {
   const bytes = execFileSync("tar", ["-xOf", tarball, `${prefix}manifest.json`]);
   const manifest = JSON.parse(bytes);
   assert.equal(manifest.schema, "evopilot-expert-host-integration/v1");
-  assert.equal(manifest.expertVersion, "2.3.0");
+  assert.equal(manifest.expertVersion, "2.3.1");
   assert.equal(manifest.runtimeVersion, "6.3.0");
   assert.deepEqual(manifest.platforms, ["darwin-arm64"]);
   for (const required of ["run.mjs", "mcp.mjs", "permission-observer.mjs", "controller.mjs", "transport.mjs", "native.mjs", "native/PrivateInput.swift", "dist/darwin-arm64/secure-input", "manage.mjs", "config.schema.json", "README.md"]) assert.ok(manifest.files[required], `Missing Host integration ${required}`);
