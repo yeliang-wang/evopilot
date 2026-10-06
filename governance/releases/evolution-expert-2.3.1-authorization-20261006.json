@@ -1,0 +1,51 @@
+{
+  "schema": "evopilot-documentation-patch-release-authorization/v1",
+  "decision": "AUTHORIZED",
+  "by": "user",
+  "recordedAt": "2026-10-06T04:24:09.207Z",
+  "authorizationDigest": "sha256:a6d196f7e19ff9117fa506532b2f8a87f18fc5adb3fd4ab213292e56eecc3924",
+  "decisionEvidence": {
+    "kind": "EXPLICIT_USER_APPROVED_DOCUMENTATION_PLAN_AND_NECESSARY_RELEASE_GITHUB_PUSH",
+    "evidence": {
+      "digest": "sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39",
+      "address": "urn:sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39"
+    }
+  },
+  "technicalBinding": {
+    "resolvedBy": "assistant",
+    "individualHumanReviewOfGeneratedTechnicalDigest": false,
+    "basis": "Existing explicit user publication instruction, exact completed current acceptance and unchanged approved release scope."
+  },
+  "binding": {
+    "product": "evopilot-evolution-expert",
+    "version": "2.3.1",
+    "targetId": "evopilot-evolution-expert-v2.3.1-documentation-onboarding",
+    "targetRevision": 3,
+    "approvedTargetScopeDigest": "sha256:38f1f5c3aaa90013d1ccb76e1ddebd24f928848dbecae2c33bece77a956c2cd2",
+    "sourceCommit": "4c7c09b8be221d2feedef8fa5f12b00883ee33fc",
+    "candidateRunId": "37407240219",
+    "handoffDigest": "sha256:f0a3b264260105f600dfa18bb7a49cb74f9b3116e3c7aee156c1a561bee79185",
+    "releaseSetDigest": "sha256:6a8b5705074a323d9156db57556f2049c5a494b2f13b362d51cdfcf2337bb28f",
+    "acceptanceDigest": "sha256:2fd74a0ed8f854867174d362f3c88a61b967756283fb23554a4890f6040bcee1",
+    "tag": "evolution-expert-v2.3.1",
+    "actions": [
+      "commit",
+      "push",
+      "tag",
+      "github-release",
+      "npm",
+      "installer"
+    ],
+    "versions": {
+      "evopilot": "2.3.1"
+    }
+  },
+  "bindingDigest": "sha256:e5557194c52c43a17c5f578f8f19d09a7b6edb188842087601f9c89bf3d7345b",
+  "acceptedPublicProjection": {
+    "path": "governance/releases/evolution-expert-2.3.1-acceptance-20261006.json",
+    "digest": "sha256:2fd74a0ed8f854867174d362f3c88a61b967756283fb23554a4890f6040bcee1"
+  },
+  "publicationStatus": "NOT_YET_PUBLISHED",
+  "rebuildAuthorized": false,
+  "dailyCutoverAuthorizedByThisCampaign": false
+}

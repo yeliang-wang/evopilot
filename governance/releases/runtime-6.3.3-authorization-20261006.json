@@ -1,0 +1,52 @@
+{
+  "schema": "evopilot-documentation-patch-release-authorization/v1",
+  "decision": "AUTHORIZED",
+  "by": "user",
+  "recordedAt": "2026-10-06T04:24:08.720Z",
+  "authorizationDigest": "sha256:7a5d949351c0ebb4c34b77e0dcb87feba84ea64192da10daafa7baec1bb6e608",
+  "decisionEvidence": {
+    "kind": "EXPLICIT_USER_APPROVED_DOCUMENTATION_PLAN_AND_NECESSARY_RELEASE_GITHUB_PUSH",
+    "evidence": {
+      "digest": "sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39",
+      "address": "urn:sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39"
+    }
+  },
+  "technicalBinding": {
+    "resolvedBy": "assistant",
+    "individualHumanReviewOfGeneratedTechnicalDigest": false,
+    "basis": "Existing explicit user publication instruction, exact completed current acceptance and unchanged approved release scope."
+  },
+  "binding": {
+    "product": "evopilot-runtime",
+    "version": "6.3.3",
+    "targetId": "evopilot-6.3.3-documentation-onboarding",
+    "targetRevision": 3,
+    "approvedTargetScopeDigest": "sha256:89cd7775f79d12e99c2150852a41c608d49067db11b6d24444e90e57b26459ed",
+    "sourceCommit": "4c7c09b8be221d2feedef8fa5f12b00883ee33fc",
+    "candidateRunId": "37407237313",
+    "handoffDigest": "sha256:7835d649fc1977852fabea66285e43f15b79e87ad607f4a21348bf4077c4d230",
+    "releaseSetDigest": "sha256:847f5ad8c9c03778139d6512fd18da1459d59bcd14c2dc4c4afedb9c33886ed4",
+    "acceptanceDigest": "sha256:652c1789aee880e72547a009a6c3879c8f5448bed461d1c945cdb56ade0718eb",
+    "tag": "v6.3.3",
+    "actions": [
+      "commit",
+      "push",
+      "tag",
+      "github-release",
+      "npm",
+      "ghcr",
+      "installer"
+    ],
+    "versions": {
+      "evopilot": "6.3.3"
+    }
+  },
+  "bindingDigest": "sha256:e4abe34eb5e8ebada5edeee5e88737a108cc09020f3ec6f1b34ee262364db9dc",
+  "acceptedPublicProjection": {
+    "path": "governance/releases/runtime-6.3.3-acceptance-20261006.json",
+    "digest": "sha256:652c1789aee880e72547a009a6c3879c8f5448bed461d1c945cdb56ade0718eb"
+  },
+  "publicationStatus": "NOT_YET_PUBLISHED",
+  "rebuildAuthorized": false,
+  "dailyCutoverAuthorizedByThisCampaign": false
+}
