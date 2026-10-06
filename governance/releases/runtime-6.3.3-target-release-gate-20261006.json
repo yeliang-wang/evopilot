@@ -1,0 +1,38 @@
+{
+  "schema": "evopilot-documentation-patch-release-target-gate/v1",
+  "recordedAt": "2026-10-06T04:24:08.720Z",
+  "targetId": "evopilot-6.3.3-documentation-onboarding",
+  "targetRevision": 3,
+  "inputStatus": "VALIDATED",
+  "inputTargetDigest": "sha256:e61c196943751c1dd089da18956e057d23e265af52352763bc565cb1e72d7617",
+  "scopeAuthorizationDigest": "sha256:89cd7775f79d12e99c2150852a41c608d49067db11b6d24444e90e57b26459ed",
+  "releaseAuthorizationDigest": "sha256:7a5d949351c0ebb4c34b77e0dcb87feba84ea64192da10daafa7baec1bb6e608",
+  "acceptance": {
+    "path": "governance/releases/runtime-6.3.3-acceptance-20261006.json",
+    "digest": "sha256:652c1789aee880e72547a009a6c3879c8f5448bed461d1c945cdb56ade0718eb"
+  },
+  "authorization": {
+    "path": "governance/releases/runtime-6.3.3-authorization-20261006.json",
+    "digest": "sha256:3ae0e0fce047163d5b8aff16e1e7e4e5aa0d8dc9c1b448a0a1cc409a967ac634"
+  },
+  "acceptanceResult": {
+    "schema": "evopilot-target-assurance/v1",
+    "phase": "acceptance",
+    "status": "PASSED",
+    "authorizationDigest": "sha256:89cd7775f79d12e99c2150852a41c608d49067db11b6d24444e90e57b26459ed",
+    "failures": [],
+    "authority": "NONE",
+    "evidenceExecutionVerified": false
+  },
+  "result": {
+    "schema": "evopilot-target-assurance/v1",
+    "phase": "release",
+    "status": "PASSED",
+    "authorizationDigest": "sha256:89cd7775f79d12e99c2150852a41c608d49067db11b6d24444e90e57b26459ed",
+    "failures": [],
+    "authority": "NONE",
+    "evidenceExecutionVerified": false
+  },
+  "evidenceBoundary": "Structural validation does not verify execution. Exact current regression, per-item impact observations, isolated Host receipts and independent artifact proofs are separately pinned and reviewed.",
+  "subsequentTargetStatus": "RELEASE_AUTHORIZED"
+}
