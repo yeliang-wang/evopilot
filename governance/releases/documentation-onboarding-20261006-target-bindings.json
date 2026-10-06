@@ -1,0 +1,38 @@
+{
+  "schema": "evopilot-documentation-maintenance-target-bindings/v1",
+  "status": "APPROVED_SCOPE_BINDINGS",
+  "authorityRecord": "governance/releases/documentation-onboarding-20261006-authority.json",
+  "authorityRecordDigest": "sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39",
+  "targets": [
+    {
+      "id": "evopilot-6.3.3-documentation-onboarding",
+      "revision": 1,
+      "product": "evopilot-runtime",
+      "version": "6.3.3",
+      "targetPath": "governance/targets/evopilot-6.3.3-documentation-onboarding.json",
+      "approvedTargetFileDigest": "sha256:31e998b16154c7feda749311dfdabbf83d76379ac182c4c8036379973c355891",
+      "approvedScopeDigest": "sha256:6368549fe5bd41082319cad26308250cbb4b467a99e347f3d7a213963781b664",
+      "baselineTarget": "governance/targets/evopilot-6.3.2-readiness-continuity.json",
+      "baselineTargetDigest": "sha256:87efd50af59cce8f6125c38a8bef846c892e203117501f9b3e876c68c3fb5f61",
+      "inheritedCriterionCount": 419,
+      "sourceAuthorityDigest": "sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39",
+      "roadmapDigest": "sha256:c1e7983c20129ca1d54e34987757d8f5e9155cbfa955ec14e9355652accd459c"
+    },
+    {
+      "id": "evopilot-evolution-expert-v2.3.1-documentation-onboarding",
+      "revision": 1,
+      "product": "evopilot-evolution-expert",
+      "version": "2.3.1",
+      "targetPath": "governance/targets/evopilot-evolution-expert-v2.3.1-documentation-onboarding.json",
+      "approvedTargetFileDigest": "sha256:bf1016726be2709fcca054e1f296b962e260450ce6d5a163d8e28e8a6cf2a016",
+      "approvedScopeDigest": "sha256:6c9532da6de0f2d68ac370f2a0f8c2ec9bdd295625f3ffc92f8442c6863c816b",
+      "baselineTarget": "governance/targets/evopilot-evolution-expert-v2.3.0-semantic-convergence-successor.json",
+      "baselineTargetDigest": "sha256:1871ddafd5581317dbe1f3bbef08a5b57f85fb41fcc81d101430ecb0401dd714",
+      "inheritedCriterionCount": 400,
+      "sourceAuthorityDigest": "sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39",
+      "roadmapDigest": "sha256:c1e7983c20129ca1d54e34987757d8f5e9155cbfa955ec14e9355652accd459c"
+    }
+  ],
+  "technicalDigestIndividuallyReviewedByUser": false,
+  "notes": "Exact finite scopes materialized from the retained explicit user instruction. No acceptance or publication is asserted. Candidate validation checks these approved source bytes; historical targets and corpus remain immutable."
+}

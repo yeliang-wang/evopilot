@@ -2,8 +2,8 @@
   "schema": "evopilot-evolution-expert-adapter/v1",
   "id": "evopilot-evolution-expert-generic-agent",
   "host": "generic-agent",
-  "version": "2.3.0",
-  "coreDigest": "sha256:1c561242683c5c3469a57dcc3c11c68385791be2b0f5dc9c72aa7bc99e1e0021",
+  "version": "2.3.1",
+  "coreDigest": "sha256:5774f5c9f1609f0e40c0ce6e3faa1faa3f26a57be0b20aff2015021f55836a44",
   "protocolVersion": "2.2",
   "requiredCapabilities": [
     "structured-tool-results",
@@ -51,5 +51,5 @@
     "ordinary-human-cli-or-http-fallback",
     "execute-source-work"
   ],
-  "digest": "sha256:1ebda5409d0d45410052f47500fe0669eef8ef96986bc445a50a52d91be6d709"
+  "digest": "sha256:5b1c3b8a7c81942e3a701a59d604bf7417b18c6657e91f2abceb93708f358ee9"
 }

@@ -31,7 +31,7 @@
   "versionPolicy": {
     "runtimeProduct": "evopilot-runtime",
     "publishedBaseline": "6.3.2",
-    "currentWorkingVersion": "6.3.2",
+    "currentWorkingVersion": "6.3.3",
     "versionsEvolveIndependently": true,
     "majorRequiredFor": [
       "incompatible published Harness consumption contract",
@@ -541,7 +541,7 @@
     "product": "evopilot-evolution-expert",
     "proposedPackage": "@evopilot/evolution-expert",
     "publishedBaseline": "2.1.0",
-    "currentWorkingVersion": "2.3.0",
+    "currentWorkingVersion": "2.3.1",
     "lockstepWithRuntime": false,
     "mandatoryForOrdinaryHumans": true,
     "canonicalProtocol": "MCP",
@@ -2132,6 +2132,66 @@
         "excludedItemsCountedAsPass": false,
         "publicDistributionObservationDigest": "sha256:dff1d3014a354b8f87d5b2bd956c248462913919572ab8f1376c6fd064ff5f58"
       }
+    },
+    {
+      "id": "evopilot-6.3.3-documentation-onboarding",
+      "product": "evopilot-runtime",
+      "status": "IN_PROGRESS",
+      "implementationAuthority": "SEPARATELY_APPROVED_TARGET_REQUIRED",
+      "targetVersion": "6.3.3",
+      "releaseLine": "6.3.x",
+      "maintenanceBasis": "evopilot-maintenance",
+      "objective": "Publish the approved packaged documentation improvements as evopilot-runtime 6.3.3, preserving independently versioned products and all accepted product boundaries.",
+      "outcomes": [
+        "Publish the approved onboarding/package documentation with necessary finite identity and validator projections; product behavior and authority remain unchanged.",
+        "Retain historical acceptance definitions and publish only a newly accepted build-once Candidate."
+      ],
+      "acceptance": [
+        "Packaged Runtime/client/installer README instructions describe the released commands, absolute stdio launch paths, local Runtime HTTP boundary, existing configuration reuse and a safe read-only first success. Evidence: Inspect the exact Candidate npm/source README bytes and command schemas; verify all packaged-relative links against actual pack inventory; version-pinned existing guide URLs and clearly labeled new source guides; no credentials, model invocation, full Goal or undeclared Host qualification claims.",
+        "Runtime 6.3.3 identity is consistently projected across the 16 versioned packages, lock, public constants/protocol, installers and manifest hashes, and Helm; only identity fields change. Evidence: Exact source delta and the complete exact identity-file inventory checks; preserve historical protocol versions, Expert independent contracts pin, Dashboard and private-extension versions; npm package manifests and image labels match the Candidate.",
+        "Documentation guard and maintenance version projections reject malformed links, inventory fallback side effects, wrong current versions and missing or mismatched release bindings without weakening historical validation. Evidence: Run existing package-doc-links tests and semantic-version/readiness/roadmap targeted tests including precise new-version negative controls. Retain original corpus and publication digests byte-for-byte.",
+        "The exact installed Candidate supports the documented safe first task through Codex MCP with server-governed readiness and read-only discovery. Evidence: Fresh exact-version Codex stdio session bound to Candidate adapter and isolated Runtime with reused scoped existing configuration where required; setup/readiness and authorized project/resource list responses, matching rendered/structured output and no writes, provider calls or secret collection. Empty valid inventories remain valid.",
+        "Every one of the 419 accepted Runtime 6.3.2 criterion definitions has an individual current patch-impact disposition and evidence; no old PASS or source-only test is transferred to current installed acceptance. Evidence: Immutable definition hashes and full delta/dependency map; named current tests for affected behavior, exact unchanged execution-input equivalence for unaffected behavior, retained one-time transaction history with current nonregression for migration-only claims; current package regression and no-regression report. No new blanket model or duration requirement.",
+        "A build-once 6.3.3 Candidate release set is accepted and can be promoted without rebuilding or substituting artifacts. Evidence: Actual source commit/run, independent fresh download handoff, full release-set/artifact digests, exact installed observations, acceptance ledger and separate exact release authorization/gate. Public promotion/readback is a subsequent release action, not a pre-publication PASS claim."
+      ],
+      "signals": [
+        "evopilot-runtime 6.3.3 documentation maintenance"
+      ],
+      "scopeAuthority": {
+        "sourceInstructionDigest": "sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39",
+        "technicalBindingResolvedBy": "assistant under explicit current user implementation and necessary patch-publication instruction",
+        "individualHumanReviewOfFutureTechnicalDigests": false
+      }
+    },
+    {
+      "id": "evopilot-evolution-expert-v2.3.1-documentation-onboarding",
+      "product": "evopilot-evolution-expert",
+      "status": "IN_PROGRESS",
+      "implementationAuthority": "SEPARATELY_APPROVED_TARGET_REQUIRED",
+      "targetVersion": "2.3.1",
+      "releaseLine": "2.3.x",
+      "maintenanceBasis": "evopilot-maintenance",
+      "objective": "Publish the approved packaged documentation improvements as evopilot-evolution-expert 2.3.1, preserving independently versioned products and all accepted product boundaries.",
+      "outcomes": [
+        "Publish the approved onboarding/package documentation with necessary finite identity and validator projections; product behavior and authority remain unchanged.",
+        "Retain historical acceptance definitions and publish only a newly accepted build-once Candidate."
+      ],
+      "acceptance": [
+        "The independently packaged Expert README provides a complete combination install and copied-skill activation route, preserving Runtime-owned state and the difference between generated adapters, installers and actually qualified Hosts. Evidence: Inspect exact Candidate README and generated Codex skill/bundle bytes; verify local packaged links and pinned existing guide targets; verify existing config reuse, no unconditional overwrite and explicit npm-upgrade does not refresh copied skills.",
+        "Expert 2.3.1 package/Core, five generated adapters and maintained Host Integration metadata consistently identify 2.3.1 while contracts6.3.0, Core schema v3, protocol2.2, declared Runtime range and native Swift/permission semantics remain intact. Evidence: Generated check and all five adapter conformance/digest validations against installed Candidate; current Host Integration manifest/inventory/private MCP identity 2.3.1 with runtimeVersion6.3.0 unchanged; exact native Swift and permission/transport source equivalence plus applicable current tests. No native input or cross-Host qualification claim.",
+        "The release validator independently validates the explicitly registered maintenance Target and retained historical semantic corpus without treating either as executed acceptance. Evidence: Keep legacy exact-byte APIs and fixed 6.3.0/2.3.0 corpus pins; current Target branch checks exact identity, revision, version, roadmap, independent authorization, lineage and allowed scope; reject forged APPROVED headers, wrong product/version/revision/digests, omitted lineage, scope expansion and historical PASS transfer.",
+        "A fresh installed Expert package and copied Codex skill support the documented safe first-task guidance using Runtime 6.3.3 while retaining declared older compatibility. Evidence: Installed CLI version/doctor/tutorial/adapter inspection, all five generated contracts, fresh Codex skill recognition and only read-only Runtime setup/readiness/discovery; preserve non-authority, secret redaction and empty-state handling; no full Goal, provider call, repeated credential input or cross-Host live claim.",
+        "All 400 effective accepted Expert 2.3.0 definitions retain exact criterion/evidence text and receive current individual patch-impact evidence instead of inherited PASS. Evidence: Map each unchanged or affected execution input, Core/adapter digest projection and installed tests; preserve the baseline excluded soak item only in historical metadata and do not repurpose the old version-specific waiver as new authority; no blanket replay of old first-input or migration journeys.",
+        "A build-once Expert 2.3.1 Candidate has a verified independent handoff and exact accepted-artifact release binding. Evidence: Fresh Candidate npm/SBOM/provenance/checksum set; public-install verifier on exact accepted tgz and clean prefix; new actual acceptance and authorization hashes. Later public npm integrity/provenance and GitHub asset readback must match the same artifact, never a rebuilt substitute."
+      ],
+      "signals": [
+        "evopilot-evolution-expert 2.3.1 documentation maintenance"
+      ],
+      "scopeAuthority": {
+        "sourceInstructionDigest": "sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39",
+        "technicalBindingResolvedBy": "assistant under explicit current user implementation and necessary patch-publication instruction",
+        "individualHumanReviewOfFutureTechnicalDigests": false
+      }
     }
   ],
   "transitionPolicies": [
@@ -2557,5 +2617,34 @@
     "hostOrEnvironmentModelFallback": false,
     "historicalBindingSchemaCompatible": true,
     "precedence": "For Runtime 6.3.2, the prior normal-operation freshness wording requires fresh successful live evidence for initial or changed explicit binding. Elapsed time alone does not revoke an unchanged, successfully verified existing binding. Actual failed proof, profile/SecretRef changes, unavailable/revoked resources, tenant/workspace mismatch, malformed or future evidence and independent request authority remain fail closed."
+  },
+  "documentationMaintenancePatchPolicy": {
+    "schema": "evopilot-documentation-maintenance-patch-policy/v1",
+    "id": "documentation-onboarding-20261006",
+    "standingWork": "evopilot-maintenance",
+    "targets": [
+      {
+        "id": "evopilot-6.3.3-documentation-onboarding",
+        "revision": 1,
+        "product": "evopilot-runtime",
+        "version": "6.3.3",
+        "path": "governance/targets/evopilot-6.3.3-documentation-onboarding.json"
+      },
+      {
+        "id": "evopilot-evolution-expert-v2.3.1-documentation-onboarding",
+        "revision": 1,
+        "product": "evopilot-evolution-expert",
+        "version": "2.3.1",
+        "path": "governance/targets/evopilot-evolution-expert-v2.3.1-documentation-onboarding.json"
+      }
+    ],
+    "authorityRecord": "governance/releases/documentation-onboarding-20261006-authority.json",
+    "authorityRecordDigest": "sha256:317f168b0b1864b60985914b1205f2eee61476ae3824d9a03cae38abac884b39",
+    "targetBindingsRecord": "governance/releases/documentation-onboarding-20261006-target-bindings.json",
+    "boundaryChange": false,
+    "productBehaviorChange": false,
+    "historicalEvidenceImmutable": true,
+    "historicalPassTransferAllowed": false,
+    "privateExtensionsVersion": "1.0.1"
   }
 }

@@ -2,6 +2,8 @@
 
 ## Status And Authority
 
+Current maintenance work: Runtime **6.3.3** and Evolution Expert **2.3.1** ship the approved onboarding and packaged-documentation corrections, with finite version and release-validator projections. Their independently approved Targets bind the current machine Roadmap and require new exact Candidate acceptance. Runtime 6.3.2 and Expert 2.3.0 remain published history; [current publication](../releases/current-release.md) changes only after observed publication. No product boundary, credential flow, model default or execution authority changes.
+
 This Roadmap is the human-readable product plan for EvoPilot. The
 machine-readable authority is [`governance/roadmap.yaml`](../../governance/roadmap.yaml).
 The accepted [EvoPilot / evopilot-harness boundary](../architecture/adr/0001-evopilot-harness-boundary.md),
@@ -19,9 +21,7 @@ for explicit user review. A boundary change additionally requires a replacement
 ADR, migration and compatibility analysis, executable guard updates, a formal
 Roadmap revision, and explicit approval.
 
-In Codex, `$evopilot-evolution-orchestrator` remains the conversational entry
-for repository evolution. It is not the EvoPilot product Lifecycle Runtime or
-the independently distributed Evolution Expert. External evidence, LLMs, Agent
+In this installation, use the installed Evolution Expert adapter, EvoPilot MCP products and independent project resources for repository evolution. Retired Suite entry points must not be loaded or restored. The repository Roadmap and exact Evolution Targets retain their authority, separately from the EvoPilot product Lifecycle Runtime. External evidence, LLMs, Agent
 Hosts, and Agent Runtimes never approve a Roadmap change, Evolution Target,
 Acceptance, Harness publication, or Release.
 

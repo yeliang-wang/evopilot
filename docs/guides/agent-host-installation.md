@@ -1,6 +1,8 @@
 # Install EvoPilot in an Agent Host
 
-This guide connects an Agent Host to **Runtime 6.3.2**, **Evolution Expert 2.3.0**, and **Harness 4.8.1**. It covers a local Codex installation using Node.js 22.14.0 or newer. The first result is an authenticated, read-only Runtime response; running a project has additional prerequisites in [Your first task](first-task.md).
+This guide describes connecting an Agent Host to **Runtime 6.3.3**, **Evolution Expert 2.3.1**, and **Harness 4.8.2**. It covers a local Codex installation using Node.js 22.14.0 or newer. The first result is an authenticated, read-only Runtime response; running a project has additional prerequisites in [Your first task](first-task.md).
+
+Before installing these exact versions, check [current publication and acceptance limits](../releases/current-release.md). Source documentation can precede public package promotion.
 
 ## Choose the starting point
 
@@ -10,7 +12,7 @@ This guide connects an Agent Host to **Runtime 6.3.2**, **Evolution Expert 2.3.0
 | Runtime already runs, but this Host is new | Obtain the existing installation's launcher or connection settings from its operator. Install the packages and connect stdio below. |
 | No Runtime exists | An operator first follows [Self-Hosting](../operations/self-hosting.md) to start the service and provision Runtime access. Then return here. Installing Expert or the MCP adapter alone does not start Runtime. |
 
-Reuse existing configuration. A valid Runtime 6.3.2 workspace LLM binding does not require another key, preflight or rebind merely because time has passed or the Host restarted. Inspect its current state first; only a reported setup or repair action requires more work. See [readiness continuity](first-run-llm-readiness.md#initial-freshness-and-continued-use).
+Reuse existing configuration. A valid Runtime 6.3.3 workspace LLM binding does not require another key, preflight or rebind merely because time has passed or the Host restarted. Inspect its current state first; only a reported setup or repair action requires more work. See [readiness continuity](first-run-llm-readiness.md#initial-freshness-and-continued-use).
 
 ## Understand the connections
 
@@ -31,11 +33,11 @@ For a fresh installation, the operator runs:
 
 ```bash
 node --version
-npm install --global @evopilot/evolution-expert@2.3.0 @evopilot/adapter-mcp@6.3.2 @evopilot/harness@4.8.1
+npm install --global @evopilot/evolution-expert@2.3.1 @evopilot/adapter-mcp@6.3.3 @evopilot/harness@4.8.2
 node -p 'process.execPath'
 npm root --global
 evopilot-expert version
-evopilot-expert doctor codex 6.3.2
+evopilot-expert doctor codex 6.3.3
 ```
 
 Record the absolute Node path and global package root printed above. These commands install client packages; an existing managed installation should retain its pinned package paths and launcher. `doctor` checks declared compatibility only: its `READY` is not a live Runtime-readiness result. The CLI prints JSON without a `--json` flag.
@@ -57,7 +59,7 @@ fi
 
 Keep all three files together. The generated Skill's name is `evopilot-evolution-expert-codex`. Select it in the Host's Skill picker; in Codex CLI/IDE, mention `$evopilot-evolution-expert-codex` explicitly. If it is not discovered, restart Codex and check for a disabled Skill entry. [Official Codex Skill guidance](https://learn.chatgpt.com/docs/build-skills) describes discovery and invocation.
 
-The bundle's `host://.../install`, `doctor` and related entries are lifecycle metadata, not shell commands or a working one-click installer. Expert 2.3.0 has no `evopilot-expert install` command. Updating the npm package does **not** refresh a copied Skill: review the new generated bundle, back up the existing directory, and replace that directory only as an explicit Expert upgrade. Runtime state stays in Runtime.
+The bundle's `host://.../install`, `doctor` and related entries are lifecycle metadata, not shell commands or a working one-click installer. Expert 2.3.1 has no `evopilot-expert install` command. Updating the npm package does **not** refresh a copied Skill: review the new generated bundle, back up the existing directory, and replace that directory only as an explicit Expert upgrade. Runtime state stays in Runtime.
 
 ## Connect Runtime over stdio
 
@@ -120,7 +122,7 @@ Before Runtime plans a Goal, its operator must configure `EVOPILOT_HARNESS_REGIS
 
 These columns describe different claims. A packaged adapter is guidance; an installer changes Host configuration; live acceptance verifies an exact Host and artifact combination.
 
-| Host | Expert 2.3.0 generated bundle | Setup path | Current release's live Host acceptance |
+| Host | Expert 2.3.1 generated bundle | Setup path | Current release's live Host acceptance |
 | --- | --- | --- | --- |
 | Codex | `generated/codex` | Copy/activate Skill and configure stdio explicitly; Harness bootstrap supplies manual instructions | Verified within the published Codex-only scope, reusing existing credentials |
 | Claude Code | `generated/claude-code` | Host-specific Skill/MCP setup by an integration operator | Not claimed |

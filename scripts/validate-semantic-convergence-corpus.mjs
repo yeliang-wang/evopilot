@@ -108,6 +108,150 @@ export function validateExternalTarget(product, plan, targetBytes, root = ROOT) 
   ensure(isDeepStrictEqual(plan, projected), "CASE_PLAN_MISMATCH");
   return {...validateCasePlan(product, plan, root), externalTarget: "EXACT_BYTES_VERIFIED"};
 }
+// This finite maintenance entry does not reinterpret the immutable 6.3.0/2.3.0
+// corpus as a current Candidate acceptance plan. Its approval registry is a
+// separate checked-in input, created before the Candidate is built.
+const maintenance = {
+  runtime: {id: "evopilot-6.3.3-documentation-onboarding", version: "6.3.3", product: "evopilot-runtime",
+    packageFile: "package.json", baseline: "governance/targets/evopilot-6.3.2-readiness-continuity.json", count: 419, prefix: "DOC633-"},
+  expert: {id: "evopilot-evolution-expert-v2.3.1-documentation-onboarding", version: "2.3.1", product: "evopilot-evolution-expert",
+    packageFile: "packages/evolution-expert/package.json", baseline: "governance/targets/evopilot-evolution-expert-v2.3.0-semantic-convergence-successor.json", count: 400, prefix: "DOC231-"}
+};
+const maintenanceAuthority = "governance/releases/documentation-onboarding-20261006-authority.json";
+const maintenanceRegistry = "governance/releases/documentation-onboarding-20261006-target-bindings.json";
+const digestPattern = /^sha256:[a-f0-9]{64}$/;
+const canonical = value => Array.isArray(value) ? `[${value.map(canonical).join(",")}]` : value && typeof value === "object"
+  ? `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${JSON.stringify(k)}:${canonical(v)}`).join(",")}}`
+  : JSON.stringify(value);
+// Match the public v1 Target authorization projection. Progress/status and
+// future exact-Candidate publication evidence do not change approved scope.
+export function maintenanceScopeDigest(target) {
+  const rows = value => Array.isArray(value) ? value.filter(x => x && typeof x === "object" && !Array.isArray(x)) : [];
+  const pick = (value, keys) => Object.fromEntries(keys.map(key => [key, value[key] ?? null]));
+  const sorted = (items, keys) => [...items].sort((a, b) => {
+    for (const key of keys) {
+      const left = String(a[key] ?? ""), right = String(b[key] ?? "");
+      if (left !== right) return left < right ? -1 : 1;
+    }
+    return 0;
+  });
+  const matrix = (key, fields, order = ["id"]) => sorted(rows(target[key]).map(x => pick(x, fields)), order);
+  return sha(canonical({schema: "evopilot-evolution-target-authorization/v1", targetId: target.id ?? null,
+    ...pick(target, ["revision", "intent", "objective", "evidence"]),
+    roadmapBindings: sorted(rows(target.roadmapBindings), ["project"]), scope: pick(target.scope ?? {}, ["include", "exclude"]),
+    compatibilityPolicy: target.compatibilityPolicy ?? {mode: "INHERIT"}, acceptanceModel: target.acceptanceModel ?? null,
+    acceptance: matrix("acceptance", ["id", "category", "critical", "criterion", "requiredEvidence"]),
+    acceptanceLineage: matrix("acceptanceLineage", ["id", "origin", "criterionDigest", "evidenceRef"], ["origin", "id"]),
+    inheritedAcceptance: matrix("inheritedAcceptance", ["id", "origin", "criterion", "requiredEvidence"], ["origin", "id"]),
+    regressionImpact: target.regressionImpact ?? null,
+    excludedHistoricalAcceptance: matrix("excludedHistoricalAcceptance", ["id", "reason", "evidenceRef"]),
+    realCaseCoverage: sorted(rows(target.realCaseCoverage).map(x => ({
+      ...pick(x, ["id", "scenario", "coversAcceptanceIds", "hosts", "startingState", "terminalState", "prohibitedEffects", "requiredEvidence"]),
+      machineVariants: sorted(rows(x.machineVariants).map(v => pick(v, ["id", "scenario", "coversAcceptanceIds", "hosts", "prohibitedEffects", "requiredEvidence"])), ["id"])
+    })), ["id"]),
+    ...pick(target, ["noRegressionRequired", "acceptanceClosurePolicy", "failurePolicy"])}));
+}
+
+function boundedRepositoryBytes(root, relative) {
+  const file = safeRepositoryFile(root, relative);
+  ensure(fs.statSync(file).size <= 33554432, "MAINTENANCE_INPUT_SIZE_LIMIT");
+  return fs.readFileSync(file);
+}
+
+/** Candidate-source structure only. Never approves a Target or closes a case. */
+export function validateMaintenanceTarget(product, plan, targetBytes, root = ROOT) {
+  config(product);
+  const c = maintenance[product], targetPath = `governance/targets/${c.id}.json`;
+  ensure(targetBytes.length <= 33554432, "TARGET_SIZE_LIMIT");
+  const target = JSON.parse(targetBytes);
+  ensure(target.schema === "evopilot-evolution-target/v1" && target.id === c.id && target.revision === 1,
+    "MAINTENANCE_TARGET_IDENTITY_MISMATCH");
+  const roadmapBytes = boundedRepositoryBytes(root, "governance/roadmap.yaml");
+  const roadmap = JSON.parse(roadmapBytes), policy = roadmap.documentationMaintenancePatchPolicy;
+  const declaration = {id: c.id, revision: 1, product: c.product, version: c.version, path: targetPath};
+  ensure(policy?.schema === "evopilot-documentation-maintenance-patch-policy/v1" &&
+    policy.id === "documentation-onboarding-20261006" && policy.standingWork === "evopilot-maintenance" &&
+    policy.authorityRecord === maintenanceAuthority && policy.targetBindingsRecord === maintenanceRegistry &&
+    policy.boundaryChange === false && policy.productBehaviorChange === false && policy.historicalEvidenceImmutable === true &&
+    policy.historicalPassTransferAllowed === false && policy.targets?.filter(x => x.id === c.id).length === 1 &&
+    isDeepStrictEqual(policy.targets.find(x => x.id === c.id), declaration), "MAINTENANCE_ROADMAP_DECLARATION_MISMATCH");
+  const currentVersion = product === "runtime" ? roadmap.versionPolicy?.currentWorkingVersion : roadmap.evolutionExpertPolicy?.currentWorkingVersion;
+  ensure(currentVersion === c.version && JSON.parse(boundedRepositoryBytes(root, c.packageFile)).version === c.version &&
+    roadmap.milestones?.some(x => x.id === c.id && x.product === c.product && x.targetVersion === c.version &&
+      x.status === "IN_PROGRESS" && x.maintenanceBasis === "evopilot-maintenance"), "MAINTENANCE_CURRENT_VERSION_MISMATCH");
+  const registry = JSON.parse(boundedRepositoryBytes(root, maintenanceRegistry));
+  ensure(registry.schema === "evopilot-documentation-maintenance-target-bindings/v1" && registry.status === "APPROVED_SCOPE_BINDINGS" &&
+    registry.authorityRecord === maintenanceAuthority && registry.authorityRecordDigest === policy.authorityRecordDigest &&
+    registry.technicalDigestIndividuallyReviewedByUser === false && registry.targets?.filter(x => x.id === c.id).length === 1,
+    "MAINTENANCE_REGISTRY_MISMATCH");
+  const binding = registry.targets.find(x => x.id === c.id);
+  ensure(binding.revision === 1 && binding.product === c.product && binding.version === c.version && binding.targetPath === targetPath &&
+    binding.baselineTarget === c.baseline && binding.inheritedCriterionCount === c.count &&
+    digestPattern.test(binding.approvedTargetFileDigest) && digestPattern.test(binding.approvedScopeDigest), "MAINTENANCE_REGISTRY_BINDING_MISMATCH");
+  ensure(sha(targetBytes) === binding.approvedTargetFileDigest &&
+    sha(boundedRepositoryBytes(root, targetPath)) === binding.approvedTargetFileDigest, "MAINTENANCE_APPROVED_TARGET_BYTES_MISMATCH");
+  const authorityBytes = boundedRepositoryBytes(root, maintenanceAuthority), authority = JSON.parse(authorityBytes);
+  ensure(sha(authorityBytes) === policy.authorityRecordDigest && binding.sourceAuthorityDigest === policy.authorityRecordDigest &&
+    authority.schema === "evopilot-user-release-instruction/v1" && typeof authority.implementationInstruction === "string" &&
+    authority.implementationInstruction.trim() && typeof authority.releaseInstruction === "string" && authority.releaseInstruction.trim() &&
+    authority.technicalDigestIndividuallyReviewedByUser === false && authority.publicationConditionalOnCurrentAcceptance === true &&
+    authority.noHistoricalPassTransfer === true && authority.remoteProductionDeploymentAuthorized === false,
+    "MAINTENANCE_AUTHORITY_MISMATCH");
+  const targetApproval = target.approvals?.target;
+  ensure(target.status === "APPROVED" && targetApproval?.decision === "APPROVED" && targetApproval.by === "user" &&
+    targetApproval.evidenceRef === maintenanceAuthority && targetApproval.authorizationDigest === binding.approvedScopeDigest,
+    "MAINTENANCE_TARGET_APPROVAL_MISMATCH");
+  const roadmapBinding = target.roadmapBindings?.[0];
+  ensure(target.roadmapBindings?.length === 1 && roadmapBinding.project === "evopilot" &&
+    roadmapBinding.releaseProduct === c.product && roadmapBinding.targetVersion === c.version &&
+    roadmapBinding.matchedMilestone === c.id && roadmapBinding.classification === "ALIGNED" &&
+    roadmapBinding.roadmapDigest === sha(roadmapBytes) && binding.roadmapDigest === sha(roadmapBytes) &&
+    target.release?.product === c.product && isDeepStrictEqual(target.release.versions, {evopilot: c.version}),
+    "MAINTENANCE_TARGET_ROADMAP_MISMATCH");
+  const baselineBytes = boundedRepositoryBytes(root, c.baseline);
+  ensure(sha(baselineBytes) === binding.baselineTargetDigest && target.acceptanceModel?.baselineTargetDigest === binding.baselineTargetDigest,
+    "MAINTENANCE_BASELINE_DIGEST_MISMATCH");
+  const baseline = JSON.parse(baselineBytes);
+  const definitions = [...baseline.acceptance.map((row, i) => ({row, pointer: `/acceptance/${i}`})),
+    ...baseline.inheritedAcceptance.map((row, i) => ({row, pointer: `/inheritedAcceptance/${i}`}))];
+  ensure(definitions.length === c.count && target.inheritedAcceptance?.length === c.count &&
+    target.acceptanceLineage?.length === c.count && target.excludedHistoricalAcceptance?.length === 0,
+    "MAINTENANCE_BASELINE_COVERAGE_MISMATCH");
+  for (const [i, {row, pointer}] of definitions.entries()) {
+    const inherited = target.inheritedAcceptance[i], lineage = target.acceptanceLineage[i];
+    const origin = `${c.baseline}#${pointer}`;
+    ensure(inherited.id === row.id && inherited.criterion === row.criterion && inherited.requiredEvidence === row.requiredEvidence &&
+      inherited.origin === origin && isDeepStrictEqual(lineage, {id: row.id, origin,
+        criterionDigest: sha(canonical({id: row.id, criterion: row.criterion, requiredEvidence: row.requiredEvidence})),
+        evidenceRef: `${c.baseline}@${binding.baselineTargetDigest}#${pointer}`}), "MAINTENANCE_BASELINE_DEFINITION_MISMATCH");
+  }
+  ensure(isDeepStrictEqual(target.acceptance?.map(x => x.id), Array.from({length: 6}, (_, i) => `${c.prefix}0${i + 1}`)) &&
+    isDeepStrictEqual(target.realCaseCoverage?.map(x => x.id), [1, 2, 3].map(i => `${c.prefix}RC0${i}`)),
+    "MAINTENANCE_CURRENT_COVERAGE_MISMATCH");
+  const currentRows = [...target.acceptance, ...target.inheritedAcceptance, ...target.realCaseCoverage,
+    ...target.realCaseCoverage.flatMap(x => x.machineVariants ?? []), target.noRegression];
+  ensure(currentRows.every(x => x.status === "PENDING" && Array.isArray(x.evidenceRefs) && x.evidenceRefs.length === 0),
+    "MAINTENANCE_PREMATURE_ACCEPTANCE");
+  ensure(maintenanceScopeDigest(target) === binding.approvedScopeDigest, "MAINTENANCE_APPROVED_SCOPE_MISMATCH");
+  // An existing conditional release instruction is permitted; this report does
+  // not resolve it into exact accepted-Candidate release authority.
+  return {schema: "evopilot-maintenance-candidate-definition-validation/v1", status: "MAINTENANCE_TARGET_AND_HISTORICAL_DEFINITION_VALIDATED",
+    product, version: c.version, targetId: c.id, targetFileDigest: binding.approvedTargetFileDigest,
+    authorizationDigest: binding.approvedScopeDigest, roadmapDigest: binding.roadmapDigest,
+    currentMaintenanceTarget: "APPROVED_SOURCE_BYTES_VERIFIED", currentCriterionCount: target.acceptance.length,
+    inheritedCriterionCount: definitions.length, historicalDefinition: validateCasePlan(product, plan, root),
+    localSyntheticTests: "NOT_RUN", installedPackageE2E: "NOT_RUN", realHost: "NOT_RUN", formalAcceptance: "NOT_RUN",
+    targetCriteriaClosed: 0, grantsProductAuthority: false, grantsReleaseAuthority: false};
+}
+
+export function validateCandidateTarget(product, plan, targetBytes, root = ROOT) {
+  config(product);
+  ensure(targetBytes.length <= 33554432, "TARGET_SIZE_LIMIT");
+  return JSON.parse(targetBytes).id === maintenance[product].id
+    ? validateMaintenanceTarget(product, plan, targetBytes, root)
+    : validateExternalTarget(product, plan, targetBytes, root);
+}
+
 function run() {
   const args = process.argv.slice(2);
   ensure((args.length === 4 || (args.length === 5 && args[4] === "--run-local")) &&
@@ -118,7 +262,7 @@ function run() {
   const planFile = safeRepositoryFile(ROOT, planPath(product));
   ensure(fs.statSync(planFile).size <= 1048576, "PLAN_SIZE_LIMIT");
   const plan = JSON.parse(fs.readFileSync(planFile));
-  const report = validateExternalTarget(product, plan, fs.readFileSync(targetFile));
+  const report = validateCandidateTarget(product, plan, fs.readFileSync(targetFile));
   if (args.includes("--run-local")) {
     const result = spawnSync(process.execPath, ["--test", "--test-reporter=tap", ...supportingSuites(product)],
       {cwd: ROOT, encoding: "utf8", timeout: 180000, maxBuffer: 8 * 1024 * 1024,

@@ -1,6 +1,8 @@
 # Your first task: inspect EvoPilot safely
 
-Use this tutorial after [Agent Host installation](agent-host-installation.md). It covers Runtime **6.3.2**, Expert **2.3.0**, and an already connected Host. The outcome is a Runtime-owned readiness report and, when ready, a read-only view of available projects and resources.
+Use this tutorial after [Agent Host installation](agent-host-installation.md). It covers Runtime **6.3.3**, Expert **2.3.1**, and an already connected Host. The outcome is a Runtime-owned readiness report and, when ready, a read-only view of available projects and resources.
+
+Before installing these exact versions, check [current publication and acceptance limits](../releases/current-release.md). Source documentation can precede public package promotion.
 
 ## 1. Ask for a bounded connection check
 
@@ -31,7 +33,7 @@ Tool discovery establishes the Host-to-stdio connection. Successful structured r
 | `PREFLIGHT_REQUIRED` | Runtime requires a successful live check and/or explicit binding before normal work. A provider call is a separate setup action. |
 | `LLM_BLOCKED` | Show the exact drift, revoked reference, failed proof or other blocker; follow the named repair path. |
 
-A `READY` result from `evopilot-expert doctor` is a package declaration check and cannot substitute for this MCP result. Runtime 6.3.2 retains valid unchanged bindings after their initial proof ages or Runtime restarts. Do not demand a new key or rerun a paid preflight solely because an old `expiresAt` has passed. Readiness inspection itself does not test current provider availability. See [First-Run LLM Readiness](first-run-llm-readiness.md).
+A `READY` result from `evopilot-expert doctor` is a package declaration check and cannot substitute for this MCP result. Runtime 6.3.3 retains valid unchanged bindings after their initial proof ages or Runtime restarts. Do not demand a new key or rerun a paid preflight solely because an old `expiresAt` has passed. Readiness inspection itself does not test current provider availability. See [First-Run LLM Readiness](first-run-llm-readiness.md).
 
 Existing Runtime and provider credentials stay where they are. Expert never asks you to paste a raw key or password into the conversation. New operators use [Self-Hosting](../operations/self-hosting.md) and the [documented setup integration](expert-host-integration.md); package installation alone does not qualify native secure input. This tutorial does not execute setup or repair.
 

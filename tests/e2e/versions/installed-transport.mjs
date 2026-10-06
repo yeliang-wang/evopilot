@@ -10,7 +10,7 @@ import {runtimeCapabilityCliResult} from './runtime/6.3.0/capability-probe.mjs';
 
 export const bytesDigest = value => 'sha256:' + crypto.createHash('sha256').update(value).digest('hex');
 const packages = {
-  runtime:{name:'@evopilot/cli',versions:['6.3.0','6.3.1','6.3.2'],entry:'dist/index.js'},
+  runtime:{name:'@evopilot/cli',versions:['6.3.0','6.3.1','6.3.2','6.3.3'],entry:'dist/index.js'},
   expert:{name:'@evopilot/evolution-expert',versions:['2.3.0'],entry:'dist/cli.js'}
 };
 function safeRelative(relative) {

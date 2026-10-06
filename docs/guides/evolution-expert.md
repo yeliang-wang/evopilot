@@ -1,6 +1,6 @@
 # EvoPilot Evolution Expert
 
-Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. This guide covers Expert `2.3.0` and Runtime `6.3.2`, accepted and published with [verified distribution and explicit acceptance limits](../releases/current-release.md). The approved successor includes the retained public CLI and secure-input recovery work; there is no standalone Expert 2.2.1 delivery. Expert uses MCP exclusively. Explicit Runtime 6.2.0 compatibility remains available for legacy non-semantic operations; semantic operations require Runtime 6.3 capability negotiation. Runtime and declarative resource versions remain independent.
+Evolution Expert is the independently versioned ordinary-human entry for EvoPilot. This guide describes Expert `2.3.1` and Runtime `6.3.3`; consult [current publication and explicit acceptance limits](../releases/current-release.md) before installation. The approved successor includes the retained public CLI and secure-input recovery work; there is no standalone Expert 2.2.1 delivery. Expert uses MCP exclusively. Explicit Runtime 6.2.0 compatibility remains available for legacy non-semantic operations; semantic operations require Runtime 6.3 capability negotiation. Runtime and declarative resource versions remain independent.
 
 One immutable Core generates Host Integration Bundles for Codex, Claude Code, designated-human WorkBuddy, generic Agent, and generic MCP. Each bundle contains the same Core and Adapter digests plus install, doctor, health, version, upgrade, rollback, removal, help, and tutorial lifecycle metadata.
 
@@ -49,14 +49,14 @@ CLI, HTTP, CI, events, and webhooks remain available to administrators and machi
 
 ## Package and Host lifecycle
 
-Expert 2.3.0 is published and verified. Administrators may use the following
+For this package version, administrators may use the following
 package-only diagnostic commands. Installing a package does not by itself
 activate a Host integration or establish live Host qualification.
 
 ```bash
-npm install --global @evopilot/evolution-expert@2.3.0
+npm install --global @evopilot/evolution-expert@2.3.1
 evopilot-expert version
-evopilot-expert doctor codex 6.3.2
+evopilot-expert doctor codex 6.3.3
 evopilot-expert tutorial
 ```
 
@@ -80,4 +80,4 @@ For maintained source-level runner scope and case definitions, see the [versione
 
 An integration author generates an Adapter and Host Integration Bundle from the public Core, exposes structured tool results, MCP, human-decision presentation, Runtime-state resume and Host-native secure secret input, then passes conformance without changing Runtime or Expert Core source. Host qualification is evidence only; it is not Candidate acceptance or Release authorization.
 
-Runtime **6.3.2** independently verifies LLM readiness continuity with this unchanged public Expert 2.3.0 package. Its patch-specific acceptance preserves the earlier Expert and Runtime 6.3.1 evidence; it does not rerun or relabel their original campaigns. See [current publication and limits](../releases/current-release.md).
+Runtime **6.3.2** independently verifies LLM readiness continuity with the unchanged public Expert 2.3.0 package. Its patch-specific acceptance preserves the earlier Expert and Runtime 6.3.1 evidence; it does not rerun or relabel their original campaigns. See [current publication and limits](../releases/current-release.md).

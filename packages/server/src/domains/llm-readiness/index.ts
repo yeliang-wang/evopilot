@@ -84,7 +84,7 @@ export function resolveGovernedLlmSecret(
 export function llmSetupProtocol(): EvoPilotLlmSetupProtocolV1 {
   return {
     schema: EVOPILOT_LLM_SETUP_PROTOCOL_SCHEMA,
-    runtimeVersion: "6.3.2",
+    runtimeVersion: "6.3.3",
     expertProtocolRange: ">=2.2 <3",
     states: ["SETUP_REQUIRED", "PREFLIGHT_REQUIRED", "READY", "LLM_BLOCKED"],
     setupOnlyTools: [...LLM_SETUP_ONLY_TOOLS],

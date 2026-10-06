@@ -22,7 +22,7 @@ export function verifyInventory(root, expected) {
   requireThat(digest(bytes) === expected);
   const manifest = JSON.parse(bytes);
   exactKeys(manifest, ['schema','expertVersion','runtimeVersion','platforms','files']);
-  requireThat(manifest.schema === 'evopilot-expert-host-integration/v1' && manifest.expertVersion === '2.3.0' && manifest.runtimeVersion === '6.3.0');
+  requireThat(manifest.schema === 'evopilot-expert-host-integration/v1' && manifest.expertVersion === '2.3.1' && manifest.runtimeVersion === '6.3.0');
   requireThat(JSON.stringify(manifest.platforms) === '["darwin-arm64"]');
   requireThat(digest(manifest.files) === digest(inventory(root)));
   requireThat(typeof manifest.files['dist/darwin-arm64/secure-input'] === 'string');

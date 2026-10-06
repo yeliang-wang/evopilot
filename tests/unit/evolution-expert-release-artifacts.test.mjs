@@ -23,20 +23,20 @@ test("Evolution Expert builds and verifies a local release-set unit fixture (not
   const integration = path.join(target, "host-integration"), nativeDir = path.join(integration, "dist/darwin-arm64");
   fs.mkdirSync(nativeDir, { recursive: true });
   fs.writeFileSync(path.join(nativeDir, "secure-input"), "UNIT_TEST_ONLY_NONEXECUTABLE_NATIVE_FIXTURE\n");
-  fs.writeFileSync(path.join(integration, "manifest.json"), JSON.stringify({ schema: "evopilot-expert-host-integration/v1", expertVersion: "2.3.0", runtimeVersion: "6.3.0", platforms: ["darwin-arm64"], files: inventory(integration) }));
+  fs.writeFileSync(path.join(integration, "manifest.json"), JSON.stringify({ schema: "evopilot-expert-host-integration/v1", expertVersion: "2.3.1", runtimeVersion: "6.3.0", platforms: ["darwin-arm64"], files: inventory(integration) }));
   const { buildEvolutionExpertArtifacts } = await import(pathToFileURL(path.join(root, "scripts/build-evolution-expert-release-artifacts.mjs")));
   const { verifyEvolutionExpertArtifacts } = await import(pathToFileURL(path.join(root, "scripts/verify-evolution-expert-release-artifacts.mjs")));
   const result = buildEvolutionExpertArtifacts({ outDir, build: false });
   const verification = verifyEvolutionExpertArtifacts({ outDir });
 
-  assert.equal(result.version, "2.3.0");
-  assert.equal(result.tag, "evolution-expert-v2.3.0");
+  assert.equal(result.version, "2.3.1");
+  assert.equal(result.tag, "evolution-expert-v2.3.1");
   assert.equal(verification.status, "PASS");
   assert.deepEqual(verification.files, [
     "SHA256SUMS",
-    "evopilot-evolution-expert-2.3.0-provenance.json",
-    "evopilot-evolution-expert-2.3.0-sbom.spdx.json",
-    "evopilot-evolution-expert-2.3.0.tgz"
+    "evopilot-evolution-expert-2.3.1-provenance.json",
+    "evopilot-evolution-expert-2.3.1-sbom.spdx.json",
+    "evopilot-evolution-expert-2.3.1.tgz"
   ]);
   const checksums = fs.readFileSync(path.join(outDir, "SHA256SUMS"), "utf8");
   fs.writeFileSync(path.join(outDir, "SHA256SUMS"), `${Array(3).fill(checksums.trim().split("\n")[0]).join("\n")}\n`);

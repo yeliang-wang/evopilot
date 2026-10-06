@@ -4,9 +4,9 @@ export type EvoPilotAgentProcessObservation = EvoPilotAgentProcessObservationV1 
 import { createHash } from "node:crypto";
 export * from "./semantic-project.js";
 
-export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "6.3.2";
+export const EVOPILOT_PRODUCT_VERSION_FALLBACK = "6.3.3";
 export const EVOPILOT_SERVER_VERSION_FALLBACK = "0.1.0";
-export const EVOPILOT_CLI_VERSION_FALLBACK = "6.3.2";
+export const EVOPILOT_CLI_VERSION_FALLBACK = "6.3.3";
 export const EVOPILOT_API_CONTRACT_VERSION = "v1";
 export const EVOPILOT_MINIMUM_CLI_VERSION = "5.0.0";
 
@@ -41,7 +41,7 @@ export const EVOPILOT_EVOLUTION_EXPERT_PROTOCOL_VERSION = "2.2";
 
 export const EVOPILOT_HARNESS_GUIDED_RUNTIME_BOUNDARY = {
   schema: "evopilot-harness-guided-runtime-boundary/v1",
-  runtimeVersion: "6.3.2",
+  runtimeVersion: "6.3.3",
   invariant: "Every Goal Target Loop binds one eligible published immutable HarnessBundle plus one resolved declarative Lifecycle.",
   harnessOwnership: "evopilot-harness",
   runtimeOwnership: "evopilot",
@@ -97,7 +97,7 @@ export interface EvoPilotWorkspaceLlmDefaultBindingV1 {
 
 export interface EvoPilotLlmSetupProtocolV1 {
   schema: typeof EVOPILOT_LLM_SETUP_PROTOCOL_SCHEMA;
-  runtimeVersion: "6.2.0" | "6.3.0" | "6.3.1" | "6.3.2";
+  runtimeVersion: "6.2.0" | "6.3.0" | "6.3.1" | "6.3.2" | "6.3.3";
   expertProtocolRange: ">=2.2 <3";
   states: EvoPilotRuntimeReadinessState[];
   setupOnlyTools: string[];

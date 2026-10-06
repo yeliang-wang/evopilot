@@ -59,7 +59,7 @@ lines.on('line',async line=>{
     let result;
     if(message.method==='initialize'){
       requireThat(!initialized);initialized=true;
-      result={protocolVersion:'2024-11-05',capabilities:{tools:{}},serverInfo:{name:'evopilot-private-input',version:'2.3.0'}};
+      result={protocolVersion:'2024-11-05',capabilities:{tools:{}},serverInfo:{name:'evopilot-private-input',version:'2.3.1'}};
     }else if(message.method==='ping')result={};
     else if(message.method==='tools/list'){requireThat(initialized);result={tools:[tool]};}
     else if(message.method==='tools/call'){

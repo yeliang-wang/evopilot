@@ -165,6 +165,7 @@ Key architecture docs:
 - [Loop Runtime Architecture](docs/architecture/loop-runtime.md)
 - [ProofOps Target Loop Mode](docs/architecture/proofops-target-loop-mode.md)
 - [Dashboard Integration](docs/guides/dashboard-integration.md)
+- [Independent Dashboard repository](https://github.com/yeliang-wang/evopilot-dashboard) — optional administrator UI using the Runtime HTTP API.
 
 ## API
 

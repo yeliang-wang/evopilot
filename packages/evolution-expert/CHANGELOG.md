@@ -2,10 +2,16 @@
 
 All notable changes to the independently versioned `@evopilot/evolution-expert` package are documented here. Runtime and Expert versions are compatible by declared ranges; they are not released in lockstep.
 
+## 2.3.1 — Documentation and installation guidance
+
+- Clarify Host Skill activation, existing configuration reuse, and MCP stdio to the local Runtime adapter.
+- Repair package-relative documentation links and synchronize generated adapters and Host Integration identity.
+- Preserve Core semantics, native credential interaction and Runtime-owned authority; see the [publication ledger](https://github.com/yeliang-wang/evopilot/blob/main/docs/releases/current-release.md) for current acceptance and availability.
+
 ## 2.3.0 — 2026-10-02 — Semantic Convergence
 
 Published on GitHub and npm after 400/400 applicable criteria passed. See
-[current release and acceptance limits](../../docs/releases/current-release.md).
+[current release and acceptance limits](https://github.com/yeliang-wang/evopilot/blob/main/docs/releases/current-release.md).
 
 - Reject nested raw credential fields in typed Lifecycle answers before MCP
   invocation, consistently with project and governed guidance.
