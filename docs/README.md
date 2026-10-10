@@ -1,6 +1,6 @@
 # EvoPilot Documentation
 
-EvoPilot documentation is organized by reader task. Current published versions are **Runtime 6.3.2 / Evolution Expert 2.3.0**, consuming **evopilot-harness 4.8.1**. See [current publication, acceptance and explicit limits](releases/current-release.md). Start from the section that matches what you need to do.
+EvoPilot documentation is organized by reader task. Current published versions are **Runtime 6.3.3 / Evolution Expert 2.3.1**, with independently published **evopilot-harness 4.8.2**. See [current publication, acceptance and explicit limits](releases/current-release.md). Start from the section that matches what you need to do.
 
 ## Start In Your Agent Host
 
@@ -80,8 +80,8 @@ EvoPilot documentation is organized by reader task. Current published versions a
 - [Suite Capability Convergence](architecture/suite-capability-convergence.md) - v5.1 DDD ownership, resource registry, provider, migration, and version boundaries.
 - [Controlled Lifecycle Evolution Architecture](architecture/controlled-lifecycle-evolution.md) - v6.1 observation, proposal, experiment, decision, monitoring, and project-neutral Core boundaries.
 - [Agent-Native Lifecycle Control Plane](architecture/agent-native-lifecycle-control-plane.md) - v6 DDD ownership across Host, Expert, Runtime, Lifecycle Registry, Harness, and external Agent Runtime.
-- [EvoPilot v6.2.0 First-Run LLM Readiness](releases/6.2.0.md) - historical introduction of first-run readiness; current behavior is documented for Runtime 6.3.2.
-- [Evolution Expert v2.2.0](releases/evolution-expert-2.2.0.md) - historical introduction of setup guidance; current Expert is 2.3.0.
+- [EvoPilot v6.2.0 First-Run LLM Readiness](releases/6.2.0.md) - historical introduction of first-run readiness; current behavior is documented for Runtime 6.3.3.
+- [Evolution Expert v2.2.0](releases/evolution-expert-2.2.0.md) - historical introduction of setup guidance; current Expert is 2.3.1.
 - [Agent-Native Security Boundaries](security/agent-native-boundaries.md) - permissions, SecretRefs, authority, and fail-closed execution rules.
 - [v6 Migration](migrations/v6-agent-native.md) - move from Suite-shaped operation to declaration-only project Pipelines without pre-release Cutover.
 - [Action Providers](reference/action-providers.md) - typed external actions, qualification, SecretRefs, receipts, rollback, and authority intersection.
@@ -100,10 +100,13 @@ EvoPilot documentation is organized by reader task. Current published versions a
 - [Evolution Expert v1.0.1 Completion-Recovery Notes](releases/evolution-expert-1.0.1.md) - historical published independently versioned Expert release.
 - [EvoPilot v5.1.0 Suite Capability Convergence](releases/5.1.0.md) - superseded, unreleased implementation history retained for traceability.
 - [Evolution Expert v1.1.0 Unified Host Entry](releases/evolution-expert-1.1.0.md) - superseded, unreleased Expert history retained for traceability.
-- [EvoPilot Runtime v6.3.2](releases/6.3.2.md) - current published LLM readiness continuity patch.
+- [Release Index](releases/README.md) - current publication records and historical release notes.
+- [EvoPilot Runtime v6.3.3](releases/6.3.3.md) - current published onboarding and installed-documentation patch.
+- [EvoPilot Runtime v6.3.2](releases/6.3.2.md) - historical published LLM readiness continuity patch.
 - [EvoPilot Runtime v6.3.1](releases/6.3.1.md) - historical published token-usage and bounded-execution maintenance release.
 - [EvoPilot Runtime v6.3.0](releases/6.3.0.md) - historical published semantic convergence baseline.
-- [Evolution Expert v2.3.0](releases/evolution-expert-2.3.0.md) - current published MCP guidance and recovery release.
+- [Evolution Expert v2.3.1](releases/evolution-expert-2.3.1.md) - current published package documentation, Host guidance and version metadata patch.
+- [Evolution Expert v2.3.0](releases/evolution-expert-2.3.0.md) - historical published MCP guidance and recovery release.
 - [EvoPilot v6.1.0 Controlled Lifecycle Evolution](releases/6.1.0.md) - historical published Runtime baseline.
 - [Evolution Expert v2.1.0](releases/evolution-expert-2.1.0.md) - historical published controlled-evolution interaction baseline.
 - [EvoPilot v6.0.0 Agent-Native Lifecycle Control Plane](releases/6.0.0.md) - published Runtime baseline.

@@ -5,7 +5,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-22%2B-339933)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-3178c6)](https://www.typescriptlang.org/)
 [![Runtime](https://img.shields.io/badge/runtime-prod%20by%20default-1f7a8c)](#self-hosting-and-distribution)
-[![Release](https://img.shields.io/badge/latest%20public-v6.3.2-2ea043)](#release-status)
+[![Release](https://img.shields.io/badge/latest%20public-v6.3.3-2ea043)](#release-status)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
 
 [Install in an Agent Host](docs/guides/agent-host-installation.md) | [First Task](docs/guides/first-task.md) | [Troubleshooting](docs/operations/troubleshooting.md) | [Docs](docs/README.md) | [Changelog](CHANGELOG.md) | [Security](SECURITY.md)
@@ -16,7 +16,7 @@ It is not an agent runtime, prompt playground, generic code generator, or Harnes
 
 ## Start Here
 
-Use EvoPilot from your AI Agent Host with the independently installed Evolution Expert and MCP connections. The current combination is **Runtime 6.3.2 + Expert 2.3.0 + Harness 4.8.1**; the products evolve independently.
+Use EvoPilot from your AI Agent Host with the independently installed Evolution Expert and MCP connections. The current combination is **Runtime 6.3.3 + Expert 2.3.1 + Harness 4.8.2**; the products evolve independently.
 
 | Your task | Start with | Success signal |
 | --- | --- | --- |
@@ -30,8 +30,10 @@ Codex has recorded live Host acceptance. Other generated adapters have separate 
 
 ## v6.3 Semantic Convergence and First-Run LLM Readiness
 
-EvoPilot Runtime **v6.3.2** and Evolution Expert **v2.3.0** are accepted and
-published, consuming semantic supply from **evopilot-harness 4.8.1**. See
+EvoPilot Runtime **v6.3.3** and Evolution Expert **v2.3.1** are accepted and
+published, with the independently published **evopilot-harness 4.8.2**. These
+maintenance releases improve onboarding and installed documentation while
+preserving the accepted product boundaries. See
 [current releases and acceptance limits](docs/releases/current-release.md).
 There is no separate Expert 2.2.1 delivery. The product core remains `Goal -> Loop -> Target`, guided by an exact published Harness and one active, immutable Lifecycle revision:
 
@@ -119,21 +121,24 @@ Release operations are local-first. Docker Compose, Helm and remote deployment a
 
 ## Release Status
 
-[Runtime 6.3.2 readiness continuity](docs/releases/6.3.2.md) is accepted and publicly verified. The patch passed 10 new criteria, four current cases, all 2,414 exact installed regression tests, and individual impact review of 409 immutable inherited criteria. Candidate `37177531263` at `05da3339b32468f3682eea8a1c2b31880a6c38a1` supplies the unchanged published assets. The [publication ledger](governance/releases/runtime-6.3.2-publication-20261004.json) records GitHub, npm and GHCR readbacks. Codex is the verified live Host; native credential interaction and a new 90-minute soak remain excluded and are not counted as passed. Expert 2.3.0, Harness 4.8.1 and the private independent project extensions 1.0.1 retain their versions.
-Runtime **v6.3.2** and Expert **v2.3.0** are accepted and published on GitHub and
-npm. Runtime's public GHCR image and manifest-based installer are verified.
-The [current release ledger](docs/releases/current-release.md) binds exact
-artifacts and preserves the approved acceptance limits. No remote Runtime
-deployment, user Host installation or Suite Cutover was performed by publication.
+[Runtime 6.3.3](docs/releases/6.3.3.md) and [Evolution Expert 2.3.1](docs/releases/evolution-expert-2.3.1.md) are published and publicly verified. Runtime is distributed through GitHub, six exact-version npm packages, GHCR and its manifest-based installer; Expert has its own GitHub Release and npm package. [Harness 4.8.2](https://github.com/yeliang-wang/evopilot-harness/releases/tag/v4.8.2) is independently published.
+
+The approved maintenance scope passed **6 new Runtime criteria and 6 new Expert criteria**, with individual current impact review of **419 inherited Runtime criteria and 400 inherited Expert criteria**. All **2,505 exact installed regression tests** passed. Current Codex observations cover bounded MCP reads, Expert Skill discovery and restart; they do not replay the historical business journeys. Other live Hosts, native credential interaction and a new 90-minute soak were not executed and are not counted as passed. This campaign made no model calls or daily-machine cutover; private project extensions **1.0.1** remain unchanged.
+
+The [current release ledger](docs/releases/current-release.md) records the separate [Runtime publication](governance/releases/runtime-6.3.3-publication-20261006.json) and [Expert publication](governance/releases/evolution-expert-2.3.1-publication-20261006.json). Both consume accepted Candidates from `4c7c09b8be221d2feedef8fa5f12b00883ee33fc` without rebuilding: Runtime `37407237313`, Expert `37407240219`. Publication does not deploy a remote Runtime, install or switch an existing Host, or remove legacy Suites.
+
+The completed Runtime 6.3.2 readiness-continuity campaign remains historical: it passed 10 new criteria, four current cases, 2,414 exact installed regression tests and individual impact review of 409 inherited criteria. Its published Candidate `37177531263` at `05da3339b32468f3682eea8a1c2b31880a6c38a1` and [publication ledger](governance/releases/runtime-6.3.2-publication-20261004.json) remain immutable. Its model/restart/rollback observations are not reported as new 6.3.3 execution.
 
 The unpublished v3.2 Bundle-consumer closure is inherited by v4.0 without a standalone v3.2 release. v4.0 keeps EvoPilot's strict read-only Harness-asset boundary while adding open YAML Lifecycle execution for project goals.
 
 Release evidence:
 
-- Current public Runtime 6.3.2: [release notes](docs/releases/6.3.2.md)
+- Current public Runtime 6.3.3: [release notes](docs/releases/6.3.3.md)
+- Historical public Runtime 6.3.2: [release notes](docs/releases/6.3.2.md)
 - Historical public Runtime 6.3.1: [release notes](docs/releases/6.3.1.md)
 - Historical public Runtime 6.3.0: [release notes](docs/releases/6.3.0.md)
-- Current Expert 2.3.0: [release notes](docs/releases/evolution-expert-2.3.0.md)
+- Current public Expert 2.3.1: [release notes](docs/releases/evolution-expert-2.3.1.md)
+- Historical public Expert 2.3.0: [release notes](docs/releases/evolution-expert-2.3.0.md)
 - Expert 2.2.1 recovery (not released): [docs/releases/evolution-expert-2.2.1.md](docs/releases/evolution-expert-2.2.1.md)
 - Previous release notes: [docs/releases/4.0.0.md](docs/releases/4.0.0.md)
 - Historical SaaS release package evidence: [docs/reference/release-package.md](docs/reference/release-package.md)

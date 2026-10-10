@@ -2,7 +2,7 @@
 
 ## Status And Authority
 
-Current maintenance work: Runtime **6.3.3** and Evolution Expert **2.3.1** ship the approved onboarding and packaged-documentation corrections, with finite version and release-validator projections. Their independently approved Targets bind the current machine Roadmap and require new exact Candidate acceptance. Runtime 6.3.2 and Expert 2.3.0 remain published history; [current publication](../releases/current-release.md) changes only after observed publication. No product boundary, credential flow, model default or execution authority changes.
+Current published maintenance releases: Runtime **6.3.3** and Evolution Expert **2.3.1**, with independently published Harness **4.8.2**. Their exact accepted Candidates have been promoted without rebuilding and verified through public distribution; see [current publication and acceptance limits](../releases/current-release.md). Runtime closes 6 new criteria and current impact review of 419 inherited definitions; Expert closes 6 new criteria and review of 400 inherited definitions. The exact installed regression run passed all 2,505 tests. Actual Codex coverage is bounded read-only/Skill/restart verification; other live Hosts, native credential interaction and a new 90-minute soak are not claimed. This campaign performs no daily-machine cutover, and private project extensions 1.0.1 remain unchanged. The immutable 6.3.0, 6.3.1 and 6.3.2 records retain their original scope. No product boundary, credential flow, model default or execution authority changes.
 
 This Roadmap is the human-readable product plan for EvoPilot. The
 machine-readable authority is [`governance/roadmap.yaml`](../../governance/roadmap.yaml).
@@ -32,9 +32,9 @@ entire approved v5 scheme. Runtime `v5.0.1` and Evolution Expert `v1.0.1` are
 the completed public recovery releases. The unreleased Runtime `v5.1.0` and
 Evolution Expert `v1.1.0` lines are superseded and cannot be promoted. Runtime
 `v6.0.0` and Evolution Expert `v2.0.0` remain immutable public history.
-Runtime `v6.1.0` and Evolution Expert `v2.1.0` are the current public,
+Runtime `v6.1.0` and Evolution Expert `v2.1.0` are published historical,
 independently versioned controlled project Lifecycle evolution releases.
-Runtime `v6.2.0` and Evolution Expert `v2.2.0` are the current working lines for
+Runtime `v6.2.0` and Evolution Expert `v2.2.0` are published historical lines for
 mandatory first-run governed LLM readiness and its Agent-neutral setup guide.
 Runtime, Expert, Host Adapter, Agent Runtime, Harness Asset, Ontology, Policy,
 Evaluation, and Catalog versions evolve independently.
@@ -1178,7 +1178,7 @@ Acceptance also reproduced a managed upgrade scope defect: Runtime inferred only
 
 ## Runtime6.3.2: LLM readiness continuity
 
-Status: `COMPLETE` — Runtime **6.3.2** is the current verified published baseline. The [publication record](../../governance/releases/runtime-6.3.2-publication-20261004.json) binds public GitHub, npm and GHCR observations to immutable Candidate `37177531263`, source `05da3339b32468f3682eea8a1c2b31880a6c38a1`. The [acceptance record](../../governance/releases/runtime-6.3.2-acceptance-20261004.json) retains 10 new criteria, individual impact closure of 409 inherited criteria (419 total), four current cases and 2,414 exact installed regression tests, with `NO_REGRESSION`. Original accepted Roadmap/Target/source/build pins remain unchanged. The earlier 6.3.1 campaign and its one-time transactions remain historical; the separately authorized current-machine upgrade is a fresh product-only transaction.
+Status: `COMPLETE` — Runtime **6.3.2** is the verified historical readiness-continuity baseline. The [publication record](../../governance/releases/runtime-6.3.2-publication-20261004.json) binds public GitHub, npm and GHCR observations to immutable Candidate `37177531263`, source `05da3339b32468f3682eea8a1c2b31880a6c38a1`. The [acceptance record](../../governance/releases/runtime-6.3.2-acceptance-20261004.json) retains 10 new criteria, individual impact closure of 409 inherited criteria (419 total), four current cases and 2,414 exact installed regression tests, with `NO_REGRESSION`. Original accepted Roadmap/Target/source/build pins remain unchanged. The earlier 6.3.1 campaign and its one-time transactions remain historical; the separately authorized current-machine upgrade is a fresh product-only transaction.
 
 Fresh successful live preflight remains mandatory within15minutes for initial or changed explicit workspace-default binding. An existing unchanged, successful explicit binding remains usable after that interval and across restart, including ordinary Goal/Loop selection. Actual failed preflight, profile or SecretRef change/revocation, scope/CAS violation, malformed or future proof still blocks. There is no background refresh timer, automatic rebind or implicit model call during a readiness read.
 

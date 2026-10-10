@@ -4,10 +4,15 @@
 
 ## Current publication
 
-Runtime **6.3.2** and Evolution Expert **2.3.0** are published and verified.
-See [the current release ledger](../releases/current-release.md) for exact tags,
-packages, image, installed acceptance and explicit exclusions. The checklist
-below governs future releases and does not create unfinished steps for those published versions.
+Runtime **6.3.3**, Evolution Expert **2.3.1** and independently published Harness **4.8.2** are the current verified releases. See [the current release ledger](../releases/current-release.md) for exact tags, packages, image and acceptance limits. The checklist below governs future releases; it does not create unfinished steps for these published versions.
+
+Runtime Candidate `37407237313` and Expert Candidate `37407240219` share source `4c7c09b8be221d2feedef8fa5f12b00883ee33fc`, while retaining separate Target, acceptance and publication bindings. The [Runtime public record](../../governance/releases/runtime-6.3.3-publication-20261006.json) and [Expert public record](../../governance/releases/evolution-expert-2.3.1-publication-20261006.json) bind the unchanged accepted bytes to their distribution channels. Runtime has six new criteria and individual impact review of 419 inherited definitions; Expert has six new criteria and review of 400 inherited definitions. All 2,505 exact installed regression tests passed.
+
+Live Codex observations are bounded to Skill discovery, read-only MCP/Runtime state and restart. No new model call, other live Host, native credential interaction or 90-minute soak is claimed. The campaign did not cut over the daily local installation or deploy a remote Runtime. Private independent project extensions 1.0.1 remain unchanged.
+
+## Historical 6.3.2 and 6.3.1 campaigns
+
+The following published identities, counts and companion versions retain their original campaign scope. They are not additional execution claimed by the current documentation patches.
 
 Runtime **6.3.2** passed ten new criteria, four current cases, 2,414 exact installed regression tests and individual impact review of 409 inherited criteria. Candidate `37177531263`, source `05da3339b32468f3682eea8a1c2b31880a6c38a1`, is published with unchanged accepted bytes. See the [6.3.2 publication ledger](../../governance/releases/runtime-6.3.2-publication-20261004.json). The existing Codex-only and omitted-soak/native-input scope remains explicit.
 
@@ -24,7 +29,7 @@ acceptance record is not rewritten to add later release authority or publication
 The accepted artifact set was promoted without rebuilding. These public version
 pointers were updated only after the actual GitHub, npm and GHCR results were verified.
 
-This Runtime promotion reuses the existing Expert 2.3.0 and Harness 4.8.1
+That historical Runtime promotion reused the existing Expert 2.3.0 and Harness 4.8.1
 releases. Independent local project extensions 1.0.1 are a private component,
 not a public npm/GitHub release in this set. No new repository or public
 extension publication is implied.
@@ -228,7 +233,7 @@ or integrity-reconciles only the accepted tarball with provenance, then performs
 a fresh public install and verifies Registry signatures, the
 `evopilot-expert` CLI, portable `skill/SKILL.md`, generated Codex adapter,
 Expert Core digest, and the Runtime compatibility bound to that Candidate.
-Expert **2.3.0 is already published** with verified Runtime **6.3.0** compatibility;
+The immutable Expert **2.3.0** baseline was published with verified Runtime **6.3.0** compatibility;
 see the [current release ledger](../releases/current-release.md). The historical
 Runtime 6.3.1 compatibility campaign has verified that unchanged Expert release
 against the exact installed maintenance candidate. Runtime promotion does not
@@ -352,9 +357,9 @@ Rollback is an operator action, not a Git-only action:
 5. Verify `/health`, `/ready`, worker queue, Dashboard proxy, and release decisions.
 6. Record the rollback in `CHANGELOG.md` or the next release note.
 
-## Runtime 6.3.2 compatibility
+## Historical Runtime 6.3.2 compatibility
 
-The readiness-continuity maintenance Candidate is verified against unchanged public Expert 2.3.0 and Harness 4.8.1. The current compatibility command is `evopilot-expert compatibility codex 6.3.2`; the public Expert package still owns its existing 6.3.0 contracts dependency and is not republished by this Runtime patch. Candidate acceptance and actual publication are recorded independently in the current release ledger.
+The readiness-continuity maintenance Candidate was verified against unchanged public Expert 2.3.0 and Harness 4.8.1. The then-current compatibility command was `evopilot-expert compatibility codex 6.3.2`; the public Expert package still owns its existing 6.3.0 contracts dependency and is not republished by this Runtime patch. Candidate acceptance and actual publication are recorded independently in the current release ledger.
 
 ## Runtime 6.3.3 compatibility
 
