@@ -638,6 +638,62 @@ test("Roadmap Gate permits declared releases and rejects undeclared release line
   assert.equal(undeclared.body.classification, "UNPLANNED");
 });
 
+function addPluginMilestone(roadmap) {
+  roadmap.milestones.push({
+    id: "codex-plugin-routing-fixture",
+    product: "evopilot-codex-plugin",
+    status: "PLANNED",
+    targetVersion: "0.1.0",
+    releaseLine: "0.1.x",
+    signals: ["codex-plugin-routing-fixture"],
+    acceptance: ["Independent plugin routing retains Runtime and Expert boundaries."]
+  });
+}
+
+test("Roadmap Gate routes independent plugin intent and explicit releases", () => {
+  for (const args of [
+    ["--intent", "codex-plugin-routing-fixture"],
+    ["--release-product", "evopilot-codex-plugin", "--release-version", "0.1.0"],
+    ["--release-product", "evopilot-codex-plugin", "--release-version", "0.1.1"]
+  ]) {
+    const result = runWithRoadmap(addPluginMilestone, args);
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.body.classification, "ALIGNED");
+    assert.ok(result.body.matchedMilestones.includes("codex-plugin-routing-fixture"));
+  }
+});
+
+test("Roadmap Gate rejects unknown milestone products", () => {
+  const result = runWithRoadmap((roadmap) => {
+    addPluginMilestone(roadmap);
+    roadmap.milestones.at(-1).product = "evopilot-unknown-plugin";
+  });
+  assert.equal(result.status, 1, result.stderr);
+  assert.equal(result.body.classification, "INVALID");
+  assert.ok(result.body.errors.includes("milestone product is invalid: codex-plugin-routing-fixture"));
+});
+
+test("Roadmap Gate keeps plugin releases separate from Runtime and Expert routing", () => {
+  for (const [product, version, classification] of [
+    [undefined, "0.1.0", "UNPLANNED"],
+    ["evopilot-evolution-expert", "0.1.0", "UNPLANNED"],
+    [undefined, "6.3.3", "ALIGNED"],
+    ["evopilot-runtime", "6.3.3", "ALIGNED"],
+    ["evopilot-evolution-expert", "2.3.1", "ALIGNED"],
+    ["evopilot-codex-plugin", "6.3.3", "UNPLANNED"],
+    ["evopilot-codex-plugin", "2.3.1", "UNPLANNED"],
+    ["evopilot-unknown-plugin", "0.1.0", "UNKNOWN"]
+  ]) {
+    const args = ["--release-version", version];
+    if (product) args.push("--release-product", product);
+    const result = runWithRoadmap(addPluginMilestone, args);
+    assert.equal(result.status, classification === "ALIGNED" ? 0 : 2, result.stderr);
+    assert.equal(result.body.classification, classification, `${product ?? "default Runtime"} ${version}`);
+    assert.equal(result.body.releaseProduct, product ?? "evopilot-runtime");
+    assert.ok(!result.body.matchedMilestones.includes("codex-plugin-routing-fixture"));
+  }
+});
+
 test("Roadmap Gate requires explicit reactivation for a standalone deferred v3.2 line", () => {
   const result = run(["--intent", "Reactivate standalone v3.2 Bundle Consumer Closure"]);
   assert.equal(result.status, 2);
@@ -651,14 +707,14 @@ function run(args) {
   return { ...result, body: JSON.parse(result.stdout) };
 }
 
-function runWithRoadmap(mutate) {
+function runWithRoadmap(mutate, args = []) {
   const roadmap = JSON.parse(fs.readFileSync(path.join(root, "governance/roadmap.yaml"), "utf8"));
   mutate(roadmap);
   const tempDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "evopilot-roadmap-gate-"));
   const contractPath = path.join(tempDirectory, "roadmap.json");
   fs.writeFileSync(contractPath, `${JSON.stringify(roadmap, null, 2)}\n`);
   try {
-    const result = spawnSync(process.execPath, ["scripts/roadmap-gate.mjs", "--json"], {
+    const result = spawnSync(process.execPath, ["scripts/roadmap-gate.mjs", ...args, "--json"], {
       cwd: root,
       encoding: "utf8",
       env: { ...process.env, EVOPILOT_ROADMAP_CONTRACT: contractPath }

@@ -1,0 +1,25 @@
+{
+  "schema": "evopilot-user-delegated-scope-revision/v1",
+  "humanInstruction": "确认，请按照你的建议执行，尽快发布release，只要不是release组赛性的问题，可以不用中断、确认。并且只要满足方案中通过codex插件驱动的核心要求就可以了。",
+  "authority": "DIRECT_HUMAN_MESSAGE_CURRENT_CONVERSATION",
+  "decision": "APPROVE_SCOPED_FIRST_PLUGIN_IMPLEMENTATION_AND_CONDITIONAL_RELEASE",
+  "scope": "Existing configured stable-product installations; first supported combination Runtime/CLI/MCP6.3.3 and Expert2.3.1, with actual compatibility required. Runtime only plugin channel; Harness producer and public project-resource integration remain separate future delivery.",
+  "versions": {
+    "plugin": "0.1.0",
+    "runtime": "6.3.3",
+    "expert": "2.3.1"
+  },
+  "excludes": [
+    "Full Runtime6.5/Expert2.4/Harness4.8.3 upgrades and original R3 100% claim",
+    "Public executor/collector first delivery or private project-extensions redistribution",
+    "Fresh suite install, automatic stop/upgrade/data adoption/rollback or historical data copying",
+    "Global Host enforcement or preventing native tools; no private Codex IPC",
+    "Unrelated source, daily data, credentials, global model settings or retired Suites"
+  ],
+  "retainedPriorWork": "Original W/P/R worktrees, original R3 Target/criteria and all FAILED/UNCERTAIN records are preserved and paused, not rewritten PASSED. Separate clean public baseline61118032ddf600e3374880da34599c33688034a9.",
+  "releaseDelegation": "Evaluate real acceptance; only then prepare exact-byte release authorization projection and publish this scoped plugin. No fresh confirmation for nonblocking issues.",
+  "sourceExecution": "Original openai/gpt-6-astra through Runtime qualified exact scopes, at most4 files/600s per request; no redispatch of old uncertain requests.",
+  "technicalBoundary": "Use registered macOS launchd service for fixed local start/reuse. No runtime-owned drain or old-data adoption claims. Missing service registration is SETUP_REQUIRED, not arbitrary shell.",
+  "status": "SCOPE_APPROVED_ACCEPTANCE_PENDING",
+  "createdAt": "2026-10-10T10:29:07.781Z"
+}

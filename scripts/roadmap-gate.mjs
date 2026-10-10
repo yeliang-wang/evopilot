@@ -11,6 +11,7 @@ const json = args.includes("--json");
 const intent = option("--intent");
 const releaseVersion = option("--release-version") ?? positionalAfter("--release-version");
 const releaseProduct = option("--release-product") ?? "evopilot-runtime";
+const milestoneProducts = ["evopilot-runtime", "evopilot-evolution-expert", "evopilot-codex-plugin"];
 
 let roadmap;
 try {
@@ -276,7 +277,7 @@ function validateRoadmap(value) {
     required(["IN_PROGRESS", "PLANNED", "DEFERRED", "SUPERSEDED", "COMPLETE"].includes(milestone.status), `invalid milestone status: ${milestone.id}`);
     required(semver(milestone.targetVersion), `targetVersion must be SemVer: ${milestone.id}`);
     required(/^\d+\.\d+\.x$/.test(milestone.releaseLine), `releaseLine must be major.minor.x: ${milestone.id}`);
-    required(["evopilot-runtime", "evopilot-evolution-expert"].includes(milestone.product), `milestone product is invalid: ${milestone.id}`);
+    required(milestoneProducts.includes(milestone.product), `milestone product is invalid: ${milestone.id}`);
     required(Array.isArray(milestone.signals) && milestone.signals.length > 0, `signals are required: ${milestone.id}`);
     required(Array.isArray(milestone.acceptance) && milestone.acceptance.length > 0, `acceptance is required: ${milestone.id}`);
   }
@@ -620,10 +621,10 @@ function classifyIntent(rawIntent, value) {
 
 function classifyRelease(version, product, value) {
   if (!semver(version)) return { classification: "UNKNOWN", matchedMilestones: [], reasons: [`Release version is not SemVer: ${version}`] };
-  const knownProducts = new Set([value.versionPolicy.runtimeProduct, value.evolutionExpertPolicy.product]);
-  if (!knownProducts.has(product)) return { classification: "UNKNOWN", matchedMilestones: [], reasons: [`Unknown release product: ${product}`] };
-  const versionPolicy = product === value.versionPolicy.runtimeProduct ? value.versionPolicy : value.evolutionExpertPolicy;
-  const exactBaseline = [versionPolicy.publishedBaseline, versionPolicy.currentWorkingVersion].includes(version);
+  if (!milestoneProducts.includes(product)) return { classification: "UNKNOWN", matchedMilestones: [], reasons: [`Unknown release product: ${product}`] };
+  const versionPolicy = product === value.versionPolicy.runtimeProduct ? value.versionPolicy
+    : product === value.evolutionExpertPolicy.product ? value.evolutionExpertPolicy : undefined;
+  const exactBaseline = [versionPolicy?.publishedBaseline, versionPolicy?.currentWorkingVersion].includes(version);
   const matchingMilestones = value.milestones.filter((milestone) => milestone.product === product && (version === milestone.targetVersion || inReleaseLine(version, milestone.releaseLine)));
   const exactIneligible = matchingMilestones.filter(milestone => milestone.targetVersion === version && (["DEFERRED", "SUPERSEDED"].includes(milestone.status) || milestone.standaloneReleaseEligible === false));
   if (exactIneligible.length > 0 && !matchingMilestones.some(milestone => milestone.targetVersion === version && !["DEFERRED", "SUPERSEDED"].includes(milestone.status) && milestone.standaloneReleaseEligible !== false)) {
