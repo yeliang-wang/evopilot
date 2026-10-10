@@ -1,0 +1,27 @@
+name: Codex component
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  component:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.14.0'
+      - name: Install component dependencies
+        run: npm ci --prefix plugins/evopilot
+      # Host observations are injected; HTTP integration uses a synthetic owner.
+      # These checks do not establish live Runtime or Desktop acceptance.
+      - name: Test component
+        run: npm test --prefix plugins/evopilot
+      - name: Check component packaging
+        working-directory: plugins/evopilot
+        run: npm pack --dry-run --json

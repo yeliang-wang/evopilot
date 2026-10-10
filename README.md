@@ -18,6 +18,8 @@ It is not an agent runtime, prompt playground, generic code generator, or Harnes
 
 Use EvoPilot from your AI Agent Host with the independently installed Evolution Expert and MCP connections. The current combination is **Runtime 6.3.3 + Expert 2.3.1 + Harness 4.8.2**; the products evolve independently.
 
+For the Runtime's Codex plugin component **0.1.0**, see the [Codex operating guide](docs/operations/codex.md) for installation and explicit activation, and the [released component source](plugins/evopilot). Fresh Desktop reinstallation and ordinary-chat repeat verification remain pending.
+
 | Your task | Start with | Success signal |
 | --- | --- | --- |
 | Install the combination in Codex or another Host | [Agent Host installation](docs/guides/agent-host-installation.md) | Expert loaded, stdio tools discovered, actual Runtime connection checked |
