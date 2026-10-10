@@ -30,3 +30,9 @@ The operator resolved actual retained receipts before marking the scoped Target 
 - Existing private configuration and daily Runtime were preserved. Model source runs used openai/gpt-6-astra; one FAILED record is retained, with its exact patch independently verified and no retry.
 - The release validation JSON accompanying the artifact contains the finite environment, known issues and separate postpublication results. Frozen package README/Skill pending-status prose predates this verification; the dated release evidence supplies the final status.
 - Target acceptance and release structural/binding checks passed using the existing user delegation. Structural validation is not evidence execution; the actual tests/Host observations above supply that evidence. Public download/reinstallation remain pending until observed after publication.
+
+## Published core release closure
+
+[Plugin 0.1.0](https://github.com/yeliang-wang/evopilot/releases/tag/codex-plugin-v0.1.0) is published from commit `7664cac54b6baee5502084049b77239269b38013`; accepted artifact bytes are unchanged. Public download, hash comparison, package installation, cache readback and the installed MCP route passed. Desktop start/status/project read was repeated successfully after reinstallation.
+
+The existing Desktop transport was retained with byte-identical payload and registration. The new public installation path passed the separate MCP test. A fresh Desktop transport from that path and a repeated ordinary-chat control were not observed. Under the user-approved minimal plugin-core release, these are disclosed follow-up coverage, not asserted passed tests. The Target retains the stricter full-repeat item as incomplete; this is not original R3 100% completion. The dated [release closure evidence](https://github.com/yeliang-wang/evopilot/releases/download/codex-plugin-v0.1.0/release-closure.json) supersedes earlier pending core-flow statements without rewriting historical receipts.

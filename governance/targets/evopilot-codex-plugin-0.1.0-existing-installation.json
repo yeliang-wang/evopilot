@@ -444,6 +444,11 @@
       "name": "evopilot-codex-plugin-0.1.0.tgz",
       "sha256": "369e3fb421b81624b5b79e24e95e5a102ab5aae9eb043808c5bdd322dd198393",
       "bytes": 4738194
+    },
+    "publication": {
+      "status": "PUBLISHED",
+      "url": "https://github.com/yeliang-wang/evopilot/releases/tag/codex-plugin-v0.1.0",
+      "sourceCommit": "7664cac54b6baee5502084049b77239269b38013"
     }
   },
   "notes": [
@@ -461,6 +466,32 @@
         "criterion": "Install those publicly downloaded bytes and repeat scoped current Codex Desktop start/status/operation/ordinary-chat checks."
       }
     ],
-    "status": "PENDING"
+    "status": "CORE_RELEASE_VERIFIED_WITH_DISCLOSED_FOLLOWUP_COVERAGE",
+    "results": [
+      {
+        "id": "POST-BYTES",
+        "status": "PASSED",
+        "evidenceRefs": [
+          "https://github.com/yeliang-wang/evopilot/releases/download/codex-plugin-v0.1.0/release-closure.json"
+        ]
+      },
+      {
+        "id": "POST-INSTALL",
+        "status": "PENDING_FULL_REPEAT_COVERAGE",
+        "evidenceRefs": [
+          "https://github.com/yeliang-wang/evopilot/releases/download/codex-plugin-v0.1.0/release-closure.json"
+        ],
+        "verified": [
+          "Public package install and registered source readback",
+          "Actual installed public-path MCP start/status/project read",
+          "Postpublication Desktop selected start/status/project read with retained byte-identical transport"
+        ],
+        "notObserved": [
+          "Fresh Desktop transport from public install root",
+          "Post-reinstallation repetition of ordinary-chat no-tool control"
+        ],
+        "disposition": "Nonblocking follow-up under user-authorized minimal plugin-core release. Original stricter repeat coverage is retained as incomplete, not relabeled passed."
+      }
+    ]
   }
 }
