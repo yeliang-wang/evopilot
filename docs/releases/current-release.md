@@ -24,6 +24,14 @@ The standalone CLI installs with `npm install -g @evopilot/cli@6.3.3`. The [tagg
 
 Host connections remain MCP stdio. The Runtime MCP adapter calls EvoPilot Runtime over HTTP, by default `http://127.0.0.1:19876`; Harness remains an independent stdio server and Expert is loaded in the Host. Expert retains its own `@evopilot/contracts@6.3.0` dependency while declaring compatibility with Runtime 6.3.3. Dashboard is independently versioned. Private independent project extensions **1.0.1** remain unchanged.
 
+## Current Codex component 0.1.0
+
+The [Codex plugin 0.1.0 release](https://github.com/yeliang-wang/evopilot/releases/tag/codex-plugin-v0.1.0) is an EvoPilot Runtime component with an independent component version, not a separate product. See the [Codex operating guide](../operations/codex.md) for the exact release checksum, prerequisites, durable installation, explicit activation and recovery. Runtime/CLI/MCP **6.3.3**, Expert **2.3.1**, Harness **4.8.2** and private local extensions **1.0.1** remain unchanged; this maintenance is not a new release of those products.
+
+The user abandoned the incomplete Runtime 6.5 / Expert 2.4 / Harness 4.8.3 full-series upgrade. Its historical targets may remain future references, and historical failure and uncertain-outcome records are retained without automatic resumption. No “Project Resources” product is introduced.
+
+Component publication does not prove fresh Desktop operation. **Current fresh Desktop reinstallation and ordinary-chat repeat verification remain pending until separately recorded.** This round's local cleanup and new-install verification must not be represented as already passed. Earlier release evidence and its limits below remain historical facts within their recorded scope.
+
 ## Current acceptance and explicit limits
 
 | Release unit | New criteria | Inherited definitions reviewed for current impact | Current cases |

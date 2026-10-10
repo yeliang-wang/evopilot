@@ -1,0 +1,20 @@
+{
+  "name": "@evopilot/codex-plugin",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=24.14.0 <25" },
+  "scripts": { "test": "node --test test/*.test.mjs" },
+  "files": ["src", "skills", ".codex-plugin", "install.mjs", "README.md", "LICENSE"],
+  "dependencies": {
+    "@evopilot/adapter-mcp": "6.3.3",
+    "@evopilot/evolution-expert": "2.3.1",
+    "@modelcontextprotocol/server": "2.3.1",
+    "@modelcontextprotocol/client": "2.0.0",
+    "zod": "4.5.4"
+  },
+  "bundleDependencies": [
+    "@evopilot/adapter-mcp", "@evopilot/evolution-expert",
+    "@modelcontextprotocol/server", "@modelcontextprotocol/client", "zod"
+  ]
+}

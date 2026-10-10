@@ -1185,3 +1185,8 @@ Fresh successful live preflight remains mandatory within15minutes for initial or
 Acceptance uses actual aged-binding MCP/model/restart cases, bounded failure/drift controls, exact fresh Candidate regression and a per-criterion impact review of all409 immutable6.3.1 baseline definitions. Old Suite migration, deletion and prior default-cutover transactions are completed historical events and must not be replayed; unchanged evidence may be reused only with explicit input equivalence and impact justification. Codex-only live acceptance, token-only usage, no new90-minute soak and no native credential interaction are explicit limits, not PASS. Expert2.3.0, Harness4.8.1 and private project extensions1.0.1 retain their versions.
 
 Publish only the accepted new Candidate bytes and record public results separately. Update current Codex through a new product-only transaction that preserves private configuration, daily data and independent resources. Publication and installation are already within the user authorization; exact technical bindings and observed results remain mandatory.
+
+
+## Scoped Codex plugin first release 0.1.0
+
+Approved on2026-10-10: A working independently versioned plugin using the already configured supported Runtime, preserving current data/credentials and owner authorization, with real Desktop and public-byte reinstall verification. Scope and exclusions: [first release plan](../plans/codex-plugin-first-release.md). This independently versioned plugin does not complete the original full-series R3 plan. Existing stable product versions remain unchanged.

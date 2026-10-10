@@ -1,0 +1,497 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-codex-plugin-0.1.0-existing-installation",
+  "revision": 1,
+  "status": "VALIDATED",
+  "intent": "codex plugin first release for existing configured stable installations",
+  "objective": "A working independently versioned plugin using the already configured supported Runtime, preserving current data/credentials and owner authorization, with real Desktop and public-byte reinstall verification.",
+  "evidence": [
+    {
+      "kind": "direct-human-scope-revision-and-release-delegation",
+      "evidenceRef": "governance/decisions/codex-plugin-first-release-20261010.json",
+      "digest": "sha256:9ecda9007777bb59b6615b38064eb7e77e5c9836aea50e4713c3104f723e43bb",
+      "technicalDigestIndividuallyReviewedByUser": false
+    },
+    {
+      "kind": "mandatory-postpublication-closure-definitions",
+      "evidenceRef": "governance/targets/evopilot-codex-plugin-0.1.0-existing-installation.json#postPublicationClosure",
+      "digest": "sha256:2e38012d7f20ba7fe65be5e9929ccf21207e5b49bb1ae222e6580cae8e930bac"
+    }
+  ],
+  "roadmapBindings": [
+    {
+      "repo": "https://github.com/yeliang-wang/evopilot",
+      "project": "evopilot",
+      "releaseProduct": "evopilot-codex-plugin",
+      "matchedMilestone": "evopilot-codex-plugin-0.1.0-existing-installation",
+      "targetVersion": "0.1.0",
+      "classification": "ALIGNED",
+      "roadmapDigest": "sha256:6684956d5dbad9d9327f663fdbb2c525f12d21899a272155cc0099e8d4b3d5df"
+    }
+  ],
+  "scope": {
+    "include": [
+      "plugins/evopilot/**",
+      "governance/decisions/codex-plugin-first-release-20261010.json",
+      "governance/targets/evopilot-codex-plugin-0.1.0-existing-installation.json",
+      "governance/roadmap.yaml",
+      "docs/roadmap/ROADMAP.md",
+      "docs/plans/codex-plugin-first-release.md"
+    ],
+    "exclude": [
+      "Full Runtime6.5/Expert2.4/Harness4.8.3 upgrades and original R3 100% claim",
+      "Public executor/collector first delivery or private project-extensions redistribution",
+      "Fresh suite install, automatic stop/upgrade/data adoption/rollback or historical data copying",
+      "Global Host enforcement or preventing native tools; no private Codex IPC",
+      "Unrelated source, daily data, credentials, global model settings or retired Suites"
+    ]
+  },
+  "compatibilityPolicy": {
+    "mode": "INHERIT"
+  },
+  "acceptanceModel": "SCOPED_FIRST_PUBLIC_PLUGIN_NO_PREVIOUS_PLUGIN_RELEASE_BASELINE",
+  "acceptance": [
+    {
+      "id": "CORE-ACTIVATION",
+      "category": "CORE",
+      "critical": true,
+      "criterion": "Explicit selected plugin and submitted instruction activates only that bridge; passive list/init and ordinary-chat control start no Runtime.",
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CORE-START",
+      "category": "CORE",
+      "critical": true,
+      "criterion": "Configured registered stopped launchd service starts once on explicit start; concurrent start and later chats reuse actual known PID; no automatic stop or unknown-process takeover.",
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CORE-IDENTITY",
+      "category": "CORE",
+      "critical": true,
+      "criterion": "Registration pins service/plist/program/package; authenticated Runtime scope/version plus actual listening PID match; mismatch, missing service, timeout and changed source refuse.",
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CORE-FUNCTION",
+      "category": "CORE",
+      "critical": true,
+      "criterion": "READY connection relays supported official Runtime6.3.3 MCP functions and preserves owner scope, authorization, results, errors and request IDs; no plugin permission escalation.",
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CORE-CONFIG",
+      "category": "CORE",
+      "critical": true,
+      "criterion": "Existing service private API configuration is used locally; no raw credentials in chat/artifact/log/argv; no copying or modifying existing data, credentials or model profile.",
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CORE-FAILURE",
+      "category": "CORE",
+      "critical": true,
+      "criterion": "Missing/invalid configuration and readiness accurately refuse affected work; unknown mutation outcomes never auto-retry; no global/private fallback.",
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "PACKAGE",
+      "category": "DELIVERY",
+      "critical": true,
+      "criterion": "Plugin0.1.0 has complete pinned public dependencies, supported macOS arm64/Node24.14 prerequisites, finite install/doctor and declared exclusions; no private helpers.",
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "DESKTOP",
+      "category": "DELIVERY",
+      "critical": true,
+      "criterion": "Exact accepted bytes pass current Codex Desktop selected start/status/real supported call, continued/new-chat reuse, ordinary-chat and failure controls.",
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "REGRESSION",
+      "category": "DELIVERY",
+      "critical": true,
+      "criterion": "Focused positive/negative tests and actual stable-product compatibility pass; published dependency bytes are not modified and previous work/uncertain records remain retained.",
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "RELEASE",
+      "category": "DELIVERY",
+      "critical": true,
+      "criterion": "Freeze exact accepted plugin package, source and public dependency identities; candidate acceptance and owner release gates pass before publication. Public readback and reinstallation remain mandatory separate postpublication checks.",
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    }
+  ],
+  "acceptanceLineage": [],
+  "inheritedAcceptance": [],
+  "excludedHistoricalAcceptance": [],
+  "regressionImpact": [],
+  "realCaseCoverage": [
+    {
+      "id": "CASE-CORE-ACTIVATION",
+      "scenario": "Explicit selected plugin and submitted instruction activates only that bridge; passive list/init and ordinary-chat control start no Runtime.",
+      "coversAcceptanceIds": [
+        "CORE-ACTIVATION"
+      ],
+      "hosts": [
+        "Codex"
+      ],
+      "startingState": "Exact scoped plugin candidate plus configured supported product installation",
+      "terminalState": "Observed criterion-specific expected outcome",
+      "prohibitedEffects": [
+        "No credential/data mutation, authority escalation, silent fallback or uncertain replay"
+      ],
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CASE-CORE-START",
+      "scenario": "Configured registered stopped launchd service starts once on explicit start; concurrent start and later chats reuse actual known PID; no automatic stop or unknown-process takeover.",
+      "coversAcceptanceIds": [
+        "CORE-START"
+      ],
+      "hosts": [
+        "Codex"
+      ],
+      "startingState": "Exact scoped plugin candidate plus configured supported product installation",
+      "terminalState": "Observed criterion-specific expected outcome",
+      "prohibitedEffects": [
+        "No credential/data mutation, authority escalation, silent fallback or uncertain replay"
+      ],
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CASE-CORE-IDENTITY",
+      "scenario": "Registration pins service/plist/program/package; authenticated Runtime scope/version plus actual listening PID match; mismatch, missing service, timeout and changed source refuse.",
+      "coversAcceptanceIds": [
+        "CORE-IDENTITY"
+      ],
+      "hosts": [
+        "Codex"
+      ],
+      "startingState": "Exact scoped plugin candidate plus configured supported product installation",
+      "terminalState": "Observed criterion-specific expected outcome",
+      "prohibitedEffects": [
+        "No credential/data mutation, authority escalation, silent fallback or uncertain replay"
+      ],
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CASE-CORE-FUNCTION",
+      "scenario": "READY connection relays supported official Runtime6.3.3 MCP functions and preserves owner scope, authorization, results, errors and request IDs; no plugin permission escalation.",
+      "coversAcceptanceIds": [
+        "CORE-FUNCTION"
+      ],
+      "hosts": [
+        "Codex"
+      ],
+      "startingState": "Exact scoped plugin candidate plus configured supported product installation",
+      "terminalState": "Observed criterion-specific expected outcome",
+      "prohibitedEffects": [
+        "No credential/data mutation, authority escalation, silent fallback or uncertain replay"
+      ],
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CASE-CORE-CONFIG",
+      "scenario": "Existing service private API configuration is used locally; no raw credentials in chat/artifact/log/argv; no copying or modifying existing data, credentials or model profile.",
+      "coversAcceptanceIds": [
+        "CORE-CONFIG"
+      ],
+      "hosts": [
+        "Codex"
+      ],
+      "startingState": "Exact scoped plugin candidate plus configured supported product installation",
+      "terminalState": "Observed criterion-specific expected outcome",
+      "prohibitedEffects": [
+        "No credential/data mutation, authority escalation, silent fallback or uncertain replay"
+      ],
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CASE-CORE-FAILURE",
+      "scenario": "Missing/invalid configuration and readiness accurately refuse affected work; unknown mutation outcomes never auto-retry; no global/private fallback.",
+      "coversAcceptanceIds": [
+        "CORE-FAILURE"
+      ],
+      "hosts": [
+        "Codex"
+      ],
+      "startingState": "Exact scoped plugin candidate plus configured supported product installation",
+      "terminalState": "Observed criterion-specific expected outcome",
+      "prohibitedEffects": [
+        "No credential/data mutation, authority escalation, silent fallback or uncertain replay"
+      ],
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CASE-PACKAGE",
+      "scenario": "Plugin0.1.0 has complete pinned public dependencies, supported macOS arm64/Node24.14 prerequisites, finite install/doctor and declared exclusions; no private helpers.",
+      "coversAcceptanceIds": [
+        "PACKAGE"
+      ],
+      "hosts": [
+        "Codex"
+      ],
+      "startingState": "Exact scoped plugin candidate plus configured supported product installation",
+      "terminalState": "Observed criterion-specific expected outcome",
+      "prohibitedEffects": [
+        "No credential/data mutation, authority escalation, silent fallback or uncertain replay"
+      ],
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CASE-DESKTOP",
+      "scenario": "Exact accepted bytes pass current Codex Desktop selected start/status/real supported call, continued/new-chat reuse, ordinary-chat and failure controls.",
+      "coversAcceptanceIds": [
+        "DESKTOP"
+      ],
+      "hosts": [
+        "Codex"
+      ],
+      "startingState": "Exact scoped plugin candidate plus configured supported product installation",
+      "terminalState": "Observed criterion-specific expected outcome",
+      "prohibitedEffects": [
+        "No credential/data mutation, authority escalation, silent fallback or uncertain replay"
+      ],
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CASE-REGRESSION",
+      "scenario": "Focused positive/negative tests and actual stable-product compatibility pass; published dependency bytes are not modified and previous work/uncertain records remain retained.",
+      "coversAcceptanceIds": [
+        "REGRESSION"
+      ],
+      "hosts": [
+        "Codex"
+      ],
+      "startingState": "Exact scoped plugin candidate plus configured supported product installation",
+      "terminalState": "Observed criterion-specific expected outcome",
+      "prohibitedEffects": [
+        "No credential/data mutation, authority escalation, silent fallback or uncertain replay"
+      ],
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    },
+    {
+      "id": "CASE-RELEASE",
+      "scenario": "Freeze exact accepted plugin package, source and public dependency identities; candidate acceptance and owner release gates pass before publication. Public readback and reinstallation remain mandatory separate postpublication checks.",
+      "coversAcceptanceIds": [
+        "RELEASE"
+      ],
+      "hosts": [
+        "Codex"
+      ],
+      "startingState": "Exact scoped plugin candidate plus configured supported product installation",
+      "terminalState": "Observed criterion-specific expected outcome",
+      "prohibitedEffects": [
+        "No credential/data mutation, authority escalation, silent fallback or uncertain replay"
+      ],
+      "requiredEvidence": [
+        "Actual current-source tests and criterion-specific owner/Host/artifact receipts; no synthetic or structural-only substitution"
+      ],
+      "status": "PASSED",
+      "evidenceRefs": [
+        "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+      ]
+    }
+  ],
+  "noRegressionRequired": true,
+  "acceptanceClosurePolicy": "ALL_REQUIRED_PASS",
+  "failurePolicy": "RETURN_TO_IMPLEMENTATION_AND_REVALIDATE",
+  "approvals": {
+    "target": {
+      "decision": "APPROVED",
+      "by": "user",
+      "evidenceRef": "governance/decisions/codex-plugin-first-release-20261010.json",
+      "authorizationDigest": "sha256:53d235b717b6ae0a1a8929c2781a69f63f45f7d6150bc9eb01d4ff9e47e719b7"
+    },
+    "release": {
+      "decision": "AUTHORIZED",
+      "by": "user",
+      "evidenceRef": "governance/decisions/codex-plugin-first-release-20261010.json",
+      "authorizationDigest": "sha256:ffa1e77db1eced48df300a279de2e33cdd5c25f49c17a60e2b47f4dfa246667e",
+      "interpretation": "User delegated conditional release and reiterated continue publication after the actual new-conversation test. Operator verified the scoped core criteria; this is not a new human approval claim."
+    }
+  },
+  "noRegression": {
+    "status": "PASSED",
+    "evidenceRefs": [
+      "docs/plans/codex-plugin-first-release.md#verified-candidate-2026-10-10"
+    ]
+  },
+  "release": {
+    "actions": [
+      "PUBLISH_GITHUB_PLUGIN_RELEASE",
+      "INSTALL_PUBLIC_PLUGIN_ARTIFACT"
+    ],
+    "versions": {
+      "evopilot": "0.1.0"
+    },
+    "artifact": {
+      "name": "evopilot-codex-plugin-0.1.0.tgz",
+      "sha256": "369e3fb421b81624b5b79e24e95e5a102ab5aae9eb043808c5bdd322dd198393",
+      "bytes": 4738194
+    },
+    "publication": {
+      "status": "PUBLISHED",
+      "url": "https://github.com/yeliang-wang/evopilot/releases/tag/codex-plugin-v0.1.0",
+      "sourceCommit": "7664cac54b6baee5502084049b77239269b38013"
+    }
+  },
+  "notes": [
+    "First plugin release has no earlier released plugin acceptance baseline. Stable Runtime/Expert are unchanged pinned dependencies, not newly released or claimed reaccepted products.",
+    "Prior large-scope Targets remain incomplete, retained and excluded from this release. RELEASE criterion includes postpublication readback, which must not be required before publication authorization: prepublication candidate acceptance and postpublication closure are explicitly separated in release evaluator."
+  ],
+  "postPublicationClosure": {
+    "definitions": [
+      {
+        "id": "POST-BYTES",
+        "criterion": "Download the published GitHub release plugin artifact and match original accepted bytes."
+      },
+      {
+        "id": "POST-INSTALL",
+        "criterion": "Install those publicly downloaded bytes and repeat scoped current Codex Desktop start/status/operation/ordinary-chat checks."
+      }
+    ],
+    "status": "CORE_RELEASE_VERIFIED_WITH_DISCLOSED_FOLLOWUP_COVERAGE",
+    "results": [
+      {
+        "id": "POST-BYTES",
+        "status": "PASSED",
+        "evidenceRefs": [
+          "https://github.com/yeliang-wang/evopilot/releases/download/codex-plugin-v0.1.0/release-closure.json"
+        ]
+      },
+      {
+        "id": "POST-INSTALL",
+        "status": "PENDING_FULL_REPEAT_COVERAGE",
+        "evidenceRefs": [
+          "https://github.com/yeliang-wang/evopilot/releases/download/codex-plugin-v0.1.0/release-closure.json"
+        ],
+        "verified": [
+          "Public package install and registered source readback",
+          "Actual installed public-path MCP start/status/project read",
+          "Postpublication Desktop selected start/status/project read with retained byte-identical transport"
+        ],
+        "notObserved": [
+          "Fresh Desktop transport from public install root",
+          "Post-reinstallation repetition of ordinary-chat no-tool control"
+        ],
+        "disposition": "Nonblocking follow-up under user-authorized minimal plugin-core release. Original stricter repeat coverage is retained as incomplete, not relabeled passed."
+      }
+    ]
+  }
+}

@@ -2192,6 +2192,52 @@
         "technicalBindingResolvedBy": "assistant under explicit current user implementation and necessary patch-publication instruction",
         "individualHumanReviewOfFutureTechnicalDigests": false
       }
+    },
+    {
+      "id": "evopilot-codex-plugin-0.1.0-existing-installation",
+      "product": "evopilot-codex-plugin",
+      "targetVersion": "0.1.0",
+      "releaseLine": "0.1.x",
+      "status": "IN_PROGRESS",
+      "standaloneReleaseEligible": true,
+      "objective": "Deliver a scoped Codex plugin first release for existing configured stable EvoPilot installations; exact published dependency versions, explicit start/reuse and supported Runtime operations.",
+      "outcomes": [
+        "Explicit selected plugin and submitted instruction activates only that bridge; passive list/init and ordinary-chat control start no Runtime.",
+        "Configured registered stopped launchd service starts once on explicit start; concurrent start and later chats reuse actual known PID; no automatic stop or unknown-process takeover.",
+        "Registration pins service/plist/program/package; authenticated Runtime scope/version plus actual listening PID match; mismatch, missing service, timeout and changed source refuse.",
+        "READY connection relays supported official Runtime6.3.3 MCP functions and preserves owner scope, authorization, results, errors and request IDs; no plugin permission escalation.",
+        "Existing service private API configuration is used locally; no raw credentials in chat/artifact/log/argv; no copying or modifying existing data, credentials or model profile.",
+        "Missing/invalid configuration and readiness accurately refuse affected work; unknown mutation outcomes never auto-retry; no global/private fallback.",
+        "Plugin0.1.0 has complete pinned public dependencies, supported macOS arm64/Node24.14 prerequisites, finite install/doctor and declared exclusions; no private helpers.",
+        "Exact accepted bytes pass current Codex Desktop selected start/status/real supported call, continued/new-chat reuse, ordinary-chat and failure controls.",
+        "Focused positive/negative tests and actual stable-product compatibility pass; published dependency bytes are not modified and previous work/uncertain records remain retained.",
+        "Exact accepted plugin bytes are released through public GitHub release codex-plugin-v0.1.0, publicly downloaded and independently matched; local installation of downloaded bytes is verified."
+      ],
+      "acceptance": [
+        "CORE-ACTIVATION: Explicit selected plugin and submitted instruction activates only that bridge; passive list/init and ordinary-chat control start no Runtime.",
+        "CORE-START: Configured registered stopped launchd service starts once on explicit start; concurrent start and later chats reuse actual known PID; no automatic stop or unknown-process takeover.",
+        "CORE-IDENTITY: Registration pins service/plist/program/package; authenticated Runtime scope/version plus actual listening PID match; mismatch, missing service, timeout and changed source refuse.",
+        "CORE-FUNCTION: READY connection relays supported official Runtime6.3.3 MCP functions and preserves owner scope, authorization, results, errors and request IDs; no plugin permission escalation.",
+        "CORE-CONFIG: Existing service private API configuration is used locally; no raw credentials in chat/artifact/log/argv; no copying or modifying existing data, credentials or model profile.",
+        "CORE-FAILURE: Missing/invalid configuration and readiness accurately refuse affected work; unknown mutation outcomes never auto-retry; no global/private fallback.",
+        "PACKAGE: Plugin0.1.0 has complete pinned public dependencies, supported macOS arm64/Node24.14 prerequisites, finite install/doctor and declared exclusions; no private helpers.",
+        "DESKTOP: Exact accepted bytes pass current Codex Desktop selected start/status/real supported call, continued/new-chat reuse, ordinary-chat and failure controls.",
+        "REGRESSION: Focused positive/negative tests and actual stable-product compatibility pass; published dependency bytes are not modified and previous work/uncertain records remain retained.",
+        "RELEASE: Exact accepted plugin bytes are released through public GitHub release codex-plugin-v0.1.0, publicly downloaded and independently matched; local installation of downloaded bytes is verified."
+      ],
+      "signals": [
+        "codex plugin first release",
+        "existing configured stable installations",
+        "evopilot-codex-plugin"
+      ],
+      "exclusions": [
+        "Full Runtime6.5/Expert2.4/Harness4.8.3 upgrades and original R3 100% claim",
+        "Public executor/collector first delivery or private project-extensions redistribution",
+        "Fresh suite install, automatic stop/upgrade/data adoption/rollback or historical data copying",
+        "Global Host enforcement or preventing native tools; no private Codex IPC",
+        "Unrelated source, daily data, credentials, global model settings or retired Suites"
+      ],
+      "authorityRef": "governance/decisions/codex-plugin-first-release-20261010.json"
     }
   ],
   "transitionPolicies": [
