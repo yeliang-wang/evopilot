@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getGuide, scenarios } from '../../expert/core/guide.mjs';
 
@@ -240,9 +241,27 @@ test('actual spawned server: malformed metadata rejects before initialization or
   assert.equal(out[7].error.code,-32600); assert.deepEqual(out[8].result,{});
 });
 test('pure guide maps every source reference to the installed package layout', () => {
+  // Concrete app-root paths are independent of the source-to-package mapping.
+  // No installed child repositories or filesystem fixtures are needed.
+  const installationRoot = '/managed/evopilot/app';
+  const expectedPaths = [
+    '/managed/evopilot/app/docs/first-journey.md',
+    '/managed/evopilot/app/docs/product-composition.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/ontology/docs/service.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/ontology/docs/classification-service.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/ontology/docs/legacy-api.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/ontology/docs/catalog-service.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/ontology/specifications',
+    '/managed/evopilot/app/node_modules/@evopilot-next/ontology/schemas',
+    '/managed/evopilot/app/node_modules/@evopilot-next/harness/specifications',
+    '/managed/evopilot/app/node_modules/@evopilot-next/harness/docs/service.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/runtime/docs/service.md',
+  ];
   for (const scenario of scenarios) {
     const guide=getGuide(scenario);
-    assert.deepEqual(guide.installedReferences,guide.references.map(p=>'app/'+p.replace(/^projects\/evopilot-(runtime|harness|ontology)\//,'node_modules/@evopilot-next/$1/')));
+    const resolvedPaths = guide.installedReferences.map(p => resolve(installationRoot, p));
+    assert.deepEqual(resolvedPaths, expectedPaths);
+    assert(resolvedPaths.every(p => p.startsWith(installationRoot + '/')));
     assert(guide.installedReferences.every(p=>!p.includes('projects/')));
     assert.equal(guide.referenceBases.installedReferences,'verified installationRoot');
   }

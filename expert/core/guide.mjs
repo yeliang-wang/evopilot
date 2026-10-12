@@ -46,7 +46,7 @@ const guides = {
 };
 // Guides are pure; installed paths resolve against a verified installationRoot.
 export const sourceReferences = Object.freeze(['docs/first-journey.md', 'docs/product-composition.md', 'projects/evopilot-ontology/docs/service.md', 'projects/evopilot-ontology/docs/classification-service.md', 'projects/evopilot-ontology/docs/legacy-api.md', 'projects/evopilot-ontology/docs/catalog-service.md', 'projects/evopilot-ontology/specifications/', 'projects/evopilot-ontology/schemas/', 'projects/evopilot-harness/specifications/', 'projects/evopilot-harness/docs/service.md', 'projects/evopilot-runtime/docs/service.md']);
-export const installedReference = reference => 'app/' + reference.replace(/^projects\/evopilot-(runtime|harness|ontology)\//, 'node_modules/@evopilot-next/$1/');
+export const installedReference = reference => reference.replace(/^projects\/evopilot-(runtime|harness|ontology)\//, 'node_modules/@evopilot-next/$1/');
 export const scenarios = Object.freeze(Object.keys(guides));
 export function getGuide(scenario) {
   if (!Object.hasOwn(guides, scenario)) throw Object.assign(new Error('Unknown scenario'), { code: 'INVALID_REQUEST' });
