@@ -1,0 +1,52 @@
+{
+  "schema": "evopilot-local-roadmap/v1",
+  "product": "evopilot",
+  "version": "0.1.0",
+  "approvedPlanDigest": "sha256:5bae53afa8a1245d9b5f3c63630b9654ea04938481e3f798964c762a5a7cc926",
+  "milestones": [
+    {
+      "id": "local-v0.1",
+      "intent": "Implement the approved isolated EvoPilot v0.1 parent and Runtime, Harness, Ontology products locally",
+      "stages": [
+        "M0",
+        "M1",
+        "M2",
+        "M3",
+        "M4"
+      ],
+      "acceptanceIds": [
+        "E01",
+        "E02",
+        "E03",
+        "E04",
+        "E05",
+        "E06",
+        "E07",
+        "E08",
+        "E09",
+        "E10",
+        "E11",
+        "E12",
+        "E13",
+        "E14",
+        "E15",
+        "E16",
+        "E17",
+        "E18",
+        "E19"
+      ]
+    }
+  ],
+  "releaseGate": {
+    "stage": "M5",
+    "requiresFreshUserDecision": true,
+    "remoteActionsAuthorized": false
+  },
+  "exclusions": [
+    "Old source, data, credentials and daily installations are read-only",
+    "No GitHub creation, push, remote CI, release or deletion before local acceptance and fresh user confirmation",
+    "No WorkBuddy implementation or acceptance",
+    "No private project assets in public code, examples, fixtures or packages",
+    "No automatic version 1.0 declaration"
+  ]
+}

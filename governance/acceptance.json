@@ -1,0 +1,196 @@
+{
+  "schema": "evopilot-local-acceptance/v1",
+  "targetId": "evopilot-v01-local-20261012",
+  "criteria": [
+    {
+      "id": "E01",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "全新源码克隆／安装: 递归获取精确子提交、独立构建、父制品清单一致；无需访问开发者私有路径",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E02",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "旧环境保护: 旧工作树、origin、配置、数据、进程和服务标识无被新安装修改；Dashboard 未提交改动保留",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E03",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "本体完整迁移与 Harness 清理: 全部本体迁移条目有可核验去向且无未决项；Ontology 独立完成保留能力；新 Harness 无本体创建／修改／审批／发布 API、命令、重复实现和过时入口；只读引用及语义消费正常",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E04",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "正反向来源: 合成需求无需源码即可形成设计资产；合成仓库来源可追踪，源码不变，证据状态不混淆",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E05",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "Harness 旅程: 专业规则与评估可用；缺失证据不报通过，Warning 不自动触发版本与发布",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E06",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "新 Runtime 消费: 锁定正确资产及摘要，权限／决策保留；未知结果不重复派发，旧运行不被改绑",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E07",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "新 workspace 隔离: 两项目、公共与私有资产不串用；当前 Codex 多会话的冲突操作被检测，重启恢复同一状态",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E08",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "数据导入: 清单完整、归属正确、迁移中断可恢复；旧源数据不变，不继承旧批准为新操作权限",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E09",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "Codex: 确切安装版本的真实入口可用，按需连接，无新旧路由混淆；普通会话不主动进入新工作流",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E10",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "当前 Codex 完整用户旅程: 经同一插件和 Expert 完成正向建模、反向来源分析、Harness 评估及 Runtime 组合消费；三产品回执可关联，缺失前提准确提示，不用模拟器或文档代替真实调用",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E11",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "隐私与待发布制品: 本地 Git／待发布包／源码归档／日志检查无 DataRig 私有资料、凭据与私人路径；无提前远端创建、推送或发布；旧包标签不被操作",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E12",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "文档与卸载: 按 README 可安装并完成首个旅程；卸载只移除新程序，保留新旧用户数据与审计",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E13",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "文档结构与功能验证映射: 父子 README 分工清晰，安装／Codex／正反向／质量评估／Runtime 交接均可从文档索引到达；关键教程用当前制品走通，链接与引用有效，功能声明对应当前验收；复用材料按适用许可保留归属",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E14",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "按需启动与 Codex 多会话复用: 无服务时显式使用可完成有界启动和健康核验；已有兼容服务复用；当前 Codex 多会话同时首次使用不产生重复共享服务或竞争写入者；不需要的产品不被强制启动",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E15",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "退出、中断与恢复: 关闭一个 Codex 会话不影响另一个使用共享服务；重新连接／产品重启后读取同一持久状态；注入响应丢失后先查回执、不重复执行；需持续的长任务有真实恢复证据，无法持续的操作明确报告中断",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E16",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "生命周期异常与默认行为: 初始化／工具发现不创建项目、任务或业务资产；错误版本／workspace、占用端口、假存活和启动超时不报 READY、不误连或停止旧服务；诊断可追踪，无无界重试或凭据泄露",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E17",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "两套 v1 的最小标准与输出: Ontology／Harness 的正反向输入分别生成同一基础规范的资产，来源、必需输出和校验结果可核验；核心条款有来源及采用范围映射；删除必需内容或破坏引用时不能通过；业务确认与机器校验分开",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E18",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "公私项目的合规扩展: 两个不同合成项目使用同一基础版本和不同领域扩展；公共／私有资产执行相同基础校验；合法扩展可用，字段冲突、放宽强制约束、不支持的必需扩展被拒绝；私有内容不进入公共包",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    },
+    {
+      "id": "E19",
+      "category": "LOCAL",
+      "critical": true,
+      "criterion": "版本锁定与兼容基线: 固定 v1 资产在产品更新候选中仍按原语义读取／校验／消费；依赖摘要稳定；未知规范或必需能力被准确拒绝；不静默迁移、改写或重绑；保存未来升级必须重跑的基线，本轮不宣称实际 v2／v3 已验收",
+      "requiredEvidence": [
+        "Current source and candidate digests, reproducible execution receipts; real Codex evidence where required"
+      ],
+      "status": "PENDING"
+    }
+  ]
+}

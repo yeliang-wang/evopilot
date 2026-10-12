@@ -1,0 +1,15 @@
+{
+  "schema": "evopilot-local-implementation-authorization/v1",
+  "date": "2026-10-12",
+  "userImplementationInstruction": "确认，请开始执行方案落地。",
+  "userLatestConstraint": "我说过了，github是最后才处理的，需要100%验收之后得到我确认之后，才能开始github的创建。",
+  "planDigest": "sha256:5bae53afa8a1245d9b5f3c63630b9654ea04938481e3f798964c762a5a7cc926",
+  "planDigestIndividuallyReviewedByUser": false,
+  "authority": "LOCAL_IMPLEMENTATION_ONLY",
+  "remoteCreationAuthorized": false,
+  "publicationAuthorized": false,
+  "oldRepositoryDeletionAuthorized": false,
+  "dailyCutoverAuthorized": false,
+  "oldSourcePolicy": "READ_ONLY",
+  "status": "M0_IN_PROGRESS"
+}
