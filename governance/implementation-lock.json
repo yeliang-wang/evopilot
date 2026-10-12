@@ -1,0 +1,9 @@
+{
+  "schema": "evopilot-local-implementation-lock/v1",
+  "roadmapDigest": "sha256:06c0e62d0f2fffce6013720509a603e753ca4f402ce24fc0937c8b45bd8129c2",
+  "approvedPlanDigest": "sha256:5bae53afa8a1245d9b5f3c63630b9654ea04938481e3f798964c762a5a7cc926",
+  "milestone": "local-v0.1",
+  "version": "0.1.0",
+  "authority": "LOCAL_IMPLEMENTATION_ONLY",
+  "remoteActionsAuthorized": false
+}

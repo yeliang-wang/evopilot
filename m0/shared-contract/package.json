@@ -1,0 +1,9 @@
+{
+  "name": "@evopilot-next/m0-reference-contract",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": "./index.mjs" },
+  "files": ["index.mjs"],
+  "engines": { "node": ">=22" },
+  "dependencies": {}
+}

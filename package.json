@@ -1,0 +1,20 @@
+{
+  "name": "@evopilot-next/stack",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.14.0"
+  },
+  "scripts": {
+    "artifacts:verify": "node scripts/verify-artifacts.mjs",
+    "components:lock": "node scripts/lock-components.mjs",
+    "roadmap:gate": "node scripts/roadmap.mjs --gate",
+    "roadmap:check": "node scripts/roadmap.mjs --check",
+    "roadmap:release": "node scripts/roadmap.mjs --release",
+    "check": "node scripts/check.mjs",
+    "build": "node scripts/sync-contract.mjs",
+    "test": "node --test integration/e2e/*.test.mjs projects/evopilot-runtime/tests/e2e/reference.test.mjs projects/evopilot-harness/tests/e2e/*.test.mjs projects/evopilot-ontology/tests/e2e/*.test.mjs"
+  },
+  "license": "Apache-2.0"
+}

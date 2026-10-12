@@ -1,0 +1,9 @@
+[submodule "projects/evopilot-runtime"]
+	path = projects/evopilot-runtime
+	url = ./projects/evopilot-runtime
+[submodule "projects/evopilot-harness"]
+	path = projects/evopilot-harness
+	url = ./projects/evopilot-harness
+[submodule "projects/evopilot-ontology"]
+	path = projects/evopilot-ontology
+	url = ./projects/evopilot-ontology

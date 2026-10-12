@@ -1,0 +1,2546 @@
+{
+  "marker": "PROBE",
+  "description": "Purely synthetic unrelated domains; full product/direction/visibility matrix.",
+  "assets": [
+    {
+      "specVersion": "v1",
+      "product": "ontology",
+      "id": "library-lending-ontology-forward-public",
+      "version": "0.1.0",
+      "visibility": "public",
+      "provenance": {
+        "direction": "forward",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:e8c4c14655e1e099d5236b56f101f5fc5a1a8985da498cf18378f4d6df942b6d",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-ontology-forward-public/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86bdfede5ebdb8b0f16ef314900efa581b4bfd110b7840e01ba61c06b24df51c",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-ontology-forward-public/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "concepts": [
+        {
+          "id": "book",
+          "label": "Book",
+          "definition": "Synthetic fixture concept representing Book; invented for this PROBE only."
+        },
+        {
+          "id": "borrower",
+          "label": "Borrower",
+          "definition": "Synthetic fixture concept representing Borrower; invented for this PROBE only."
+        }
+      ],
+      "properties": [
+        {
+          "id": "quantity",
+          "conceptRef": "book",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "id": "label",
+          "conceptRef": "borrower",
+          "type": "string"
+        },
+        {
+          "id": "active",
+          "conceptRef": "book",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "id": "directed-link",
+          "from": "borrower",
+          "to": "book",
+          "directed": true
+        }
+      ],
+      "constraints": [
+        {
+          "id": "quantity-limit",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "descriptive-range",
+          "description": "Synthetic copy count is nonnegative."
+        },
+        {
+          "id": "quantity-numeric-range",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "numeric-range",
+          "description": "Synthetic numeric-range boundary only.",
+          "minimum": 0,
+          "maximum": 10
+        },
+        {
+          "id": "quantity-enum",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "enum",
+          "description": "Synthetic enum boundary only.",
+          "values": [
+            0,
+            2,
+            10
+          ]
+        },
+        {
+          "id": "quantity-cardinality",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "cardinality",
+          "description": "Synthetic cardinality boundary only.",
+          "minCount": 1,
+          "maxCount": 1
+        },
+        {
+          "id": "active-enum",
+          "conceptRef": "book",
+          "propertyRef": "active",
+          "kind": "enum",
+          "description": "Synthetic boolean boundary.",
+          "values": [
+            false,
+            true
+          ]
+        }
+      ],
+      "sourceMappings": [
+        {
+          "id": "mapping",
+          "sourceRef": "source-0",
+          "conceptRef": "book",
+          "sourceLocator": "synthetic://m0/library-lending-ontology-forward-public/source-0#record-1",
+          "sourceRevision": "synthetic-r1"
+        }
+      ],
+      "unresolvedIssues": [
+        {
+          "id": "open-question",
+          "description": "Synthetic renewal policy remains unspecified."
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "ontology",
+      "id": "library-lending-ontology-forward-private",
+      "version": "0.1.0",
+      "visibility": "private",
+      "provenance": {
+        "direction": "forward",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:e8c4c14655e1e099d5236b56f101f5fc5a1a8985da498cf18378f4d6df942b6d",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-ontology-forward-private/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86bdfede5ebdb8b0f16ef314900efa581b4bfd110b7840e01ba61c06b24df51c",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-ontology-forward-private/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "concepts": [
+        {
+          "id": "book",
+          "label": "Book",
+          "definition": "Synthetic fixture concept representing Book; invented for this PROBE only."
+        },
+        {
+          "id": "borrower",
+          "label": "Borrower",
+          "definition": "Synthetic fixture concept representing Borrower; invented for this PROBE only."
+        }
+      ],
+      "properties": [
+        {
+          "id": "quantity",
+          "conceptRef": "book",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "id": "label",
+          "conceptRef": "borrower",
+          "type": "string"
+        },
+        {
+          "id": "active",
+          "conceptRef": "book",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "id": "directed-link",
+          "from": "borrower",
+          "to": "book",
+          "directed": true
+        }
+      ],
+      "constraints": [
+        {
+          "id": "quantity-limit",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "descriptive-range",
+          "description": "Synthetic copy count is nonnegative."
+        },
+        {
+          "id": "quantity-numeric-range",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "numeric-range",
+          "description": "Synthetic numeric-range boundary only.",
+          "minimum": 0,
+          "maximum": 10
+        },
+        {
+          "id": "quantity-enum",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "enum",
+          "description": "Synthetic enum boundary only.",
+          "values": [
+            0,
+            2,
+            10
+          ]
+        },
+        {
+          "id": "quantity-cardinality",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "cardinality",
+          "description": "Synthetic cardinality boundary only.",
+          "minCount": 1,
+          "maxCount": 1
+        },
+        {
+          "id": "active-enum",
+          "conceptRef": "book",
+          "propertyRef": "active",
+          "kind": "enum",
+          "description": "Synthetic boolean boundary.",
+          "values": [
+            false,
+            true
+          ]
+        }
+      ],
+      "sourceMappings": [
+        {
+          "id": "mapping",
+          "sourceRef": "source-0",
+          "conceptRef": "book",
+          "sourceLocator": "synthetic://m0/library-lending-ontology-forward-private/source-0#record-1",
+          "sourceRevision": "synthetic-r1"
+        }
+      ],
+      "unresolvedIssues": [
+        {
+          "id": "open-question",
+          "description": "Synthetic renewal policy remains unspecified."
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "ontology",
+      "id": "library-lending-ontology-reverse-public",
+      "version": "0.1.0",
+      "visibility": "public",
+      "provenance": {
+        "direction": "reverse",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:e8c4c14655e1e099d5236b56f101f5fc5a1a8985da498cf18378f4d6df942b6d",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-ontology-reverse-public/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86bdfede5ebdb8b0f16ef314900efa581b4bfd110b7840e01ba61c06b24df51c",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-ontology-reverse-public/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "concepts": [
+        {
+          "id": "book",
+          "label": "Book",
+          "definition": "Synthetic fixture concept representing Book; invented for this PROBE only."
+        },
+        {
+          "id": "borrower",
+          "label": "Borrower",
+          "definition": "Synthetic fixture concept representing Borrower; invented for this PROBE only."
+        }
+      ],
+      "properties": [
+        {
+          "id": "quantity",
+          "conceptRef": "book",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "id": "label",
+          "conceptRef": "borrower",
+          "type": "string"
+        },
+        {
+          "id": "active",
+          "conceptRef": "book",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "id": "directed-link",
+          "from": "borrower",
+          "to": "book",
+          "directed": true
+        }
+      ],
+      "constraints": [
+        {
+          "id": "quantity-limit",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "descriptive-range",
+          "description": "Synthetic copy count is nonnegative."
+        },
+        {
+          "id": "quantity-numeric-range",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "numeric-range",
+          "description": "Synthetic numeric-range boundary only.",
+          "minimum": 0,
+          "maximum": 10
+        },
+        {
+          "id": "quantity-enum",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "enum",
+          "description": "Synthetic enum boundary only.",
+          "values": [
+            0,
+            2,
+            10
+          ]
+        },
+        {
+          "id": "quantity-cardinality",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "cardinality",
+          "description": "Synthetic cardinality boundary only.",
+          "minCount": 1,
+          "maxCount": 1
+        },
+        {
+          "id": "active-enum",
+          "conceptRef": "book",
+          "propertyRef": "active",
+          "kind": "enum",
+          "description": "Synthetic boolean boundary.",
+          "values": [
+            false,
+            true
+          ]
+        }
+      ],
+      "sourceMappings": [
+        {
+          "id": "mapping",
+          "sourceRef": "source-0",
+          "conceptRef": "book",
+          "sourceLocator": "synthetic://m0/library-lending-ontology-reverse-public/source-0#record-1",
+          "sourceRevision": "synthetic-r1"
+        }
+      ],
+      "unresolvedIssues": [
+        {
+          "id": "open-question",
+          "description": "Synthetic renewal policy remains unspecified."
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "ontology",
+      "id": "library-lending-ontology-reverse-private",
+      "version": "0.1.0",
+      "visibility": "private",
+      "provenance": {
+        "direction": "reverse",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:e8c4c14655e1e099d5236b56f101f5fc5a1a8985da498cf18378f4d6df942b6d",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-ontology-reverse-private/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86bdfede5ebdb8b0f16ef314900efa581b4bfd110b7840e01ba61c06b24df51c",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-ontology-reverse-private/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "concepts": [
+        {
+          "id": "book",
+          "label": "Book",
+          "definition": "Synthetic fixture concept representing Book; invented for this PROBE only."
+        },
+        {
+          "id": "borrower",
+          "label": "Borrower",
+          "definition": "Synthetic fixture concept representing Borrower; invented for this PROBE only."
+        }
+      ],
+      "properties": [
+        {
+          "id": "quantity",
+          "conceptRef": "book",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "id": "label",
+          "conceptRef": "borrower",
+          "type": "string"
+        },
+        {
+          "id": "active",
+          "conceptRef": "book",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "id": "directed-link",
+          "from": "borrower",
+          "to": "book",
+          "directed": true
+        }
+      ],
+      "constraints": [
+        {
+          "id": "quantity-limit",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "descriptive-range",
+          "description": "Synthetic copy count is nonnegative."
+        },
+        {
+          "id": "quantity-numeric-range",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "numeric-range",
+          "description": "Synthetic numeric-range boundary only.",
+          "minimum": 0,
+          "maximum": 10
+        },
+        {
+          "id": "quantity-enum",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "enum",
+          "description": "Synthetic enum boundary only.",
+          "values": [
+            0,
+            2,
+            10
+          ]
+        },
+        {
+          "id": "quantity-cardinality",
+          "conceptRef": "book",
+          "propertyRef": "quantity",
+          "kind": "cardinality",
+          "description": "Synthetic cardinality boundary only.",
+          "minCount": 1,
+          "maxCount": 1
+        },
+        {
+          "id": "active-enum",
+          "conceptRef": "book",
+          "propertyRef": "active",
+          "kind": "enum",
+          "description": "Synthetic boolean boundary.",
+          "values": [
+            false,
+            true
+          ]
+        }
+      ],
+      "sourceMappings": [
+        {
+          "id": "mapping",
+          "sourceRef": "source-0",
+          "conceptRef": "book",
+          "sourceLocator": "synthetic://m0/library-lending-ontology-reverse-private/source-0#record-1",
+          "sourceRevision": "synthetic-r1"
+        }
+      ],
+      "unresolvedIssues": [
+        {
+          "id": "open-question",
+          "description": "Synthetic renewal policy remains unspecified."
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "harness",
+      "id": "library-lending-harness-forward-public",
+      "version": "0.1.0",
+      "visibility": "public",
+      "provenance": {
+        "direction": "forward",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:e8c4c14655e1e099d5236b56f101f5fc5a1a8985da498cf18378f4d6df942b6d",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-harness-forward-public/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86bdfede5ebdb8b0f16ef314900efa581b4bfd110b7840e01ba61c06b24df51c",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-harness-forward-public/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "applicability": {
+        "enabled": true,
+        "domains": [
+          "library-lending"
+        ]
+      },
+      "objectives": [
+        {
+          "id": "objective",
+          "description": "Check synthetic lending observations."
+        }
+      ],
+      "inputs": [
+        {
+          "id": "maximum",
+          "type": "number"
+        },
+        {
+          "id": "minimum",
+          "type": "integer"
+        },
+        {
+          "id": "ready",
+          "type": "boolean"
+        },
+        {
+          "id": "tags",
+          "type": "array"
+        },
+        {
+          "id": "note",
+          "type": "string"
+        }
+      ],
+      "deliverables": [
+        {
+          "id": "report",
+          "description": "Synthetic observation evaluation."
+        }
+      ],
+      "rules": [
+        {
+          "id": "upper-bound",
+          "evidenceKey": "maximum",
+          "operator": "lte",
+          "expected": 10,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "lower-bound",
+          "evidenceKey": "minimum",
+          "operator": "gte",
+          "expected": 1,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "ready-check",
+          "evidenceKey": "ready",
+          "operator": "eq",
+          "expected": true,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "tag-check",
+          "evidenceKey": "tags",
+          "operator": "contains",
+          "expected": "library-lending",
+          "severity": "warning",
+          "blocking": false
+        },
+        {
+          "id": "note-check",
+          "evidenceKey": "note",
+          "operator": "contains",
+          "expected": "synthetic",
+          "severity": "info",
+          "blocking": false
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "observation-dependency",
+          "inputRefs": [
+            "maximum",
+            "minimum",
+            "ready",
+            "tags",
+            "note"
+          ]
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "harness",
+      "id": "library-lending-harness-forward-private",
+      "version": "0.1.0",
+      "visibility": "private",
+      "provenance": {
+        "direction": "forward",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:e8c4c14655e1e099d5236b56f101f5fc5a1a8985da498cf18378f4d6df942b6d",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-harness-forward-private/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86bdfede5ebdb8b0f16ef314900efa581b4bfd110b7840e01ba61c06b24df51c",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-harness-forward-private/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "applicability": {
+        "enabled": true,
+        "domains": [
+          "library-lending"
+        ]
+      },
+      "objectives": [
+        {
+          "id": "objective",
+          "description": "Check synthetic lending observations."
+        }
+      ],
+      "inputs": [
+        {
+          "id": "maximum",
+          "type": "number"
+        },
+        {
+          "id": "minimum",
+          "type": "integer"
+        },
+        {
+          "id": "ready",
+          "type": "boolean"
+        },
+        {
+          "id": "tags",
+          "type": "array"
+        },
+        {
+          "id": "note",
+          "type": "string"
+        }
+      ],
+      "deliverables": [
+        {
+          "id": "report",
+          "description": "Synthetic observation evaluation."
+        }
+      ],
+      "rules": [
+        {
+          "id": "upper-bound",
+          "evidenceKey": "maximum",
+          "operator": "lte",
+          "expected": 10,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "lower-bound",
+          "evidenceKey": "minimum",
+          "operator": "gte",
+          "expected": 1,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "ready-check",
+          "evidenceKey": "ready",
+          "operator": "eq",
+          "expected": true,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "tag-check",
+          "evidenceKey": "tags",
+          "operator": "contains",
+          "expected": "library-lending",
+          "severity": "warning",
+          "blocking": false
+        },
+        {
+          "id": "note-check",
+          "evidenceKey": "note",
+          "operator": "contains",
+          "expected": "synthetic",
+          "severity": "info",
+          "blocking": false
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "observation-dependency",
+          "inputRefs": [
+            "maximum",
+            "minimum",
+            "ready",
+            "tags",
+            "note"
+          ]
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "harness",
+      "id": "library-lending-harness-reverse-public",
+      "version": "0.1.0",
+      "visibility": "public",
+      "provenance": {
+        "direction": "reverse",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:e8c4c14655e1e099d5236b56f101f5fc5a1a8985da498cf18378f4d6df942b6d",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-harness-reverse-public/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86bdfede5ebdb8b0f16ef314900efa581b4bfd110b7840e01ba61c06b24df51c",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-harness-reverse-public/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "applicability": {
+        "enabled": true,
+        "domains": [
+          "library-lending"
+        ]
+      },
+      "objectives": [
+        {
+          "id": "objective",
+          "description": "Check synthetic lending observations."
+        }
+      ],
+      "inputs": [
+        {
+          "id": "maximum",
+          "type": "number"
+        },
+        {
+          "id": "minimum",
+          "type": "integer"
+        },
+        {
+          "id": "ready",
+          "type": "boolean"
+        },
+        {
+          "id": "tags",
+          "type": "array"
+        },
+        {
+          "id": "note",
+          "type": "string"
+        }
+      ],
+      "deliverables": [
+        {
+          "id": "report",
+          "description": "Synthetic observation evaluation."
+        }
+      ],
+      "rules": [
+        {
+          "id": "upper-bound",
+          "evidenceKey": "maximum",
+          "operator": "lte",
+          "expected": 10,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "lower-bound",
+          "evidenceKey": "minimum",
+          "operator": "gte",
+          "expected": 1,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "ready-check",
+          "evidenceKey": "ready",
+          "operator": "eq",
+          "expected": true,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "tag-check",
+          "evidenceKey": "tags",
+          "operator": "contains",
+          "expected": "library-lending",
+          "severity": "warning",
+          "blocking": false
+        },
+        {
+          "id": "note-check",
+          "evidenceKey": "note",
+          "operator": "contains",
+          "expected": "synthetic",
+          "severity": "info",
+          "blocking": false
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "observation-dependency",
+          "inputRefs": [
+            "maximum",
+            "minimum",
+            "ready",
+            "tags",
+            "note"
+          ]
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "harness",
+      "id": "library-lending-harness-reverse-private",
+      "version": "0.1.0",
+      "visibility": "private",
+      "provenance": {
+        "direction": "reverse",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:e8c4c14655e1e099d5236b56f101f5fc5a1a8985da498cf18378f4d6df942b6d",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-harness-reverse-private/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86bdfede5ebdb8b0f16ef314900efa581b4bfd110b7840e01ba61c06b24df51c",
+            "status": "synthetic",
+            "locator": "synthetic://m0/library-lending-harness-reverse-private/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "applicability": {
+        "enabled": true,
+        "domains": [
+          "library-lending"
+        ]
+      },
+      "objectives": [
+        {
+          "id": "objective",
+          "description": "Check synthetic lending observations."
+        }
+      ],
+      "inputs": [
+        {
+          "id": "maximum",
+          "type": "number"
+        },
+        {
+          "id": "minimum",
+          "type": "integer"
+        },
+        {
+          "id": "ready",
+          "type": "boolean"
+        },
+        {
+          "id": "tags",
+          "type": "array"
+        },
+        {
+          "id": "note",
+          "type": "string"
+        }
+      ],
+      "deliverables": [
+        {
+          "id": "report",
+          "description": "Synthetic observation evaluation."
+        }
+      ],
+      "rules": [
+        {
+          "id": "upper-bound",
+          "evidenceKey": "maximum",
+          "operator": "lte",
+          "expected": 10,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "lower-bound",
+          "evidenceKey": "minimum",
+          "operator": "gte",
+          "expected": 1,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "ready-check",
+          "evidenceKey": "ready",
+          "operator": "eq",
+          "expected": true,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "tag-check",
+          "evidenceKey": "tags",
+          "operator": "contains",
+          "expected": "library-lending",
+          "severity": "warning",
+          "blocking": false
+        },
+        {
+          "id": "note-check",
+          "evidenceKey": "note",
+          "operator": "contains",
+          "expected": "synthetic",
+          "severity": "info",
+          "blocking": false
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "observation-dependency",
+          "inputRefs": [
+            "maximum",
+            "minimum",
+            "ready",
+            "tags",
+            "note"
+          ]
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "ontology",
+      "id": "garden-monitoring-ontology-forward-public",
+      "version": "0.1.0",
+      "visibility": "public",
+      "provenance": {
+        "direction": "forward",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:2a762f4332f82a0d8f27ce5a2b1f650636b65fb1523bb42d3ed43fd484b0b648",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-ontology-forward-public/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86f4671b28812fed65fe2b29eeae6cbe057f9d49212d7ef81fb61df306304b70",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-ontology-forward-public/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "concepts": [
+        {
+          "id": "plot",
+          "label": "Garden plot",
+          "definition": "Synthetic fixture concept representing Garden plot; invented for this PROBE only."
+        },
+        {
+          "id": "sensor",
+          "label": "Moisture sensor",
+          "definition": "Synthetic fixture concept representing Moisture sensor; invented for this PROBE only."
+        }
+      ],
+      "properties": [
+        {
+          "id": "quantity",
+          "conceptRef": "plot",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "id": "label",
+          "conceptRef": "sensor",
+          "type": "string"
+        },
+        {
+          "id": "active",
+          "conceptRef": "plot",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "id": "directed-link",
+          "from": "sensor",
+          "to": "plot",
+          "directed": true
+        }
+      ],
+      "constraints": [
+        {
+          "id": "quantity-limit",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "descriptive-range",
+          "description": "Synthetic plant count is nonnegative."
+        },
+        {
+          "id": "quantity-numeric-range",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "numeric-range",
+          "description": "Synthetic numeric-range boundary only.",
+          "minimum": 0,
+          "maximum": 10
+        },
+        {
+          "id": "quantity-enum",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "enum",
+          "description": "Synthetic enum boundary only.",
+          "values": [
+            0,
+            2,
+            10
+          ]
+        },
+        {
+          "id": "quantity-cardinality",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "cardinality",
+          "description": "Synthetic cardinality boundary only.",
+          "minCount": 1,
+          "maxCount": 1
+        },
+        {
+          "id": "active-enum",
+          "conceptRef": "plot",
+          "propertyRef": "active",
+          "kind": "enum",
+          "description": "Synthetic boolean boundary.",
+          "values": [
+            false,
+            true
+          ]
+        }
+      ],
+      "sourceMappings": [
+        {
+          "id": "mapping",
+          "sourceRef": "source-0",
+          "conceptRef": "plot",
+          "sourceLocator": "synthetic://m0/garden-monitoring-ontology-forward-public/source-0#record-1",
+          "sourceRevision": "synthetic-r1"
+        }
+      ],
+      "unresolvedIssues": [
+        {
+          "id": "open-question",
+          "description": "Synthetic watering interval remains unspecified."
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "ontology",
+      "id": "garden-monitoring-ontology-forward-private",
+      "version": "0.1.0",
+      "visibility": "private",
+      "provenance": {
+        "direction": "forward",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:2a762f4332f82a0d8f27ce5a2b1f650636b65fb1523bb42d3ed43fd484b0b648",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-ontology-forward-private/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86f4671b28812fed65fe2b29eeae6cbe057f9d49212d7ef81fb61df306304b70",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-ontology-forward-private/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "concepts": [
+        {
+          "id": "plot",
+          "label": "Garden plot",
+          "definition": "Synthetic fixture concept representing Garden plot; invented for this PROBE only."
+        },
+        {
+          "id": "sensor",
+          "label": "Moisture sensor",
+          "definition": "Synthetic fixture concept representing Moisture sensor; invented for this PROBE only."
+        }
+      ],
+      "properties": [
+        {
+          "id": "quantity",
+          "conceptRef": "plot",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "id": "label",
+          "conceptRef": "sensor",
+          "type": "string"
+        },
+        {
+          "id": "active",
+          "conceptRef": "plot",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "id": "directed-link",
+          "from": "sensor",
+          "to": "plot",
+          "directed": true
+        }
+      ],
+      "constraints": [
+        {
+          "id": "quantity-limit",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "descriptive-range",
+          "description": "Synthetic plant count is nonnegative."
+        },
+        {
+          "id": "quantity-numeric-range",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "numeric-range",
+          "description": "Synthetic numeric-range boundary only.",
+          "minimum": 0,
+          "maximum": 10
+        },
+        {
+          "id": "quantity-enum",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "enum",
+          "description": "Synthetic enum boundary only.",
+          "values": [
+            0,
+            2,
+            10
+          ]
+        },
+        {
+          "id": "quantity-cardinality",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "cardinality",
+          "description": "Synthetic cardinality boundary only.",
+          "minCount": 1,
+          "maxCount": 1
+        },
+        {
+          "id": "active-enum",
+          "conceptRef": "plot",
+          "propertyRef": "active",
+          "kind": "enum",
+          "description": "Synthetic boolean boundary.",
+          "values": [
+            false,
+            true
+          ]
+        }
+      ],
+      "sourceMappings": [
+        {
+          "id": "mapping",
+          "sourceRef": "source-0",
+          "conceptRef": "plot",
+          "sourceLocator": "synthetic://m0/garden-monitoring-ontology-forward-private/source-0#record-1",
+          "sourceRevision": "synthetic-r1"
+        }
+      ],
+      "unresolvedIssues": [
+        {
+          "id": "open-question",
+          "description": "Synthetic watering interval remains unspecified."
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "ontology",
+      "id": "garden-monitoring-ontology-reverse-public",
+      "version": "0.1.0",
+      "visibility": "public",
+      "provenance": {
+        "direction": "reverse",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:2a762f4332f82a0d8f27ce5a2b1f650636b65fb1523bb42d3ed43fd484b0b648",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-ontology-reverse-public/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86f4671b28812fed65fe2b29eeae6cbe057f9d49212d7ef81fb61df306304b70",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-ontology-reverse-public/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "concepts": [
+        {
+          "id": "plot",
+          "label": "Garden plot",
+          "definition": "Synthetic fixture concept representing Garden plot; invented for this PROBE only."
+        },
+        {
+          "id": "sensor",
+          "label": "Moisture sensor",
+          "definition": "Synthetic fixture concept representing Moisture sensor; invented for this PROBE only."
+        }
+      ],
+      "properties": [
+        {
+          "id": "quantity",
+          "conceptRef": "plot",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "id": "label",
+          "conceptRef": "sensor",
+          "type": "string"
+        },
+        {
+          "id": "active",
+          "conceptRef": "plot",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "id": "directed-link",
+          "from": "sensor",
+          "to": "plot",
+          "directed": true
+        }
+      ],
+      "constraints": [
+        {
+          "id": "quantity-limit",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "descriptive-range",
+          "description": "Synthetic plant count is nonnegative."
+        },
+        {
+          "id": "quantity-numeric-range",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "numeric-range",
+          "description": "Synthetic numeric-range boundary only.",
+          "minimum": 0,
+          "maximum": 10
+        },
+        {
+          "id": "quantity-enum",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "enum",
+          "description": "Synthetic enum boundary only.",
+          "values": [
+            0,
+            2,
+            10
+          ]
+        },
+        {
+          "id": "quantity-cardinality",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "cardinality",
+          "description": "Synthetic cardinality boundary only.",
+          "minCount": 1,
+          "maxCount": 1
+        },
+        {
+          "id": "active-enum",
+          "conceptRef": "plot",
+          "propertyRef": "active",
+          "kind": "enum",
+          "description": "Synthetic boolean boundary.",
+          "values": [
+            false,
+            true
+          ]
+        }
+      ],
+      "sourceMappings": [
+        {
+          "id": "mapping",
+          "sourceRef": "source-0",
+          "conceptRef": "plot",
+          "sourceLocator": "synthetic://m0/garden-monitoring-ontology-reverse-public/source-0#record-1",
+          "sourceRevision": "synthetic-r1"
+        }
+      ],
+      "unresolvedIssues": [
+        {
+          "id": "open-question",
+          "description": "Synthetic watering interval remains unspecified."
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "ontology",
+      "id": "garden-monitoring-ontology-reverse-private",
+      "version": "0.1.0",
+      "visibility": "private",
+      "provenance": {
+        "direction": "reverse",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:2a762f4332f82a0d8f27ce5a2b1f650636b65fb1523bb42d3ed43fd484b0b648",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-ontology-reverse-private/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86f4671b28812fed65fe2b29eeae6cbe057f9d49212d7ef81fb61df306304b70",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-ontology-reverse-private/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "concepts": [
+        {
+          "id": "plot",
+          "label": "Garden plot",
+          "definition": "Synthetic fixture concept representing Garden plot; invented for this PROBE only."
+        },
+        {
+          "id": "sensor",
+          "label": "Moisture sensor",
+          "definition": "Synthetic fixture concept representing Moisture sensor; invented for this PROBE only."
+        }
+      ],
+      "properties": [
+        {
+          "id": "quantity",
+          "conceptRef": "plot",
+          "type": "integer",
+          "required": true
+        },
+        {
+          "id": "label",
+          "conceptRef": "sensor",
+          "type": "string"
+        },
+        {
+          "id": "active",
+          "conceptRef": "plot",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "relations": [
+        {
+          "id": "directed-link",
+          "from": "sensor",
+          "to": "plot",
+          "directed": true
+        }
+      ],
+      "constraints": [
+        {
+          "id": "quantity-limit",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "descriptive-range",
+          "description": "Synthetic plant count is nonnegative."
+        },
+        {
+          "id": "quantity-numeric-range",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "numeric-range",
+          "description": "Synthetic numeric-range boundary only.",
+          "minimum": 0,
+          "maximum": 10
+        },
+        {
+          "id": "quantity-enum",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "enum",
+          "description": "Synthetic enum boundary only.",
+          "values": [
+            0,
+            2,
+            10
+          ]
+        },
+        {
+          "id": "quantity-cardinality",
+          "conceptRef": "plot",
+          "propertyRef": "quantity",
+          "kind": "cardinality",
+          "description": "Synthetic cardinality boundary only.",
+          "minCount": 1,
+          "maxCount": 1
+        },
+        {
+          "id": "active-enum",
+          "conceptRef": "plot",
+          "propertyRef": "active",
+          "kind": "enum",
+          "description": "Synthetic boolean boundary.",
+          "values": [
+            false,
+            true
+          ]
+        }
+      ],
+      "sourceMappings": [
+        {
+          "id": "mapping",
+          "sourceRef": "source-0",
+          "conceptRef": "plot",
+          "sourceLocator": "synthetic://m0/garden-monitoring-ontology-reverse-private/source-0#record-1",
+          "sourceRevision": "synthetic-r1"
+        }
+      ],
+      "unresolvedIssues": [
+        {
+          "id": "open-question",
+          "description": "Synthetic watering interval remains unspecified."
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "harness",
+      "id": "garden-monitoring-harness-forward-public",
+      "version": "0.1.0",
+      "visibility": "public",
+      "provenance": {
+        "direction": "forward",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:2a762f4332f82a0d8f27ce5a2b1f650636b65fb1523bb42d3ed43fd484b0b648",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-harness-forward-public/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86f4671b28812fed65fe2b29eeae6cbe057f9d49212d7ef81fb61df306304b70",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-harness-forward-public/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "applicability": {
+        "enabled": true,
+        "domains": [
+          "garden-monitoring"
+        ]
+      },
+      "objectives": [
+        {
+          "id": "objective",
+          "description": "Check synthetic garden observations."
+        }
+      ],
+      "inputs": [
+        {
+          "id": "maximum",
+          "type": "number"
+        },
+        {
+          "id": "minimum",
+          "type": "integer"
+        },
+        {
+          "id": "ready",
+          "type": "boolean"
+        },
+        {
+          "id": "tags",
+          "type": "array"
+        },
+        {
+          "id": "note",
+          "type": "string"
+        }
+      ],
+      "deliverables": [
+        {
+          "id": "report",
+          "description": "Synthetic observation evaluation."
+        }
+      ],
+      "rules": [
+        {
+          "id": "upper-bound",
+          "evidenceKey": "maximum",
+          "operator": "lte",
+          "expected": 10,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "lower-bound",
+          "evidenceKey": "minimum",
+          "operator": "gte",
+          "expected": 1,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "ready-check",
+          "evidenceKey": "ready",
+          "operator": "eq",
+          "expected": true,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "tag-check",
+          "evidenceKey": "tags",
+          "operator": "contains",
+          "expected": "garden-monitoring",
+          "severity": "warning",
+          "blocking": false
+        },
+        {
+          "id": "note-check",
+          "evidenceKey": "note",
+          "operator": "contains",
+          "expected": "synthetic",
+          "severity": "info",
+          "blocking": false
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "observation-dependency",
+          "inputRefs": [
+            "maximum",
+            "minimum",
+            "ready",
+            "tags",
+            "note"
+          ]
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "harness",
+      "id": "garden-monitoring-harness-forward-private",
+      "version": "0.1.0",
+      "visibility": "private",
+      "provenance": {
+        "direction": "forward",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:2a762f4332f82a0d8f27ce5a2b1f650636b65fb1523bb42d3ed43fd484b0b648",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-harness-forward-private/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86f4671b28812fed65fe2b29eeae6cbe057f9d49212d7ef81fb61df306304b70",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-harness-forward-private/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "applicability": {
+        "enabled": true,
+        "domains": [
+          "garden-monitoring"
+        ]
+      },
+      "objectives": [
+        {
+          "id": "objective",
+          "description": "Check synthetic garden observations."
+        }
+      ],
+      "inputs": [
+        {
+          "id": "maximum",
+          "type": "number"
+        },
+        {
+          "id": "minimum",
+          "type": "integer"
+        },
+        {
+          "id": "ready",
+          "type": "boolean"
+        },
+        {
+          "id": "tags",
+          "type": "array"
+        },
+        {
+          "id": "note",
+          "type": "string"
+        }
+      ],
+      "deliverables": [
+        {
+          "id": "report",
+          "description": "Synthetic observation evaluation."
+        }
+      ],
+      "rules": [
+        {
+          "id": "upper-bound",
+          "evidenceKey": "maximum",
+          "operator": "lte",
+          "expected": 10,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "lower-bound",
+          "evidenceKey": "minimum",
+          "operator": "gte",
+          "expected": 1,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "ready-check",
+          "evidenceKey": "ready",
+          "operator": "eq",
+          "expected": true,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "tag-check",
+          "evidenceKey": "tags",
+          "operator": "contains",
+          "expected": "garden-monitoring",
+          "severity": "warning",
+          "blocking": false
+        },
+        {
+          "id": "note-check",
+          "evidenceKey": "note",
+          "operator": "contains",
+          "expected": "synthetic",
+          "severity": "info",
+          "blocking": false
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "observation-dependency",
+          "inputRefs": [
+            "maximum",
+            "minimum",
+            "ready",
+            "tags",
+            "note"
+          ]
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "harness",
+      "id": "garden-monitoring-harness-reverse-public",
+      "version": "0.1.0",
+      "visibility": "public",
+      "provenance": {
+        "direction": "reverse",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:2a762f4332f82a0d8f27ce5a2b1f650636b65fb1523bb42d3ed43fd484b0b648",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-harness-reverse-public/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86f4671b28812fed65fe2b29eeae6cbe057f9d49212d7ef81fb61df306304b70",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-harness-reverse-public/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "applicability": {
+        "enabled": true,
+        "domains": [
+          "garden-monitoring"
+        ]
+      },
+      "objectives": [
+        {
+          "id": "objective",
+          "description": "Check synthetic garden observations."
+        }
+      ],
+      "inputs": [
+        {
+          "id": "maximum",
+          "type": "number"
+        },
+        {
+          "id": "minimum",
+          "type": "integer"
+        },
+        {
+          "id": "ready",
+          "type": "boolean"
+        },
+        {
+          "id": "tags",
+          "type": "array"
+        },
+        {
+          "id": "note",
+          "type": "string"
+        }
+      ],
+      "deliverables": [
+        {
+          "id": "report",
+          "description": "Synthetic observation evaluation."
+        }
+      ],
+      "rules": [
+        {
+          "id": "upper-bound",
+          "evidenceKey": "maximum",
+          "operator": "lte",
+          "expected": 10,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "lower-bound",
+          "evidenceKey": "minimum",
+          "operator": "gte",
+          "expected": 1,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "ready-check",
+          "evidenceKey": "ready",
+          "operator": "eq",
+          "expected": true,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "tag-check",
+          "evidenceKey": "tags",
+          "operator": "contains",
+          "expected": "garden-monitoring",
+          "severity": "warning",
+          "blocking": false
+        },
+        {
+          "id": "note-check",
+          "evidenceKey": "note",
+          "operator": "contains",
+          "expected": "synthetic",
+          "severity": "info",
+          "blocking": false
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "observation-dependency",
+          "inputRefs": [
+            "maximum",
+            "minimum",
+            "ready",
+            "tags",
+            "note"
+          ]
+        }
+      ]
+    },
+    {
+      "specVersion": "v1",
+      "product": "harness",
+      "id": "garden-monitoring-harness-reverse-private",
+      "version": "0.1.0",
+      "visibility": "private",
+      "provenance": {
+        "direction": "reverse",
+        "sources": [
+          {
+            "id": "source-0",
+            "kind": "synthetic-description",
+            "digest": "sha256:2a762f4332f82a0d8f27ce5a2b1f650636b65fb1523bb42d3ed43fd484b0b648",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-harness-reverse-private/source-0#record-1",
+            "revision": "synthetic-r1"
+          },
+          {
+            "id": "source-1",
+            "kind": "synthetic-observation",
+            "digest": "sha256:86f4671b28812fed65fe2b29eeae6cbe057f9d49212d7ef81fb61df306304b70",
+            "status": "synthetic",
+            "locator": "synthetic://m0/garden-monitoring-harness-reverse-private/source-1#record-1",
+            "revision": "synthetic-r1"
+          }
+        ]
+      },
+      "extensions": [
+        {
+          "namespace": "probe.notes",
+          "version": "1.0.0",
+          "required": false,
+          "data": {
+            "description": "Purely synthetic descriptive annotation; no executable semantics."
+          }
+        }
+      ],
+      "applicability": {
+        "enabled": true,
+        "domains": [
+          "garden-monitoring"
+        ]
+      },
+      "objectives": [
+        {
+          "id": "objective",
+          "description": "Check synthetic garden observations."
+        }
+      ],
+      "inputs": [
+        {
+          "id": "maximum",
+          "type": "number"
+        },
+        {
+          "id": "minimum",
+          "type": "integer"
+        },
+        {
+          "id": "ready",
+          "type": "boolean"
+        },
+        {
+          "id": "tags",
+          "type": "array"
+        },
+        {
+          "id": "note",
+          "type": "string"
+        }
+      ],
+      "deliverables": [
+        {
+          "id": "report",
+          "description": "Synthetic observation evaluation."
+        }
+      ],
+      "rules": [
+        {
+          "id": "upper-bound",
+          "evidenceKey": "maximum",
+          "operator": "lte",
+          "expected": 10,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "lower-bound",
+          "evidenceKey": "minimum",
+          "operator": "gte",
+          "expected": 1,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "ready-check",
+          "evidenceKey": "ready",
+          "operator": "eq",
+          "expected": true,
+          "severity": "error",
+          "blocking": true
+        },
+        {
+          "id": "tag-check",
+          "evidenceKey": "tags",
+          "operator": "contains",
+          "expected": "garden-monitoring",
+          "severity": "warning",
+          "blocking": false
+        },
+        {
+          "id": "note-check",
+          "evidenceKey": "note",
+          "operator": "contains",
+          "expected": "synthetic",
+          "severity": "info",
+          "blocking": false
+        }
+      ],
+      "dependencies": [
+        {
+          "id": "observation-dependency",
+          "inputRefs": [
+            "maximum",
+            "minimum",
+            "ready",
+            "tags",
+            "note"
+          ]
+        }
+      ]
+    }
+  ],
+  "evidence": {
+    "library-lending-harness-forward-public": {
+      "maximum": 5,
+      "minimum": 2,
+      "ready": true,
+      "tags": [
+        "library-lending",
+        "synthetic"
+      ],
+      "note": "purely synthetic evidence"
+    },
+    "library-lending-harness-forward-private": {
+      "maximum": 5,
+      "minimum": 2,
+      "ready": true,
+      "tags": [
+        "library-lending",
+        "synthetic"
+      ],
+      "note": "purely synthetic evidence"
+    },
+    "library-lending-harness-reverse-public": {
+      "maximum": 5,
+      "minimum": 2,
+      "ready": true,
+      "tags": [
+        "library-lending",
+        "synthetic"
+      ],
+      "note": "purely synthetic evidence"
+    },
+    "library-lending-harness-reverse-private": {
+      "maximum": 5,
+      "minimum": 2,
+      "ready": true,
+      "tags": [
+        "library-lending",
+        "synthetic"
+      ],
+      "note": "purely synthetic evidence"
+    },
+    "garden-monitoring-harness-forward-public": {
+      "maximum": 5,
+      "minimum": 2,
+      "ready": true,
+      "tags": [
+        "garden-monitoring",
+        "synthetic"
+      ],
+      "note": "purely synthetic evidence"
+    },
+    "garden-monitoring-harness-forward-private": {
+      "maximum": 5,
+      "minimum": 2,
+      "ready": true,
+      "tags": [
+        "garden-monitoring",
+        "synthetic"
+      ],
+      "note": "purely synthetic evidence"
+    },
+    "garden-monitoring-harness-reverse-public": {
+      "maximum": 5,
+      "minimum": 2,
+      "ready": true,
+      "tags": [
+        "garden-monitoring",
+        "synthetic"
+      ],
+      "note": "purely synthetic evidence"
+    },
+    "garden-monitoring-harness-reverse-private": {
+      "maximum": 5,
+      "minimum": 2,
+      "ready": true,
+      "tags": [
+        "garden-monitoring",
+        "synthetic"
+      ],
+      "note": "purely synthetic evidence"
+    }
+  },
+  "instances": {
+    "library-lending-ontology-forward-public": {
+      "entities": [
+        {
+          "id": "entity-0",
+          "conceptRef": "book",
+          "properties": {
+            "quantity": [
+              0
+            ],
+            "active": [
+              false
+            ]
+          }
+        },
+        {
+          "id": "entity-1",
+          "conceptRef": "borrower",
+          "properties": {
+            "label": [
+              "synthetic"
+            ]
+          }
+        }
+      ],
+      "relations": [
+        {
+          "id": "relation-instance",
+          "relationRef": "directed-link",
+          "from": "entity-1",
+          "to": "entity-0"
+        }
+      ]
+    },
+    "library-lending-ontology-forward-private": {
+      "entities": [
+        {
+          "id": "entity-0",
+          "conceptRef": "book",
+          "properties": {
+            "quantity": [
+              0
+            ],
+            "active": [
+              false
+            ]
+          }
+        },
+        {
+          "id": "entity-1",
+          "conceptRef": "borrower",
+          "properties": {
+            "label": [
+              "synthetic"
+            ]
+          }
+        }
+      ],
+      "relations": [
+        {
+          "id": "relation-instance",
+          "relationRef": "directed-link",
+          "from": "entity-1",
+          "to": "entity-0"
+        }
+      ]
+    },
+    "library-lending-ontology-reverse-public": {
+      "entities": [
+        {
+          "id": "entity-0",
+          "conceptRef": "book",
+          "properties": {
+            "quantity": [
+              0
+            ],
+            "active": [
+              false
+            ]
+          }
+        },
+        {
+          "id": "entity-1",
+          "conceptRef": "borrower",
+          "properties": {
+            "label": [
+              "synthetic"
+            ]
+          }
+        }
+      ],
+      "relations": [
+        {
+          "id": "relation-instance",
+          "relationRef": "directed-link",
+          "from": "entity-1",
+          "to": "entity-0"
+        }
+      ]
+    },
+    "library-lending-ontology-reverse-private": {
+      "entities": [
+        {
+          "id": "entity-0",
+          "conceptRef": "book",
+          "properties": {
+            "quantity": [
+              0
+            ],
+            "active": [
+              false
+            ]
+          }
+        },
+        {
+          "id": "entity-1",
+          "conceptRef": "borrower",
+          "properties": {
+            "label": [
+              "synthetic"
+            ]
+          }
+        }
+      ],
+      "relations": [
+        {
+          "id": "relation-instance",
+          "relationRef": "directed-link",
+          "from": "entity-1",
+          "to": "entity-0"
+        }
+      ]
+    },
+    "garden-monitoring-ontology-forward-public": {
+      "entities": [
+        {
+          "id": "entity-0",
+          "conceptRef": "plot",
+          "properties": {
+            "quantity": [
+              0
+            ],
+            "active": [
+              false
+            ]
+          }
+        },
+        {
+          "id": "entity-1",
+          "conceptRef": "sensor",
+          "properties": {
+            "label": [
+              "synthetic"
+            ]
+          }
+        }
+      ],
+      "relations": [
+        {
+          "id": "relation-instance",
+          "relationRef": "directed-link",
+          "from": "entity-1",
+          "to": "entity-0"
+        }
+      ]
+    },
+    "garden-monitoring-ontology-forward-private": {
+      "entities": [
+        {
+          "id": "entity-0",
+          "conceptRef": "plot",
+          "properties": {
+            "quantity": [
+              0
+            ],
+            "active": [
+              false
+            ]
+          }
+        },
+        {
+          "id": "entity-1",
+          "conceptRef": "sensor",
+          "properties": {
+            "label": [
+              "synthetic"
+            ]
+          }
+        }
+      ],
+      "relations": [
+        {
+          "id": "relation-instance",
+          "relationRef": "directed-link",
+          "from": "entity-1",
+          "to": "entity-0"
+        }
+      ]
+    },
+    "garden-monitoring-ontology-reverse-public": {
+      "entities": [
+        {
+          "id": "entity-0",
+          "conceptRef": "plot",
+          "properties": {
+            "quantity": [
+              0
+            ],
+            "active": [
+              false
+            ]
+          }
+        },
+        {
+          "id": "entity-1",
+          "conceptRef": "sensor",
+          "properties": {
+            "label": [
+              "synthetic"
+            ]
+          }
+        }
+      ],
+      "relations": [
+        {
+          "id": "relation-instance",
+          "relationRef": "directed-link",
+          "from": "entity-1",
+          "to": "entity-0"
+        }
+      ]
+    },
+    "garden-monitoring-ontology-reverse-private": {
+      "entities": [
+        {
+          "id": "entity-0",
+          "conceptRef": "plot",
+          "properties": {
+            "quantity": [
+              0
+            ],
+            "active": [
+              false
+            ]
+          }
+        },
+        {
+          "id": "entity-1",
+          "conceptRef": "sensor",
+          "properties": {
+            "label": [
+              "synthetic"
+            ]
+          }
+        }
+      ],
+      "relations": [
+        {
+          "id": "relation-instance",
+          "relationRef": "directed-link",
+          "from": "entity-1",
+          "to": "entity-0"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "schema": "evopilot-m0-technical-evidence/v1",
+  "technicalStatus": "PASS",
+  "scope": "M0 feasibility only",
+  "releaseAuthorized": false,
+  "remoteActionsAuthorized": false,
+  "fullProductE2EComplete": false,
+  "productOperations": 0,
+  "evidence": [
+    { "kind": "prototype-checks", "passed": 1247 },
+    { "kind": "independent-typed-provenance-tests", "passed": 10 },
+    { "kind": "extracted-catalog-tests", "passed": 49 },
+    { "kind": "real-codex-conversations", "count": 2, "distinctMcpProcesses": true, "inspectionActive": false, "explicitActivationActive": true },
+    { "kind": "shared-local-service", "checks": ["concurrency", "receipt-readback", "restart", "detached-starter-exit"] },
+    { "kind": "portable-contract", "consumers": 2, "originalSourceReadsDeniedByNodePermissions": true },
+    { "kind": "offline-three-submodule-clone", "verified": true }
+  ],
+  "acceptance": {
+    "E01": "PENDING", "E02": "PENDING", "E03": "PENDING", "E04": "PENDING",
+    "E05": "PENDING", "E06": "PENDING", "E07": "PENDING", "E08": "PENDING",
+    "E09": "PENDING", "E10": "PENDING", "E11": "PENDING", "E12": "PENDING",
+    "E13": "PENDING", "E14": "PENDING", "E15": "PENDING", "E16": "PENDING",
+    "E17": "PENDING", "E18": "PENDING", "E19": "PENDING"
+  }
+}
