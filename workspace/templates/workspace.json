@@ -1,0 +1,6 @@
+{
+  "schema": "evopilot-workspace/v1",
+  "id": "illustrative-only",
+  "canonicalRoot": "<product-resolved-external-canonical-root>",
+  "ownerUid": "<product-resolved-os-uid>"
+}

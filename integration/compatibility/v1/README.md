@@ -8,4 +8,6 @@ Source statuses are design-proposed/design-confirmed/source-observed/inferred/ru
 
 Extensions are additive data. local.notes@1.0.0 validates annotation text and optional language; unknown optional extensions remain NOT_EVALUATED, unknown required ones are rejected. No caller-supplied arbitrary support registry or executable extension exists.
 
-Independent children receive identical generated vendor bytes. The operator runs npm run build separately, then tests; sync-contract --check verifies pins without refreshing them. This source edit does not generate vendors. Products import only their own copies and own source. E01–E19, persistent operations and release authority remain pending.
+Independent children receive identical generated vendor bytes. In a source checkout, the operator runs `npm run build` separately, then tests; `node scripts/sync-contract.mjs --check` verifies pins without refreshing them. Products import only their own copies and own source.
+
+Informational implementation status: the independent products provide persistent storage and retained operation receipts. Current E01–E19 and product/Host acceptance status is controlled by the separate exact candidate-bound report and its real evidence; see [report verification](../../../docs/testing.md). Without that report, no acceptance claim is made. This status text is not the normative manifest pin and grants no release authority.

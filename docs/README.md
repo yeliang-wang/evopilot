@@ -1,16 +1,17 @@
 # EvoPilot documentation
 
-EvoPilot 0.1.0 separates execution ownership (Runtime), declarative evaluation (Harness), and semantic modeling (Ontology). Current source delivers pure APIs and explicitly scoped compatibility libraries. The unified Expert/plugin user experience is under construction.
+Choose the path matching your task:
 
-- [Capabilities and current limits](capabilities.md)
-- [Developer validation and local packaging](development.md)
-- [Three-product boundaries](architecture/0001-three-product-boundary.md)
-- [Local process topology](architecture/0002-local-process-topology.md)
-- [Native source authoring and assembly](architecture/0003-local-authoring.md)
-- [Approved roadmap](roadmap/ROADMAP.md)
-- [Runtime API](../projects/evopilot-runtime/README.md)
-- [Harness specification](../projects/evopilot-harness/specifications/v1/README.md)
-- [Ontology specification](../projects/evopilot-ontology/specifications/v1/README.md)
+The portable app includes this index and the public documentation. Product links open source checkouts here and packed `node_modules/@evopilot-next/` documentation after assembly. Development and test commands, including source paths shown in API verification sections, require a populated source checkout; source tests and assembly tools are not shipped. Installation, recovery, report verification and the roadmap checker document the commands available in the portable app.
 
-Local source tests and artifact manifests provide technical evidence. They do not establish M1 completion, full acceptance or release authority.
+| Audience | Start here | Next reference |
+| --- | --- | --- |
+| New Preview user | [Installation](installation.md), then [first journey](first-journey.md) | [Capabilities and limits](capabilities.md) |
+| Project onboarding and model authoring | [First journey](first-journey.md) | [Ontology v1 definitions](../projects/evopilot-ontology/specifications/v1/README.md), [schemas](../projects/evopilot-ontology/schemas/), [examples and templates](../projects/evopilot-ontology/examples/) |
+| Quality author | [Harness v1 definitions](../projects/evopilot-harness/specifications/v1/README.md) | [Harness examples](../projects/evopilot-harness/examples/), [service API](../projects/evopilot-harness/docs/service.md) |
+| Developer | [Development](development.md), [testing](testing.md) | [Composition](product-composition.md), [Runtime API](../projects/evopilot-runtime/docs/service.md), [Ontology API](../projects/evopilot-ontology/docs/service.md) |
+| Operator | [Local service](local-service.md), [recovery](recovery.md) | [Migration](migration.md), [current roadmap](roadmap.md) |
 
+Architecture covers [product boundaries](architecture/0001-three-product-boundary.md), [process topology](architecture/0002-local-process-topology.md), and [native authoring](architecture/0003-local-authoring.md). The [authoritative roadmap](roadmap/ROADMAP.md) remains separate from the current implementation summary.
+
+Local services and the explicit Preview entry are implemented. Technical tests, package assembly and passive installation do not establish final Host acceptance or production readiness.

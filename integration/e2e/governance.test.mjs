@@ -11,7 +11,7 @@ const paths = ['roadmap.json', 'implementation-lock.json', 'decisions/local-impl
 const [roadmapRaw, ...values] = await Promise.all(paths.map(path => readFile(new URL(`governance/${path}`, root), 'utf8')));
 const [lock, decision, acceptance, m0] = values.map(value => JSON.parse(value));
 const baseline = { roadmapRaw, lock, decision, acceptance, m0 };
-const expected = { status: 'PASSED', localAcceptance: 'NOT_PASSED', authority: 'LOCAL_IMPLEMENTATION_ONLY' };
+const expected = { status: 'PASSED', validation: 'INITIAL_M1_BASELINE', localAcceptance: 'NOT_EVALUATED', authority: 'LOCAL_IMPLEMENTATION_ONLY' };
 const localIntent = 'local-v0.1/M1: foundation implementation';
 function changeRoadmap(input, change) {
   const roadmap = JSON.parse(input.roadmapRaw);

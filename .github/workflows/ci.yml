@@ -16,9 +16,11 @@ jobs:
           node-version: '24.14.0'
       - name: Install child dependencies
         run: |
-          for product in harness ontology; do
+          for product in runtime harness ontology; do
             npm --prefix "projects/evopilot-$product" ci --ignore-scripts --no-audit --no-fund
           done
+      - name: Bind local public packages
+        run: npm install --ignore-scripts --no-save --package-lock=false --no-audit --no-fund ./projects/evopilot-runtime ./projects/evopilot-harness ./projects/evopilot-ontology
       - run: npm run build
       - run: npm run check
       - run: npm test

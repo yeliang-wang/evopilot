@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "evopilot_v01_preview": {
+      "command": "${nodeExecutable}",
+      "args": [
+        "${serverPath}",
+        "--config",
+        "${configPath}"
+      ]
+    }
+  }
+}

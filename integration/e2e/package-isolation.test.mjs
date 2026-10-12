@@ -46,25 +46,32 @@ test('child source graph contains only own source and vendor modules', async () 
       const imports = staticSpecifiers(source);
       for (const specifier of imports) {
         if (isBuiltin(specifier)) continue;
-        if (['projects/evopilot-harness', 'projects/evopilot-ontology'].includes(child) && file === resolve(srcRoot, 'asset-sources.mjs') && specifier === 'yaml') continue;
-        if (child === 'projects/evopilot-ontology' && file.startsWith(resolve(srcRoot, 'compat') + sep) && ['ajv/dist/2020.js', 'yaml'].includes(specifier)) continue;
+        const sites = {
+          'projects/evopilot-harness': { 'asset-sources.mjs': ['yaml'], 'import-operations.mjs': ['yaml'] },
+          'projects/evopilot-ontology': {
+            'asset-sources.mjs': ['yaml'], 'import-operations.mjs': ['yaml'],
+            'compat/v4/classification/taxonomy.mjs': ['yaml', 'ajv/dist/2020.js'],
+            'compat/v4/semantics/catalog-supply.mjs': ['yaml'],
+            'compat/v3/schema.mjs': ['ajv/dist/2020.js'], 'compat/v3/utils.mjs': ['yaml'],
+          },
+        };
+        if (sites[child]?.[name.split(sep).join('/')]?.includes(specifier)) {
+          const pkg = JSON.parse(await readFile(resolve(ROOT, child, 'package.json'), 'utf8'));
+          assert(Object.hasOwn(pkg.dependencies ?? {}, specifier.split('/')[0]), 'Own declared dependency required');
+          continue;
+        }
         assert(specifier.startsWith('.'), `External product import: ${specifier}`);
         const target = resolve(dirname(file), specifier);
         assert(target.startsWith(srcRoot + sep) || target === resolve(ROOT, child, 'vendor/compatibility/v1/reference.mjs'), `Cross-package import: ${specifier}`);
       }
       assert.doesNotMatch(source, /EVOPILOT_HARNESS_HOME|defaultHarnessHome|\.evopilot-harness|\bprocess\s*(?:\.\s*(?:env|cwd|chdir)|\[)|\bglobalThis\s*(?:\.|\[)|\/Users\/|\/home\//);
-      const pidFiles = new Set(['compat/v4/semantics/catalog-store.mjs']);
-      const neutralFiles = new Set(['compat/v4/constants.mjs', 'compat/v4/semantics/ontology-grounding.mjs']);
       const localName = name.split(sep).join('/');
-      const ontology = child === 'projects/evopilot-ontology';
-      const checked = ontology && pidFiles.has(localName)
-        ? source.replace(/\bprocess\.pid\b/g, '').replace(/\bprocess\.kill\(owner\.pid, 0\)/g, '')
-        : source;
-      if (ontology && (pidFiles.has(localName) || neutralFiles.has(localName))) {
-        assert.doesNotMatch(checked, /\bprocess\s*(?:\.|\[|\()/);
-      } else {
-        assert.doesNotMatch(checked, /\bprocess\s*(?:\.|\[|\()/);
-      }
+      let checked = source;
+      if (localName === 'state.mjs') checked = checked.replace(/\bprocess\.getuid(?![\w$])/g, '');
+      if (localName === 'cli.mjs') checked = checked.replace(/\bprocess\.(?:stdin|stdout|argv|exitCode)(?![\w$])/g, '');
+      if (child === 'projects/evopilot-ontology' && localName === 'compat/v4/semantics/catalog-store.mjs')
+        checked = checked.replace(/\bprocess\.pid(?![\w$])/g, '').replace(/\bprocess\.kill\(owner\.pid, 0\)/g, '');
+      assert.doesNotMatch(checked, /\bprocess\s*(?:\.|\[|\()/);
       assert.doesNotMatch(source, /\bimport\s*\(|\brequire\s*\(|\bm0\b|\bPROBE\b|\beval\s*\(/);
     }
     const vendor = await readFile(resolve(ROOT, child, 'vendor/compatibility/v1/reference.mjs'), 'utf8');
@@ -80,8 +87,13 @@ test('actual child imports work with parent reads denied by Node permissions', (
     const source = `
       import assert from 'node:assert/strict';
       const api = await import(${JSON.stringify(pathToFileURL(resolve(childRoot, 'src/index.mjs')).href)});
-      assert.equal(api.capabilities().businessOperationsReady, false);
+      assert.equal(api.capabilities().businessOperationsReady, true);
       assert.equal(api.capabilities().authority, false);
+      const serviceAPI = await import('@evopilot-next/' + api.PRODUCT + '/service');
+      const factory = serviceAPI['create' + api.PRODUCT[0].toUpperCase() + api.PRODUCT.slice(1) + 'Service'];
+      const service = factory({ workspaceRoot: '/uninitialized-package-discovery', workspaceId: 'discovery' });
+      assert.equal(service.capabilities().authority, false);
+      service.close();
       if (['harness', 'ontology'].includes(api.PRODUCT)) {
         const sources = await import('@evopilot-next/' + api.PRODUCT + '/sources');
         assert.deepEqual(Object.keys(sources).sort(), ['listPublicSources', 'readPublicSource']);
@@ -132,7 +144,7 @@ test('actual child imports work with parent reads denied by Node permissions', (
           assert.equal(api.evaluateHarness(asset, { id: 'evidence', version: '0.1.0', source: { locator: 'synthetic:evidence', revision: 'r1', digest: 'sha256:' + 'b'.repeat(64) }, values: {} }).status, 'INDETERMINATE');
           assert.equal(api.evaluateHarness(asset, {}).status, 'ERROR');
         } else assert.equal(api.validateInstances(asset, { entities: [], relations: [] }).valid, true);
-        assert.deepEqual(Object.keys(api).sort(), ['PRODUCT', 'VERSION', 'capabilities', 'buildDelivery', 'verifyDelivery', ...(api.PRODUCT === 'harness' ? ['inspectOntologyReference', 'validateHarness', 'evaluateHarness'] : ['inspectArtifactReference', 'validateOntology', 'validateInstances'])].sort());
+        assert.deepEqual(Object.keys(api).sort(), ['PRODUCT', 'VERSION', 'capabilities', 'buildDelivery', 'verifyDelivery', ...(api.PRODUCT === 'harness' ? ['inspectOntologyReference', 'validateHarness', 'evaluateHarness', 'createHarnessSemanticRequirements', 'evaluateSemanticCompatibility'] : ['inspectArtifactReference', 'validateOntology', 'validateInstances'])].sort());
       }
     `;
     const result = spawnSync(process.execPath, ['--permission', `--allow-fs-read=${childRoot}`, '--input-type=module', '-e', source], {

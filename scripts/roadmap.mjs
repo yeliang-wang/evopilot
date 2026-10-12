@@ -65,7 +65,7 @@ export function validateGovernance({ roadmapRaw, lock, decision, acceptance, m0,
     const classification = classifyIntent(intent);
     requireFact(classification === 'LOCAL_CANDIDATE', `${classification}: intent is not an authorized local intent`);
   }
-  return { status: intent === undefined ? 'PASSED' : 'ALIGNED', localAcceptance: 'NOT_PASSED', authority: AUTHORITY };
+  return { status: intent === undefined ? 'PASSED' : 'ALIGNED', validation: 'INITIAL_M1_BASELINE', localAcceptance: 'NOT_EVALUATED', authority: AUTHORITY };
 }
 
 export async function checkRoadmap(intent) {

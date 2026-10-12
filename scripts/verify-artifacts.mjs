@@ -7,6 +7,8 @@ import { pathToFileURL } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { ROOT, CHILDREN, assertNoSymlinks } from './sync-contract.mjs';
 
+import { validateProductMetadata } from './check.mjs';
+
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const PIN = 'df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a';
 export function safePath(name) {
@@ -66,18 +68,8 @@ export function validateEntries(entries, expected, owner) {
     assert.equal(hash(bytes), hash(expected.get(path)), 'Package source digest mismatch: ' + path);
   }
   const pkg = JSON.parse(entries.get('package.json'));
-  assert.equal(pkg.name, '@evopilot-next/' + owner); assert.equal(pkg.version, '0.1.0');
-  assert.equal(pkg.type, 'module');
-  assert.equal(pkg.license, 'Apache-2.0'); assert.equal(pkg.private, true);
-  assert.deepEqual(pkg.engines, { node: '>=24.14.0' });
-  assert.equal(pkg.bin, undefined);
-  for (const field of ['devDependencies', 'peerDependencies', 'optionalDependencies']) assert.deepEqual(pkg[field] ?? {}, {});
-  assert.deepEqual(pkg.files, owner === 'runtime' ? ['src', 'vendor', 'README.md', 'docs', 'LICENSE', 'NOTICE']
-    : owner === 'harness' ? ['src', 'vendor', 'README.md', 'specifications', 'examples', 'assets', 'docs', 'provenance', 'LICENSE', 'NOTICE']
-    : ['src', 'vendor', 'README.md', 'specifications', 'examples', 'schemas', 'docs', 'provenance', 'LICENSE', 'NOTICE', 'assets']);
-  assert.deepEqual(pkg.exports, owner === 'runtime' ? './src/index.mjs'
-    : owner === 'harness' ? { '.': './src/index.mjs', './sources': './src/asset-sources.mjs' }
-    : { '.': './src/index.mjs', './compat': './src/compat/index.mjs', './migration': './src/migration.mjs', './sources': './src/asset-sources.mjs' });
+  validateProductMetadata(pkg, owner);
+  if (pkg.bin) assert(entries.has('src/cli.mjs'), 'Missing own CLI');
   const manifest = JSON.parse(entries.get('vendor/compatibility/v1/manifest.json'));
   assert.equal(manifest.module, 'reference.mjs'); assert.equal(manifest.contractRevision, '1.0.0');
   assert.equal(manifest.sha256, PIN); assert.equal(hash(entries.get('vendor/compatibility/v1/reference.mjs')), PIN);
@@ -204,8 +196,24 @@ async function smokePackage(owner, name) {
   const { default: assert } = await import('node:assert/strict');
   const api = await import(name);
   assert.equal(api.PRODUCT, owner); assert.equal(api.VERSION, '0.1.0');
-  assert.equal(api.capabilities().authority, false);
-  assert.equal(api.capabilities().businessOperationsReady, false);
+  const serviceAPI = await import(name + '/service');
+  const factory = serviceAPI['create' + owner[0].toUpperCase() + owner.slice(1) + 'Service'];
+  const service = factory({ workspaceRoot: '/uninitialized-artifact-workspace', workspaceId: 'artifact-discovery' });
+  const serviceCapabilities = service.capabilities(), publicCapabilities = api.capabilities();
+  assert.equal(serviceCapabilities.authority, false);
+  assert.equal(serviceCapabilities.product, owner);
+  assert.match(serviceCapabilities.stage, /^M2(?:_|$)/);
+  assert(Array.isArray(serviceCapabilities.operations));
+  const required = owner === 'runtime' ? ['project.create', 'goal.create', 'run.prepare', 'run.decide', 'run.inspect']
+    : ['asset.put', 'asset.review', 'asset.decide', 'asset.publish', 'asset.inspect', ...(owner === 'harness' ? ['asset.evaluate', 'evaluation.inspect'] : [])];
+  for (const operation of required) assert(serviceCapabilities.operations.includes(operation), 'Missing owning operation: ' + operation);
+  if (owner === 'runtime') assert.deepEqual(serviceCapabilities.asyncOperations, ['dispatch', 'reconcile']);
+  service.close();
+  assert.equal(publicCapabilities.authority, false);
+  assert.equal(publicCapabilities.product, owner);
+  assert.equal(publicCapabilities.version, '0.1.0');
+  assert.match(publicCapabilities.implementationStage, /^M2(?:_|$)/);
+  assert.equal(typeof publicCapabilities.businessOperationsReady, 'boolean');
   const ref = product => ({ product, id: 'artifact', version: '0.1.0', specVersion: 'v1', digest: 'sha256:' + 'a'.repeat(64), visibility: 'private' });
   const result = owner === 'runtime'
     ? api.inspectPinnedInputs({ontology: ref('ontology'), observedOntology: ref('ontology'), harness: ref('harness'), observedHarness: ref('harness')})
@@ -229,6 +237,7 @@ async function smokePackage(owner, name) {
     assert.equal(compat.validation.validateDocument(foundation).valid, true);
     assert.equal(migration.inspectLegacySource(foundation, {sourceLocator: 'synthetic://artifact', sourceRevision: 'r1', sourceVisibility: 'public'}).valid, true);
   }
+  console.log(JSON.stringify({ public: publicCapabilities, service: serviceCapabilities, authority: false }));
 }
 export async function verifyArtifacts(out) {
   assert.equal(process.versions.node, '24.14.0', 'Use Node 24.14.0');
@@ -272,7 +281,7 @@ export async function verifyArtifacts(out) {
         await writeFile(target, content, { flag: 'wx' });
       }
       const record = { product: owner, name: pkg.name, version: pkg.version, packageSHA256: hash(bytes),
-        tarball: relative(out, tarball), exports: pkg.exports, contractSHA256: PIN,
+        tarball: relative(out, tarball), exports: pkg.exports, checkpoint: validateProductMetadata(pkg, owner), contractSHA256: PIN,
         dependencyLock: lockBytes ? { source: relative(ROOT, lockSource), file: relative(out, resolve(destination, 'dependency-lock.json')), sha256: lockSHA256 } : null,
         dependencies: retained?.inventory ?? {}, smoke: 'PENDING' };
       report.packages.push(record); await save();
@@ -286,7 +295,8 @@ export async function verifyArtifacts(out) {
         await verifyInstalledDependencies(extracted, retained);
         assert.equal(hash(await readFile(lockSource)), lockSHA256, 'Source lock drift');
       }
-      run(process.execPath, ['--permission', '--allow-fs-read=' + extracted, '--input-type=module', '-e', smoke(owner, pkg)], extracted);
+      const capabilityEvidence = run(process.execPath, ['--permission', '--allow-fs-read=' + extracted, '--input-type=module', '-e', smoke(owner, pkg)], extracted);
+      record.capabilities = JSON.parse(capabilityEvidence);
       record.smoke = 'PASSED'; await save();
     }
     return report;

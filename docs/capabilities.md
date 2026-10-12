@@ -1,14 +1,16 @@
 # Current capabilities
 
-All three independently versioned products target 0.1.0 and expose `PRODUCT`, `VERSION` and `capabilities()`. Business operation readiness is false. References bind exact product, identity, version, spec version, digest and visibility; they grant no authority.
+The three 0.1.0 products expose public APIs, owned persistent services and CLI entry points. The parent composes public packages and supplies a shared local connection, MCP adapter and explicit Preview Expert. Read active capabilities and scoped owner state before constructing requests.
 
-| Owner | Implemented source APIs | Pending product operations |
+| Owner | Implemented behavior | Explicit limits |
 | --- | --- | --- |
-| [Runtime](../projects/evopilot-runtime/README.md) | Exact pinned Ontology/Harness input inspection | Projects, goals, execution, credentials, decisions, audit and workspace services |
-| [Harness](../projects/evopilot-harness/README.md) | v1 validation, supplied-evidence evaluation, deterministic delivery verification, 101 preserved public sources | Persistent lifecycle, material closure, publication transport and service integration |
-| [Ontology](../projects/evopilot-ontology/README.md) | v1 models/instances/deliveries, legacy compatibility calculations, explicit derivation bridge, four preserved public sources | Product-owned lifecycle and workspace import, operational migration and services |
+| [Runtime](../projects/evopilot-runtime/docs/service.md) | Project/goal creation, immutable six-field pins, preparation and review, human decisions, dispatch, retained receipts and reconciliation | No automatic approval, latest selection, CAS refresh or redispatch after uncertainty; no claim of all old Runtime features |
+| [Harness](../projects/evopilot-harness/docs/service.md) | Native v1 lifecycle, dependency closure, review/decision/publication, supplied-evidence quality evaluation and retained receipts; preserved source imports | Semantic consumption is read-only; missing rules/reports yield INDETERMINATE with Warning, not PASS |
+| [Ontology](../projects/evopilot-ontology/docs/service.md) | Native v1 models, instances and lifecycle; structured legacy bridge; retained producer, query, Catalog and seven classification operations | Native source reverse modeling is Host-authored; classification and foreign Catalog dependencies require trusted callbacks |
+| Parent Preview | Bare-package composition, authenticated shared daemon, independent chat activation, bounded MCP and passive guides | Default daemon has no classification callbacks; discovery does not activate or confer authority |
 
-Historical compatibility libraries include explicit caller-selected filesystem operations where documented; they are not a running service. Preserved sources retain licenses, provenance and historical identities. Reading an archive never executes its recipes or imports user data. Native v1 validation does not relabel historical artifacts automatically.
+Classification needs SDK-supplied `resolveClassificationSource`, `classificationAdvisor` and `classificationModel`; the model binding is exactly `{providerId, modelId, revision, timeoutMs}`. Foreign Catalog resolution requires `resolveLegacyHarness`. These are trusted code prerequisites, not request JSON or automatic Host LLM/credential inheritance. Unconfigured dependent operations are unavailable by default. Normal native modeling, quality evaluation and Runtime handoff do not require those callbacks. See [composition contracts](product-composition.md).
 
-CLI, MCP, workspace/services, unified Expert/plugin integration and operational migration are under construction. Ordinary users ultimately use the unified Expert/plugin; administrators use machine scripts for setup and diagnostics. There is no final plugin installation flow yet. Stable 1.0, production readiness, M1 completion and E01–E19 acceptance are not asserted.
+Current Harness Catalog and retained Ontology Catalog formats are distinct. Historical labels, source recognition and provider configuration grant no native approval or publication rights. Public visibility does not authorize uploading, and private material cannot feed public consumers.
 
+[Test evidence](testing.md) includes actual product services and package assembly. Current candidate/Host verification, E01–E19 and operational migration status must be read from the separate exact candidate-bound local report and its real receipts. Without that report, no acceptance claim is made; discovery, static metadata and M0 feasibility do not establish acceptance.

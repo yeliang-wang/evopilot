@@ -5,9 +5,59 @@ import { gzipSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { ROOT } from '../../scripts/sync-contract.mjs';
+import { validateProductMetadata } from '../../scripts/check.mjs';
 import { expectedEntries, validateEntries, archiveEntries, validateDependencyLock, validateInstalledInventory } from '../../scripts/verify-artifacts.mjs';
 
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+
+// Synthetic package boundaries exercise guards without unpopulated children.
+test('M2 metadata: exact service exports, own bins and Runtime provenance remain bounded', async () => {
+  const canonical = await readFile(resolve(ROOT, 'integration/compatibility/v1/reference.mjs'));
+  for (const owner of ['runtime', 'harness', 'ontology']) {
+    const pkg = {
+      name: '@evopilot-next/' + owner, version: '0.1.0', private: true, type: 'module', license: 'Apache-2.0', engines: { node: '>=24.14.0' },
+      scripts: { build: 'node scripts/check.mjs', check: 'node scripts/check.mjs', test: 'node --test tests/e2e/*.test.mjs' },
+      files: owner === 'runtime' ? ['src', 'vendor', 'README.md', 'docs', 'LICENSE', 'NOTICE', 'provenance']
+        : owner === 'harness' ? ['src', 'vendor', 'README.md', 'specifications', 'examples', 'assets', 'docs', 'provenance', 'LICENSE', 'NOTICE']
+        : ['src', 'vendor', 'README.md', 'specifications', 'examples', 'schemas', 'docs', 'provenance', 'LICENSE', 'NOTICE', 'assets'],
+      exports: { '.': './src/index.mjs', ...(owner === 'ontology' ? { './compat': './src/compat/index.mjs', './migration': './src/migration.mjs' } : {}), ...(owner !== 'runtime' ? { './sources': './src/asset-sources.mjs' } : {}), './service': './src/service.mjs' },
+      bin: { ['evopilot-next-' + owner]: 'src/cli.mjs' },
+      dependencies: owner === 'runtime' ? {} : owner === 'harness' ? { yaml: '2.9.0' } : { ajv: '8.20.0', yaml: '2.9.0' },
+    };
+    const entriesFor = manifest => new Map([
+      ...Object.values(manifest.exports).map(path => [path.slice(2), Buffer.from('// synthetic public module')]),
+      ['package.json', Buffer.from(JSON.stringify(manifest))],
+      ['src/index.mjs', Buffer.from(`export const PRODUCT = '${owner}';\nexport const VERSION = '0.1.0';`)],
+      ['src/cli.mjs', Buffer.from('// synthetic own CLI')],
+      ['vendor/compatibility/v1/reference.mjs', canonical],
+      ['vendor/compatibility/v1/manifest.json', Buffer.from(JSON.stringify({ module: 'reference.mjs', contractRevision: '1.0.0', sha256: sha256(canonical) }))],
+    ]);
+    const valid = entriesFor(pkg);
+    validateEntries(valid, valid, owner);
+    assert.equal(validateProductMetadata(pkg, owner).cli, 'PRESENT');
+    const missingBin = { ...pkg }; delete missingBin.bin;
+    assert.throws(() => validateProductMetadata(missingBin, owner, 'M4'));
+    const withBin = { ...pkg, bin: { ['evopilot-next-' + owner]: 'src/cli.mjs' } };
+    assert.equal(validateProductMetadata(withBin, owner).cli, 'PRESENT');
+    for (const mutate of [
+      p => { p.bin = { foreign: 'src/cli.mjs' }; },
+      p => { p.bin = { ['evopilot-next-' + owner]: '../foreign/cli.mjs' }; },
+      p => { p.bin = { ['evopilot-next-' + owner]: 'src/service.mjs' }; },
+      p => { p.exports['./service'] = '../foreign/service.mjs'; },
+      p => { p.exports['./service'] = './src/index.mjs'; },
+      p => { p.exports['./foreign'] = './src/foreign.mjs'; },
+      p => { p.dependencies.foreign = '1.0.0'; },
+      p => { p.scripts.test = 'node --test tests/e2e/reference.test.mjs'; },
+      p => { p.files = p.files.filter(path => path !== 'provenance'); },
+      ...(owner !== 'ontology' ? [p => { delete p.bin; }] : []),
+    ]) {
+      const changed = structuredClone(pkg); mutate(changed);
+      assert.throws(() => validateProductMetadata(changed, owner));
+      const entries = entriesFor(changed);
+      assert.throws(() => validateEntries(entries, entries, owner));
+    }
+  }
+});
 test('real own locks match packed identities and reject identity, direct and transitive changes', async () => {
   for (const owner of ['harness', 'ontology']) {
     const root = resolve(ROOT, 'projects/evopilot-' + owner);
