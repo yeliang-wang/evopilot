@@ -1,0 +1,59 @@
+{
+  "schema": "evopilot-delivery-repair/v1",
+  "version": "0.1.1",
+  "edition": "Preview",
+  "kind": "informational-projection",
+  "authority": false,
+  "objective": "Repair delivery and user documentation for the composed EvoPilot 0.1.1 Preview while preserving product ownership and historical baselines.",
+  "scope": [
+    {
+      "id": "documentation",
+      "fix": "Public user documentation, navigation and four concrete first journeys."
+    },
+    {
+      "id": "product-typescript",
+      "fix": "Strict TypeScript product sources, compiled JavaScript and declarations."
+    },
+    {
+      "id": "parent-core",
+      "fix": "Strict TypeScript parent core and runtime build integration."
+    },
+    {
+      "id": "packaging",
+      "fix": "Portable compiled packages, offline installed documentation and Expert references."
+    },
+    {
+      "id": "delivery-evidence",
+      "fix": "Candidate-bound verification and four Preview release delivery evidence."
+    }
+  ],
+  "exclusions": [
+    "Old source and retired Suite restoration",
+    "Private workspace or daily installation/data replacement",
+    "WorkBuddy integration",
+    "v1 specification changes",
+    "Immutable M0–M4 baselines and historical proof changes",
+    "v1.0 scope or GA claims"
+  ],
+  "authorization": {
+    "basis": "User-approved repair scope",
+    "releaseCondition": "Four Preview releases conditionally authorized after full acceptance; no redundant decision required.",
+    "projectionGrantsAuthority": false
+  },
+  "acceptance": {
+    "status": "PENDING",
+    "requirements": [
+      "Exact candidate identities across parent and all three products",
+      "Strict TypeScript checks, runtime builds and relevant tests",
+      "Package identity, compiled entry point and declaration checks",
+      "Portable bundle integrity and clean isolated installation",
+      "Installed documentation links and Expert reference readback",
+      "Real Codex Host journeys, per-chat activation and shared-daemon behavior",
+      "Exact retained receipts, lost-response reconciliation and bounded recovery"
+    ],
+    "verification": "External candidate-bound evidence; this projection is neither a signature nor an acceptance certificate."
+  },
+  "delivery": {
+    "afterAcceptance": "Publish the four conditionally authorized Preview releases and retain external artifact and publication proof."
+  }
+}

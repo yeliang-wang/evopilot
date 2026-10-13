@@ -6,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { ROOT } from '../../scripts/sync-contract.mjs';
 import { validateProductMetadata } from '../../scripts/check.mjs';
-import { expectedEntries, validateEntries, archiveEntries, validateDependencyLock, validateInstalledInventory } from '../../scripts/verify-artifacts.mjs';
+import { expectedEntries, validateEntries, archiveEntries, validateDependencyLock, validateInstalledInventory, safePath } from '../../scripts/verify-artifacts.mjs';
 
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 
@@ -14,30 +14,25 @@ const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
 test('M2 metadata: exact service exports, own bins and Runtime provenance remain bounded', async () => {
   const canonical = await readFile(resolve(ROOT, 'integration/compatibility/v1/reference.mjs'));
   for (const owner of ['runtime', 'harness', 'ontology']) {
-    const pkg = {
-      name: '@evopilot-next/' + owner, version: '0.1.0', private: true, type: 'module', license: 'Apache-2.0', engines: { node: '>=24.14.0' },
-      scripts: { build: 'node scripts/check.mjs', check: 'node scripts/check.mjs', test: 'node --test tests/e2e/*.test.mjs' },
-      files: owner === 'runtime' ? ['src', 'vendor', 'README.md', 'docs', 'LICENSE', 'NOTICE', 'provenance']
-        : owner === 'harness' ? ['src', 'vendor', 'README.md', 'specifications', 'examples', 'assets', 'docs', 'provenance', 'LICENSE', 'NOTICE']
-        : ['src', 'vendor', 'README.md', 'specifications', 'examples', 'schemas', 'docs', 'provenance', 'LICENSE', 'NOTICE', 'assets'],
-      exports: { '.': './src/index.mjs', ...(owner === 'ontology' ? { './compat': './src/compat/index.mjs', './migration': './src/migration.mjs' } : {}), ...(owner !== 'runtime' ? { './sources': './src/asset-sources.mjs' } : {}), './service': './src/service.mjs' },
-      bin: { ['evopilot-next-' + owner]: 'src/cli.mjs' },
-      dependencies: owner === 'runtime' ? {} : owner === 'harness' ? { yaml: '2.9.0' } : { ajv: '8.20.0', yaml: '2.9.0' },
-    };
+    const pkg = structuredClone({"runtime":{"name":"@evopilot-next/runtime","version":"0.1.1","private":true,"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","docs","LICENSE","NOTICE","provenance"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"license":"Apache-2.0","bin":{"evopilot-next-runtime":"dist/cli.js"},"devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}},"harness":{"name":"@evopilot-next/harness","version":"0.1.1","private":true,"bin":{"evopilot-next-harness":"dist/cli.js"},"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","specifications","examples","assets","docs","provenance","LICENSE","NOTICE"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./sources":{"types":"./dist/asset-sources.d.ts","import":"./dist/asset-sources.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"dependencies":{"yaml":"2.9.0"},"license":"Apache-2.0","devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}},"ontology":{"name":"@evopilot-next/ontology","version":"0.1.1","private":true,"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","specifications","examples","schemas","docs","provenance","LICENSE","NOTICE","assets"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./compat":{"types":"./dist/compat/index.d.mts","import":"./dist/compat/index.mjs"},"./migration":{"types":"./dist/migration.d.ts","import":"./dist/migration.js"},"./sources":{"types":"./dist/asset-sources.d.ts","import":"./dist/asset-sources.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"tsc --noEmit && node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"dependencies":{"ajv":"8.20.0","yaml":"2.9.0"},"license":"Apache-2.0","bin":{"evopilot-next-ontology":"dist/cli.js"},"devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}}}[owner]);
     const entriesFor = manifest => new Map([
-      ...Object.values(manifest.exports).map(path => [path.slice(2), Buffer.from('// synthetic public module')]),
+      ...Object.values(manifest.exports).flatMap(entry => typeof entry === 'string' ? [entry] : Object.values(entry)).map(path => [path.slice(2), Buffer.from('// synthetic public module')]),
       ['package.json', Buffer.from(JSON.stringify(manifest))],
-      ['src/index.mjs', Buffer.from(`export const PRODUCT = '${owner}';\nexport const VERSION = '0.1.0';`)],
-      ['src/cli.mjs', Buffer.from('// synthetic own CLI')],
+      ['src/index.ts', Buffer.from(`export const PRODUCT = '${owner}';\nexport const VERSION = '0.1.1';`)],
+      ['src/cli.ts', Buffer.from('// synthetic own CLI')],
+      ['dist/cli.js', Buffer.from('// synthetic compiled CLI')],
       ['vendor/compatibility/v1/reference.mjs', canonical],
       ['vendor/compatibility/v1/manifest.json', Buffer.from(JSON.stringify({ module: 'reference.mjs', contractRevision: '1.0.0', sha256: sha256(canonical) }))],
     ]);
     const valid = entriesFor(pkg);
+    const noTypes = new Map(valid); noTypes.delete('dist/index.d.ts');
+    assert.throws(() => validateEntries(noTypes, noTypes, owner), /declaration/);
     validateEntries(valid, valid, owner);
     assert.equal(validateProductMetadata(pkg, owner).cli, 'PRESENT');
+    assert.equal(validateProductMetadata({ ...pkg, files: [...pkg.files].reverse() }, owner).cli, 'PRESENT');
     const missingBin = { ...pkg }; delete missingBin.bin;
     assert.throws(() => validateProductMetadata(missingBin, owner, 'M4'));
-    const withBin = { ...pkg, bin: { ['evopilot-next-' + owner]: 'src/cli.mjs' } };
+    const withBin = { ...pkg, bin: { ['evopilot-next-' + owner]: 'dist/cli.js' } };
     assert.equal(validateProductMetadata(withBin, owner).cli, 'PRESENT');
     for (const mutate of [
       p => { p.bin = { foreign: 'src/cli.mjs' }; },
@@ -46,9 +41,12 @@ test('M2 metadata: exact service exports, own bins and Runtime provenance remain
       p => { p.exports['./service'] = '../foreign/service.mjs'; },
       p => { p.exports['./service'] = './src/index.mjs'; },
       p => { p.exports['./foreign'] = './src/foreign.mjs'; },
-      p => { p.dependencies.foreign = '1.0.0'; },
+      p => { p.dependencies = { ...p.dependencies, foreign: '1.0.0' }; },
       p => { p.scripts.test = 'node --test tests/e2e/reference.test.mjs'; },
       p => { p.files = p.files.filter(path => path !== 'provenance'); },
+      ...['CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md'].map(doc => p => { p.files = p.files.filter(path => path !== doc); }),
+      p => { p.files.push('arbitrary.txt'); },
+      p => { p.files.push('README.md'); },
       ...(owner !== 'ontology' ? [p => { delete p.bin; }] : []),
     ]) {
       const changed = structuredClone(pkg); mutate(changed);
@@ -58,6 +56,57 @@ test('M2 metadata: exact service exports, own bins and Runtime provenance remain
     }
   }
 });
+test('dependency lock requires dev flags for direct and transitive development-only nodes', () => {
+  const pkg = {
+    name: '@evopilot-next/harness', version: '0.1.1',
+    dependencies: { yaml: '2.9.0' },
+    devDependencies: { typescript: '5.9.3', '@types/node': '24.19.2' },
+  };
+  const record = (name, version, extra = {}) => ({
+    version, resolved: 'https://registry.npmjs.org/' + name + '/-/fixture.tgz',
+    integrity: 'sha512-' + 'A'.repeat(86) + '==', ...extra,
+  });
+  const lock = {
+    name: pkg.name, version: pkg.version, lockfileVersion: 3,
+    packages: {
+      '': structuredClone(pkg),
+      'node_modules/yaml': record('yaml', '2.9.0'),
+      'node_modules/typescript': record('typescript', '5.9.3', { dev: true }),
+      'node_modules/@types/node': record('@types/node', '24.19.2', {
+        dev: true, dependencies: { 'undici-types': '~7.18.0' },
+      }),
+      'node_modules/undici-types': record('undici-types', '7.18.2', { dev: true }),
+    },
+  };
+  const bytes = Buffer.from(JSON.stringify(lock)), digest = sha256(bytes);
+  const retained = validateDependencyLock(bytes, pkg, digest);
+  assert.deepEqual(Object.keys(retained.inventory), ['node_modules/yaml']);
+  for (const name of ['typescript', '@types/node', 'undici-types']) {
+    for (const flag of [undefined, false]) {
+      const changed = structuredClone(lock), path = 'node_modules/' + name;
+      if (flag === undefined) delete changed.packages[path].dev;
+      else changed.packages[path].dev = flag;
+      const changedBytes = Buffer.from(JSON.stringify(changed));
+      assert.throws(() => validateDependencyLock(changedBytes, pkg, digest), /digest mismatch/);
+      assert.throws(() => validateDependencyLock(changedBytes, pkg, sha256(changedBytes)), {
+        code: 'ERR_ASSERTION', actual: flag, expected: true,
+        message: /^Development-only dependency must be marked dev:/,
+      });
+    }
+  }
+  const productionDev = structuredClone(lock);
+  productionDev.packages['node_modules/yaml'].dev = true;
+  const productionBytes = Buffer.from(JSON.stringify(productionDev));
+  assert.throws(() => validateDependencyLock(productionBytes, pkg, sha256(productionBytes)), /Production dependency marked dev/);
+  // A node reached through both closures remains a production dependency.
+  const shared = structuredClone(lock);
+  shared.packages['node_modules/yaml'].dependencies = { 'undici-types': '7.18.2' };
+  delete shared.packages['node_modules/undici-types'].dev;
+  const sharedBytes = Buffer.from(JSON.stringify(shared));
+  assert.deepEqual(Object.keys(validateDependencyLock(sharedBytes, pkg, sha256(sharedBytes)).inventory),
+    ['node_modules/undici-types', 'node_modules/yaml']);
+});
+
 test('real own locks match packed identities and reject identity, direct and transitive changes', async () => {
   for (const owner of ['harness', 'ontology']) {
     const root = resolve(ROOT, 'projects/evopilot-' + owner);
@@ -82,6 +131,8 @@ test('real own locks match packed identities and reject identity, direct and tra
       lock => { lock.version = '9.0.0'; },
       lock => { lock.packages[''].name = '@foreign/package'; },
       lock => { lock.packages[''].dependencies.yaml = '0.0.0'; },
+      lock => { lock.packages['node_modules/yaml'].dev = true; },
+      lock => { lock.packages[''].devDependencies.typescript = '0.0.0'; },
       lock => { lock.packages['node_modules/yaml'].version = '0.0.0'; },
       lock => { lock.packages['node_modules/yaml'].integrity = 'missing'; },
       lock => { lock.packages['node_modules/yaml'].resolved = 'file:/foreign'; },
@@ -98,6 +149,7 @@ test('real own locks match packed identities and reject identity, direct and tra
     }
     const installed = { lockfileVersion: 3, packages: structuredClone(retained.lock.packages) };
     delete installed.packages[''];
+    for (const name of Object.keys(installed.packages)) if (!Object.hasOwn(retained.inventory, name)) delete installed.packages[name];
     validateInstalledInventory(installed, retained.inventory);
     for (const path of Object.keys(installed.packages)) {
       for (const field of ['version', 'resolved', 'integrity']) {
@@ -112,6 +164,23 @@ test('real own locks match packed identities and reject identity, direct and tra
   }
 });
 
+function assertReadmeTarget(entries, link) {
+  if (/^(?:https?:|#)/.test(link)) return;
+  const target = decodeURIComponent(link.split('#')[0]).replace(/^\.\//, '');
+  const directory = target.endsWith('/');
+  const name = safePath('package/' + (directory ? target.slice(0, -1) : target));
+  assert((!directory && entries.has(name)) || [...entries.keys()].some(file => file.startsWith(name + '/')),
+    'Broken packaged README link: ' + link);
+}
+
+test('README directory links require shipped descendants inside the exact safe directory', () => {
+  const entries = new Map([['provenance/source.json', Buffer.from('{}')], ['docs/guide.md', Buffer.from('# Guide')]]);
+  for (const link of ['provenance/', './provenance/#sources', 'docs/guide.md#guide', '#heading']) assertReadmeTarget(entries, link);
+  for (const link of ['missing/', 'docs/missing.md#heading', 'proven/', 'docs/guide.md/', '../provenance/', '/provenance/', '%2e%2e/provenance/', 'docs/../provenance/', 'provenance//']) {
+    assert.throws(() => assertReadmeTarget(entries, link));
+  }
+});
+
 test('consumer README links resolve in each actual package file inventory', async () => {
   for (const owner of ['runtime', 'harness', 'ontology']) {
     const entries = await expectedEntries(resolve(ROOT, 'projects/evopilot-' + owner));
@@ -120,8 +189,7 @@ test('consumer README links resolve in each actual package file inventory', asyn
     ]));
     validateEntries(archiveEntries(artifact), entries, owner);
     for (const [, link] of entries.get('README.md').toString().matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
-      if (/^(?:https?:|#)/.test(link)) continue;
-      assert(entries.has(link.split('#')[0]), owner + ' broken packaged README link: ' + link);
+      assertReadmeTarget(entries, link);
     }
   }
 });
@@ -131,7 +199,7 @@ test('consumer README links resolve in each actual package file inventory', asyn
 test('artifact verification rejects missing, foreign and corrupted real product bytes', async () => {
   const expected = await expectedEntries(resolve(ROOT, 'projects/evopilot-runtime'));
   assert.equal(validateEntries(expected, expected, 'runtime').name, '@evopilot-next/runtime');
-  for (const path of ['src/index.mjs', 'vendor/compatibility/v1/reference.mjs', 'vendor/compatibility/v1/manifest.json']) {
+  for (const path of ['src/index.ts', 'vendor/compatibility/v1/reference.mjs', 'vendor/compatibility/v1/manifest.json']) {
     const corrupt = new Map(expected); corrupt.set(path, Buffer.from('corrupted'));
     assert.throws(() => validateEntries(corrupt, expected, 'runtime'), /digest mismatch/);
     const missing = new Map(expected); missing.delete(path);

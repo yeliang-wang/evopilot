@@ -8,8 +8,8 @@ import { pathToFileURL, fileURLToPath } from 'node:url';
 import http from 'node:http';
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { validateAction } from '../connection/client.mjs';
-import { canonicalJSON, installationIdentity } from '../connection/config.mjs';
+import { validateAction } from '../../dist/integration/connection/client.js';
+import { canonicalJSON, installationIdentity } from '../../dist/integration/connection/config.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -109,21 +109,21 @@ export async function assembly(realProducts = false) {
   const install = path.join(base, 'install');
   fs.mkdirSync(install);
   const copy = relative => { fs.mkdirSync(path.dirname(path.join(install, relative)), { recursive: true }); fs.copyFileSync(path.join(root, relative), path.join(install, relative)); };
-  const files = ['package.json', 'integration/composition.mjs', 'integration/compatibility/v1/reference.mjs', 'integration/compatibility/v1/manifest.json', ...['config', 'control', 'client', 'daemon'].map(n => `integration/connection/${n}.mjs`)];
+  const files = ['package.json', 'dist/integration/types.js', 'dist/integration/composition.js', 'dist/integration/compatibility/v1/reference.mjs', 'dist/integration/compatibility/v1/manifest.json', ...['config', 'control', 'client', 'daemon'].map(n => `dist/integration/connection/${n}.js`)];
   files.forEach(copy);
   if (realProducts) for (const owner of ['runtime', 'harness', 'ontology']) {
     const name = '@evopilot-next/' + owner;
     const source = packageRoot(fileURLToPath(import.meta.resolve(name)), name);
-    copyInstalledPackage(source, path.join(install, 'node_modules', name), name, '0.1.0');
+    copyInstalledPackage(source, path.join(install, 'node_modules', name), name, '0.1.1');
   }
   else for (const owner of ['runtime', 'harness', 'ontology']) {
     const dir = path.join(install, 'node_modules/@evopilot-next', owner);
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: '@evopilot-next/' + owner, version: '0.1.0', type: 'module', exports: { '.': './index.mjs', './service': './index.mjs' } }));
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: '@evopilot-next/' + owner, version: '0.1.1', type: 'module', exports: { '.': './index.mjs', './service': './index.mjs' } }));
     const factory = 'create' + owner[0].toUpperCase() + owner.slice(1) + 'Service';
     fs.writeFileSync(path.join(dir, 'index.mjs'), `
       import fs from 'node:fs';
-      export const PRODUCT = '${owner}', VERSION = '0.1.0';
+      export const PRODUCT = '${owner}', VERSION = '0.1.1';
       export const verifyDelivery = () => ({valid:true});
       export const validateInstances = () => ({valid:true});
       export function ${factory}(options) {
@@ -143,15 +143,15 @@ export async function assembly(realProducts = false) {
     }
   }
   walk('node_modules');
-  const config = { schema: 'evopilot-connection-config/v1', version: '0.1.0', protocol: 'evopilot-connection/v1', installationRoot: install,
+  const config = { schema: 'evopilot-connection-config/v1', version: '0.1.1', protocol: 'evopilot-connection/v1', installationRoot: install,
     installationId: 'test-install', workspaceRoot: path.join(base, 'workspace'), workspaceId: 'test-workspace',
-    components: { runtime: '0.1.0', harness: '0.1.0', ontology: '0.1.0' },
+    components: { runtime: '0.1.1', harness: '0.1.1', ontology: '0.1.1' },
     manifest: files.sort().map(relative => ({ path: relative, sha256: createHash('sha256').update(fs.readFileSync(path.join(install, relative))).digest('hex') })) };
   const configPath = path.join(base, 'config.json');
   fs.writeFileSync(configPath, JSON.stringify(config), { mode: 0o600 });
-  const api = await import(pathToFileURL(path.join(install, 'integration/connection/client.mjs')));
-  const configuration = await import(pathToFileURL(path.join(install, 'integration/connection/config.mjs')));
-  const control = await import(pathToFileURL(path.join(install, 'integration/connection/control.mjs')));
+  const api = await import(pathToFileURL(path.join(install, 'dist/integration/connection/client.js')));
+  const configuration = await import(pathToFileURL(path.join(install, 'dist/integration/connection/config.js')));
+  const control = await import(pathToFileURL(path.join(install, 'dist/integration/connection/control.js')));
   const cleanup = async () => {
     try { await api.stopConnection(configPath); } catch {}
     // Test cleanup only removes its own fixture after exact authenticated stop.
@@ -164,8 +164,8 @@ export async function assembly(realProducts = false) {
 
 export function clientProcess(f, expression) {
   return new Promise((resolve, reject) => {
-    const source = `import * as api from ${JSON.stringify(pathToFileURL(path.join(f.install, 'integration/connection/client.mjs')).href)}; const config = ${JSON.stringify(f.configPath)}; console.log(JSON.stringify(await (${expression})));`;
-    const child = spawn(process.execPath, ['--input-type=module', '-e', source], { env: { LANG: 'C' }, stdio: ['ignore', 'pipe', 'pipe'] });
+    const source = `import * as api from ${JSON.stringify(pathToFileURL(path.join(f.install, 'dist/integration/connection/client.js')).href)}; const config = ${JSON.stringify(f.configPath)}; console.log(JSON.stringify(await (${expression})));`;
+    const child = spawn(process.execPath, ['--input-type=module', '-e', source], { env: { LANG: 'C', OPENSSL_CONF: '/dev/null' }, stdio: ['ignore', 'pipe', 'pipe'] });
     let output = '', errors = '';
     const timer = setTimeout(() => { child.kill(); reject(Error('Fixture client timeout')); }, 15000);
     child.stdout.on('data', b => { output += b; }); child.stderr.on('data', b => { errors += b; });
@@ -250,9 +250,9 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
       f.control.writeRecord(c, { ...record, pid: child.pid, state: 'starting', port: 0 }, true);
       assert.equal(f.api.recoverStaleConnection(f.configPath).recovered, true);
       assert.equal(fs.existsSync(f.config.workspaceRoot), true);
-      fs.appendFileSync(path.join(f.install, 'integration/composition.mjs'), '\n// drift');
+      fs.appendFileSync(path.join(f.install, 'dist/integration/composition.js'), '\n// drift');
       assert.throws(() => f.configuration.loadConfiguration(f.configPath), { code: 'INSTALLATION_DIGEST' });
-      fs.copyFileSync(path.join(root, 'integration/composition.mjs'), path.join(f.install, 'integration/composition.mjs'));
+      fs.copyFileSync(path.join(root, 'dist/integration/composition.js'), path.join(f.install, 'dist/integration/composition.js'));
     } finally { await f.cleanup(); }
   });
 }

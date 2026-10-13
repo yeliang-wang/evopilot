@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadInstalledProducts } from '../composition.mjs';
+import { loadInstalledProducts } from '../../dist/integration/composition.js';
 import { assembly, clientProcess, rawRequest } from './connection.test.mjs';
 
 test('installed public products: passive discovery, Runtime activation, durable receipt after lost response and restart', { timeout: 45000 }, async () => {

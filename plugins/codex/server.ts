@@ -1,18 +1,20 @@
 #!/usr/bin/env node
+import { errorCode } from '../../integration/types.js';
+import type { Schema, MCPMessage, ActionPayload } from '../../integration/types.js';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { inspectConnection, activateConnection, callConnection } from '../../integration/connection/client.mjs';
-import { getGuide, scenarios } from '../../expert/core/guide.mjs';
+import { inspectConnection, activateConnection, callConnection } from '../../integration/connection/client.js';
+import { getGuide, scenarios } from '../../expert/core/guide.js';
 
 const INPUT = 1048576, OUTPUT = 8388608;
 const prefix = 'evopilot_v01_';
-const object = (properties = {}, required = Object.keys(properties)) => ({ type: 'object', properties, required, additionalProperties: false });
+const object = (properties: Record<string, Schema> = {}, required = Object.keys(properties)): Schema => ({ type: 'object', properties, required, additionalProperties: false });
 const slug = { type: 'string', pattern: '^[a-z0-9][a-z0-9-]{0,63}$' };
 const scope = object({ visibility: { enum: ['public', 'private'] }, projectId: slug });
 const revision = { type: 'integer', minimum: 0 };
 const envelope = object({ operation: { type: 'string', minLength: 1, maxLength: 128 }, scope, input: { type: 'object' }, requestId: slug, expectedRevision: revision }, ['operation', 'scope', 'input']);
 const args = object({ scope, id: slug, requestId: slug, expectedRevision: revision });
-const definitions = {
+const definitions: Record<string, [string, Schema]> = {
   inspect: ['Inspect this session and passive authenticated connection identity.', object()],
   activate: ['Explicitly activate this session; start or reuse the verified shared connection.', object()],
   deactivate: ['Deactivate only this session; keep the shared connection running.', object()],
@@ -23,20 +25,20 @@ const definitions = {
   capabilities: ['Read actual composition capabilities after session activation.', object()],
 };
 const tools = Object.entries(definitions).map(([name, [description, inputSchema]]) => ({ name: prefix + name, description, inputSchema }));
-function validate(value, schema, depth = 0) {
+function validate(value: unknown, schema: Schema, depth = 0): void {
   if (depth > 64) throw Error('SCHEMA');
   if (schema.enum && !schema.enum.includes(value)) throw Error('SCHEMA');
   if (schema.type === 'object') {
     if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error('SCHEMA');
     if (schema.properties) {
-      if (schema.required.some(k => !Object.hasOwn(value, k)) || Object.keys(value).some(k => !Object.hasOwn(schema.properties, k))) throw Error('SCHEMA');
-      for (const k of Object.keys(value)) validate(value[k], schema.properties[k], depth + 1);
+      if (schema.required!.some(k => !Object.hasOwn(value, k)) || Object.keys(value).some(k => !Object.hasOwn(schema.properties!, k))) throw Error('SCHEMA');
+      for (const k of Object.keys(value)) validate((value as Record<string, unknown>)[k], schema.properties[k], depth + 1);
     }
   }
   if (schema.type === 'string' && (typeof value !== 'string' || value.length < (schema.minLength ?? 0) || value.length > (schema.maxLength ?? Infinity) || (schema.pattern && !new RegExp(schema.pattern).test(value)))) throw Error('SCHEMA');
-  if (schema.type === 'integer' && (!Number.isSafeInteger(value) || value < schema.minimum)) throw Error('SCHEMA');
+  if (schema.type === 'integer' && (typeof value !== 'number' || !Number.isSafeInteger(value) || value < (schema.minimum ?? -Infinity))) throw Error('SCHEMA');
 }
-function finiteJSON(value, depth = 0) {
+function finiteJSON(value: unknown, depth = 0) {
   if (depth > 64 || (typeof value === 'number' && !Number.isFinite(value))) throw Error('SCHEMA');
   if (value && typeof value === 'object') for (const v of Object.values(value)) finiteJSON(v, depth + 1);
 }
@@ -47,29 +49,29 @@ if (argv.length !== 2 || argv[0] !== '--config' || !path.isAbsolute(argv[1]) || 
 } else {
   await serve(argv[1]);
 }
-async function serve(configPath) {
+async function serve(configPath: string) {
   const sessionId = randomUUID();
-  let initialized = false, sessionActive = false, connection = null;
+  let initialized = false, sessionActive = false, connection: Awaited<ReturnType<typeof inspectConnection>> | null = null;
   const identity = () => ({ namespace: 'evopilot_v01_preview', sessionId, pid: process.pid, sessionActive, connection, authority: false });
-  const receipt = (result, error) => {
-    const data = { ...identity(), ...(error ? { error } : { result }) };
+  const receipt = (result: unknown, error?: { code: string; correlation: unknown }) => {
+    const data: ReturnType<typeof identity> & { result?: unknown; error?: { code: string; correlation: unknown }; correlation?: unknown } = { ...identity(), ...(error ? { error } : { result }) };
     return { content: [{ type: 'text', text: JSON.stringify(data) }], structuredContent: data, ...(error ? { isError: true } : {}) };
   };
-  const rpcError = (id, code, message) => ({ jsonrpc: '2.0', id, error: { code, message } });
-  async function write(value) {
+  const rpcError = (id: unknown, code: number, message: string) => ({ jsonrpc: '2.0', id, error: { code, message } });
+  async function write(value: { jsonrpc: string; id?: unknown; result?: unknown; error?: unknown }) {
     let bytes;
     try { bytes = JSON.stringify(value); } catch { bytes = ''; }
     if (!bytes || Buffer.byteLength(bytes) > OUTPUT) {
-      const data = receipt(undefined, { code: 'LIMIT', correlation: value.result?.structuredContent?.correlation ?? null });
+      const data = receipt(undefined, { code: 'LIMIT', correlation: (value.result as ReturnType<typeof receipt> | undefined)?.structuredContent?.correlation ?? null });
       bytes = JSON.stringify({ jsonrpc: '2.0', id: value.id ?? null, result: data });
     }
-    await new Promise((resolve, reject) => process.stdout.write(bytes + '\n', error => error ? reject(error) : resolve()));
+    await new Promise<void>((resolve, reject) => process.stdout.write(bytes + '\n', error => error ? reject(error) : resolve()));
   }
-  async function handle(line) {
-    let r;
+  async function handle(line: Uint8Array) {
+    let r: MCPMessage;
     try { r = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(line)); }
     catch { await write(rpcError(null, -32700, 'Parse error')); return; }
-    const validId = id => typeof id === 'string' || (typeof id === 'number' && Number.isFinite(id));
+    const validId = (id: unknown) => typeof id === 'string' || (typeof id === 'number' && Number.isFinite(id));
     const hasId = r && Object.hasOwn(r, 'id');
     const notification = r && !Array.isArray(r) && r.jsonrpc === '2.0' && typeof r.method === 'string' && !hasId;
     if (!r || Array.isArray(r) || typeof r !== 'object' || r.jsonrpc !== '2.0' || typeof r.method !== 'string' || (hasId && !validId(r.id)) || Object.keys(r).some(k => !['jsonrpc','id','method','params'].includes(k))) {
@@ -78,7 +80,7 @@ async function serve(configPath) {
     }
     // Notifications never trigger tools or initialization, and never receive a response.
     if (notification) return;
-    const error = (code, message) => write(rpcError(r.id, code, message));
+    const error = (code: number, message: string) => write(rpcError(r.id, code, message));
     try { finiteJSON(r); } catch { await error(-32602, 'Invalid params'); return; }
     if (!initialized && !['initialize', 'ping'].includes(r.method)) { await error(-32002, 'Not initialized'); return; }
     // Metadata is bounded transport data, never business input or response data.
@@ -87,27 +89,29 @@ async function serve(configPath) {
     if (params && Object.hasOwn(params, '_meta')) {
       const meta = params._meta;
       if (!meta || typeof meta !== 'object' || Array.isArray(meta) ||
-          (Object.hasOwn(meta, 'progressToken') && typeof meta.progressToken !== 'string' && typeof meta.progressToken !== 'number')) {
+          (Object.hasOwn(meta, 'progressToken') && typeof (meta as Record<string, unknown>).progressToken !== 'string' && typeof (meta as Record<string, unknown>).progressToken !== 'number')) {
         await error(-32602, 'Invalid params'); return;
       }
     }
     let result;
     if (r.method === 'initialize') {
       const p = r.params;
-      if (initialized || !p || Object.keys(p).some(k => !['protocolVersion', 'capabilities', 'clientInfo', '_meta'].includes(k)) || typeof p.protocolVersion !== 'string' || !p.capabilities || typeof p.capabilities !== 'object' || Array.isArray(p.capabilities) || !p.clientInfo || typeof p.clientInfo.name !== 'string' || typeof p.clientInfo.version !== 'string') { await error(-32602, 'Invalid params'); return; }
+      if (initialized || !p || Object.keys(p).some(k => !['protocolVersion', 'capabilities', 'clientInfo', '_meta'].includes(k)) || typeof p.protocolVersion !== 'string' || !p.capabilities || typeof p.capabilities !== 'object' || Array.isArray(p.capabilities) || !p.clientInfo || typeof (p.clientInfo as Record<string, unknown>).name !== 'string' || typeof (p.clientInfo as Record<string, unknown>).version !== 'string') { await error(-32602, 'Invalid params'); return; }
       initialized = true;
-      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.1.0' } };
+      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.1.1' } };
     } else if (r.method === 'ping' || r.method === 'tools/list') {
       if (params && (Object.keys(params).some(k => !['_meta', ...(r.method === 'tools/list' ? ['cursor'] : [])].includes(k)) || (Object.hasOwn(params, 'cursor') && (typeof params.cursor !== 'string' || params.cursor !== '')))) { await error(-32602, 'Invalid params'); return; }
       result = r.method === 'ping' ? {} : { tools };
     } else if (r.method === 'tools/call') {
       const p = r.params, def = tools.find(t => t.name === p?.name);
       if (!def || !p || Object.keys(p).some(k => !['name', 'arguments', '_meta'].includes(k))) { await error(-32602, 'Invalid params'); return; }
-      const input = p.arguments ?? {};
-      try { validate(input, def.inputSchema); } catch { await error(-32602, 'Invalid params'); return; }
-      const action = p.name.slice(prefix.length);
+      const rawInput = p.arguments ?? {};
+      try { validate(rawInput, def.inputSchema); } catch { await error(-32602, 'Invalid params'); return; }
+      // The tool-specific schema above checks each forwarded field before use.
+      const input = rawInput as ActionPayload & { scenario: string };
+      const action = (p.name as string).slice(prefix.length);
       const source = input.envelope ?? input.args;
-      const correlation = source ? Object.fromEntries(['requestId', 'scope', 'expectedRevision', 'operation', 'id'].filter(k => Object.hasOwn(source, k)).map(k => [k, source[k]])) : null;
+      const correlation = source ? Object.fromEntries(['requestId', 'scope', 'expectedRevision', 'operation', 'id'].filter(k => Object.hasOwn(source, k)).map(k => [k, (source as unknown as Record<string, unknown>)[k]])) : null;
       try {
         let value;
         if (action === 'guide') value = getGuide(input.scenario);
@@ -128,13 +132,13 @@ async function serve(configPath) {
         result.structuredContent.correlation = correlation;
         result.content[0].text = JSON.stringify(result.structuredContent);
       } catch (e) {
-        result = receipt(undefined, { code: safeCodes.has(e.code) ? e.code : 'CONNECTION_ERROR', correlation });
+        result = receipt(undefined, { code: safeCodes.has(errorCode(e) ?? '') ? errorCode(e)! : 'CONNECTION_ERROR', correlation });
       }
     } else { await error(-32601, 'Method not found'); return; }
     await write({ jsonrpc: '2.0', id: r.id, result });
   }
   // One in-flight request, no application queue. Backpressure bounds both streams.
-  let parts = [], size = 0, dropping = false;
+  let parts: Buffer[] = [], size = 0, dropping = false;
   try {
     for await (const chunk of process.stdin) {
       let start = 0;

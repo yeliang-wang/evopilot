@@ -7,3 +7,11 @@ EvoPilot Harness
 Copyright 2026 The EvoPilot Harness Authors
 
 This product is licensed under the Apache License, Version 2.0.
+
+Documentation attribution
+
+Documentation navigation, quickstart organization and product-boundary table
+layout were inspired by OpenHands/OpenHands:
+https://github.com/OpenHands/OpenHands
+Reference verified 2026-10-13. EvoPilot uses its own wording. This attribution
+does not imply endorsement or transfer another project's license to EvoPilot.

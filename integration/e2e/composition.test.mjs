@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { createComposition, aggregateEvaluation } from '../composition.mjs';
+import { createComposition, aggregateEvaluation } from '../../dist/integration/composition.js';
 import { frozenClone, sha256 } from '../compatibility/v1/reference.mjs';
 import { validateProductMetadata } from '../../scripts/check.mjs';
 
@@ -39,7 +39,7 @@ function fixture() {
     const ref = owner === 'runtime' ? null : reference(owner);
     if (ref) records[owner] = { model: { id: ref.id, version: ref.version, specVersion: 'v1' }, scope: owner === 'ontology' ? shared : scope, delivery: { digest: ref.digest }, ...(owner === 'harness' ? { resolution: { dependencies: [reference('ontology')] } } : {}) };
     return [owner, {
-      PRODUCT: owner, VERSION: '0.1.0', verifyDelivery: delivery => ({ valid: delivery.digest === ref.digest }),
+      PRODUCT: owner, VERSION: '0.1.1', verifyDelivery: delivery => ({ valid: delivery.digest === ref.digest }),
       validateInstances: () => ({ valid: true, status: 'PASS' }),
       ['create' + owner[0].toUpperCase() + owner.slice(1) + 'Service']: (received, supplied) => {
         if (owner === 'ontology') validateProviderContract(supplied);
@@ -78,7 +78,7 @@ function fixture() {
 }
 
 test('interface only: pure import under read-only permissions and construction/discovery never initialize', () => {
-  const result = spawnSync(process.execPath, ['--permission', '--allow-fs-read=' + new URL('../..', import.meta.url).pathname, '--input-type=module', '-e', "await import('./integration/composition.mjs')"], { encoding: 'utf8', env: { ...process.env, OPENSSL_CONF: '/dev/null' } });
+  const result = spawnSync(process.execPath, ['--permission', '--allow-fs-read=' + new URL('../..', import.meta.url).pathname, '--input-type=module', '-e', "await import('./dist/integration/composition.js')"], { encoding: 'utf8', env: { ...process.env, OPENSSL_CONF: '/dev/null' } });
   assert.equal(result.status, 0, result.stderr);
   const f = fixture(), composition = createComposition(options, f.apis);
   assert.deepEqual(f.events, []);
@@ -304,47 +304,68 @@ test('interface only: cancellation during revision query prevents Harness dispat
 const metadataFixtures = {
   "runtime": {
     "name": "@evopilot-next/runtime",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "private": true,
     "type": "module",
     "engines": {
       "node": ">=24.14.0"
     },
     "files": [
+      "dist",
       "src",
       "vendor",
       "README.md",
+      "CONTRIBUTING.md",
+      "SECURITY.md",
+      "CHANGELOG.md",
       "docs",
       "LICENSE",
       "NOTICE",
       "provenance"
     ],
     "exports": {
-      ".": "./src/index.mjs",
-      "./service": "./src/service.mjs"
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./service": {
+        "types": "./dist/service.d.ts",
+        "import": "./dist/service.js"
+      }
     },
     "scripts": {
-      "build": "node scripts/check.mjs",
+      "build": "node scripts/build.mjs",
       "check": "node scripts/check.mjs",
       "test": "node --test tests/e2e/*.test.mjs"
     },
-    "license": "Apache-2.0"
+    "license": "Apache-2.0",
+    "bin": {
+      "evopilot-next-runtime": "dist/cli.js"
+    },
+    "devDependencies": {
+      "typescript": "5.9.3",
+      "@types/node": "24.19.2"
+    }
   },
   "harness": {
     "name": "@evopilot-next/harness",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "private": true,
     "bin": {
-      "evopilot-next-harness": "src/cli.mjs"
+      "evopilot-next-harness": "dist/cli.js"
     },
     "type": "module",
     "engines": {
       "node": ">=24.14.0"
     },
     "files": [
+      "dist",
       "src",
       "vendor",
       "README.md",
+      "CONTRIBUTING.md",
+      "SECURITY.md",
+      "CHANGELOG.md",
       "specifications",
       "examples",
       "assets",
@@ -354,32 +375,49 @@ const metadataFixtures = {
       "NOTICE"
     ],
     "exports": {
-      ".": "./src/index.mjs",
-      "./sources": "./src/asset-sources.mjs",
-      "./service": "./src/service.mjs"
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./sources": {
+        "types": "./dist/asset-sources.d.ts",
+        "import": "./dist/asset-sources.js"
+      },
+      "./service": {
+        "types": "./dist/service.d.ts",
+        "import": "./dist/service.js"
+      }
     },
     "scripts": {
-      "build": "node scripts/check.mjs",
+      "build": "node scripts/build.mjs",
       "check": "node scripts/check.mjs",
       "test": "node --test tests/e2e/*.test.mjs"
     },
     "dependencies": {
       "yaml": "2.9.0"
     },
-    "license": "Apache-2.0"
+    "license": "Apache-2.0",
+    "devDependencies": {
+      "typescript": "5.9.3",
+      "@types/node": "24.19.2"
+    }
   },
   "ontology": {
     "name": "@evopilot-next/ontology",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "private": true,
     "type": "module",
     "engines": {
       "node": ">=24.14.0"
     },
     "files": [
+      "dist",
       "src",
       "vendor",
       "README.md",
+      "CONTRIBUTING.md",
+      "SECURITY.md",
+      "CHANGELOG.md",
       "specifications",
       "examples",
       "schemas",
@@ -390,36 +428,57 @@ const metadataFixtures = {
       "assets"
     ],
     "exports": {
-      ".": "./src/index.mjs",
-      "./compat": "./src/compat/index.mjs",
-      "./migration": "./src/migration.mjs",
-      "./sources": "./src/asset-sources.mjs",
-      "./service": "./src/service.mjs"
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./compat": {
+        "types": "./dist/compat/index.d.mts",
+        "import": "./dist/compat/index.mjs"
+      },
+      "./migration": {
+        "types": "./dist/migration.d.ts",
+        "import": "./dist/migration.js"
+      },
+      "./sources": {
+        "types": "./dist/asset-sources.d.ts",
+        "import": "./dist/asset-sources.js"
+      },
+      "./service": {
+        "types": "./dist/service.d.ts",
+        "import": "./dist/service.js"
+      }
     },
     "scripts": {
-      "build": "node scripts/check.mjs",
-      "check": "node scripts/check.mjs",
+      "build": "node scripts/build.mjs",
+      "check": "tsc --noEmit && node scripts/check.mjs",
       "test": "node --test tests/e2e/*.test.mjs"
     },
     "dependencies": {
       "ajv": "8.20.0",
       "yaml": "2.9.0"
     },
-    "license": "Apache-2.0"
+    "license": "Apache-2.0",
+    "bin": {
+      "evopilot-next-ontology": "dist/cli.js"
+    },
+    "devDependencies": {
+      "typescript": "5.9.3",
+      "@types/node": "24.19.2"
+    }
   }
 };
 
-test('M2 current metadata: Runtime and Harness bins required; only Ontology may wait until M4', () => {
+test('Current metadata: all compiled product bins are required', () => {
   for (const owner of ['runtime', 'harness', 'ontology']) {
     const pkg = structuredClone(metadataFixtures[owner]);
-    pkg.bin = { ['evopilot-next-' + owner]: 'src/cli.mjs' };
+    pkg.bin = { ['evopilot-next-' + owner]: 'dist/cli.js' };
     assert.equal(validateProductMetadata(pkg, owner).cli, 'PRESENT');
     assert.equal(validateProductMetadata(pkg, owner, 'M4').cli, 'PRESENT');
     const absent = { ...pkg }; delete absent.bin;
-    if (owner === 'ontology') assert.equal(validateProductMetadata(absent, owner).cli, 'PENDING');
-    else assert.throws(() => validateProductMetadata(absent, owner));
+    assert.throws(() => validateProductMetadata(absent, owner));
     assert.throws(() => validateProductMetadata(absent, owner, 'M4'));
-    for (const bin of [{ foreign: 'src/cli.mjs' }, { ['evopilot-next-' + owner]: 'src/service.mjs' }])
+    for (const bin of [{ foreign: 'dist/cli.js' }, { ['evopilot-next-' + owner]: 'src/service.mjs' }])
       assert.throws(() => validateProductMetadata({ ...pkg, bin }, owner));
   }
 });

@@ -11,7 +11,7 @@ import { checkPackages } from '../../scripts/check.mjs';
 import { ROOT, CHILDREN, syncContract } from '../../scripts/sync-contract.mjs';
 
 // Only line-anchored static declarations: a model field named "from" is data.
-const staticSpecifiers = source => [...source.matchAll(/^[\t ]*(?:import\s+(?:(?:[\w$]+(?:\s*,\s*)?)?(?:\{[^}]*\}|\*\s+as\s+[\w$]+)?\s*from\s*)?|export\s+(?:\{[^}]*\}|\*(?:\s+as\s+[\w$]+)?)\s+from\s*)['"]([^'"]+)['"]/gm)].map(match => match[1]);
+const staticSpecifiers = source => [...source.matchAll(/^[\t ]*(?:import\s+(?:type\s+)?(?:(?:[\w$]+(?:\s*,\s*)?)?(?:\{[^}]*\}|\*\s+as\s+[\w$]+)?\s*from\s*)?|export\s+(?:\{[^}]*\}|\*(?:\s+as\s+[\w$]+)?)\s+from\s*)['"]([^'"]+)['"]/gm)].map(match => match[1]);
 
 test('static import scanner distinguishes declarations from data', () => {
   assert.deepEqual(staticSpecifiers("const rows = ['from', ', '];\nimport './side.mjs';\nimport { x } from './own.mjs';\nexport { x } from './export.mjs';\nimport fs from 'node:fs';"), ['./side.mjs', './own.mjs', './export.mjs', 'node:fs']);
@@ -19,7 +19,7 @@ test('static import scanner distinguishes declarations from data', () => {
 
 test('public inventory partitions 105 original sources between independent owners', async () => {
   const inventories = await Promise.all(['harness', 'ontology'].map(async owner => {
-    const { listPublicSources } = await import(pathToFileURL(resolve(ROOT, 'projects/evopilot-' + owner, 'src/asset-sources.mjs')).href);
+    const { listPublicSources } = await import(pathToFileURL(resolve(ROOT, 'projects/evopilot-' + owner, 'dist/asset-sources.js')).href);
     return listPublicSources();
   }));
   assert.deepEqual(inventories.map(list => list.count), [101, 4]);
@@ -40,16 +40,16 @@ test('child source graph contains only own source and vendor modules', async () 
   for (const child of CHILDREN) {
     const srcRoot = resolve(ROOT, child, 'src');
     for (const name of await readdir(srcRoot, { recursive: true })) {
-      if (!name.endsWith('.mjs')) continue;
+      if (!/\.(?:ts|mts|mjs)$/.test(name)) continue;
       const file = resolve(srcRoot, name);
       const source = await readFile(file, 'utf8');
       const imports = staticSpecifiers(source);
       for (const specifier of imports) {
         if (isBuiltin(specifier)) continue;
         const sites = {
-          'projects/evopilot-harness': { 'asset-sources.mjs': ['yaml'], 'import-operations.mjs': ['yaml'] },
+          'projects/evopilot-harness': { 'asset-sources.ts': ['yaml'], 'import-operations.ts': ['yaml'] },
           'projects/evopilot-ontology': {
-            'asset-sources.mjs': ['yaml'], 'import-operations.mjs': ['yaml'],
+            'asset-sources.ts': ['yaml'], 'import-operations.ts': ['yaml'],
             'compat/v4/classification/taxonomy.mjs': ['yaml', 'ajv/dist/2020.js'],
             'compat/v4/semantics/catalog-supply.mjs': ['yaml'],
             'compat/v3/schema.mjs': ['ajv/dist/2020.js'], 'compat/v3/utils.mjs': ['yaml'],
@@ -67,8 +67,8 @@ test('child source graph contains only own source and vendor modules', async () 
       assert.doesNotMatch(source, /EVOPILOT_HARNESS_HOME|defaultHarnessHome|\.evopilot-harness|\bprocess\s*(?:\.\s*(?:env|cwd|chdir)|\[)|\bglobalThis\s*(?:\.|\[)|\/Users\/|\/home\//);
       const localName = name.split(sep).join('/');
       let checked = source;
-      if (localName === 'state.mjs') checked = checked.replace(/\bprocess\.getuid(?![\w$])/g, '');
-      if (localName === 'cli.mjs') checked = checked.replace(/\bprocess\.(?:stdin|stdout|argv|exitCode)(?![\w$])/g, '');
+      if (localName === 'state.ts') checked = checked.replace(/\bprocess\.getuid(?![\w$])/g, '');
+      if (localName === 'cli.ts') checked = checked.replace(/\bprocess\.(?:stdin|stdout|argv|exitCode)(?![\w$])/g, '');
       if (child === 'projects/evopilot-ontology' && localName === 'compat/v4/semantics/catalog-store.mjs')
         checked = checked.replace(/\bprocess\.pid(?![\w$])/g, '').replace(/\bprocess\.kill\(owner\.pid, 0\)/g, '');
       assert.doesNotMatch(checked, /\bprocess\s*(?:\.|\[|\()/);
@@ -86,7 +86,7 @@ test('actual child imports work with parent reads denied by Node permissions', (
     const childRoot = resolve(ROOT, child);
     const source = `
       import assert from 'node:assert/strict';
-      const api = await import(${JSON.stringify(pathToFileURL(resolve(childRoot, 'src/index.mjs')).href)});
+      const api = await import(${JSON.stringify(pathToFileURL(resolve(childRoot, 'dist/index.js')).href)});
       assert.equal(api.capabilities().businessOperationsReady, true);
       assert.equal(api.capabilities().authority, false);
       const serviceAPI = await import('@evopilot-next/' + api.PRODUCT + '/service');
@@ -107,7 +107,7 @@ test('actual child imports work with parent reads denied by Node permissions', (
       }
       await assert.rejects((await import('node:fs/promises')).readFile(${JSON.stringify(resolve(ROOT, "integration/compatibility/v1/reference.mjs"))}), { code: 'ERR_ACCESS_DENIED' });
       if (api.PRODUCT === 'ontology') {
-        const compat = await import('./src/compat/index.mjs');
+        const compat = await import('./dist/compat/index.mjs');
         const migration = await import('@evopilot-next/ontology/migration');
         assert.deepEqual(Object.keys(migration).sort(), ['deriveLegacyModel', 'inspectLegacySource']);
         const inspected = migration.inspectLegacySource(compat.grounding.resolveOntologyFoundation(), {sourceLocator: 'synthetic://isolated', sourceRevision: 'r1', sourceVisibility: 'public'});
@@ -156,7 +156,7 @@ test('actual child imports work with parent reads denied by Node permissions', (
 });
 
 test('immutable references cross independent copies without authority', async () => {
-  const [runtime, harness, ontology] = await Promise.all(CHILDREN.map(child => import(pathToFileURL(resolve(ROOT, child, 'src/index.mjs')).href)));
+  const [runtime, harness, ontology] = await Promise.all(CHILDREN.map(child => import(pathToFileURL(resolve(ROOT, child, 'dist/index.js')).href)));
   const original = Object.freeze({ product: 'ontology', id: 'cross-child', version: '0.1.0', specVersion: 'v1', digest: 'sha256:' + 'a'.repeat(64), visibility: 'private' });
   const inspected = ontology.inspectArtifactReference(original, original);
   const consumed = harness.inspectOntologyReference(inspected.reference, original);

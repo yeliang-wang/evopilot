@@ -9,7 +9,7 @@ import * as harness from '@evopilot-next/harness';
 import { createHarnessService } from '@evopilot-next/harness/service';
 import * as ontology from '@evopilot-next/ontology';
 import { createOntologyService } from '@evopilot-next/ontology/service';
-import { createComposition } from '../composition.mjs';
+import { createComposition } from '../../dist/integration/composition.js';
 import { sha256 } from '../compatibility/v1/reference.mjs';
 
 // Standalone fixture data, based on the supplied synthetic v1 contract examples.

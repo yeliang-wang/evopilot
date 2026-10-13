@@ -16,13 +16,20 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24.14.0'
+      - name: Install locked parent tools
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Bind local public packages
+        run: npm install --ignore-scripts --no-save --package-lock=false --no-audit --no-fund ./projects/evopilot-runtime ./projects/evopilot-harness ./projects/evopilot-ontology
       - name: Install child dependencies
         run: |
           for product in runtime harness ontology; do
             npm --prefix "projects/evopilot-$product" ci --ignore-scripts --no-audit --no-fund
           done
-      - name: Bind local public packages
-        run: npm install --ignore-scripts --no-save --package-lock=false --no-audit --no-fund ./projects/evopilot-runtime ./projects/evopilot-harness ./projects/evopilot-ontology
+      - name: Compile children before parent public imports
+        run: |
+          for product in runtime harness ontology; do
+            npm --prefix "projects/evopilot-$product" run build
+          done
       - run: npm run build
       - run: npm run check
       - run: npm test
@@ -35,7 +42,7 @@ jobs:
           set -euo pipefail
           distribution="$RUNNER_TEMP/evopilot-distribution"
           mkdir "$distribution"
-          tar -czf "$distribution/evopilot-0.1.0-preview.tar.gz" -C "$RUNNER_TEMP/evopilot-bundle" .
+          tar -czf "$distribution/evopilot-0.1.1-preview.tar.gz" -C "$RUNNER_TEMP/evopilot-bundle" .
           for owner in runtime harness ontology; do
             mkdir "$distribution/$owner"
             tarballs=("$RUNNER_TEMP/evopilot-artifacts/$owner/"*.tgz)
@@ -51,11 +58,11 @@ jobs:
             git submodule status
           } > "$distribution/source-revision.txt"
           cd "$distribution"
-          sha256sum evopilot-0.1.0-preview.tar.gz */*.tgz */dependency-lock.json source-revision.txt > SHA256SUMS
+          sha256sum evopilot-0.1.1-preview.tar.gz */*.tgz */dependency-lock.json source-revision.txt > SHA256SUMS
       - name: Upload candidate distribution (not an official Release)
         uses: actions/upload-artifact@v4
         with:
-          name: evopilot-0.1.0-preview-${{ github.sha }}
+          name: evopilot-0.1.1-preview-${{ github.sha }}
           path: ${{ runner.temp }}/evopilot-distribution/
           retention-days: 14
           if-no-files-found: error

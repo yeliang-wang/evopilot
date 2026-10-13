@@ -69,15 +69,23 @@ export function validateEntries(entries, expected, owner) {
   }
   const pkg = JSON.parse(entries.get('package.json'));
   validateProductMetadata(pkg, owner);
-  if (pkg.bin) assert(entries.has('src/cli.mjs'), 'Missing own CLI');
+  if (pkg.bin) assert(entries.has('dist/cli.js') && entries.has('src/cli.ts'), 'Missing own CLI');
   const manifest = JSON.parse(entries.get('vendor/compatibility/v1/manifest.json'));
   assert.equal(manifest.module, 'reference.mjs'); assert.equal(manifest.contractRevision, '1.0.0');
   assert.equal(manifest.sha256, PIN); assert.equal(hash(entries.get('vendor/compatibility/v1/reference.mjs')), PIN);
-  const index = entries.get('src/index.mjs').toString();
+  const index = entries.get('src/index.ts').toString();
   assert(index.includes("export const PRODUCT = '" + owner + "';"));
-  assert(index.includes("export const VERSION = '0.1.0';"));
+  assert(index.includes("export const VERSION = '0.1.1';"));
   const exports = typeof pkg.exports === 'string' ? { '.': pkg.exports } : pkg.exports;
-  for (const path of Object.values(exports)) assert(path.startsWith('./src/') && entries.has(path.slice(2)), 'Invalid export');
+  for (const entry of Object.values(exports)) {
+    assert.deepEqual(Object.keys(entry), ['types', 'import'], 'Invalid export conditions');
+    for (const target of Object.values(entry)) assert(target.startsWith('./dist/') && entries.has(target.slice(2)), 'Missing export or declaration');
+    assert(/\.d\.(?:ts|mts)$/.test(entry.types), 'Invalid declaration');
+  }
+  for (const name of entries.keys()) {
+    if (name.startsWith('src/')) assert(/\.(?:ts|mts|mjs|json)$/.test(name), 'Unexpected source inventory');
+    assert(!/(?:^|\/)(?:tests|typescript|@types)(?:\/|$)/.test(name), 'Development content in package');
+  }
   const deps = owner === 'runtime' ? {} : owner === 'harness' ? { yaml: '2.9.0' } : { ajv: '8.20.0', yaml: '2.9.0' };
   assert.deepEqual(pkg.dependencies ?? {}, deps);
   return pkg;
@@ -109,33 +117,42 @@ export function validateDependencyLock(bytes, pkg, expectedSHA256) {
   assert(root, 'Missing lock root');
   assert.equal(root.name, pkg.name); assert.equal(root.version, pkg.version);
   assert.deepEqual(root.dependencies ?? {}, pkg.dependencies ?? {}, 'Lock direct dependencies mismatch');
-  for (const field of ['devDependencies', 'optionalDependencies', 'peerDependencies']) {
+  assert.deepEqual(root.devDependencies ?? {}, pkg.devDependencies ?? {}, 'Lock development dependencies mismatch');
+  for (const field of ['optionalDependencies', 'peerDependencies']) {
     assert.deepEqual(root[field] ?? {}, {});
   }
-  const inventory = dependencyInventory(lock);
+  const all = dependencyInventory(lock);
   for (const [name, version] of Object.entries(pkg.dependencies ?? {})) {
-    assert.equal(inventory['node_modules/' + name]?.version, version, 'Locked direct version mismatch');
+    assert.equal(all['node_modules/' + name]?.version, version, 'Locked direct version mismatch');
   }
+  for (const [name, version] of Object.entries(pkg.devDependencies ?? {})) assert.equal(all['node_modules/' + name]?.version, version, 'Locked development version mismatch');
   // Require every declared edge to resolve inside this lock, including transitives.
-  const reached = new Set();
-  function visit(path, record) {
-    for (const name of Object.keys(record.dependencies ?? {})) {
+  function visit(path, record, reached, development) {
+    for (const name of Object.keys({ ...record.dependencies, ...(development ? record.devDependencies : {}) })) {
       assert(/^(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+$/i.test(name), 'Invalid dependency name');
       assert(name.split('/').every(part => part !== '.' && part !== '..'), 'Invalid dependency name');
       let parent = path, target;
       while (true) {
         const candidate = (parent ? parent + '/' : '') + 'node_modules/' + name;
-        if (inventory[candidate]) { target = candidate; break; }
+        if (all[candidate]) { target = candidate; break; }
         if (!parent) break;
         const boundary = parent.lastIndexOf('/node_modules/');
         parent = boundary < 0 ? '' : parent.slice(0, boundary);
       }
       assert(target, 'Unresolved lock dependency: ' + name);
-      if (!reached.has(target)) { reached.add(target); visit(target, lock.packages[target]); }
+      if (!development) assert(!lock.packages[target].dev, 'Production dependency marked dev');
+      if (!reached.has(target)) { reached.add(target); visit(target, lock.packages[target], reached, development); }
     }
   }
-  visit('', root);
-  assert.deepEqual([...reached].sort(), Object.keys(inventory).sort(), 'Unreachable lock records');
+  const reached = new Set();
+  visit('', root, reached, true);
+  assert.deepEqual([...reached].sort(), Object.keys(all).sort(), 'Unreachable lock records');
+  const production = new Set();
+  visit('', root, production, false);
+  for (const path of reached) {
+    if (!production.has(path)) assert.equal(lock.packages[path].dev, true, 'Development-only dependency must be marked dev: ' + path);
+  }
+  const inventory = Object.fromEntries([...production].sort().map(name => [name, all[name]]));
   return { lock, inventory };
 }
 export function dependencyInventory(lock) {
@@ -144,7 +161,9 @@ export function dependencyInventory(lock) {
   return Object.fromEntries(Object.entries(lock.packages).filter(([path]) => path !== '').sort().map(([path, record]) => {
     assert(/^(?:node_modules\/(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+)(?:\/node_modules\/(?:@[a-z0-9._-]+\/)?[a-z0-9._-]+)*$/i.test(path), 'Invalid dependency lock path');
     assert(path.split('/').every(part => part !== '.' && part !== '..'), 'Invalid dependency lock path');
-    assert(!record.link && !record.dev && !record.optional, 'Unsupported lock record');
+    assert(!record.link && !record.optional && !record.peer && !record.devOptional, 'Unsupported lock record');
+    assert(record.dev === undefined || typeof record.dev === 'boolean', 'Invalid dev flag');
+    for (const field of ['optionalDependencies', 'peerDependencies', 'peerDependenciesMeta']) assert.deepEqual(record[field] ?? {}, {}, 'Unsupported lock edge');
     assert(/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(record.version), 'Invalid locked version');
     const url = new URL(record.resolved);
     assert(url.protocol === 'https:' && !url.username && !url.password && !url.hash, 'Invalid resolved dependency');
@@ -195,7 +214,7 @@ function smoke(owner, pkg) {
 async function smokePackage(owner, name) {
   const { default: assert } = await import('node:assert/strict');
   const api = await import(name);
-  assert.equal(api.PRODUCT, owner); assert.equal(api.VERSION, '0.1.0');
+  assert.equal(api.PRODUCT, owner); assert.equal(api.VERSION, '0.1.1');
   const serviceAPI = await import(name + '/service');
   const factory = serviceAPI['create' + owner[0].toUpperCase() + owner.slice(1) + 'Service'];
   const service = factory({ workspaceRoot: '/uninitialized-artifact-workspace', workspaceId: 'artifact-discovery' });
@@ -211,7 +230,7 @@ async function smokePackage(owner, name) {
   service.close();
   assert.equal(publicCapabilities.authority, false);
   assert.equal(publicCapabilities.product, owner);
-  assert.equal(publicCapabilities.version, '0.1.0');
+  assert.equal(publicCapabilities.version, '0.1.1');
   assert.match(publicCapabilities.implementationStage, /^M2(?:_|$)/);
   assert.equal(typeof publicCapabilities.businessOperationsReady, 'boolean');
   const ref = product => ({ product, id: 'artifact', version: '0.1.0', specVersion: 'v1', digest: 'sha256:' + 'a'.repeat(64), visibility: 'private' });
@@ -290,7 +309,7 @@ export async function verifyArtifacts(out) {
         const bundleBytes = await readFile(resolve(destination, 'dependency-lock.json'));
         retained = validateDependencyLock(bundleBytes, pkg, lockSHA256);
         await writeFile(resolve(extracted, 'package-lock.json'), bundleBytes, { flag: 'wx' });
-        run('npm', ['ci', '--offline', '--ignore-scripts', '--no-audit', '--no-fund'], extracted, npmEnv);
+        run('npm', ['ci', '--omit=dev', '--offline', '--ignore-scripts', '--no-audit', '--no-fund'], extracted, npmEnv);
         assert.equal(hash(await readFile(resolve(extracted, 'package-lock.json'))), lockSHA256, 'Installed lock drift');
         await verifyInstalledDependencies(extracted, retained);
         assert.equal(hash(await readFile(lockSource)), lockSHA256, 'Source lock drift');

@@ -1,27 +1,45 @@
-# First Preview journey
+# Four first journeys in 0.1.1 Preview
 
-Prerequisites: Node 24.14.0, an isolated ready bundle installation, a configured external workspace and explicit Codex registration using the [installation instructions](installation.md). Select **EvoPilot v0.1 Preview** and submit an EvoPilot task. This authorizes activation of the current chat without a redundant enable question. Discovery and passive information/guide requests remain inactive. The Expert inspects identity, activates for the task, and selects a guide. When active it reads `evopilot_v01_capabilities` and the relevant owner's `workspace.inspect` before acting. Ask only questions not already answered: intended outcome, project, public/private scope, authorized source and missing requirements.
+Complete [installation](installation.md), select **EvoPilot v0.1 Preview** in Codex, and describe your task. The first task activates this chat and checks or starts the shared daemon. Inspect and guide requests remain passive. The Expert checks active capabilities and the owner's workspace, then asks for missing project, visibility, source scope or requirements. Ordinary work needs no CLI commands.
 
-For an explicitly requested synthetic validation example, use a synthetic library domain with Book and Loan concepts. Synthetic evidence must stay labelled synthetic; an ordinary modeling request does not authorize invented acceptance evidence.
+## 1. Design from requirements
 
-| Ordinary request | Guide and next owning operations |
-| --- | --- |
-| “Help model our lending requirements” | ontology-forward; Ontology asset.list, asset.put with model, asset.review, then actual human asset.decide and separate asset.publish |
-| “Model this authorized repository revision” | ontology-reverse; Host reads scoped source and authors a native v1 model via Ontology asset.put, then reviews coverage/gaps |
-| “Import this structured legacy model” | ontology-reverse bridge; source.list/source.inspect, legacy.import of supported JSON/YAML assets, then legacy.derive |
-| “Check the quality rules and missing reports” | harness-quality; Harness asset.list/inspect, asset.put with asset, review/decide/publish, asset.evaluate, evaluation.inspect |
-| “Execute this goal using these published versions” | runtime-handoff; Runtime project.create, goal.create, run.prepare, run.inspect, run.decide; separate evopilot_v01_dispatch |
-| “The response was lost” | recovery; owning receipt.inspect with exact requestId, Runtime run.inspect, then evopilot_v01_reconcile where appropriate |
-| “Classify this registered source” | retained-ontology; verify actual provider capabilities, await Ontology classification.start, read classification.inspect/resume |
+Say: “Model a library with Book and Loan. A loan must identify its book and borrower. Show the draft and unresolved questions before publication.”
 
-The assistant assembles exact payloads from current child schemas and explains decisions in ordinary language. Every mutation requires explicit requestId and current expectedRevision; no automatic refresh/retry. Scope is exactly visibility plus projectId. Ontology asset.put takes model; Harness asset.put takes asset. Review digests, human evidence references and published six-field pins come from real owner state and the actual user decision.
+Expect a draft Ontology v1 asset with concepts, relations, constraints and proposed mappings, plus questions about borrower identity and renewal rules. Required semantic gaps remain PENDING. Review the draft, make an explicit decision, then separately request publication. Publication returns an immutable reference.
 
-Native repository reverse modeling requires real source locator, revision and digest, with source-observed versus inferred mappings. The Host authors the v1 asset; legacy.import/legacy.derive do not parse arbitrary Java or repository source. Production business decisions cannot be inferred from code. Required semantic gaps stay PENDING for user review.
+See [Ontology v1 definitions](https://github.com/yeliang-wang/evopilot-ontology/blob/main/specifications/v1/README.md) and [asset lifecycle](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/service.md).
 
-Forward mappings remain proposed; reverse mappings distinguish observed and inferred evidence. Required gaps keep drafts pending. Missing Harness rules/reports are INDETERMINATE with Warning, never automatic PASS or a new version. Runtime execution status, Harness quality and Ontology business validity are separate.
+## 2. Model an authorized project revision
 
-Authoritative definitions live at `installationRoot/node_modules/@evopilot-next/OWNER`; `installationRoot` already equals `managedRoot/app`. The pure guide returns source references and explicit installedReferences relative to the verified installationRoot, without needing configuration. Service entries are [Ontology service](../projects/evopilot-ontology/docs/service.md), [Harness service](../projects/evopilot-harness/docs/service.md) and [Runtime service](../projects/evopilot-runtime/docs/service.md). Consult these pack paths: Ontology `specifications/`, `schemas/`, `examples/`, `docs/service.md`, `docs/legacy-api.md`, `docs/classification-service.md`, `docs/catalog-service.md`; Harness `specifications/`, `examples/`, `docs/service.md`; Runtime `docs/service.md`. Query the owning capabilities for implemented advanced operation names before constructing requests. Common v1 pins require exact product/id/version/specVersion/digest/visibility; unknown required extensions block consumption. Public data is not automatically uploaded.
+Say: “Use only this authorized project revision and these files to draft its domain model. Separate observed mappings from inferred ones and list business questions for review.”
 
-Classification needs explicitly configured resolveClassificationSource, classificationAdvisor and classificationModel; Catalog dependencies may need resolveLegacyHarness. The default daemon provides neither classification callbacks nor a Host LLM identity. classificationModel is exactly {providerId, modelId, revision, timeoutMs}; the other keys are trusted SDK callbacks. Classification and foreign Catalog paths require that wiring. The ordinary native core journey works without it. Model output, historical calculation and delivery never supply human approval or release authority.
+Expect the same Ontology v1 asset shape, with source locator, revision and digest, observed code mappings, separately marked inferences and coverage gaps. The Host reads authorized source and authors the model; code alone cannot settle business meaning. Review, decision and publication follow the forward-design lifecycle.
 
-See [Codex setup status](codex.md) and [composition contracts](product-composition.md). Desktop journey status is supplied separately in an exact candidate-bound local report and must be supported by real receipts. Without that report, no acceptance claim is made. Protocol fixtures and M0 feasibility are not product or Host acceptance. Updating external evidence does not require editing or reinstalling these candidate documents.
+Structured legacy JSON/YAML import is a separate bridge; it does not parse arbitrary repositories or Java source. See [Ontology service](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/service.md) and [legacy API](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/legacy-api.md).
+
+## 3. Assess quality with Harness
+
+Say: “Review this Harness asset and its rules, evaluate the supplied evidence, and show missing reports alongside quality results.”
+
+Expect a Harness v1 asset and an evaluation identifying rules, supplied evidence, quality results and missing material. Missing rules or reports yield **INDETERMINATE with Warning**, never automatic PASS. Evaluation does not automatically change a version or launch an action. New or changed assets require explicit review, decision and publication.
+
+See [Harness v1 definitions](https://github.com/yeliang-wang/evopilot-harness/blob/main/specifications/v1/README.md) and [evaluation service](https://github.com/yeliang-wang/evopilot-harness/blob/main/docs/service.md).
+
+## 4. Prepare and execute a Runtime goal
+
+Say: “Prepare this project goal using these exact published Ontology and Harness versions. Show the inputs and run for my decision; dispatch only after my decision.”
+
+Expect a Runtime project and goal, immutable pinned inputs, a prepared run for review, an explicit decision and, after authorized dispatch, execution receipts and reconciliation state. The parent composition provides a deterministic execution provider that validates supplied Ontology instances and evaluates Harness evidence against exact published pins, with retained receipts and reconciliation. It does not perform arbitrary code changes or deployment. Standalone Runtime requires explicitly supplied trusted providers. Preparation does not execute a goal. Runtime completion, Harness quality and Ontology business validity remain separate results.
+
+If a response is lost, say: “Inspect the retained receipt for this exact request and reconcile the run.” Uncertainty never authorizes redispatch. See [Runtime service](https://github.com/yeliang-wang/evopilot-runtime/blob/main/docs/service.md).
+
+## Artifacts, providers and references
+
+Native asset authoring and supplied-evidence quality evaluation need no LLM callback. Advanced classification requires trusted SDK `resolveClassificationSource`, `classificationAdvisor` and `classificationModel` providers; the model binding is `{providerId, modelId, revision, timeoutMs}`. Foreign legacy Catalog resolution requires `resolveLegacyHarness`. The default daemon does not inherit a Host LLM or configure these callbacks. Consult the owning [classification](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/classification-service.md) and [Catalog](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/catalog-service.md) guides.
+
+Harness and Ontology own their `specifications/v1`, schemas and extensions around v1. A common published pin contains six fields: `product`, `id`, `version`, `specVersion`, `digest`, `visibility`. Use exact owner-returned values, never “latest”; unknown required extensions block consumption. Mutations carry exact scope (`visibility` and `projectId`), request ID and current expected revision. Review digests and decision evidence come from real owner state and the user's actual decision.
+
+Guides return `installedReferences` relative to verified `installationRoot`, already equal to `managedRoot/app`. Product references resolve under `installationRoot/node_modules/@evopilot-next/{runtime,harness,ontology}/`; do not append another `app`. Ontology includes schemas, v1 specifications and service guides; Harness includes v1 definitions and its service guide; Runtime includes its service guide.
+
+Keep synthetic examples labelled synthetic. Public visibility does not authorize upload, and private material cannot feed public consumers. Model output grants no approval or release authority. See [capabilities](capabilities.md), [Codex](codex.md) and [composition contracts](product-composition.md).

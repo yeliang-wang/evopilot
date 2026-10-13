@@ -4,10 +4,10 @@ import { spawn, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getGuide, scenarios } from '../../expert/core/guide.mjs';
+import { getGuide, scenarios } from '../../dist/expert/core/guide.js';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
-const server = fileURLToPath(new URL('../../plugins/codex/server.mjs', import.meta.url));
+const server = fileURLToPath(new URL('../../dist/plugins/codex/server.js', import.meta.url));
 const env = { ...process.env, OPENSSL_CONF: '/dev/null' };
 const config = root + 'nonexistent-protocol-config.json';
 const init = { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'protocol-fixture', version: '1' } } };
@@ -35,7 +35,8 @@ export async function callConnection(config, action, payload) {
 }
 `;
 const dataURL = source => 'data:text/javascript,' + encodeURIComponent(source);
-const hook = dataURL("import { registerHooks } from 'node:module'; registerHooks({resolve(specifier, context, nextResolve) { if (specifier.endsWith('/integration/connection/client.mjs')) return {url:" + JSON.stringify(dataURL(fixtureCode)) + ",shortCircuit:true}; return nextResolve(specifier,context); }});");
+const clientURL = new URL('../../dist/integration/connection/client.js', import.meta.url).href;
+const hook = dataURL("import { registerHooks } from 'node:module'; registerHooks({resolve(specifier, context, nextResolve) { if ((specifier.startsWith('.') || specifier.startsWith('/') || specifier.startsWith('file:')) && new URL(specifier, context.parentURL).href === " + JSON.stringify(clientURL) + ") return {url:" + JSON.stringify(dataURL(fixtureCode)) + ",shortCircuit:true}; return nextResolve(specifier,context); }});");
 function args(fixture = false) {
   return ['--permission', '--allow-fs-read=' + root, ...(fixture ? ['--import', hook] : []), server, '--config', config];
 }

@@ -1,9 +1,9 @@
-# Local product composition
+# Local product composition — v0.1.1 Preview
 
-`integration/composition.mjs` connects three independent 0.1.0 public product APIs and owns no business state. `loadInstalledProducts()` imports only the bare `@evopilot-next/runtime`, `@evopilot-next/harness`, `@evopilot-next/ontology` packages and their `/service` exports. Missing packages fail explicitly; there is no source-tree, historical installation or global provider fallback.
+`dist/integration/composition.js` connects three independent 0.1.1 public product APIs and owns no business state. `loadInstalledProducts()` imports only the bare `@evopilot-next/runtime`, `@evopilot-next/harness`, `@evopilot-next/ontology` packages and their `/service` exports. Missing packages fail explicitly; there is no source-tree, historical installation or global provider fallback.
 
 ```js
-import { createComposition, loadInstalledProducts } from '../integration/composition.mjs';
+import { createComposition, loadInstalledProducts } from '../dist/integration/composition.js';
 const composition = createComposition(
   { workspaceRoot, workspaceId },
   await loadInstalledProducts(),
@@ -19,6 +19,8 @@ composition.close(); // Retains workspace data and receipts.
 ```
 
 Options contain exactly `workspaceRoot` and `workspaceId`. Construction copies configuration without initializing storage. Discovery may construct owning services, whose factories validate their contracts, but does not initialize them. Explicit operations initialize only the owners they use.
+
+The parent configures Runtime with its built-in deterministic validation, pinned-material resolution, execution and reconciliation providers. Execution routes evaluation through Harness and checks business validity through Ontology. Standalone Runtime still reports missing callbacks when its caller has not supplied these providers; discovering a provider is not acceptance.
 
 ## Requests and trusted SDK providers
 
@@ -42,12 +44,12 @@ After an uncertain response, reconciliation reads `evaluation.inspect` without a
 
 ## Package fixtures and verification
 
-All three current packages have their own CLI bins. Metadata fixtures use valid synthetic public entries and assert PRESENT for every owner; M4 rejects every missing bin. Foreign bins, exports and dependencies remain rejected. Source graph checks permit only `process.getuid` in each owner's `src/state.mjs` and `process.stdin/stdout/argv/exitCode` in its `src/cli.mjs`. The exact legacy Catalog PID and `kill(owner.pid, 0)` exceptions remain confined to the original file. Ambient environment, cwd/chdir, computed/global access, private paths and foreign internal imports remain forbidden. Read-only imports expect actual owned M2 business operations while retaining authority false, pure discovery and parent-read denial.
+All three current packages have their own CLI bins. Metadata fixtures use valid synthetic public entries and assert PRESENT for every owner; M4 rejects every missing bin. Foreign bins, exports and dependencies remain rejected. Source graph checks permit only `process.getuid` in each owner's `src/state.ts` and `process.stdin/stdout/argv/exitCode` in its `src/cli.ts`. The exact legacy Catalog PID and `kill(owner.pid, 0)` exceptions remain confined to the original file. Ambient environment, cwd/chdir, computed/global access, private paths and foreign internal imports remain forbidden. Read-only imports expect actual owned M2 business operations while retaining authority false, pure discovery and parent-read denial.
 
 The detached real-product test assembly resolves public installed packages with `import.meta.resolve`, copies their own package files as regular bytes, and recursively resolves installed dependencies against pinned lock records. It supports local npm package bindings and regular artifact installations with sibling or nested dependencies. Generated .bin/.cache links, hidden state, Git and tests are omitted; package identities and dependency metadata are preserved. Missing packages or dependencies fail. There are no source or .local imports. Production no-symlink configuration checks and exact authenticated fixture cleanup remain unchanged.
 
-Independent operator evidence records actual product composition and detached connection tests PASS, with execution SUCCEEDED and business/quality PASS for tested material. The retained full source baseline is 394 PASS, zero failures and zero skips. A separate four-test distribution fixture baseline passed; actual three-package bundle assembly and passive new-directory installation also passed. These independently recorded results were not rerun by this source editor, whose child gitlinks are unpopulated.
+Historical v0.1.0 evidence remains immutable and does not establish results for the current v0.1.1 candidate. Retain actual command results against the exact compiled candidate.
 
 The default daemon does not configure classification callbacks or foreign Catalog resolution. The native core journey remains available. Current Harness Catalog and retained Ontology Catalog formats are distinct; historical labels never supply current approval.
 
-Populated source verification requires child dependencies and parent bare-package bindings as documented in development.md. Actual tests are integration/e2e/composition-products.test.mjs and integration/e2e/connection-products.test.mjs; protocol and distribution fixtures remain separate. Final candidate/Host verification, full E03/E10 and E01–E19 acceptance remain pending. No production readiness or release authority is inferred.
+Populated source verification requires child dependencies and parent bare-package bindings as documented in development.md. Actual tests are integration/e2e/composition-products.test.mjs and integration/e2e/connection-products.test.mjs; protocol and distribution fixtures remain separate. Current candidate/Host verification must include full E03/E10 and E01–E19 acceptance, using the exact candidate evidence. No production readiness or acceptance is inferred. The existing conditional release authorization applies only once its acceptance conditions are met.

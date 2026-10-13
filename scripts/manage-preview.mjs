@@ -4,7 +4,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.1';
 export const PIN = 'df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a';
 export const OWNERS = ['runtime', 'harness', 'ontology'];
 export const SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -124,13 +124,15 @@ export function readBundle(bundle) {
   for (const [name, content] of all.files) { if (name === 'manifest.json') continue; assert(name.startsWith('app/'), 'Unexpected bundle file'); app.set(name.slice(4), content); }
   checkInventory(m.files, app); portable(app);
   assert.deepEqual(all.directories, expectedDirectories(all.files), 'Unexpected bundle directory');
-  const required = ['package.json', 'LICENSE', 'NOTICE', 'scripts/manage-preview.mjs', 'plugins/codex/server.mjs', 'plugins/codex/mcp.template.json', 'plugins/codex/.codex-plugin/plugin.json', 'expert/core/guide.mjs', 'integration/composition.mjs', ...['config', 'client', 'control', 'daemon'].map(n => 'integration/connection/' + n + '.mjs')];
+  const required = ['package.json', 'LICENSE', 'NOTICE', 'scripts/manage-preview.mjs', 'dist/plugins/codex/server.js', 'plugins/codex/mcp.template.json', 'plugins/codex/.codex-plugin/plugin.json', 'dist/expert/core/guide.js', 'dist/integration/composition.js', ...['config', 'client', 'control', 'daemon'].map(n => 'dist/integration/connection/' + n + '.js')];
   for (const name of required) assert(app.has(name), 'Incomplete bundle: ' + name);
   for (const owner of ['stack', ...OWNERS]) {
     const name = owner === 'stack' ? 'package.json' : 'node_modules/@evopilot-next/' + owner + '/package.json';
     const p = JSON.parse(app.get(name)); assert.equal(p.name, '@evopilot-next/' + owner); assert.equal(p.version, VERSION);
   }
   assert.equal(sha(app.get('integration/compatibility/v1/reference.mjs')), PIN);
+  assert.equal(sha(app.get('dist/integration/compatibility/v1/reference.mjs')), PIN);
+  assert(app.has('dist/integration/compatibility/v1/reference.d.mts'));
   const contract = JSON.parse(app.get('integration/compatibility/v1/manifest.json'));
   assert.equal(contract.sha256, PIN); assert.equal(contract.module, 'reference.mjs'); assert.equal(contract.contractRevision, '1.0.0');
   return { manifest: m, bytes, app };
@@ -147,7 +149,7 @@ export async function installPreview({ bundle, root, workspaceRoot, workspaceId,
   assert(!app.has('plugins/codex/.mcp.json'), 'Bundle contains live configuration');
   const template = JSON.parse(app.get('plugins/codex/mcp.template.json'));
   assert.deepEqual(template, { mcpServers: { evopilot_v01_preview: { command: '${nodeExecutable}', args: ['${serverPath}', '--config', '${configPath}'] } } }, 'Unexpected MCP template');
-  const replacements = { '${nodeExecutable}': process.execPath, '${serverPath}': path.join(root, 'app/plugins/codex/server.mjs'), '${configPath}': path.join(root, 'config.json') };
+  const replacements = { '${nodeExecutable}': process.execPath, '${serverPath}': path.join(root, 'app/dist/plugins/codex/server.js'), '${configPath}': path.join(root, 'config.json') };
   const render = v => typeof v === 'string' ? replacements[v] ?? v : Array.isArray(v) ? v.map(render) : Object.fromEntries(Object.entries(v).map(([k, val]) => [k, render(val)]));
   const rendered = json(render(template)); assert(!rendered.toString().includes('${'), 'Unresolved MCP template');
   app.set('plugins/codex/.mcp.json', rendered);
@@ -177,13 +179,13 @@ async function installed(root) {
   checkInventory(d.files, snapshot.files); assert.deepEqual(d.directories, snapshot.directories, 'Unexpected directories');
   assert.equal(sha(snapshot.files.get('bundle-manifest.json')), d.bundleManifestSHA256);
   assert.equal(fs.lstatSync(path.join(root, 'config.json')).mode & 0o777, 0o600);
-  const api = await import(pathToFileURL(path.join(root, 'app/integration/connection/config.mjs')).href);
+  const api = await import(pathToFileURL(path.join(root, 'app/dist/integration/connection/config.js')).href);
   const c = api.loadConfiguration(path.join(root, 'config.json'));
   assert.equal(c.installationId, d.installationId); assert.equal(c.workspaceId, d.workspaceId); assert.equal(c.workspaceRoot, d.workspaceRoot);
   disjoint(root, c.workspaceRoot, c.controlRoot);
   const app = new Map([...snapshot.files].filter(([name]) => name.startsWith('app/')).map(([name, bytes]) => [name.slice(4), bytes]));
   checkInventory(c.manifest, app);
-  const client = await import(pathToFileURL(path.join(root, 'app/integration/connection/client.mjs')).href);
+  const client = await import(pathToFileURL(path.join(root, 'app/dist/integration/connection/client.js')).href);
   return { d, c, client, snapshot };
 }
 export async function doctorPreview({ root }) {

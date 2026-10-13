@@ -1,15 +1,61 @@
-# EvoPilot 0.1.0 Preview
+# EvoPilot 0.1.1 Preview
 
-EvoPilot combines three independently versioned products. [Runtime](projects/evopilot-runtime/README.md) owns projects, goals, immutable execution inputs, decisions, dispatch and reconciliation. [Harness](projects/evopilot-harness/README.md) owns quality assets, their lifecycle and evaluation. [Ontology](projects/evopilot-ontology/README.md) owns semantic models, provenance, review and publication.
+Build domain models, assess quality, and prepare controlled execution through one Expert in Codex. Runtime owns execution and state, Harness owns QA and delivery standards, and Ontology owns domain modeling.
 
-The local services, composition, shared connection, CLI, MCP adapter and explicit Preview Expert entry are implemented. Use **Node 24.14.0** and an isolated [portable bundle installation](docs/installation.md). With the preview registered in Codex, select **EvoPilot v0.1 Preview** and submit an EvoPilot task; this authorizes activation of the current chat without another enable question. Follow the [first journey](docs/first-journey.md).
+[Quickstart](docs/installation.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/yeliang-wang/evopilot/releases/tag/v0.1.1) · [Contribute](CONTRIBUTING.md)
 
-The installation binds a configurable external shared workspace with v1 public/private project scopes. Installation is passive; discovery and informational guides do not activate a chat. Native modeling, quality and pinned execution work without classification callbacks. No default LLM, credential inheritance or parity with every old Runtime feature is promised.
+0.1.1 Preview brings the three products together for local modeling, quality assessment and controlled execution. Preview is not GA or blanket production acceptance. Review drafts and evidence before making business or publication decisions.
 
-Technical evidence includes source tests, actual three-package assembly and passive installation. Current E01–E19 status is supplied separately in an exact candidate-bound local report; without that report, no acceptance claim is made. The immutable initial M1 planning baseline is not a current candidate verdict, and M0 establishes feasibility only. Follow [report verification and test instructions](docs/testing.md); see also [capabilities](docs/capabilities.md) and [current roadmap](docs/roadmap.md).
+## What can I do?
 
-A ready local bundle installs without npm or network access. Source assembly requires populated child checkouts and cached locked dependencies. All four repositories are public and their M5 R1 CI runs passed. Parent commit `d4a9201169a82c36875bf6bc28c784fb3fb7122a` passed 441 tests in [run 38328075766](https://github.com/yeliang-wang/evopilot/actions/runs/38328075766); this result does not cover future revisions. See [GitHub source and release preparation](docs/github-release.md) for workflow parameters and digest requirements. Release publication requires an explicit decision after external M5 Evolution Target validation. The expected [v0.1.0 Release URL](https://github.com/yeliang-wang/evopilot/releases/tag/v0.1.0) is pending publication; there is no automatic latest selection. Existing daily installations, data and credentials remain unchanged.
+| Scenario | Unified Expert path | Result to review |
+| --- | --- | --- |
+| Design from requirements | Forward design | Concepts, relations, constraints and proposed mappings |
+| Understand an existing project | Reverse modeling of an authorized revision | Observed mappings, inferences and semantic gaps |
+| Assess quality | Harness quality assessment | Rules, evidence, missing reports and quality results |
+| Plan and execute a goal | Runtime plan/execute | Immutable inputs, decisions, receipts and reconciliation |
 
-Developers should follow [source setup](docs/development.md): recursively clone the public source, install each child's dependencies, bind the three local packages in the parent, then run the source checks. The retained M5 R1 CI bundle passed the full synthetic MCP product journey after installation, and its independent Linux/macOS bundle manifests matched. These results are tied to that candidate; CI artifacts are not official Releases. Download a bundle, verify SHA256, unpack it, then follow the existing installation instructions with Node 24.14.0.
+Missing evidence stays INDETERMINATE with Warning; it does not become PASS or trigger an automatic version bump. Runtime defaults to inspect-only/unavailable execution until a trusted executor is configured. Selecting the plugin alone does not enable arbitrary coding.
 
-Browse the [documentation index](docs/README.md), [architecture](docs/architecture/0001-three-product-boundary.md) and [compatibility contract](integration/compatibility/v1/README.md). Source is licensed under [Apache-2.0](LICENSE); [NOTICE](NOTICE) retains attribution, including the OpenHands structure attribution.
+## Three products, one entry
+
+| Repository | Responsibility | Documentation | Releases |
+| --- | --- | --- | --- |
+| [EvoPilot parent](https://github.com/yeliang-wang/evopilot) | Composition, unified Expert and distribution; Codex plugin is Runtime integration, not a fourth product | [Guides](docs/README.md) | [0.1.1 Preview](https://github.com/yeliang-wang/evopilot/releases/tag/v0.1.1) |
+| [Runtime](https://github.com/yeliang-wang/evopilot-runtime) | Projects, goals, execution, state, decisions and audit | [API](https://github.com/yeliang-wang/evopilot-runtime/blob/main/docs/service.md) | [0.1.1 Preview](https://github.com/yeliang-wang/evopilot-runtime/releases/tag/v0.1.1) |
+| [Harness](https://github.com/yeliang-wang/evopilot-harness) | QA, evidence, evaluation and delivery standards | [Guide](https://github.com/yeliang-wang/evopilot-harness/blob/main/README.md) | [0.1.1 Preview](https://github.com/yeliang-wang/evopilot-harness/releases/tag/v0.1.1) |
+| [Ontology](https://github.com/yeliang-wang/evopilot-ontology) | Domain concepts, relations, modeling, builds and immutable deliveries | [Guide](https://github.com/yeliang-wang/evopilot-ontology/blob/main/README.md) | [0.1.1 Preview](https://github.com/yeliang-wang/evopilot-ontology/releases/tag/v0.1.1) |
+
+```mermaid
+flowchart LR
+  C[Codex: unified Expert] --> A[Per-chat MCP adapter]
+  A --> D[Shared local parent daemon]
+  D --> R[Runtime service]
+  D --> H[Harness service]
+  D --> O[Ontology service]
+  R --> W[External scoped workspace]
+  H --> W
+  O --> W
+```
+
+The daemon loads all three services; it does not start one process per product. See [process topology](docs/architecture/0002-local-process-topology.md).
+
+## Start with the portable bundle
+
+Use **Node 24.14.0**. Get `evopilot-0.1.1-preview.tar.gz` and `SHA256SUMS` from the exact [v0.1.1 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.1.1). Follow [checksum verification and extraction](docs/installation.md), then set canonical absolute paths to your extracted bundle and new isolated locations outside Git; their parent directories must exist. Public and private product data belong to the workspace, separate from installed program files:
+
+```sh
+preview_bundle="/absolute/path/to/extracted-bundle"
+preview_root="/absolute/path/to/new-preview-program"
+preview_workspace="/absolute/path/to/new-preview-workspace"
+node "$preview_bundle/app/scripts/manage-preview.mjs" install --bundle "$preview_bundle" --root "$preview_root" --workspace "$preview_workspace" --workspace-id preview-workspace --installation-id preview-install
+node "$preview_bundle/app/scripts/manage-preview.mjs" doctor --root "$preview_root"
+codex plugin marketplace add "$preview_root" --json
+codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json
+```
+
+Select **EvoPilot v0.1 Preview**, then say: “Help me design a synthetic library model with Book and Loan; show the draft and unresolved questions before publication.” This activates only the current chat, checks the local daemon and starts it if absent. Inspect and guide requests stay passive. Chats without the plugin ignore this entry; these are integration behaviors, not Host-enforcement claims.
+
+After installation, ordinary work happens through the Expert; routine CLI operations are not required. Native asset authoring needs no LLM callback. Advanced classification and legacy Catalog resolution need trusted callbacks. Continue with the [four first journeys](docs/first-journey.md), [capabilities](docs/capabilities.md), [source development](docs/development.md), or [troubleshooting](docs/recovery.md).
+
+For help, use [support](SUPPORT.md); for sensitive reports, read [security](SECURITY.md). Licensed under [Apache-2.0](LICENSE); attribution is in [NOTICE](NOTICE).

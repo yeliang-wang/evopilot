@@ -1,67 +1,39 @@
-# Source development
+# Source development — v0.1.1 Preview
 
-Use Node 24.14.0 and npm. The parent owns the canonical compatibility module; each child owns its ESM source, exact dependency declarations, tests and pinned vendor bytes. No sibling source or old installation is needed for an independent child checkout.
+Use Node 24.14.0, TypeScript 5.9.3 and @types/node 24.19.2 from committed locks. The parent owns composition, connection, Expert, plugin and canonical compatibility bytes. Each child owns its strict TypeScript core, public declarations, production dependencies and independent checks.
 
-The four public repositories and pinned child commits are available. Clone recursively before setup:
+The four repositories are [EvoPilot](https://github.com/yeliang-wang/evopilot), [Runtime](https://github.com/yeliang-wang/evopilot-runtime), [Harness](https://github.com/yeliang-wang/evopilot-harness) and [Ontology](https://github.com/yeliang-wang/evopilot-ontology). Clone the parent recursively. Gitlinks must match the exact reviewed child commits; local package bindings never replace gitlink pinning.
 
-```sh
-git clone --recurse-submodules https://github.com/yeliang-wang/evopilot.git
-cd evopilot
-```
+From a populated parent checkout:
 
-See [GitHub source and release preparation](github-release.md) for the four repositories, remote CI scope and candidate distribution artifacts.
-
-Each child installs from its own committed lock with `npm ci --ignore-scripts --no-audit --no-fund`. Parent bare public imports also require local package bindings. Do not regenerate locks during verification. Product dependencies remain exact: Runtime has none, Harness uses yaml 2.9.0, Ontology uses ajv 8.20.0 and yaml 2.9.0. Offline rehearsal requires those packages and their transitive dependencies already in npm's cache.
-
-From each child source directory:
-
-```sh
-npm run check
-npm run build
-npm test
-```
-
-Build for these pure ESM packages verifies owned sources and the existing pinned vendor. It does not generate code or consult a parent. Run the same commands in an unrelated standalone copy with its own dependencies. Source-development scripts/tests are omitted from consumer tarballs.
-
-From the populated parent, install dependencies and bind local packages before tests:
-
-```sh
+~~~sh
+npm ci --ignore-scripts --no-audit --no-fund
+npm install --ignore-scripts --no-save --package-lock=false --no-audit --no-fund ./projects/evopilot-runtime ./projects/evopilot-harness ./projects/evopilot-ontology
 for product in runtime harness ontology; do
   npm --prefix "projects/evopilot-$product" ci --ignore-scripts --no-audit --no-fund
+  npm --prefix "projects/evopilot-$product" run build
 done
-npm install --ignore-scripts --no-save --package-lock=false --no-audit --no-fund ./projects/evopilot-runtime ./projects/evopilot-harness ./projects/evopilot-ontology
 npm run build
 npm run check
 npm test
 npm run roadmap:check
-```
+~~~
 
-The bindings use ignored parent node_modules and change neither package.json nor parent dependencies. Add --offline to npm commands only with all prerequisites and locked packages cached locally. A ready bundle installs without npm. Release publication requires an explicit decision after external M5 Evolution Target validation. The expected v0.1.0 Release remains pending; download, verify SHA256 and unpack an available ready bundle before following [installation](installation.md).
+Local package binding can update child transitive dependencies. Bind before the final child npm ci, which restores each complete child lock; never bind again after that install.
 
-These three bindings are the current local public packages: `@evopilot-next/runtime`, `@evopilot-next/harness` and `@evopilot-next/ontology`, each at `0.1.0`. The parent test glob includes `integration/e2e/local-acceptance.test.mjs`; its synthetic report-verifier unit fixtures do not establish Host acceptance. See [testing](testing.md) for focused checks and verification of a separate candidate report. Keep that private report outside the app, source checkout and real workspace; evidence updates do not require changing candidate documentation bytes.
+Child builds emit JavaScript, declarations and source maps before the parent resolves their public imports. Parent build emits dist/integration, dist/expert and dist/plugins, and copies the frozen compatibility reference assets. It checks existing canonical vendor bindings without refreshing pins. Each child can also run build, check and test independently with its own locked tools. Do not regenerate locks during verification. In restricted environments set OPENSSL_CONF=/dev/null.
 
-Only the parent build regenerates canonical vendor copies; it never refreshes pins. The full parent suite remains separate from artifact verification. In restricted environments, `OPENSSL_CONF=/dev/null` avoids reading inaccessible system OpenSSL configuration.
+Compiled entry points include dist/integration/composition.js, dist/integration/connection/*.js, dist/expert/core/guide.js and dist/plugins/codex/server.js. Child CLI bins use dist/cli.js; public package exports select declarations through types and JavaScript through import. Ontology retains its explicitly declared compatibility MJS export.
 
-For an authorized local artifact rehearsal, choose a new directory outside every source checkout whose parent already exists:
+Runtime production dependencies are empty. Harness requires yaml 2.9.0; Ontology requires ajv 8.20.0 and yaml 2.9.0. Source locks also contain the exact development compiler tree. Artifact verification binds the full source lock bytes by SHA256, checks root development metadata and all dependency edges, then derives the installed inventory only from production dependencies. A production dependency marked dev is rejected.
 
-```sh
+~~~sh
 npm run artifacts:verify -- --out /absolute/operator-selected/new-artifacts
-```
+node scripts/assemble-preview.mjs --artifacts /absolute/operator-selected/new-artifacts --out /absolute/operator-selected/new-bundle
+~~~
 
-The verifier packs with scripts disabled, validates exact file inventory, paths, source digests, contract pin and product identity before extraction, then retains each dependency-bearing child's exact own lock as `dependency-lock.json` beside its tarball. This separate assembly material is not included by npm in the tarball. The verifier validates lock identity, direct dependencies and resolved records, copies those exact bytes to the extracted `package/package-lock.json`, and runs `npm ci --offline --ignore-scripts --no-audit --no-fund`. It compares the complete installed version/resolved/integrity inventory against the retained lock; npm ci verifies cached tarball integrity. Runtime asserts empty dependencies and performs no dependency resolution. Public subpaths run under Node permissions limited to that extracted package and its dependencies. Missing offline cache fails; no network fallback occurs. Output preserves tarballs and a JSON manifest with versions, package SHA256, own exports, explicit lock source/bundle paths and SHA256, resolved dependency inventory and smoke status, including partial failures. Existing output is refused. This is local package rehearsal, not GitHub release or product acceptance.
+Choose new output directories outside source with existing parents. Verification packs offline with scripts disabled, checks actual source inventory, generated exports and declarations, frozen vendor SHA, and tar path/link/size/integrity guards before extraction. Harness and Ontology retain the exact source lock beside their tgz and install with npm ci --omit=dev --offline --ignore-scripts --no-audit --no-fund. Installed version/resolved/integrity inventory and unchanged source lock bytes are checked. Runtime ships no dependency lock. Missing cache fails explicitly.
 
-The parent wires the three exact child commits as gitlinks and .gitmodules entries using the public HTTPS repositories listed in [GitHub source and release preparation](github-release.md). All four repositories were published in M5 R1; gitlinks identify exact child revisions. After all source is committed and repositories are clean, report assembly evidence:
+Assembly includes compiled parent code, corresponding owned TypeScript sources, declarations, source maps, public documentation and legal/support files, workspace templates, verified governance and the informational repair projection. Child packages come from verified tgz inventories with production dependencies only. Tests, development node_modules and private state are excluded. Markdown link destinations to packaged product documents become installation-local; prose and code examples remain unchanged.
 
-```sh
-npm run components:lock
-npm run components:lock -- --out /absolute/operator-selected/new-components.json
-```
-
-The lock command refuses missing/unpopulated children, inherited parent repositories, dirty/untracked source and index gitlinks differing from child HEADs. It never stages, commits or changes remotes. Output is deterministic for the same source commits and contract, and must not overwrite source or an existing file.
-
-Remote CI is authorized under M5. The parent workflow retains read-only contents permission, recursive checkout/setup-node, lock-based child dependency installation, parent local package binding, full source checks and offline artifact rehearsal. It adds portable assembly and a commit-specific candidate distribution upload as described in [GitHub source and release preparation](github-release.md). All four M5 R1 CI runs passed; parent commit `d4a9201169a82c36875bf6bc28c784fb3fb7122a` passed 441 tests in run `38328075766`. That immutable result does not cover later revisions or establish release authority. See [native authoring boundaries](architecture/0003-local-authoring.md).
-
-The common `release.yml` and builtins-only `scripts/release-gate.mjs` can be copied verbatim into each repository. Run the fixture-only check with `node --test integration/e2e/release-gate.test.mjs` (use `OPENSSL_CONF=/dev/null` in restricted environments), then `git diff --check`. Preparation performs no tag or Release writes when `publish=false`; see the [parameter and publication procedure](github-release.md).
-
-
-The bundle assembler translates only relative Markdown product link destinations from projects/evopilot-OWNER to node_modules/@evopilot-next/OWNER. Prose, commands, code examples and absolute URLs remain unchanged. Source guide references resolve from the checkout; installedReferences resolve from the verified `installationRoot`, which already equals `managedRoot/app`. The packed children retain public licenses, provenance and documentation; no product implementation is duplicated or symlinked. Development commands above require a populated source checkout; the portable app omits source tests and assembly tools. It includes the public documentation, workspace templates, immutable governance baseline, report verifier and roadmap checker. The exact mapping is covered by the distribution tests described in [testing](testing.md).
+After authorized integration, npm run components:lock records exact clean component commits and rejects mismatched index gitlinks. It never stages or commits. The immutable v0.1.0 and M0/M1 records remain historical evidence. Follow [testing](testing.md), [release delivery](github-release.md) and [authoring boundaries](architecture/0003-local-authoring.md); no new result is inferred from these instructions.

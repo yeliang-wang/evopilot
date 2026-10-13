@@ -6,11 +6,11 @@ import { archiveEntries, validateEntries, validateDependencyLock, verifyInstalle
 import { SOURCE, VERSION, PIN, OWNERS, sha, json, regular, tree, portable, inventory, put, canonical, newRoot, disjoint, safeRelative, exact, argumentsFor, readBundle } from './manage-preview.mjs';
 
 // Explicit parent whitelist. Assembly helpers and source children are not runtime dependencies.
-export const PARENT_FILES = ['package.json', 'README.md', 'LICENSE', 'NOTICE',
-  'integration/composition.mjs', 'integration/compatibility', 'integration/connection', 'plugins/codex', 'expert',
+export const PARENT_FILES = ['package.json', 'README.md', 'LICENSE', 'NOTICE', 'CONTRIBUTING.md', 'SECURITY.md', 'SUPPORT.md', 'CHANGELOG.md',
+  'dist', 'integration/composition.ts', 'integration/types.ts', 'integration/compatibility', 'integration/connection', 'plugins/codex', 'expert',
   'docs', 'workspace/README.md', 'workspace/templates',
   'governance/roadmap.json', 'governance/implementation-lock.json', 'governance/decisions/local-implementation.json',
-  'governance/acceptance.json', 'governance/m0.json',
+  'governance/acceptance.json', 'governance/m0.json', 'governance/delivery-repair-v011.json',
   'scripts/manage-preview.mjs', 'scripts/verify-local-acceptance.mjs', 'scripts/roadmap.mjs'];
 export function collect(root, names) {
   const files = new Map();
@@ -21,13 +21,24 @@ export function collect(root, names) {
   }
   return files;
 }
-// Only Markdown destinations are translated. Code, prose and absolute URLs stay
-// byte-identical. Source projects/evopilot-OWNER maps to the installed npm pack.
-export function installedMarkdown(markdown, filename) {
+// Only Markdown destinations are translated. Code, prose and unowned URLs stay
+// byte-identical. Owned GitHub files map only when shipped in the complete inventory.
+// Source projects/evopilot-OWNER maps to the installed npm pack.
+export function installedMarkdown(markdown, filename, packagedFiles = new Map()) {
   const target = value => {
+    const owned = value.match(/^https:\/\/github\.com\/yeliang-wang\/(evopilot(?:-runtime|-harness|-ontology)?)\/blob\/main\/([^?#]+)([?#].*)?$/);
+    if (owned) {
+      let relative;
+      try { relative = decodeURIComponent(owned[2]); } catch { return value; }
+      if (relative.includes('\\') || relative.startsWith('/') || relative.split('/').some(p => !p || p === '.' || p === '..')) return value;
+      const local = (owned[1] === 'evopilot' ? '' : 'node_modules/@evopilot-next/' + owned[1].slice(9) + '/') + relative;
+      if (!packagedFiles.has(local)) return value;
+      return path.posix.relative(path.posix.dirname(filename), local) + (owned[3] ?? '');
+    }
     if (/^(?:[a-z][a-z0-9+.-]*:|\/|#)/i.test(value)) return value;
     const match = value.match(/^([^?#]*)([?#].*)?$/);
     const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(filename), match[1]));
+    if (resolved === '..' || resolved.startsWith('../')) return value;
     if (!/^projects\/evopilot-(runtime|harness|ontology)(?:\/|$)/.test(resolved)) return value;
     const installed = resolved.replace(/^projects\/evopilot-(runtime|harness|ontology)/, 'node_modules/@evopilot-next/$1');
     return path.posix.relative(path.posix.dirname(filename), installed) + (match[2] ?? '');
@@ -55,7 +66,6 @@ export async function assemblePreview({ artifacts, out }) {
   assert.equal(manifest.authority, false); assert.equal(manifest.acceptance, 'NOT_INFERRED');
   assert(Array.isArray(manifest.packages) && manifest.packages.length === 3);
   const app = collect(SOURCE, PARENT_FILES), packages = [];
-  for (const [name, bytes] of app) if (name.endsWith('.md')) app.set(name, Buffer.from(installedMarkdown(bytes.toString('utf8'), name)));
   for (const [i, record] of manifest.packages.entries()) {
     exact(record, ['product', 'name', 'version', 'packageSHA256', 'tarball', 'exports', 'checkpoint', 'contractSHA256', 'dependencyLock', 'dependencies', 'smoke', 'capabilities']);
     const owner = OWNERS[i]; assert.equal(record.product, owner); assert.equal(record.name, '@evopilot-next/' + owner);
@@ -94,6 +104,8 @@ export async function assemblePreview({ artifacts, out }) {
     }
     packages.push({ product: owner, name: pkg.name, version: VERSION, packageSHA256: record.packageSHA256, dependencyLockSHA256: lockSHA });
   }
+  // Translate after all verified package inventories exist, including child docs.
+  for (const [name, bytes] of app) if (name.endsWith('.md')) app.set(name, Buffer.from(installedMarkdown(bytes.toString('utf8'), name, app)));
   portable(app);
   assert(app.size <= 10000 && [...app.values()].reduce((n, bytes) => n + bytes.length, 0) <= 268435456, 'Bundle limit');
   const report = { schema: 'evopilot-preview-bundle/v1', version: VERSION, node: '24.14.0', contractSHA256: PIN, packages, files: inventory(app) };

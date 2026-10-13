@@ -1,40 +1,47 @@
+import { errorCode } from '../types.js';
+import type { Configuration, ControlRecord, ActionPayload } from '../types.js';
 import http from 'node:http';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { loadConfiguration, LIMITS, fail, fields } from './config.mjs';
-import { readRecord, same, recoverRecord } from './control.mjs';
+import { loadConfiguration, LIMITS, fail, fields } from './config.js';
+import { readRecord, same, recoverRecord } from './control.js';
 
-const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
-export function validateAction(action, payload) {
-  const shapes = { health: [], stop: [], capabilities: [], request: ['owner', 'envelope'], dispatch: ['args'], reconcile: ['args'], inspect: ['owner', 'scope'] };
+const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+export function validateAction(action: string, payload: ActionPayload) {
+  const shapes: Record<string, string[]> = { health: [], stop: [], capabilities: [], request: ['owner', 'envelope'], dispatch: ['args'], reconcile: ['args'], inspect: ['owner', 'scope'] };
   if (!Object.hasOwn(shapes, action)) fail('ACTION');
   fields(payload, shapes[action]);
-  if (['request', 'inspect'].includes(action) && !['runtime', 'harness', 'ontology'].includes(payload.owner)) fail('OWNER');
+  if (['request', 'inspect'].includes(action) && !['runtime', 'harness', 'ontology'].includes(typeof payload.owner === 'string' ? payload.owner : '')) fail('OWNER');
   if (action === 'request' && (!payload.envelope || typeof payload.envelope !== 'object' || Array.isArray(payload.envelope))) fail('SCHEMA');
   if (['dispatch', 'reconcile'].includes(action) && (!payload.args || typeof payload.args !== 'object' || Array.isArray(payload.args))) fail('SCHEMA');
 }
-export function transport(c, record, action, payload = {}, timeout = LIMITS.request) {
+export function transport(c: Configuration, record: ControlRecord, action: string, payload: ActionPayload = {}, timeout: number = LIMITS.request) {
   validateAction(action, payload);
   const body = JSON.stringify({ protocol: c.protocol, identity: c.identity, nonce: record.nonce, action, payload });
   if (Buffer.byteLength(body) > LIMITS.body) fail('LIMIT');
   return new Promise((resolve, reject) => {
-    let timer;
+    let timer: ReturnType<typeof setTimeout>;
     const source = payload.envelope ?? payload.args;
-    const correlation = source ? Object.fromEntries(['requestId', 'scope', 'expectedRevision'].filter(k => Object.hasOwn(source, k)).map(k => [k, source[k]])) : null;
+    const correlation = source ? Object.fromEntries(['requestId', 'scope', 'expectedRevision'].filter(k => Object.hasOwn(source, k)).map(k => [k, (source as unknown as Record<string, unknown>)[k]])) : null;
     const unknown = () => Object.assign(new Error('Connection outcome unknown; inspect the owning receipt before any new action'), { code: 'UNKNOWN', correlation });
     const req = http.request({ hostname: '127.0.0.1', port: record.port, path: '/', method: 'POST', agent: false,
       headers: { authorization: 'Bearer ' + record.token, host: '127.0.0.1:' + record.port, 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) } }, res => {
-      let size = 0; const chunks = [];
+      let size = 0; const chunks: Buffer[] = [];
       res.on('data', chunk => { size += chunk.length; if (size > LIMITS.response) res.destroy(); else chunks.push(chunk); });
       res.on('error', () => { clearTimeout(timer); reject(unknown()); });
       res.on('end', () => {
         clearTimeout(timer);
         try {
-          const value = JSON.parse(Buffer.concat(chunks));
-          if (!same(value.identity, c.identity) || value.nonce !== record.nonce || value.pid !== record.pid) throw Error();
-          if (value.error) reject(Object.assign(new Error(value.error.code), value.error));
+          const value: unknown = JSON.parse(Buffer.concat(chunks).toString());
+          if (!value || typeof value !== 'object') throw Error();
+          const reply = value as Record<string, unknown>;
+          if (!same(reply.identity, c.identity) || reply.nonce !== record.nonce || reply.pid !== record.pid) throw Error();
+          if (reply.error) {
+            const error = reply.error as { code?: string };
+            reject(Object.assign(new Error(error.code), error));
+          }
           else if (res.statusCode !== 200) reject(unknown());
-          else resolve(value.result);
+          else resolve(reply.result);
         } catch { reject(unknown()); }
       });
     });
@@ -43,19 +50,19 @@ export function transport(c, record, action, payload = {}, timeout = LIMITS.requ
     req.end(body);
   });
 }
-function publicConnection(c, r) { return { active: true, identity: c.identity, pid: r.pid, nonce: r.nonce, address: '127.0.0.1', port: r.port, authority: false }; }
-export async function inspectConnection(configPath) {
+function publicConnection(c: Configuration, r: ControlRecord) { return { active: true, identity: c.identity, pid: r.pid, nonce: r.nonce, address: '127.0.0.1', port: r.port, authority: false }; }
+export async function inspectConnection(configPath: string) {
   const c = loadConfiguration(configPath), r = readRecord(c);
   if (!r) return { active: false, identity: c.identity, authority: false };
   if (r.state !== 'ready') return { active: false, identity: c.identity, state: r.state, diagnostic: r.diagnostic ?? 'STARTING' };
   await transport(c, r, 'health', {}, 1500);
   return publicConnection(c, r);
 }
-export async function activateConnection(configPath) {
+export async function activateConnection(configPath: string) {
   const c = loadConfiguration(configPath);
   let r = readRecord(c);
   if (!r) {
-    const child = spawn(process.execPath, [path.join(c.installationRoot, 'integration/connection/daemon.mjs'), c.configPath], {
+    const child = spawn(process.execPath, [path.join(c.installationRoot, 'dist/integration/connection/daemon.js'), c.configPath], {
       detached: true, stdio: 'ignore', cwd: c.installationRoot, env: { LANG: 'C', TZ: 'UTC' },
     });
     let spawnError = false;
@@ -66,7 +73,7 @@ export async function activateConnection(configPath) {
   }
   const deadline = Date.now() + LIMITS.startup;
   while (Date.now() < deadline) {
-    try { r = readRecord(c); } catch (e) { if (e.code !== 'CONTROL_INVALID') throw e; }
+    try { r = readRecord(c); } catch (e) { if (errorCode(e) !== 'CONTROL_INVALID') throw e; }
     if (r?.state === 'failed') fail(r.diagnostic ?? 'STARTUP_FAILED');
     if (r?.state === 'ready') {
       await transport(c, r, 'health', {}, 1500);
@@ -76,18 +83,18 @@ export async function activateConnection(configPath) {
   }
   fail('STARTUP_TIMEOUT', 'Startup timed out; retained control evidence requires explicit diagnosis/recovery');
 }
-export async function callConnection(configPath, action, payload = {}) {
+export async function callConnection(configPath: string, action: string, payload: ActionPayload = {}) {
   validateAction(action, payload);
   if (['stop', 'health'].includes(action)) fail('ACTION');
   const c = loadConfiguration(configPath), r = readRecord(c);
   if (!r || r.state !== 'ready') fail('INACTIVE');
   return transport(c, r, action, payload);
 }
-export async function stopConnection(configPath) {
+export async function stopConnection(configPath: string) {
   const c = loadConfiguration(configPath), r = readRecord(c);
   if (!r) return { stopped: false };
   if (r.state !== 'ready') fail('NOT_READY');
   await transport(c, r, 'health', {}, 1500);
   return transport(c, r, 'stop', {}, 3000);
 }
-export function recoverStaleConnection(configPath) { return recoverRecord(loadConfiguration(configPath)); }
+export function recoverStaleConnection(configPath: string) { return recoverRecord(loadConfiguration(configPath)); }

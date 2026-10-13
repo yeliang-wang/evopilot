@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "declaration": true,
+    "sourceMap": true,
+    "rootDir": ".",
+    "outDir": "dist",
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "integration/composition.ts",
+    "integration/connection/client.ts",
+    "integration/connection/config.ts",
+    "integration/connection/control.ts",
+    "integration/connection/daemon.ts",
+    "expert/core/guide.ts",
+    "plugins/codex/server.ts",
+    "integration/types.ts",
+    "integration/compatibility/v1/reference.d.mts"
+  ]
+}

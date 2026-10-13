@@ -18,16 +18,12 @@ function tarEntry(name, bytes) {
   return Buffer.concat([h, bytes, Buffer.alloc((512 - bytes.length % 512) % 512)]);
 }
 function packageFixture(owner) {
-  const pkg = { name: '@evopilot-next/' + owner, version: '0.1.0', private: true, type: 'module', license: 'Apache-2.0', engines: { node: '>=24.14.0' },
-    scripts: { build: 'node scripts/check.mjs', check: 'node scripts/check.mjs', test: 'node --test tests/e2e/*.test.mjs' },
-    files: owner === 'runtime' ? ['src', 'vendor', 'README.md', 'docs', 'LICENSE', 'NOTICE', 'provenance'] : owner === 'harness' ? ['src', 'vendor', 'README.md', 'specifications', 'examples', 'assets', 'docs', 'provenance', 'LICENSE', 'NOTICE'] : ['src', 'vendor', 'README.md', 'specifications', 'examples', 'schemas', 'docs', 'provenance', 'LICENSE', 'NOTICE', 'assets'],
-    exports: owner === 'runtime' ? { '.': './src/index.mjs', './service': './src/service.mjs' } : owner === 'harness' ? { '.': './src/index.mjs', './sources': './src/asset-sources.mjs', './service': './src/service.mjs' } : { '.': './src/index.mjs', './compat': './src/compat/index.mjs', './migration': './src/migration.mjs', './sources': './src/asset-sources.mjs', './service': './src/service.mjs' },
-    bin: { ['evopilot-next-' + owner]: 'src/cli.mjs' }, dependencies: owner === 'runtime' ? {} : owner === 'harness' ? { yaml: '2.9.0' } : { ajv: '8.20.0', yaml: '2.9.0' } };
+  const pkg = structuredClone({"runtime":{"name":"@evopilot-next/runtime","version":"0.1.1","private":true,"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","docs","LICENSE","NOTICE","provenance"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"license":"Apache-2.0","bin":{"evopilot-next-runtime":"dist/cli.js"},"devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}},"harness":{"name":"@evopilot-next/harness","version":"0.1.1","private":true,"bin":{"evopilot-next-harness":"dist/cli.js"},"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","specifications","examples","assets","docs","provenance","LICENSE","NOTICE"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./sources":{"types":"./dist/asset-sources.d.ts","import":"./dist/asset-sources.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"dependencies":{"yaml":"2.9.0"},"license":"Apache-2.0","devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}},"ontology":{"name":"@evopilot-next/ontology","version":"0.1.1","private":true,"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","specifications","examples","schemas","docs","provenance","LICENSE","NOTICE","assets"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./compat":{"types":"./dist/compat/index.d.mts","import":"./dist/compat/index.mjs"},"./migration":{"types":"./dist/migration.d.ts","import":"./dist/migration.js"},"./sources":{"types":"./dist/asset-sources.d.ts","import":"./dist/asset-sources.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"tsc --noEmit && node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"dependencies":{"ajv":"8.20.0","yaml":"2.9.0"},"license":"Apache-2.0","bin":{"evopilot-next-ontology":"dist/cli.js"},"devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}}}[owner]);
   const own = new Map([['package.json', json(pkg)]]);
   own.set('docs/service.md', Buffer.from('Synthetic service documentation fixture.'));
-  for (const file of pkg.files) if (!['src', 'vendor'].includes(file)) own.set(file.includes('.') || ['LICENSE', 'NOTICE'].includes(file) ? file : file + '/fixture.txt', Buffer.from('Synthetic package fixture, not product acceptance.'));
-  for (const file of [...Object.values(pkg.exports), './src/cli.mjs']) own.set(file.slice(2), Buffer.from('// synthetic package fixture\n'));
-  own.set('src/index.mjs', Buffer.from(`export const PRODUCT = '${owner}';\nexport const VERSION = '0.1.0';\n`));
+  for (const file of pkg.files) if (!['dist', 'src', 'vendor'].includes(file)) own.set(file.includes('.') || ['LICENSE', 'NOTICE'].includes(file) ? file : file + '/fixture.txt', Buffer.from('Synthetic package fixture, not product acceptance.'));
+  for (const file of [...Object.values(pkg.exports).flatMap(Object.values), './dist/cli.js', './src/cli.ts']) own.set(file.slice(2), Buffer.from('// synthetic package fixture\n'));
+  own.set('src/index.ts', Buffer.from(`export const PRODUCT = '${owner}';\nexport const VERSION = '0.1.1';\n`));
   own.set('vendor/compatibility/v1/reference.mjs', fs.readFileSync(path.join(SOURCE, 'integration/compatibility/v1/reference.mjs')));
   own.set('vendor/compatibility/v1/manifest.json', json({ module: 'reference.mjs', contractRevision: '1.0.0', sha256: PIN }));
   // Minimal public documentation, explicitly synthetic; no Host evidence.
@@ -45,13 +41,14 @@ function artifactFixtures(root) {
     put(root, owner + '/fixture.tgz', tgz);
     let dependencyLock = null; const dependencies = {};
     if (owner !== 'runtime') {
-      const lock = { name: pkg.name, version: pkg.version, lockfileVersion: 3, packages: { '': { name: pkg.name, version: pkg.version, dependencies: pkg.dependencies } } };
+      const lock = { name: pkg.name, version: pkg.version, lockfileVersion: 3, packages: { '': { name: pkg.name, version: pkg.version, dependencies: pkg.dependencies, devDependencies: pkg.devDependencies } } };
       for (const [name, version] of Object.entries(pkg.dependencies)) {
         const record = { version, resolved: 'https://example.invalid/' + name + '.tgz', integrity: 'sha512-' + 'A'.repeat(86) + '==' };
         dependencies['node_modules/' + name] = record; lock.packages['node_modules/' + name] = record;
         put(root, owner + '/package/node_modules/' + name + '/package.json', json({ name, version }));
         put(root, owner + '/package/node_modules/' + name + '/index.js', Buffer.from('// dependency package fixture'));
       }
+      for (const [name, version] of Object.entries(pkg.devDependencies)) lock.packages['node_modules/' + name] = { version, dev: true, resolved: 'https://example.invalid/dev.tgz', integrity: 'sha512-' + 'A'.repeat(86) + '==' };
       const bytes = json(lock); dependencyLock = { source: 'projects/evopilot-' + owner + '/package-lock.json', file: owner + '/dependency-lock.json', sha256: sha(bytes) };
       put(root, dependencyLock.file, bytes); put(root, owner + '/package/package-lock.json', bytes);
       put(root, owner + '/package/node_modules/.package-lock.json', json({ lockfileVersion: 3, packages: dependencies }));
@@ -167,7 +164,7 @@ test('PACKAGE FIXTURE: portable assembly, passive install, doctor, preservation 
 test('PACKAGE FIXTURE: assembly refuses changed archive, extracted bytes and dependency inventory before output', { timeout: 30000 }, async t => {
   const base = temp(t), artifacts = path.join(base, 'artifacts'); artifactFixtures(artifacts);
   const out = path.join(base, 'out');
-  for (const rel of ['runtime/fixture.tgz', 'runtime/package/src/index.mjs', 'harness/dependency-lock.json', 'harness/package/node_modules/yaml/package.json']) {
+  for (const rel of ['runtime/fixture.tgz', 'runtime/package/src/index.ts', 'harness/dependency-lock.json', 'harness/package/node_modules/yaml/package.json']) {
     const full = path.join(artifacts, rel), bytes = fs.readFileSync(full); fs.writeFileSync(full, '{}');
     await assert.rejects(assemblePreview({ artifacts, out })); assert(!fs.existsSync(out)); fs.writeFileSync(full, bytes);
   }
@@ -185,6 +182,34 @@ test('Markdown product links map exactly; unrelated destinations and examples st
   assert.equal(installedMarkdown('[R](../../../projects/evopilot-runtime/README.md)', 'integration/compatibility/v1/README.md'), '[R](../../../node_modules/@evopilot-next/runtime/README.md)');
 });
 
+test('owned absolute Markdown URLs map only to shipped files and preserve code and bounds', () => {
+  const url = 'https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/service.md';
+  const parentURL = 'https://github.com/yeliang-wang/evopilot/blob/main/docs/installation.md';
+  const files = new Map([
+    ['node_modules/@evopilot-next/ontology/docs/service.md', Buffer.from('fixture')],
+    ['docs/installation.md', Buffer.from('fixture')],
+  ]);
+  const source = '[API](' + url + '#requests)\n[ref]: ' + parentURL + '?view=1#install\n';
+  assert.equal(installedMarkdown(source, 'docs/example.md', files),
+    '[API](../node_modules/@evopilot-next/ontology/docs/service.md#requests)\n[ref]: installation.md?view=1#install\n');
+  assert.equal(installedMarkdown(source, 'docs/example.md'), source);
+  assert.equal(installedMarkdown('[Install](' + parentURL + ')', 'node_modules/@evopilot-next/ontology/README.md', files),
+    '[Install](../../../docs/installation.md)');
+  const untouched = [
+    '[missing](' + url.replace('service.md', 'missing.md') + ')',
+    '[external](' + url.replace('yeliang-wang', 'other-owner') + ')',
+    '[traversal](' + url.replace('docs/service.md', 'docs/%2e%2e/service.md') + ')',
+    '[absolute](/docs/installation.md)',
+    '[escape](../../projects/evopilot-runtime/README.md)',
+    '[local](./installation.md#install)',
+    '`[inline](' + url + ')`',
+    '    [indented](' + url + ')',
+    '```md\n[fenced](' + url + ')\n```',
+    'Plain ' + url,
+  ].join('\n');
+  assert.equal(installedMarkdown(untouched, 'docs/example.md', files), untouched);
+});
+
 test('included parent Markdown links resolve after product target translation', () => {
   const files = collect(SOURCE, PARENT_FILES);
   for (const name of ['README.md', 'docs/README.md', 'scripts/verify-local-acceptance.mjs']) {
@@ -193,13 +218,13 @@ test('included parent Markdown links resolve after product target translation', 
   }
   assert(![...files.keys()].some(name => /^(?:projects|node_modules|\.local|tests|integration\/e2e)\//.test(name)));
   assert(!files.has('scripts/verify-artifacts.mjs'));
-  for (const [name, bytes] of files) if (name.endsWith('.md')) files.set(name, Buffer.from(installedMarkdown(bytes.toString('utf8'), name)));
   for (const owner of OWNERS) for (const [name, bytes] of packageFixture(owner).own) {
     files.set('node_modules/@evopilot-next/' + owner + '/' + name, bytes);
   }
+  for (const [name, bytes] of files) if (name.endsWith('.md')) files.set(name, Buffer.from(installedMarkdown(bytes.toString('utf8'), name, files)));
   assertPublicNavigation(files);
   // Missing public targets must fail even though source-only tools are absent.
-  for (const target of ['docs/installation.md', 'scripts/verify-local-acceptance.mjs', 'scripts/roadmap.mjs', 'governance/roadmap.json', 'node_modules/@evopilot-next/ontology/specifications/v1/README.md']) {
+  for (const target of ['docs/installation.md', 'docs/README.md', 'scripts/verify-local-acceptance.mjs', 'scripts/roadmap.mjs', 'node_modules/@evopilot-next/runtime/docs/service.md', 'node_modules/@evopilot-next/harness/specifications/v1/README.md', 'node_modules/@evopilot-next/ontology/specifications/v1/README.md']) {
     const missing = new Map(files); missing.delete(target);
     assert.throws(() => assertPublicNavigation(missing), / -> /);
   }

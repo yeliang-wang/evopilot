@@ -1,4 +1,8 @@
-# Testing and evidence
+# Testing and evidence — v0.1.1 Preview
+
+Install the parent compiler from its complete lock, bind the local public packages, then install each child from its own lock and build it before building the parent as described in [development](development.md). Current checks cover compiled JavaScript entry points, conditional declaration exports, strict consumer typing, full source lock integrity, production-only installation and installation-local documentation links. The release gate tests exercise exact candidate preparation and publication guards; no fixture establishes acceptance. Current delivery uses [the exact candidate release sequence](github-release.md).
+
+The standalone local-acceptance verifier documented below intentionally remains a historical v0.1.0 report contract. Do not relabel its fixtures as v0.1.1 evidence. Current repair acceptance requires external evidence bound to the exact v0.1.1 source, bundle and installation, preserving every required Host journey and receipt check.
 
 The retained historical source baseline reports **394 PASS, 0 FAIL, 0 SKIP**, with a separate baseline of **4 distribution fixture tests PASS**. These counts describe those recorded runs, not a fixed future suite size or the current candidate's verdict. Retain the actual command, environment, candidate identity and result for each new run. Technical assembly and passive installation alone do not establish Host acceptance.
 
@@ -18,6 +22,7 @@ The retained historical source baseline reports **394 PASS, 0 FAIL, 0 SKIP**, wi
 After [source setup](development.md), run the complete checks from the populated parent:
 
 ```sh
+npm run build
 npm run check
 npm test
 npm run roadmap:check
@@ -37,7 +42,7 @@ M0 Desktop evidence establishes feasibility only. All E01–E19 remain required 
 Current candidate status is supplied separately in a private local report. Without one, no acceptance claim is made. From the source checkout or installed `installationRoot` (`managedRoot/app`), verify an operator-selected report using the shipped [standalone verifier](../scripts/verify-local-acceptance.mjs):
 
 ```sh
-node scripts/verify-local-acceptance.mjs --report /absolute/private-audit/candidate-report.json
+node scripts/verify-local-acceptance.mjs --report /absolute/operator-selected/candidate-report.json
 ```
 
 The shipped [roadmap checker](../scripts/roadmap.mjs) also runs from either root with `node scripts/roadmap.mjs --check`; it reads only the immutable public governance baseline. Neither command ships a live candidate report or supplies Host evidence.
@@ -52,6 +57,6 @@ The installation identity file contains only the actual public connection `ident
 
 Any non-PASS criterion yields `NOT_PASSED` and CLI exit 1; malformed structure, identities or hashes also exit 1. All PASS yields `localAcceptance: PASSED`, exit 0 and authority `NONE`, with all authorization flags still false. This is **structural binding, integrity and completeness only**. Digests establish byte integrity, not intrinsic semantic truth. Descriptions, author assertions, discovery, metadata, simulations and tool names alone cannot prove acceptance. The operator must review the real receipts against every unchanged criterion; the checker never supplies human approval.
 
-Store the report outside the app, source checkout and real workspace. It contains private audit paths and must not enter a public package or source archive. A public redacted summary may be produced separately only under a fresh M5 approval. Keep candidate documentation independent of changing report status so later Host evidence does not require byte edits or repeated installation. The synthetic unit fixture that returns structural PASS is not a shipped acceptance report or evidence of a real Host journey.
+Store the report outside the app, source checkout and real workspace. It contains private audit paths and must not enter a public package or source archive. Any public redacted summary must remain within the genuine decision scope; the approved repair conditionally authorizes release after exact candidate acceptance without a redundant approval. Keep candidate documentation independent of changing report status so later Host evidence does not require byte edits or repeated installation. The synthetic unit fixture that returns structural PASS is not a shipped acceptance report or evidence of a real Host journey.
 
-See [capabilities](capabilities.md), [composition](product-composition.md), [migration](migration.md) and [current roadmap](roadmap.md). Future CI configuration is not evidence that Linux CI or a Host journey ran.
+See [capabilities](capabilities.md), [composition](product-composition.md), [migration](migration.md) and [current roadmap](roadmap.md). CI configuration is not evidence that CI or a Host journey ran.

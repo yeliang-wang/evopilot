@@ -1,15 +1,23 @@
-# Current implementation and remaining verification
+# Release line and roadmap
 
-The [authoritative roadmap](roadmap/ROADMAP.md) and retained governance preserve the initial planning and acceptance baseline. The newer M5 instruction separately authorizes source publication, remote CI and release preparation as described in [GitHub source and release preparation](github-release.md); it does not rewrite that baseline.
+The [frozen roadmap](roadmap/ROADMAP.md) and retained governance preserve the historical v0.1.0 planning and acceptance baseline. They remain immutable records, not a description of all current capabilities. The baseline checker validates historical integrity and returns `localAcceptance: NOT_EVALUATED`; it does not evaluate a new release.
 
-Runtime, Harness and Ontology now have owned persistent services and CLIs. Public-package composition verifies immutable pins and separates Runtime completion, Harness quality and Ontology validity. The shared daemon, explicit per-chat MCP activation, passive guides, portable assembly and passive installation are implemented.
+## v0.1.0: published Preview baseline
 
-Retained technical evidence includes source and installer tests, actual three-package assembly and new-directory passive installation. Actual product composition and detached connection tests have passed. See [testing](testing.md) for evidence boundaries and reproducible commands, and [composition](product-composition.md).
+All four v0.1.0 public prereleases are published: [parent](https://github.com/yeliang-wang/evopilot/releases/tag/v0.1.0), [Runtime](https://github.com/yeliang-wang/evopilot-runtime/releases/tag/v0.1.0), [Harness](https://github.com/yeliang-wang/evopilot-harness/releases/tag/v0.1.0) and [Ontology](https://github.com/yeliang-wang/evopilot-ontology/releases/tag/v0.1.0). Their tags and historical evidence remain preserved.
 
-Each candidate requires installed documentation and Expert readback, the complete Codex Host journey, multiple chats, concurrent startup, lost-response recovery and final status evidence. Current full migration/E03 and E01–E19 status belongs in a separate exact candidate-bound local report; without it no acceptance is claimed. Prior Desktop feasibility does not substitute for this evidence. The immutable `governance/acceptance.json` retains the initial M1 planning baseline with 19 PENDING criteria. `roadmap:check` validates that baseline and its anti-tamper bindings, returning `localAcceptance: NOT_EVALUATED`; it does not evaluate a candidate report.
+This line establishes owned product services, public-package composition, immutable inputs, a shared local daemon, explicit per-chat activation and portable installation. See [current capabilities](capabilities.md).
 
-The default daemon has no classification or foreign Catalog callbacks. Those advanced paths require the exact trusted SDK providers described in [capabilities](capabilities.md); ordinary native core workflows do not.
+## v0.1.1: delivery repair
 
-M5 R1 published all four source repositories and all four CI runs passed. Parent commit `d4a9201169a82c36875bf6bc28c784fb3fb7122a` passed 441 tests in [run 38328075766](https://github.com/yeliang-wang/evopilot/actions/runs/38328075766). Its downloaded portable app passed the full synthetic MCP product journey; independently assembled Linux/macOS bundle manifests matched. These immutable candidate results do not automatically apply to later revisions.
+The 0.1.1 Preview edition improves user documentation and navigation, strict TypeScript product sources, parent core compilation, packaging and installed references, and delivery verification. The [informational repair projection](../governance/delivery-repair-v011.json) records the five approved work areas, exclusions and pending acceptance requirements. It is not an acceptance certificate.
 
-The common release workflow prepares pinned assets without adding business capabilities or changing the M1 gate or immutable M4 baseline. The independent M5 Evolution Target and human decision remain external; publication requires their validation and an explicit decision before an operator dispatches `publish=true`. A workflow input or decision reference does not itself establish authority. The expected [v0.1.0 Release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.1.0) remains pending. Local installation works after downloading, checking SHA256 and unpacking a ready bundle; there is no automatic latest selection. CI artifacts are candidate evidence, not official Releases. Existing daily installations and audit records are retained unchanged.
+Current v0.1.1 acceptance is ongoing. Exact candidate verification and release proof are reported externally. Required checks cover builds and tests, package identities, compiled entry points and declarations, installed documentation and Expert readback, real Host journeys and recovery. Existing conditional authorization covers release after full acceptance; no redundant decision is required. Model or test output alone cannot grant authority.
+
+Use [v0.1.1 versioned downloads](https://github.com/yeliang-wang/evopilot/releases/tag/v0.1.1) and the [installation guide](installation.md). Preview remains Preview, not GA.
+
+## Future targets
+
+Future capability and readiness work requires explicit Target scope, owner boundaries and acceptance criteria. Advanced providers and executor configuration retain the [documented limits](capabilities.md); this repair does not promise full historical feature parity or v1.0 readiness.
+
+Old source, private workspaces, daily installations and data, WorkBuddy integration, v1 specification changes and historical baseline rewrites are outside this repair. Follow [development](development.md) and [release procedure](github-release.md) for separately scoped work.
