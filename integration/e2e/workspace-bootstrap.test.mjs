@@ -73,6 +73,52 @@ test('V02-A01/A02: real installed services bootstrap in inactive MCP session, th
   } finally { await f.cleanup(); }
 });
 
+test('V02-C01/C03/D05: actual owners preserve quarantine and Pack conflict diagnostics through daemon and MCP without mutation', { timeout: 30000 }, async () => {
+  const f = await fixture();
+  // Synthetic inputs only; no provider stub or owner-error injection on this path.
+  const selected = { visibility: 'private', projectId: 'diagnostic-fixture' };
+  const request = (id, operation, input = {}, mutation = {}) => call(id, 'request', { owner: 'ontology', envelope: { operation, scope: selected, input, ...mutation } });
+  const result = (out, id) => data(out.find(reply => reply.id === id));
+  const pack = (id, conceptId, definition) => ({ kind: 'DomainOntologyPack', metadata: { id, version: '1.0.0', namespace: 'diagnostic', root: 'PRIVATE_ORGANIZATION', visibility: 'PRIVATE', owner: 'synthetic-fixture', provenance: { author: 'synthetic' } }, spec: { concepts: [{ conceptId, label: conceptId, metaType: 'ENTITY', definition }] } });
+  try {
+    await f.bootstrap.setupWorkspace(f.configPath, f.input);
+    const raw = '{"schema":"unsupported-synthetic/v9","id":"unrecognized"}';
+    const initial = conversation(f, [call(2, 'activate'), request(3, 'workspace.inspect'),
+      request(4, 'legacy.import', { raw, format: 'json', sourceLocator: 'synthetic://diagnostic/unknown.json', sourceRevision: 'r1', sourceVisibility: 'private' }, { requestId: 'diagnostic-import', expectedRevision: 0 }),
+      request(5, 'pack.scaffold.inspect', pack('diagnostic-base', 'diagnostic:account', 'Synthetic original account.')),
+      request(6, 'pack.scaffold.inspect', pack('diagnostic-extra', 'diagnostic:audit', 'Synthetic audit.')),
+      request(7, 'pack.scaffold.inspect', pack('diagnostic-conflict', 'diagnostic:account', 'A conflicting account definition.')),
+      request(8, 'workspace.inspect')]);
+    assert.equal(result(initial, 3).result.revision, 0);
+    const source = result(initial, 4).result.result;
+    assert.equal(source.status, 'QUARANTINED'); assert.equal(source.inspection.valid, false);
+    const base = result(initial, 5).result.result, extra = result(initial, 6).result.result, conflict = result(initial, 7).result.result;
+    const before = result(initial, 8).result; assert.equal(before.revision, 1);
+    const root = 'PRIVATE_ORGANIZATION';
+    const checks = conversation(f, [call(2, 'activate'),
+      request(3, 'legacy.derive', { sourceId: source.sourceId, id: 'rejected-draft', version: '1.0.0', visibility: 'private' }, { requestId: 'diagnostic-derive', expectedRevision: before.revision }),
+      request(4, 'workspace.inspect'), request(5, 'receipt.inspect', { requestId: 'diagnostic-derive' }), request(6, 'asset.inspect', { id: 'rejected-draft', version: '1.0.0' }),
+      request(7, 'pack.resolve.inspect', { packs: [base, extra], targetRoot: root }),
+      request(8, 'pack.resolve.inspect', { packs: [base, extra], targetRoot: root, precedence: ['diagnostic-base@1.0.0', 'diagnostic-extra@1.0.0'] }),
+      request(9, 'pack.resolve.inspect', { packs: [base, conflict], targetRoot: root, precedence: ['diagnostic-base@1.0.0', 'diagnostic-conflict@1.0.0'] }),
+      request(10, 'workspace.inspect'), request(11, 'source.inspect', { sourceId: source.sourceId })]);
+    for (const [id, code] of [[3, 'SOURCE_QUARANTINED'], [7, 'PACK_NAMESPACE_COLLISION'], [9, 'PACK_OVERRIDE_INCOMPATIBLE']]) {
+      const value = result(checks, id);
+      assert.equal(value.error.code, code); assert.equal(value.sessionActive, true); assert.equal(value.connection.active, true);
+      assert.deepEqual(value.error.correlation.scope, selected);
+      assert.equal(value.error.correlation.operation, id === 3 ? 'legacy.derive' : 'pack.resolve.inspect');
+      assert.deepEqual(Object.keys(value.error).sort(), ['code', 'correlation']);
+    }
+    assert.equal(result(checks, 3).error.correlation.requestId, 'diagnostic-derive');
+    assert.equal(result(checks, 3).error.correlation.expectedRevision, before.revision);
+    assert.deepEqual(result(checks, 4).result, before);
+    assert.equal(result(checks, 5).error.code, 'NOT_FOUND'); assert.equal(result(checks, 6).error.code, 'NOT_FOUND');
+    assert.deepEqual(result(checks, 8).result.result.concepts.map(item => item.conceptId).sort(), ['diagnostic:account', 'diagnostic:audit']);
+    assert.deepEqual(result(checks, 10).result, before);
+    assert.equal(result(checks, 11).result.raw, raw);
+  } finally { await f.cleanup(); }
+});
+
 test('V02-A02/A03: concurrent exact initialization converges, repeated setup preserves user edits and rejects switching', { timeout: 30000 }, async () => {
   const f = await fixture();
   try {

@@ -30,6 +30,7 @@ export async function callConnection(config, action, payload) {
   calls++;
   if (payload.envelope?.operation === 'unknown') throw Object.assign(Error('SECRET_PROVIDER_TEXT'), { code: 'UNKNOWN' });
   if (payload.envelope?.operation === 'unsafe-error') throw Object.assign(Error('SECRET_PROVIDER_TEXT'), { code: 'SECRET_PROVIDER_CODE' });
+  if (payload.envelope?.operation === 'diagnostic') throw Object.assign(Error('SECRET_PROVIDER_TEXT'), { code: payload.envelope.input.code, detail: 'SECRET_PROVIDER_DETAIL' });
   if (payload.envelope?.operation === 'oversize') return 'x'.repeat(5 * 1048576);
   if (payload.envelope?.operation === 'roundtrip') return payload.envelope.input.value;
   await Promise.resolve();
@@ -116,6 +117,20 @@ test('protocol fixture: verified session activation, once-only forwarding, struc
   const other = run([init,call(2,'inspect')],true);
   assert.notEqual(data(other[1]).sessionId,data(out[1]).sessionId);
   assert.equal(data(other[1]).sessionActive,false);
+});
+
+test('protocol fixture: finite public source/Pack diagnostics preserve correlation while arbitrary codes and details remain redacted', () => {
+  const known = ['SOURCE_QUARANTINED', 'PACK_NAMESPACE_COLLISION', 'PACK_OVERRIDE_INCOMPATIBLE'];
+  const codes = [...known, 'PACK_SECRET_PROVIDER_CODE', 'SECRET_PROVIDER_CODE'];
+  const out = run([init, call(2, 'activate'), ...codes.map((code, index) => call(index + 3, 'request', request('diagnostic', { code })))], true);
+  for (const [index, code] of codes.entries()) {
+    const reply = out[index + 2], value = data(reply);
+    assert.equal(reply.result.isError, true);
+    assert.equal(value.error.code, known.includes(code) ? code : 'CONNECTION_ERROR');
+    assert.deepEqual(value.error.correlation, { requestId: 'retained-request', scope, expectedRevision: 1, operation: 'diagnostic' });
+    assert.deepEqual(Object.keys(value.error).sort(), ['code', 'correlation']);
+  }
+  assert.doesNotMatch(JSON.stringify(out), /SECRET_PROVIDER|\"message\"|\"stack\"|\"detail\"/);
 });
 
 test('protocol fixture: bounded serialized output retains owning correlation', () => {
