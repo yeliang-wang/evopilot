@@ -1,4 +1,4 @@
-# Capabilities in 0.1.1 Preview
+# Capabilities in v0.2.0 Preview
 
 Runtime, Harness and Ontology provide independent public APIs, persistent services and CLI entry points. The parent composes their public packages into one local daemon and unified Codex Expert. Read active capabilities and scoped owner state before constructing requests.
 
@@ -7,7 +7,7 @@ Runtime, Harness and Ontology provide independent public APIs, persistent servic
 | [Runtime](https://github.com/yeliang-wang/evopilot-runtime/blob/main/docs/service.md) | Projects and goals, immutable six-field pins, preparation, review, human decisions, deterministic parent-provider dispatch, receipts and reconciliation | The parent validates supplied Ontology instances and evaluates Harness evidence against exact published pins, with retained receipts/reconciliation; no arbitrary code changes or deployment. Standalone Runtime requires explicitly supplied trusted providers; no automatic approval, latest selection, revision refresh or redispatch |
 | [Harness](https://github.com/yeliang-wang/evopilot-harness/blob/main/docs/service.md) | Native v1 assets, dependency closure, review/decision/publication, supplied-evidence quality evaluation and retained receipts; preserved structured imports | Missing rules/reports yield INDETERMINATE with Warning; evaluation grants no automatic action, version bump or publication |
 | [Ontology](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/service.md) | Native v1 models and instances, lifecycle, structured legacy bridge, retained producer, query, Catalog and classification operations | Repository reverse modeling is Host-authored from authorized source; classification and foreign Catalog resolution need trusted callbacks |
-| Parent Preview | Public-package composition, authenticated shared daemon, independent chat activation, bounded MCP and passive guides | Discovery does not activate or grant authority; per-chat integration is not tamperproof Host enforcement |
+| Parent Preview | Public-package composition, Workspace initialization/attachment, user-project binding, authenticated shared daemon, independent chat activation, bounded MCP, passive guides and private campaign records | One Workspace per installation; explicit source-drift checkpoints, no continuous synchronization; discovery does not activate or grant authority; per-chat integration is not tamperproof Host enforcement |
 
 ## Native assets and advanced providers
 
@@ -21,4 +21,10 @@ Advanced classification requires SDK-supplied `resolveClassificationSource`, `cl
 
 Runtime completion, Harness quality and Ontology business validity are separate. Model output, provider registration and historical labels supply no human approval or publication rights. Current Harness Catalog and retained Ontology Catalog formats are distinct. Public visibility does not authorize uploads; private material cannot feed public consumers.
 
-Start with the [four journeys](first-journey.md), or read [composition contracts](product-composition.md) for SDK boundaries.
+Start with [first use](first-journey.md) and the [complete Expert scenario catalogue](expert-scenarios.md), or read [composition contracts](product-composition.md) for SDK boundaries.
+
+## Personal Workspace and progress
+
+Templates, README and synthetic forward/reverse examples ship with EvoPilot. First use can initialize a personal project and separate protected service state before chat activation, without GitHub. Workspace project files may be versioned by the user; databases, control state, credentials and raw runtime evidence remain outside Git. Exact path/identity checks, consistent backup, relocation provenance and customization-preserving upgrades are product responsibilities.
+
+Native Runtime objects remain project/Goal/Run/receipt. Target/Loop progress is private documentary governance linked to those objects. Normal project work does not edit public product Roadmaps or source. Draft changes are not active delivery changes; immutable publication and Run pins remain explicit. All 27 Expert cases require scenario-bound automated and real Desktop evidence; the [testing contract](testing.md) separates evidence completeness from acceptance authority.

@@ -1,0 +1,55 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-workspace-v02",
+  "version": "0.2.0",
+  "lifecycle": "Preview",
+  "kind": "approved-scope-and-acceptance-contract",
+  "authority": false,
+  "objective": "Conversation-based initialization of an independent private local workspace, complete Expert scenario verification, preservation of existing project history during migration, and exact-candidate delivery.",
+  "approvalSource": "User confirmation of the complete v0.2.0 review in the originating task; the original message and execution evidence are retained privately.",
+  "repositories": {
+    "evopilot": "dec55e7eb2051f27747568b3f862d46c005cd5cc",
+    "evopilot-runtime": "f5829d98c3596c5c20deb7a1f4444ee67ff10764",
+    "evopilot-harness": "ac29de1b84c2e9db3279012d9936fb9182196ebe",
+    "evopilot-ontology": "6be96b1b1a10b0eea3bd384754181f908489ee30"
+  },
+  "scope": [
+    "Typed bootstrap and installation configuration usable before a workspace exists",
+    "Private editable project root and separate owner-controlled state outside Git",
+    "Bundled templates, README and synthetic forward/reverse examples",
+    "Expert complete scenario registry, truthful capabilities and executable E2E coverage",
+    "Same-machine same-uid consistent backup, restore and explicit relocation lineage",
+    "Preserved immutable project assets, Runs, decisions, receipts and evidence",
+    "Public product criteria separated from private project execution ledgers",
+    "Synchronized documentation, packages, exact-candidate Codex acceptance and conditional Preview release"
+  ],
+  "fileBindings": {
+    "parent": ["AGENTS.md", "README.md", "CHANGELOG.md", "CONTRIBUTING.md", "package.json", "package-lock.json", "tsconfig.json", "docs/**", "expert/**", "plugins/codex/**", "integration/**", "workspace/**", "scripts/**", "tests/**", ".github/**", "governance/workspace-v02.json", "governance/readiness-v1.json", "projects/evopilot-runtime", "projects/evopilot-harness", "projects/evopilot-ontology"],
+    "children": ["AGENTS.md", "src/*.ts", "src/workspace/**", "tests/**", "docs/**", "README.md", "CHANGELOG.md", "CONTRIBUTING.md", "package.json", "package-lock.json", "scripts/**", "tsconfig.json", ".github/**"]
+  },
+  "targets": [
+    {"id":"WS-T0","intent":"Freeze scenario coverage and prove workspace-free bootstrap and lossless relocation in isolation"},
+    {"id":"WS-T1","intent":"Implement bundled templates, initialization and private project/state binding"},
+    {"id":"WS-T2","intent":"Implement complete Expert guidance and all required scenario E2E"},
+    {"id":"WS-T3","intent":"Validate backup and relocation, then migrate the existing authorized workspace"},
+    {"id":"WS-T4","intent":"Verify the exact installed candidate in Codex and synchronize documentation"},
+    {"id":"WS-T5","intent":"Complete CI, four Preview releases, downloaded artifact verification and local installation closure"}
+  ],
+  "scenarioIds": ["V02-A01","V02-A02","V02-A03","V02-A04","V02-A05","V02-A06","V02-A07","V02-B01","V02-B02","V02-B03","V02-B04","V02-B05","V02-B06","V02-B07","V02-C01","V02-C02","V02-C03","V02-C04","V02-C05","V02-C06","V02-C07","V02-C08","V02-D01","V02-D02","V02-D03","V02-D04","V02-D05"],
+  "completion": {
+    "allRequiredScenarios": "PASS with exact-candidate evidence; no missing, skipped, pending or unknown item counts as complete",
+    "desktop": "Real Codex conversation and tool receipts; fixtures and report structure checks cannot substitute",
+    "providerBoundary": "Default-install missing-provider guidance and explicitly synthetic configured-provider product tests are reported separately",
+    "release": "Conditional on full acceptance, exact source CI, reviewed artifact digests, four remote release readbacks and installed verification",
+    "evidenceLocation": "Private operator-owned audit storage; no private paths, business materials, credentials or acceptance receipts in public packages"
+  },
+  "exclusions": [
+    "No new GitHub workspace repository",
+    "No modification of original customer project source, tags, releases or production services",
+    "No WorkBuddy integration or acceptance",
+    "No cross-machine or different-uid restore, workspace hot-switch platform, or mixed component version negotiation",
+    "No automatic background asset synchronization, arbitrary code/deployment executor, or automatic software version bump from quality warnings",
+    "No v1.0 release or second real-project onboarding",
+    "No changes to frozen specifications/v1, schemas, compat/vendor bytes or historical governance and acceptance records"
+  ]
+}

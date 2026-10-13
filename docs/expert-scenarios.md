@@ -1,0 +1,70 @@
+# Expert scenarios — v0.2.0 Preview
+
+EvoPilot provides one Expert through the Codex plugin. Select the plugin and describe your task. Ordinary chats remain unaffected; information-only requests stay passive. The stable MCP tool `evopilot_v01_guide` accepts the IDs below or the seven historical guide names. The catalogue is a capability and acceptance contract, not a claim that a particular installation has passed acceptance.
+
+The canonical typed catalogue is `expert/core/scenarios.ts`, compiled into the installation. Each entry supplies preconditions, sample requests, exact operations, expected outputs, state that must remain unchanged, automated test bindings, required branches and real Desktop observations. The guide returns those details; use it to expand a table row rather than inventing an API.
+
+## Start and operate a personal Workspace
+
+| ID | Ask the Expert | Required result and boundary |
+| --- | --- | --- |
+| V02-A01 | Explain EvoPilot without starting it | Help works without a Workspace. Ordinary chat causes no product calls; help creates no state or daemon. |
+| V02-A02 | Start using EvoPilot and create my Workspace | Create a personal project with README/examples and separate protected state, then activate this chat. No GitHub login. Duplicate/concurrent requests do not overwrite or duplicate user data. |
+| V02-A03 | Connect my existing Workspace | Verify its identity, version and locations; read existing history without reinitializing. One installation binds one Workspace; no hot switching. |
+| V02-A04 | Open/stop EvoPilot in this chat | Start or reuse the verified shared connection. Session activation remains separate; closing or stopping one chat does not stop another. |
+| V02-A05 | Run the forward/reverse example | Use the shipped synthetic materials, instructions and expected results. Keep example scope separate from real projects. |
+| V02-A06 | Select my project and use this shared asset | Apply exact project/public/private scope. Reject foreign private materials and unknown required extensions; never automatically upload. |
+| V02-A07 | Which data and versions am I using? | Read exact project/state paths, product identity, drafts, published pins and last Run. Do not expose credentials or guess latest versions. |
+
+`workspace_initialize` and `workspace_attach` are explicit setup tools available before activation. Setup does not itself authorize a product Run. The Expert inspects the binding, initializes or attaches, then activates in the same session. Existing user files, installation inventory and matching historical state remain intact.
+
+## Connect and evolve a project
+
+| ID | Ask the Expert | Required result and boundary |
+| --- | --- | --- |
+| V02-B01 | Model these requirements before there is code | Produce a native v1 forward draft; retain unresolved required business semantics as PENDING. |
+| V02-B02 | Extract from this authorized source revision | Record locator, revision and digest; distinguish observed mappings from inference. Read-only extraction preserves source bytes, HEAD and tags. |
+| V02-B03 | Review this draft and record my decision | Bind actual APPROVE/REJECT to the current review; publish separately. Changed drafts invalidate prior decisions; delivered versions are immutable. |
+| V02-B04 | Evaluate these reports against this Harness | Compute rule-level quality from actual supplied reports. Missing evidence remains INDETERMINATE with Warning; no automatic action or software version bump. |
+| V02-B05 | Prepare this goal with these exact deliveries | Resolve six-field pins; prepare immutable inputs, obtain the current human decision, then dispatch. Execution, Harness quality and Ontology business results remain separate. |
+| V02-B06 | My source changed; reconcile its assets | Check baseline drift at onboarding, resumption and delivery. Record impact and justified reuse or new reviewed deliveries. Preserve old pins and Runs; no background real-time synchronization. |
+| V02-B07 | Continue this Target from its last Loop | Read private progress and owner receipts. Missing required evidence prevents closure. Target/Loop documents are not invented native completion APIs and do not modify the product Roadmap. |
+
+Forward and reverse routes use the same owner `specifications/v1/`, with owner-specific extensions around that base. Editing a draft does not update an already published asset or Run. Runtime validates supplied instances/evidence through the composed provider; it is not an arbitrary coding or deployment executor. See [composition](product-composition.md) and [capabilities](capabilities.md).
+
+## Retained Ontology workflows
+
+These are capabilities in the current Ontology product, not activation of retired software. Consult active owner capabilities for exact argument schemas. Named producers require a prepared, currently decided plan; calculation output grants no approval.
+
+| ID | Ask the Expert | Required result and boundary |
+| --- | --- | --- |
+| V02-C01 | Import this structured asset and derive a draft | Preserve supported JSON/YAML raw bytes and provenance. Quarantine unknown formats. Historical approvals are not adopted. Arbitrary source repositories are not structured imports. |
+| V02-C02 | Validate and compare stored Ontology sources | Verify scoped IDs and bytes; report structural differences without claiming business equivalence or writing state. |
+| V02-C03 | Resolve Packs and record a lifecycle transition | Check dependencies/conflicts and the exact decided producer plan. Local INSTALL/ACTIVATE records do not install another product. |
+| V02-C04 | Produce a Proposal, Snapshot and delivery artifacts | The owner recomputes Snapshot, projections, manifest and Skill; exact source/decision bindings and immutable publication remain enforced. |
+| V02-C05 | Compare reasoning and inspect semantic closure | Inspect foundation/index, incremental versus full results, round-trip and closure with exact input digests. Query results do not mutate state or grant publication. |
+| V02-C06 | Publish, revoke, roll back or recover a Catalog | Check providers/materials, bind transition plans and verify retained receipts. Rollback cannot undo revocation; recovery does not repeat publication. |
+| V02-C07 | Classify, reanalyze, inspect or resume | Use explicitly configured trusted providers. Retain original admission receipt; timeout/restart stays UNKNOWN until resolved and does not trigger retry. |
+| V02-C08 | Record my classification handoff to Harness | Bind the human decision token to exact source/results. The handoff record neither creates a native Harness asset nor starts a Run. |
+
+Advanced classification requires trusted SDK `resolveClassificationSource`, `classificationAdvisor` and `classificationModel`; the model binding is `{providerId, modelId, revision, timeoutMs}`. Foreign Catalog Harness material needs `resolveLegacyHarness`. The default daemon does not supply these callbacks or inherit Codex credentials/model identity. An accurate missing-provider diagnostic is the default Desktop branch; it is not a successful classification/publication. Configured success and recovery branches run against actual product services with explicitly synthetic test providers in automated E2E.
+
+Read the owning [retained API](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/legacy-api.md), [classification](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/classification-service.md) and [Catalog](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/catalog-service.md) contracts before constructing requests.
+
+## Recover, maintain and upgrade
+
+| ID | Ask the Expert | Required result and boundary |
+| --- | --- | --- |
+| V02-D01 | Reconcile this exact lost-response request | Inspect retained receipt and Run; restart/reconciliation keeps the original claim and execution count. Never automatically refresh revision, change requestId or redispatch. |
+| V02-D02 | Back up my Workspace and verify restoration | Take a consistent project/state backup; use `evopilot_v01_workspace_backup_inspect` for fresh anchor/inventory/digest verification. A repeated backup request returns a historical receipt, not fresh verification. Reject corrupted backup before replacement. Git history alone is not a full backup. |
+| V02-D03 | Relocate my existing v0.1.1 Workspace | Preserve historical records and digests through migration provenance; attach migrated locations through a fresh verified installation; do not edit old claims/decisions or execute old Runs. Recovery must retain post-cutover writes. |
+| V02-D04 | Upgrade while preserving my customization | Check product, Workspace-format and template compatibility separately. Preserve user files, report conflicts and retain specifications/v1. |
+| V02-D05 | Explain this unsafe path or unsupported operation | Show the actual safe diagnostic and supported next action. Preserve data; do not bypass guards, leak credentials or fabricate completion. |
+
+Product upgrades use a new verified installation, stop the old connection and explicitly attach the existing project/state. Template upgrades are separate: the Expert uses `evopilot_v01_workspace_project` with operation `template.upgrade`, an exact expected template version and target `0.2.0`. Known-compatible `0.1.1` and `0.2.0` project markers retain the v1 schema/specifications. Missing template files are copied from the verified installation; customized files are preserved and reported as conflicts. The original marker and exact upgrade plan are retained privately. Unsupported versions are refused before writes. Do not assume that updating the product overwrites the user project.
+
+## Acceptance
+
+Every row requires automated branch evidence and real Codex Desktop observations bound to the exact candidate installation. The catalogue test rejects a missing guide/scenario mapping, orphan scenario or missing test binding. String matching in guidance verifies distribution only, never model behavior. [Testing](testing.md) explains the evidence verifier and its limits.
+
+A valid candidate report is stored privately; documentation and catalogue carry no changing PASS claims. Configured synthetic provider tests cannot be relabeled as real Host execution. WorkBuddy is outside v0.2.0 acceptance.

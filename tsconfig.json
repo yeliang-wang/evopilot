@@ -21,6 +21,8 @@
     "expert/core/guide.ts",
     "plugins/codex/server.ts",
     "integration/types.ts",
-    "integration/compatibility/v1/reference.d.mts"
+    "integration/compatibility/v1/reference.d.mts",
+    "integration/workspace/**/*.ts",
+    "expert/core/acceptance.ts"
   ]
 }

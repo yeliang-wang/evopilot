@@ -1,0 +1,187 @@
+{
+  "schema": "evopilot-readiness/v1",
+  "kind": "product-readiness-criteria",
+  "authority": false,
+  "objective": "EvoPilot v1.0 readiness through two real projects, each with two real delivery rounds, forward and reverse workflows, Codex use, upgrade and recovery verification, and an explicit final user release decision",
+  "nativeObjects": [
+    "project",
+    "goal",
+    "run",
+    "receipt"
+  ],
+  "nonNativeTracking": [
+    "target",
+    "loop"
+  ],
+  "targets": [
+    {
+      "id": "T0",
+      "scope": "Current roadmap, readiness contract and acceptance checklist"
+    },
+    {
+      "id": "T1",
+      "scope": "First real project reverse onboarding, two real asset deliveries, version consistency and recovery",
+      "required": [
+        "T1-01",
+        "T1-02",
+        "T1-03",
+        "T1-04",
+        "T1-05",
+        "T1-06",
+        "T1-07",
+        "T1-08",
+        "T1-09"
+      ]
+    },
+    {
+      "id": "T2",
+      "scope": "Second real project with two real rounds, preferably forward requirement/design workflow"
+    },
+    {
+      "id": "T3",
+      "scope": "Exact v1.0 candidate combination regression, readiness report and user release decision"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "T1-01",
+      "requirement": "Formal installed plugin first use succeeds in the current chat",
+      "evidence": [
+        "passive identity",
+        "activation receipt",
+        "capabilities",
+        "scoped project and native Goal"
+      ]
+    },
+    {
+      "id": "T1-02",
+      "requirement": "Correct immutable release baseline and traceable analysis coverage",
+      "evidence": [
+        "source revision and byte digests",
+        "module/contract/test coverage matrix",
+        "observed versus inferred mappings"
+      ]
+    },
+    {
+      "id": "T1-03",
+      "requirement": "Ontology and Harness meet native v1 syntax and semantics and required questions are closed",
+      "evidence": [
+        "native validation",
+        "source review",
+        "real decisions on exact reviews",
+        "immutable deliveries"
+      ]
+    },
+    {
+      "id": "T1-04",
+      "requirement": "Two real asset delivery rounds with substantive input and complete version relationships",
+      "evidence": [
+        "round-one baseline",
+        "confirmed real change and impact",
+        "round-two delivery or justified reuse",
+        "historical origin"
+      ]
+    },
+    {
+      "id": "T1-05",
+      "requirement": "Actual inputs, Runs, references, evaluations and retained receipts agree",
+      "evidence": [
+        "raw report to structured input mapping",
+        "exact published pins",
+        "execution and quality results reported separately"
+      ]
+    },
+    {
+      "id": "T1-06",
+      "requirement": "Source differences and affected asset update process demonstrated",
+      "evidence": [
+        "revision difference",
+        "impact decisions",
+        "fresh affected validation",
+        "immutable prior evidence"
+      ]
+    },
+    {
+      "id": "T1-07",
+      "requirement": "Mandatory Codex use and recovery checks pass",
+      "evidence": [
+        "reconnect and state recovery",
+        "receipt readback",
+        "exact pin verification",
+        "exception handling",
+        "upgrade regression when a product upgrade occurs"
+      ]
+    },
+    {
+      "id": "T1-08",
+      "requirement": "Original project, releases and private data boundaries preserved",
+      "evidence": [
+        "before/after repository state",
+        "isolated database-free checks",
+        "no release/deployment mutation",
+        "private storage audit"
+      ]
+    },
+    {
+      "id": "T1-09",
+      "requirement": "Usage, maintenance, issues, Target state and closure evidence synchronized",
+      "evidence": [
+        "maintenance guide",
+        "issues",
+        "evidence index",
+        "per-item closure report"
+      ]
+    }
+  ],
+  "loops": [
+    {
+      "id": "L1",
+      "intent": "Bind source and authorized paths; record plan and governance"
+    },
+    {
+      "id": "L2",
+      "intent": "Installed plugin first use and private project/Goal"
+    },
+    {
+      "id": "L3",
+      "intent": "Release-source reverse analysis and source coverage"
+    },
+    {
+      "id": "L4",
+      "intent": "First native assets, semantic review and immutable private delivery"
+    },
+    {
+      "id": "L5",
+      "intent": "Real evidence, pinned Runtime evaluation and receipts"
+    },
+    {
+      "id": "L6",
+      "intent": "Real second-round change, impact, delivery and regression"
+    },
+    {
+      "id": "L7",
+      "intent": "Recovery, exact versions, maintenance and closure"
+    }
+  ],
+  "loopFields": [
+    "goal",
+    "inputBaseline",
+    "actions",
+    "actualResults",
+    "evidence",
+    "unresolved",
+    "next"
+  ],
+  "completionRule": "All mandatory items require actual candidate-bound evidence; missing, unknown, skipped and unexecuted never mean PASS. T2/T3 remain incomplete until separately executed.",
+  "boundaries": [
+    "Preserve historical v0.1 governance and frozen specifications",
+    "All project assets and evidence stay in verified private workspace scope",
+    "Original project is read-only; checks use isolated copies without production databases or release pipelines",
+    "Service state changes use public owner APIs",
+    "No automatic source synchronization is claimed",
+    "New product defects require separately bound repair targets; no inherited release authority",
+    "Synthetic tests do not count as real business evidence",
+    "Technical results never invent business confirmation or release approval"
+  ],
+  "progressPolicy": "Real-project selections, authorization, status and evidence are private workspace campaign records. This file defines generic product criteria only."
+}

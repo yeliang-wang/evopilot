@@ -4,7 +4,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-export const VERSION = '0.1.1';
+export const VERSION = '0.2.0';
 export const PIN = 'df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a';
 export const OWNERS = ['runtime', 'harness', 'ontology'];
 export const SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -137,14 +137,18 @@ export function readBundle(bundle) {
   assert.equal(contract.sha256, PIN); assert.equal(contract.module, 'reference.mjs'); assert.equal(contract.contractRevision, '1.0.0');
   return { manifest: m, bytes, app };
 }
-export async function installPreview({ bundle, root, workspaceRoot, workspaceId, installationId }) {
+export async function installPreview({ bundle, root, workspaceRoot = null, workspaceId = null, installationId }) {
   assert.equal(process.versions.node, '24.14.0', 'Requires Node 24.14.0');
-  canonical(bundle); newRoot(root); outsideGit(root); canonical(workspaceRoot, true); outsideGit(workspaceRoot);
-  for (const id of [workspaceId, installationId]) assert(typeof id === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(id), 'Invalid identity');
-  if (fs.existsSync(workspaceRoot)) assert(fs.statSync(workspaceRoot).isDirectory(), 'Workspace must be a directory');
-  const control = workspaceRoot + '.evopilot-control'; canonical(control, true);
-  disjoint(root, bundle, workspaceRoot, control);
-  for (const other of [root, workspaceRoot, control]) disjoint(other, SOURCE);
+  canonical(bundle); newRoot(root); outsideGit(root);
+  assert.equal(workspaceRoot === null, workspaceId === null, 'Workspace root and id must be supplied together');
+  if (workspaceRoot !== null) { canonical(workspaceRoot, true); outsideGit(workspaceRoot); }
+  for (const id of [installationId, ...(workspaceId === null ? [] : [workspaceId])]) assert(typeof id === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(id), 'Invalid identity');
+  if (workspaceRoot !== null && fs.existsSync(workspaceRoot)) assert(fs.statSync(workspaceRoot).isDirectory(), 'Workspace must be a directory');
+  const control = workspaceRoot === null ? null : workspaceRoot + '.evopilot-control';
+  if (control !== null) canonical(control, true);
+  disjoint(root, bundle, ...[workspaceRoot, control].filter(v => v !== null));
+  for (const other of [root, workspaceRoot, control].filter(v => v !== null)) disjoint(other, SOURCE);
+  assert(!fs.existsSync(root + '.evopilot-binding.json'), 'Installation root has an existing Workspace binding');
   const { manifest, bytes, app } = readBundle(bundle);
   assert(!app.has('plugins/codex/.mcp.json'), 'Bundle contains live configuration');
   const template = JSON.parse(app.get('plugins/codex/mcp.template.json'));
@@ -180,9 +184,10 @@ async function installed(root) {
   assert.equal(sha(snapshot.files.get('bundle-manifest.json')), d.bundleManifestSHA256);
   assert.equal(fs.lstatSync(path.join(root, 'config.json')).mode & 0o777, 0o600);
   const api = await import(pathToFileURL(path.join(root, 'app/dist/integration/connection/config.js')).href);
-  const c = api.loadConfiguration(path.join(root, 'config.json'));
-  assert.equal(c.installationId, d.installationId); assert.equal(c.workspaceId, d.workspaceId); assert.equal(c.workspaceRoot, d.workspaceRoot);
-  disjoint(root, c.workspaceRoot, c.controlRoot);
+  const c = api.loadInstallationConfiguration(path.join(root, 'config.json'));
+  const configured = JSON.parse(snapshot.files.get('config.json'));
+  assert.equal(c.installationId, d.installationId); assert.equal(configured.workspaceId, d.workspaceId); assert.equal(configured.workspaceRoot, d.workspaceRoot);
+  if (c.workspaceRoot !== null) disjoint(root, c.workspaceRoot, c.workspaceRoot + '.evopilot-control');
   const app = new Map([...snapshot.files].filter(([name]) => name.startsWith('app/')).map(([name, bytes]) => [name.slice(4), bytes]));
   checkInventory(c.manifest, app);
   const client = await import(pathToFileURL(path.join(root, 'app/dist/integration/connection/client.js')).href);
@@ -221,7 +226,10 @@ export function argumentsFor(args, names) {
   return values;
 }
 const help = `Requires Node 24.14.0. No network, activation or Codex registration.
-install --bundle DIR --root NEW_ROOT --workspace ROOT --workspace-id ID --installation-id ID
+install --bundle DIR --root NEW_ROOT --installation-id ID [--workspace ROOT --workspace-id ID]
+workspace-init --root ROOT --project-root DIR --state-root DIR --workspace-id ID --request-id ID
+workspace-attach --root ROOT --project-root DIR --state-root DIR --workspace-id ID --request-id ID
+workspace-inspect --root ROOT
 doctor|stop|recover|uninstall --root ROOT
 Unregister this preview entry BEFORE uninstall (explicit operator actions):
 codex plugin remove evopilot-v01-preview@evopilot-v01-preview-local --json
@@ -237,8 +245,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       assert.equal(process.versions.node, '24.14.0', 'Requires Node 24.14.0');
       const command = args.shift(); let result;
       if (command === 'install') {
-        const a = argumentsFor(args, ['--bundle', '--root', '--workspace', '--workspace-id', '--installation-id']);
-        result = await installPreview({ bundle: a['--bundle'], root: a['--root'], workspaceRoot: a['--workspace'], workspaceId: a['--workspace-id'], installationId: a['--installation-id'] });
+        const names = ['--bundle', '--root', '--installation-id', ...(args.includes('--workspace') || args.includes('--workspace-id') ? ['--workspace', '--workspace-id'] : [])];
+        const a = argumentsFor(args, names);
+        result = await installPreview({ bundle: a['--bundle'], root: a['--root'], workspaceRoot: a['--workspace'] ?? null, workspaceId: a['--workspace-id'] ?? null, installationId: a['--installation-id'] });
+      } else if (['workspace-init', 'workspace-attach', 'workspace-inspect'].includes(command)) {
+        const names = command === 'workspace-inspect' ? ['--root'] : ['--root', '--project-root', '--state-root', '--workspace-id', '--request-id'];
+        const a = argumentsFor(args, names), { c } = await installed(a['--root']);
+        const api = await import(pathToFileURL(path.join(c.installationRoot, 'dist/integration/workspace/bootstrap.js')).href);
+        result = command === 'workspace-inspect' ? api.inspectWorkspace(c.configPath) : await api.setupWorkspace(c.configPath, { projectRoot: a['--project-root'], stateRoot: a['--state-root'], workspaceId: a['--workspace-id'], requestId: a['--request-id'] }, command === 'workspace-init' ? 'initialize' : 'attach');
       } else {
         const commands = { doctor: doctorPreview, stop: stopPreview, recover: recoverPreview, uninstall: uninstallPreview };
         assert(Object.hasOwn(commands, command), 'Unknown command; use --help');

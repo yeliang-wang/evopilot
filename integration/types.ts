@@ -29,9 +29,13 @@ export interface ProductAPIs {
   ontology: { PRODUCT: string; VERSION: string; createOntologyService(options: Options, providers: OntologyProviders): OntologyService; verifyDelivery(value: unknown): { valid: boolean }; validateInstances(model: unknown, instance: unknown): Evaluation };
 }
 export interface ManifestEntry { path: string; sha256: string }
-export interface ConnectionConfig extends Options { schema: 'evopilot-connection-config/v1'; version: '0.1.1'; protocol: 'evopilot-connection/v1'; installationId: string; installationRoot: string; components: Record<Owner, '0.1.1'>; manifest: ManifestEntry[] }
-export interface ConnectionIdentity extends Options { product: 'evopilot-v01-preview'; version: '0.1.1'; protocol: 'evopilot-connection/v1'; installationId: string; installationRoot: string; installationDigest: string; components: ConnectionConfig['components'] }
-export interface Configuration extends ConnectionConfig { configPath: string; controlRoot: string; identity: ConnectionIdentity }
+export interface ConnectionConfig extends Options { schema: 'evopilot-connection-config/v1'; version: '0.2.0'; protocol: 'evopilot-connection/v1'; installationId: string; installationRoot: string; components: Record<Owner, '0.2.0'>; manifest: ManifestEntry[] }
+export interface ConnectionIdentity extends Options { product: 'evopilot-v01-preview'; version: '0.2.0'; protocol: 'evopilot-connection/v1'; installationId: string; installationRoot: string; installationDigest: string; components: ConnectionConfig['components'] }
+export interface Configuration extends ConnectionConfig { configPath: string; controlRoot: string; bindingPath: string; projectRoot: string | null; identity: ConnectionIdentity }
+export interface UnboundConnectionConfig extends Omit<ConnectionConfig, 'workspaceRoot' | 'workspaceId'> { workspaceRoot: null; workspaceId: null }
+export interface InstallationConfiguration extends Omit<ConnectionConfig, 'workspaceRoot' | 'workspaceId'> { workspaceRoot: string | null; workspaceId: string | null; configPath: string; bindingPath: string; projectRoot: string | null; identity: Omit<ConnectionIdentity, 'workspaceRoot' | 'workspaceId'> & { workspaceRoot: string | null; workspaceId: string | null } }
+export interface WorkspaceBinding { schema: 'evopilot-workspace-binding/v1'; installationId: string; installationDigest: string; installationRoot: string; projectRoot: string; stateRoot: string; workspaceId: string; requestId: string }
+export interface WorkspaceProject { schema: 'evopilot-workspace-project/v1'; id: string; templateVersion: '0.2.0'; specifications: { ontology: 'v1'; harness: 'v1' } }
 export interface ControlRecord { identity: ConnectionIdentity; nonce: string; token: string; pid: number; port: number; state: 'starting' | 'ready' | 'failed'; diagnostic: string | null }
 export type Action = 'health' | 'stop' | 'capabilities' | 'request' | 'dispatch' | 'reconcile' | 'inspect';
 export interface ActionPayload { owner?: Owner; envelope?: Envelope; args?: ExternalRequest; scope?: Scope }

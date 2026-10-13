@@ -1,4 +1,21 @@
-# Source migration and authority boundaries
+# Workspace migration and source boundaries
+
+## Upgrade from 0.1.1 to 0.2.0
+
+Use a new verified 0.2.0 installation. Keep the old installation and Workspace until an isolated migration copy passes owner validation. A 0.1.1 Workspace may lack the new editable project root; explicit attachment creates that template separately while preserving state.
+
+1. Inspect the original identity, records, deliveries and unresolved operations. Reconcile UNKNOWN requests without redispatch.
+2. Stop the old authenticated connection. Create an independent private editable project and bind the new installation to verified existing state for maintenance. Stop all services sharing that state.
+3. Back up project and state. Retain the manifest, protected local backup anchor and relocation keys. Verify inventoried bytes.
+4. Request migration to new project and state roots. The parent copies opaque state; each owner validates snapshots and appends signed location lineage. Asset digests, Run plans, decisions, claims and receipts remain unchanged. The source remains available.
+5. Compare owner business-record/blob digests at the destination and inspect unresolved work. Historical pending requests need fresh preparation/review; claimed UNKNOWN runs only reconcile their original claim.
+6. Attach a fresh installation to the destination, complete actual Codex journeys, then switch the registered plugin entry. Retain the previous installation, source state and migration evidence.
+
+This release supports the same machine and OS uid. Restore targets original canonical locations, both missing or empty, and never overwrites live data. A separate relocation can move restored state. Cross-machine restore, key import and hot switching are unsupported.
+
+Template upgrades copy missing bundled files, preserve customized files and retain the original marker/report. They do not change product code, published assets or specifications/v1.
+
+## Historical source disposition
 
 This preview separates historical material by ownership and role. The independently retained source-role audit covers **739 files** at immutable source commit `372733fd7b67ec3bee9efe6322f0229db77b160d`; all 739 source hashes were unchanged. It establishes source disposition, not completed operational migration.
 

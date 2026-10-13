@@ -1,13 +1,13 @@
-# Install EvoPilot 0.1.1 Preview
+# Install EvoPilot 0.2.0 Preview
 
-Use **Node 24.14.0**. Download `evopilot-0.1.1-preview.tar.gz` and `SHA256SUMS` from the exact [v0.1.1 Preview release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.1.1). Use immutable versioned Preview downloads, not a latest-stable selector. The bundle contains compiled JavaScript and needs no npm install or source build. It includes no Node executable, credentials, live configuration, business data or configured providers. Source builds belong to the [developer path](development.md).
+Use **Node 24.14.0**. Download `evopilot-0.2.0-preview.tar.gz` and `SHA256SUMS` from the exact [v0.2.0 Preview release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.2.0). Use immutable versioned Preview downloads, not a latest-stable selector. The bundle contains compiled JavaScript and needs no npm install or source build. It includes no Node executable, credentials, live configuration, business data or configured providers. Source builds belong to the [developer path](development.md).
 
 ## Verify and extract
 
 In the directory containing both downloads, select exactly the bundle entry. This fails if the entry is missing or duplicated:
 
 ```sh
-preview_checksum="$(awk '$2 == "evopilot-0.1.1-preview.tar.gz" && length($1) == 64 && $1 !~ /[^0-9a-fA-F]/ { line=$0; count++ } END { if (count != 1) exit 1; print line }' SHA256SUMS)" &&
+preview_checksum="$(awk '$2 == "evopilot-0.2.0-preview.tar.gz" && length($1) == 64 && $1 !~ /[^0-9a-fA-F]/ { line=$0; count++ } END { if (count != 1) exit 1; print line }' SHA256SUMS)" &&
   printf '%s\n' "$preview_checksum" | shasum -a 256 -c -
 ```
 
@@ -18,27 +18,28 @@ Choose a new extraction directory with an existing parent:
 ```sh
 preview_bundle="/absolute/path/to/new-extracted-bundle"
 mkdir "$preview_bundle" &&
-  tar -xzf evopilot-0.1.1-preview.tar.gz -C "$preview_bundle"
+  tar -xzf evopilot-0.2.0-preview.tar.gz -C "$preview_bundle"
 ```
 
 ## Install and register
 
-Use canonical absolute paths without symlinks. The program root must be new; its parent and the workspace parent must exist. Keep the program root and workspace outside Git and separate from the source checkout, extracted bundle and each other. The adjacent `WORKSPACE.evopilot-control` directory must also be separate. Use a dedicated Preview workspace; do not replace daily installations or data.
+Use canonical absolute paths without symlinks. The program root must be new with an existing parent, outside Git and separate from the source checkout and extracted bundle. Workspace setup happens later through the Expert. Upgrades use a new program root and preserve the previous verified installation until acceptance.
 
 ```sh
 preview_root="/absolute/path/to/new-preview-program"
-preview_workspace="/absolute/path/to/new-preview-workspace"
-node "$preview_bundle/app/scripts/manage-preview.mjs" install --bundle "$preview_bundle" --root "$preview_root" --workspace "$preview_workspace" --workspace-id preview-workspace --installation-id preview-install
+node "$preview_bundle/app/scripts/manage-preview.mjs" install --bundle "$preview_bundle" --root "$preview_root" --installation-id preview-install
 node "$preview_bundle/app/scripts/manage-preview.mjs" doctor --root "$preview_root"
 codex plugin marketplace add "$preview_root" --json
 codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json
 ```
 
-The workspace may exist or be a missing final directory. Installation does not write workspace data. Runtime, Harness and Ontology own public and private data there when used; public visibility does not upload anything. Program files live under `preview_root/app`; configuration `installationRoot` already points to that `app` directory.
+Installation does not create a Workspace. Program files live under `preview_root/app`; configuration `installationRoot` points to that directory. The later binding is stored beside the managed installation as `ROOT.evopilot-binding.json`, outside its immutable inventory. Public visibility never uploads data.
 
 The installer verifies the inventory, renders Codex configuration with the current Node executable, and creates the private managed descriptor and local marketplace. Changed bytes, unexpected files, symlinks and hardlinks fail validation. `doctor` checks configuration and performs passive inspection. Installation itself does not activate a daemon or register the plugin; the Codex commands above register it.
 
-Select **EvoPilot v0.1 Preview** and submit your first task. That activates the current chat, checks the shared daemon and starts it if absent. Inspect and guide requests remain passive. Ordinary work then happens through the Expert without routine CLI operations. See [first journeys](first-journey.md), [Codex](codex.md) and [provider limits](capabilities.md).
+Select **EvoPilot v0.2 Preview** and request: “Inspect the installation, initialize my own Workspace, then activate and show the examples.” You may provide explicit project/state paths or use the defaults described in [Workspace](../workspace/README.md). Initialization is idempotent and does not overwrite an occupied directory or user edits. The Expert separately activates the current chat after successful setup. Existing users can request attachment of a validated, stopped Workspace; an already bound installation cannot silently switch to another Workspace.
+
+Inspect and guide requests remain passive. Ordinary work then happens through the Expert without routine CLI operations. See [first journeys](first-journey.md), [Codex](codex.md), [migration](migration.md) and [provider limits](capabilities.md).
 
 ## Recovery and removal
 

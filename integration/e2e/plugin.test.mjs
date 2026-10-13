@@ -12,6 +12,7 @@ const env = { ...process.env, OPENSSL_CONF: '/dev/null' };
 const config = root + 'nonexistent-protocol-config.json';
 const init = { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'protocol-fixture', version: '1' } } };
 const call = (id, action, args = {}) => ({ jsonrpc: '2.0', id, method: 'tools/call', params: { name: 'evopilot_v01_' + action, arguments: args } });
+const expectedToolIds = ['inspect','activate','deactivate','guide','request','dispatch','reconcile','capabilities','workspace_inspect','workspace_initialize','workspace_attach','workspace_project','workspace_backup','workspace_backup_inspect','workspace_restore','workspace_migrate'].map(name => 'evopilot_v01_' + name).sort();
 const scope = { visibility: 'private', projectId: 'example' };
 const request = (operation, input = {}) => ({ owner: 'ontology', envelope: { operation, scope, input, requestId: 'retained-request', expectedRevision: 1 } });
 const lines = values => values.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join('\n') + '\n';
@@ -21,6 +22,7 @@ const lines = values => values.map(v => typeof v === 'string' ? v : JSON.stringi
 // No fake product or Host acceptance; no files or workspace are created.
 const fixtureCode = `
 let activations = 0, calls = 0;
+export async function withWorkspaceMaintenance() { throw Error('Unexpected maintenance call in protocol-only fixture'); }
 const ready = { active: true, pid: 1234, identity: { fixture: true, installationId: 'protocol-only', workspaceId: 'fixture' } };
 export async function inspectConnection() { return ready; }
 export async function activateConnection() { activations++; return ready; }
@@ -52,8 +54,8 @@ test('actual spawned server: passive discovery and guide need no config, live co
   const out = run([init, {jsonrpc:'2.0',id:2,method:'tools/list'}, call(3,'guide',{scenario:'onboarding'}), call(4,'request',request('workspace.inspect')), call(5,'capabilities')]);
   assert.equal(out[0].result.protocolVersion, '2025-06-18');
   assert.equal(out[0].result.serverInfo.name, 'evopilot-v01-preview');
-  assert.equal(out[1].result.tools.length, 8);
-  assert.equal(new Set(out[1].result.tools.map(t => t.name)).size, 8);
+  assert.deepEqual(out[1].result.tools.map(t => t.name).sort(), expectedToolIds);
+  assert.equal(new Set(out[1].result.tools.map(t => t.name)).size, expectedToolIds.length);
   assert(out[1].result.tools.every(t => t.name.startsWith('evopilot_v01_')));
   assert.equal(data(out[2]).sessionActive, false);
   assert.equal(data(out[2]).connection, null);
@@ -97,7 +99,7 @@ test('protocol fixture: verified session activation, once-only forwarding, struc
     call(11,'deactivate'), call(12,'capabilities'), call(13,'inspect')],true);
   assert.equal(data(out[1]).connection.active,true); assert.equal(data(out[1]).sessionActive,false);
   assert.equal(data(out[2]).error.code,'SESSION_INACTIVE');
-  assert.equal(data(out[5]).result.activations,1);
+  assert.equal(data(out[5]).result.activations,2, 'Each activation revalidates the shared connection; business forwarding still occurs once');
   assert.equal(data(out[5]).result.calls,1);
   assert.deepEqual(data(out[5]).result.payload,request('classification.start',{id:'session',sourceId:'source',taxonomy:{}}));
   assert.deepEqual(data(out[5]).result.values,['text',{nested:[null,0.25,true]}]);
@@ -208,7 +210,7 @@ test('actual spawned server: standard metadata is ignored and fractional IDs rou
     withMeta(call(4,'activate')), withMeta(call(5,'request',request('echo'))),
     {...call(6,'guide',{scenario:'ontology-reverse'}), params:{...call(6,'guide',{scenario:'ontology-reverse'}).params,_meta:{progressToken:'opaque'}}}], true);
   assert.equal(out[1].id, 2.5); assert.deepEqual(out[1].result, {});
-  assert.equal(out[2].result.tools.length, 8);
+  assert.deepEqual(out[2].result.tools.map(t => t.name).sort(), expectedToolIds);
   assert.deepEqual(data(out[4]).result.payload, request('echo'));
   assert.equal(data(out[4]).result.calls, 1);
   assert(!JSON.stringify(out).includes('META_ONLY'));

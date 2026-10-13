@@ -1,6 +1,6 @@
-# Local product composition — v0.1.1 Preview
+# Local product composition — v0.2.0 Preview
 
-`dist/integration/composition.js` connects three independent 0.1.1 public product APIs and owns no business state. `loadInstalledProducts()` imports only the bare `@evopilot-next/runtime`, `@evopilot-next/harness`, `@evopilot-next/ontology` packages and their `/service` exports. Missing packages fail explicitly; there is no source-tree, historical installation or global provider fallback.
+`dist/integration/composition.js` connects three independent 0.2.0 public product APIs and owns no business state. `loadInstalledProducts()` imports only the bare `@evopilot-next/runtime`, `@evopilot-next/harness`, `@evopilot-next/ontology` packages and their `/service` exports. Missing packages fail explicitly; there is no source-tree, historical installation or global provider fallback.
 
 ```js
 import { createComposition, loadInstalledProducts } from '../dist/integration/composition.js';
@@ -48,7 +48,7 @@ All three current packages have their own CLI bins. Metadata fixtures use valid 
 
 The detached real-product test assembly resolves public installed packages with `import.meta.resolve`, copies their own package files as regular bytes, and recursively resolves installed dependencies against pinned lock records. It supports local npm package bindings and regular artifact installations with sibling or nested dependencies. Generated .bin/.cache links, hidden state, Git and tests are omitted; package identities and dependency metadata are preserved. Missing packages or dependencies fail. There are no source or .local imports. Production no-symlink configuration checks and exact authenticated fixture cleanup remain unchanged.
 
-Historical v0.1.0 evidence remains immutable and does not establish results for the current v0.1.1 candidate. Retain actual command results against the exact compiled candidate.
+Historical v0.1.0 evidence remains immutable and does not establish results for the current v0.2.0 candidate. Retain actual command results against the exact compiled candidate.
 
 The default daemon does not configure classification callbacks or foreign Catalog resolution. The native core journey remains available. Current Harness Catalog and retained Ontology Catalog formats are distinct; historical labels never supply current approval.
 

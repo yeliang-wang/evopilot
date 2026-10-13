@@ -1,5 +1,19 @@
 # Preview diagnosis and recovery
 
+## Workspace backup and restore
+
+Ask the Expert to back up the configured project and state to a new separate private directory. Backup and migration hold a process-safe workspace lease and stop the verified daemon. Active requests or uncertain identity block maintenance. The OS releases a lease when its holder exits; this does not establish success of interrupted work.
+
+Backups include editable project files and owner databases, assets, receipts and audit. Live PID/socket/token files and coordination sidecars are not restored into state. Original control/audit and maintenance journals remain beside the original state. Treat backups as private; do not include them in product releases.
+
+The checked copier accepts at most 20,000 entries, 64 MiB per file and 512 MiB of file content per inventoried root. Links, foreign ownership and writable-by-others files are rejected. An optional private Git directory is part of the project backup; review its contents before sharing any backup.
+
+Restore requires the exact backup manifest pinned by the retained maintenance journal. Foreign or self-rehashed backups are insufficient. It supports only the same host/uid and original canonical roots, both missing or empty. Retain backup anchors and requests under `STATE_ROOT.evopilot-maintenance/{known-backups,requests}` and relocation keys under `~/.local/share/evopilot/relocation-keys`. Copying project/state directories alone is not cross-machine disaster recovery.
+
+After interruption, preserve request ID, journal and partial destination. Resume only the exact operation when its phase permits it. Never delete a journal to force retry. Restore and migration do not grant decisions, switch bindings or replay dispatches; verify owner snapshots before activation.
+
+## Connection recovery
+
 Use Node 24.14.0 and the retained bundle's `app/scripts/manage-preview.mjs`, or the installed copy. ROOT is the canonical managed installation root.
 
 ```sh

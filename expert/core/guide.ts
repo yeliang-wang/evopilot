@@ -1,10 +1,13 @@
+import { getScenario, scenarioCatalogue, scenarioIds } from './scenarios.js';
+
 export interface GuideScenario { questions: string[]; owners: string[]; operations: string[]; steps: string[]; tools?: string[] }
 const guides: Record<string, GuideScenario> = {
   onboarding: {
     questions: ['What outcome do you want?', 'Which project and public/private scope?', 'Create a proposed model, inspect authorized sources, evaluate quality, or execute a pinned goal?'],
     owners: ['ontology', 'harness', 'runtime'],
     operations: ['workspace.inspect', 'asset.list', 'project.list'],
-    steps: ['Inspect this session identity. Selecting Preview and submitting an EvoPilot task authorizes activation of this chat without a redundant enable question. Discovery and guide-only informational requests remain passive.', 'When active, read capabilities and scoped state before choosing the owner.', 'Use the relevant scenario; ask only unresolved requirements.'],
+    tools: ['evopilot_v01_workspace_inspect', 'evopilot_v01_workspace_initialize', 'evopilot_v01_workspace_attach'],
+    steps: ['Selecting Preview and submitting an EvoPilot task authorizes use in this chat without a redundant enable question. Discovery and guide-only informational requests remain passive.', 'Inspect Workspace binding before activation. If unbound, explain default project/state locations and initialize on the user request to start using EvoPilot, or attach explicitly identified existing state. Initialization does not activate the chat; activate next in this same session.', 'Keep project files separate from protected Git-external service state. Do not require GitHub login or a separate template repository. Never create workspace identity markers by hand.', 'When active, read capabilities and scoped state before choosing the owner. Current installation binds one Workspace; do not improvise hot switching.', 'Use a V02 scenario for concrete prerequisites, expected results, preservation and evidence. Ask only unresolved requirements.'],
   },
   'ontology-forward': {
     questions: ['Which concepts, relationships and constraints express the domain?', 'Which requirements are confirmed and which remain unresolved?'],
@@ -16,7 +19,7 @@ const guides: Record<string, GuideScenario> = {
     questions: ['Which exact source and revision may be inspected?', 'Which observations are direct evidence and which are inferred?'],
     owners: ['ontology'],
     operations: ['workspace.inspect', 'asset.list', 'asset.put', 'source.list', 'source.inspect', 'legacy.import', 'legacy.derive', 'asset.review', 'asset.decide', 'asset.publish'],
-    steps: ['For native repository reverse modeling, the Host reads only explicitly authorized source and authors a native v1 model via asset.put, preserving real source locator, revision and digest.', 'Mark mappings source-observed or inferred, retain required semantic gaps as PENDING, and ask the user to resolve them. Never infer production business decisions.', 'legacy.import and legacy.derive are a separate structured legacy-asset bridge for supported JSON/YAML documents, never an arbitrary Java or repository source parser.'],
+    steps: ['For native repository reverse modeling, the Host reads only explicitly authorized source and authors a native v1 model via asset.put, preserving real source locator, revision and digest.', 'Mark mappings source-observed or inferred, retain required semantic gaps as PENDING, and ask the user to resolve them. Never infer production business decisions.', 'At onboarding, resumption and delivery checkpoints compare the recorded source baseline. Classify drift and record impact, justified reuse or a newly reviewed asset version; never overwrite historical pins or claim background real-time synchronization.', 'legacy.import and legacy.derive are a separate structured legacy-asset bridge for supported JSON/YAML documents, never an arbitrary Java or repository source parser.'],
   },
   'harness-quality': {
     questions: ['What quality outcome and applicability are required?', 'Which rules, parameters and actual evidence support it?'],
@@ -29,14 +32,14 @@ const guides: Record<string, GuideScenario> = {
     owners: ['runtime', 'ontology', 'harness'],
     operations: ['workspace.inspect', 'project.inspect', 'project.create', 'goal.create', 'asset.inspect', 'run.prepare', 'run.inspect', 'run.decide'],
     tools: ['evopilot_v01_dispatch', 'evopilot_v01_reconcile'],
-    steps: ['Create the scoped project and goal explicitly. Resolve published six-field pins without latest selection.', 'Prepare immutable input, inspect its review, retain the real human decision, then dispatch separately.', 'SUCCEEDED execution does not imply PASS for quality or business semantics.'],
+    steps: ['Create the scoped project and goal explicitly. Resolve published six-field pins without latest selection.', 'Prepare immutable input, inspect its review, retain the real human decision, then dispatch separately.', 'SUCCEEDED execution does not imply PASS for quality or business semantics.', 'Maintain Target/Loop progress and evidence in the private Workspace ledger, linked to actual native project/Goal/Run/receipt records. There is no native Target/Loop completion API. Missing required evidence prevents closure.', 'Before resuming work, inspect retained state and source drift. Routine project work must not modify product Roadmap, AGENTS or source files.'],
   },
   recovery: {
     questions: ['Which exact owner, scope, requestId and run/session id were retained?'],
     owners: ['runtime', 'harness', 'ontology'],
     operations: ['workspace.inspect', 'receipt.inspect', 'run.inspect', 'evaluation.inspect', 'classification.inspect', 'classification.resume'],
     tools: ['evopilot_v01_reconcile'],
-    steps: ['UNKNOWN remains unresolved. Read the owning receipt and current run/session before any new action.', 'Runtime reconcile reads retained provider evidence; never rerun, refresh CAS or retry automatically.', 'A connection fault needs explicit operator diagnosis/recovery; closing a chat does not stop the daemon.'],
+    steps: ['UNKNOWN remains unresolved. Read the owning receipt and current run/session before any new action.', 'Runtime reconcile reads retained provider evidence; never rerun, refresh CAS or retry automatically.', 'A connection fault needs explicit operator diagnosis/recovery; closing a chat does not stop the daemon.', 'For backup, relocation and upgrade, use supported product maintenance operations and a consistent service stop/checkpoint. Never copy a live database, edit canonicalRoot manually or rewrite historical claims to repair a moved directory.', 'Use evopilot_v01_workspace_backup_inspect for fresh verification of backup anchors and bytes; a repeated backup request returns historical receipt only. Relocation requires a fresh verified installation attached to the new locations; the old installation cannot hot-switch.', 'After cutover, preserve newly created records before any recovery. Git asset history is not a complete database/evidence backup.'],
   },
   'retained-ontology': {
     questions: ['Which retained source, Pack/Proposal/Snapshot, projection, reasoning or Catalog operation is required?', 'Are the exact trusted providers configured and their bindings verified?'],
@@ -48,11 +51,15 @@ const guides: Record<string, GuideScenario> = {
 // Guides are pure; installed paths resolve against a verified installationRoot.
 export const sourceReferences = Object.freeze(['docs/first-journey.md', 'docs/product-composition.md', 'projects/evopilot-ontology/docs/service.md', 'projects/evopilot-ontology/docs/classification-service.md', 'projects/evopilot-ontology/docs/legacy-api.md', 'projects/evopilot-ontology/docs/catalog-service.md', 'projects/evopilot-ontology/specifications/', 'projects/evopilot-ontology/schemas/', 'projects/evopilot-harness/specifications/', 'projects/evopilot-harness/docs/service.md', 'projects/evopilot-runtime/docs/service.md']);
 export const installedReference = (reference: string) => reference.replace(/^projects\/evopilot-(runtime|harness|ontology)\//, 'node_modules/@evopilot-next/$1/');
-export const scenarios = Object.freeze(Object.keys(guides));
+export const scenarios = Object.freeze([...Object.keys(guides), ...scenarioIds]);
 export function getGuide(scenario: string) {
-  if (!Object.hasOwn(guides, scenario)) throw Object.assign(new Error('Unknown scenario'), { code: 'INVALID_REQUEST' });
+  const detail = scenarioIds.some(id => id === scenario) ? getScenario(scenario) : null;
+  const guideName = detail?.guide ?? scenario;
+  if (!Object.hasOwn(guides, guideName)) throw Object.assign(new Error('Unknown scenario'), { code: 'INVALID_REQUEST' });
   return structuredClone({
-    scenario, ...guides[scenario], authority: false,
+    scenario, guideName, ...guides[guideName], authority: false,
+    ...(detail ? { useCase: detail } : { useCases: scenarioCatalogue.filter(item => item.guide === guideName).map(item => ({ id: item.id, title: item.title })) }),
+    scenarioReferences: ['docs/expert-scenarios.md'],
     firstWhenActive: ['evopilot_v01_capabilities', 'evopilot_v01_request: owner workspace.inspect and relevant scoped read operations'],
     rules: [
       'Ask only unresolved questions; explain user choices without asking users to author raw schema or digests.',

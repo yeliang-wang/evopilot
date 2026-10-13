@@ -3,7 +3,14 @@ import { errorCode } from '../../integration/types.js';
 import type { Schema, MCPMessage, ActionPayload } from '../../integration/types.js';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { inspectConnection, activateConnection, callConnection } from '../../integration/connection/client.js';
+import { inspectConnection, activateConnection, callConnection, withWorkspaceMaintenance } from '../../integration/connection/client.js';
+import { loadConfiguration } from '../../integration/connection/config.js';
+import { withWorkspaceLease } from '../../integration/workspace/lock.js';
+import { inspectWorkspace, setupWorkspace } from '../../integration/workspace/bootstrap.js';
+import { projectOperation } from '../../integration/workspace/project.js';
+import { upgradeWorkspaceProject } from '../../integration/workspace/upgrade.js';
+import type { TemplateUpgradeInput } from '../../integration/workspace/upgrade.js';
+import type { WorkspaceSetupInput } from '../../integration/workspace/bootstrap.js';
 import { getGuide, scenarios } from '../../expert/core/guide.js';
 
 const INPUT = 1048576, OUTPUT = 8388608;
@@ -14,7 +21,18 @@ const scope = object({ visibility: { enum: ['public', 'private'] }, projectId: s
 const revision = { type: 'integer', minimum: 0 };
 const envelope = object({ operation: { type: 'string', minLength: 1, maxLength: 128 }, scope, input: { type: 'object' }, requestId: slug, expectedRevision: revision }, ['operation', 'scope', 'input']);
 const args = object({ scope, id: slug, requestId: slug, expectedRevision: revision });
+const absolutePath = { type: 'string', minLength: 1, maxLength: 4096 };
+const setup = object({ requestId: slug, projectRoot: absolutePath, stateRoot: absolutePath, workspaceId: slug }, ['requestId']);
+const attach = object({ requestId: slug, projectRoot: absolutePath, stateRoot: absolutePath, workspaceId: slug });
 const definitions: Record<string, [string, Schema]> = {
+  workspace_inspect: ['Inspect installation and Workspace binding without starting services or creating files.', object()],
+  workspace_initialize: ['Explicitly initialize your private editable project and separate protected service state; does not activate the session.', setup],
+  workspace_attach: ['Explicitly attach an existing validated and stopped Workspace, creating its editable project if absent. Cannot switch an already bound installation.', attach],
+  workspace_project: ['Manage private project baselines and Goal/Target/Loop evidence; template upgrade preserves customized files. Requires this active session.', object({operation:{enum:['bind','inspect','drift','baseline.accept','campaign.write','campaign.inspect','template.upgrade']},input:{type:'object'},requestId:slug})],
+  workspace_backup: ['Stop the verified connection and back up the private project and owner state into a new protected destination. Deactivates this session.', object({destinationRoot:absolutePath,requestId:slug})],
+  workspace_backup_inspect: ['Verify every retained backup byte against its protected manifest anchor without starting services.', object({backupRoot:absolutePath,requestId:slug})],
+  workspace_restore: ['Restore a retained verified same-host backup only into its missing or empty original project/state locations. Does not activate this session.', object({backupRoot:absolutePath,requestId:slug})],
+  workspace_migrate: ['Stop the connection, copy to new private project/state locations and verify owner relocation lineage. Preserves the source and requires explicit attachment to the destination.', object({destinationProjectRoot:absolutePath,destinationStateRoot:absolutePath,requestId:slug})],
   inspect: ['Inspect this session and passive authenticated connection identity.', object()],
   activate: ['Explicitly activate this session; start or reuse the verified shared connection.', object()],
   deactivate: ['Deactivate only this session; keep the shared connection running.', object()],
@@ -42,7 +60,7 @@ function finiteJSON(value: unknown, depth = 0) {
   if (depth > 64 || (typeof value === 'number' && !Number.isFinite(value))) throw Error('SCHEMA');
   if (value && typeof value === 'object') for (const v of Object.values(value)) finiteJSON(v, depth + 1);
 }
-const safeCodes = new Set(['UNKNOWN', 'INACTIVE', 'SESSION_INACTIVE', 'NOT_READY', 'STARTUP_TIMEOUT', 'STARTUP_FAILED', 'SPAWN_FAILED', 'CONTROL_INVALID', 'IDENTITY_MISMATCH', 'INSTALLATION_DIGEST', 'CONFIG_VERSION', 'PATH', 'SYMLINK', 'UNSAFE_FILE', 'INVALID_REQUEST', 'LIMIT', 'NOT_FOUND', 'REVISION_CONFLICT', 'REQUEST_CONFLICT', 'APPROVAL_REQUIRED', 'REVIEW_REQUIRED', 'REVIEW_MISMATCH', 'PENDING_MODEL', 'INVALID_MODEL', 'SCOPE_MISMATCH', 'IMMUTABLE_VERSION', 'UNSUPPORTED_DEPENDENCY', 'CLASSIFICATION_PROVIDER_UNAVAILABLE', 'CLASSIFICATION_SOURCE_UNAVAILABLE', 'CLASSIFICATION_UNRESOLVED', 'PROVIDER_UNAVAILABLE']);
+const safeCodes = new Set(['WORKSPACE_UNCONFIGURED', 'WORKSPACE_ALREADY_BOUND', 'WORKSPACE_OCCUPIED', 'PROJECT_OCCUPIED', 'UNSAFE_PROJECT', 'PROJECT_IDENTITY', 'BINDING_IDENTITY', 'SETUP_BUSY', 'SETUP_CONFLICT', 'SETUP_LOCK_INVALID', 'CONNECTION_MUST_STOP', 'WORKSPACE_LOCATION', 'WORKSPACE_IN_GIT', 'CONFIG_WORKSPACE', 'UNSAFE_DIRECTORY', 'UNSAFE_WORKSPACE', 'IDENTITY_CONFLICT', 'CONFIG_ID', 'SCHEMA', 'UNKNOWN', 'INACTIVE', 'SESSION_INACTIVE', 'NOT_READY', 'STARTUP_TIMEOUT', 'STARTUP_FAILED', 'SPAWN_FAILED', 'CONTROL_INVALID', 'IDENTITY_MISMATCH', 'INSTALLATION_DIGEST', 'CONFIG_VERSION', 'PATH', 'SYMLINK', 'UNSAFE_FILE', 'INVALID_REQUEST', 'LIMIT', 'NOT_FOUND', 'REVISION_CONFLICT', 'REQUEST_CONFLICT', 'APPROVAL_REQUIRED', 'REVIEW_REQUIRED', 'REVIEW_MISMATCH', 'PENDING_MODEL', 'INVALID_MODEL', 'SCOPE_MISMATCH', 'IMMUTABLE_VERSION', 'UNSUPPORTED_DEPENDENCY', 'CLASSIFICATION_PROVIDER_UNAVAILABLE', 'CLASSIFICATION_SOURCE_UNAVAILABLE', 'CLASSIFICATION_UNRESOLVED', 'PROVIDER_UNAVAILABLE', 'PROVIDER_REQUIRED', 'PROVIDER_FAILED', 'PROVIDER_MISMATCH','MISSING_RELOCATION_KEY','INVALID_LINEAGE','SNAPSHOT_DRIFT','CORRUPT_BLOB','CORRUPT_STATE','WORKSPACE_BUSY','UNSAFE_COORDINATION']);
 const argv = process.argv.slice(2);
 if (argv.length !== 2 || argv[0] !== '--config' || !path.isAbsolute(argv[1]) || path.normalize(argv[1]) !== argv[1] || !argv[1].endsWith('.json')) {
   process.stderr.write('Invalid adapter configuration argument\n'); process.exitCode = 2;
@@ -98,7 +116,7 @@ async function serve(configPath: string) {
       const p = r.params;
       if (initialized || !p || Object.keys(p).some(k => !['protocolVersion', 'capabilities', 'clientInfo', '_meta'].includes(k)) || typeof p.protocolVersion !== 'string' || !p.capabilities || typeof p.capabilities !== 'object' || Array.isArray(p.capabilities) || !p.clientInfo || typeof (p.clientInfo as Record<string, unknown>).name !== 'string' || typeof (p.clientInfo as Record<string, unknown>).version !== 'string') { await error(-32602, 'Invalid params'); return; }
       initialized = true;
-      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.1.1' } };
+      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.2.0' } };
     } else if (r.method === 'ping' || r.method === 'tools/list') {
       if (params && (Object.keys(params).some(k => !['_meta', ...(r.method === 'tools/list' ? ['cursor'] : [])].includes(k)) || (Object.hasOwn(params, 'cursor') && (typeof params.cursor !== 'string' || params.cursor !== '')))) { await error(-32602, 'Invalid params'); return; }
       result = r.method === 'ping' ? {} : { tools };
@@ -108,22 +126,61 @@ async function serve(configPath: string) {
       const rawInput = p.arguments ?? {};
       try { validate(rawInput, def.inputSchema); } catch { await error(-32602, 'Invalid params'); return; }
       // The tool-specific schema above checks each forwarded field before use.
-      const input = rawInput as ActionPayload & { scenario: string };
+      const input = rawInput as ActionPayload & WorkspaceSetupInput & { scenario: string; operation: Parameters<typeof projectOperation>[1] | 'template.upgrade'; input: Record<string,unknown>; destinationRoot: string; backupRoot: string; destinationProjectRoot: string; destinationStateRoot: string };
       const action = (p.name as string).slice(prefix.length);
-      const source = input.envelope ?? input.args;
+      const source = input.envelope ?? input.args ?? (input.requestId ? {requestId:input.requestId,operation:input.operation??action} : null);
       const correlation = source ? Object.fromEntries(['requestId', 'scope', 'expectedRevision', 'operation', 'id'].filter(k => Object.hasOwn(source, k)).map(k => [k, (source as unknown as Record<string, unknown>)[k]])) : null;
       try {
         let value;
         if (action === 'guide') value = getGuide(input.scenario);
+        else if (action === 'workspace_inspect') value = inspectWorkspace(configPath);
+        else if (action === 'workspace_initialize' || action === 'workspace_attach') {
+          value = await setupWorkspace(configPath, input, action === 'workspace_attach' ? 'attach' : 'initialize');
+          connection = await inspectConnection(configPath);
+        }
         else if (action === 'deactivate') { sessionActive = false; value = { deactivated: true }; }
         else if (action === 'inspect') { connection = await inspectConnection(configPath); value = { inspected: true }; }
         else if (action === 'activate') {
-          if (!sessionActive) {
+          {
             const ready = await activateConnection(configPath);
             if (ready?.active !== true || !ready.identity || !Number.isSafeInteger(ready.pid)) throw Object.assign(Error(), { code: 'NOT_READY' });
             connection = ready; sessionActive = true;
           }
           value = { activated: true };
+        } else if (action === 'workspace_project') {
+          if (!sessionActive) throw Object.assign(Error(), {code:'SESSION_INACTIVE'});
+          const c = loadConfiguration(configPath);
+          if (!c.projectRoot) throw Object.assign(Error(), {code:'WORKSPACE_UNCONFIGURED'});
+          const context = {projectRoot:c.projectRoot,stateRoot:c.workspaceRoot,workspaceId:c.workspaceId,installationRoot:c.installationRoot,configPath};
+          if (input.operation === 'template.upgrade') {
+            try { value = await withWorkspaceMaintenance(configPath,input.requestId,async()=>upgradeWorkspaceProject(context,{...input.input,requestId:input.requestId} as TemplateUpgradeInput)); }
+            finally { sessionActive=false; }
+          } else {
+            value = await withWorkspaceLease(c,input.requestId,async()=>{
+              const state=await inspectConnection(configPath);
+              if (!state.active) { sessionActive=false; throw Object.assign(Error(),{code:'SESSION_INACTIVE'}); }
+              return projectOperation(context,input.operation as Parameters<typeof projectOperation>[1],input.input,input.requestId);
+            });
+          }
+        } else if (action === 'workspace_backup_inspect') {
+          const c=loadConfiguration(configPath,{allowMissingProject:true});
+          if (!c.projectRoot) throw Object.assign(Error(),{code:'WORKSPACE_UNCONFIGURED'});
+          value=await withWorkspaceLease(c,input.requestId,async()=>{
+            const {inspectWorkspaceBackup}=await import('../../integration/workspace/maintenance.js');
+            return inspectWorkspaceBackup({projectRoot:c.projectRoot!,stateRoot:c.workspaceRoot,workspaceId:c.workspaceId,installationRoot:c.installationRoot},input.backupRoot);
+          });
+        } else if (['workspace_backup','workspace_restore','workspace_migrate'].includes(action)) {
+          if (!sessionActive && action !== 'workspace_restore') throw Object.assign(Error(), {code:'SESSION_INACTIVE'});
+          const operation = action.slice('workspace_'.length) as 'backup'|'restore'|'migrate';
+          const details = operation === 'backup' ? {destinationRoot:input.destinationRoot} : operation === 'restore' ? {backupRoot:input.backupRoot} : {destinationProjectRoot:input.destinationProjectRoot,destinationStateRoot:input.destinationStateRoot};
+          try {
+            value = await withWorkspaceMaintenance(configPath,input.requestId,async c=>{
+              if (!c.projectRoot) throw Object.assign(Error(),{code:'WORKSPACE_UNCONFIGURED'});
+              const {maintainWorkspace} = await import('../../integration/workspace/maintenance.js');
+              return maintainWorkspace({projectRoot:c.projectRoot,stateRoot:c.workspaceRoot,workspaceId:c.workspaceId,installationRoot:c.installationRoot},operation,details,input.requestId);
+            },{restoring:operation==='restore'});
+            connection = await inspectConnection(configPath);
+          } finally { sessionActive=false; }
         } else {
           if (!sessionActive) throw Object.assign(Error(), { code: 'SESSION_INACTIVE' });
           value = await callConnection(configPath, action, input);
@@ -132,7 +189,8 @@ async function serve(configPath: string) {
         result.structuredContent.correlation = correlation;
         result.content[0].text = JSON.stringify(result.structuredContent);
       } catch (e) {
-        result = receipt(undefined, { code: safeCodes.has(errorCode(e) ?? '') ? errorCode(e)! : 'CONNECTION_ERROR', correlation });
+        const code = errorCode(e) ?? '';
+        result = receipt(undefined, { code: safeCodes.has(code) || /^(?:PROJECT|CAMPAIGN|MAINTENANCE|BACKUP|RESTORE|MIGRATION|RELOCATION|TEMPLATE|UPGRADE|WORKSPACE_LEASE)_[A-Z0-9_]+$/.test(code) ? code : 'CONNECTION_ERROR', correlation });
       }
     } else { await error(-32601, 'Method not found'); return; }
     await write({ jsonrpc: '2.0', id: r.id, result });

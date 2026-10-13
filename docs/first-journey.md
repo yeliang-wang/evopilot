@@ -1,45 +1,45 @@
-# Four first journeys in 0.1.1 Preview
+# First use — v0.2.0 Preview
 
-Complete [installation](installation.md), select **EvoPilot v0.1 Preview** in Codex, and describe your task. The first task activates this chat and checks or starts the shared daemon. Inspect and guide requests remain passive. The Expert checks active capabilities and the owner's workspace, then asks for missing project, visibility, source scope or requirements. Ordinary work needs no CLI commands.
+[Install EvoPilot](installation.md), select the EvoPilot plugin in Codex and say:
 
-## 1. Design from requirements
+> Start using EvoPilot. Create my personal Workspace, then show me the forward and reverse examples.
 
-Say: “Model a library with Book and Loan. A loan must identify its book and borrower. Show the draft and unresolved questions before publication.”
+No GitHub login or separate Workspace repository is required. The Expert checks for a binding. If none exists, it explains the default user project location (`~/evopilot-workspace`) and separate protected service state (`~/.local/share/evopilot/workspaces/<workspace-id>`), initializes them, then activates this chat. You can specify your own locations. Existing occupied directories are not overwritten. Merely asking what EvoPilot does stays passive.
 
-Expect a draft Ontology v1 asset with concepts, relations, constraints and proposed mappings, plus questions about borrower identity and renewal rules. Required semantic gaps remain PENDING. Review the draft, make an explicit decision, then separately request publication. Publication returns an immutable reference.
+The project contains README, documentation, synthetic examples, public reusable assets and private project materials. `public` means reusable scope, not permission to upload. Keep databases, raw runtime evidence, control state and credentials out of Git; use a complete Workspace backup for restoration. The installation binds one Workspace; use the explicit attach/migration workflow for existing data rather than editing identity files or moving live databases.
 
-See [Ontology v1 definitions](https://github.com/yeliang-wang/evopilot-ontology/blob/main/specifications/v1/README.md) and [asset lifecycle](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/service.md).
+## Try a synthetic example
 
-## 2. Model an authorized project revision
+Say “Run the forward example and show its expected artifacts” or “Run the reverse example without changing its source.” Follow the installed example README. The Expert labels synthetic inputs, scopes and decisions; they do not authorize actions on your real project. Compare actual draft, delivery and evaluation artifacts with the documented outputs.
 
-Say: “Use only this authorized project revision and these files to draft its domain model. Separate observed mappings from inferred ones and list business questions for review.”
+## Start from requirements
 
-Expect the same Ontology v1 asset shape, with source locator, revision and digest, observed code mappings, separately marked inferences and coverage gaps. The Host reads authorized source and authors the model; code alone cannot settle business meaning. Review, decision and publication follow the forward-design lifecycle.
+> Model a library with Book and Loan. Show the draft and unresolved questions before publication.
 
-Structured legacy JSON/YAML import is a separate bridge; it does not parse arbitrary repositories or Java source. See [Ontology service](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/service.md) and [legacy API](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/legacy-api.md).
+Expect a native Ontology v1 draft with concepts, relations, constraints and proposed source mappings. Required unknown business rules remain PENDING. Review the exact draft and give your decision before separate publication. See [Ontology v1](https://github.com/yeliang-wang/evopilot-ontology/blob/main/specifications/v1/README.md).
 
-## 3. Assess quality with Harness
+## Connect an existing project
 
-Say: “Review this Harness asset and its rules, evaluate the supplied evidence, and show missing reports alongside quality results.”
+> Read only this project revision and these files. Extract its Ontology and Harness, distinguish direct evidence from inference, and list questions for review.
 
-Expect a Harness v1 asset and an evaluation identifying rules, supplied evidence, quality results and missing material. Missing rules or reports yield **INDETERMINATE with Warning**, never automatic PASS. Evaluation does not automatically change a version or launch an action. New or changed assets require explicit review, decision and publication.
+The Host reads only authorized sources; the Expert records real locator, revision and digest. The source stays unchanged. Code alone does not confirm business meaning. Review and publish through the same v1 lifecycle as forward modeling. Structured JSON/YAML import is a separate bridge, not an arbitrary Java/repository parser.
 
-See [Harness v1 definitions](https://github.com/yeliang-wang/evopilot-harness/blob/main/specifications/v1/README.md) and [evaluation service](https://github.com/yeliang-wang/evopilot-harness/blob/main/docs/service.md).
+## Evaluate and hand off
 
-## 4. Prepare and execute a Runtime goal
+> Evaluate this Harness against the supplied reports. Show missing evidence. Prepare a Runtime goal using the exact delivered Ontology and Harness versions.
 
-Say: “Prepare this project goal using these exact published Ontology and Harness versions. Show the inputs and run for my decision; dispatch only after my decision.”
+Missing evidence remains INDETERMINATE with Warning. Evaluation does not automatically change versions or launch an action. A prepared Runtime Run pins six exact reference fields (`product`, `id`, `version`, `specVersion`, `digest`, `visibility`) and immutable inputs. After your actual decision, authorized dispatch validates supplied instances and quality evidence. Runtime completion, quality and business validity remain distinct. Runtime does not arbitrarily edit code or deploy software.
 
-Expect a Runtime project and goal, immutable pinned inputs, a prepared run for review, an explicit decision and, after authorized dispatch, execution receipts and reconciliation state. The parent composition provides a deterministic execution provider that validates supplied Ontology instances and evaluates Harness evidence against exact published pins, with retained receipts and reconciliation. It does not perform arbitrary code changes or deployment. Standalone Runtime requires explicitly supplied trusted providers. Preparation does not execute a goal. Runtime completion, Harness quality and Ontology business validity remain separate results.
+## Continue in another chat
 
-If a response is lost, say: “Inspect the retained receipt for this exact request and reconcile the run.” Uncertainty never authorizes redispatch. See [Runtime service](https://github.com/yeliang-wang/evopilot-runtime/blob/main/docs/service.md).
+> Continue my project's Target from the last Loop. Check whether the source baseline changed and show the remaining evidence.
 
-## Artifacts, providers and references
+Select the plugin in that chat first. The Expert activates that session, reads private progress and real receipts, compares the recorded baseline and proposes impact/reuse or a new reviewed asset version. Previous Runs keep their original pins. Asset alignment occurs at explicit checkpoints, not continuously in the background. Private Target/Loop documents do not change the EvoPilot product Roadmap or invent a native Goal-completion API.
 
-Native asset authoring and supplied-evidence quality evaluation need no LLM callback. Advanced classification requires trusted SDK `resolveClassificationSource`, `classificationAdvisor` and `classificationModel` providers; the model binding is `{providerId, modelId, revision, timeoutMs}`. Foreign legacy Catalog resolution requires `resolveLegacyHarness`. The default daemon does not inherit a Host LLM or configure these callbacks. Consult the owning [classification](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/classification-service.md) and [Catalog](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/catalog-service.md) guides.
+For a lost response, retain the original requestId and say “Inspect this receipt and reconcile without redispatch.” Use product maintenance for backup, migration and upgrade; never copy a live database or edit historical identities to repair a move.
 
-Harness and Ontology own their `specifications/v1`, schemas and extensions around v1. A common published pin contains six fields: `product`, `id`, `version`, `specVersion`, `digest`, `visibility`. Use exact owner-returned values, never “latest”; unknown required extensions block consumption. Mutations carry exact scope (`visibility` and `projectId`), request ID and current expected revision. Review digests and decision evidence come from real owner state and the user's actual decision.
+## More workflows and capabilities
 
-Guides return `installedReferences` relative to verified `installationRoot`, already equal to `managedRoot/app`. Product references resolve under `installationRoot/node_modules/@evopilot-next/{runtime,harness,ontology}/`; do not append another `app`. Ontology includes schemas, v1 specifications and service guides; Harness includes v1 definitions and its service guide; Runtime includes its service guide.
+The [complete Expert catalogue](expert-scenarios.md) lists all 27 scenarios and their acceptance requirements. Advanced classification requires explicit trusted SDK providers; the default daemon does not inherit the Host model or credentials. Foreign Catalog Harness material also needs a resolver. A provider-prerequisite diagnostic is not a completed classification. See [capabilities](capabilities.md), [Codex integration](codex.md) and [composition](product-composition.md).
 
-Keep synthetic examples labelled synthetic. Public visibility does not authorize upload, and private material cannot feed public consumers. Model output grants no approval or release authority. See [capabilities](capabilities.md), [Codex](codex.md) and [composition contracts](product-composition.md).
+Guides return `installedReferences` relative to verified `installationRoot` (already `managedRoot/app`). Child references resolve under `node_modules/@evopilot-next/{runtime,harness,ontology}/`; do not append another `app`. Read owner schemas for exact payloads. Public visibility does not authorize upload; model output never grants approval or release authority.

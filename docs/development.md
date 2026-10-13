@@ -1,4 +1,4 @@
-# Source development — v0.1.1 Preview
+# Source development — v0.2.0 Preview
 
 Use Node 24.14.0, TypeScript 5.9.3 and @types/node 24.19.2 from committed locks. The parent owns composition, connection, Expert, plugin and canonical compatibility bytes. Each child owns its strict TypeScript core, public declarations, production dependencies and independent checks.
 

@@ -6,6 +6,8 @@ Start with [installation](installation.md) and the [first journey](first-journey
 | --- | --- |
 | Install, verify checksums, register or remove | [Installation](installation.md) |
 | Forward design, reverse modeling, quality, execution | [First journey](first-journey.md) |
+| Initialize or maintain your private Workspace | [Workspace](../workspace/README.md), [migration](migration.md), [recovery](recovery.md) |
+| All supported Expert scenarios and acceptance branches | [27-scenario catalogue](expert-scenarios.md), [testing](testing.md) |
 | Concepts and limits | [Capabilities](capabilities.md), [product boundaries](architecture/0001-three-product-boundary.md), [composition](product-composition.md) |
 | Codex activation and tools | [Codex integration](codex.md) |
 | Ontology specifications and schemas | [v1 definitions](https://github.com/yeliang-wang/evopilot-ontology/blob/main/specifications/v1/README.md), [schemas](https://github.com/yeliang-wang/evopilot-ontology/tree/main/schemas), [examples](https://github.com/yeliang-wang/evopilot-ontology/tree/main/examples) |
@@ -15,6 +17,6 @@ Start with [installation](installation.md) and the [first journey](first-journey
 | Troubleshoot or migrate | [Recovery](recovery.md), [migration](migration.md), [support](../SUPPORT.md) |
 | Release and roadmap | [Release procedure](github-release.md), [current roadmap](roadmap.md), [changelog](../CHANGELOG.md) |
 
-Architecture also covers [process topology](architecture/0002-local-process-topology.md) and [local authoring](architecture/0003-local-authoring.md). Product links use GitHub; within-parent links stay relative. Offline installed-link mapping awaits the following code batch and installed readback verification.
+Architecture also covers [process topology](architecture/0002-local-process-topology.md) and [local authoring](architecture/0003-local-authoring.md). Product links use GitHub; within-parent links stay relative. Installed bundles map shipped child documentation to local paths for offline reading.
 
-The [frozen roadmap](roadmap/ROADMAP.md) preserves the v0.1.0 baseline. Current requirements are summarized in the [informational repair scope](../governance/delivery-repair-v011.json); neither document certifies acceptance.
+The [frozen roadmap](roadmap/ROADMAP.md) preserves the v0.1.0 baseline and the [repair scope](../governance/delivery-repair-v011.json) preserves v0.1.1. The current [v0.2 target](../governance/workspace-v02.json) adds independent Workspace workflows. [v1.0 readiness criteria](../governance/readiness-v1.json) stay generic; real project progress and evidence remain private. These documents define scope, not acceptance results.

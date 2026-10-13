@@ -1,5 +1,5 @@
 import { errorCode } from '../types.js';
-import type { ConnectionConfig, ConnectionIdentity, Configuration, Owner } from '../types.js';
+import type { ConnectionConfig, ConnectionIdentity, Configuration, InstallationConfiguration, WorkspaceBinding, Owner } from '../types.js';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -40,33 +40,60 @@ export function readRegular(filename: string, max: number = LIMITS.config, priva
     return bytes;
   } finally { fs.closeSync(fd); }
 }
-function outsideGit(root: string) {
+function present(filename: string) { try { fs.lstatSync(filename); return true; } catch (error) { if (errorCode(error) === 'ENOENT') return false; throw error; } }
+export function outsideGit(root: string) {
   for (let p = root; ; p = path.dirname(p)) {
-    if (fs.existsSync(path.join(p, '.git'))) fail('WORKSPACE_IN_GIT');
+    if (present(path.join(p, '.git'))) fail('WORKSPACE_IN_GIT');
     if (path.dirname(p) === p) break;
   }
 }
 export function installationIdentity(config: ConnectionConfig): ConnectionIdentity {
-  return Object.freeze({ product: 'evopilot-v01-preview', version: '0.1.1', protocol: 'evopilot-connection/v1', installationId: config.installationId,
+  return Object.freeze({ product: 'evopilot-v01-preview', version: '0.2.0', protocol: 'evopilot-connection/v1', installationId: config.installationId,
     installationRoot: config.installationRoot, installationDigest: digest(canonicalJSON(config.manifest)), components: config.components,
     workspaceRoot: config.workspaceRoot, workspaceId: config.workspaceId });
 }
-export function loadConfiguration(filename: string): Configuration {
+interface ConfigurationReadOptions { allowMissingProject?: boolean; restoreRequestId?: string }
+function restoreStagingProject(binding: WorkspaceBinding, requestId: string | undefined): boolean {
+  if (!requestId || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(requestId) || present(path.join(binding.projectRoot, 'workspace-project.json'))) return false;
+  const privateDirectory = (root: string) => {
+    canonicalPath(root); const st = fs.lstatSync(root);
+    if (!st.isDirectory() || st.uid !== process.getuid!() || (st.mode & 0o777) !== 0o700) fail('UNSAFE_PROJECT');
+  };
+  privateDirectory(binding.projectRoot);
+  const stageName = '.evopilot-copy-' + requestId;
+  if (canonicalJSON(fs.readdirSync(binding.projectRoot)) !== canonicalJSON([stageName])) return false;
+  const control = binding.stateRoot + '.evopilot-maintenance';
+  outsideGit(control); privateDirectory(control); privateDirectory(path.join(control, 'requests'));
+  const journal = JSON.parse(readRegular(path.join(control, 'requests', requestId + '.json'), 32 * 1048576, true).toString());
+  fields(journal, ['schema', 'requestId', 'intentDigest', 'operation', 'status', 'source', 'destinations', 'manifest', 'copied', 'result', 'lastError']);
+  const source = { projectRoot: binding.projectRoot, stateRoot: binding.stateRoot, workspaceId: binding.workspaceId };
+  if (journal.schema !== 'evopilot-workspace-maintenance-journal/v1' || journal.requestId !== requestId || journal.operation !== 'restore' || !['COPYING', 'INTERRUPTED'].includes(String(journal.status)) || journal.result !== null || journal.copied !== false || canonicalJSON(journal.source) !== canonicalJSON(source) || canonicalJSON(journal.destinations) !== canonicalJSON([binding.projectRoot, binding.stateRoot])) fail('RESTORE_JOURNAL');
+  if (!journal.manifest || typeof journal.manifest !== 'object' || Array.isArray(journal.manifest) || canonicalJSON((journal.manifest as Record<string, unknown>).source) !== canonicalJSON(source)) fail('RESTORE_JOURNAL');
+  const stage = path.join(binding.projectRoot, stageName); privateDirectory(stage);
+  for (const name of fs.readdirSync(stage)) {
+    if (!/^[a-f0-9]{64}$/.test(name)) fail('RESTORE_STAGING');
+    const filename = path.join(stage, name); canonicalPath(filename); const st = fs.lstatSync(filename);
+    if (!st.isFile() || st.nlink !== 1 || st.uid !== process.getuid!() || (st.mode & 0o777) !== 0o600 || st.size > 64 * 1048576) fail('RESTORE_STAGING');
+  }
+  // The maintenance owner verifies the pinned backup and exact partial bytes
+  // before publishing anything. This allowance only reaches that recovery path.
+  return true;
+}
+export function loadInstallationConfiguration(filename: string, options: ConfigurationReadOptions = {}): InstallationConfiguration {
   filename = canonicalPath(filename);
   outsideGit(path.dirname(filename));
   if (filename.startsWith(codeRoot + path.sep)) fail('CONFIG_LOCATION');
   const c: unknown = JSON.parse(readRegular(filename).toString());
   fields(c, ['schema', 'version', 'protocol', 'installationId', 'installationRoot', 'workspaceRoot', 'workspaceId', 'components', 'manifest']);
-  if (c.schema !== 'evopilot-connection-config/v1' || c.version !== '0.1.1' || c.protocol !== 'evopilot-connection/v1') fail('CONFIG_VERSION');
-  for (const key of ['installationId', 'workspaceId'] as const) if (typeof c[key] !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(c[key])) fail('CONFIG_ID');
+  if (c.schema !== 'evopilot-connection-config/v1' || c.version !== '0.2.0' || c.protocol !== 'evopilot-connection/v1') fail('CONFIG_VERSION');
+  if (typeof c.installationId !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(c.installationId)) fail('CONFIG_ID');
+  if ((c.workspaceRoot === null) !== (c.workspaceId === null)) fail('CONFIG_WORKSPACE');
+  if (c.workspaceId !== null && (typeof c.workspaceId !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(c.workspaceId))) fail('CONFIG_ID');
   canonicalPath(c.installationRoot);
   if (c.installationRoot !== codeRoot) fail('INSTALLATION_ROOT');
-  const workspaceRoot = canonicalPath(c.workspaceRoot, true);
-  outsideGit(workspaceRoot);
-  if (workspaceRoot === path.parse(workspaceRoot).root || c.workspaceRoot === codeRoot || workspaceRoot.startsWith(codeRoot + path.sep)) fail('WORKSPACE_LOCATION');
-  if (fs.existsSync(workspaceRoot) && !fs.lstatSync(workspaceRoot).isDirectory()) fail('WORKSPACE_LOCATION');
+  if (c.workspaceRoot !== null) validateStateRoot(c.workspaceRoot);
   fields(c.components, ['runtime', 'harness', 'ontology']);
-  if (Object.values(c.components).some(v => v !== '0.1.1')) fail('COMPONENT_VERSION');
+  if (Object.values(c.components).some(v => v !== '0.2.0')) fail('COMPONENT_VERSION');
   if (!Array.isArray(c.manifest) || !c.manifest.length || c.manifest.length > LIMITS.files) fail('MANIFEST');
   const listed = new Set();
   let total = 0;
@@ -94,12 +121,50 @@ export function loadConfiguration(filename: string): Configuration {
   walk('node_modules');
   if (required.some(p => !listed.has(p))) fail('MANIFEST_INCOMPLETE');
   const parent = JSON.parse(readRegular(path.join(codeRoot, 'package.json')).toString());
-  if (parent.name !== '@evopilot-next/stack' || parent.version !== '0.1.1') fail('COMPONENT_IDENTITY');
+  if (parent.name !== '@evopilot-next/stack' || parent.version !== '0.2.0') fail('COMPONENT_IDENTITY');
   for (const owner of Object.keys(c.components) as Owner[]) {
     const pkg = JSON.parse(readRegular(path.join(codeRoot, 'node_modules/@evopilot-next', owner, 'package.json')).toString());
     if (pkg.name !== '@evopilot-next/' + owner || pkg.version !== (c.components as Record<string, unknown>)[owner]) fail('COMPONENT_IDENTITY');
   }
-  // All config fields, paths, versions and inventory have been checked above.
+  // A binding is private mutable user configuration, outside immutable program inventory.
+  const bindingPath = path.dirname(filename) + '.evopilot-binding.json';
   const validated = c as unknown as ConnectionConfig;
-  return { ...validated, configPath: filename, controlRoot: workspaceRoot + '.evopilot-control', identity: installationIdentity(validated) };
+  let workspaceRoot = c.workspaceRoot as string | null, workspaceId = c.workspaceId as string | null, projectRoot: string | null = null;
+  if (present(bindingPath)) {
+    const binding: WorkspaceBinding = JSON.parse(readRegular(bindingPath, LIMITS.config, true).toString());
+    fields(binding, ['schema', 'installationId', 'installationDigest', 'installationRoot', 'projectRoot', 'stateRoot', 'workspaceId', 'requestId']);
+    if (binding.schema !== 'evopilot-workspace-binding/v1' || binding.installationId !== c.installationId || binding.installationRoot !== c.installationRoot || binding.installationDigest !== digest(canonicalJSON(c.manifest))) fail('BINDING_IDENTITY');
+    for (const id of [binding.workspaceId, binding.requestId]) if (typeof id !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(id)) fail('BINDING_IDENTITY');
+    validateStateRoot(binding.stateRoot); canonicalPath(binding.projectRoot, options.allowMissingProject === true);
+    if (workspaceRoot !== null && (workspaceRoot !== binding.stateRoot || workspaceId !== binding.workspaceId)) fail('WORKSPACE_ALREADY_BOUND');
+    const projectMissing = options.allowMissingProject === true && (!present(binding.projectRoot) || (fs.lstatSync(binding.projectRoot).isDirectory() && fs.readdirSync(binding.projectRoot).length === 0));
+    if (projectMissing && present(binding.projectRoot)) { const st = fs.lstatSync(binding.projectRoot); if (st.uid !== process.getuid!() || (st.mode & 0o777) !== 0o700) fail('UNSAFE_PROJECT'); }
+    if (!projectMissing && !(options.allowMissingProject === true && restoreStagingProject(binding, options.restoreRequestId))) validateProject(binding.projectRoot, binding.workspaceId);
+    const roots = [binding.projectRoot, binding.stateRoot, path.dirname(filename)];
+    for (let i = 0; i < roots.length; i++) for (let j = i + 1; j < roots.length; j++) if (roots[i] === roots[j] || roots[i].startsWith(roots[j] + path.sep) || roots[j].startsWith(roots[i] + path.sep)) fail('WORKSPACE_LOCATION');
+    workspaceRoot = binding.stateRoot; workspaceId = binding.workspaceId; projectRoot = binding.projectRoot;
+  }
+  return { ...validated, workspaceRoot, workspaceId, projectRoot, configPath: filename, bindingPath,
+    identity: { ...installationIdentity(validated), workspaceRoot, workspaceId } };
+}
+export function validateStateRoot(value: unknown): string {
+  const root = canonicalPath(value, true); outsideGit(root);
+  if (root === path.parse(root).root || root === codeRoot || root.startsWith(codeRoot + path.sep) || codeRoot.startsWith(root + path.sep)) fail('WORKSPACE_LOCATION');
+  if (fs.existsSync(root) && !fs.lstatSync(root).isDirectory()) fail('WORKSPACE_LOCATION');
+  return root;
+}
+export function validateProject(root: string, id: string) {
+  canonicalPath(root);
+  if (root === codeRoot || root.startsWith(codeRoot + path.sep) || codeRoot.startsWith(root + path.sep)) fail('WORKSPACE_LOCATION');
+  const st = fs.lstatSync(root);
+  if (!st.isDirectory() || st.uid !== process.getuid!() || (st.mode & 0o077)) fail('UNSAFE_PROJECT');
+  const p = JSON.parse(readRegular(path.join(root, 'workspace-project.json'), LIMITS.config, true).toString());
+  fields(p, ['schema', 'id', 'templateVersion', 'specifications']); fields(p.specifications, ['ontology', 'harness']);
+  if (p.schema !== 'evopilot-workspace-project/v1' || p.id !== id || (typeof p.templateVersion !== 'string' || !['0.1.1', '0.2.0'].includes(p.templateVersion)) || p.specifications.ontology !== 'v1' || p.specifications.harness !== 'v1') fail('PROJECT_IDENTITY');
+  return p;
+}
+export function loadConfiguration(filename: string, options: ConfigurationReadOptions = {}): Configuration {
+  const c = loadInstallationConfiguration(filename, options);
+  if (c.workspaceRoot === null || c.workspaceId === null) fail('WORKSPACE_UNCONFIGURED');
+  return { ...c, workspaceRoot: c.workspaceRoot, workspaceId: c.workspaceId, controlRoot: c.workspaceRoot + '.evopilot-control', identity: { ...c.identity, workspaceRoot: c.workspaceRoot, workspaceId: c.workspaceId } };
 }

@@ -10,7 +10,7 @@ export function validateProductMetadata(pkg, owner, checkpoint = 'M2') {
   assert(['M2', 'M4'].includes(checkpoint), 'Unknown metadata checkpoint');
   assert(['runtime', 'harness', 'ontology'].includes(owner), 'Unknown product');
   assert.equal(pkg.name, '@evopilot-next/' + owner);
-  assert.equal(pkg.version, '0.1.1');
+  assert.equal(pkg.version, '0.2.0');
   assert.equal(pkg.private, true);
   assert.equal(pkg.type, 'module');
   assert.equal(pkg.license, 'Apache-2.0');
@@ -24,7 +24,7 @@ export function validateProductMetadata(pkg, owner, checkpoint = 'M2') {
   assert.deepEqual([...pkg.files].sort(), ( owner === 'runtime' ? ['dist', 'src', 'vendor', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'docs', 'LICENSE', 'NOTICE', 'provenance']
     : owner === 'harness' ? ['dist', 'src', 'vendor', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'specifications', 'examples', 'assets', 'docs', 'provenance', 'LICENSE', 'NOTICE']
     : ['dist', 'src', 'vendor', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'specifications', 'examples', 'schemas', 'docs', 'provenance', 'LICENSE', 'NOTICE', 'assets']).sort());
-  const names = { '.': 'index', ...(owner === 'ontology' ? { './compat': 'compat/index', './migration': 'migration' } : {}), ...(owner !== 'runtime' ? { './sources': 'asset-sources' } : {}), './service': 'service' };
+  const names = { '.': 'index', ...(owner === 'ontology' ? { './compat': 'compat/index', './migration': 'migration' } : {}), ...(owner !== 'runtime' ? { './sources': 'asset-sources' } : {}), './service': 'service', './workspace-migration': 'workspace-migration' };
   assert.deepEqual(pkg.exports, Object.fromEntries(Object.entries(names).map(([key, name]) => [key, { types: './dist/' + name + (key === './compat' ? '.d.mts' : '.d.ts'), import: './dist/' + name + (key === './compat' ? '.mjs' : '.js') }])));
   return Object.freeze({ product: owner, checkpoint, cli, allBinsRequiredAt: 'M4' });
 }
@@ -35,7 +35,7 @@ export async function checkPackages() {
     await assertNoSymlinks(path);
     const pkg = JSON.parse(await readFile(path, 'utf8'));
     assert.equal(pkg.name, `@evopilot-next/${['stack', 'runtime', 'harness', 'ontology'][index]}`);
-    assert.equal(pkg.version, '0.1.1');
+    assert.equal(pkg.version, '0.2.0');
     assert.equal(pkg.private, true);
     assert.equal(pkg.type, 'module');
   assert.equal(pkg.license, 'Apache-2.0');
@@ -64,7 +64,7 @@ export async function checkPackages() {
       const sourcePath = resolve(ROOT, directory, 'src/index.ts');
       await assertNoSymlinks(sourcePath);
       const source = await readFile(sourcePath, 'utf8');
-      assert(source.includes("export const VERSION = '0.1.1';"));
+      assert(source.includes("export const VERSION = '0.2.0';"));
       assert(source.includes(`export const PRODUCT = '${['runtime', 'harness', 'ontology'][index - 1]}';`));
     }
   }

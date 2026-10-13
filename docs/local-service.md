@@ -1,6 +1,6 @@
 # Local connection foundation (M3)
 
-This is connection orchestration for EvoPilot v0.1 Preview, version `0.1.0`,
+This is connection orchestration for EvoPilot v0.2 Preview, version `0.1.0`,
 protocol `evopilot-connection/v1`. It is not Host acceptance, release authority,
 or a completed stdio adapter/installer. Runtime, Harness and Ontology retain
 their own state and receipts. There is no parent business database.

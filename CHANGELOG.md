@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 Preview
+
+- Private Workspace initialization and explicit existing-workspace attachment through the unified Expert.
+- Separate editable project files and protected service state; same-host migration preserves immutable history and receipts.
+- Versioned asset compatibility, recovery coverage and expanded Expert E2E documentation.
+- Historical specifications/v1 and earlier acceptance records remain unchanged.
+- Full 27-scenario catalogue with evidence requirements; acceptance remains bound to the exact candidate and real Host receipts.
+
 ## 0.1.1 Preview — planned repair
 
 Five approved repair areas; this is scope, not an acceptance or publication report:

@@ -35,7 +35,7 @@ export async function componentLock() {
     assert.equal(index, '160000 ' + commit + ' 0\t' + path, 'Parent index gitlink must match child HEAD');
     const pkg = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'));
     assert.equal(pkg.name, '@evopilot-next/' + path.slice('projects/evopilot-'.length));
-    assert.equal(pkg.version, '0.1.1');
+    assert.equal(pkg.version, '0.2.0');
     components.push({ path, name: pkg.name, version: pkg.version, commit });
   }
   return { schema: 'evopilot-local-component-lock/v1', parentSourceCommit,

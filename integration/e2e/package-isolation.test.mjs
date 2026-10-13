@@ -67,7 +67,7 @@ test('child source graph contains only own source and vendor modules', async () 
       assert.doesNotMatch(source, /EVOPILOT_HARNESS_HOME|defaultHarnessHome|\.evopilot-harness|\bprocess\s*(?:\.\s*(?:env|cwd|chdir)|\[)|\bglobalThis\s*(?:\.|\[)|\/Users\/|\/home\//);
       const localName = name.split(sep).join('/');
       let checked = source;
-      if (localName === 'state.ts') checked = checked.replace(/\bprocess\.getuid(?![\w$])/g, '');
+      if (['state.ts','location-lineage.ts'].includes(localName)) checked = checked.replace(/\bprocess\.getuid(?![\w$])/g, '');
       if (localName === 'cli.ts') checked = checked.replace(/\bprocess\.(?:stdin|stdout|argv|exitCode)(?![\w$])/g, '');
       if (child === 'projects/evopilot-ontology' && localName === 'compat/v4/semantics/catalog-store.mjs')
         checked = checked.replace(/\bprocess\.pid(?![\w$])/g, '').replace(/\bprocess\.kill\(owner\.pid, 0\)/g, '');
@@ -193,7 +193,7 @@ test('canonical v1 wire derives from M0 independently of implementation revision
       }
       for (const patch of [
         { product: product === 'ontology' ? 'harness' : 'ontology' },
-        { version: '0.1.1' }, { digest: 'sha256:' + 'b'.repeat(64) },
+        { version: '0.2.0' }, { digest: 'sha256:' + 'b'.repeat(64) },
       ]) assert.throws(() => inspectReference(input, { ...input, ...patch }), TypeError);
     }
   }

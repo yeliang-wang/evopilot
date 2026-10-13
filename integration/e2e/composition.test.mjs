@@ -39,7 +39,7 @@ function fixture() {
     const ref = owner === 'runtime' ? null : reference(owner);
     if (ref) records[owner] = { model: { id: ref.id, version: ref.version, specVersion: 'v1' }, scope: owner === 'ontology' ? shared : scope, delivery: { digest: ref.digest }, ...(owner === 'harness' ? { resolution: { dependencies: [reference('ontology')] } } : {}) };
     return [owner, {
-      PRODUCT: owner, VERSION: '0.1.1', verifyDelivery: delivery => ({ valid: delivery.digest === ref.digest }),
+      PRODUCT: owner, VERSION: '0.2.0', verifyDelivery: delivery => ({ valid: delivery.digest === ref.digest }),
       validateInstances: () => ({ valid: true, status: 'PASS' }),
       ['create' + owner[0].toUpperCase() + owner.slice(1) + 'Service']: (received, supplied) => {
         if (owner === 'ontology') validateProviderContract(supplied);
@@ -304,7 +304,7 @@ test('interface only: cancellation during revision query prevents Harness dispat
 const metadataFixtures = {
   "runtime": {
     "name": "@evopilot-next/runtime",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "private": true,
     "type": "module",
     "engines": {
@@ -349,7 +349,7 @@ const metadataFixtures = {
   },
   "harness": {
     "name": "@evopilot-next/harness",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "private": true,
     "bin": {
       "evopilot-next-harness": "dist/cli.js"
@@ -404,7 +404,7 @@ const metadataFixtures = {
   },
   "ontology": {
     "name": "@evopilot-next/ontology",
-    "version": "0.1.1",
+    "version": "0.2.0",
     "private": true,
     "type": "module",
     "engines": {
@@ -472,6 +472,7 @@ const metadataFixtures = {
 test('Current metadata: all compiled product bins are required', () => {
   for (const owner of ['runtime', 'harness', 'ontology']) {
     const pkg = structuredClone(metadataFixtures[owner]);
+    pkg.exports['./workspace-migration'] = {types:'./dist/workspace-migration.d.ts',import:'./dist/workspace-migration.js'};
     pkg.bin = { ['evopilot-next-' + owner]: 'dist/cli.js' };
     assert.equal(validateProductMetadata(pkg, owner).cli, 'PRESENT');
     assert.equal(validateProductMetadata(pkg, owner, 'M4').cli, 'PRESENT');

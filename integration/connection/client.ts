@@ -2,8 +2,10 @@ import { errorCode } from '../types.js';
 import type { Configuration, ControlRecord, ActionPayload } from '../types.js';
 import http from 'node:http';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { withWorkspaceLease } from '../workspace/lock.js';
 import { spawn } from 'node:child_process';
-import { loadConfiguration, LIMITS, fail, fields } from './config.js';
+import { loadConfiguration, loadInstallationConfiguration, LIMITS, fail, fields } from './config.js';
 import { readRecord, same, recoverRecord } from './control.js';
 
 const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -52,14 +54,19 @@ export function transport(c: Configuration, record: ControlRecord, action: strin
 }
 function publicConnection(c: Configuration, r: ControlRecord) { return { active: true, identity: c.identity, pid: r.pid, nonce: r.nonce, address: '127.0.0.1', port: r.port, authority: false }; }
 export async function inspectConnection(configPath: string) {
+  const installation = loadInstallationConfiguration(configPath);
+  if (installation.workspaceRoot === null) return { active: false, configured: false, identity: installation.identity, authority: false };
   const c = loadConfiguration(configPath), r = readRecord(c);
-  if (!r) return { active: false, identity: c.identity, authority: false };
+  if (!r) return { active: false, configured: true, identity: c.identity, authority: false };
   if (r.state !== 'ready') return { active: false, identity: c.identity, state: r.state, diagnostic: r.diagnostic ?? 'STARTING' };
   await transport(c, r, 'health', {}, 1500);
   return publicConnection(c, r);
 }
 export async function activateConnection(configPath: string) {
   const c = loadConfiguration(configPath);
+  return withWorkspaceLease(c, 'activate-' + randomUUID(), () => activateVerifiedConnection(c));
+}
+async function activateVerifiedConnection(c: Configuration) {
   let r = readRecord(c);
   if (!r) {
     const child = spawn(process.execPath, [path.join(c.installationRoot, 'dist/integration/connection/daemon.js'), c.configPath], {
@@ -91,10 +98,24 @@ export async function callConnection(configPath: string, action: string, payload
   return transport(c, r, action, payload);
 }
 export async function stopConnection(configPath: string) {
-  const c = loadConfiguration(configPath), r = readRecord(c);
+  if (loadInstallationConfiguration(configPath).workspaceRoot === null) return { stopped: false };
+  const c = loadConfiguration(configPath);
+  return withWorkspaceLease(c, 'stop-' + randomUUID(), () => stopVerifiedConnection(c));
+}
+async function stopVerifiedConnection(c: Configuration) {
+  const r = readRecord(c);
   if (!r) return { stopped: false };
   if (r.state !== 'ready') fail('NOT_READY');
   await transport(c, r, 'health', {}, 1500);
   return transport(c, r, 'stop', {}, 3000);
 }
-export function recoverStaleConnection(configPath: string) { return recoverRecord(loadConfiguration(configPath)); }
+export function recoverStaleConnection(configPath: string) { if (loadInstallationConfiguration(configPath).workspaceRoot === null) return { recovered: false }; return recoverRecord(loadConfiguration(configPath)); }
+
+export async function withWorkspaceMaintenance<T>(configPath: string, requestId: string, callback: (configuration: Configuration) => Promise<T> | T, options: { restoring?: boolean } = {}): Promise<T> {
+  const c = loadConfiguration(configPath, { allowMissingProject: options.restoring === true, restoreRequestId: options.restoring === true ? requestId : undefined });
+  return withWorkspaceLease(c, requestId, async () => {
+    await stopVerifiedConnection(c);
+    if (readRecord(c) !== null) fail('WORKSPACE_BUSY');
+    return callback(c);
+  });
+}

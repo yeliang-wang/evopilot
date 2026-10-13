@@ -1,4 +1,31 @@
-# Testing and evidence — v0.1.1 Preview
+# Testing and evidence — v0.2.0 Preview
+
+The v0.2.0 candidate must cover every case in the [Expert catalogue](expert-scenarios.md), including all existing retained workflows and new Workspace initialization/maintenance. `expert/core/scenarios.ts` is the canonical metadata; `getGuide("V02-A02")` returns a concrete use case with prerequisites, required branches, expected outputs, preserved state, test files and real Desktop observations. The seven earlier guide groups remain compatible.
+
+| Current v0.2 evidence layer | What it proves | What it cannot prove |
+| --- | --- | --- |
+| `integration/e2e/expert-catalogue.test.mjs` | Guide/scenario/Target/test binding completeness; immutable pure guide metadata; compiled MCP passive readback | Correct Host reasoning or successful real project work |
+| `integration/e2e/expert-products.test.mjs` | Real product draft/review/decision/publication, scope, quality and retained previous deliveries using explicitly synthetic material | Actual human decisions or Desktop behavior |
+| Workspace bootstrap/project/maintenance E2E | Product initialization, bindings, source drift, private ledger, backup/restore and migration invariants | Real installed Desktop connection unless separately observed |
+| Existing child product E2E | Actual native and retained operation behavior; configured synthetic providers clearly identified | Default installation has an advanced provider when it does not |
+| Real Codex Desktop journeys | Natural-language routing, installed tools, actual outputs/receipts, fresh connection and recovery for the exact candidate | Independent release authorization |
+
+Run `npm run build`, `npm test` and `npm run check` from the populated source checkout. Each mapped test file must actually execute in the candidate test run; file existence and guide text assertions alone are insufficient. New Expert scenarios require new catalogue and E2E mappings. Required scenarios cannot pass with PENDING, UNKNOWN, FAIL or SKIPPED. WorkBuddy remains outside this release.
+
+## Private v0.2 scenario report
+
+`expert/core/acceptance.ts` exports `evaluateScenarioEvidence(report, expectedInstallationDigest)` for metadata and `verifyExpertAcceptanceFile(reportPath, expectedInstallationDigest)` for metadata plus file-byte integrity. The compiled module is shipped under `dist/expert/core/acceptance.js`. The report lives outside public source and installation; no passing report is bundled.
+
+The report has exactly `schema: evopilot-expert-evidence/v1`, `version: 0.2.0`, `installationDigest` (64 lowercase hex) and `scenarios`. It contains each V02-A01–A07, V02-B01–B07, V02-C01–C08 and V02-D01–D05 exactly once. Each scenario has `id`, `status` (PASS/FAIL/PENDING/UNKNOWN/SKIPPED) and `evidence`.
+
+Each evidence record contains `kind` (automated/desktop), canonical absolute `path`, lowercase hex `sha256`, matching `installationDigest`, explicit `synthetic` boolean and `branches` from that scenario. Automated records also contain `tests` drawn from its declared test paths; all mapped paths and required branches must be covered. Desktop records instead contain real UUID `threadId` and `toolNamespace: evopilot_v01_preview`, with `synthetic: false`. Every scenario requires actual Desktop observations. Configured classification/Catalog provider success is explicitly synthetic automated evidence; the default Desktop branch proves an accurate missing-provider diagnostic, not a successful advanced operation.
+
+File verification rejects symlinks, hard links, changed bytes, missing evidence, conflicting hashes and self-referential reports. Report files are bounded to 4 MiB and evidence files to 32 MiB. The returned `completeness` is COMPLETE, INCOMPLETE or INVALID. **Even COMPLETE returns `acceptance: NOT_EVALUATED`, `authority: false` and `releaseAuthorized: false`.** Hashes and coverage cannot judge whether receipts satisfy their claims. The operator must compare actual candidate-bound outputs and decisions against every scenario before acceptance and conditional publication.
+
+## Retained historical baseline and verifier
+
+The material below documents earlier contracts. It does not replace v0.2 scenario evidence, mutate historical E01–E19 or relabel old Host results as current acceptance.
+
 
 Install the parent compiler from its complete lock, bind the local public packages, then install each child from its own lock and build it before building the parent as described in [development](development.md). Current checks cover compiled JavaScript entry points, conditional declaration exports, strict consumer typing, full source lock integrity, production-only installation and installation-local documentation links. The release gate tests exercise exact candidate preparation and publication guards; no fixture establishes acceptance. Current delivery uses [the exact candidate release sequence](github-release.md).
 
