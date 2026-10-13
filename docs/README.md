@@ -15,3 +15,5 @@ The portable app includes this index and the public documentation. Product links
 Architecture covers [product boundaries](architecture/0001-three-product-boundary.md), [process topology](architecture/0002-local-process-topology.md), and [native authoring](architecture/0003-local-authoring.md). The [authoritative roadmap](roadmap/ROADMAP.md) remains separate from the current implementation summary.
 
 Local services and the explicit Preview entry are implemented. Technical tests, package assembly and passive installation do not establish final Host acceptance or production readiness.
+
+M5 source publication, remote CI and release preparation are authorized; source publishing is in progress. See [GitHub source and release preparation](github-release.md) for the four public repositories and candidate CI artifacts. Final versioned Release publication is not yet authorized; local acceptance remains in a separately verified candidate report.

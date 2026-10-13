@@ -1,7 +1,9 @@
-name: Local assembly checks
+name: Source and distribution checks
 on:
   workflow_dispatch:
   pull_request:
+  push:
+    branches: [main]
 permissions:
   contents: read
 jobs:
@@ -25,4 +27,36 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: npm run artifacts:verify -- --out "$RUNNER_TEMP/evopilot-artifacts"
+      - name: Assemble portable bundle
+        run: node scripts/assemble-preview.mjs --artifacts "$RUNNER_TEMP/evopilot-artifacts" --out "$RUNNER_TEMP/evopilot-bundle"
+      - name: Collect candidate distribution
+        shell: bash
+        run: |
+          set -euo pipefail
+          distribution="$RUNNER_TEMP/evopilot-distribution"
+          mkdir "$distribution"
+          tar -czf "$distribution/evopilot-0.1.0-preview.tar.gz" -C "$RUNNER_TEMP/evopilot-bundle" .
+          for owner in runtime harness ontology; do
+            mkdir "$distribution/$owner"
+            tarballs=("$RUNNER_TEMP/evopilot-artifacts/$owner/"*.tgz)
+            test "${#tarballs[@]}" -eq 1
+            cp "${tarballs[0]}" "$distribution/$owner/"
+            # Runtime has no dependencies and the verifier retains no lock for it.
+            if [ "$owner" != runtime ]; then
+              cp "$RUNNER_TEMP/evopilot-artifacts/$owner/dependency-lock.json" "$distribution/$owner/"
+            fi
+          done
+          {
+            git rev-parse HEAD
+            git submodule status
+          } > "$distribution/source-revision.txt"
+          cd "$distribution"
+          sha256sum evopilot-0.1.0-preview.tar.gz */*.tgz */dependency-lock.json source-revision.txt > SHA256SUMS
+      - name: Upload candidate distribution (not an official Release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: evopilot-0.1.0-preview-${{ github.sha }}
+          path: ${{ runner.temp }}/evopilot-distribution/
+          retention-days: 14
+          if-no-files-found: error
 

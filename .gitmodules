@@ -1,9 +1,9 @@
 [submodule "projects/evopilot-runtime"]
 	path = projects/evopilot-runtime
-	url = ./projects/evopilot-runtime
+	url = https://github.com/yeliang-wang/evopilot-runtime.git
 [submodule "projects/evopilot-harness"]
 	path = projects/evopilot-harness
-	url = ./projects/evopilot-harness
+	url = https://github.com/yeliang-wang/evopilot-harness.git
 [submodule "projects/evopilot-ontology"]
 	path = projects/evopilot-ontology
-	url = ./projects/evopilot-ontology
+	url = https://github.com/yeliang-wang/evopilot-ontology.git

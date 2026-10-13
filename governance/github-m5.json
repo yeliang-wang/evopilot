@@ -1,0 +1,17 @@
+{
+  "schema": "evopilot-m5-source-plan/v1",
+  "version": "0.1.0",
+  "repositories": {
+    "parent": "https://github.com/yeliang-wang/evopilot",
+    "runtime": "https://github.com/yeliang-wang/evopilot-runtime",
+    "harness": "https://github.com/yeliang-wang/evopilot-harness",
+    "ontology": "https://github.com/yeliang-wang/evopilot-ontology"
+  },
+  "sourcePublicationAuthorized": true,
+  "remoteCIAuthorized": true,
+  "releasePreparationAuthorized": true,
+  "finalReleaseAuthorized": false,
+  "priorBaselinePreserved": true,
+  "candidateResults": "EXTERNAL",
+  "purpose": "Informational technical projection of the human M5 instruction; not a signature, acceptance certificate or evidence of completed publication or CI."
+}
