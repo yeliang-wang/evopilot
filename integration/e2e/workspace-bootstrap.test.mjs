@@ -145,6 +145,34 @@ test('V02-A03: attach validates actual existing owner state and identity without
   } finally { await f.cleanup(); }
 });
 
+test('V02-A03: incompatible project schema, template and specification versions cannot attach or alter retained state', async () => {
+  const f = await fixture();
+  let markerPath, original;
+  try {
+    await f.bootstrap.setupWorkspace(f.configPath, f.input);
+    const inspection = f.bootstrap.inspectWorkspace(f.configPath);
+    markerPath = path.join(f.input.projectRoot, 'workspace-project.json'); original = fs.readFileSync(markerPath);
+    const marker = JSON.parse(original), stateMarker = fs.readFileSync(path.join(f.input.stateRoot, 'workspace.json'));
+    fs.unlinkSync(inspection.bindingPath);
+    const incompatible = [
+      { ...marker, schema: 'evopilot-workspace-project/v999' },
+      { ...marker, templateVersion: '99.0.0' },
+      { ...marker, specifications: { ...marker.specifications, ontology: 'v999' } },
+      { ...marker, specifications: { ...marker.specifications, harness: 'v999' } },
+    ];
+    for (const [index, invalid] of incompatible.entries()) {
+      const bytes = Buffer.from(JSON.stringify(invalid)); fs.writeFileSync(markerPath, bytes);
+      await assert.rejects(f.bootstrap.setupWorkspace(f.configPath, { ...f.input, requestId: `incompatible-${index}` }, 'attach'), { code: 'PROJECT_IDENTITY' });
+      assert.equal(fs.existsSync(inspection.bindingPath), false);
+      assert.deepEqual(fs.readFileSync(markerPath), bytes, 'Invalid metadata is diagnosed, not silently rewritten');
+      assert.deepEqual(fs.readFileSync(path.join(f.input.stateRoot, 'workspace.json')), stateMarker);
+    }
+    fs.writeFileSync(markerPath, original);
+    assert.equal((await f.bootstrap.setupWorkspace(f.configPath, { ...f.input, requestId: 'compatible-attach' }, 'attach')).configured, true);
+    assert.deepEqual(fs.readFileSync(markerPath), original);
+  } finally { if (original) fs.writeFileSync(markerPath, original); await f.cleanup(); }
+});
+
 test('V02-A02/D01: retained exact setup intent recovers an interrupted binding write without replacing project content', async () => {
   const f = await fixture();
   try {

@@ -69,6 +69,41 @@ test('V02-B01/B02/B03: forward and reverse assets retain provenance, reject pend
   assert.equal(bytesHash(readFileSync(sourceFile)), before, 'Host-authoring fixture may not edit authorized input');
 });
 
+test('V02-B02: observed source and inferred meaning remain distinct in a pending reverse draft', async t => {
+  const f = await setup(t);
+  const sourceFile = join(f.parent, 'synthetic-inventory.json');
+  const sourceBytes = Buffer.from('{"entity":"item","quantity":3}\n');
+  writeFileSync(sourceFile, sourceBytes);
+  const sourceDigest = bytesHash(readFileSync(sourceFile));
+  const fixture = models.assets.find(item => item.provenance.direction === 'reverse');
+  const model = { ...structuredClone(fixture), id: 'observed-versus-inferred', visibility: 'private' };
+  for (const source of model.provenance.sources) {
+    source.locator = `synthetic://fixture/inventory.json#${source.id}`;
+    source.revision = 'synthetic-source-r1'; source.digest = `sha256:${sourceDigest}`; source.status = 'source-observed';
+  }
+  for (const mapping of model.sourceMappings) {
+    const source = model.provenance.sources.find(item => item.id === mapping.sourceRef);
+    mapping.sourceLocator = source.locator; mapping.sourceRevision = source.revision; mapping.status = source.status;
+  }
+  const inferred = { id: 'inferred-meaning', kind: 'synthetic-analyst-hypothesis', locator: 'synthetic://fixture/hypothesis', revision: 'hypothesis-r1', digest: `sha256:${bytesHash(Buffer.from('Unconfirmed domain meaning'))}`, status: 'inferred' };
+  model.provenance.sources.push(inferred);
+  model.sourceMappings.push({ id: 'mapping-inferred-meaning', targetRef: model.concepts[0].id, sourceRef: inferred.id, sourceLocator: inferred.locator, sourceRevision: inferred.revision, status: inferred.status });
+  model.unresolvedIssues.push({ id: 'unconfirmed-meaning', description: 'Synthetic inference needs an actual domain decision', targetRef: model.concepts[0].id, required: true });
+  f.write('ontology', 'asset.put', { model });
+  const record = f.read('ontology', 'asset.inspect', f.identify(model));
+  assert.deepEqual(record.model.provenance, model.provenance);
+  assert.deepEqual(record.model.sourceMappings, model.sourceMappings);
+  assert(record.model.sourceMappings.some(item => item.status === 'source-observed'));
+  assert(record.model.sourceMappings.some(item => item.status === 'inferred'));
+  assert.equal(record.validation.status, 'PENDING');
+  f.decide('ontology', model);
+  assert.throws(() => f.write('ontology', 'asset.publish', f.identify(model)), { code: 'PENDING_MODEL' });
+  f.restart();
+  assert.deepEqual(f.read('ontology', 'asset.inspect', f.identify(model)).model, model);
+  assert.equal(bytesHash(readFileSync(sourceFile)), sourceDigest);
+  assert.deepEqual(readFileSync(sourceFile), sourceBytes);
+});
+
 test('V02-A05: shipped reading-list and inventory example inputs reach actual deliveries and pinned Runtime evaluation in isolated scopes', async t => {
   for (const direction of ['forward', 'reverse']) {
     const projectId = direction === 'forward' ? 'example-reading-list' : 'example-inventory';
@@ -146,12 +181,24 @@ test('V02-A06/B04: scoped Harness evaluation preserves Warning, missing evidence
   assert.deepEqual(f.read('harness', 'asset.list', {}, other), []);
 });
 
-test('V02-B06/A07: a second extraction publishes a new version without changing old delivery or historical provenance', async t => {
+test('V02-B06/A07: a second extraction preserves the old completed Run, receipts, pins and delivery', async t => {
   const f = await setup(t);
   const fixture = models.assets.find(item => item.provenance.direction === 'reverse');
   const first = { ...structuredClone(fixture), id: 'expert-evolution', version: '1.0.0', visibility: 'private' };
   const firstDelivery = f.publish('ontology', first);
   const firstRecord = f.read('ontology', 'asset.inspect', f.identify(first));
+  const sample = structuredClone(harnessSamples[0]);
+  const harness = f.publish('harness', { ...sample.asset, id: 'evolution-quality', visibility: 'private' }).reference;
+  f.write('runtime', 'project.create', { name: 'Synthetic source evolution' });
+  f.write('runtime', 'goal.create', { id: 'evolution-goal', description: 'Retain the first extraction and exact Run evidence' });
+  const prepared = f.write('runtime', 'run.prepare', { id: 'first-extraction-run', goalId: 'evolution-goal', ontology: firstDelivery.reference, harness,
+    input: { schema: 'runtime-composition/v1', ontologyInstance: models.instances[fixture.id], harness: { mode: 'component', evidence: sample.evidence, configuration: {} } } }).result;
+  f.write('runtime', 'run.decide', { id: 'first-extraction-run', reviewDigest: prepared.reviewDigest, decision: 'APPROVE', humanEvidenceRef });
+  const completed = await f.composition.dispatch({ scope, id: 'first-extraction-run', requestId: 'first-extraction-dispatch', expectedRevision: f.composition.inspect('runtime', scope).revision });
+  assert.equal(completed.result.stage, 'SUCCEEDED');
+  const originalRun = f.read('runtime', 'run.inspect', { id: 'first-extraction-run' });
+  const originalAdmission = f.read('runtime', 'receipt.inspect', { requestId: 'first-extraction-dispatch' });
+  assert.equal(originalRun.attemptCount, 1);
   const next = { ...structuredClone(first), version: '1.1.0' };
   next.concepts[0].definition += ' Explicit second-revision extraction.';
   for (const source of next.provenance.sources) {
@@ -164,6 +211,11 @@ test('V02-B06/A07: a second extraction publishes a new version without changing 
   assert.equal(secondDelivery.reference.version, '1.1.0');
   f.restart();
   assert.deepEqual(f.read('ontology', 'asset.inspect', f.identify(first)), firstRecord);
+  assert.deepEqual(f.read('runtime', 'run.inspect', { id: 'first-extraction-run' }), originalRun);
+  assert.deepEqual(f.read('runtime', 'receipt.inspect', { requestId: 'first-extraction-dispatch' }), originalAdmission);
+  assert.deepEqual(f.read('runtime', 'receipt.inspect', { requestId: completed.requestId }), completed);
+  assert.deepEqual(originalRun.plan.pins.ontology, firstDelivery.reference);
+  assert.notDeepEqual(originalRun.plan.pins.ontology, secondDelivery.reference);
   assert.deepEqual(f.read('ontology', 'asset.inspect', f.identify(next)).delivery, secondDelivery.delivery);
   assert.deepEqual(firstRecord.delivery.model.provenance, first.provenance);
   assert.notDeepEqual(firstRecord.delivery.model.provenance, next.provenance);

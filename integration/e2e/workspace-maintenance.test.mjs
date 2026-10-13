@@ -62,8 +62,10 @@ test('actual owners backup, readback and same-original-location restore preserve
   assert.equal(restored.status, 'VERIFIED'); assert.deepEqual(ownerSnapshots(context), before); assertReadback(context, fixture);
   assert.equal(fs.readFileSync(path.join(context.projectRoot, 'README.md'), 'utf8'), 'Synthetic personal workspace\n');
 });
-test('migrate uses each owner, retains source, preserves original readback and backups require retained local keys', async t => {
+test('migrate retains source and post-cutover writes; stale migration or backup cannot replace new records', async t => {
   const fixture = await setup(t), { context, parent } = fixture, before = ownerSnapshots(context);
+  const originalBackup = path.join(parent, 'pre-cutover-backup');
+  maintainWorkspace(context, 'backup', { destinationRoot: originalBackup }, 'pre-cutover-backup');
   const input = { destinationProjectRoot: path.join(parent, 'next-project'), destinationStateRoot: path.join(parent, 'next-state') };
   const result = maintainWorkspace(context, 'migrate', input, 'migrate');
   t.after(() => { for (const id of result.requiredKeyIds) fs.rmSync(path.join(homedir(), '.local/share/evopilot/relocation-keys', id + '.key'), { force: true }); });
@@ -71,12 +73,25 @@ test('migrate uses each owner, retains source, preserves original readback and b
   const next = { ...context, projectRoot: input.destinationProjectRoot, stateRoot: input.destinationStateRoot };
   for (const product of ['runtime','harness','ontology']) { assert.equal(result.ownerSnapshots[product].recordsDigest, before[product].recordsDigest); assert.equal(result.ownerSnapshots[product].blobsDigest, before[product].blobsDigest); }
   assertReadback(next, fixture); assertReadback(context, fixture);
-  assert.deepEqual(maintainWorkspace(context, 'migrate', input, 'migrate'), result);
+  const afterCutover = createRuntimeService({ workspaceRoot: next.stateRoot, workspaceId: next.workspaceId }); afterCutover.initialize();
+  const added = write(afterCutover, 'goal.create', { id: 'post-cutover-goal', description: 'New work after the verified cutover' });
+  const newGoal = read(afterCutover, 'goal.inspect', { id: 'post-cutover-goal' }); afterCutover.close();
+  const retained = () => {
+    const service = createRuntimeService({ workspaceRoot: next.stateRoot, workspaceId: next.workspaceId }); service.initialize();
+    try { assert.deepEqual(read(service, 'goal.inspect', { id: 'post-cutover-goal' }), newGoal); assert.deepEqual(read(service, 'receipt.inspect', { requestId: added.requestId }), added); }
+    finally { service.close(); }
+  };
+  // Exact retry returns historical migration evidence, and must never recopy its old snapshot.
+  assert.deepEqual(maintainWorkspace(context, 'migrate', input, 'migrate'), result); retained();
+  assert.throws(() => maintainWorkspace(context, 'migrate', input, 'stale-new-migration'), { code: 'MAINTENANCE_DESTINATION_NOT_EMPTY' }); retained();
+  assert.throws(() => maintainWorkspace(next, 'restore', { backupRoot: originalBackup }, 'old-location-restore'), { code: 'MAINTENANCE_DESTINATION_NOT_EMPTY' }); retained();
+  assert.deepEqual(ownerSnapshots(context), before, 'Cutover and later writes do not alter original source');
   const backupRoot = path.join(parent, 'relocated-backup'); maintainWorkspace(next, 'backup', { destinationRoot: backupRoot }, 'backup');
   const key = path.join(homedir(), '.local/share/evopilot/relocation-keys', result.requiredKeyIds[0] + '.key'); fs.renameSync(key, key + '.held');
   try { assert.throws(() => inspectWorkspaceBackup(next, backupRoot)); } finally { fs.renameSync(key + '.held', key); }
+  assert.throws(() => maintainWorkspace(next, 'restore', { backupRoot }, 'occupied-restore'), { code: 'MAINTENANCE_DESTINATION_NOT_EMPTY' }); retained();
   fs.rmSync(next.projectRoot, { recursive: true }); fs.rmSync(next.stateRoot, { recursive: true });
-  maintainWorkspace(next, 'restore', { backupRoot }, 'restore'); assertReadback(next, fixture);
+  maintainWorkspace(next, 'restore', { backupRoot }, 'restore'); assertReadback(next, fixture); retained();
 });
 test('corruption, self-rehashed foreign backup, linked paths and conflicting request never overwrite data', async t => {
   const { context, parent } = await setup(t), backupRoot = path.join(parent, 'backup');
@@ -105,6 +120,23 @@ test('interrupted restore leaves a recoverable journal and resumes without overw
   const resumed = maintainWorkspace(context, 'restore', { backupRoot }, 'restore-interrupted');
   assert.equal(resumed.status, 'VERIFIED'); assertReadback(context, fixture);
 });
+test('V02-D03: interrupted migration resumes its exact journal and preserves all original owner evidence', async t => {
+  const fixture = await setup(t), { parent, context } = fixture, before = ownerSnapshots(context);
+  const input = { destinationProjectRoot: path.join(parent, 'next-project'), destinationStateRoot: path.join(parent, 'next-state') };
+  const rename = fs.renameSync;
+  fs.renameSync = function(from, to) { if (to === path.join(input.destinationProjectRoot, 'README.md')) throw Object.assign(Error('Synthetic interrupted migration copy'), { code: 'SYNTHETIC_INTERRUPTION' }); return rename.call(this, from, to); };
+  try { assert.throws(() => maintainWorkspace(context, 'migrate', input, 'interrupted-migration'), { code: 'SYNTHETIC_INTERRUPTION' }); }
+  finally { fs.renameSync = rename; }
+  const journal = JSON.parse(fs.readFileSync(context.stateRoot + '.evopilot-maintenance/requests/interrupted-migration.json'));
+  assert.equal(journal.status, 'INTERRUPTED'); assert.equal(journal.result, null);
+  assert.deepEqual(ownerSnapshots(context), before); assertReadback(context, fixture);
+  const resumed = maintainWorkspace(context, 'migrate', input, 'interrupted-migration');
+  t.after(() => { for (const id of resumed.requiredKeyIds) fs.rmSync(path.join(homedir(), '.local/share/evopilot/relocation-keys', id + '.key'), { force: true }); });
+  assert.equal(resumed.status, 'VERIFIED'); assert.equal(resumed.requiredKeyIds.length, 3);
+  assert.deepEqual(ownerSnapshots(context), before);
+  assertReadback({ ...context, projectRoot: input.destinationProjectRoot, stateRoot: input.destinationStateRoot }, fixture);
+});
+
 test('source changes during copy cannot produce a verified backup or a trusted restore anchor', async t => {
   const { parent, context } = await setup(t), backupRoot = path.join(parent, 'backup');
   const rename = fs.renameSync; let changed = false;
