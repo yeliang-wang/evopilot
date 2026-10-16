@@ -33,6 +33,12 @@ native standards; the parent defines the [project contract](../specifications/pr
 4. `native_project.materialize` writes the package into an isolated candidate
    project; `check-layout` compares the exact bytes, directory, scope and cases.
    `candidate-location` returns its path. Existing current assets remain intact.
+   README local links must resolve to files or directories within that candidate;
+   broken links, escaping paths and symlinks return `PROJECT_NAVIGATION` and
+   prevent the directory check from passing. Inline and reference-style links
+   are checked; fenced/indented code and inline code examples are excluded.
+   HTTP, HTTPS and mail links are not fetched, so this check does not certify
+   remote availability or Markdown heading anchors.
    Put, validate, review, decide and publish each package through its owner:
    `native.package.put/validate/review/decide/publish`. Read immutable publication
    with `native.package.readback`. A test fixture decision is never business evidence.

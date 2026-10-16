@@ -110,7 +110,7 @@ export async function assembly(realProducts = false) {
   fs.mkdirSync(install);
   const copy = relative => { fs.mkdirSync(path.dirname(path.join(install, relative)), { recursive: true }); fs.copyFileSync(path.join(root, relative), path.join(install, relative)); };
   const files = ['package.json', 'dist/integration/types.js', 'dist/integration/composition.js', 'dist/integration/native-composition.js',
-    ...['lock', 'project-lock', 'native-project', 'native-router', 'native-promotion'].map(n => `dist/integration/workspace/${n}.js`),
+    ...['lock', 'project-lock', 'native-project', 'native-router', 'native-promotion', 'project-navigation'].map(n => `dist/integration/workspace/${n}.js`),
     ...['reference.mjs', 'native.mjs', 'decision-evidence.mjs', 'manifest.json'].map(n => 'dist/integration/compatibility/v1/' + n),
     ...['config', 'control', 'client', 'daemon'].map(n => `dist/integration/connection/${n}.js`),
     ...fs.globSync('dist/integration/toolchain/**/*', { cwd: root }).filter(n => fs.statSync(path.join(root,n)).isFile()),
