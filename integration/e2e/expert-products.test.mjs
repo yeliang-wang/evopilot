@@ -4,9 +4,12 @@ import { mkdtempSync, realpathSync, rmSync, readFileSync, writeFileSync, mkdirSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
-import { createComposition, loadInstalledProducts } from '../../dist/integration/composition.js';
+import { createComposition } from '../../dist/integration/composition.js';
 
-// Actual public product services; all sources, decisions and evidence in this file are
+import { historicalProducts } from './fixtures/historical-products.mjs';
+
+// Historical v0.2 regression with TEST-ONLY writers. Current native E2E is separate.
+// All sources, decisions and evidence in this file are
 // explicitly synthetic. These assertions verify deterministic contracts, not Host reasoning.
 const models = JSON.parse(readFileSync(new URL('../../projects/evopilot-ontology/examples/synthetic-models.json', import.meta.url)));
 const harnessSamples = JSON.parse(readFileSync(new URL('../../projects/evopilot-harness/examples/synthetic-harnesses.json', import.meta.url)));
@@ -18,7 +21,7 @@ const bytesHash = bytes => createHash('sha256').update(bytes).digest('hex');
 async function setup(t, selectedScope = scope) {
   const parent = realpathSync(mkdtempSync(join(tmpdir(), 'evopilot-expert-products-')));
   const options = { workspaceRoot: join(parent, 'state'), workspaceId: 'expert-products' };
-  const apis = await loadInstalledProducts();
+  const apis = await historicalProducts();
   let c = createComposition(options, apis), serial = 0;
   t.after(() => { c.close(); rmSync(parent, { recursive: true, force: true }); });
   const read = (owner, operation, input = {}, selected = selectedScope) => c.request(owner, { operation, scope: selected, input });
@@ -38,7 +41,7 @@ async function setup(t, selectedScope = scope) {
   return { parent, read, write, identify, decide, publish, get composition() { return c; }, restart() { c.close(); c = createComposition(options, apis); } };
 }
 
-test('V02-B01/B02/B03: forward and reverse assets retain provenance, reject pending/rejected/stale approvals and preserve source', async t => {
+test('historical v0.2: V02-B01/B02/B03: forward and reverse assets retain provenance, reject pending/rejected/stale approvals and preserve source', async t => {
   const f = await setup(t);
   const sourceRoot = join(f.parent, 'authorized-synthetic-source'); mkdirSync(sourceRoot);
   const sourceFile = join(sourceRoot, 'requirements.txt'); writeFileSync(sourceFile, 'Synthetic orchard: trees have a quantity.\n');
@@ -69,7 +72,7 @@ test('V02-B01/B02/B03: forward and reverse assets retain provenance, reject pend
   assert.equal(bytesHash(readFileSync(sourceFile)), before, 'Host-authoring fixture may not edit authorized input');
 });
 
-test('V02-B02: observed source and inferred meaning remain distinct in a pending reverse draft', async t => {
+test('historical v0.2: V02-B02: observed source and inferred meaning remain distinct in a pending reverse draft', async t => {
   const f = await setup(t);
   const sourceFile = join(f.parent, 'synthetic-inventory.json');
   const sourceBytes = Buffer.from('{"entity":"item","quantity":3}\n');
@@ -104,7 +107,7 @@ test('V02-B02: observed source and inferred meaning remain distinct in a pending
   assert.deepEqual(readFileSync(sourceFile), sourceBytes);
 });
 
-test('V02-A05: shipped reading-list and inventory example inputs reach actual deliveries and pinned Runtime evaluation in isolated scopes', async t => {
+test('historical v0.2: V02-A05: shipped reading-list and inventory example inputs reach actual deliveries and pinned Runtime evaluation in isolated scopes', async t => {
   for (const direction of ['forward', 'reverse']) {
     const projectId = direction === 'forward' ? 'example-reading-list' : 'example-inventory';
     const selected = { visibility: 'private', projectId };
@@ -164,7 +167,7 @@ test('V02-A05: shipped reading-list and inventory example inputs reach actual de
   }
 });
 
-test('V02-A06/B04: scoped Harness evaluation preserves Warning, missing evidence and explicit version', async t => {
+test('historical v0.2: V02-A06/B04: scoped Harness evaluation preserves Warning, missing evidence and explicit version', async t => {
   const f = await setup(t);
   const sample = structuredClone(harnessSamples[0]);
   const asset = { ...sample.asset, id: 'expert-quality', visibility: 'private' };
@@ -181,7 +184,7 @@ test('V02-A06/B04: scoped Harness evaluation preserves Warning, missing evidence
   assert.deepEqual(f.read('harness', 'asset.list', {}, other), []);
 });
 
-test('V02-B06/A07: a second extraction preserves the old completed Run, receipts, pins and delivery', async t => {
+test('historical v0.2: V02-B06/A07: a second extraction preserves the old completed Run, receipts, pins and delivery', async t => {
   const f = await setup(t);
   const fixture = models.assets.find(item => item.provenance.direction === 'reverse');
   const first = { ...structuredClone(fixture), id: 'expert-evolution', version: '1.0.0', visibility: 'private' };

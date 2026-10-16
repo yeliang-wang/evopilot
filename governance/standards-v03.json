@@ -1,0 +1,202 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-standards-v03",
+  "version": "0.3.0",
+  "lifecycle": "Preview",
+  "kind": "approved-scope-and-acceptance-contract",
+  "authority": false,
+  "objective": "Correct current v1 native ontology and quality standards, implement verifiable collection and complete project acceptance, and re-extract real project assets while preserving history.",
+  "approvalSource": "User confirmed the complete reviewed plan in the originating conversation; private source and evidence bindings are retained separately.",
+  "repositories": {
+    "evopilot": "347aca0b5e094d24c698396d1cd9067dac6daeaf",
+    "evopilot-runtime": "17e26798fddc40a93bfbed7e035ea529d5189a36",
+    "evopilot-harness": "94656d09a3e93818ee4ebdf9848f7e6c1782a6b9",
+    "evopilot-ontology": "1f493544be931898bf514cfaf52a3cb52838a8e1"
+  },
+  "planDigest": "sha256:503a725458aa4175e10b0e956a3316f4783d1227afa53ffc6740df8f35da90b6",
+  "acceptanceCatalogDigest": "sha256:4785fd558667d9dabb51a24b90c5256b0dd5e92299d2eea4b1d34496401d9742",
+  "fileBindings": {
+    "parent": [
+      "AGENTS.md",
+      "README.md",
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "package.json",
+      "package-lock.json",
+      "tsconfig.json",
+      "docs/**",
+      "expert/**",
+      "plugins/codex/**",
+      "integration/**",
+      "workspace/**",
+      "scripts/**",
+      "tests/**",
+      ".github/**",
+      "specifications/project/v1/**",
+      "governance/standards-v03.json",
+      "governance/readiness-v1.json",
+      "projects/evopilot-runtime",
+      "projects/evopilot-harness",
+      "projects/evopilot-ontology"
+    ],
+    "children": [
+      "AGENTS.md",
+      "README.md",
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "package.json",
+      "package-lock.json",
+      "tsconfig.json",
+      "src/**",
+      "specifications/v1/**",
+      "specifications/README.md",
+      "schemas/**",
+      "vendor/compatibility/v1/**",
+      "tests/**",
+      "examples/**",
+      "docs/**",
+      "scripts/**",
+      ".github/**",
+      "provenance/**"
+    ]
+  },
+  "scope": [
+    "Native RDF/Turtle with bounded RDFS/OWL declarations and SHACL/pySHACL",
+    "Native Rego v1, OPA and Conftest with pinned configuration and mandatory cases",
+    "Correct specifications/v1 in place; identify normative content by owner standardDigest",
+    "Controlled local collection, protected receipts, candidate-bound project completion and historical readers",
+    "Workspace/project directory contracts, source inventory and observed/inferred mappings",
+    "Expert forward/reverse and public/private journeys with real Codex verification",
+    "Fresh reverse extraction from fixed source snapshots and substantive second-round validation",
+    "Documentation, exact four-product candidate, conditional Preview release and installed readback"
+  ],
+  "targets": [
+    {
+      "id": "R0",
+      "loop": "L1",
+      "intent": "Freeze scope, repository bindings and all criterion variants"
+    },
+    {
+      "id": "R1",
+      "loop": "L2",
+      "intent": "Prove isolated upstream toolchain and minimum actual collection/run/recovery"
+    },
+    {
+      "id": "R2",
+      "loop": "L3",
+      "intent": "Implement native standards, owned lifecycle, strict composition, Expert and packaging"
+    },
+    {
+      "id": "R3",
+      "loops": [
+        "L4",
+        "L5"
+      ],
+      "intent": "Independently re-extract and verify two real source rounds with historical protection"
+    },
+    {
+      "id": "R4",
+      "loop": "L6",
+      "intent": "Verify installed user journeys, native independent replay and all pre-release variants"
+    },
+    {
+      "id": "R5",
+      "loop": "L7",
+      "intent": "Publish conditional Preview, verify downloaded artifacts and installed state, then close"
+    }
+  ],
+  "criterionIds": [
+    "S01",
+    "S02",
+    "S03",
+    "S04",
+    "S05",
+    "S06",
+    "O01",
+    "O02",
+    "O03",
+    "O04",
+    "O05",
+    "O06",
+    "O07",
+    "O08",
+    "O09",
+    "O10",
+    "O11",
+    "O12",
+    "H01",
+    "H02",
+    "H03",
+    "H04",
+    "H05",
+    "H06",
+    "H07",
+    "H08",
+    "H09",
+    "H10",
+    "H11",
+    "H12",
+    "C01",
+    "C02",
+    "C03",
+    "C04",
+    "C05",
+    "C06",
+    "C07",
+    "C08",
+    "M01",
+    "M02",
+    "M03",
+    "M04",
+    "M05",
+    "M06",
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D05",
+    "D06",
+    "D07",
+    "D08",
+    "D09",
+    "U01",
+    "U02",
+    "U03",
+    "U04",
+    "U05",
+    "U06",
+    "R01",
+    "R02",
+    "R03",
+    "R04",
+    "R05",
+    "R06"
+  ],
+  "completion": {
+    "preRelease": "All fixed pre-release variants require actual exact-candidate evidence",
+    "postRelease": "Published download/install readback and final closure remain pending until executed",
+    "requiredResults": "Complete fixed set, no missing, skipped, unknown, unsupported or stale required result",
+    "negativeCases": "Passing a negative test means the specified rejection occurred",
+    "authority": "Technical results cannot fabricate human domain decisions"
+  },
+  "preservation": [
+    "Old commits, tags, releases, audit, asset deliveries, decisions and receipts retain exact bytes",
+    "Business source and releases remain unchanged; private project evidence stays private",
+    "No new tasks under the defective historical validator; historical readback only",
+    "Current canonical contracts and generated vendor copies are corrected together by the parent producer"
+  ],
+  "exclusions": [
+    "WorkBuddy plugin or E2E",
+    "Second real-project onboarding and v1.0 release",
+    "Production database, deployment or online SLO execution",
+    "Automatic background synchronization, approval or warning-driven releases",
+    "New repository or service, own SHACL/Rego interpreter, unrestricted executor",
+    "Changes to frozen historical governance or archived sources"
+  ],
+  "acceptanceVariantsDigest": "sha256:99947934377cbac5cf0f0afc270cd7e49d0c3b2f49fb077dd077ae990ff15c36",
+  "acceptanceVariantCount": 364,
+  "acceptancePhases": {
+    "PRE_RELEASE": 356,
+    "POST_RELEASE": 8
+  }
+}

@@ -14,6 +14,8 @@ After interruption, preserve request ID, journal and partial destination. Resume
 
 ## Connection recovery
 
+If selecting a candidate plugin still returns another installation, keep the session inactive. Check the installed plugin cache's MCP configuration against the candidate configuration path. Corrected installations use distinct `evopilot_<path-hash>` server names; older releases used one shared name and can collide when registered together. Refresh the candidate registration using the supported Codex plugin commands and reconnect in the Host. Do not overwrite the old installation or edit an inventoried `.mcp.json` in place. Only the actual `inspect` receipt can establish that the new connection is in use.
+
 Use Node 24.14.0 and the retained bundle's `app/scripts/manage-preview.mjs`, or the installed copy. ROOT is the canonical managed installation root.
 
 ```sh
@@ -31,3 +33,11 @@ Recover is an explicit action for retained stale control state. The installed cl
 Uninstall requires removal of this preview's Codex registration first, as shown in [installation](installation.md). It refuses changed or unknown managed files before removal and retains all files on a failed preflight or authenticated stop. It never recursively deletes the managed root, workspace, control directory or audit evidence. Keep workspace and control locations in place during product changes.
 
 Failed assembly or installation retains partial new program directories for diagnosis. Do not reuse that output path or treat it as ready. Inspect the failure and select a new empty output path for a corrected attempt. No automatic rollback deletes unknown files. The exact-path inventory guards removal but cannot provide an atomic transaction against concurrent filesystem modification; keep the managed program root quiescent during maintenance.
+
+On macOS, a network-assigned hostname may differ from the configured local
+computer name. Owner relocation validation recognizes the current OS hostname
+and the system's `LocalHostName.local`; new records prefer the configured name.
+It still requires the original home/uid, local signing key, exact historical
+receipts and signed location chain. It does not rewrite old attestations or
+accept caller-supplied host aliases. A genuinely different machine or changed
+configured identity remains unsupported by same-host recovery.

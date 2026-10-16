@@ -2,6 +2,8 @@ import { errorCode } from './types.js';
 import type { Owner, Options, ProductAPIs, OntologyProviders, Evaluation, Claim, RuntimeProviders, ProductService, RuntimeService, OntologyService, Scope, Reference, MaterialOwner, AssetRecord, Receipt, EvaluationReport, WorkspaceInspection, HarnessResolveRequest, ResolveRequest, ProviderReceipt, Envelope, ExternalRequest } from './types.js';
 import { exactFields, frozenClone, inspectReference, sha256, stableSerialize, validateReference } from './compatibility/v1/reference.mjs';
 import { types } from 'node:util';
+import { createNativeIntegration } from './native-composition.js';
+import type { NativeIntegrationConfiguration, NativeIntegrationAPIs } from './native-composition.js';
 
 const owners: Owner[] = ['runtime', 'harness', 'ontology'];
 const factories = { runtime: 'createRuntimeService', harness: 'createHarnessService', ontology: 'createOntologyService' };
@@ -54,7 +56,7 @@ function invocation(context: unknown) {
 }
 
 // Loading public modules does not construct or initialize any owning service.
-export async function loadInstalledProducts() {
+export async function loadInstalledProducts(): Promise<ProductAPIs & NativeIntegrationAPIs> {
   const runtime = await import('@evopilot-next/runtime');
   const runtimeService = await import('@evopilot-next/runtime/service');
   const harness = await import('@evopilot-next/harness');
@@ -78,7 +80,7 @@ export function aggregateEvaluation(ontology: Evaluation | undefined, harness: E
   return results.includes('N/A') ? 'N/A' : 'PASS';
 }
 
-export function createComposition(options: Options, apis: ProductAPIs, trustedOntologyProviders: OntologyProviders = {}) {
+export function createComposition(options: Options, apis: ProductAPIs & Partial<NativeIntegrationAPIs>, trustedOntologyProviders: OntologyProviders = {}, nativeConfiguration: NativeIntegrationConfiguration = {}) {
   options = frozenClone(safeCopy(options)) as Options;
   exactFields(options, ['workspaceRoot', 'workspaceId']);
   const ontologyProviders = safeCopy(trustedOntologyProviders, true) as OntologyProviders;
@@ -86,13 +88,14 @@ export function createComposition(options: Options, apis: ProductAPIs, trustedOn
     fail('INVALID_INPUT', 'Expected trusted provider object');
   // These are trusted code-injected APIs, never request-supplied providers.
   for (const owner of owners) {
-    if (apis?.[owner]?.PRODUCT !== owner || apis[owner].VERSION !== '0.2.0') fail('PRODUCT_IDENTITY', 'Expected exact 0.2.0 product: ' + owner);
+    if (apis?.[owner]?.PRODUCT !== owner || apis[owner].VERSION !== '0.3.0') fail('PRODUCT_IDENTITY', 'Expected exact 0.3.0 product: ' + owner);
     if (typeof (apis[owner] as unknown as Record<string, unknown>)[factories[owner]] !== 'function') fail('PRODUCT_API', 'Missing public service factory: ' + owner);
   }
   for (const name of ['ontology', 'harness'] as const) if (typeof apis[name].verifyDelivery !== 'function') fail('PRODUCT_API', 'Missing delivery validator');
   if (typeof apis.ontology.validateInstances !== 'function') fail('PRODUCT_API', 'Missing instance validator');
   const products: ProductAPIs = { runtime: { ...apis.runtime }, harness: { ...apis.harness }, ontology: { ...apis.ontology } };
   const services = new Map<Owner, ProductService>(), initialized = new Set<Owner>();
+  const nativeIntegration = createNativeIntegration(options, apis, owner => service(owner), nativeConfiguration);
   let closed = false;
   function service(owner: Owner, initialize = true): ProductService {
     if (closed) fail('CLOSED', 'Composition is closed');
@@ -103,8 +106,9 @@ export function createComposition(options: Options, apis: ProductAPIs, trustedOn
         resolveHarness: request => resolveMaterial('harness', request),
         execute: executeClaim,
         inspectReceipt: inspectClaimReceipt,
+        ...nativeIntegration.runtimeProviders(),
       };
-      services.set(owner, owner === 'runtime' ? products.runtime.createRuntimeService(options, providers) : owner === 'harness' ? products.harness.createHarnessService(options, { resolveOntology: resolveHarnessOntology }) : products.ontology.createOntologyService(options, ontologyProviders));
+      services.set(owner, owner === 'runtime' ? products.runtime.createRuntimeService(options, providers) : owner === 'harness' ? products.harness.createHarnessService(options, Object.freeze({ resolveOntology: resolveHarnessOntology, ...nativeIntegration.harnessProviders })) : products.ontology.createOntologyService(options, Object.freeze({ ...ontologyProviders, ...nativeIntegration.ontologyProviders })));
     }
     const result = services.get(owner)!;
     if (initialize && !initialized.has(owner)) {
@@ -200,7 +204,7 @@ export function createComposition(options: Options, apis: ProductAPIs, trustedOn
     return receipt(claim, materials, retained);
   }
   function capabilities() {
-    return frozenClone({ version: '0.2.0', authority: false,
+    return frozenClone({ version: '0.3.0', authority: false,
       products: Object.fromEntries(owners.map(owner => [owner, service(owner, false).capabilities()])),
       ontologyProviders: Object.fromEntries((['resolveClassificationSource', 'classificationModel', 'classificationAdvisor', 'resolveLegacyHarness'] as const).map(name =>
         [name, Object.hasOwn(ontologyProviders, name) && ontologyProviders[name] != null ? 'CONFIGURED' : 'UNCONFIGURED'])),
@@ -229,6 +233,7 @@ export function createComposition(options: Options, apis: ProductAPIs, trustedOn
   }
   return Object.freeze({
     request,
+    native: nativeIntegration.native,
     dispatch: async (args: ExternalRequest) => (service('runtime') as RuntimeService).dispatch(args),
     reconcile: async (args: ExternalRequest) => (service('runtime') as RuntimeService).reconcile(args),
     inspect: (owner: Owner, scope: Scope) => read(owner, scope, 'workspace.inspect'),

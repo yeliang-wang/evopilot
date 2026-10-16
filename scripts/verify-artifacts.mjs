@@ -8,9 +8,9 @@ import { spawnSync } from 'node:child_process';
 import { ROOT, CHILDREN, assertNoSymlinks } from './sync-contract.mjs';
 
 import { validateProductMetadata } from './check.mjs';
+import { PIN, LEGACY_PIN } from './manage-preview.mjs';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-const PIN = 'df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a';
 export function safePath(name) {
   assert(typeof name === 'string' && name.startsWith('package/'), 'Invalid archive prefix');
   const path = name.slice(8);
@@ -71,11 +71,12 @@ export function validateEntries(entries, expected, owner) {
   validateProductMetadata(pkg, owner);
   if (pkg.bin) assert(entries.has('dist/cli.js') && entries.has('src/cli.ts'), 'Missing own CLI');
   const manifest = JSON.parse(entries.get('vendor/compatibility/v1/manifest.json'));
-  assert.equal(manifest.module, 'reference.mjs'); assert.equal(manifest.contractRevision, '1.0.0');
-  assert.equal(manifest.sha256, PIN); assert.equal(hash(entries.get('vendor/compatibility/v1/reference.mjs')), PIN);
+  assert.equal(manifest.module, 'native.mjs'); assert.equal(manifest.contractRevision, '1.1.0');
+  assert.equal(manifest.sha256, PIN); assert.equal(hash(entries.get('vendor/compatibility/v1/native.mjs')), PIN);
+  assert.equal(manifest.legacySha256, LEGACY_PIN); assert.equal(hash(entries.get('vendor/compatibility/v1/reference.mjs')), LEGACY_PIN);
   const index = entries.get('src/index.ts').toString();
   assert(index.includes("export const PRODUCT = '" + owner + "';"));
-  assert(index.includes("export const VERSION = '0.2.0';"));
+  assert(index.includes("export const VERSION = '0.3.0';"));
   const exports = typeof pkg.exports === 'string' ? { '.': pkg.exports } : pkg.exports;
   for (const entry of Object.values(exports)) {
     assert.deepEqual(Object.keys(entry), ['types', 'import'], 'Invalid export conditions');
@@ -83,7 +84,7 @@ export function validateEntries(entries, expected, owner) {
     assert(/\.d\.(?:ts|mts)$/.test(entry.types), 'Invalid declaration');
   }
   for (const name of entries.keys()) {
-    if (name.startsWith('src/')) assert(/\.(?:ts|mts|mjs|json)$/.test(name), 'Unexpected source inventory');
+    if (name.startsWith('src/')) assert(/\.(?:ts|mts|mjs|json)$/.test(name) || owner === 'ontology' && name === 'src/native/validator.py', 'Unexpected source inventory: ' + name);
     assert(!/(?:^|\/)(?:tests|typescript|@types)(?:\/|$)/.test(name), 'Development content in package');
   }
   const deps = owner === 'runtime' ? {} : owner === 'harness' ? { yaml: '2.9.0' } : { ajv: '8.20.0', yaml: '2.9.0' };
@@ -214,24 +215,33 @@ function smoke(owner, pkg) {
 async function smokePackage(owner, name) {
   const { default: assert } = await import('node:assert/strict');
   const api = await import(name);
-  assert.equal(api.PRODUCT, owner); assert.equal(api.VERSION, '0.2.0');
+  assert.equal(api.PRODUCT, owner); assert.equal(api.VERSION, '0.3.0');
   const serviceAPI = await import(name + '/service');
   const factory = serviceAPI['create' + owner[0].toUpperCase() + owner.slice(1) + 'Service'];
   const service = factory({ workspaceRoot: '/uninitialized-artifact-workspace', workspaceId: 'artifact-discovery' });
   const serviceCapabilities = service.capabilities(), publicCapabilities = api.capabilities();
   assert.equal(serviceCapabilities.authority, false);
   assert.equal(serviceCapabilities.product, owner);
-  assert.match(serviceCapabilities.stage, /^M2(?:_|$)/);
+  assert.equal(serviceCapabilities.stage, 'NATIVE_STANDARDS');
   assert(Array.isArray(serviceCapabilities.operations));
-  const required = owner === 'runtime' ? ['project.create', 'goal.create', 'run.prepare', 'run.decide', 'run.inspect']
-    : ['asset.put', 'asset.review', 'asset.decide', 'asset.publish', 'asset.inspect', ...(owner === 'harness' ? ['asset.evaluate', 'evaluation.inspect'] : [])];
-  for (const operation of required) assert(serviceCapabilities.operations.includes(operation), 'Missing owning operation: ' + operation);
-  if (owner === 'runtime') assert.deepEqual(serviceCapabilities.asyncOperations, ['dispatch', 'reconcile']);
+  const required = owner === 'runtime' ? ['project.create', 'goal.create', 'run.inspect']
+    : ['asset.inspect', 'asset.list', ...(owner === 'harness' ? ['evaluation.inspect'] : [])];
+  for (const operation of required) assert(serviceCapabilities.operations.includes(operation), 'Missing owning reader: ' + operation);
+  for (const operation of owner === 'runtime' ? ['run.prepare', 'run.decide'] : ['asset.put', 'asset.publish']) assert(!serviceCapabilities.operations.includes(operation), 'Retired writer advertised: ' + operation);
+  assert(Array.isArray(serviceCapabilities.nativeOperations));
+  for (const operation of owner === 'runtime' ? ['collection.prepare', 'collection.execute', 'run.dispatch', 'project.complete'] : ['standard.inspect', 'native.package.put', 'native.package.validate', 'native.package.publish']) assert(serviceCapabilities.nativeOperations.includes(operation), 'Missing native operation: ' + operation);
+  if (owner === 'runtime') assert.deepEqual(serviceCapabilities.asyncOperations, ['reconcile', 'native']);
+  else {
+    const standard = await service.native({operation:'standard.inspect', scope:{visibility:'public',projectId:'artifact-discovery'}, input:{}});
+    assert.equal(standard.owner, owner); assert.match(standard.standardDigest, /^sha256:[a-f0-9]{64}$/);
+    assert(standard.files.some(file => file.path === 'standards.lock.json'));
+    assert(standard.files.some(file => file.path === 'support-matrix.json'));
+  }
   service.close();
   assert.equal(publicCapabilities.authority, false);
   assert.equal(publicCapabilities.product, owner);
-  assert.equal(publicCapabilities.version, '0.2.0');
-  assert.match(publicCapabilities.implementationStage, /^M2(?:_|$)/);
+  assert.equal(publicCapabilities.version, '0.3.0');
+  assert.equal(publicCapabilities.implementationStage, 'NATIVE_STANDARDS');
   assert.equal(typeof publicCapabilities.businessOperationsReady, 'boolean');
   const ref = product => ({ product, id: 'artifact', version: '0.1.0', specVersion: 'v1', digest: 'sha256:' + 'a'.repeat(64), visibility: 'private' });
   const result = owner === 'runtime'
@@ -245,7 +255,8 @@ async function smokePackage(owner, name) {
     assert.equal(sources.readPublicSource(list.sources[0].sourcePath).status, 'PRESERVED_SOURCE');
     assert.throws(() => sources.readPublicSource('../private.yaml'));
     const fs = await import('node:fs/promises');
-    const asset = JSON.parse(await fs.readFile('./specifications/v1/templates/' + (owner === 'harness' ? 'harness' : 'model') + '.json'));
+    // Historical pure readers remain available; they do not certify corrected v1.
+    const asset = owner === 'harness' ? JSON.parse(await fs.readFile('./examples/synthetic-harnesses.json'))[0].asset : JSON.parse(await fs.readFile('./examples/synthetic-models.json')).assets[0];
     assert.equal((api.validateHarness ?? api.validateOntology)(asset).valid, true);
     assert.equal(api.verifyDelivery(api.buildDelivery(asset)).valid, true);
   }

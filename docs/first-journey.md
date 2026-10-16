@@ -1,5 +1,7 @@
 # First use — v0.2.0 Preview
 
+> Historical v0.2 workflow. Its JSON mutation commands are retired in the v0.3 candidate. Use the [native workflow](native-workflow.md) for new assets and execution; historical records remain readable with their original meaning.
+
 [Install EvoPilot](installation.md), select the EvoPilot plugin in Codex and say:
 
 > Start using EvoPilot. Create my personal Workspace, then show me the forward and reverse examples.

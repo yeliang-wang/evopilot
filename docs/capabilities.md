@@ -1,30 +1,26 @@
-# Capabilities in v0.2.0 Preview
+# Capabilities in the v0.3.0 implementation candidate
 
-Runtime, Harness and Ontology provide independent public APIs, persistent services and CLI entry points. The parent composes their public packages into one local daemon and unified Codex Expert. Read active capabilities and scoped owner state before constructing requests.
+This is source capability documentation, not a release or production certificate. The [native workflow](native-workflow.md) is the current path. Historical v0.2 JSON mutation examples cannot create corrected-v1 work.
 
-| Owner | Behavior | Limits |
-| --- | --- | --- |
-| [Runtime](https://github.com/yeliang-wang/evopilot-runtime/blob/main/docs/service.md) | Projects and goals, immutable six-field pins, preparation, review, human decisions, deterministic parent-provider dispatch, receipts and reconciliation | The parent validates supplied Ontology instances and evaluates Harness evidence against exact published pins, with retained receipts/reconciliation; no arbitrary code changes or deployment. Standalone Runtime requires explicitly supplied trusted providers; no automatic approval, latest selection, revision refresh or redispatch |
-| [Harness](https://github.com/yeliang-wang/evopilot-harness/blob/main/docs/service.md) | Native v1 assets, dependency closure, review/decision/publication, supplied-evidence quality evaluation and retained receipts; preserved structured imports | Missing rules/reports yield INDETERMINATE with Warning; evaluation grants no automatic action, version bump or publication |
-| [Ontology](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/service.md) | Native v1 models and instances, lifecycle, structured legacy bridge, retained producer, query, Catalog and classification operations | Repository reverse modeling is Host-authored from authorized source; classification and foreign Catalog resolution need trusted callbacks |
-| Parent Preview | Public-package composition, Workspace initialization/attachment, user-project binding, authenticated shared daemon, independent chat activation, bounded MCP, passive guides and private campaign records | One Workspace per installation; explicit source-drift checkpoints, no continuous synchronization; discovery does not activate or grant authority; per-chat integration is not tamperproof Host enforcement |
+| Owner | Current native behavior | Boundary |
+|---|---|---|
+| Runtime | Frozen project requirements, reviewed collection recipes, protected raw receipts, pinned Runs, reconciliation and exact project completion | Requires trusted execution/resolution providers and actual decisions. It does not generate business models or operate arbitrary deployments. |
+| Harness | Rego v1 policies, OPA tests, Conftest evaluation, explicit missing-input cases, source mappings and immutable package lifecycle | Owns quality criteria and validation. A Warning or failed required rule blocks quality completion; it does not authorize repair or release. |
+| Ontology | RDF/Turtle domain models and instances, bounded SHACL, source mappings, declared coverage, positive/negative cases and immutable package lifecycle | Native validation checks stated constraints. It cannot determine whether an inferred business meaning is correct without domain review. |
+| Parent / Codex integration | Private Workspace bootstrap, complete source inventory, independent scope freeze, staged editable assets, native owner composition and controlled current-delivery promotion | Explicit per-chat activation; one bound Workspace per installation. It cannot force all unrelated Codex activity through EvoPilot. |
 
-## Native assets and advanced providers
+## Standards and execution
 
-Forward requirements and reverse modeling produce the same Ontology v1 asset format. Forward mappings are proposed; reverse mappings distinguish observed evidence and inference. Required business questions stay pending for review. Native asset authoring and quality evaluation of supplied evidence need no LLM callback.
+[Ontology v1](https://github.com/yeliang-wang/evopilot-ontology/blob/main/specifications/v1/README.md) and [Harness v1](https://github.com/yeliang-wang/evopilot-harness/blob/main/specifications/v1/README.md) define the adopted upstream formats and the separate EvoPilot packaging conventions. The [project standard](../specifications/project/v1/README.md) joins them with source inventory, directories and independent requirements. Both public and private projects use these standards. New references bind actual standard content and lock digests, producer version and contract digest; a historical `v1` label alone is insufficient.
 
-Advanced classification requires SDK-supplied `resolveClassificationSource`, `classificationAdvisor` and `classificationModel`; the model binding is exactly `{providerId, modelId, revision, timeoutMs}`. Foreign Catalog resolution requires `resolveLegacyHarness`. These are trusted SDK configuration, not request JSON or automatic inheritance of Host LLM credentials. The default daemon and standalone callers without these providers cannot perform dependent operations. See the owning [classification](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/classification-service.md) and [Catalog](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/catalog-service.md) guides.
+The pinned validator distribution supports macOS arm64. The installed collection router supplies a pinned Node executable; other project build tools require trusted SDK toolchain construction. Neither project JSON nor an MCP request may inject provider callbacks. The local collector restricts writes and network and allows only pinned executable paths, including subprocesses. Reviewed tools retain ordinary host reads: this is not an untrusted-code confidentiality sandbox. See [tool preparation](native-toolchain.md).
 
-## Contracts and decisions
+Execution success and semantic/quality success are separate. Missing, unknown, skipped, stale or unimplemented required evidence blocks project completion. Source changes require a new reviewed candidate. The project current-delivery transition additionally rereads protected Runtime completion and preserves the entire previous project tree.
 
-[Harness v1](https://github.com/yeliang-wang/evopilot-harness/blob/main/specifications/v1/README.md) and [Ontology v1](https://github.com/yeliang-wang/evopilot-ontology/blob/main/specifications/v1/README.md) definitions and schemas belong to their owners, with owner-specific extensions around v1. Published references pin `product/id/version/specVersion/digest/visibility`; unknown required extensions block consumption.
+## Historical compatibility and private progress
 
-Runtime completion, Harness quality and Ontology business validity are separate. Model output, provider registration and historical labels supply no human approval or publication rights. Current Harness Catalog and retained Ontology Catalog formats are distinct. Public visibility does not authorize uploads; private material cannot feed public consumers.
+Historical asset deliveries, decisions and receipts keep their original bytes and meaning. Legacy JSON authoring, classification and Catalog mutation routes are read-only; they cannot certify the corrected v1. A pre-upgrade consistent snapshot is required for rollback to an old installation. Do not point an old writer at state written by this candidate.
 
-Start with [first use](first-journey.md) and the [complete Expert scenario catalogue](expert-scenarios.md), or read [composition contracts](product-composition.md) for SDK boundaries.
+Target/Loop progress remains private documentary governance linked to Runtime objects. Normal project onboarding does not change public product source or Roadmaps. Public visibility does not authorize uploading private data. No WorkBuddy implementation, production database operation, monitoring service, automatic synchronization or automatic release is included.
 
-## Personal Workspace and progress
-
-Templates, README and synthetic forward/reverse examples ship with EvoPilot. First use can initialize a personal project and separate protected service state before chat activation, without GitHub. Workspace project files may be versioned by the user; databases, control state, credentials and raw runtime evidence remain outside Git. Exact path/identity checks, consistent backup, relocation provenance and customization-preserving upgrades are product responsibilities.
-
-Native Runtime objects remain project/Goal/Run/receipt. Target/Loop progress is private documentary governance linked to those objects. Normal project work does not edit public product Roadmaps or source. Draft changes are not active delivery changes; immutable publication and Run pins remain explicit. All 27 Expert cases require scenario-bound automated and real Desktop evidence; the [testing contract](testing.md) separates evidence completeness from acceptance authority.
+The [Expert catalogue](expert-scenarios.md) separates current native journeys from retained historical scenarios. [Acceptance evidence](native-acceptance.md) explains why tests and complete-shaped reports alone cannot establish project or product acceptance.

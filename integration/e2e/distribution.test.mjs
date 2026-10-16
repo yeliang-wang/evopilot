@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { gzipSync } from 'node:zlib';
 import { assemblePreview, collect, installedMarkdown, PARENT_FILES } from '../../scripts/assemble-preview.mjs';
-import { SOURCE, PIN, OWNERS, sha, json, put, tree, portable, inventory, readBundle, argumentsFor, disjoint, installPreview, doctorPreview, stopPreview, recoverPreview, uninstallPreview } from '../../scripts/manage-preview.mjs';
+import { SOURCE, PIN, OWNERS, sha, json, put, tree, portable, inventory, readBundle, argumentsFor, disjoint, installPreview, doctorPreview, stopPreview, recoverPreview, uninstallPreview, mcpServerName } from '../../scripts/manage-preview.mjs';
 
 // PACKAGE FIXTURES ONLY. These do not execute or establish actual product acceptance.
 function tarEntry(name, bytes) {
@@ -18,15 +18,17 @@ function tarEntry(name, bytes) {
   return Buffer.concat([h, bytes, Buffer.alloc((512 - bytes.length % 512) % 512)]);
 }
 function packageFixture(owner) {
-  const pkg = structuredClone({"runtime":{"name":"@evopilot-next/runtime","version":"0.2.0","private":true,"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","docs","LICENSE","NOTICE","provenance"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"license":"Apache-2.0","bin":{"evopilot-next-runtime":"dist/cli.js"},"devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}},"harness":{"name":"@evopilot-next/harness","version":"0.2.0","private":true,"bin":{"evopilot-next-harness":"dist/cli.js"},"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","specifications","examples","assets","docs","provenance","LICENSE","NOTICE"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./sources":{"types":"./dist/asset-sources.d.ts","import":"./dist/asset-sources.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"dependencies":{"yaml":"2.9.0"},"license":"Apache-2.0","devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}},"ontology":{"name":"@evopilot-next/ontology","version":"0.2.0","private":true,"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","specifications","examples","schemas","docs","provenance","LICENSE","NOTICE","assets"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./compat":{"types":"./dist/compat/index.d.mts","import":"./dist/compat/index.mjs"},"./migration":{"types":"./dist/migration.d.ts","import":"./dist/migration.js"},"./sources":{"types":"./dist/asset-sources.d.ts","import":"./dist/asset-sources.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"tsc --noEmit && node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"dependencies":{"ajv":"8.20.0","yaml":"2.9.0"},"license":"Apache-2.0","bin":{"evopilot-next-ontology":"dist/cli.js"},"devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}}}[owner]);
+  const pkg = structuredClone({"runtime":{"name":"@evopilot-next/runtime","version":"0.3.0","private":true,"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","docs","LICENSE","NOTICE","provenance"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"license":"Apache-2.0","bin":{"evopilot-next-runtime":"dist/cli.js"},"devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}},"harness":{"name":"@evopilot-next/harness","version":"0.3.0","private":true,"bin":{"evopilot-next-harness":"dist/cli.js"},"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","specifications","examples","assets","docs","provenance","LICENSE","NOTICE"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./sources":{"types":"./dist/asset-sources.d.ts","import":"./dist/asset-sources.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"dependencies":{"yaml":"2.9.0"},"license":"Apache-2.0","devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}},"ontology":{"name":"@evopilot-next/ontology","version":"0.3.0","private":true,"type":"module","engines":{"node":">=24.14.0"},"files":["dist","src","vendor","README.md","CONTRIBUTING.md","SECURITY.md","CHANGELOG.md","specifications","examples","schemas","docs","provenance","LICENSE","NOTICE","assets"],"exports":{".":{"types":"./dist/index.d.ts","import":"./dist/index.js"},"./compat":{"types":"./dist/compat/index.d.mts","import":"./dist/compat/index.mjs"},"./migration":{"types":"./dist/migration.d.ts","import":"./dist/migration.js"},"./sources":{"types":"./dist/asset-sources.d.ts","import":"./dist/asset-sources.js"},"./service":{"types":"./dist/service.d.ts","import":"./dist/service.js"}},"scripts":{"build":"node scripts/build.mjs","check":"tsc --noEmit && node scripts/check.mjs","test":"node --test tests/e2e/*.test.mjs"},"dependencies":{"ajv":"8.20.0","yaml":"2.9.0"},"license":"Apache-2.0","bin":{"evopilot-next-ontology":"dist/cli.js"},"devDependencies":{"typescript":"5.9.3","@types/node":"24.19.2"}}}[owner]);
+  if (owner === 'harness') pkg.exports['./native'] = {types:'./dist/native.d.ts',import:'./dist/native.js'};
   pkg.exports['./workspace-migration'] = {types:'./dist/workspace-migration.d.ts',import:'./dist/workspace-migration.js'};
   const own = new Map([['package.json', json(pkg)]]);
   own.set('docs/service.md', Buffer.from('Synthetic service documentation fixture.'));
   for (const file of pkg.files) if (!['dist', 'src', 'vendor'].includes(file)) own.set(file.includes('.') || ['LICENSE', 'NOTICE'].includes(file) ? file : file + '/fixture.txt', Buffer.from('Synthetic package fixture, not product acceptance.'));
   for (const file of [...Object.values(pkg.exports).flatMap(Object.values), './dist/cli.js', './src/cli.ts']) own.set(file.slice(2), Buffer.from('// synthetic package fixture\n'));
-  own.set('src/index.ts', Buffer.from(`export const PRODUCT = '${owner}';\nexport const VERSION = '0.2.0';\n`));
+  own.set('src/index.ts', Buffer.from(`export const PRODUCT = '${owner}';\nexport const VERSION = '0.3.0';\n`));
   own.set('vendor/compatibility/v1/reference.mjs', fs.readFileSync(path.join(SOURCE, 'integration/compatibility/v1/reference.mjs')));
-  own.set('vendor/compatibility/v1/manifest.json', json({ module: 'reference.mjs', contractRevision: '1.0.0', sha256: PIN }));
+  own.set('vendor/compatibility/v1/native.mjs', fs.readFileSync(path.join(SOURCE, 'integration/compatibility/v1/native.mjs')));
+  own.set('vendor/compatibility/v1/manifest.json', fs.readFileSync(path.join(SOURCE, 'integration/compatibility/v1/manifest.json')));
   // Minimal public documentation, explicitly synthetic; no Host evidence.
   own.set('README.md', Buffer.from('# Synthetic ' + owner + ' package\n\n[Service](docs/service.md)\n'));
   if (owner !== 'runtime') own.set('specifications/v1/README.md', Buffer.from('# Synthetic specification fixture\n\n[Package](../../README.md)\n'));
@@ -100,6 +102,14 @@ test('distribution pure guards and parent portable whitelist', () => {
   assert(files.has('scripts/manage-preview.mjs')); assert(!files.has('scripts/assemble-preview.mjs'));
   assert.equal(inventory(files).length, files.size);
 });
+test('distribution excludes Finder metadata without deleting source files or hidden configuration', t => {
+  const root = temp(t);
+  const names = ['docs/.DS_Store', 'docs/._README.md', 'docs/__MACOSX/file', 'docs/README.md', 'docs/.gitignore'];
+  for (const name of names) put(root, name, Buffer.from('synthetic packaging fixture'));
+  const files = collect(root, ['docs']);
+  assert.deepEqual([...files.keys()].sort(), ['docs/.gitignore', 'docs/README.md']);
+  for (const name of names) assert(fs.existsSync(path.join(root, name)));
+});
 test('CLI help is standalone and strict (no source children required)', () => {
   for (const script of ['assemble-preview', 'manage-preview']) {
     const run = args => spawnSync(process.execPath, [path.join(SOURCE, 'scripts/' + script + '.mjs'), ...args], { timeout: 5000, encoding: 'utf8', env: { ...process.env, OPENSSL_CONF: '/dev/null' } });
@@ -129,7 +139,17 @@ test('PACKAGE FIXTURE: portable assembly, passive install, doctor, preservation 
   assert.equal(fs.statSync(path.join(root, 'config.json')).mode & 0o777, 0o600);
   assert.equal(fs.statSync(path.join(root, 'managed-install.json')).mode & 0o777, 0o600);
   const mcp = JSON.parse(fs.readFileSync(path.join(root, 'app/plugins/codex/.mcp.json')));
-  assert.equal(mcp.mcpServers.evopilot_v01_preview.command, process.execPath);
+  const namespace=mcpServerName(path.join(root,'config.json'));
+  assert.deepEqual(Object.keys(mcp.mcpServers),[namespace]);
+  assert.equal(mcp.mcpServers[namespace].command, process.execPath);
+  assert.match(namespace,/^evopilot_[0-9a-f]{16}$/);
+  const parallelRoot=path.join(base,'parallel-install');
+  await installPreview({...options,root:parallelRoot,workspaceRoot:null,workspaceId:null});
+  const parallelMcp=JSON.parse(fs.readFileSync(path.join(parallelRoot,'app/plugins/codex/.mcp.json')));
+  assert.notEqual(Object.keys(parallelMcp.mcpServers)[0],namespace);
+  assert.equal(Object.keys({...mcp.mcpServers,...parallelMcp.mcpServers}).length,2);
+  assert.equal((await doctorPreview({root:parallelRoot})).connection.active,false);
+  await uninstallPreview({root:parallelRoot});
   await assert.rejects(installPreview(options));
   put(root, 'unexpected.txt', Buffer.from('retain'));
   await assert.rejects(doctorPreview({ root })); await assert.rejects(uninstallPreview({ root }));

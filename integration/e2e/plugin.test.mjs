@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getGuide, scenarios } from '../../dist/expert/core/guide.js';
+import { mcpServerName } from '../../scripts/manage-preview.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const server = fileURLToPath(new URL('../../dist/plugins/codex/server.js', import.meta.url));
@@ -12,7 +13,7 @@ const env = { ...process.env, OPENSSL_CONF: '/dev/null' };
 const config = root + 'nonexistent-protocol-config.json';
 const init = { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'protocol-fixture', version: '1' } } };
 const call = (id, action, args = {}) => ({ jsonrpc: '2.0', id, method: 'tools/call', params: { name: 'evopilot_v01_' + action, arguments: args } });
-const expectedToolIds = ['inspect','activate','deactivate','guide','request','dispatch','reconcile','capabilities','workspace_inspect','workspace_initialize','workspace_attach','workspace_project','workspace_backup','workspace_backup_inspect','workspace_restore','workspace_migrate'].map(name => 'evopilot_v01_' + name).sort();
+const expectedToolIds = ['inspect','activate','deactivate','guide','request','native','native_project','toolchain_inspect','toolchain_prepare','dispatch','reconcile','capabilities','workspace_inspect','workspace_initialize','workspace_attach','workspace_project','workspace_backup','workspace_backup_inspect','workspace_restore','workspace_migrate'].map(name => 'evopilot_v01_' + name).sort();
 const scope = { visibility: 'private', projectId: 'example' };
 const request = (operation, input = {}) => ({ owner: 'ontology', envelope: { operation, scope, input, requestId: 'retained-request', expectedRevision: 1 } });
 const lines = values => values.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join('\n') + '\n';
@@ -50,6 +51,17 @@ function run(values, fixture = false) {
   return result.stdout.trim().split('\n').filter(Boolean).map(line => JSON.parse(line));
 }
 const data = r => r.result.structuredContent;
+
+test('native protocol routes require this session activation and forward exact owner/project inputs once', () => {
+  const envelope = request('workspace.inspect');
+  const candidate = { operation: 'inspect', input: { scope, id: 'round-one' } };
+  const out = run([init, call(2, 'native', envelope), call(3, 'native_project', candidate), call(4, 'activate'), call(5, 'native', envelope), call(6, 'native_project', candidate), call(7, 'native_project', { operation: 'register-provider', input: {} })], true);
+  assert.equal(data(out[1]).error.code, 'SESSION_INACTIVE');
+  assert.equal(data(out[2]).error.code, 'SESSION_INACTIVE');
+  assert.deepEqual(data(out[4]).result.payload, envelope); assert.equal(data(out[4]).result.calls, 1);
+  assert.deepEqual(data(out[5]).result.payload, candidate); assert.equal(data(out[5]).result.calls, 2);
+  assert.equal(out[6].error.code, -32602);
+});
 
 test('actual spawned server: passive discovery and guide need no config, live connection or filesystem writes', () => {
   const out = run([init, {jsonrpc:'2.0',id:2,method:'tools/list'}, call(3,'guide',{scenario:'onboarding'}), call(4,'request',request('workspace.inspect')), call(5,'capabilities')]);
@@ -113,7 +125,7 @@ test('protocol fixture: verified session activation, once-only forwarding, struc
   assert(!JSON.stringify(out).includes('SECRET_PROVIDER'));
   assert.equal(data(out[11]).error.code,'SESSION_INACTIVE');
   assert.equal(data(out[12]).connection.active,true);
-  assert(out.slice(1).every(r=>data(r).namespace==='evopilot_v01_preview'));
+  assert(out.slice(1).every(r=>data(r).namespace===mcpServerName(config)));
   const other = run([init,call(2,'inspect')],true);
   assert.notEqual(data(other[1]).sessionId,data(out[1]).sessionId);
   assert.equal(data(other[1]).sessionActive,false);
@@ -206,7 +218,7 @@ test('distribution invariant and explicit entry metadata; not decision or Host a
   const manifest=JSON.parse(read('plugins/codex/.codex-plugin/plugin.json'));
   assert.equal(manifest.name,'evopilot-v01-preview'); assert.equal(manifest.mcpServers,'./.mcp.json');
   assert(manifest.interface.shortDescription.length>=25 && manifest.interface.shortDescription.length<=64);
-  const template=JSON.parse(read('plugins/codex/mcp.template.json')).mcpServers.evopilot_v01_preview;
+  const template=JSON.parse(read('plugins/codex/mcp.template.json')).mcpServers['${mcpServerName}'];
   assert.equal(template.command,'${nodeExecutable}');
   assert.deepEqual(template.args,['${serverPath}','--config','${configPath}']);
   for(const scenario of scenarios) {
@@ -263,6 +275,9 @@ test('pure guide maps every source reference to the installed package layout', (
   // No installed child repositories or filesystem fixtures are needed.
   const installationRoot = '/managed/evopilot/app';
   const expectedPaths = [
+    '/managed/evopilot/app/specifications/project/v1/README.md',
+    '/managed/evopilot/app/docs/native-workflow.md',
+    '/managed/evopilot/app/docs/native-decisions.md',
     '/managed/evopilot/app/docs/first-journey.md',
     '/managed/evopilot/app/docs/product-composition.md',
     '/managed/evopilot/app/node_modules/@evopilot-next/ontology/docs/service.md',
@@ -284,6 +299,7 @@ test('pure guide maps every source reference to the installed package layout', (
     assert.equal(guide.referenceBases.installedReferences,'verified installationRoot');
   }
   const reverse=getGuide('ontology-reverse');
-  assert(reverse.operations.includes('asset.put'));
-  assert.match(reverse.steps.join(' '),/never an arbitrary Java/);
+  assert(reverse.operations.includes('native.package.put'));
+  assert(!reverse.operations.includes('asset.put'));
+  assert.match(reverse.steps.join(' '),/independently of existing assets/);
 });

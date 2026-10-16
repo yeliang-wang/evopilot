@@ -1,5 +1,7 @@
 # Local product composition — v0.2.0 Preview
 
+> Historical v0.2 workflow. Its JSON mutation commands are retired in the v0.3 candidate. Use the [native workflow](native-workflow.md) for new assets and execution; historical records remain readable with their original meaning.
+
 `dist/integration/composition.js` connects three independent 0.2.0 public product APIs and owns no business state. `loadInstalledProducts()` imports only the bare `@evopilot-next/runtime`, `@evopilot-next/harness`, `@evopilot-next/ontology` packages and their `/service` exports. Missing packages fail explicitly; there is no source-tree, historical installation or global provider fallback.
 
 ```js

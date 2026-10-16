@@ -4,11 +4,11 @@ import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import * as runtime from '@evopilot-next/runtime';
-import { createRuntimeService } from '@evopilot-next/runtime/service';
+import { createHistoricalRuntime as createRuntimeService } from './fixtures/historical-products.mjs';
 import * as harness from '@evopilot-next/harness';
-import { createHarnessService } from '@evopilot-next/harness/service';
+import { createHistoricalHarness as createHarnessService } from './fixtures/historical-products.mjs';
 import * as ontology from '@evopilot-next/ontology';
-import { createOntologyService } from '@evopilot-next/ontology/service';
+import { createHistoricalOntology as createOntologyService } from './fixtures/historical-products.mjs';
 import { createComposition } from '../../dist/integration/composition.js';
 import { sha256 } from '../compatibility/v1/reference.mjs';
 
@@ -44,7 +44,7 @@ const scope = { visibility: 'private', projectId: 'synthetic-composition' };
 const shared = { visibility: 'public', projectId: 'shared' };
 const humanEvidenceRef = 'synthetic://test-only/no-real-business-approval';
 
-test('actual public products: dual PASS, duplicate receipt, restart reconciliation and foreign scope refusal', async () => {
+test('historical v0.2 regression (test-only writers): dual PASS, duplicate receipt, restart reconciliation and foreign scope refusal', async () => {
   assert.equal(ontology.validateOntology(model).valid, true);
   assert.equal(harness.validateHarness(asset).valid, true);
   assert.equal(ontology.validateInstances(model, instance).status, 'PASS');

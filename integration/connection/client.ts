@@ -10,11 +10,12 @@ import { readRecord, same, recoverRecord } from './control.js';
 
 const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export function validateAction(action: string, payload: ActionPayload) {
-  const shapes: Record<string, string[]> = { health: [], stop: [], capabilities: [], request: ['owner', 'envelope'], dispatch: ['args'], reconcile: ['args'], inspect: ['owner', 'scope'] };
+  const shapes: Record<string, string[]> = { health: [], stop: [], capabilities: [], request: ['owner', 'envelope'], native: ['owner', 'envelope'], native_project: ['operation', 'input'], dispatch: ['args'], reconcile: ['args'], inspect: ['owner', 'scope'] };
   if (!Object.hasOwn(shapes, action)) fail('ACTION');
   fields(payload, shapes[action]);
-  if (['request', 'inspect'].includes(action) && !['runtime', 'harness', 'ontology'].includes(typeof payload.owner === 'string' ? payload.owner : '')) fail('OWNER');
-  if (action === 'request' && (!payload.envelope || typeof payload.envelope !== 'object' || Array.isArray(payload.envelope))) fail('SCHEMA');
+  if (['request', 'native', 'inspect'].includes(action) && !['runtime', 'harness', 'ontology'].includes(typeof payload.owner === 'string' ? payload.owner : '')) fail('OWNER');
+  if (['request', 'native'].includes(action) && (!payload.envelope || typeof payload.envelope !== 'object' || Array.isArray(payload.envelope))) fail('SCHEMA');
+  if (action === 'native_project' && (typeof payload.operation !== 'string' || !payload.input || typeof payload.input !== 'object' || Array.isArray(payload.input))) fail('SCHEMA');
   if (['dispatch', 'reconcile'].includes(action) && (!payload.args || typeof payload.args !== 'object' || Array.isArray(payload.args))) fail('SCHEMA');
 }
 export function transport(c: Configuration, record: ControlRecord, action: string, payload: ActionPayload = {}, timeout: number = LIMITS.request) {
@@ -95,7 +96,7 @@ export async function callConnection(configPath: string, action: string, payload
   if (['stop', 'health'].includes(action)) fail('ACTION');
   const c = loadConfiguration(configPath), r = readRecord(c);
   if (!r || r.state !== 'ready') fail('INACTIVE');
-  return transport(c, r, action, payload);
+  return transport(c, r, action, payload, action === 'native' ? 625_000 : LIMITS.request);
 }
 export async function stopConnection(configPath: string) {
   if (loadInstallationConfiguration(configPath).workspaceRoot === null) return { stopped: false };

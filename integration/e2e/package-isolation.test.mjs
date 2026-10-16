@@ -62,12 +62,13 @@ test('child source graph contains only own source and vendor modules', async () 
         }
         assert(specifier.startsWith('.'), `External product import: ${specifier}`);
         const target = resolve(dirname(file), specifier);
-        assert(target.startsWith(srcRoot + sep) || target === resolve(ROOT, child, 'vendor/compatibility/v1/reference.mjs'), `Cross-package import: ${specifier}`);
+        assert(target.startsWith(srcRoot + sep) || ['reference.mjs','native.mjs','decision-evidence.mjs'].some(name => target === resolve(ROOT, child, 'vendor/compatibility/v1', name)), `Cross-package import: ${specifier}`);
       }
       assert.doesNotMatch(source, /EVOPILOT_HARNESS_HOME|defaultHarnessHome|\.evopilot-harness|\bprocess\s*(?:\.\s*(?:env|cwd|chdir)|\[)|\bglobalThis\s*(?:\.|\[)|\/Users\/|\/home\//);
       const localName = name.split(sep).join('/');
       let checked = source;
-      if (['state.ts','location-lineage.ts'].includes(localName)) checked = checked.replace(/\bprocess\.getuid(?![\w$])/g, '');
+      if (['state.ts','location-lineage.ts','native.ts'].includes(localName)) checked = checked.replace(/\bprocess\.getuid(?![\w$])/g, '');
+      if (['native-evaluation.ts','native/validator.ts'].includes(localName)) checked = checked.replace(/\bprocess\.(?:platform|arch)(?![\w$])/g, '');
       if (localName === 'cli.ts') checked = checked.replace(/\bprocess\.(?:stdin|stdout|argv|exitCode)(?![\w$])/g, '');
       if (child === 'projects/evopilot-ontology' && localName === 'compat/v4/semantics/catalog-store.mjs')
         checked = checked.replace(/\bprocess\.pid(?![\w$])/g, '').replace(/\bprocess\.kill\(owner\.pid, 0\)/g, '');
@@ -144,7 +145,7 @@ test('actual child imports work with parent reads denied by Node permissions', (
           assert.equal(api.evaluateHarness(asset, { id: 'evidence', version: '0.1.0', source: { locator: 'synthetic:evidence', revision: 'r1', digest: 'sha256:' + 'b'.repeat(64) }, values: {} }).status, 'INDETERMINATE');
           assert.equal(api.evaluateHarness(asset, {}).status, 'ERROR');
         } else assert.equal(api.validateInstances(asset, { entities: [], relations: [] }).valid, true);
-        assert.deepEqual(Object.keys(api).sort(), ['PRODUCT', 'VERSION', 'capabilities', 'buildDelivery', 'verifyDelivery', ...(api.PRODUCT === 'harness' ? ['inspectOntologyReference', 'validateHarness', 'evaluateHarness', 'createHarnessSemanticRequirements', 'evaluateSemanticCompatibility'] : ['inspectArtifactReference', 'validateOntology', 'validateInstances'])].sort());
+        assert.deepEqual(Object.keys(api).sort(), ['PRODUCT', 'VERSION', 'capabilities', 'buildDelivery', 'verifyDelivery', ...(api.PRODUCT === 'harness' ? ['inspectOntologyReference', 'validateHarness', 'evaluateHarness', 'createHarnessSemanticRequirements', 'evaluateSemanticCompatibility', 'inspectHarnessPackage', 'inspectHarnessStandard', 'validateNativeHarness'] : ['inspectArtifactReference', 'validateOntology', 'validateInstances', 'inspectOntologyStandard', 'validateOntologyPackage', 'validateNativeOntology', 'verifyOntologyToolchain'])].sort());
       }
     `;
     const result = spawnSync(process.execPath, ['--permission', `--allow-fs-read=${childRoot}`, '--input-type=module', '-e', source], {

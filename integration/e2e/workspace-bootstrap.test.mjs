@@ -8,6 +8,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createHash } from 'node:crypto';
 import { assembly } from './connection.test.mjs';
 
+import { createHistoricalOntology } from './fixtures/historical-products.mjs';
 const source = fileURLToPath(new URL('../../', import.meta.url));
 const sha = value => createHash('sha256').update(value).digest('hex');
 async function fixture() {
@@ -59,7 +60,7 @@ test('V02-A01/A02: real installed services bootstrap in inactive MCP session, th
     assert.equal(data(out[1]).sessionActive, false);
     assert.equal(data(out[2]).error.code, 'SESSION_INACTIVE');
     assert.equal(data(out[3]).sessionActive, true);
-    assert.equal(data(out[4]).result.version, '0.2.0');
+    assert.equal(data(out[4]).result.version, '0.3.0');
     assert.deepEqual(fs.readFileSync(f.configPath), configBytes, 'Setup preserves immutable installed configuration');
     const marker = JSON.parse(fs.readFileSync(path.join(f.input.stateRoot, 'workspace.json')));
     assert.equal(marker.id, f.input.workspaceId); assert.equal(marker.canonicalRoot, f.input.stateRoot);
@@ -83,14 +84,17 @@ test('V02-C01/C03/D05: actual owners preserve quarantine and Pack conflict diagn
   try {
     await f.bootstrap.setupWorkspace(f.configPath, f.input);
     const raw = '{"schema":"unsupported-synthetic/v9","id":"unrecognized"}';
+    // Test-only historical import; current MCP must retain quarantine and reject new derivation.
+    const historical = createHistoricalOntology({ workspaceRoot: f.input.stateRoot, workspaceId: f.input.workspaceId });
+    historical.initialize();
+    let source;
+    try { source = historical.execute({ operation: 'legacy.import', scope: selected, input: { raw, format: 'json', sourceLocator: 'synthetic://diagnostic/unknown.json', sourceRevision: 'r1', sourceVisibility: 'private' }, requestId: 'diagnostic-import', expectedRevision: 0 }).result; } finally { historical.close(); }
     const initial = conversation(f, [call(2, 'activate'), request(3, 'workspace.inspect'),
-      request(4, 'legacy.import', { raw, format: 'json', sourceLocator: 'synthetic://diagnostic/unknown.json', sourceRevision: 'r1', sourceVisibility: 'private' }, { requestId: 'diagnostic-import', expectedRevision: 0 }),
       request(5, 'pack.scaffold.inspect', pack('diagnostic-base', 'diagnostic:account', 'Synthetic original account.')),
       request(6, 'pack.scaffold.inspect', pack('diagnostic-extra', 'diagnostic:audit', 'Synthetic audit.')),
       request(7, 'pack.scaffold.inspect', pack('diagnostic-conflict', 'diagnostic:account', 'A conflicting account definition.')),
       request(8, 'workspace.inspect')]);
-    assert.equal(result(initial, 3).result.revision, 0);
-    const source = result(initial, 4).result.result;
+    assert.equal(result(initial, 3).result.revision, 1);
     assert.equal(source.status, 'QUARANTINED'); assert.equal(source.inspection.valid, false);
     const base = result(initial, 5).result.result, extra = result(initial, 6).result.result, conflict = result(initial, 7).result.result;
     const before = result(initial, 8).result; assert.equal(before.revision, 1);
@@ -102,7 +106,7 @@ test('V02-C01/C03/D05: actual owners preserve quarantine and Pack conflict diagn
       request(8, 'pack.resolve.inspect', { packs: [base, extra], targetRoot: root, precedence: ['diagnostic-base@1.0.0', 'diagnostic-extra@1.0.0'] }),
       request(9, 'pack.resolve.inspect', { packs: [base, conflict], targetRoot: root, precedence: ['diagnostic-base@1.0.0', 'diagnostic-conflict@1.0.0'] }),
       request(10, 'workspace.inspect'), request(11, 'source.inspect', { sourceId: source.sourceId })]);
-    for (const [id, code] of [[3, 'SOURCE_QUARANTINED'], [7, 'PACK_NAMESPACE_COLLISION'], [9, 'PACK_OVERRIDE_INCOMPATIBLE']]) {
+    for (const [id, code] of [[3, 'HISTORICAL_READ_ONLY'], [7, 'PACK_NAMESPACE_COLLISION'], [9, 'PACK_OVERRIDE_INCOMPATIBLE']]) {
       const value = result(checks, id);
       assert.equal(value.error.code, code); assert.equal(value.sessionActive, true); assert.equal(value.connection.active, true);
       assert.deepEqual(value.error.correlation.scope, selected);

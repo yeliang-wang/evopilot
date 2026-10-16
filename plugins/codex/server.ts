@@ -2,7 +2,7 @@
 import { errorCode } from '../../integration/types.js';
 import type { Schema, MCPMessage, ActionPayload } from '../../integration/types.js';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { inspectConnection, activateConnection, callConnection, withWorkspaceMaintenance } from '../../integration/connection/client.js';
 import { loadConfiguration } from '../../integration/connection/config.js';
 import { withWorkspaceLease } from '../../integration/workspace/lock.js';
@@ -12,6 +12,8 @@ import { upgradeWorkspaceProject } from '../../integration/workspace/upgrade.js'
 import type { TemplateUpgradeInput } from '../../integration/workspace/upgrade.js';
 import type { WorkspaceSetupInput } from '../../integration/workspace/bootstrap.js';
 import { getGuide, scenarios } from '../../expert/core/guide.js';
+import { inspectNativeToolchain, inspectBundledToolchainLock } from '../../integration/toolchain/locked.js';
+import { inspectToolchainPreparation, startToolchainPreparation } from '../../integration/toolchain/preparation.js';
 
 const INPUT = 1048576, OUTPUT = 8388608;
 const prefix = 'evopilot_v01_';
@@ -38,6 +40,10 @@ const definitions: Record<string, [string, Schema]> = {
   deactivate: ['Deactivate only this session; keep the shared connection running.', object()],
   guide: ['Read a scenario guide without activating or accessing product state.', object({ scenario: { enum: scenarios } })],
   request: ['Forward one exact owning product envelope; await classification start/reanalyze.', object({ owner: { enum: ['runtime', 'harness', 'ontology'] }, envelope })],
+  native: ['Call a corrected-v1 owning product operation. Real collection, owner receipts and exact project completion gates remain mandatory.', object({ owner: { enum: ['runtime', 'harness', 'ontology'] }, envelope })],
+  native_project: ['Prepare and inspect a corrected-v1 project candidate, freeze an actually reviewed scope, materialize native assets or record an exact domain review. Candidate files do not replace current deliveries. prepare-execution currently supports the installed Node toolchain only.', object({ operation: { enum: ['prepare', 'freeze', 'materialize', 'review-domain', 'inspect', 'check-layout', 'candidate-location', 'prepare-execution', 'promote'] }, input: { type: 'object' } })],
+  toolchain_inspect: ['Verify the bundled native toolchain lock and local installed bytes without downloading or activating.', object()],
+  toolchain_prepare: ['Start bounded preparation of bundled pinned dependencies and return a retained status. Inspect progress; never repeat a pending request. Deactivates this session; activate only after toolchain_inspect reports ready.', object({ requestId: slug })],
   dispatch: ['Dispatch one explicitly approved Runtime run without retry.', object({ args })],
   reconcile: ['Read retained provider evidence through Runtime reconciliation, without redispatch.', object({ args })],
   capabilities: ['Read actual composition capabilities after session activation.', object()],
@@ -60,7 +66,7 @@ function finiteJSON(value: unknown, depth = 0) {
   if (depth > 64 || (typeof value === 'number' && !Number.isFinite(value))) throw Error('SCHEMA');
   if (value && typeof value === 'object') for (const v of Object.values(value)) finiteJSON(v, depth + 1);
 }
-const safeCodes = new Set(['WORKSPACE_UNCONFIGURED', 'WORKSPACE_ALREADY_BOUND', 'WORKSPACE_OCCUPIED', 'PROJECT_OCCUPIED', 'UNSAFE_PROJECT', 'PROJECT_IDENTITY', 'BINDING_IDENTITY', 'SETUP_BUSY', 'SETUP_CONFLICT', 'SETUP_LOCK_INVALID', 'CONNECTION_MUST_STOP', 'WORKSPACE_LOCATION', 'WORKSPACE_IN_GIT', 'CONFIG_WORKSPACE', 'UNSAFE_DIRECTORY', 'UNSAFE_WORKSPACE', 'IDENTITY_CONFLICT', 'CONFIG_ID', 'SCHEMA', 'UNKNOWN', 'INACTIVE', 'SESSION_INACTIVE', 'NOT_READY', 'STARTUP_TIMEOUT', 'STARTUP_FAILED', 'SPAWN_FAILED', 'CONTROL_INVALID', 'IDENTITY_MISMATCH', 'INSTALLATION_DIGEST', 'CONFIG_VERSION', 'PATH', 'SYMLINK', 'UNSAFE_FILE', 'INVALID_REQUEST', 'LIMIT', 'NOT_FOUND', 'REVISION_CONFLICT', 'REQUEST_CONFLICT', 'APPROVAL_REQUIRED', 'REVIEW_REQUIRED', 'REVIEW_MISMATCH', 'PENDING_MODEL', 'SOURCE_QUARANTINED', 'PACK_NAMESPACE_COLLISION', 'PACK_OVERRIDE_INCOMPATIBLE', 'INVALID_MODEL', 'SCOPE_MISMATCH', 'IMMUTABLE_VERSION', 'UNSUPPORTED_DEPENDENCY', 'CLASSIFICATION_PROVIDER_UNAVAILABLE', 'CLASSIFICATION_SOURCE_UNAVAILABLE', 'CLASSIFICATION_UNRESOLVED', 'PROVIDER_UNAVAILABLE', 'PROVIDER_REQUIRED', 'PROVIDER_FAILED', 'PROVIDER_MISMATCH','MISSING_RELOCATION_KEY','INVALID_LINEAGE','SNAPSHOT_DRIFT','CORRUPT_BLOB','CORRUPT_STATE','WORKSPACE_BUSY','UNSAFE_COORDINATION']);
+const safeCodes = new Set(['HISTORICAL_READ_ONLY', 'WORKSPACE_UNCONFIGURED', 'WORKSPACE_ALREADY_BOUND', 'WORKSPACE_OCCUPIED', 'PROJECT_OCCUPIED', 'UNSAFE_PROJECT', 'PROJECT_IDENTITY', 'BINDING_IDENTITY', 'SETUP_BUSY', 'SETUP_CONFLICT', 'SETUP_LOCK_INVALID', 'CONNECTION_MUST_STOP', 'WORKSPACE_LOCATION', 'WORKSPACE_IN_GIT', 'CONFIG_WORKSPACE', 'UNSAFE_DIRECTORY', 'UNSAFE_WORKSPACE', 'IDENTITY_CONFLICT', 'CONFIG_ID', 'SCHEMA', 'UNKNOWN', 'INACTIVE', 'SESSION_INACTIVE', 'NOT_READY', 'STARTUP_TIMEOUT', 'STARTUP_FAILED', 'SPAWN_FAILED', 'CONTROL_INVALID', 'IDENTITY_MISMATCH', 'INSTALLATION_DIGEST', 'CONFIG_VERSION', 'PATH', 'SYMLINK', 'UNSAFE_FILE', 'INVALID_REQUEST', 'LIMIT', 'NOT_FOUND', 'REVISION_CONFLICT', 'REQUEST_CONFLICT', 'APPROVAL_REQUIRED', 'REVIEW_REQUIRED', 'REVIEW_MISMATCH', 'PENDING_MODEL', 'SOURCE_QUARANTINED', 'PACK_NAMESPACE_COLLISION', 'PACK_OVERRIDE_INCOMPATIBLE', 'INVALID_MODEL', 'SCOPE_MISMATCH', 'IMMUTABLE_VERSION', 'UNSUPPORTED_DEPENDENCY', 'CLASSIFICATION_PROVIDER_UNAVAILABLE', 'CLASSIFICATION_SOURCE_UNAVAILABLE', 'CLASSIFICATION_UNRESOLVED', 'PROVIDER_UNAVAILABLE', 'PROVIDER_REQUIRED', 'PROVIDER_FAILED', 'PROVIDER_MISMATCH','MISSING_RELOCATION_KEY','INVALID_LINEAGE','SNAPSHOT_DRIFT','CORRUPT_BLOB','CORRUPT_STATE','WORKSPACE_BUSY','UNSAFE_COORDINATION']);
 const argv = process.argv.slice(2);
 if (argv.length !== 2 || argv[0] !== '--config' || !path.isAbsolute(argv[1]) || path.normalize(argv[1]) !== argv[1] || !argv[1].endsWith('.json')) {
   process.stderr.write('Invalid adapter configuration argument\n'); process.exitCode = 2;
@@ -69,8 +75,9 @@ if (argv.length !== 2 || argv[0] !== '--config' || !path.isAbsolute(argv[1]) || 
 }
 async function serve(configPath: string) {
   const sessionId = randomUUID();
+  const namespace = 'evopilot_' + createHash('sha256').update(configPath).digest('hex').slice(0, 16);
   let initialized = false, sessionActive = false, connection: Awaited<ReturnType<typeof inspectConnection>> | null = null;
-  const identity = () => ({ namespace: 'evopilot_v01_preview', sessionId, pid: process.pid, sessionActive, connection, authority: false });
+  const identity = () => ({ namespace, sessionId, pid: process.pid, sessionActive, connection, authority: false });
   const receipt = (result: unknown, error?: { code: string; correlation: unknown }) => {
     const data: ReturnType<typeof identity> & { result?: unknown; error?: { code: string; correlation: unknown }; correlation?: unknown } = { ...identity(), ...(error ? { error } : { result }) };
     return { content: [{ type: 'text', text: JSON.stringify(data) }], structuredContent: data, ...(error ? { isError: true } : {}) };
@@ -116,7 +123,7 @@ async function serve(configPath: string) {
       const p = r.params;
       if (initialized || !p || Object.keys(p).some(k => !['protocolVersion', 'capabilities', 'clientInfo', '_meta'].includes(k)) || typeof p.protocolVersion !== 'string' || !p.capabilities || typeof p.capabilities !== 'object' || Array.isArray(p.capabilities) || !p.clientInfo || typeof (p.clientInfo as Record<string, unknown>).name !== 'string' || typeof (p.clientInfo as Record<string, unknown>).version !== 'string') { await error(-32602, 'Invalid params'); return; }
       initialized = true;
-      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.2.0' } };
+      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.3.0' } };
     } else if (r.method === 'ping' || r.method === 'tools/list') {
       if (params && (Object.keys(params).some(k => !['_meta', ...(r.method === 'tools/list' ? ['cursor'] : [])].includes(k)) || (Object.hasOwn(params, 'cursor') && (typeof params.cursor !== 'string' || params.cursor !== '')))) { await error(-32602, 'Invalid params'); return; }
       result = r.method === 'ping' ? {} : { tools };
@@ -133,6 +140,21 @@ async function serve(configPath: string) {
       try {
         let value;
         if (action === 'guide') value = getGuide(input.scenario);
+        else if (action === 'toolchain_inspect') {
+          const lock = inspectBundledToolchainLock(), c = loadConfiguration(configPath), preparation = inspectToolchainPreparation(configPath);
+          try {
+            const toolchain = inspectNativeToolchain({ cacheRoot: path.join(c.workspaceRoot, 'native-toolchain') });
+            value = { ready: true, lock, toolchain, preparation, authority: false };
+          } catch (error) {
+            const code = errorCode(error);
+            if (code !== 'ENOENT' && code !== 'TOOLCHAIN_NOT_READY') throw error;
+            value = { ready: false, lock, preparation, diagnostic: 'TOOLCHAIN_NOT_READY', nextAction: preparation && ['RUNNING','UNKNOWN'].includes(preparation.status) ? 'toolchain_inspect' : 'toolchain_prepare', authority: false };
+          }
+        } else if (action === 'toolchain_prepare') {
+          try {
+            value = await startToolchainPreparation(configPath, input.requestId);
+          } finally { sessionActive = false; connection = await inspectConnection(configPath); }
+        }
         else if (action === 'workspace_inspect') value = inspectWorkspace(configPath);
         else if (action === 'workspace_initialize' || action === 'workspace_attach') {
           value = await setupWorkspace(configPath, input, action === 'workspace_attach' ? 'attach' : 'initialize');
@@ -190,7 +212,7 @@ async function serve(configPath: string) {
         result.content[0].text = JSON.stringify(result.structuredContent);
       } catch (e) {
         const code = errorCode(e) ?? '';
-        result = receipt(undefined, { code: safeCodes.has(code) || /^(?:PROJECT|CAMPAIGN|MAINTENANCE|BACKUP|RESTORE|MIGRATION|RELOCATION|TEMPLATE|UPGRADE|WORKSPACE_LEASE)_[A-Z0-9_]+$/.test(code) ? code : 'CONNECTION_ERROR', correlation });
+        result = receipt(undefined, { code: safeCodes.has(code) || /^(?:PROJECT|DOMAIN|STANDARD|CONTRACT|NATIVE|COLLECTION|TOOLCHAIN|CAMPAIGN|MAINTENANCE|BACKUP|RESTORE|MIGRATION|RELOCATION|TEMPLATE|UPGRADE|WORKSPACE_LEASE)_[A-Z0-9_]+$/.test(code) ? code : 'CONNECTION_ERROR', correlation });
       }
     } else { await error(-32601, 'Method not found'); return; }
     await write({ jsonrpc: '2.0', id: r.id, result });

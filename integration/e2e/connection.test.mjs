@@ -109,21 +109,27 @@ export async function assembly(realProducts = false) {
   const install = path.join(base, 'install');
   fs.mkdirSync(install);
   const copy = relative => { fs.mkdirSync(path.dirname(path.join(install, relative)), { recursive: true }); fs.copyFileSync(path.join(root, relative), path.join(install, relative)); };
-  const files = ['dist/integration/workspace/lock.js', 'package.json', 'dist/integration/types.js', 'dist/integration/composition.js', 'dist/integration/compatibility/v1/reference.mjs', 'dist/integration/compatibility/v1/manifest.json', ...['config', 'control', 'client', 'daemon'].map(n => `dist/integration/connection/${n}.js`)];
+  const files = ['package.json', 'dist/integration/types.js', 'dist/integration/composition.js', 'dist/integration/native-composition.js',
+    ...['lock', 'project-lock', 'native-project', 'native-router', 'native-promotion', 'project-navigation'].map(n => `dist/integration/workspace/${n}.js`),
+    ...['reference.mjs', 'native.mjs', 'decision-evidence.mjs', 'manifest.json'].map(n => 'dist/integration/compatibility/v1/' + n),
+    ...['config', 'control', 'client', 'daemon'].map(n => `dist/integration/connection/${n}.js`),
+    ...fs.globSync('dist/integration/toolchain/**/*', { cwd: root }).filter(n => fs.statSync(path.join(root,n)).isFile()),
+    ...fs.globSync('dist/integration/collection/*.js', { cwd: root }),
+    ...fs.globSync('specifications/project/v1/*', { cwd: root })];
   files.forEach(copy);
   if (realProducts) for (const owner of ['runtime', 'harness', 'ontology']) {
     const name = '@evopilot-next/' + owner;
     const source = packageRoot(fileURLToPath(import.meta.resolve(name)), name);
-    copyInstalledPackage(source, path.join(install, 'node_modules', name), name, '0.2.0');
+    copyInstalledPackage(source, path.join(install, 'node_modules', name), name, '0.3.0');
   }
   else for (const owner of ['runtime', 'harness', 'ontology']) {
     const dir = path.join(install, 'node_modules/@evopilot-next', owner);
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: '@evopilot-next/' + owner, version: '0.2.0', type: 'module', exports: { '.': './index.mjs', './service': './index.mjs' } }));
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: '@evopilot-next/' + owner, version: '0.3.0', type: 'module', exports: { '.': './index.mjs', './service': './index.mjs' } }));
     const factory = 'create' + owner[0].toUpperCase() + owner.slice(1) + 'Service';
     fs.writeFileSync(path.join(dir, 'index.mjs'), `
       import fs from 'node:fs';
-      export const PRODUCT = '${owner}', VERSION = '0.2.0';
+      export const PRODUCT = '${owner}', VERSION = '0.3.0';
       export const verifyDelivery = () => ({valid:true});
       export const validateInstances = () => ({valid:true});
       export function ${factory}(options) {
@@ -143,9 +149,9 @@ export async function assembly(realProducts = false) {
     }
   }
   walk('node_modules');
-  const config = { schema: 'evopilot-connection-config/v1', version: '0.2.0', protocol: 'evopilot-connection/v1', installationRoot: install,
+  const config = { schema: 'evopilot-connection-config/v1', version: '0.3.0', protocol: 'evopilot-connection/v1', installationRoot: install,
     installationId: 'test-install', workspaceRoot: path.join(base, 'workspace'), workspaceId: 'test-workspace',
-    components: { runtime: '0.2.0', harness: '0.2.0', ontology: '0.2.0' },
+    components: { runtime: '0.3.0', harness: '0.3.0', ontology: '0.3.0' },
     manifest: files.sort().map(relative => ({ path: relative, sha256: createHash('sha256').update(fs.readFileSync(path.join(install, relative))).digest('hex') })) };
   const configPath = path.join(base, 'config.json');
   fs.writeFileSync(configPath, JSON.stringify(config), { mode: 0o600 });

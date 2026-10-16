@@ -3,15 +3,16 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createOntologyService } from '@evopilot-next/ontology/service';
+import { createOntologyService as currentOntology } from '@evopilot-next/ontology/service';
+import { createHistoricalOntology as createOntologyService } from './fixtures/historical-products.mjs';
 import { createHarnessService } from '@evopilot-next/harness/service';
 import { createRuntimeService } from '@evopilot-next/runtime/service';
 import { catalogClient, ownedCatalogMaterials } from '../../projects/evopilot-ontology/tests/fixtures/catalog-service-materials.mjs';
 import { fixture, taxonomy } from '../../projects/evopilot-ontology/tests/fixtures/classification-service.mjs';
 
-// Actual installed public service, no configured callbacks. The reused owner fixture
+// Historical v0.2 synthetic regression only; current service rejects retired writes. The reused owner fixture
 // builders only supply explicitly synthetic materials and synthetic decisions.
-test('V02-C06: default provider absence prevents Catalog publication without changing prepared materials or state', t => {
+test('historical v0.2: V02-C06: default provider absence prevents Catalog publication without changing prepared materials or state', t => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'evopilot-expert-catalog-')));
   const service = createOntologyService({ workspaceRoot: join(root, 'state'), workspaceId: 'catalog-test' });
   t.after(() => { service.close(); rmSync(root, { force: true, recursive: true }); });
@@ -26,7 +27,7 @@ test('V02-C06: default provider absence prevents Catalog publication without cha
   assert.equal(client.read('semantic.catalog.inspect', { catalogId: 'main' }).head, 'EMPTY');
 });
 
-test('V02-C07/C08: default classification prerequisite cannot create results or a Harness handoff', async t => {
+test('historical v0.2: V02-C07/C08: default classification prerequisite cannot create results or a Harness handoff', async t => {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'evopilot-expert-classification-')));
   const service = createOntologyService({ workspaceRoot: join(root, 'state'), workspaceId: 'expert-default-classification' });
   t.after(() => { service.close(); rmSync(root, { force: true, recursive: true }); });
@@ -42,7 +43,7 @@ test('V02-C07/C08: default classification prerequisite cannot create results or 
   assert.throws(() => service.execute({ operation: 'receipt.inspect', scope, input: { requestId: 'classify-missing-provider' } }), { code: 'NOT_FOUND' });
 });
 
-test('V02-C08: configured synthetic classification requires exact human token and never creates Harness assets or Runtime work', async t => {
+test('historical v0.2: V02-C08: configured synthetic classification requires exact human token and never creates Harness assets or Runtime work', async t => {
   const f = fixture();
   const ontology = createOntologyService(f.options, f.providers);
   const harness = createHarnessService(f.options), runtime = createRuntimeService(f.options);
@@ -67,4 +68,21 @@ test('V02-C08: configured synthetic classification requires exact human token an
   assert.deepEqual(read(harness, 'workspace.inspect'), beforeHarness);
   assert.deepEqual(read(runtime, 'workspace.inspect'), beforeRuntime);
   assert.deepEqual(read(harness, 'asset.list'), []); assert.deepEqual(read(runtime, 'project.list'), []);
+});
+
+// Rejection through the current public service is separate from historical replay.
+test('current Ontology rejects retired authoring and classification before any mutation', async t => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'evopilot-retired-')));
+  const service = currentOntology({ workspaceRoot: join(root, 'state'), workspaceId: 'retired-test' });
+  t.after(() => { service.close(); rmSync(root, { force: true, recursive: true }); });
+  service.initialize();
+  const scope = { visibility: 'private', projectId: 'synthetic' };
+  const read = () => service.execute({ operation: 'workspace.inspect', scope, input: {} });
+  const before = read();
+  for (const [operation, input] of [['asset.put', {model:{}}], ['legacy.import', {raw:'{}',format:'json',sourceLocator:'synthetic://retired',sourceRevision:'r1',sourceVisibility:'private'}], ['asset.publish',{id:'retired',version:'1.0.0'}]]) {
+    assert.throws(() => service.execute({ operation, scope, input, requestId: 'retired-' + operation.replaceAll('.', '-'), expectedRevision: before.revision }), { code: 'HISTORICAL_READ_ONLY' });
+    assert.deepEqual(read(), before);
+  }
+  await assert.rejects(service.classify({ operation: 'classification.start', scope, input: { id: 'session', sourceId: 'synthetic-cache', taxonomy: taxonomy() }, requestId: 'retired-classify', expectedRevision: before.revision }), { code: 'HISTORICAL_READ_ONLY' });
+  assert.deepEqual(read(), before);
 });
