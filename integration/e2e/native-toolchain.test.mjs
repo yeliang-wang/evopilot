@@ -48,6 +48,25 @@ test('failed locked downloads expose bounded diagnostics and never retain partia
   }
 });
 
+test('a timed out response body retains no partial artifact or ready toolchain', async () => {
+  const root = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'evopilot-download-body-'));
+  const original = globalThis.fetch;
+  try {
+    globalThis.fetch = async (_url, options) => {
+      assert(options.signal instanceof AbortSignal);
+      return { ok: true, url: 'https://example.invalid/synthetic-locked-artifact',
+        body: { async *[Symbol.asyncIterator]() {
+          yield Buffer.from('synthetic partial download');
+          throw new DOMException('synthetic body timeout', 'TimeoutError');
+        } } };
+    };
+    await assert.rejects(prepareNativeToolchain({ cacheRoot: root }), { code: 'TOOLCHAIN_DOWNLOAD_TIMEOUT' });
+    assert.deepEqual(fs.readdirSync(root), ['downloads']);
+    assert.deepEqual(fs.readdirSync(path.join(root, 'downloads')), []);
+    assert.throws(() => inspectNativeToolchain({ cacheRoot: root }), { code: 'TOOLCHAIN_NOT_READY' });
+  } finally { globalThis.fetch = original; fs.rmSync(root, { recursive: true, force: true }); }
+});
+
 test('pinned distribution reconstructs offline and detects executable, dependency, pyc and configuration drift', { timeout: 120_000 }, async () => {
   if (process.platform !== 'darwin' || process.arch !== 'arm64') {
     assert.throws(() => inspectBundledToolchainLock(), { code: 'TOOLCHAIN_UNSUPPORTED_PLATFORM' }); return;

@@ -10,7 +10,9 @@ native standards; the parent defines the [project contract](../specifications/pr
    downloads. The verified native platform is currently macOS arm64 only.
    Download failures report `TOOLCHAIN_DOWNLOAD_TIMEOUT`,
    `TOOLCHAIN_DOWNLOAD_NETWORK`, or `TOOLCHAIN_DOWNLOAD` for an HTTP/bounds
-   failure. Inspect readiness before retrying preparation after connectivity is
+   failure. Each artifact download has a bounded five-minute total deadline,
+   including its response body; validation keeps its separate execution limits.
+   Inspect readiness before retrying preparation after connectivity is
    restored. Only complete hash-verified downloads are reused; partial downloads
    cannot make the toolchain ready. No business collection or Run is dispatched
    by preparation.

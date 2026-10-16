@@ -89,7 +89,9 @@ async function download(directory: string, asset: Download, mirror: string | und
   else {
     if (offline) fail('TOOLCHAIN_NOT_READY', 'Offline cache is missing a locked artifact');
     try {
-      const response = await fetch(asset.url, { signal: AbortSignal.timeout(60_000), redirect: 'follow' });
+      // This budget covers the complete body, including the 62 MB locked OPA
+      // binary. A one-minute deadline repeatedly aborts valid slow transfers.
+      const response = await fetch(asset.url, { signal: AbortSignal.timeout(300_000), redirect: 'follow' });
       if (!response.ok || !response.body || !response.url.startsWith('https://')) fail('TOOLCHAIN_DOWNLOAD', 'Locked artifact download failed');
       const chunks: Buffer[] = []; let size = 0;
       for await (const value of response.body) {
