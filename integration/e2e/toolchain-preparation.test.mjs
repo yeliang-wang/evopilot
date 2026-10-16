@@ -6,16 +6,19 @@ import { pathToFileURL } from 'node:url';
 import { assembly } from './connection.test.mjs';
 
 test('native preparation returns before a slow download, retains failure and never redispatches a request', { timeout: 30000 }, async () => {
-  const f = await assembly(true), original = globalThis.fetch;
+  const f = await assembly(true), original = globalThis.fetch, originalTimeout = AbortSignal.timeout;
   let release, calls = 0;
+  const deadlines = [];
   try {
     await f.api.activateConnection(f.configPath);
     const url = pathToFileURL(path.join(f.install, 'dist/integration/toolchain/preparation.js')).href;
     const api = await import(url);
-    globalThis.fetch = async () => { calls++; return new Promise(resolve => { release = () => resolve(new Response('synthetic unavailable', { status: 503 })); }); };
+    AbortSignal.timeout = ms => { deadlines.push(ms); return originalTimeout(ms); };
+    globalThis.fetch = async (_url, options) => { assert(options.signal instanceof AbortSignal); calls++; return new Promise(resolve => { release = () => resolve(new Response('synthetic unavailable', { status: 503 })); }); };
     const admitted = await Promise.race([api.startToolchainPreparation(f.configPath, 'slow-download'),
       new Promise((_, reject) => { const timer = setTimeout(() => reject(Error('Preparation blocked on body')), 2000); timer.unref(); })]);
     assert.equal(admitted.preparation.status, 'RUNNING'); assert.equal(calls, 1);
+    assert(deadlines.includes(900000), 'A slow large locked artifact has a bounded fifteen-minute budget');
     assert.equal(api.inspectToolchainPreparation(f.configPath).status, 'RUNNING');
     const duplicate = await api.startToolchainPreparation(f.configPath, 'slow-download');
     assert.equal(duplicate.reused, true); assert.equal(calls, 1);
@@ -42,7 +45,7 @@ test('native preparation returns before a slow download, retains failure and nev
     assert.equal(fs.statSync(path.join(directory, 'slow-download.json')).mode & 0o777, 0o600);
     fs.writeFileSync(path.join(directory, 'invalid.json'), '{}', { mode: 0o600 });
     assert.throws(() => api.inspectToolchainPreparation(f.configPath), { code: 'TOOLCHAIN_PREPARATION_INVALID' });
-  } finally { if (release) release(); globalThis.fetch = original; await f.cleanup(); }
+  } finally { if (release) release(); globalThis.fetch = original; AbortSignal.timeout = originalTimeout; await f.cleanup(); }
 });
 
 test('native preparation verifies ready cache without fetching and retains a terminal receipt across readers', { timeout: 60000 }, async () => {

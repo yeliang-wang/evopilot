@@ -43,6 +43,6 @@ reports an unfinished receipt as `UNKNOWN`; diagnose the original operation and
 retain its evidence rather than changing request IDs to bypass uncertainty.
 After a terminal `FAILED`, an explicitly authorized new request can reuse only
 complete hash-verified downloads. No partial artifact is cached. Each artifact
-has a five-minute body deadline; there is no automatic download retry.
+has a fifteen-minute body deadline; there is no automatic download retry.
 Activate only after inspection verifies `ready=true`. Readiness is not an asset
 approval, project completion or Host acceptance result.
