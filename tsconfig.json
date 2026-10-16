@@ -23,6 +23,9 @@
     "integration/types.ts",
     "integration/compatibility/v1/reference.d.mts",
     "integration/workspace/**/*.ts",
-    "expert/core/acceptance.ts"
+    "integration/toolchain/**/*.ts",
+    "integration/collection/**/*.ts",
+    "expert/core/acceptance.ts",
+    "expert/core/native-acceptance.ts"
   ]
 }

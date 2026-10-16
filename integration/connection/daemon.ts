@@ -1,12 +1,18 @@
 import { errorCode } from '../types.js';
 import type { ControlRecord, ConnectionRequest } from '../types.js';
 import http from 'node:http';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { withWorkspaceLease } from '../workspace/lock.js';
+import { randomBytes, timingSafeEqual, randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import { loadConfiguration, LIMITS, fields, fail } from './config.js';
 import { checkDirectory, writeRecord, removeRecord, readRecord, same } from './control.js';
 import { validateAction } from './client.js';
 import { createComposition, loadInstalledProducts } from '../composition.js';
+import { createNativeProjectRouter } from '../workspace/native-router.js';
+import { inspectNativeToolchain } from '../toolchain/locked.js';
+import type { NativeProject } from '@evopilot-next/runtime/service';
 
 // No fixture/provider override: the installed public bare packages are the only loader.
 export async function runDaemon(configPath: string) {
@@ -17,7 +23,16 @@ export async function runDaemon(configPath: string) {
   let composition: ReturnType<typeof createComposition> | undefined, server: http.Server | undefined, active = 0, closing = false;
   const publicReply = (value: Record<string, unknown>) => ({ identity: c.identity, nonce: record.nonce, pid: record.pid, ...value });
   try {
-    composition = createComposition({ workspaceRoot: c.workspaceRoot, workspaceId: c.workspaceId }, await loadInstalledProducts());
+    const project = c.projectRoot ? createNativeProjectRouter({ projectRoot: c.projectRoot, stateRoot: c.workspaceRoot, workspaceId: c.workspaceId }, {
+      readCompletedProject: async (scope, id) => {
+        if (!composition) fail('NOT_READY');
+        return await composition.native('runtime', { operation: 'project.inspect', scope, input: { id } }) as NativeProject;
+      },
+    }) : null;
+    const cacheRoot = path.join(c.workspaceRoot, 'native-toolchain');
+    // Inspection verifies local bytes only. No background download on activation.
+    const toolchain = fs.existsSync(cacheRoot) ? inspectNativeToolchain({ cacheRoot }) : undefined;
+    composition = createComposition({ workspaceRoot: c.workspaceRoot, workspaceId: c.workspaceId }, await loadInstalledProducts(), {}, { ...project?.providers, ...(toolchain ? { toolchain } : {}) });
     composition.inspect('runtime', { visibility: 'public', projectId: 'shared' });
     server = http.createServer({ maxHeaderSize: 8192, requestTimeout: 5000, headersTimeout: 5000, keepAliveTimeout: 1000 }, async (req, res) => {
       const send = (status: number, value: Record<string, unknown>) => {
@@ -55,6 +70,11 @@ export async function runDaemon(configPath: string) {
         active++; entered = true;
         let result;
         if (action === 'request') result = await composition!.request(payload.owner!, payload.envelope!);
+        else if (action === 'native') result = await composition!.native(payload.owner!, payload.envelope!);
+        else if (action === 'native_project') {
+          if (!project) fail('WORKSPACE_UNCONFIGURED');
+          result = await withWorkspaceLease(c, 'native-project-' + randomUUID(), () => project.request({ operation: payload.operation!, input: payload.input }));
+        }
         else if (action === 'dispatch' || action === 'reconcile') result = await composition![action](payload.args!);
         else if (action === 'inspect') result = await composition!.inspect(payload.owner!, payload.scope!);
         else result = composition!.capabilities();

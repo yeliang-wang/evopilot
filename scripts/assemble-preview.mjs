@@ -7,11 +7,11 @@ import { SOURCE, VERSION, PIN, OWNERS, sha, json, regular, tree, portable, inven
 
 // Explicit parent whitelist. Assembly helpers and source children are not runtime dependencies.
 export const PARENT_FILES = ['package.json', 'README.md', 'LICENSE', 'NOTICE', 'CONTRIBUTING.md', 'SECURITY.md', 'SUPPORT.md', 'CHANGELOG.md',
-  'dist', 'integration/composition.ts', 'integration/types.ts', 'integration/compatibility', 'integration/connection', 'integration/workspace', 'plugins/codex', 'expert',
+  'dist', 'integration/composition.ts', 'integration/native-composition.ts', 'integration/types.ts', 'integration/compatibility', 'integration/connection', 'integration/workspace', 'integration/collection', 'integration/toolchain', 'specifications/project/v1', 'plugins/codex', 'expert',
   'docs', 'workspace/README.md', 'workspace/templates',
   'governance/roadmap.json', 'governance/implementation-lock.json', 'governance/decisions/local-implementation.json',
-  'governance/acceptance.json', 'governance/m0.json', 'governance/delivery-repair-v011.json', 'governance/workspace-v02.json', 'governance/readiness-v1.json',
-  'scripts/manage-preview.mjs', 'scripts/verify-workspace-acceptance.mjs', 'scripts/verify-local-acceptance.mjs', 'scripts/roadmap.mjs'];
+  'governance/acceptance.json', 'governance/m0.json', 'governance/delivery-repair-v011.json', 'governance/workspace-v02.json', 'governance/standards-v03.json', 'governance/readiness-v1.json',
+  'scripts/manage-preview.mjs', 'scripts/verify-native-acceptance.mjs', 'scripts/verify-workspace-acceptance.mjs', 'scripts/verify-local-acceptance.mjs', 'scripts/roadmap.mjs'];
 export function collect(root, names) {
   const files = new Map();
   for (const name of names) {

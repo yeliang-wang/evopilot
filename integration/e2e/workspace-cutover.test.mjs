@@ -9,6 +9,8 @@ import { createHash } from 'node:crypto';
 import { assembly } from './connection.test.mjs';
 import { sha256 } from '../compatibility/v1/reference.mjs';
 
+import { createComposition } from '../../dist/integration/composition.js';
+import { historicalProducts } from './fixtures/historical-products.mjs';
 const sourceRoot = fileURLToPath(new URL('../../', import.meta.url));
 const scope = { visibility: 'private', projectId: 'synthetic-cutover' };
 const source = { id: 'source', kind: 'synthetic', locator: 'synthetic://workspace-cutover/requirements', revision: 'r1', digest: sha256({ fixture: 'workspace-cutover' }), status: 'synthetic' };
@@ -64,12 +66,15 @@ async function adapter(f) {
     async close() { if (child.exitCode !== null || child.signalCode !== null) return; const done = new Promise(resolve => child.once('exit', resolve)); child.stdin.end(); await done; },
   };
 }
-async function seed(mcp) {
+// Only initial historical records use test fixtures; installed MCP performs all readback/cutover.
+async function seed(mcp, f) {
+  const c = createComposition({ workspaceRoot: f.stateRoot, workspaceId: f.workspaceId }, await historicalProducts());
+  try {
   let serial = 0;
-  const read = async (owner, operation, input = {}) => (await mcp.tool('request', { owner, envelope: { operation, scope, input } })).result;
+  const read = async (owner, operation, input = {}) => c.request(owner, { operation, scope, input });
   const write = async (owner, operation, input) => {
     const revision = (await read(owner, 'workspace.inspect')).revision;
-    return (await mcp.tool('request', { owner, envelope: { operation, scope, input, requestId: 'cutover-write-' + (++serial), expectedRevision: revision } })).result;
+    return c.request(owner, { operation, scope, input, requestId: 'cutover-write-' + (++serial), expectedRevision: revision });
   };
   const pins = {};
   for (const owner of ['ontology', 'harness']) {
@@ -83,8 +88,9 @@ async function seed(mcp) {
   await write('runtime', 'goal.create', { id: 'goal', description: 'Retain actual owning records through workspace cutover' });
   const prepared = (await write('runtime', 'run.prepare', { id: 'run', goalId: 'goal', ...pins, input })).result;
   await write('runtime', 'run.decide', { id: 'run', reviewDigest: prepared.reviewDigest, decision: 'APPROVE', humanEvidenceRef });
-  const dispatched = (await mcp.tool('dispatch', { args: { scope, id: 'run', requestId: 'cutover-dispatch', expectedRevision: (await read('runtime', 'workspace.inspect')).revision } })).result;
+  const dispatched = await c.dispatch({ scope, id: 'run', requestId: 'cutover-dispatch', expectedRevision: (await read('runtime', 'workspace.inspect')).revision });
   assert.equal(dispatched.result.stage, 'SUCCEEDED'); assert.equal(dispatched.result.outcome.receipt.result.evaluation, 'PASS');
+  } finally { c.close(); }
   return readback(mcp);
 }
 async function readback(mcp) {
@@ -100,7 +106,7 @@ async function initialize(f, mcp) {
 test('V02-D03: actual installed MCP migration, fresh installation attachment and all-owner immutable readback', { timeout: 60000 }, async () => {
   const original = await installedFixture(), next = await installedFixture(); let first, second; const keys = [];
   try {
-    first = await adapter(original); await initialize(original, first); const before = await seed(first);
+    first = await adapter(original); await initialize(original, first); const before = await seed(first, original);
     const projectBytes = fs.readFileSync(path.join(original.projectRoot, 'README.md'));
     const destinationProjectRoot = path.join(original.base, 'migrated-project'), destinationStateRoot = path.join(original.base, 'migrated-state');
     const migrated = await first.tool('workspace_migrate', { destinationProjectRoot, destinationStateRoot, requestId: 'migrate-cutover' });
@@ -130,7 +136,7 @@ test('V02-D03: actual installed MCP migration, fresh installation attachment and
 test('V02-D02: actual MCP backup, passive inspection, occupied restore refusal and missing-root restore/reactivation', { timeout: 45000 }, async () => {
   const f = await installedFixture(); let mcp;
   try {
-    mcp = await adapter(f); await initialize(f, mcp); const before = await seed(mcp);
+    mcp = await adapter(f); await initialize(f, mcp); const before = await seed(mcp, f);
     const backupRoot = path.join(f.base, 'backup'), bytes = fs.readFileSync(path.join(f.projectRoot, 'README.md'));
     const backup = await mcp.tool('workspace_backup', { destinationRoot: backupRoot, requestId: 'backup-cutover' });
     assert.equal(backup.result.status, 'VERIFIED'); assert.equal(backup.sessionActive, false); assert.equal((await f.api.inspectConnection(f.configPath)).active, false);

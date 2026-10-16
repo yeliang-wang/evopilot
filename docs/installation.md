@@ -1,13 +1,15 @@
-# Install EvoPilot 0.2.0 Preview
+# Install EvoPilot 0.3.0 Preview
 
-Use **Node 24.14.0**. Download `evopilot-0.2.0-preview.tar.gz` and `SHA256SUMS` from the exact [v0.2.0 Preview release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.2.0). Use immutable versioned Preview downloads, not a latest-stable selector. The bundle contains compiled JavaScript and needs no npm install or source build. It includes no Node executable, credentials, live configuration, business data or configured providers. Source builds belong to the [developer path](development.md).
+These instructions describe the **unreleased 0.3.0 candidate**. Use its verified local bundle during acceptance. Download links apply only after conditional publication is verified; no current download availability is claimed. Existing [0.2.0 release artifacts](https://github.com/yeliang-wang/evopilot/releases/tag/v0.2.0) retain their original instructions and semantics.
+
+Use **Node 24.14.0**. Download `evopilot-0.3.0-preview.tar.gz` and `SHA256SUMS` from the exact [v0.3.0 Preview release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.3.0). Use immutable versioned Preview downloads, not a latest-stable selector. The bundle contains compiled JavaScript and needs no npm install or source build. Native validation additionally requires the explicitly prepared pinned toolchain; inspection never downloads it. It includes no Node executable, credentials, live configuration, business data or configured providers. Source builds belong to the [developer path](development.md).
 
 ## Verify and extract
 
 In the directory containing both downloads, select exactly the bundle entry. This fails if the entry is missing or duplicated:
 
 ```sh
-preview_checksum="$(awk '$2 == "evopilot-0.2.0-preview.tar.gz" && length($1) == 64 && $1 !~ /[^0-9a-fA-F]/ { line=$0; count++ } END { if (count != 1) exit 1; print line }' SHA256SUMS)" &&
+preview_checksum="$(awk '$2 == "evopilot-0.3.0-preview.tar.gz" && length($1) == 64 && $1 !~ /[^0-9a-fA-F]/ { line=$0; count++ } END { if (count != 1) exit 1; print line }' SHA256SUMS)" &&
   printf '%s\n' "$preview_checksum" | shasum -a 256 -c -
 ```
 
@@ -18,7 +20,7 @@ Choose a new extraction directory with an existing parent:
 ```sh
 preview_bundle="/absolute/path/to/new-extracted-bundle"
 mkdir "$preview_bundle" &&
-  tar -xzf evopilot-0.2.0-preview.tar.gz -C "$preview_bundle"
+  tar -xzf evopilot-0.3.0-preview.tar.gz -C "$preview_bundle"
 ```
 
 ## Install and register
@@ -37,7 +39,7 @@ Installation does not create a Workspace. Program files live under `preview_root
 
 The installer verifies the inventory, renders Codex configuration with the current Node executable, and creates the private managed descriptor and local marketplace. Changed bytes, unexpected files, symlinks and hardlinks fail validation. `doctor` checks configuration and performs passive inspection. Installation itself does not activate a daemon or register the plugin; the Codex commands above register it.
 
-Select **EvoPilot v0.2 Preview** and request: “Inspect the installation, initialize my own Workspace, then activate and show the examples.” You may provide explicit project/state paths or use the defaults described in [Workspace](../workspace/README.md). Initialization is idempotent and does not overwrite an occupied directory or user edits. The Expert separately activates the current chat after successful setup. Existing users can request attachment of a validated, stopped Workspace; an already bound installation cannot silently switch to another Workspace.
+Select **EvoPilot v0.3 Preview** and request: “Inspect the installation, initialize my own Workspace, then activate and show the examples.” You may provide explicit project/state paths or use the defaults described in [Workspace](../workspace/README.md). Initialization is idempotent and does not overwrite an occupied directory or user edits. The Expert separately activates the current chat after successful setup. Existing users can request attachment of a validated, stopped Workspace; an already bound installation cannot silently switch to another Workspace.
 
 Inspect and guide requests remain passive. Ordinary work then happens through the Expert without routine CLI operations. See [first journeys](first-journey.md), [Codex](codex.md), [migration](migration.md) and [provider limits](capabilities.md).
 
@@ -61,3 +63,5 @@ node "$preview_bundle/app/scripts/manage-preview.mjs" uninstall --root "$preview
 ```
 
 The manager is also at `preview_root/app/scripts/manage-preview.mjs`. Uninstall verifies the exact managed inventory and uses authenticated stop for its own healthy daemon. Changed or unknown files, stale ownership and active operations block removal. It removes only inventoried program files and empty managed directories; workspace data, control evidence and audit records remain. Other installations and plugin entries stay in place.
+
+After initialization read the [native workflow](native-workflow.md). Use `toolchain_inspect` and explicit `toolchain_prepare`, then reactivate. Before upgrading existing data, stop the connection, verify a backup/recovery copy and preserve historical receipt bytes. An older installation must not open newly upgraded native state. Versioned installation roots allow an exact rollback using the preserved prior state, not an old reader against new tables.

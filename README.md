@@ -1,10 +1,10 @@
-# EvoPilot 0.2.0 Preview
+# EvoPilot 0.3.0 Preview — implementation candidate
 
 Build domain models, assess quality, and prepare controlled execution through one Expert in Codex. Runtime owns execution and state, Harness owns QA and delivery standards, and Ontology owns domain modeling.
 
 [Quickstart](docs/installation.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/yeliang-wang/evopilot/releases/tag/v0.2.0) · [Contribute](CONTRIBUTING.md)
 
-0.2.0 Preview adds conversation-based private Workspace setup, project baselines and migration/recovery to the three-product workflow. Preview is not GA or blanket production acceptance. Review drafts and evidence before making business or publication decisions.
+This checkout implements the v0.3.0 standards correction. The exact candidate still requires acceptance and publication; the release links below refer to the previous published version. Native domain models use RDF/Turtle and SHACL; quality assets use Rego, OPA and Conftest. Project completion requires fixed requirements, actual collection receipts, both owner reports and the actual domain decision. Preview is not GA or blanket production acceptance.
 
 ## What can I do?
 
@@ -16,7 +16,7 @@ Build domain models, assess quality, and prepare controlled execution through on
 | Assess quality | Harness quality assessment | Rules, evidence, missing reports and quality results |
 | Plan and execute a goal | Runtime plan/execute | Immutable inputs, decisions, receipts and reconciliation |
 
-Missing evidence stays INDETERMINATE with Warning; it does not become PASS or trigger an automatic version bump. The installed parent can execute its deterministic Ontology validation and supplied-evidence Harness evaluation. Standalone Runtime requires trusted providers; arbitrary coding and deployment are unsupported.
+Missing, unknown, skipped or stale required evidence blocks completion. Warnings do not authorize an automatic version bump. The current native workflow separates execution status from semantic and quality results; standalone Runtime needs trusted providers. Arbitrary coding and deployment are unsupported. Start with the [native workflow](docs/native-workflow.md), [project standard](specifications/project/v1/README.md) and [locked toolchain](docs/native-toolchain.md).
 
 ## Three products, one entry
 
@@ -41,7 +41,7 @@ flowchart LR
 
 The daemon loads all three services; it does not start one process per product. See [process topology](docs/architecture/0002-local-process-topology.md).
 
-## Start with the portable bundle
+## Previous published bundle
 
 Use **Node 24.14.0**. Get `evopilot-0.2.0-preview.tar.gz` and `SHA256SUMS` from the exact [v0.2.0 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.2.0). Follow [checksum verification and extraction](docs/installation.md), then set canonical absolute paths to your extracted bundle and new isolated locations outside Git; their parent directories must exist. Public and private product data belong to the workspace, separate from installed program files:
 
@@ -56,8 +56,8 @@ codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json
 
 Select **EvoPilot v0.2 Preview**, then say: “Initialize my private Workspace, explain its directories, and guide me through the forward example.” The Expert inspects first, creates the Workspace only after your setup request, then explicitly activates the current chat. You can choose your own directories; no private GitHub repository is required. Initialization alone does not activate the chat. Inspect and guide requests stay passive; ordinary chats do not require EvoPilot.
 
-Your editable project defaults to `~/evopilot-workspace`; protected service state defaults to `~/.local/share/evopilot/workspaces/<id>`. The project may have its own private Git history. Service databases, control records, signing keys and private evidence stay outside EvoPilot source and distribution. See [Workspace](workspace/README.md) and the [27 Expert scenarios](docs/expert-scenarios.md).
+Your editable project defaults to `~/evopilot-workspace`; protected service state defaults to `~/.local/share/evopilot/workspaces/<id>`. The project may have its own private Git history. Service databases, control records, signing keys and private evidence stay outside EvoPilot source and distribution. See [Workspace](workspace/README.md) and the [current and historical Expert scenarios](docs/expert-scenarios.md).
 
-After installation, ordinary work happens through the Expert; routine CLI operations are not required. Native asset authoring needs no LLM callback. Advanced classification and legacy Catalog resolution need trusted callbacks. Continue with the [four first journeys](docs/first-journey.md), [capabilities](docs/capabilities.md), [source development](docs/development.md), or [troubleshooting](docs/recovery.md).
+For the current candidate, use the [native workflow](docs/native-workflow.md) and [current Expert journeys](docs/expert-scenarios.md). Its native validator platform is macOS arm64 with an explicit locked-toolchain preparation step; inspection never downloads dependencies. The legacy JSON authoring, classification and Catalog mutation routes are read-only historical compatibility. They cannot certify the corrected v1. Use [source development](docs/development.md) for this unreleased checkout and [recovery](docs/recovery.md) before changing installations.
 
 For help, use [support](SUPPORT.md); for sensitive reports, read [security](SECURITY.md). Licensed under [Apache-2.0](LICENSE); attribution is in [NOTICE](NOTICE).

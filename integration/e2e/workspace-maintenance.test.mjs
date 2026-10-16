@@ -13,6 +13,8 @@ import { inspectWorkspaceSnapshot as runtimeSnapshot } from '@evopilot-next/runt
 import { inspectWorkspaceSnapshot as harnessSnapshot } from '@evopilot-next/harness/workspace-migration';
 import { inspectWorkspaceSnapshot as ontologySnapshot } from '@evopilot-next/ontology/workspace-migration';
 import { sha256, stableSerialize } from '../../integration/compatibility/v1/reference.mjs';
+import { createHistoricalRuntime, createHistoricalHarness, createHistoricalOntology } from './fixtures/historical-products.mjs';
+// Seed historical records only; all maintenance and readback use current product APIs.
 const scope = { visibility: 'public', projectId: 'synthetic' };
 const read = (service, operation, input = {}) => service.execute({ operation, scope, input });
 let serial = 0;
@@ -26,7 +28,7 @@ async function setup(t, uncertain = false) {
   fs.writeFileSync(path.join(context.projectRoot, 'README.md'), 'Synthetic personal workspace\n', { mode: 0o600 });
   t.after(() => fs.rmSync(parent, { recursive: true, force: true }));
   const options = { workspaceRoot: context.stateRoot, workspaceId: context.workspaceId }, pins = {};
-  for (const [product, factory] of [['harness', createHarnessService], ['ontology', createOntologyService]]) {
+  for (const [product, factory] of [['harness', createHistoricalHarness], ['ontology', createHistoricalOntology]]) {
     const service = factory(options); service.initialize();
     const samples = JSON.parse(fs.readFileSync(new URL(product === 'harness' ? '../../projects/evopilot-harness/examples/synthetic-harnesses.json' : '../../projects/evopilot-ontology/examples/synthetic-models.json', import.meta.url)));
     const model = product === 'harness' ? samples[0].asset : samples.assets[0], input = { id: model.id, version: model.version };
@@ -37,7 +39,7 @@ async function setup(t, uncertain = false) {
   }
   const digest = 'sha256:' + 'b'.repeat(64);
   const resolve = ({ reference, workspace }) => ({ reference, workspace, scope, published: true, materialDigest: digest, descriptor: { kind: reference.product + '-composition/v1', digest } });
-  const service = createRuntimeService(options, { resolveHarness: resolve, resolveOntology: resolve, execute: claim => { if (uncertain) throw Error('Synthetic lost execution response'); return ({ claimId: claim.claimId, inputDigest: claim.inputDigest, pins: claim.pins, providerReceiptId: 'synthetic:finished', status: 'SUCCEEDED', result: { evaluation: 'PASS', evidenceDigest: digest } }); } });
+  const service = createHistoricalRuntime(options, { resolveHarness: resolve, resolveOntology: resolve, execute: claim => { if (uncertain) throw Error('Synthetic lost execution response'); return ({ claimId: claim.claimId, inputDigest: claim.inputDigest, pins: claim.pins, providerReceiptId: 'synthetic:finished', status: 'SUCCEEDED', result: { evaluation: 'PASS', evidenceDigest: digest } }); } });
   service.initialize(); write(service, 'project.create', { name: 'Synthetic' }); write(service, 'goal.create', { id: 'goal', description: 'Verified maintenance' });
   const prepared = write(service, 'run.prepare', { id: 'run', goalId: 'goal', ...pins, input: { schema: 'runtime-composition/v1', ontologyInstance: { entities: [], relations: [] }, harness: { mode: 'composed', evidence: {}, configuration: {} } } }).result;
   write(service, 'run.decide', { id: 'run', reviewDigest: prepared.reviewDigest, decision: 'APPROVE', humanEvidenceRef: 'synthetic:maintenance-approval' });

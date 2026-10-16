@@ -9,13 +9,14 @@ import { scenarioCatalogue, scenarioIds, guideNames, getScenario } from '../../d
 import { getGuide, scenarios } from '../../dist/expert/core/guide.js';
 import { loadInstalledProducts } from '../../dist/integration/composition.js';
 
+const nativeIds = ['V03-U01', 'V03-U02', 'V03-U03', 'V03-U04', 'V03-U05', 'V03-U06'];
 const root = fileURLToPath(new URL('../../', import.meta.url));
 
 test('V02 catalogue metadata: exact approved IDs, bidirectional guide coverage, required branches and existing E2E bindings', () => {
   const target = JSON.parse(readFileSync(new URL('../../governance/workspace-v02.json', import.meta.url)));
   assert.deepEqual(scenarioIds, target.scenarioIds);
   assert.equal(new Set(scenarioIds).size, 27);
-  assert.deepEqual(new Set(scenarios), new Set([...guideNames, ...scenarioIds]));
+  assert.deepEqual(new Set(scenarios), new Set([...guideNames, ...nativeIds, ...scenarioIds]));
   const documented = readFileSync(new URL('../../docs/expert-scenarios.md', import.meta.url), 'utf8');
   for (const entry of scenarioCatalogue) {
     assert(guideNames.includes(entry.guide));
@@ -30,8 +31,9 @@ test('V02 catalogue metadata: exact approved IDs, bidirectional guide coverage, 
       assert(existsSync(join(root, file)), `${entry.id}: missing actual test file ${file}`);
     }
     assert(documented.includes(`| ${entry.id} |`), `${entry.id} absent from user-facing catalogue`);
-    assert.deepEqual(getGuide(entry.id).useCase, entry);
-    assert(getGuide(entry.guide).useCases.some(item => item.id === entry.id));
+    assert.equal(getGuide(entry.id).useCase.id, entry.id);
+    assert.equal(getGuide(entry.id).useCase.historicalReadOnly, true);
+    assert.deepEqual(getGuide(entry.id).useCase.operations, getGuide(entry.guide).operations);
   }
   for (const guide of guideNames) assert(scenarioCatalogue.some(item => item.guide === guide), `orphan guide ${guide}`);
   const copy = getScenario('V02-A02'); copy.preconditions.length = 0;
@@ -41,7 +43,7 @@ test('V02 catalogue metadata: exact approved IDs, bidirectional guide coverage, 
   assert.throws(() => getScenario('V02-A99'), { code: 'INVALID_REQUEST' });
 });
 
-test('V02 catalogue contracts: real public owner capabilities contain every named operation without initializing state', async t => {
+test('Current guides: real public owner capabilities contain every named operation without initializing state', async t => {
   const scratch = realpathSync(mkdtempSync(join(tmpdir(), 'evopilot-expert-catalogue-')));
   t.after(() => rmSync(scratch, { force: true, recursive: true }));
   const workspaceRoot = join(scratch, 'not-created');
@@ -49,10 +51,10 @@ test('V02 catalogue contracts: real public owner capabilities contain every name
   const services = [apis.runtime.createRuntimeService, apis.harness.createHarnessService, apis.ontology.createOntologyService]
     .map(create => create({ workspaceRoot, workspaceId: 'catalogue-only' }));
   try {
-    const operations = new Set(services.flatMap(service => service.capabilities().operations));
-    for (const entry of scenarioCatalogue) for (const operation of entry.operations) {
+    const operations = new Set(services.flatMap(service => [...service.capabilities().operations, ...(service.capabilities().nativeOperations ?? [])]));
+    for (const id of nativeIds) for (const operation of getGuide(id).operations) {
       if (operation.startsWith('evopilot_v01_')) continue;
-      assert(operations.has(operation), `${entry.id}: operation ${operation} is absent from all actual owner capabilities`);
+      assert(operations.has(operation), `${id}: operation ${operation} is absent from all actual owner capabilities`);
     }
     assert.equal(existsSync(workspaceRoot), false);
   } finally { for (const service of services) service.close(); }
@@ -60,7 +62,7 @@ test('V02 catalogue contracts: real public owner capabilities contain every name
 
 test('V02-A01: actual compiled MCP reads all concrete guides with no config, activation or filesystem writes', () => {
   const initialize = { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'synthetic-catalogue-e2e', version: '0.2.0' } } };
-  const frames = [initialize, { jsonrpc: '2.0', id: 2, method: 'tools/list' }, ...scenarioIds.map((scenario, index) => ({ jsonrpc: '2.0', id: index + 3, method: 'tools/call', params: { name: 'evopilot_v01_guide', arguments: { scenario } } }))];
+  const frames = [initialize, { jsonrpc: '2.0', id: 2, method: 'tools/list' }, ...[...scenarioIds, ...nativeIds].map((scenario, index) => ({ jsonrpc: '2.0', id: index + 3, method: 'tools/call', params: { name: 'evopilot_v01_guide', arguments: { scenario } } }))];
   const child = spawnSync(process.execPath, ['--permission', '--allow-fs-read=' + root, join(root, 'dist/plugins/codex/server.js'), '--config', join(root, 'nonexistent-passive-guide-config.json')], {
     input: frames.map(frame => JSON.stringify(frame)).join('\n') + '\n', encoding: 'utf8', timeout: 10000, maxBuffer: 8 * 1024 * 1024, env: { ...process.env, OPENSSL_CONF: '/dev/null' },
   });
@@ -71,10 +73,10 @@ test('V02-A01: actual compiled MCP reads all concrete guides with no config, act
   for (const entry of scenarioCatalogue) for (const operation of entry.operations.filter(operation => operation.startsWith('evopilot_v01_'))) {
     assert(toolIds.has(operation), `${entry.id}: missing actual MCP tool ${operation}`);
   }
-  for (const [index, id] of scenarioIds.entries()) {
+  for (const [index, id] of [...scenarioIds, ...nativeIds].entries()) {
     const response = replies[index + 2].result.structuredContent;
     assert.equal(response.sessionActive, false); assert.equal(response.connection, null);
-    assert.equal(response.result.scenario, id); assert.deepEqual(response.result.useCase, getScenario(id));
+    assert.equal(response.result.scenario, id); assert.deepEqual(response.result.useCase, getGuide(id).useCase);
     assert.equal(response.result.authority, false);
   }
 });

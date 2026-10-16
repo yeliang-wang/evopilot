@@ -3,9 +3,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { NATIVE_CONTRACT_DIGEST } from '../integration/compatibility/v1/native.mjs';
 
-export const VERSION = '0.2.0';
-export const PIN = 'df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a';
+export const VERSION = '0.3.0';
+export const PIN = NATIVE_CONTRACT_DIGEST.slice(7);
+export const LEGACY_PIN = 'df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a';
 export const OWNERS = ['runtime', 'harness', 'ontology'];
 export const SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const sha = bytes => createHash('sha256').update(bytes).digest('hex');
@@ -130,11 +132,13 @@ export function readBundle(bundle) {
     const name = owner === 'stack' ? 'package.json' : 'node_modules/@evopilot-next/' + owner + '/package.json';
     const p = JSON.parse(app.get(name)); assert.equal(p.name, '@evopilot-next/' + owner); assert.equal(p.version, VERSION);
   }
-  assert.equal(sha(app.get('integration/compatibility/v1/reference.mjs')), PIN);
-  assert.equal(sha(app.get('dist/integration/compatibility/v1/reference.mjs')), PIN);
+  assert.equal(sha(app.get('integration/compatibility/v1/reference.mjs')), LEGACY_PIN);
+  assert.equal(sha(app.get('dist/integration/compatibility/v1/reference.mjs')), LEGACY_PIN);
+  assert.equal(sha(app.get('integration/compatibility/v1/native.mjs')), PIN);
+  assert.equal(sha(app.get('dist/integration/compatibility/v1/native.mjs')), PIN);
   assert(app.has('dist/integration/compatibility/v1/reference.d.mts'));
   const contract = JSON.parse(app.get('integration/compatibility/v1/manifest.json'));
-  assert.equal(contract.sha256, PIN); assert.equal(contract.module, 'reference.mjs'); assert.equal(contract.contractRevision, '1.0.0');
+  assert.equal(contract.sha256, PIN); assert.equal(contract.module, 'native.mjs'); assert.equal(contract.contractRevision, '1.1.0'); assert.equal(contract.legacySha256, LEGACY_PIN);
   return { manifest: m, bytes, app };
 }
 export async function installPreview({ bundle, root, workspaceRoot = null, workspaceId = null, installationId }) {

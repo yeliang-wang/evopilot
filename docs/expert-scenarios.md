@@ -1,4 +1,30 @@
-# Expert scenarios — v0.2.0 Preview
+# Expert scenarios — corrected-v1 candidate
+
+Current native journeys are returned by `evopilot_v01_guide`. Their actual
+operation sequence is in [Native workflow](native-workflow.md). Guidance and
+catalogue metadata do not certify installed Desktop behavior.
+
+| ID | User journey | Automated evidence locations |
+| --- | --- | --- |
+| V03-U01 | Workspace, explicit activation, pinned toolchain and default-off sessions | plugin, native-toolchain, native-connection |
+| V03-U02 | Forward requirements and independent project scope | native-project |
+| V03-U03 | Reverse extraction, public/private and fixed source provenance | native-project |
+| V03-U04 | Actual collection, native quality, missing or failed evidence | native-collection, native-composition |
+| V03-U05 | Exact owner receipts, domain review and complete project criteria | native-composition, native-project |
+| V03-U06 | Source drift, isolated rounds, history and no-redispatch recovery | native-collection, native-project |
+
+Names refer to `integration/e2e/<name>.test.mjs`. Real Host verification, native
+independent replay and the fixed v0.3 acceptance variants remain separate
+requirements. Passing a synthetic journey does not mark those requirements done.
+
+## Historical v0.2 scenario catalogue
+
+The following retained table documents the old scope. Current guide responses
+mark these IDs historical and route new work to corrected-v1 operations. Retired
+JSON/classification/Catalog writes are not enabled by this catalogue. Workspace
+initialization, attachment, session isolation and maintenance remain supported;
+new assets use native standards and exact project completion gates.
+
 
 EvoPilot provides one Expert through the Codex plugin. Select the plugin and describe your task. Ordinary chats remain unaffected; information-only requests stay passive. The stable MCP tool `evopilot_v01_guide` accepts the IDs below or the seven historical guide names. The catalogue is a capability and acceptance contract, not a claim that a particular installation has passed acceptance.
 
