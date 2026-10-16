@@ -28,6 +28,26 @@ test('native toolchain requires preparation; doctor never fetches on cold/offlin
   } finally { fs.rmSync(root, { recursive: true, force: true }); }
 });
 
+test('failed locked downloads expose bounded diagnostics and never retain partial artifacts', async () => {
+  const original = globalThis.fetch;
+  for (const [code, failure] of [
+    ['TOOLCHAIN_DOWNLOAD_TIMEOUT', new DOMException('synthetic timeout', 'TimeoutError')],
+    ['TOOLCHAIN_DOWNLOAD_NETWORK', new TypeError('synthetic network details must not escape')],
+    ['TOOLCHAIN_DOWNLOAD', null],
+  ]) {
+    const root = fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()), 'evopilot-download-failure-'));
+    try {
+      globalThis.fetch = async () => { if (failure) throw failure; return new Response('unavailable', { status: 503 }); };
+      await assert.rejects(prepareNativeToolchain({ cacheRoot: root }), error => {
+        assert.equal(error.code, code); assert(!error.message.includes('synthetic'));
+        return true;
+      });
+      assert.deepEqual(fs.readdirSync(root), ['downloads']);
+      assert.deepEqual(fs.readdirSync(path.join(root, 'downloads')), []);
+    } finally { globalThis.fetch = original; fs.rmSync(root, { recursive: true, force: true }); }
+  }
+});
+
 test('pinned distribution reconstructs offline and detects executable, dependency, pyc and configuration drift', { timeout: 120_000 }, async () => {
   if (process.platform !== 'darwin' || process.arch !== 'arm64') {
     assert.throws(() => inspectBundledToolchainLock(), { code: 'TOOLCHAIN_UNSUPPORTED_PLATFORM' }); return;

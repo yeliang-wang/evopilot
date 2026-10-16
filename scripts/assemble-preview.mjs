@@ -14,10 +14,12 @@ export const PARENT_FILES = ['package.json', 'README.md', 'LICENSE', 'NOTICE', '
   'scripts/manage-preview.mjs', 'scripts/verify-native-acceptance.mjs', 'scripts/verify-workspace-acceptance.mjs', 'scripts/verify-local-acceptance.mjs', 'scripts/roadmap.mjs'];
 export function collect(root, names) {
   const files = new Map();
+  const metadata = name => name.split('/').some(part => part === '.DS_Store' || part === '__MACOSX' || part.startsWith('._'));
   for (const name of names) {
     safeRelative(name); const full = path.join(root, name); canonical(full);
-    if (fs.lstatSync(full).isDirectory()) for (const [rel, bytes] of tree(full).files) files.set(name + '/' + rel, bytes);
-    else files.set(name, regular(full));
+    if (fs.lstatSync(full).isDirectory()) {
+      for (const [rel, bytes] of tree(full).files) if (!metadata(name + '/' + rel)) files.set(name + '/' + rel, bytes);
+    } else if (!metadata(name)) files.set(name, regular(full));
   }
   return files;
 }

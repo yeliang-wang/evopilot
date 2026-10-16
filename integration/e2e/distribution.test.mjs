@@ -102,6 +102,14 @@ test('distribution pure guards and parent portable whitelist', () => {
   assert(files.has('scripts/manage-preview.mjs')); assert(!files.has('scripts/assemble-preview.mjs'));
   assert.equal(inventory(files).length, files.size);
 });
+test('distribution excludes Finder metadata without deleting source files or hidden configuration', t => {
+  const root = temp(t);
+  const names = ['docs/.DS_Store', 'docs/._README.md', 'docs/__MACOSX/file', 'docs/README.md', 'docs/.gitignore'];
+  for (const name of names) put(root, name, Buffer.from('synthetic packaging fixture'));
+  const files = collect(root, ['docs']);
+  assert.deepEqual([...files.keys()].sort(), ['docs/.gitignore', 'docs/README.md']);
+  for (const name of names) assert(fs.existsSync(path.join(root, name)));
+});
 test('CLI help is standalone and strict (no source children required)', () => {
   for (const script of ['assemble-preview', 'manage-preview']) {
     const run = args => spawnSync(process.execPath, [path.join(SOURCE, 'scripts/' + script + '.mjs'), ...args], { timeout: 5000, encoding: 'utf8', env: { ...process.env, OPENSSL_CONF: '/dev/null' } });
