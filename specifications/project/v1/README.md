@@ -29,6 +29,15 @@ target, source, observed/inferred status and a precise line range or JSON pointe
 The fragment digest is recomputed from actual source bytes. Inferred mappings
 require rationale and must appear in the exact domain review.
 
+For each owner requirement, the set of source paths reached by its mappings must
+equal that requirement's frozen `sourceIds`. Including a file in the inventory
+or package does not establish this link. Missing links and mappings to additional,
+unreviewed sources fail with `PROJECT_SOURCE_COVERAGE`, even when all native
+rule cases pass. Each mapping must identify a target, source fragment and modeling
+rationale; creating arbitrary links to satisfy the set is not semantic acceptance.
+Correcting these links changes the package and review digests and requires a new
+candidate and domain review. Historical deliveries and decisions remain unchanged.
+
 ## Candidate isolation and validation
 
 Before completion, each candidate lives at

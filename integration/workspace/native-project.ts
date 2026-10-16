@@ -86,10 +86,15 @@ export function createNativeProjectService(context:NativeProjectContext,trusted:
   function roots(scope:NativeScope,create=false){safeContext(context);scopeCheck(scope);const rel=scope.visibility+'/projects/'+scope.projectId;const project=create?mkdir(context.projectRoot,rel):path.join(context.projectRoot,rel);if(exists(project))privateDirectory(project);const retainedRel='state/project-standards/'+scope.visibility+'/'+scope.projectId;const retained=create?mkdir(context.stateRoot,retainedRel):path.join(context.stateRoot,retainedRel);if(exists(retained))privateDirectory(retained);return{project,retained};}
   // Candidate files are isolated until Runtime completion is verified. Never mutate a current project during preparation.
   function candidateRoot(scope:NativeScope,id:string,create=false):string{slug(id);const {project}=roots(scope);const relative='campaigns/native-v1/'+id+'/project';return create?mkdir(project,relative):path.join(project,relative);}
-  function record(scope:NativeScope,id:string):FrozenProject{slug(id);const {retained}=roots(scope);const value=json(path.join(retained,'frozen',id+'.json')) as FrozenProject;if(value.digest!==recordDigest(value,'digest')||value.candidate.reviewDigest!==recordDigest(value.candidate,'reviewDigest')||!same(value.candidate.scope,scope)||value.candidate.id!==id)fail('PROJECT_STATE_CORRUPT');if(value.candidate.projectStandardDigest!==inspectProjectStandard().standardDigest||value.candidate.contractDigest!==NATIVE_CONTRACT_DIGEST)fail('STANDARD_MISMATCH');return value;}
+  function record(scope:NativeScope,id:string,current=true):FrozenProject{slug(id);const {retained}=roots(scope);const value=json(path.join(retained,'frozen',id+'.json')) as FrozenProject;if(value.digest!==recordDigest(value,'digest')||value.candidate.reviewDigest!==recordDigest(value.candidate,'reviewDigest')||!same(value.candidate.scope,scope)||value.candidate.id!==id)fail('PROJECT_STATE_CORRUPT');if(current&&(value.candidate.projectStandardDigest!==inspectProjectStandard().standardDigest||value.candidate.contractDigest!==NATIVE_CONTRACT_DIGEST))fail('STANDARD_MISMATCH');return value;}
   function findAll(scope:NativeScope,sourceScope:NativeSourceScope):FrozenProject[]{
     const {retained}=roots(scope),directory=path.join(retained,'frozen');if(!exists(directory))fail('PROJECT_SCOPE_NOT_FROZEN');
-    const matches=fs.readdirSync(directory).filter(n=>n.endsWith('.json')).sort().map(n=>record(scope,n.slice(0,-5))).filter(v=>same(v.candidate.sourceScope,sourceScope));
+    // Integrity-check all retained candidates before excluding retired standards.
+    // Historical presence must not prevent new candidates, nor authorize old ones.
+    const standardDigest=inspectProjectStandard().standardDigest;
+    const matches=fs.readdirSync(directory).filter(n=>n.endsWith('.json')).sort()
+      .map(n=>record(scope,n.slice(0,-5),false))
+      .filter(v=>v.candidate.projectStandardDigest===standardDigest&&v.candidate.contractDigest===NATIVE_CONTRACT_DIGEST&&same(v.candidate.sourceScope,sourceScope));
     if(!matches.length)fail('PROJECT_SCOPE_NOT_FROZEN');return matches;
   }
   function find(scope:NativeScope,sourceScope:NativeSourceScope,assetDigests?:{ontology:string;harness:string}):FrozenProject{
@@ -112,7 +117,31 @@ export function createNativeProjectService(context:NativeProjectContext,trusted:
     }
     return{digest:nativeSha256(all),inferred:inferred.sort()};
   }
-  function coverage(f:FrozenProject,packages:Materialization['packages']):void{for(const owner of ['ontology','harness'] as const){const pkg=packages[owner],b=packageBindings(pkg),required=f.candidate.requirements.ownerRequirements.filter(r=>r.criterionId.startsWith(owner+':'));if(!same(required.map(r=>r.criterionId).sort(),b.requirements.filter(r=>r.required).map(r=>r.id).sort()))fail('PROJECT_COVERAGE');for(const req of required){let cases:string[];if(owner==='ontology'){const ep=pkg.manifest.entrypoints.cases;if(typeof ep!=='string')fail('PROJECT_COVERAGE');const value=JSON.parse(pkg.files[ep]);cases=value.cases.filter((c:{requirementIds:string[]})=>c.requirementIds.includes(req.criterionId)).map((c:{id:string})=>c.id);}else{const ep=pkg.manifest.entrypoints.coverage;if(typeof ep!=='string')fail('PROJECT_COVERAGE');const value=JSON.parse(pkg.files[ep]);const q=value.requirements.find((r:{id:string})=>r.id===req.criterionId);if(!q)fail('PROJECT_COVERAGE');cases=[...q.caseIds,'actual-observation'];}if(!same([...req.variantIds].sort(),cases.sort())||!b.mappings.some(m=>m.requirementId===req.criterionId))fail('PROJECT_COVERAGE');}}}
+  function coverage(f:FrozenProject,packages:Materialization['packages']):void{
+    for(const owner of ['ontology','harness'] as const){
+      const pkg=packages[owner],b=packageBindings(pkg);
+      const required=f.candidate.requirements.ownerRequirements.filter(r=>r.criterionId.startsWith(owner+':'));
+      if(!same(required.map(r=>r.criterionId).sort(),b.requirements.filter(r=>r.required).map(r=>r.id).sort()))fail('PROJECT_COVERAGE');
+      for(const req of required){
+        const mappings=b.mappings.filter(m=>m.requirementId===req.criterionId);
+        const mappedSources=new Set(mappings.map(m=>b.sources.find(s=>s.id===m.sourceId)?.locator));
+        // Packaged source bytes alone cannot prove that each reviewed input was used.
+        if(mappedSources.has(undefined)||!same([...mappedSources].sort(),[...new Set(req.sourceIds)].sort()))
+          fail('PROJECT_SOURCE_COVERAGE','Requirement source mappings differ from reviewed scope: '+req.criterionId);
+        let cases:string[];
+        if(owner==='ontology'){
+          const ep=pkg.manifest.entrypoints.cases;if(typeof ep!=='string')fail('PROJECT_COVERAGE');
+          const value=JSON.parse(pkg.files[ep]);
+          cases=value.cases.filter((c:{requirementIds:string[]})=>c.requirementIds.includes(req.criterionId)).map((c:{id:string})=>c.id);
+        }else{
+          const ep=pkg.manifest.entrypoints.coverage;if(typeof ep!=='string')fail('PROJECT_COVERAGE');
+          const value=JSON.parse(pkg.files[ep]),q=value.requirements.find((r:{id:string})=>r.id===req.criterionId);
+          if(!q)fail('PROJECT_COVERAGE');cases=[...q.caseIds,'actual-observation'];
+        }
+        if(!same([...req.variantIds].sort(),cases.sort()))fail('PROJECT_COVERAGE');
+      }
+    }
+  }
   function layout(f:FrozenProject,m:Materialization):void{const project=candidateRoot(f.candidate.scope,f.candidate.id),spec=JSON.parse(readRegular(path.join(codeRoot,'specifications/project/v1/directory-layout.json')).toString());for(const relative of spec.requiredDirectories)privateDirectory(path.join(project,relative));for(const relative of spec.requiredFiles){const p=relative.replace('<candidateId>',f.candidate.id);readRegular(path.join(project,p),MAX_TOTAL,true);}const manifest=json(path.join(project,'project-manifest.json')) as Record<string,unknown>;if(manifest.schema!=='evopilot-project-manifest/v1'||manifest.candidateDigest!==f.candidate.reviewDigest||manifest.projectStandardDigest!==f.candidate.projectStandardDigest||manifest.contractDigest!==NATIVE_CONTRACT_DIGEST||!same(manifest.standardPins,f.candidate.standardPins)||!same(manifest.sourceScope,f.candidate.sourceScope)||!same(manifest.packages,{ontology:nativePackageDigest(m.packages.ontology),harness:nativePackageDigest(m.packages.harness)}))fail('PROJECT_MANIFEST');if(!same(json(path.join(project,'scope/requirements.json')),f.candidate.requirements)||!same(json(path.join(project,'sources/inventory.json')),f.candidate.inventory)||!same(json(path.join(project,'acceptance/contracts',f.candidate.id+'.json')),f.candidate.nativeRequirements))fail('PROJECT_MANIFEST');
     for(const owner of ['ontology','harness'] as const){const pkg=m.packages[owner],dir=path.join(project,owner,pkg.manifest.id);if(!same(json(path.join(dir,'package.json')),pkg.manifest))fail('PROJECT_MANIFEST');const paths:string[]=[];function walk(p:string,rel:string){privateDirectory(p);for(const name of fs.readdirSync(p)){const next=rel?rel+'/'+name:name,full=path.join(p,name),st=fs.lstatSync(full);if(st.isDirectory())walk(full,next);else{const bytes=readRegular(full,MAX_FILE,true);paths.push(next);if(next!=='package.json'&&pkg.files[next]!==bytes.toString())fail('PROJECT_ASSET_DRIFT');}}}walk(dir,'');if(!same(paths.sort(),['package.json',...Object.keys(pkg.files)].sort()))fail('PROJECT_DIRECTORY');for(const rel of spec[owner+'Directories'])privateDirectory(path.join(dir,rel));}
     const b=checkBindings(f,m.packages);if(!same(json(path.join(project,'sources/bindings.json')),{schema:'evopilot-project-source-bindings/v1',candidateDigest:f.candidate.reviewDigest,bindingsDigest:b.digest,packages:{ontology:packageBindings(m.packages.ontology),harness:packageBindings(m.packages.harness)}}))fail('PROJECT_BINDINGS');

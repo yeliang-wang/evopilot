@@ -24,6 +24,12 @@ native standards; the parent defines the [project contract](../specifications/pr
    instances, SHACL shapes and positive/negative cases. Harness requires Rego,
    configuration, rule catalog, cases and explicit missing-input behavior. Both
    include precise source mappings and observed/inferred status.
+   For each requirement, mappings must cover exactly its reviewed `sourceIds`.
+   A source file copied into the package without a mapping does not count.
+   `PROJECT_SOURCE_COVERAGE` identifies a gap between the frozen source set and
+   the mapped sources. Repair the grounded target/fragment/rationale links in a
+   new candidate, validate again, and obtain an exact domain review; do not
+   narrow the source set or reuse the previous candidate's decision.
 4. `native_project.materialize` writes the package into an isolated candidate
    project; `check-layout` compares the exact bytes, directory, scope and cases.
    `candidate-location` returns its path. Existing current assets remain intact.
@@ -80,3 +86,10 @@ candidate ID. Equivalent source/requirement scopes may coexist. Exact asset
 checks select the matching package digests; they never reuse a different draft’s
 domain decision. Duplicate matching asset candidates are ambiguous and must be
 resolved explicitly. Old candidate files and receipts remain unchanged.
+
+Verified frozen candidates under a retired project standard remain historical.
+Source and requirement resolution selects only candidates under the installed
+standard; old records cannot prevent a corrected candidate from being prepared.
+Their integrity is still checked, explicit old-candidate operations fail with
+`STANDARD_MISMATCH`, and the resolver never falls back to an old standard when
+no current candidate exists.

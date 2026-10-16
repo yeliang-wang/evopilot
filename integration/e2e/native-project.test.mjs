@@ -11,6 +11,32 @@ import { syntheticHarnessPackage, replaceNativeFile } from '../../projects/evopi
 
 import {fixture,freeze,write} from './fixtures/native-project.mjs';
 
+test('current source resolution coexists with verified retired-standard candidates without reactivating them', async () => {
+  const f=fixture('forward','private');
+  try {
+    const legacy=structuredClone(await freeze(f));
+    legacy.candidate.projectStandardDigest=nativeSha256('synthetic-retired-standard');
+    const {reviewDigest,...candidateSubject}=legacy.candidate;
+    legacy.candidate.reviewDigest=nativeSha256(candidateSubject);
+    const {digest,...frozenSubject}=legacy;legacy.digest=nativeSha256(frozenSubject);
+    const directory=path.join(f.stateRoot,'state/project-standards/private',f.scope.projectId,'frozen');
+    const oldPath=path.join(directory,f.input.id+'.json');write(oldPath,legacy);
+    const retained=fs.readFileSync(oldPath);
+    const current=await freeze(f,{...f.input,id:'current-standard-candidate'});
+    const query={scope:f.scope,sourceScope:current.candidate.sourceScope};
+    assert.deepEqual(f.service.inspectSource(query),current.candidate.sourceScope);
+    assert.deepEqual(f.service.resolveRequirements(query),current.candidate.nativeRequirements);
+    assert.throws(()=>f.service.checkLayout({scope:f.scope,id:f.input.id}),{code:'STANDARD_MISMATCH'});
+    assert.deepEqual(fs.readFileSync(oldPath),retained);
+    const currentPath=path.join(directory,current.candidate.id+'.json');
+    fs.renameSync(currentPath,currentPath+'.held');
+    assert.throws(()=>f.service.inspectSource(query),{code:'PROJECT_SCOPE_NOT_FROZEN'});
+    fs.renameSync(currentPath+'.held',currentPath);
+    write(oldPath,{...legacy,digest:nativeSha256('synthetic-corruption')});
+    assert.throws(()=>f.service.inspectSource(query),{code:'PROJECT_STATE_CORRUPT'});
+  } finally {f.cleanup();}
+});
+
 for (const direction of ['forward', 'reverse']) for (const visibility of ['public', 'private']) {
   test(`${direction}/${visibility}: fixed scope, native assets, exact directory and explicit domain review`, async () => {
     const f = fixture(direction, visibility);
@@ -127,4 +153,29 @@ test('same reviewed source supports immutable corrected drafts without reusing a
     run.plan.pins.ontology.digest=nativeSha256('foreign');
     assert.throws(()=>f.service.verifyProject({project,run}),{code:'PROJECT_SCOPE_AMBIGUOUS'});
   } finally {f.cleanup();}
+});
+
+for (const owner of ['ontology', 'harness']) test(`source closure: ${owner} must map every independently required source`, async () => {
+  const f = fixture();
+  try {
+    const requirement = f.input.requirements.ownerRequirements.find(r => r.criterionId.startsWith(owner + ':'));
+    const pkg = f.packages[owner], key = pkg.manifest.sourceBindingRef;
+    const bindings = JSON.parse(pkg.files[key]), original = bindings.sources[0];
+    const filename = owner + '-additional.txt', contentPath = 'sources/additional.txt';
+    // A second independent input is required even though existing cases and mappings still pass.
+    write(path.join(f.source, filename), pkg.files[original.contentPath]);
+    requirement.sourceIds.push(filename);
+    await freeze(f);
+    await assert.rejects(f.service.materialize({ scope: f.scope, id: f.input.id, packages: f.packages }), { code: 'PROJECT_SOURCE_COVERAGE' });
+    // Merely copying the input into sources also cannot substitute for a requirement mapping.
+    bindings.sources.push({ ...original, id: 'additional', locator: filename, contentPath });
+    pkg.files[contentPath] = pkg.files[original.contentPath];
+    pkg.files[key] = JSON.stringify(bindings); rehash(pkg);
+    await assert.rejects(f.service.materialize({ scope: f.scope, id: f.input.id, packages: f.packages }), { code: 'PROJECT_SOURCE_COVERAGE' });
+    const target = bindings.mappings.find(m => m.requirementId === requirement.criterionId);
+    bindings.mappings.push({ ...target, sourceId: 'additional', rationale: 'Synthetic duplicate source reinforces this exact requirement; domain acceptance remains separate.' });
+    pkg.files[key] = JSON.stringify(bindings); rehash(pkg);
+    await f.service.materialize({ scope: f.scope, id: f.input.id, packages: f.packages });
+    assert.equal(f.service.checkLayout({ scope: f.scope, id: f.input.id }).conforms, true);
+  } finally { f.cleanup(); }
 });
