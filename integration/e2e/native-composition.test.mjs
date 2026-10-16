@@ -12,10 +12,11 @@ import { syntheticHarnessPackage, replaceNativeFile } from '../../projects/evopi
 
 import {fixture,freeze} from './fixtures/native-project.mjs';
 
-test('three actual products publish native packages, consume actual collection bytes and read both owner receipts before completion', { timeout: 120_000 }, async () => {
+for (const direction of ['forward', 'reverse']) for (const visibility of ['public', 'private'])
+test(`U03: ${direction} ${visibility} journey publishes native packages, consumes collection bytes and verifies both owner receipts`, { timeout: 120_000 }, async () => {
   assert.ok(process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN, 'Prepare the pinned native toolchain before native E2E');
   const toolchain = JSON.parse(fs.readFileSync(process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN, 'utf8'));
-  const f = fixture('reverse', 'private'), scope = f.scope;
+  const f = fixture(direction, visibility), scope = f.scope;
   for (const r of f.input.requirements.ownerRequirements) if (r.criterionId.startsWith('harness:')) r.origin = 'execution-result';
   const frozen = await freeze(f), samples = f.packages;
   await f.service.materialize({scope,id:f.input.id,packages:samples});
@@ -69,6 +70,17 @@ test('three actual products publish native packages, consume actual collection b
     composition.close(); composition = createComposition(options, apis, {}, trusted);
     const reread = await composition.native('runtime', { operation: 'project.inspect', scope, input: { id: project.id } });
     assert.equal(reread.complete.runId, run.plan.id);
+    assert.equal(reread.sourceScope.direction, direction);
+    assert.equal(reread.scope.visibility, visibility);
+    if (direction === 'forward') {
+      assert(reread.requirements.filter(r => !r.criterionId.startsWith('harness:')).every(r => r.origin === 'design-declaration'));
+      // No implementation/production attestation can be added to this exact
+      // design-snapshot completion by an unrecognised caller flag.
+      await assert.rejects(mutate('runtime', 'project.complete', {
+        id: project.id, runId: run.plan.id, reviewDigest: review.reviewDigest,
+        humanEvidenceRef: 'synthetic-design-review', productionReady: true,
+      }), /Unexpected|INVALID|Unknown|keys|field/i);
+    }
     f.setCompletion(reread);
     const promoted=await f.service.promote({scope,id:f.input.id,runtimeProjectId:project.id});
     assert.equal(promoted.completed,true);
@@ -101,6 +113,12 @@ test('three actual products publish native packages, consume actual collection b
     } finally {
       for (const id of moved.requiredKeyIds) fs.rmSync(path.join(os.homedir(),'.local/share/evopilot/relocation-keys',id+'.key'),{force:true});
     }
-    assert.equal(f.git('rev-parse','HEAD'),f.input.revision); assert.equal(f.git('status','--porcelain'), '');
+    if (direction === 'reverse') {
+      assert.equal(f.git('rev-parse','HEAD'),f.input.revision); assert.equal(f.git('status','--porcelain'), '');
+    } else {
+      assert.equal(fs.existsSync(path.join(f.source, '.git')), false);
+      assert.equal(fs.readFileSync(path.join(f.source, 'ontology.txt'), 'utf8'), samples.ontology.files['sources/source.txt']);
+      assert.equal(fs.readFileSync(path.join(f.source, 'harness.txt'), 'utf8'), samples.harness.files['sources/requirements.txt']);
+    }
   } finally { composition.close(); f.cleanup(); }
 });
