@@ -10,7 +10,7 @@ native standards; the parent defines the [project contract](../specifications/pr
    downloads. The verified native platform is currently macOS arm64 only.
    Download failures report `TOOLCHAIN_DOWNLOAD_TIMEOUT`,
    `TOOLCHAIN_DOWNLOAD_NETWORK`, or `TOOLCHAIN_DOWNLOAD` for an HTTP/bounds
-   failure. Each artifact download has a bounded five-minute total deadline,
+   failure. Each artifact download has a bounded fifteen-minute total deadline,
    including its response body; validation keeps its separate execution limits.
    The plugin returns a retained preparation status after admission; inspect
    progress with backoff. Do not repeat RUNNING/UNKNOWN requests or treat their
