@@ -14,6 +14,8 @@ After interruption, preserve request ID, journal and partial destination. Resume
 
 ## Connection recovery
 
+If selecting a candidate plugin still returns another installation, keep the session inactive. Check the installed plugin cache's MCP configuration against the candidate configuration path. Corrected installations use distinct `evopilot_<path-hash>` server names; older releases used one shared name and can collide when registered together. Refresh the candidate registration using the supported Codex plugin commands and reconnect in the Host. Do not overwrite the old installation or edit an inventoried `.mcp.json` in place. Only the actual `inspect` receipt can establish that the new connection is in use.
+
 Use Node 24.14.0 and the retained bundle's `app/scripts/manage-preview.mjs`, or the installed copy. ROOT is the canonical managed installation root.
 
 ```sh

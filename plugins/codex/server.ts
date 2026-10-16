@@ -2,7 +2,7 @@
 import { errorCode } from '../../integration/types.js';
 import type { Schema, MCPMessage, ActionPayload } from '../../integration/types.js';
 import path from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { inspectConnection, activateConnection, callConnection, withWorkspaceMaintenance } from '../../integration/connection/client.js';
 import { loadConfiguration } from '../../integration/connection/config.js';
 import { withWorkspaceLease } from '../../integration/workspace/lock.js';
@@ -74,8 +74,9 @@ if (argv.length !== 2 || argv[0] !== '--config' || !path.isAbsolute(argv[1]) || 
 }
 async function serve(configPath: string) {
   const sessionId = randomUUID();
+  const namespace = 'evopilot_' + createHash('sha256').update(configPath).digest('hex').slice(0, 16);
   let initialized = false, sessionActive = false, connection: Awaited<ReturnType<typeof inspectConnection>> | null = null;
-  const identity = () => ({ namespace: 'evopilot_v01_preview', sessionId, pid: process.pid, sessionActive, connection, authority: false });
+  const identity = () => ({ namespace, sessionId, pid: process.pid, sessionActive, connection, authority: false });
   const receipt = (result: unknown, error?: { code: string; correlation: unknown }) => {
     const data: ReturnType<typeof identity> & { result?: unknown; error?: { code: string; correlation: unknown }; correlation?: unknown } = { ...identity(), ...(error ? { error } : { result }) };
     return { content: [{ type: 'text', text: JSON.stringify(data) }], structuredContent: data, ...(error ? { isError: true } : {}) };

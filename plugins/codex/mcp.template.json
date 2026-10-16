@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "evopilot_v01_preview": {
+    "${mcpServerName}": {
       "command": "${nodeExecutable}",
       "args": [
         "${serverPath}",

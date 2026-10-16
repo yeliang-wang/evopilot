@@ -11,6 +11,9 @@ export const LEGACY_PIN = 'df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e
 export const OWNERS = ['runtime', 'harness', 'ontology'];
 export const SOURCE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const sha = bytes => createHash('sha256').update(bytes).digest('hex');
+// Codex addresses tools by MCP server name. Concurrent installations must not
+// share that key, even when their plugin/package names are the same.
+export const mcpServerName = configPath => 'evopilot_' + sha(Buffer.from(configPath)).slice(0, 16);
 export const json = value => Buffer.from(JSON.stringify(value, null, 2) + '\n');
 const hex = value => typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
 export function exact(value, keys) {
@@ -156,9 +159,9 @@ export async function installPreview({ bundle, root, workspaceRoot = null, works
   const { manifest, bytes, app } = readBundle(bundle);
   assert(!app.has('plugins/codex/.mcp.json'), 'Bundle contains live configuration');
   const template = JSON.parse(app.get('plugins/codex/mcp.template.json'));
-  assert.deepEqual(template, { mcpServers: { evopilot_v01_preview: { command: '${nodeExecutable}', args: ['${serverPath}', '--config', '${configPath}'] } } }, 'Unexpected MCP template');
-  const replacements = { '${nodeExecutable}': process.execPath, '${serverPath}': path.join(root, 'app/dist/plugins/codex/server.js'), '${configPath}': path.join(root, 'config.json') };
-  const render = v => typeof v === 'string' ? replacements[v] ?? v : Array.isArray(v) ? v.map(render) : Object.fromEntries(Object.entries(v).map(([k, val]) => [k, render(val)]));
+  assert.deepEqual(template, { mcpServers: { '${mcpServerName}': { command: '${nodeExecutable}', args: ['${serverPath}', '--config', '${configPath}'] } } }, 'Unexpected MCP template');
+  const replacements = { '${mcpServerName}': mcpServerName(path.join(root, 'config.json')), '${nodeExecutable}': process.execPath, '${serverPath}': path.join(root, 'app/dist/plugins/codex/server.js'), '${configPath}': path.join(root, 'config.json') };
+  const render = v => typeof v === 'string' ? replacements[v] ?? v : Array.isArray(v) ? v.map(render) : Object.fromEntries(Object.entries(v).map(([k, val]) => [replacements[k] ?? k, render(val)]));
   const rendered = json(render(template)); assert(!rendered.toString().includes('${'), 'Unresolved MCP template');
   app.set('plugins/codex/.mcp.json', rendered);
   const config = { schema: 'evopilot-connection-config/v1', version: VERSION, protocol: 'evopilot-connection/v1', installationId,

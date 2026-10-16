@@ -5,6 +5,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getGuide, scenarios } from '../../dist/expert/core/guide.js';
+import { mcpServerName } from '../../scripts/manage-preview.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const server = fileURLToPath(new URL('../../dist/plugins/codex/server.js', import.meta.url));
@@ -124,7 +125,7 @@ test('protocol fixture: verified session activation, once-only forwarding, struc
   assert(!JSON.stringify(out).includes('SECRET_PROVIDER'));
   assert.equal(data(out[11]).error.code,'SESSION_INACTIVE');
   assert.equal(data(out[12]).connection.active,true);
-  assert(out.slice(1).every(r=>data(r).namespace==='evopilot_v01_preview'));
+  assert(out.slice(1).every(r=>data(r).namespace===mcpServerName(config)));
   const other = run([init,call(2,'inspect')],true);
   assert.notEqual(data(other[1]).sessionId,data(out[1]).sessionId);
   assert.equal(data(other[1]).sessionActive,false);
@@ -217,7 +218,7 @@ test('distribution invariant and explicit entry metadata; not decision or Host a
   const manifest=JSON.parse(read('plugins/codex/.codex-plugin/plugin.json'));
   assert.equal(manifest.name,'evopilot-v01-preview'); assert.equal(manifest.mcpServers,'./.mcp.json');
   assert(manifest.interface.shortDescription.length>=25 && manifest.interface.shortDescription.length<=64);
-  const template=JSON.parse(read('plugins/codex/mcp.template.json')).mcpServers.evopilot_v01_preview;
+  const template=JSON.parse(read('plugins/codex/mcp.template.json')).mcpServers['${mcpServerName}'];
   assert.equal(template.command,'${nodeExecutable}');
   assert.deepEqual(template.args,['${serverPath}','--config','${configPath}']);
   for(const scenario of scenarios) {

@@ -6,7 +6,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { gzipSync } from 'node:zlib';
 import { assemblePreview, collect, installedMarkdown, PARENT_FILES } from '../../scripts/assemble-preview.mjs';
-import { SOURCE, PIN, OWNERS, sha, json, put, tree, portable, inventory, readBundle, argumentsFor, disjoint, installPreview, doctorPreview, stopPreview, recoverPreview, uninstallPreview } from '../../scripts/manage-preview.mjs';
+import { SOURCE, PIN, OWNERS, sha, json, put, tree, portable, inventory, readBundle, argumentsFor, disjoint, installPreview, doctorPreview, stopPreview, recoverPreview, uninstallPreview, mcpServerName } from '../../scripts/manage-preview.mjs';
 
 // PACKAGE FIXTURES ONLY. These do not execute or establish actual product acceptance.
 function tarEntry(name, bytes) {
@@ -131,7 +131,17 @@ test('PACKAGE FIXTURE: portable assembly, passive install, doctor, preservation 
   assert.equal(fs.statSync(path.join(root, 'config.json')).mode & 0o777, 0o600);
   assert.equal(fs.statSync(path.join(root, 'managed-install.json')).mode & 0o777, 0o600);
   const mcp = JSON.parse(fs.readFileSync(path.join(root, 'app/plugins/codex/.mcp.json')));
-  assert.equal(mcp.mcpServers.evopilot_v01_preview.command, process.execPath);
+  const namespace=mcpServerName(path.join(root,'config.json'));
+  assert.deepEqual(Object.keys(mcp.mcpServers),[namespace]);
+  assert.equal(mcp.mcpServers[namespace].command, process.execPath);
+  assert.match(namespace,/^evopilot_[0-9a-f]{16}$/);
+  const parallelRoot=path.join(base,'parallel-install');
+  await installPreview({...options,root:parallelRoot,workspaceRoot:null,workspaceId:null});
+  const parallelMcp=JSON.parse(fs.readFileSync(path.join(parallelRoot,'app/plugins/codex/.mcp.json')));
+  assert.notEqual(Object.keys(parallelMcp.mcpServers)[0],namespace);
+  assert.equal(Object.keys({...mcp.mcpServers,...parallelMcp.mcpServers}).length,2);
+  assert.equal((await doctorPreview({root:parallelRoot})).connection.active,false);
+  await uninstallPreview({root:parallelRoot});
   await assert.rejects(installPreview(options));
   put(root, 'unexpected.txt', Buffer.from('retain'));
   await assert.rejects(doctorPreview({ root })); await assert.rejects(uninstallPreview({ root }));

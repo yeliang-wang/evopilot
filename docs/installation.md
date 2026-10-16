@@ -39,6 +39,8 @@ Installation does not create a Workspace. Program files live under `preview_root
 
 The installer verifies the inventory, renders Codex configuration with the current Node executable, and creates the private managed descriptor and local marketplace. Changed bytes, unexpected files, symlinks and hardlinks fail validation. `doctor` checks configuration and performs passive inspection. Installation itself does not activate a daemon or register the plugin; the Codex commands above register it.
 
+Each installation receives a distinct MCP server name derived from its canonical configuration path. This keeps a candidate connection separate from a retained installation when both are registered. The plugin's display name alone does not prove which program is connected: before activation, inspect and compare its version, installation ID, root and digest. See [connection recovery](recovery.md#connection-recovery) if the Host still exposes an older connection.
+
 Select **EvoPilot v0.3 Preview** and request: “Inspect the installation, initialize my own Workspace, then activate and show the examples.” You may provide explicit project/state paths or use the defaults described in [Workspace](../workspace/README.md). Initialization is idempotent and does not overwrite an occupied directory or user edits. The Expert separately activates the current chat after successful setup. Existing users can request attachment of a validated, stopped Workspace; an already bound installation cannot silently switch to another Workspace.
 
 Inspect and guide requests remain passive. Ordinary work then happens through the Expert without routine CLI operations. See [first journeys](first-journey.md), [Codex](codex.md), [migration](migration.md) and [provider limits](capabilities.md).
