@@ -12,7 +12,8 @@ import { upgradeWorkspaceProject } from '../../integration/workspace/upgrade.js'
 import type { TemplateUpgradeInput } from '../../integration/workspace/upgrade.js';
 import type { WorkspaceSetupInput } from '../../integration/workspace/bootstrap.js';
 import { getGuide, scenarios } from '../../expert/core/guide.js';
-import { inspectNativeToolchain, prepareNativeToolchain, inspectBundledToolchainLock } from '../../integration/toolchain/locked.js';
+import { inspectNativeToolchain, inspectBundledToolchainLock } from '../../integration/toolchain/locked.js';
+import { inspectToolchainPreparation, startToolchainPreparation } from '../../integration/toolchain/preparation.js';
 
 const INPUT = 1048576, OUTPUT = 8388608;
 const prefix = 'evopilot_v01_';
@@ -42,7 +43,7 @@ const definitions: Record<string, [string, Schema]> = {
   native: ['Call a corrected-v1 owning product operation. Real collection, owner receipts and exact project completion gates remain mandatory.', object({ owner: { enum: ['runtime', 'harness', 'ontology'] }, envelope })],
   native_project: ['Prepare and inspect a corrected-v1 project candidate, freeze an actually reviewed scope, materialize native assets or record an exact domain review. Candidate files do not replace current deliveries. prepare-execution currently supports the installed Node toolchain only.', object({ operation: { enum: ['prepare', 'freeze', 'materialize', 'review-domain', 'inspect', 'check-layout', 'candidate-location', 'prepare-execution', 'promote'] }, input: { type: 'object' } })],
   toolchain_inspect: ['Verify the bundled native toolchain lock and local installed bytes without downloading or activating.', object()],
-  toolchain_prepare: ['Explicitly download and verify only bundled pinned native dependencies. Stops this Workspace connection; activate again after success.', object({ requestId: slug })],
+  toolchain_prepare: ['Start bounded preparation of bundled pinned dependencies and return a retained status. Inspect progress; never repeat a pending request. Deactivates this session; activate only after toolchain_inspect reports ready.', object({ requestId: slug })],
   dispatch: ['Dispatch one explicitly approved Runtime run without retry.', object({ args })],
   reconcile: ['Read retained provider evidence through Runtime reconciliation, without redispatch.', object({ args })],
   capabilities: ['Read actual composition capabilities after session activation.', object()],
@@ -140,18 +141,18 @@ async function serve(configPath: string) {
         let value;
         if (action === 'guide') value = getGuide(input.scenario);
         else if (action === 'toolchain_inspect') {
-          const lock = inspectBundledToolchainLock(), c = loadConfiguration(configPath);
+          const lock = inspectBundledToolchainLock(), c = loadConfiguration(configPath), preparation = inspectToolchainPreparation(configPath);
           try {
             const toolchain = inspectNativeToolchain({ cacheRoot: path.join(c.workspaceRoot, 'native-toolchain') });
-            value = { ready: true, lock, toolchain, authority: false };
+            value = { ready: true, lock, toolchain, preparation, authority: false };
           } catch (error) {
             const code = errorCode(error);
             if (code !== 'ENOENT' && code !== 'TOOLCHAIN_NOT_READY') throw error;
-            value = { ready: false, lock, diagnostic: 'TOOLCHAIN_NOT_READY', nextAction: 'toolchain_prepare', authority: false };
+            value = { ready: false, lock, preparation, diagnostic: 'TOOLCHAIN_NOT_READY', nextAction: preparation && ['RUNNING','UNKNOWN'].includes(preparation.status) ? 'toolchain_inspect' : 'toolchain_prepare', authority: false };
           }
         } else if (action === 'toolchain_prepare') {
           try {
-            value = await withWorkspaceMaintenance(configPath, input.requestId, async c => ({ ready: true, toolchain: await prepareNativeToolchain({ cacheRoot: path.join(c.workspaceRoot, 'native-toolchain') }), authority: false }));
+            value = await startToolchainPreparation(configPath, input.requestId);
           } finally { sessionActive = false; connection = await inspectConnection(configPath); }
         }
         else if (action === 'workspace_inspect') value = inspectWorkspace(configPath);

@@ -33,7 +33,16 @@ builds check their exact bytes. `manifest.json` records each generated file and
 the TypeScript source digests. Native validation still verifies the executable and
 complete dependency content rather than trusting that metadata alone.
 
-In the Codex plugin, `toolchain_inspect` checks the bound Workspace cache;
-`toolchain_prepare` explicitly prepares it and deactivates this connection before
-changes. Activate again afterward. Readiness is not an asset approval, project
-completion or Host acceptance result.
+In the Codex plugin, `toolchain_inspect` checks the bound Workspace cache.
+`toolchain_prepare` deactivates this session, stops the connection and returns
+after admission. Downloads continue in that adapter while it remains alive;
+the Workspace maintenance lease prevents concurrent preparation or activation.
+Inspect progress with backoff. A retained `RUNNING` receipt is not readiness.
+The same request ID reads its receipt without dispatching again. Another process
+reports an unfinished receipt as `UNKNOWN`; diagnose the original operation and
+retain its evidence rather than changing request IDs to bypass uncertainty.
+After a terminal `FAILED`, an explicitly authorized new request can reuse only
+complete hash-verified downloads. No partial artifact is cached. Each artifact
+has a five-minute body deadline; there is no automatic download retry.
+Activate only after inspection verifies `ready=true`. Readiness is not an asset
+approval, project completion or Host acceptance result.

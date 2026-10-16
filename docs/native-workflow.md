@@ -12,8 +12,10 @@ native standards; the parent defines the [project contract](../specifications/pr
    `TOOLCHAIN_DOWNLOAD_NETWORK`, or `TOOLCHAIN_DOWNLOAD` for an HTTP/bounds
    failure. Each artifact download has a bounded five-minute total deadline,
    including its response body; validation keeps its separate execution limits.
-   Inspect readiness before retrying preparation after connectivity is
-   restored. Only complete hash-verified downloads are reused; partial downloads
+   The plugin returns a retained preparation status after admission; inspect
+   progress with backoff. Do not repeat RUNNING/UNKNOWN requests or treat their
+   receipts as readiness. A terminal FAILED operation can be followed by an
+   explicitly authorized new request after diagnosis. Only complete hash-verified downloads are reused; partial downloads
    cannot make the toolchain ready. No business collection or Run is dispatched
    by preparation.
 2. Read both owners' `standard.inspect` through `evopilot_v01_native`.
