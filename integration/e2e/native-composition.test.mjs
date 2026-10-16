@@ -1,3 +1,4 @@
+import { syntheticDecisionEvidence } from './fixtures/decision-evidence.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -28,6 +29,7 @@ test(`U03: ${direction} ${visibility} journey publishes native packages, consume
   const trusted = {toolchain,...collector,inspectSource:f.service.inspectSource,resolveRequirements:f.service.resolveRequirements,verifyProject:f.service.verifyProject};
   let composition = createComposition(options, apis, {}, trusted), sequence = 0;
   const mutate = async (owner, operation, input) => {
+    if(input.humanEvidenceRef?.startsWith('synthetic'))input={...input,humanEvidenceRef:syntheticDecisionEvidence(f.root,{owner,operation,workspaceId:options.workspaceId,scope,reviewDigest:input.reviewDigest,decision:input.decision??'APPROVE'})};
     const expectedRevision = owner === 'runtime' ? (await composition.native(owner, { operation: 'workspace.inspect', scope, input: {} })).revision : composition.inspect(owner, scope).revision;
     return composition.native(owner, { operation, scope, input, requestId: 'request-' + (++sequence), expectedRevision });
   };

@@ -93,3 +93,5 @@ standard; old records cannot prevent a corrected candidate from being prepared.
 Their integrity is still checked, explicit old-candidate operations fail with
 `STANDARD_MISMATCH`, and the resolver never falls back to an old standard when
 no current candidate exists.
+
+Before a new decision, retain the actual authorization source and bind it using the [decision evidence format](native-decisions.md). Opaque approval labels no longer authorize new native work; historical receipts remain unchanged.

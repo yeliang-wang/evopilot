@@ -54,7 +54,7 @@ const nativeScenarios: Record<string, { guide: keyof typeof guides; title: strin
   'V03-U06': { guide: 'recovery', title: 'Source changes, history, no redispatch and retained errors', tests: ['integration/e2e/native-collection.test.mjs', 'integration/e2e/native-project.test.mjs'] },
 };
 // Guides are pure; installed paths resolve against a verified installationRoot.
-export const sourceReferences = Object.freeze(['specifications/project/v1/README.md', 'docs/native-workflow.md', 'docs/first-journey.md', 'docs/product-composition.md', 'projects/evopilot-ontology/docs/service.md', 'projects/evopilot-ontology/docs/classification-service.md', 'projects/evopilot-ontology/docs/legacy-api.md', 'projects/evopilot-ontology/docs/catalog-service.md', 'projects/evopilot-ontology/specifications/', 'projects/evopilot-ontology/schemas/', 'projects/evopilot-harness/specifications/', 'projects/evopilot-harness/docs/service.md', 'projects/evopilot-runtime/docs/service.md']);
+export const sourceReferences = Object.freeze(['specifications/project/v1/README.md', 'docs/native-workflow.md', 'docs/native-decisions.md', 'docs/first-journey.md', 'docs/product-composition.md', 'projects/evopilot-ontology/docs/service.md', 'projects/evopilot-ontology/docs/classification-service.md', 'projects/evopilot-ontology/docs/legacy-api.md', 'projects/evopilot-ontology/docs/catalog-service.md', 'projects/evopilot-ontology/specifications/', 'projects/evopilot-ontology/schemas/', 'projects/evopilot-harness/specifications/', 'projects/evopilot-harness/docs/service.md', 'projects/evopilot-runtime/docs/service.md']);
 export const installedReference = (reference: string) => reference.replace(/^projects\/evopilot-(runtime|harness|ontology)\//, 'node_modules/@evopilot-next/$1/');
 export const scenarios = Object.freeze([...Object.keys(guides), ...Object.keys(nativeScenarios), ...scenarioIds]);
 export function getGuide(scenario: string) {
@@ -73,7 +73,7 @@ export function getGuide(scenario: string) {
       'Respect public/private and exact project scope. Public visibility is not permission to upload; private material cannot feed public consumers.',
       'Extensions are inert namespaced data; unknown required extensions block use. Child schemas/templates are authoritative.',
       'Every mutation uses an explicit requestId and expectedRevision; owner validates operational payloads. No automatic CAS refresh or replay.',
-      'Honor real human APPROVE/REJECT decisions on the current review. Never invent humanEvidenceRef or other evidence references.',
+      'Honor real human APPROVE/REJECT decisions on the current review. Never invent humanEvidenceRef or other evidence references. For new native decisions, use docs/native-decisions.md: a digest-pinned local evidence record and authorization source, bound to the exact owner, operation, workspace, scope and review. File integrity does not authenticate a human; only record authorization actually received.',
       'Model output, calculation, tests and delivery are not approval, acceptance or release authority.',
       'Use synthetic acceptance fixtures only when validation with synthetic data was explicitly requested.',
     ],

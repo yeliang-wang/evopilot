@@ -277,6 +277,7 @@ test('pure guide maps every source reference to the installed package layout', (
   const expectedPaths = [
     '/managed/evopilot/app/specifications/project/v1/README.md',
     '/managed/evopilot/app/docs/native-workflow.md',
+    '/managed/evopilot/app/docs/native-decisions.md',
     '/managed/evopilot/app/docs/first-journey.md',
     '/managed/evopilot/app/docs/product-composition.md',
     '/managed/evopilot/app/node_modules/@evopilot-next/ontology/docs/service.md',

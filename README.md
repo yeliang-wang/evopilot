@@ -61,3 +61,5 @@ Your editable project defaults to `~/evopilot-workspace`; protected service stat
 For the current candidate, use the [native workflow](docs/native-workflow.md) and [current Expert journeys](docs/expert-scenarios.md). Its native validator platform is macOS arm64 with an explicit locked-toolchain preparation step; inspection never downloads dependencies. The legacy JSON authoring, classification and Catalog mutation routes are read-only historical compatibility. They cannot certify the corrected v1. Use [source development](docs/development.md) for this unreleased checkout and [recovery](docs/recovery.md) before changing installations.
 
 For help, use [support](SUPPORT.md); for sensitive reports, read [security](SECURITY.md). Licensed under [Apache-2.0](LICENSE); attribution is in [NOTICE](NOTICE).
+
+Native approvals bind readable, digest-pinned evidence to the exact review, Workspace and operation. See [decision evidence](docs/native-decisions.md) for the format, historical readback and trusted-operator boundary.

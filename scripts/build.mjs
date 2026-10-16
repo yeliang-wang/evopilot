@@ -13,7 +13,7 @@ if (result.error) throw result.error;
 if (result.status !== 0) process.exit(result.status ?? 1);
 const target = new URL('../dist/integration/compatibility/v1/', import.meta.url);
 await mkdir(target, { recursive: true });
-for (const name of ['reference.mjs', 'manifest.json', 'reference.d.mts', 'native.mjs', 'native.d.mts']) {
+for (const name of ['reference.mjs', 'manifest.json', 'reference.d.mts', 'native.mjs', 'native.d.mts', 'decision-evidence.mjs', 'decision-evidence.d.mts']) {
   await copyFile(new URL('../integration/compatibility/v1/' + name, import.meta.url), new URL(name, target));
 }
 const toolchain = new URL('../dist/integration/toolchain/', import.meta.url);
