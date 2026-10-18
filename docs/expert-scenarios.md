@@ -1,4 +1,4 @@
-# Expert scenarios — corrected-v1 candidate
+# Expert scenarios — native assets and execution feedback
 
 Current native journeys are returned by `evopilot_v01_guide`. Their actual
 operation sequence is in [Native workflow](native-workflow.md). Guidance and
@@ -6,6 +6,9 @@ catalogue metadata do not certify installed Desktop behavior.
 
 | ID | User journey | Automated evidence locations |
 | --- | --- | --- |
+| V04-U01 | Configure registered Run feedback, inspect owner inboxes and resume delivery | feedback |
+| V04-U02 | Native asset updates, exact-version reuse and reviewed dispositions | feedback |
+| V04-U03 | Restart and full Workspace backup/restore with feedback history | feedback |
 | V03-U01 | Workspace, explicit activation, pinned toolchain and default-off sessions | plugin, native-toolchain, native-connection |
 | V03-U02 | Forward requirements and independent project scope | native-project |
 | V03-U03 | Reverse extraction, public/private and fixed source provenance | native-project |
@@ -15,7 +18,7 @@ catalogue metadata do not certify installed Desktop behavior.
 
 Names refer to `integration/e2e/<name>.test.mjs`. Real Host verification, native
 independent replay and the fixed v0.3 acceptance variants remain separate
-requirements. Passing a synthetic journey does not mark those requirements done.
+requirements. The [v0.4 feedback guide](feedback.md) and its 36 fixed variants add separate delivery, review, recovery and real Host checks. Passing a synthetic journey does not mark those requirements done.
 
 ## Historical v0.2 scenario catalogue
 

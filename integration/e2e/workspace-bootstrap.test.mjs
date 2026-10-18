@@ -60,7 +60,7 @@ test('V02-A01/A02: real installed services bootstrap in inactive MCP session, th
     assert.equal(data(out[1]).sessionActive, false);
     assert.equal(data(out[2]).error.code, 'SESSION_INACTIVE');
     assert.equal(data(out[3]).sessionActive, true);
-    assert.equal(data(out[4]).result.version, '0.3.0');
+    assert.equal(data(out[4]).result.version, '0.4.0');
     assert.deepEqual(fs.readFileSync(f.configPath), configBytes, 'Setup preserves immutable installed configuration');
     const marker = JSON.parse(fs.readFileSync(path.join(f.input.stateRoot, 'workspace.json')));
     assert.equal(marker.id, f.input.workspaceId); assert.equal(marker.canonicalRoot, f.input.stateRoot);

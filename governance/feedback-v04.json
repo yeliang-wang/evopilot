@@ -1,0 +1,317 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-feedback-v04",
+  "version": "0.4.0",
+  "lifecycle": "Preview",
+  "authority": false,
+  "status": "IMPLEMENTING",
+  "approvalSource": "Explicitly approved product-evolution scope; actual authorization and acceptance evidence remain private.",
+  "predecessor": "evopilot-standards-v03",
+  "acceptanceStatus": "NOT_EVALUATED",
+  "criteria": [
+    {
+      "id": "F01",
+      "requirement": "Registered execution feedback",
+      "variants": [
+        {
+          "id": "F01.01",
+          "expected": "Successful and failed actual Runtime runs generate evidence-bound events",
+          "status": "PENDING"
+        },
+        {
+          "id": "F01.02",
+          "expected": "Events retain source commit, artifact and project identities",
+          "status": "PENDING"
+        },
+        {
+          "id": "F01.03",
+          "expected": "Unregistered Host activity is not claimed as captured",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F02",
+      "requirement": "Durable delivery",
+      "variants": [
+        {
+          "id": "F02.01",
+          "expected": "Run result and delivery intent survive restart",
+          "status": "PENDING"
+        },
+        {
+          "id": "F02.02",
+          "expected": "Interrupted delivery resumes from retained state",
+          "status": "PENDING"
+        },
+        {
+          "id": "F02.03",
+          "expected": "Pending feedback prevents dependent RC completion",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F03",
+      "requirement": "Idempotency and recovery",
+      "variants": [
+        {
+          "id": "F03.01",
+          "expected": "Duplicate events create one owner receipt and candidate",
+          "status": "PENDING"
+        },
+        {
+          "id": "F03.02",
+          "expected": "Lost response after owner commit reconciles without duplicate write",
+          "status": "PENDING"
+        },
+        {
+          "id": "F03.03",
+          "expected": "Conflicting reuse of an event identity is rejected",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F04",
+      "requirement": "Scope and authenticity",
+      "variants": [
+        {
+          "id": "F04.01",
+          "expected": "Exact source and private project accepted",
+          "status": "PENDING"
+        },
+        {
+          "id": "F04.02",
+          "expected": "Cross-project or public leakage rejected",
+          "status": "PENDING"
+        },
+        {
+          "id": "F04.03",
+          "expected": "Tampered evidence, stale source and untrusted receipt rejected",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F05",
+      "requirement": "Harness feedback assets",
+      "variants": [
+        {
+          "id": "F05.01",
+          "expected": "Real failure retained as regression candidate",
+          "status": "PENDING"
+        },
+        {
+          "id": "F05.02",
+          "expected": "Updated rule and mandatory positive/negative/missing-input cases validate with native engine",
+          "status": "PENDING"
+        },
+        {
+          "id": "F05.03",
+          "expected": "Existing published rule and failed observation remain immutable",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F06",
+      "requirement": "Ontology evolution",
+      "variants": [
+        {
+          "id": "F06.01",
+          "expected": "Domain change produces source-linked semantic impact and candidate",
+          "status": "PENDING"
+        },
+        {
+          "id": "F06.02",
+          "expected": "No semantic change permits justified exact-version reuse",
+          "status": "PENDING"
+        },
+        {
+          "id": "F06.03",
+          "expected": "Changed relation/cardinality/deprecated identifier identifies dependent Harness impact",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F07",
+      "requirement": "Causality",
+      "variants": [
+        {
+          "id": "F07.01",
+          "expected": "Parent and cause IDs connect run, feedback and asset delivery",
+          "status": "PENDING"
+        },
+        {
+          "id": "F07.02",
+          "expected": "Owner delivery does not recursively regenerate the same feedback",
+          "status": "PENDING"
+        },
+        {
+          "id": "F07.03",
+          "expected": "Concurrent changes yield conflict rather than silent overwrite",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F08",
+      "requirement": "RC and release consistency",
+      "variants": [
+        {
+          "id": "F08.01",
+          "expected": "Both owners resolve to exact delivered assets or justified reuse",
+          "status": "PENDING"
+        },
+        {
+          "id": "F08.02",
+          "expected": "Missing, stale or unreviewed required disposition blocks completion",
+          "status": "PENDING"
+        },
+        {
+          "id": "F08.03",
+          "expected": "RC1 failure and RC2 correction preserve separate evidence and final release association",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F09",
+      "requirement": "Automation policy",
+      "variants": [
+        {
+          "id": "F09.01",
+          "expected": "Ordinary chats and unselected projects remain inactive",
+          "status": "PENDING"
+        },
+        {
+          "id": "F09.02",
+          "expected": "Configured deterministic feedback stages run without per-step prompting",
+          "status": "PENDING"
+        },
+        {
+          "id": "F09.03",
+          "expected": "Semantic approval and software publication cannot be fabricated from a passing test",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F10",
+      "requirement": "Expert and Codex",
+      "variants": [
+        {
+          "id": "F10.01",
+          "expected": "Installed MCP exposes feedback status and actionable diagnostics",
+          "status": "PENDING"
+        },
+        {
+          "id": "F10.02",
+          "expected": "Real Host journey resumes an interrupted evolution with retained identities",
+          "status": "PENDING"
+        },
+        {
+          "id": "F10.03",
+          "expected": "New user locates evidence, model, rules, versions and next action",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F11",
+      "requirement": "Compatibility",
+      "variants": [
+        {
+          "id": "F11.01",
+          "expected": "Upgrade preserves v0.3 deliveries, decisions and receipts",
+          "status": "PENDING"
+        },
+        {
+          "id": "F11.02",
+          "expected": "Unsupported state or contract is rejected by older reader",
+          "status": "PENDING"
+        },
+        {
+          "id": "F11.03",
+          "expected": "Backup and recovery restore exact matching state and installation",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "F12",
+      "requirement": "Delivery",
+      "variants": [
+        {
+          "id": "F12.01",
+          "expected": "Four exact repositories build, typecheck, test and package",
+          "status": "PENDING"
+        },
+        {
+          "id": "F12.02",
+          "expected": "README/API/workflow and installed bundle agree",
+          "status": "PENDING"
+        },
+        {
+          "id": "F12.03",
+          "expected": "Conditional Preview download and installed readback match accepted candidate",
+          "status": "PENDING"
+        }
+      ]
+    }
+  ],
+  "fileBindings": {
+    "parent": [
+      "AGENTS.md",
+      "README.md",
+      "CHANGELOG.md",
+      "docs/**",
+      "governance/feedback-v04.json",
+      "governance/online-harness-v05.json",
+      "integration/**",
+      "expert/**",
+      "plugins/codex/**",
+      "scripts/**",
+      "specifications/project/v1/**",
+      "package.json",
+      "package-lock.json",
+      ".github/**",
+      "tests/**",
+      "projects/evopilot-runtime",
+      "projects/evopilot-harness",
+      "projects/evopilot-ontology"
+    ],
+    "children": [
+      "AGENTS.md",
+      "README.md",
+      "CHANGELOG.md",
+      "docs/**",
+      "src/**",
+      "tests/**",
+      "examples/**",
+      "specifications/**",
+      "vendor/compatibility/**",
+      "scripts/**",
+      "package.json",
+      "package-lock.json",
+      ".github/**"
+    ]
+  },
+  "completionRule": "Every fixed variant requires exact-candidate evidence. Tests, domain decision, real Host, CI and post-release checks cannot substitute for one another. No missing/skipped/unknown required result.",
+  "preserve": [
+    "v0.3 fixed acceptance denominator",
+    "private project data and immutable history",
+    "original DataRig source and production environment",
+    "existing v1.0 readiness criteria"
+  ],
+  "exclusions": [
+    "WorkBuddy",
+    "new SRE platform or metrics database",
+    "automatic software release from warning",
+    "unrestricted Host interception",
+    "production deployment or database writes",
+    "second real-project onboarding or v1.0 release"
+  ]
+}

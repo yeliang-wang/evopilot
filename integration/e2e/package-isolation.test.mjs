@@ -62,7 +62,7 @@ test('child source graph contains only own source and vendor modules', async () 
         }
         assert(specifier.startsWith('.'), `External product import: ${specifier}`);
         const target = resolve(dirname(file), specifier);
-        assert(target.startsWith(srcRoot + sep) || ['reference.mjs','native.mjs','decision-evidence.mjs'].some(name => target === resolve(ROOT, child, 'vendor/compatibility/v1', name)), `Cross-package import: ${specifier}`);
+        assert(target.startsWith(srcRoot + sep) || ['reference.mjs','native.mjs','decision-evidence.mjs'].some(name => target === resolve(ROOT, child, 'vendor/compatibility/v1', name)) || ['feedback.mjs','owner.mjs'].some(name=>target===resolve(ROOT,child,'vendor/compatibility/feedback/v1',name)), `Cross-package import: ${specifier}`);
       }
       assert.doesNotMatch(source, /EVOPILOT_HARNESS_HOME|defaultHarnessHome|\.evopilot-harness|\bprocess\s*(?:\.\s*(?:env|cwd|chdir)|\[)|\bglobalThis\s*(?:\.|\[)|\/Users\/|\/home\//);
       const localName = name.split(sep).join('/');

@@ -105,3 +105,7 @@ Their integrity is still checked, explicit old-candidate operations fail with
 no current candidate exists.
 
 Before a new decision, retain the actual authorization source and bind it using the [decision evidence format](native-decisions.md). Opaque approval labels no longer authorize new native work; historical receipts remain unchanged.
+
+## Registered evolution feedback (v0.4)
+
+When the user requests asset feedback for version evolution, configure the exact Runtime candidate before dispatch using `feedback.configure`. Inspect owner inboxes, propose a source-bound native delivery or justified exact-version reuse, record the concrete human decision, then refresh dispositions. Pending feedback blocks dependent completion; final Runs must evaluate the exact approved assets. See [the feedback guide](feedback.md) for API inputs, timeout recovery and the V04 Expert scenarios. Existing native standards and receipt producer identifiers remain unchanged from v0.3.

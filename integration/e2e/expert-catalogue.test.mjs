@@ -9,14 +9,14 @@ import { scenarioCatalogue, scenarioIds, guideNames, getScenario } from '../../d
 import { getGuide, scenarios } from '../../dist/expert/core/guide.js';
 import { loadInstalledProducts } from '../../dist/integration/composition.js';
 
-const nativeIds = ['V03-U01', 'V03-U02', 'V03-U03', 'V03-U04', 'V03-U05', 'V03-U06'];
+const nativeIds = ['V04-U01', 'V04-U02', 'V04-U03', 'V03-U01', 'V03-U02', 'V03-U03', 'V03-U04', 'V03-U05', 'V03-U06'];
 const root = fileURLToPath(new URL('../../', import.meta.url));
 
 test('V02 catalogue metadata: exact approved IDs, bidirectional guide coverage, required branches and existing E2E bindings', () => {
   const target = JSON.parse(readFileSync(new URL('../../governance/workspace-v02.json', import.meta.url)));
   assert.deepEqual(scenarioIds, target.scenarioIds);
   assert.equal(new Set(scenarioIds).size, 27);
-  assert.deepEqual(new Set(scenarios), new Set([...guideNames, ...nativeIds, ...scenarioIds]));
+  assert.deepEqual(new Set(scenarios), new Set([...guideNames, 'runtime-feedback', 'asset-feedback-review', 'feedback-recovery', ...nativeIds, ...scenarioIds]));
   const documented = readFileSync(new URL('../../docs/expert-scenarios.md', import.meta.url), 'utf8');
   for (const entry of scenarioCatalogue) {
     assert(guideNames.includes(entry.guide));
@@ -51,7 +51,7 @@ test('Current guides: real public owner capabilities contain every named operati
   const services = [apis.runtime.createRuntimeService, apis.harness.createHarnessService, apis.ontology.createOntologyService]
     .map(create => create({ workspaceRoot, workspaceId: 'catalogue-only' }));
   try {
-    const operations = new Set(services.flatMap(service => [...service.capabilities().operations, ...(service.capabilities().nativeOperations ?? [])]));
+    const operations = new Set(services.flatMap(service => [...service.capabilities().operations, ...(service.capabilities().nativeOperations ?? []), ...(service.capabilities().feedbackOperations ?? [])]));
     for (const id of nativeIds) for (const operation of getGuide(id).operations) {
       if (operation.startsWith('evopilot_v01_')) continue;
       assert(operations.has(operation), `${id}: operation ${operation} is absent from all actual owner capabilities`);

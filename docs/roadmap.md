@@ -22,9 +22,9 @@ The user-approved [Workspace Target](../governance/workspace-v02.json) governs t
 
 Implementation uses strict TypeScript and the existing public package ownership boundaries. Runtime, Harness and Ontology form an exact 0.2.0 candidate combination. Frozen asset specifications/v1 and historical governance are unchanged. A technical Target check validates scope and coverage; actual results, migration authorization, Host receipts and release proof remain private and candidate-bound.
 
-## v0.3.0 implementation: correct v1 standards and project conformance
+## v0.3.0: corrected v1 standards and project conformance
 
-Status: `IMPLEMENTING`, under the user-approved [v0.3.0 Target](../governance/standards-v03.json). The four-repository Preview candidate is being implemented and verified. This entry records accepted scope; it does not claim acceptance, publication or installed cutover. Actual project decisions and evidence remain private.
+The four v0.3.0 Preview releases are published. The [v0.3.0 Target](../governance/standards-v03.json) records its fixed scope; detailed project decisions and acceptance evidence remain private. Published software does not imply daily installation cutover or v1.0 readiness.
 
 Correct the current Ontology and Harness `specifications/v1` directly. Do not introduce a second specification directory or treat conversion of old assets as fresh reverse extraction. Preserve historical tags, artifacts, decisions and receipts; identify corrected normative content by owner-specific standard digests and the actual producer/contract identity. Old `v1` labels or PASS records cannot establish conformance to corrected content.
 
@@ -39,6 +39,12 @@ The approved correction includes:
 The approved order is scope binding, isolated upstream/toolchain and minimal-run proof, product implementation, fresh source-based asset extraction, two substantive source rounds, user/Host acceptance, then conditional Preview delivery. Release prerequisites must pass before publication; published-download/install readback and final closure happen afterward. Only all required pre- and post-release evidence can establish completion. Conditional Preview publication requires the Target’s fixed pre-release checks; downloaded readback and closure remain separate post-release checks.
 
 Full OWL reasoning, multi-target schema/code generation, external ontology import management, remote policy distribution, external build engines, online SRE telemetry, background synchronization and additional Host plugins are not part of this correction. Their disposition is recorded below. Existing v0.2.0 preservation statements describe that release's scope; they do not silently freeze the defective current specification against this explicitly approved correction. The bound implementation Target is `evopilot-standards-v03`.
+
+## v0.4.0: registered execution feedback
+
+Status: `IMPLEMENTING`, under the approved [feedback Target](../governance/feedback-v04.json). Runtime captures terminal registered Run results durably, delivers them to both owners with retained receipt reconciliation, and requires exact reviewed owner dispositions before dependent completion. Harness owns regression candidates; Ontology owns semantic impact and exact-version reuse or new delivery. See the [feedback architecture decision](adr-feedback.md). Actual project evidence stays private. All 36 fixed variants are required; implementation alone is not acceptance.
+
+The approved next version, v0.5.0, adds bounded online Harness integration, real Prometheus and Alertmanager adapters, persisted scheduling and supervised worker lifecycle. It remains unimplemented at this stage. Neither version authorizes arbitrary Host interception, automatic patch release from warnings, production deployment or v1.0.
 
 ## v1.0 readiness criteria
 
