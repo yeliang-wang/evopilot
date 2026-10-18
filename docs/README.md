@@ -1,6 +1,6 @@
 # Documentation
 
-Current v0.3 candidate: [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics.
+Current v0.5 candidate: [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics.
 
 Start with [installation](installation.md) and the [first journey](first-journey.md). The portable bundle is the user path; source builds are for contributors.
 
@@ -9,7 +9,7 @@ Start with [installation](installation.md) and the [first journey](first-journey
 | Install, verify checksums, register or remove | [Installation](installation.md) |
 | Forward design, reverse modeling, quality, execution | [First journey](first-journey.md) |
 | Initialize or maintain your private Workspace | [Workspace](../workspace/README.md), [migration](migration.md), [recovery](recovery.md) |
-| All supported Expert scenarios and acceptance branches | [27-scenario catalogue](expert-scenarios.md), [testing](testing.md) |
+| All supported Expert scenarios and acceptance branches | [Expert scenario catalogue](expert-scenarios.md), [testing](testing.md) |
 | Concepts and limits | [Capabilities](capabilities.md), [product boundaries](architecture/0001-three-product-boundary.md), [composition](product-composition.md) |
 | Codex activation and tools | [Codex integration](codex.md) |
 | Ontology specifications and schemas | [v1 definitions](https://github.com/yeliang-wang/evopilot-ontology/blob/main/specifications/v1/README.md), [schemas](https://github.com/yeliang-wang/evopilot-ontology/tree/main/schemas), [examples](https://github.com/yeliang-wang/evopilot-ontology/tree/main/examples) |
@@ -26,3 +26,7 @@ The [frozen roadmap](roadmap/ROADMAP.md) preserves the v0.1.0 baseline and the [
 ## Registered execution feedback
 
 Start with [the v0.4 feedback guide](feedback.md) for exact operation inputs, owner review and recovery; [the Expert catalogue](expert-scenarios.md) lists V04-U01–U03. The [fixed Target](../governance/feedback-v04.json) separates implementation from acceptance.
+
+## Online Harness
+
+Use [online setup, inspection and recovery](online-harness.md), the [worker design](architecture/0005-online-harness.md), and the fixed [v0.5 Target](../governance/online-harness-v05.json). Expert journeys V05-U01–U05 have linked executable tests. Actual Host and controlled telemetry acceptance remain separate evidence.

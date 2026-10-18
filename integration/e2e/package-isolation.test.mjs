@@ -62,12 +62,12 @@ test('child source graph contains only own source and vendor modules', async () 
         }
         assert(specifier.startsWith('.'), `External product import: ${specifier}`);
         const target = resolve(dirname(file), specifier);
-        assert(target.startsWith(srcRoot + sep) || ['reference.mjs','native.mjs','decision-evidence.mjs'].some(name => target === resolve(ROOT, child, 'vendor/compatibility/v1', name)) || ['feedback.mjs','owner.mjs'].some(name=>target===resolve(ROOT,child,'vendor/compatibility/feedback/v1',name)), `Cross-package import: ${specifier}`);
+        assert(target.startsWith(srcRoot + sep) || ['reference.mjs','native.mjs','decision-evidence.mjs'].some(name => target === resolve(ROOT, child, 'vendor/compatibility/v1', name)) || target===resolve(ROOT,child,'vendor/compatibility/online/v1/online.mjs') || ['feedback.mjs','owner.mjs'].some(name=>target===resolve(ROOT,child,'vendor/compatibility/feedback/v1',name)), `Cross-package import: ${specifier}`);
       }
       assert.doesNotMatch(source, /EVOPILOT_HARNESS_HOME|defaultHarnessHome|\.evopilot-harness|\bprocess\s*(?:\.\s*(?:env|cwd|chdir)|\[)|\bglobalThis\s*(?:\.|\[)|\/Users\/|\/home\//);
       const localName = name.split(sep).join('/');
       let checked = source;
-      if (['state.ts','location-lineage.ts','native.ts'].includes(localName)) checked = checked.replace(/\bprocess\.getuid(?![\w$])/g, '');
+      if (['state.ts','location-lineage.ts','native.ts','online-prometheus.ts'].includes(localName)) checked = checked.replace(/\bprocess\.getuid(?![\w$])/g, '');
       if (['native-evaluation.ts','native/validator.ts'].includes(localName)) checked = checked.replace(/\bprocess\.(?:platform|arch)(?![\w$])/g, '');
       if (localName === 'cli.ts') checked = checked.replace(/\bprocess\.(?:stdin|stdout|argv|exitCode)(?![\w$])/g, '');
       if (child === 'projects/evopilot-ontology' && localName === 'compat/v4/semantics/catalog-store.mjs')

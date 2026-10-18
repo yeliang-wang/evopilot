@@ -97,3 +97,15 @@ Product upgrades use a new verified installation, stop the old connection and ex
 Every row requires automated branch evidence and real Codex Desktop observations bound to the exact candidate installation. The catalogue test rejects a missing guide/scenario mapping, orphan scenario or missing test binding. String matching in guidance verifies distribution only, never model behavior. [Testing](testing.md) explains the evidence verifier and its limits.
 
 A valid candidate report is stored privately; documentation and catalogue carry no changing PASS claims. Configured synthetic provider tests cannot be relabeled as real Host execution. WorkBuddy is outside v0.2.0 acceptance.
+
+## v0.5 online journeys
+
+| ID | User outcome | Executable coverage |
+|---|---|---|
+| V05-U01 | Configure private providers; review and select an immutable service binding; explicitly start | `online-profile.test.mjs`, `online-owner.test.mjs`, `online-worker.test.mjs` |
+| V05-U02 | Inspect actual measured windows, native reports and authenticated alerts; reject incomplete data | `online-prometheus.test.mjs`, `online-owner.test.mjs` |
+| V05-U03 | Reconcile a confirmed finding into one reviewable Runtime repair candidate, including lost response | `integration/e2e/online-feedback.test.mjs` |
+| V05-U04 | Compare same-policy real failure and recovery without publishing or weakening a policy | `online-owner.test.mjs` |
+| V05-U05 | Continue after client exit; restart with watermarks; block live maintenance; stop owned worker | `integration/e2e/online-worker.test.mjs` |
+
+Harness test paths are under `projects/evopilot-harness/tests/e2e`; integration test paths are under `integration/e2e`. These named tests exercise actual product APIs; telemetry fixtures are labeled synthetic. Controlled real Prometheus/Alertmanager plus the isolated project and actual installed Codex journeys remain fixed P11/P12 acceptance, never inferred from this table. See [the user guide](online-harness.md).

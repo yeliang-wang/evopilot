@@ -13,6 +13,7 @@ import { createComposition, loadInstalledProducts } from '../composition.js';
 import { createNativeProjectRouter } from '../workspace/native-router.js';
 import { inspectNativeToolchain } from '../toolchain/locked.js';
 import type { NativeProject } from '@evopilot-next/runtime/service';
+import {readOnlineConfiguration,onlineAdapters} from '../online/config.js';
 
 // No fixture/provider override: the installed public bare packages are the only loader.
 export async function runDaemon(configPath: string) {
@@ -32,7 +33,8 @@ export async function runDaemon(configPath: string) {
     const cacheRoot = path.join(c.workspaceRoot, 'native-toolchain');
     // Inspection verifies local bytes only. No background download on activation.
     const toolchain = fs.existsSync(cacheRoot) ? inspectNativeToolchain({ cacheRoot }) : undefined;
-    composition = createComposition({ workspaceRoot: c.workspaceRoot, workspaceId: c.workspaceId }, await loadInstalledProducts(), {}, { ...project?.providers, ...(toolchain ? { toolchain } : {}) });
+    const online=onlineAdapters(readOnlineConfiguration(c));
+    composition = createComposition({ workspaceRoot: c.workspaceRoot, workspaceId: c.workspaceId }, await loadInstalledProducts(), {}, { ...project?.providers, ...(toolchain ? { toolchain } : {}),...(online?{online:{collectOnline:online.collectOnline}}:{}) });
     composition.inspect('runtime', { visibility: 'public', projectId: 'shared' });
     server = http.createServer({ maxHeaderSize: 8192, requestTimeout: 5000, headersTimeout: 5000, keepAliveTimeout: 1000 }, async (req, res) => {
       const send = (status: number, value: Record<string, unknown>) => {

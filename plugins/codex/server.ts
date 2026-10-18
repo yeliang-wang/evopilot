@@ -14,6 +14,8 @@ import type { WorkspaceSetupInput } from '../../integration/workspace/bootstrap.
 import { getGuide, scenarios } from '../../expert/core/guide.js';
 import { inspectNativeToolchain, inspectBundledToolchainLock } from '../../integration/toolchain/locked.js';
 import { inspectToolchainPreparation, startToolchainPreparation } from '../../integration/toolchain/preparation.js';
+import {configureOnline,readOnlineConfiguration} from '../../integration/online/config.js';
+import {inspectOnlineWorker,startOnlineWorker,stopOnlineWorker} from '../../integration/online/lifecycle.js';
 
 const INPUT = 1048576, OUTPUT = 8388608;
 const prefix = 'evopilot_v01_';
@@ -27,6 +29,8 @@ const absolutePath = { type: 'string', minLength: 1, maxLength: 4096 };
 const setup = object({ requestId: slug, projectRoot: absolutePath, stateRoot: absolutePath, workspaceId: slug }, ['requestId']);
 const attach = object({ requestId: slug, projectRoot: absolutePath, stateRoot: absolutePath, workspaceId: slug });
 const definitions: Record<string, [string, Schema]> = {
+  online_configure:['Configure private read-only Prometheus and authenticated Alertmanager connections using credential file references. Requires this active session and a stopped worker; stops the shared connection and deactivates this session. Does not select monitoring.',object({settings:{type:'object'},expectedDigest:{},requestId:slug})],
+  online_worker:['Inspect the independent online worker passively, or explicitly start/stop/uninstall its verified launchd job in this active session. Monitoring bindings must be reviewed and selected separately. Evidence is preserved.',object({operation:{enum:['inspect','start','stop','uninstall']},requestId:slug})],
   workspace_inspect: ['Inspect installation and Workspace binding without starting services or creating files.', object()],
   workspace_initialize: ['Explicitly initialize your private editable project and separate protected service state; does not activate the session.', setup],
   workspace_attach: ['Explicitly attach an existing validated and stopped Workspace, creating its editable project if absent. Cannot switch an already bound installation.', attach],
@@ -123,7 +127,7 @@ async function serve(configPath: string) {
       const p = r.params;
       if (initialized || !p || Object.keys(p).some(k => !['protocolVersion', 'capabilities', 'clientInfo', '_meta'].includes(k)) || typeof p.protocolVersion !== 'string' || !p.capabilities || typeof p.capabilities !== 'object' || Array.isArray(p.capabilities) || !p.clientInfo || typeof (p.clientInfo as Record<string, unknown>).name !== 'string' || typeof (p.clientInfo as Record<string, unknown>).version !== 'string') { await error(-32602, 'Invalid params'); return; }
       initialized = true;
-      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.4.0' } };
+      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.5.0' } };
     } else if (r.method === 'ping' || r.method === 'tools/list') {
       if (params && (Object.keys(params).some(k => !['_meta', ...(r.method === 'tools/list' ? ['cursor'] : [])].includes(k)) || (Object.hasOwn(params, 'cursor') && (typeof params.cursor !== 'string' || params.cursor !== '')))) { await error(-32602, 'Invalid params'); return; }
       result = r.method === 'ping' ? {} : { tools };
@@ -140,6 +144,16 @@ async function serve(configPath: string) {
       try {
         let value;
         if (action === 'guide') value = getGuide(input.scenario);
+        else if(action==='online_worker'){
+          const operation=String(input.operation),c=loadConfiguration(configPath);
+          if(operation==='inspect'){const cfg=readOnlineConfiguration(c);value={configurationDigest:cfg?.digest??null,providerIds:cfg?.settings.prometheus.map(p=>p.id)??[],alertSourceIds:cfg?.settings.alertmanager.map(p=>p.id)??[],worker:inspectOnlineWorker(c)};}
+          else {if(!sessionActive)throw Object.assign(Error(),{code:'SESSION_INACTIVE'});value=await withWorkspaceLease(c,input.requestId,async()=>operation==='start'?startOnlineWorker(c):stopOnlineWorker(c,operation==='uninstall'));}
+        }
+        else if(action==='online_configure'){
+          if(!sessionActive)throw Object.assign(Error(),{code:'SESSION_INACTIVE'});
+          try{value=await withWorkspaceMaintenance(configPath,input.requestId,c=>configureOnline(c,rawInput as Parameters<typeof configureOnline>[1]));}
+          finally{sessionActive=false;connection=await inspectConnection(configPath);}
+        }
         else if (action === 'toolchain_inspect') {
           const lock = inspectBundledToolchainLock(), c = loadConfiguration(configPath), preparation = inspectToolchainPreparation(configPath);
           try {

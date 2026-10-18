@@ -115,6 +115,7 @@ export function recoverStaleConnection(configPath: string) { if (loadInstallatio
 export async function withWorkspaceMaintenance<T>(configPath: string, requestId: string, callback: (configuration: Configuration) => Promise<T> | T, options: { restoring?: boolean } = {}): Promise<T> {
   const c = loadConfiguration(configPath, { allowMissingProject: options.restoring === true, restoreRequestId: options.restoring === true ? requestId : undefined });
   return withWorkspaceLease(c, requestId, async () => {
+    const {requireOnlineWorkerStopped}=await import('../online/lifecycle.js');requireOnlineWorkerStopped(c);
     await stopVerifiedConnection(c);
     if (readRecord(c) !== null) fail('WORKSPACE_BUSY');
     return callback(c);

@@ -26,6 +26,7 @@
     "integration/toolchain/**/*.ts",
     "integration/collection/**/*.ts",
     "expert/core/acceptance.ts",
-    "expert/core/native-acceptance.ts"
+    "expert/core/native-acceptance.ts",
+    "integration/online/**/*.ts"
   ]
 }
