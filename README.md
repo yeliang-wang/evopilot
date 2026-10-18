@@ -56,11 +56,13 @@ codex plugin marketplace add "$preview_root" --json
 codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json
 ```
 
+Existing users should follow the [v0.2–v0.4 upgrade procedure](docs/migration.md#upgrade-from-v02v04-to-v050) before switching their daily plugin. Preserve the existing Workspace and verify rollback on an isolated copy.
+
 Select **EvoPilot v0.5 Preview**, then say: “Initialize my private Workspace, explain its directories, and guide me through the forward example.” The Expert inspects first, creates the Workspace only after your setup request, then explicitly activates the current chat. You can choose your own directories; no private GitHub repository is required. Initialization alone does not activate the chat. Inspect and guide requests stay passive; ordinary chats do not require EvoPilot.
 
 Your editable project defaults to `~/evopilot-workspace`; protected service state defaults to `~/.local/share/evopilot/workspaces/<id>`. The project may have its own private Git history. Service databases, control records, signing keys and private evidence stay outside EvoPilot source and distribution. See [Workspace](workspace/README.md) and the [current and historical Expert scenarios](docs/expert-scenarios.md).
 
-For the current candidate, use the [native workflow](docs/native-workflow.md) and [current Expert journeys](docs/expert-scenarios.md). Its native validator platform is macOS arm64 with an explicit locked-toolchain preparation step; inspection never downloads dependencies. The legacy JSON authoring, classification and Catalog mutation routes are read-only historical compatibility. They cannot certify the corrected v1. Use [source development](docs/development.md) for this checkout and [recovery](docs/recovery.md) before changing installations.
+For the current release, use the [native workflow](docs/native-workflow.md) and [current Expert journeys](docs/expert-scenarios.md). Its native validator platform is macOS arm64 with an explicit locked-toolchain preparation step; inspection never downloads dependencies. The legacy JSON authoring, classification and Catalog mutation routes are read-only historical compatibility. They cannot certify the corrected v1. Use [source development](docs/development.md) for this checkout and [recovery](docs/recovery.md) before changing installations.
 
 For help, use [support](SUPPORT.md); for sensitive reports, read [security](SECURITY.md). Licensed under [Apache-2.0](LICENSE); attribution is in [NOTICE](NOTICE).
 
