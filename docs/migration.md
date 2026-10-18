@@ -1,5 +1,19 @@
 # Workspace migration and source boundaries
 
+## Upgrade from v0.2–v0.4 to v0.5.0
+
+This is a same-machine, same-OS-user upgrade of an existing Workspace. It does not require moving the editable project or protected service state. Use the exact [v0.5.0 Preview bundle](https://github.com/yeliang-wang/evopilot/releases/tag/v0.5.0) and a new versioned program directory; preserve the previous installation. Publication does not switch a user's daily plugin.
+
+1. Inspect the old installation, Workspace binding and unresolved owner operations. Stop its authenticated connection and any independently enabled online worker. If a control record is stale, use [verified recovery](recovery.md#connection-recovery); retain the record and never kill an unidentified process or replay an uncertain request.
+2. Use Workspace maintenance to back up both editable project files and owner state into a new private directory. Verify the backup manifest, protected anchor and required relocation keys. Retain the exact old installation and binding with the backup.
+3. Create an isolated copy through owner-validated migration. Open it with v0.5 and compare historical state, receipts, audit and asset-blob digests. Prove recovery by restoring its pre-upgrade backup and reading it with the old version. A successful empty/synthetic Workspace test does not establish compatibility of existing user data.
+4. After that proof, install v0.5 in its final new program directory and explicitly attach the stopped original Workspace. Attachment initializes owner schemas and validates the binding; it is not passive inspection. Compare historical digests again and preserve customized project files. Prepare and inspect the pinned native toolchain before native validation.
+5. Replace the old Codex plugin registration with the new installation's local marketplace and plugin. Preserve old program files for rollback. In a fresh Codex chat, verify the version, installation ID, program root, Workspace roots and component identities before activation. Confirm first-use inactivity, activation, capabilities, readback, restart and per-chat deactivation through actual MCP receipts. Existing chats may retain the old connection and need a fresh selection or reconnection.
+
+An upgraded database must not be opened by the old program. Rollback means stopping v0.5, preserving its current project/state separately, restoring the verified pre-upgrade backup into its original missing or empty roots, then restoring the old plugin registration. Never restore over live data or merely point an older binary at upgraded tables. See [backup and recovery limits](recovery.md#workspace-backup-and-restore).
+
+The data upgrade preserves historical deliveries; it does not certify old JSON assets against corrected native v1, re-extract project sources, approve domain changes or start online monitoring. New native work follows the [native workflow](native-workflow.md). Online service selection and worker start remain explicit actions in the [online guide](online-harness.md). Personal upgrade reports, paths and receipts stay outside product source and GitHub.
+
 ## Upgrade from 0.1.1 to 0.2.0
 
 Use a new verified 0.2.0 installation. Keep the old installation and Workspace until an isolated migration copy passes owner validation. A 0.1.1 Workspace may lack the new editable project root; explicit attachment creates that template separately while preserving state.

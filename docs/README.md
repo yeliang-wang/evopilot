@@ -1,6 +1,6 @@
 # Documentation
 
-Current v0.5 candidate: [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics.
+Current v0.5.0 Preview: [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics.
 
 Start with [installation](installation.md) and the [first journey](first-journey.md). The portable bundle is the user path; source builds are for contributors.
 
@@ -21,7 +21,7 @@ Start with [installation](installation.md) and the [first journey](first-journey
 
 Architecture also covers [process topology](architecture/0002-local-process-topology.md) and [local authoring](architecture/0003-local-authoring.md). Product links use GitHub; within-parent links stay relative. Installed bundles map shipped child documentation to local paths for offline reading.
 
-The [frozen roadmap](roadmap/ROADMAP.md) preserves the v0.1.0 baseline and the [repair scope](../governance/delivery-repair-v011.json) preserves v0.1.1. The current [v0.2 target](../governance/workspace-v02.json) adds independent Workspace workflows. [v1.0 readiness criteria](../governance/readiness-v1.json) stay generic; real project progress and evidence remain private. These documents define scope, not acceptance results.
+The [frozen roadmap](roadmap/ROADMAP.md) preserves the v0.1.0 baseline and the [repair scope](../governance/delivery-repair-v011.json) preserves v0.1.1. The [v0.2 target](../governance/workspace-v02.json) records independent Workspace workflows; the [v0.3 standards correction](../governance/standards-v03.json), [v0.4 feedback](../governance/feedback-v04.json) and [v0.5 online Harness](../governance/online-harness-v05.json) define the subsequent release scopes. [v1.0 readiness criteria](../governance/readiness-v1.json) stay generic; real project progress and evidence remain private. These documents define scope, not acceptance results.
 
 ## Registered execution feedback
 
