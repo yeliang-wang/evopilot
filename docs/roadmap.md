@@ -42,9 +42,9 @@ Full OWL reasoning, multi-target schema/code generation, external ontology impor
 
 ## v0.4.0: registered execution feedback
 
-Status: `IMPLEMENTING`, under the approved [feedback Target](../governance/feedback-v04.json). Runtime captures terminal registered Run results durably, delivers them to both owners with retained receipt reconciliation, and requires exact reviewed owner dispositions before dependent completion. Harness owns regression candidates; Ontology owns semantic impact and exact-version reuse or new delivery. See the [feedback architecture decision](adr-feedback.md). Actual project evidence stays private. All 36 fixed variants are required; implementation alone is not acceptance.
+Published in the v0.4.0 Preview under the approved [feedback Target](../governance/feedback-v04.json). Runtime captures terminal registered Run results durably, delivers them to both owners with retained receipt reconciliation, and requires exact reviewed owner dispositions before dependent completion. Harness owns regression candidates; Ontology owns semantic impact and exact-version reuse or new delivery. See the [feedback architecture decision](adr-feedback.md). Actual project evidence stays private. All 36 fixed variants are required; implementation alone is not acceptance.
 
-The approved next version, v0.5.0, adds bounded online Harness integration, real Prometheus and Alertmanager adapters, persisted scheduling and supervised worker lifecycle. It remains unimplemented at this stage. Neither version authorizes arbitrary Host interception, automatic patch release from warnings, production deployment or v1.0.
+The v0.5.0 scope below adds bounded online Harness integration, real Prometheus and Alertmanager adapters, persisted scheduling and supervised worker lifecycle. Neither version authorizes arbitrary Host interception, automatic patch release from warnings, production deployment or v1.0.
 
 ## v1.0 readiness criteria
 
@@ -82,7 +82,7 @@ These are deliberate boundaries, not uncompleted items in the approved 0.3.0 acc
 
 ## Approved v0.5: online Harness
 
-The fixed [36-variant parent Target](https://github.com/yeliang-wang/evopilot/blob/main/governance/online-harness-v05.json) follows the published v0.4 Preview. This checkout is implementing that scope; exact candidate acceptance and release receipts remain external.
+The fixed [36-variant parent Target](https://github.com/yeliang-wang/evopilot/blob/main/governance/online-harness-v05.json) follows the published v0.4 Preview. This checkout implements that scope; exact candidate acceptance and release receipts remain external.
 
 Harness owns immutable service/environment/deployment/SLO/policy bindings, actual Prometheus measurements, authenticated Alertmanager findings, native Rego evaluation, retained incidents and reviewable regression comparisons. Runtime receives trusted repair candidates; it does not infer a software version or dispatch an autonomous repair. Ontology standards and reviewed semantic evolution remain unchanged. The parent provides the explicitly enabled independent local worker and Expert journeys, with actual installed Codex acceptance.
 
