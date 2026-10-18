@@ -1,0 +1,318 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "evopilot-online-harness-v05",
+  "version": "0.5.0",
+  "lifecycle": "Preview",
+  "authority": false,
+  "status": "IMPLEMENTING",
+  "approvalSource": "Explicitly approved product-evolution scope; actual authorization and acceptance evidence remain private.",
+  "predecessor": "evopilot-feedback-v04",
+  "acceptanceStatus": "NOT_EVALUATED",
+  "criteria": [
+    {
+      "id": "P01",
+      "requirement": "Service binding",
+      "variants": [
+        {
+          "id": "P01.01",
+          "expected": "Bind service, environment, deployment revision and immutable policies",
+          "status": "PENDING"
+        },
+        {
+          "id": "P01.02",
+          "expected": "Wrong service/environment/revision is rejected",
+          "status": "PENDING"
+        },
+        {
+          "id": "P01.03",
+          "expected": "Registration does not start monitoring without selection",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P02",
+      "requirement": "OpenSLO subset",
+      "variants": [
+        {
+          "id": "P02.01",
+          "expected": "Declared v1 subset validates indicators, objectives, units and windows",
+          "status": "PENDING"
+        },
+        {
+          "id": "P02.02",
+          "expected": "Unsupported fields and ambiguous units are rejected",
+          "status": "PENDING"
+        },
+        {
+          "id": "P02.03",
+          "expected": "Declared configuration and measured result remain distinct",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P03",
+      "requirement": "Prometheus adapter",
+      "variants": [
+        {
+          "id": "P03.01",
+          "expected": "Real isolated Prometheus query yields source-bound observations",
+          "status": "PENDING"
+        },
+        {
+          "id": "P03.02",
+          "expected": "Missing/stale/partial windows and zero denominators never PASS",
+          "status": "PENDING"
+        },
+        {
+          "id": "P03.03",
+          "expected": "Timeout and provider authentication failure retain diagnostic evidence",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P04",
+      "requirement": "Alertmanager adapter",
+      "variants": [
+        {
+          "id": "P04.01",
+          "expected": "Real isolated firing and resolved alerts create correlated records",
+          "status": "PENDING"
+        },
+        {
+          "id": "P04.02",
+          "expected": "Duplicate and out-of-order notifications do not duplicate or erase findings",
+          "status": "PENDING"
+        },
+        {
+          "id": "P04.03",
+          "expected": "Unauthorized and wrong-service requests are rejected",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P05",
+      "requirement": "Online Harness evaluation",
+      "variants": [
+        {
+          "id": "P05.01",
+          "expected": "Pinned native Rego evaluates actual collected observations",
+          "status": "PENDING"
+        },
+        {
+          "id": "P05.02",
+          "expected": "Violated objective produces expected failure; recovery is a new record",
+          "status": "PENDING"
+        },
+        {
+          "id": "P05.03",
+          "expected": "Policy or threshold changes invalidate old approval without rewriting old result",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P06",
+      "requirement": "Scheduler",
+      "variants": [
+        {
+          "id": "P06.01",
+          "expected": "Selected persisted schedules continue across worker restart",
+          "status": "PENDING"
+        },
+        {
+          "id": "P06.02",
+          "expected": "Repeated windows reconcile idempotently",
+          "status": "PENDING"
+        },
+        {
+          "id": "P06.03",
+          "expected": "Backlog and resource limits expose incomplete status rather than false health",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P07",
+      "requirement": "Independent lifecycle",
+      "variants": [
+        {
+          "id": "P07.01",
+          "expected": "Supervised worker continues without Codex process",
+          "status": "PENDING"
+        },
+        {
+          "id": "P07.02",
+          "expected": "Restart restores bindings and watermarks",
+          "status": "PENDING"
+        },
+        {
+          "id": "P07.03",
+          "expected": "Disable and uninstall stop only the owned worker and preserve evidence",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P08",
+      "requirement": "Operational boundary",
+      "variants": [
+        {
+          "id": "P08.01",
+          "expected": "Read-only provider credentials stay out of assets and logs",
+          "status": "PENDING"
+        },
+        {
+          "id": "P08.02",
+          "expected": "Network endpoints, request sizes and timeouts are bounded",
+          "status": "PENDING"
+        },
+        {
+          "id": "P08.03",
+          "expected": "No production deploy, database mutation or unrestricted remote execution",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P09",
+      "requirement": "Repair feedback",
+      "variants": [
+        {
+          "id": "P09.01",
+          "expected": "Confirmed finding enters Runtime as a repair-target candidate",
+          "status": "PENDING"
+        },
+        {
+          "id": "P09.02",
+          "expected": "Warning alone neither selects patch version nor releases software",
+          "status": "PENDING"
+        },
+        {
+          "id": "P09.03",
+          "expected": "Recovery closes current incident state while preserving historical failure",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P10",
+      "requirement": "Regression learning",
+      "variants": [
+        {
+          "id": "P10.01",
+          "expected": "Confirmed incident becomes reviewable regression case",
+          "status": "PENDING"
+        },
+        {
+          "id": "P10.02",
+          "expected": "Case fails against fault and passes against correction",
+          "status": "PENDING"
+        },
+        {
+          "id": "P10.03",
+          "expected": "Observation cannot silently change ontology definition or weaken policy",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P11",
+      "requirement": "Controlled project E2E",
+      "variants": [
+        {
+          "id": "P11.01",
+          "expected": "Run isolated DataRig-derived instance and actual telemetry components",
+          "status": "PENDING"
+        },
+        {
+          "id": "P11.02",
+          "expected": "Inject a controlled fault and verify detection, repair feedback and recovery",
+          "status": "PENDING"
+        },
+        {
+          "id": "P11.03",
+          "expected": "Original DataRig source, current working changes and production service remain untouched",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "P12",
+      "requirement": "Delivery and user journey",
+      "variants": [
+        {
+          "id": "P12.01",
+          "expected": "Actual installed Codex configures and inspects online evaluation",
+          "status": "PENDING"
+        },
+        {
+          "id": "P12.02",
+          "expected": "README explains supported provider subsets, deployment and recovery",
+          "status": "PENDING"
+        },
+        {
+          "id": "P12.03",
+          "expected": "Exact CI, packages, conditional Preview download and installed readback pass",
+          "status": "PENDING"
+        }
+      ]
+    }
+  ],
+  "fileBindings": {
+    "parent": [
+      "AGENTS.md",
+      "README.md",
+      "CHANGELOG.md",
+      "docs/**",
+      "governance/feedback-v04.json",
+      "governance/online-harness-v05.json",
+      "integration/**",
+      "expert/**",
+      "plugins/codex/**",
+      "scripts/**",
+      "specifications/project/v1/**",
+      "package.json",
+      "package-lock.json",
+      ".github/**",
+      "tests/**",
+      "projects/evopilot-runtime",
+      "projects/evopilot-harness",
+      "projects/evopilot-ontology",
+      "tsconfig.json"
+    ],
+    "children": [
+      "AGENTS.md",
+      "README.md",
+      "CHANGELOG.md",
+      "docs/**",
+      "src/**",
+      "tests/**",
+      "examples/**",
+      "specifications/**",
+      "vendor/compatibility/**",
+      "scripts/**",
+      "package.json",
+      "package-lock.json",
+      ".github/**"
+    ]
+  },
+  "completionRule": "Every fixed variant requires exact-candidate evidence. Tests, domain decision, real Host, CI and post-release checks cannot substitute for one another. No missing/skipped/unknown required result.",
+  "preserve": [
+    "v0.3 fixed acceptance denominator",
+    "private project data and immutable history",
+    "original DataRig source and production environment",
+    "existing v1.0 readiness criteria"
+  ],
+  "exclusions": [
+    "WorkBuddy",
+    "new SRE platform or metrics database",
+    "automatic software release from warning",
+    "unrestricted Host interception",
+    "production deployment or database writes",
+    "second real-project onboarding or v1.0 release"
+  ]
+}

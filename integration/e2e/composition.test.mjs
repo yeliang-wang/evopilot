@@ -39,7 +39,7 @@ function fixture() {
     const ref = owner === 'runtime' ? null : reference(owner);
     if (ref) records[owner] = { model: { id: ref.id, version: ref.version, specVersion: 'v1' }, scope: owner === 'ontology' ? shared : scope, delivery: { digest: ref.digest }, ...(owner === 'harness' ? { resolution: { dependencies: [reference('ontology')] } } : {}) };
     return [owner, {
-      PRODUCT: owner, VERSION: '0.4.0', verifyDelivery: delivery => ({ valid: delivery.digest === ref.digest }),
+      PRODUCT: owner, VERSION: '0.5.0', verifyDelivery: delivery => ({ valid: delivery.digest === ref.digest }),
       validateInstances: () => ({ valid: true, status: 'PASS' }),
       ['create' + owner[0].toUpperCase() + owner.slice(1) + 'Service']: (received, supplied) => {
         if (owner === 'ontology') validateProviderContract(supplied);
@@ -307,7 +307,7 @@ test('interface only: cancellation during revision query prevents Harness dispat
 const metadataFixtures = {
   "runtime": {
     "name": "@evopilot-next/runtime",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "private": true,
     "type": "module",
     "engines": {
@@ -352,7 +352,7 @@ const metadataFixtures = {
   },
   "harness": {
     "name": "@evopilot-next/harness",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "private": true,
     "bin": {
       "evopilot-next-harness": "dist/cli.js"
@@ -402,12 +402,13 @@ const metadataFixtures = {
     "license": "Apache-2.0",
     "devDependencies": {
       "typescript": "5.9.3",
-      "@types/node": "24.19.2"
+      "@types/node": "24.19.2",
+      "ajv": "8.20.0"
     }
   },
   "ontology": {
     "name": "@evopilot-next/ontology",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "private": true,
     "type": "module",
     "engines": {
@@ -477,6 +478,7 @@ test('Current metadata: all compiled product bins are required', () => {
     const pkg = structuredClone(metadataFixtures[owner]);
     if (owner === 'harness') pkg.exports['./native'] = {types:'./dist/native.d.ts',import:'./dist/native.js'};
     pkg.exports['./workspace-migration'] = {types:'./dist/workspace-migration.d.ts',import:'./dist/workspace-migration.js'};
+    if(owner !== 'ontology') pkg.exports['./online'] = {types:'./dist/online.d.ts',import:'./dist/online.js'};
     pkg.bin = { ['evopilot-next-' + owner]: 'dist/cli.js' };
     assert.equal(validateProductMetadata(pkg, owner).cli, 'PRESENT');
     assert.equal(validateProductMetadata(pkg, owner, 'M4').cli, 'PRESENT');

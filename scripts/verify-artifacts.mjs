@@ -76,7 +76,7 @@ export function validateEntries(entries, expected, owner) {
   assert.equal(manifest.legacySha256, LEGACY_PIN); assert.equal(hash(entries.get('vendor/compatibility/v1/reference.mjs')), LEGACY_PIN);
   const index = entries.get('src/index.ts').toString();
   assert(index.includes("export const PRODUCT = '" + owner + "';"));
-  assert(index.includes("export const VERSION = '0.4.0';"));
+  assert(index.includes("export const VERSION = '0.5.0';"));
   const exports = typeof pkg.exports === 'string' ? { '.': pkg.exports } : pkg.exports;
   for (const entry of Object.values(exports)) {
     assert.deepEqual(Object.keys(entry), ['types', 'import'], 'Invalid export conditions');
@@ -215,7 +215,7 @@ function smoke(owner, pkg) {
 async function smokePackage(owner, name) {
   const { default: assert } = await import('node:assert/strict');
   const api = await import(name);
-  assert.equal(api.PRODUCT, owner); assert.equal(api.VERSION, '0.4.0');
+  assert.equal(api.PRODUCT, owner); assert.equal(api.VERSION, '0.5.0');
   const serviceAPI = await import(name + '/service');
   const factory = serviceAPI['create' + owner[0].toUpperCase() + owner.slice(1) + 'Service'];
   const service = factory({ workspaceRoot: '/uninitialized-artifact-workspace', workspaceId: 'artifact-discovery' });
@@ -240,7 +240,7 @@ async function smokePackage(owner, name) {
   service.close();
   assert.equal(publicCapabilities.authority, false);
   assert.equal(publicCapabilities.product, owner);
-  assert.equal(publicCapabilities.version, '0.4.0');
+  assert.equal(publicCapabilities.version, '0.5.0');
   assert.equal(publicCapabilities.implementationStage, 'NATIVE_STANDARDS');
   assert.equal(typeof publicCapabilities.businessOperationsReady, 'boolean');
   const ref = product => ({ product, id: 'artifact', version: '0.1.0', specVersion: 'v1', digest: 'sha256:' + 'a'.repeat(64), visibility: 'private' });

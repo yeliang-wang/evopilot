@@ -1,4 +1,5 @@
 import type { FeedbackEnvelope, FeedbackEvent, FeedbackInbox, FeedbackOwner, FeedbackMaterial } from './compatibility/feedback/v1/feedback.mjs';
+import type {OnlineEnvelope,OnlineFinding,OnlineRepairCandidate,OnlineHarnessProviders,OnlineRuntimeProviders} from './compatibility/online/v1/online.mjs';
 import { nativeAssertJSON, nativeExact, nativeSha256, nativeStableSerialize, nativePackageDigest, referenceForPackage, validateNativeReference, NATIVE_CONTRACT_DIGEST } from './compatibility/v1/native.mjs';
 import type { NativePackage, NativeReference, NativeToolchain, NativeScope, StandardPins, NativeJSON } from './compatibility/v1/native.mjs';
 import type { NativeRuntimeProviders, NativeRunClaim, NativeRun, NativeMaterial, NativeOwnerReceipt, NativeProviderReceipt } from '@evopilot-next/runtime/service';
@@ -8,6 +9,7 @@ import type { Options, ProductService, Owner, Envelope } from './types.js';
 
 export interface NativeIntegrationConfiguration extends Pick<NativeRuntimeProviders, 'collect' | 'inspectCollection' | 'inspectSource' | 'resolveRequirements' | 'verifyProject'> {
   toolchain?: NativeToolchain;
+  online?:Pick<OnlineHarnessProviders,'collectOnline'|'inspectOnlineAlert'>;
 }
 export interface NativeIntegrationAPIs {
   ontology: { inspectOntologyStandard?: () => StandardPins & { contractDigest: string } };
@@ -117,6 +119,16 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
   async function feedbackAPI(owner:Owner,envelope:FeedbackEnvelope):Promise<unknown> {
     const instance=service(owner);if(!instance.feedback)fail('FEEDBACK_API_UNAVAILABLE');return instance.feedback(envelope);
   }
+  async function onlineAPI(owner:Owner,envelope:OnlineEnvelope):Promise<unknown>{
+    const instance=service(owner);if(!instance.online)fail('ONLINE_API_UNAVAILABLE');return instance.online(envelope);
+  }
+  const readOnlineFinding=async({scope,id}:{scope:NativeScope;id:string})=>await onlineAPI('harness',{operation:'online.finding.inspect',scope,input:{id}}) as OnlineFinding;
+  const readOnlineRepair=async({scope,id}:{scope:NativeScope;id:string})=>await onlineAPI('runtime',{operation:'online.repair.inspect',scope,input:{id}}) as OnlineRepairCandidate|null;
+  async function deliverOnlineFinding(finding:OnlineFinding):Promise<{id:string;digest:string}>{
+    const state=await onlineAPI('runtime',{operation:'online.inspect',scope:finding.scope,input:{}}) as {revision:number};
+    const response=await onlineAPI('runtime',{operation:'online.repair.ingest',scope:finding.scope,input:{id:finding.id},requestId:'online-finding-'+finding.id.slice(7),expectedRevision:state.revision}) as {result:{id:string;digest:string}};
+    return response.result;
+  }
   async function readFeedbackInbox({owner,scope,id}:{owner:FeedbackOwner;scope:NativeScope;id:string}):Promise<FeedbackInbox|null> {
     try{return await feedbackAPI(owner,{operation:'feedback.read',scope,input:{id}}) as FeedbackInbox;}catch(e){if((e as {code?:string}).code==='NOT_FOUND')return null;throw e;}
   }
@@ -132,14 +144,15 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
       const value=await published(reference,scope);return {...value,workspaceId:options.workspaceId,published:true};
     },
   };
-  const runtimeProviders = (): NativeRuntimeProviders => ({
+  const runtimeProviders = (): NativeRuntimeProviders & OnlineRuntimeProviders => ({
     ...(apis.ontology.inspectOntologyStandard && apis.harness.inspectHarnessStandard ? { nativeStandards: standards() } : {}),
     ...Object.fromEntries((['collect', 'inspectCollection', 'inspectSource', 'resolveRequirements', 'verifyProject'] as const).filter(k => configuration[k]).map(k => [k, configuration[k]])),
-    resolveNative, executeNative, readOwnerReceipt, deliverFeedback, readFeedbackInbox,
+    resolveNative, executeNative, readOwnerReceipt, deliverFeedback, readFeedbackInbox, readOnlineFinding,
     inspectNative: async ({ claim, signal }) => { if (signal.aborted) fail('ABORTED'); return receipt(claim); },
   });
   const harnessProviders = {
     ...ownerFeedbackProviders,
+    ...configuration.online,deliverOnlineFinding,readOnlineRepair,
     ...(configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {}),
     resolveNativeDependency: async ({ reference, workspaceId, scope }: { reference: NativeReference; workspaceId: string; scope: NativeScope }) => {
       if (workspaceId !== options.workspaceId) fail('MATERIAL_SCOPE');
@@ -149,6 +162,7 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
   };
   return { runtimeProviders, harnessProviders, ontologyProviders: {...ownerFeedbackProviders,...(configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {})},
     native: async (owner: Owner, envelope: Envelope) => {
+      if(envelope.operation.startsWith('online.')){nativeAssertJSON(envelope.input);if(!envelope.input||typeof envelope.input!=='object'||Array.isArray(envelope.input))fail('INVALID_INPUT');return onlineAPI(owner,{...envelope,input:Object.fromEntries(Object.entries(envelope.input))});}
       if(!envelope.operation.startsWith('feedback.'))return service(owner).native(envelope);
       nativeAssertJSON(envelope.input);if(!envelope.input||typeof envelope.input!=='object'||Array.isArray(envelope.input))fail('INVALID_INPUT');
       return feedbackAPI(owner,{...envelope,input:Object.fromEntries(Object.entries(envelope.input))});

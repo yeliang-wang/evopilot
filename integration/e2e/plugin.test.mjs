@@ -13,7 +13,7 @@ const env = { ...process.env, OPENSSL_CONF: '/dev/null' };
 const config = root + 'nonexistent-protocol-config.json';
 const init = { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'protocol-fixture', version: '1' } } };
 const call = (id, action, args = {}) => ({ jsonrpc: '2.0', id, method: 'tools/call', params: { name: 'evopilot_v01_' + action, arguments: args } });
-const expectedToolIds = ['inspect','activate','deactivate','guide','request','native','native_project','toolchain_inspect','toolchain_prepare','dispatch','reconcile','capabilities','workspace_inspect','workspace_initialize','workspace_attach','workspace_project','workspace_backup','workspace_backup_inspect','workspace_restore','workspace_migrate'].map(name => 'evopilot_v01_' + name).sort();
+const expectedToolIds = ['inspect','activate','deactivate','guide','request','native','native_project','online_configure','online_worker','toolchain_inspect','toolchain_prepare','dispatch','reconcile','capabilities','workspace_inspect','workspace_initialize','workspace_attach','workspace_project','workspace_backup','workspace_backup_inspect','workspace_restore','workspace_migrate'].map(name => 'evopilot_v01_' + name).sort();
 const scope = { visibility: 'private', projectId: 'example' };
 const request = (operation, input = {}) => ({ owner: 'ontology', envelope: { operation, scope, input, requestId: 'retained-request', expectedRevision: 1 } });
 const lines = values => values.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join('\n') + '\n';
@@ -275,6 +275,7 @@ test('pure guide maps every source reference to the installed package layout', (
   // No installed child repositories or filesystem fixtures are needed.
   const installationRoot = '/managed/evopilot/app';
   const expectedPaths = [
+    '/managed/evopilot/app/docs/online-harness.md',
     '/managed/evopilot/app/docs/feedback.md',
     '/managed/evopilot/app/specifications/project/v1/README.md',
     '/managed/evopilot/app/docs/native-workflow.md',

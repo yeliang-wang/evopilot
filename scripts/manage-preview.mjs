@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { NATIVE_CONTRACT_DIGEST } from '../integration/compatibility/v1/native.mjs';
 
-export const VERSION = '0.4.0';
+export const VERSION = '0.5.0';
 export const PIN = NATIVE_CONTRACT_DIGEST.slice(7);
 export const LEGACY_PIN = 'df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a';
 export const OWNERS = ['runtime', 'harness', 'ontology'];
@@ -210,6 +210,13 @@ export async function stopPreview({ root }) { const { c, client } = await instal
 export async function recoverPreview({ root }) { const { c, client } = await installed(root); return client.recoverStaleConnection(c.configPath); }
 export async function uninstallPreview({ root }) {
   const { c, client } = await installed(root);
+  if(c.workspaceRoot!==null){
+    const configAPI=await import(pathToFileURL(path.join(root,'app/dist/integration/connection/config.js')).href);
+    const lifecycle=await import(pathToFileURL(path.join(root,'app/dist/integration/online/lifecycle.js')).href);
+    const configuration=configAPI.loadConfiguration(c.configPath);
+    if(process.platform==='darwin')await lifecycle.stopOnlineWorker(configuration,true);
+    lifecycle.requireOnlineWorkerStopped(configuration);
+  }
   const connection = await client.inspectConnection(c.configPath);
   assert(!connection.state, 'Explicit recovery required before uninstall');
   if (connection.active) {

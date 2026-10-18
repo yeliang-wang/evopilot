@@ -42,9 +42,9 @@ Full OWL reasoning, multi-target schema/code generation, external ontology impor
 
 ## v0.4.0: registered execution feedback
 
-Status: `IMPLEMENTING`, under the approved [feedback Target](../governance/feedback-v04.json). Runtime captures terminal registered Run results durably, delivers them to both owners with retained receipt reconciliation, and requires exact reviewed owner dispositions before dependent completion. Harness owns regression candidates; Ontology owns semantic impact and exact-version reuse or new delivery. See the [feedback architecture decision](adr-feedback.md). Actual project evidence stays private. All 36 fixed variants are required; implementation alone is not acceptance.
+Published in the v0.4.0 Preview under the approved [feedback Target](../governance/feedback-v04.json). Runtime captures terminal registered Run results durably, delivers them to both owners with retained receipt reconciliation, and requires exact reviewed owner dispositions before dependent completion. Harness owns regression candidates; Ontology owns semantic impact and exact-version reuse or new delivery. See the [feedback architecture decision](adr-feedback.md). Actual project evidence stays private. All 36 fixed variants are required; implementation alone is not acceptance.
 
-The approved next version, v0.5.0, adds bounded online Harness integration, real Prometheus and Alertmanager adapters, persisted scheduling and supervised worker lifecycle. It remains unimplemented at this stage. Neither version authorizes arbitrary Host interception, automatic patch release from warnings, production deployment or v1.0.
+The v0.5.0 scope below adds bounded online Harness integration, real Prometheus and Alertmanager adapters, persisted scheduling and supervised worker lifecycle. Neither version authorizes arbitrary Host interception, automatic patch release from warnings, production deployment or v1.0.
 
 ## v1.0 readiness criteria
 
@@ -79,3 +79,22 @@ The owning repository keeps the detailed trigger, scope and acceptance; this tab
 EvoPilot coordinates project assets, quality evidence and reviewed execution through third-party Agents. It does not aim to become a general ontology editor/reasoner implementation, an independent CI/build engine, a metrics storage and alerting/on-call platform, a new hosted policy registry, or an embedded replacement for the user's Agent. Prefer bounded adapters to established tools when justified. A logged Warning does not authorize an automatic patch release; source changes do not authorize automatic asset approval or publication. Remote production deployment and unrestricted background mutation are not default capabilities.
 
 These are deliberate boundaries, not uncompleted items in the approved 0.3.0 acceptance. Follow [development](development.md) and [release procedure](github-release.md) for later explicitly scoped work. Historical baselines and existing private records remain protected.
+
+## Approved v0.5: online Harness
+
+The fixed [36-variant parent Target](https://github.com/yeliang-wang/evopilot/blob/main/governance/online-harness-v05.json) follows the published v0.4 Preview. This checkout implements that scope; exact candidate acceptance and release receipts remain external.
+
+Harness owns immutable service/environment/deployment/SLO/policy bindings, actual Prometheus measurements, authenticated Alertmanager findings, native Rego evaluation, retained incidents and reviewable regression comparisons. Runtime receives trusted repair candidates; it does not infer a software version or dispatch an autonomous repair. Ontology standards and reviewed semantic evolution remain unchanged. The parent provides the explicitly enabled independent local worker and Expert journeys, with actual installed Codex acceptance.
+
+The delivered scope is a bounded OpenSLO v1 RatioTimeslices profile and macOS arm64/launchd supervision. It does not establish full OpenSLO/Sloth compatibility, production business-SLO acceptance or v1.0 readiness. No second real project, WorkBuddy or original project mutation is included.
+
+### Deferred online follow-ups
+
+| Target candidate | Trigger | Required future evidence / boundary |
+|---|---|---|
+| Online retention and scale | Real projects reach bounded history/backlog limits | Reviewed retention/export semantics, immutable historical evidence, restart/load tests and explicit no-loss acceptance; no silent pruning |
+| Additional supervisors/providers | A concrete project requires another platform or telemetry source | Pinned supported subset, real provider/Host E2E, credentials/network isolation and owned stop/recovery; no blanket compatibility claim |
+| Reviewed repair execution linkage | Real users need repair candidates connected to a concrete approved Target | Explicit candidate/Target/source/version mapping, reviewed authority, real executor receipts, failure/recovery tests; never automatic patch release from Warning |
+| Additional SLO semantics | Several projects need calendar/composite/other budgeting methods | Versioned profile compatibility, upstream field/calculation comparisons, negative cases and preserved earlier approvals |
+
+These candidates are not uncompleted v0.5 criteria and have no assigned release date. They require their own reviewed Target. Existing v1.0 readiness conditions remain unchanged.

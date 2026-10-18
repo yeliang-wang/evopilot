@@ -2,6 +2,28 @@ import { getScenario, scenarioCatalogue, scenarioIds } from './scenarios.js';
 
 export interface GuideScenario { questions: string[]; owners: string[]; operations: string[]; steps: string[]; tools?: string[] }
 const guides: Record<string, GuideScenario> = {
+  'online-setup': {
+    questions:['Which service, environment, deployment revision and reviewed SLO apply?','Which private read-only Prometheus and authenticated Alertmanager credential file references are configured?'],
+    owners:['harness','runtime'],operations:['online.inspect','online.binding.put','online.binding.decide','online.binding.select'],
+    tools:['evopilot_v01_online_configure','evopilot_v01_online_worker','evopilot_v01_native','evopilot_v01_activate'],
+    steps:['Inspect exact installation and Workspace; read docs/online-harness.md against the verified installationRoot. Configuration, plugin selection and a valid SLO are not measurements or monitoring activation.','Use the strict OpenSLO v1 RatioTimeslices profile and an exact published native policy whose onlineTarget matches. Explain unsupported fields and actual units/window/freshness requirements.','Configure private server connections with credential file references; never put tokens into chat or assets. This stops the connection and deactivates the chat; explicitly reactivate to load configuration.','Prepare the immutable service binding and present the exact review for the actual human decision. Only then select it and explicitly start the independent worker. Do not infer a production SLO from a synthetic example.'],
+  },
+  'online-observe': {
+    questions:['Which selected binding and measurement window should be inspected?'],owners:['harness'],operations:['online.inspect','online.binding.inspect','online.observation.inspect','online.incident.inspect'],tools:['evopilot_v01_online_worker','evopilot_v01_native'],
+    steps:['Inspect worker registration, current PID/heartbeat and last tick separately from service health. A live worker is not PASS.','Read retained actual Prometheus windows, native command receipts and authenticated alert history for the exact service/environment/deployment.','Missing, stale, partial, unauthenticated, zero-denominator or timed-out data is INCOMPLETE. Diagnose the retained code; never substitute a guessed healthy value.','Backlog and resource limits remain visible. The selected worker continues independently of Codex; ordinary chats remain unaffected.'],
+  },
+  'online-repair': {
+    questions:['Which confirmed finding and concrete change should be reviewed?'],owners:['harness','runtime'],operations:['online.finding.inspect','online.finding.deliver','online.repair.inspect'],tools:['evopilot_v01_native'],
+    steps:['Read the immutable failure and current incident state. Reconcile pending Runtime delivery by retained owner readback before retrying.','Runtime holds a REVIEW_REQUIRED repair candidate, with no requested version, software release or ontology mutation. A warning cannot authorize a patch.','Review the evidence and proposed scope, then use the normal Runtime Target/Run workflow and actual human decisions. Link the finding as context; the candidate is not an approved Target or execution request.','Preserve failed and recovered observations. A recovery closes current incident state without erasing failure history or accepting business semantics.'],
+  },
+  'online-regression': {
+    questions:['Which retained same-policy fault and later recovery observations support this regression?'],owners:['harness'],operations:['online.regression.verify','native.package.put','native.package.validate','native.package.review','native.package.decide','native.package.publish'],tools:['evopilot_v01_native'],
+    steps:['Select actual native FAIL then PASS observations from the same immutable binding and policy. Verify the retained comparison, including exact report digests.','The comparison is REVIEW_REQUIRED and does not publish or weaken a rule. Build a new immutable package only if the reviewed change calls for one.','Keep precise source mappings and positive/negative/missing-input cases. A new threshold or policy requires a new binding/review; old evidence is unchanged.','Online observations cannot silently rewrite Ontology or project semantics.'],
+  },
+  'online-recovery': {
+    questions:['Which owned worker, retained window or verified backup requires recovery?'],owners:['harness','runtime'],operations:['online.binding.select','online.binding.inspect','online.receipt.inspect','online.observation.inspect'],tools:['evopilot_v01_online_worker','evopilot_v01_workspace_backup','evopilot_v01_workspace_restore','evopilot_v01_native'],
+    steps:['Deselect a binding to stop its schedule, or explicitly stop/uninstall the owned Workspace worker. Chat deactivation does not stop it. Preserve other processes and evidence.','Stop the independent worker before backup, restore, relocation, upgrade or toolchain maintenance. Existing selected schedules and watermarks are persisted; restored configuration does not start a worker automatically.','Online writes require database marker 4. Older readers must reject it; rollback uses a matching pre-upgrade backup/installation. Preserve external credential files separately.','After interruption, inspect the same pending window. Read-only measurement may resume for that window; completed results are immutable. Never replay a business Run to clear an online diagnostic.'],
+  },
   onboarding: {
     questions: ['What outcome and project scope do you want?', 'Do you have an existing Workspace or want a personal one initialized?'],
     owners: ['runtime', 'ontology', 'harness'], operations: ['workspace.inspect', 'standard.inspect', 'project.list'],
@@ -64,6 +86,11 @@ const guides: Record<string, GuideScenario> = {
   },
 };
 const nativeScenarios: Record<string, { guide: keyof typeof guides; title: string; tests: string[] }> = {
+  'V05-U01':{guide:'online-setup',title:'Reviewed service binding and explicit online setup',tests:['projects/evopilot-harness/tests/e2e/online-profile.test.mjs','projects/evopilot-harness/tests/e2e/online-owner.test.mjs','integration/e2e/online-worker.test.mjs']},
+  'V05-U02':{guide:'online-observe',title:'Measured native evaluation and authenticated alert inspection',tests:['projects/evopilot-harness/tests/e2e/online-prometheus.test.mjs','projects/evopilot-harness/tests/e2e/online-owner.test.mjs']},
+  'V05-U03':{guide:'online-repair',title:'Trusted findings become reviewable Runtime repair candidates',tests:['integration/e2e/online-feedback.test.mjs']},
+  'V05-U04':{guide:'online-regression',title:'Retained fault and correction regression comparison',tests:['projects/evopilot-harness/tests/e2e/online-owner.test.mjs']},
+  'V05-U05':{guide:'online-recovery',title:'Supervised restart, stop and maintenance boundary',tests:['integration/e2e/online-worker.test.mjs']},
   'V04-U01': { guide: 'runtime-feedback', title: 'Registered Run feedback and retained delivery', tests: ['integration/e2e/feedback.test.mjs'] },
   'V04-U02': { guide: 'asset-feedback-review', title: 'Reviewed regression and semantic-impact delivery', tests: ['integration/e2e/feedback.test.mjs'] },
   'V04-U03': { guide: 'feedback-recovery', title: 'Feedback restart, history and backup recovery', tests: ['integration/e2e/feedback.test.mjs'] },
@@ -75,7 +102,7 @@ const nativeScenarios: Record<string, { guide: keyof typeof guides; title: strin
   'V03-U06': { guide: 'recovery', title: 'Source changes, history, no redispatch and retained errors', tests: ['integration/e2e/native-collection.test.mjs', 'integration/e2e/native-project.test.mjs'] },
 };
 // Guides are pure; installed paths resolve against a verified installationRoot.
-export const sourceReferences = Object.freeze(['docs/feedback.md', 'specifications/project/v1/README.md', 'docs/native-workflow.md', 'docs/native-decisions.md', 'docs/first-journey.md', 'docs/product-composition.md', 'projects/evopilot-ontology/docs/service.md', 'projects/evopilot-ontology/docs/classification-service.md', 'projects/evopilot-ontology/docs/legacy-api.md', 'projects/evopilot-ontology/docs/catalog-service.md', 'projects/evopilot-ontology/specifications/', 'projects/evopilot-ontology/schemas/', 'projects/evopilot-harness/specifications/', 'projects/evopilot-harness/docs/service.md', 'projects/evopilot-runtime/docs/service.md']);
+export const sourceReferences = Object.freeze(['docs/online-harness.md', 'docs/feedback.md', 'specifications/project/v1/README.md', 'docs/native-workflow.md', 'docs/native-decisions.md', 'docs/first-journey.md', 'docs/product-composition.md', 'projects/evopilot-ontology/docs/service.md', 'projects/evopilot-ontology/docs/classification-service.md', 'projects/evopilot-ontology/docs/legacy-api.md', 'projects/evopilot-ontology/docs/catalog-service.md', 'projects/evopilot-ontology/specifications/', 'projects/evopilot-ontology/schemas/', 'projects/evopilot-harness/specifications/', 'projects/evopilot-harness/docs/service.md', 'projects/evopilot-runtime/docs/service.md']);
 export const installedReference = (reference: string) => reference.replace(/^projects\/evopilot-(runtime|harness|ontology)\//, 'node_modules/@evopilot-next/$1/');
 export const scenarios = Object.freeze([...Object.keys(guides), ...Object.keys(nativeScenarios), ...scenarioIds]);
 export function getGuide(scenario: string) {
@@ -89,6 +116,7 @@ export function getGuide(scenario: string) {
     scenarioReferences: ['docs/expert-scenarios.md'],
     firstWhenActive: ['evopilot_v01_capabilities', 'evopilot_v01_native: owner workspace.inspect, standard.inspect and exact scoped records'],
     rules: [
+      'Resolve installedReferences against inspect.connection.identity.installationRoot, not the plugin cache or current working directory. Read the referenced installed guide before operating.',
       'Ask only unresolved questions; explain user choices without asking users to author raw schema or digests.',
       'Native references additionally bind producer, contractDigest and owner standardDigest/standardLockDigest. A v1 label alone proves no conformance.',
       'Respect public/private and exact project scope. Public visibility is not permission to upload; private material cannot feed public consumers.',
