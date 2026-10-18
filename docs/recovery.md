@@ -12,6 +12,20 @@ Restore requires the exact backup manifest pinned by the retained maintenance jo
 
 After interruption, preserve request ID, journal and partial destination. Resume only the exact operation when its phase permits it. Never delete a journal to force retry. Restore and migration do not grant decisions, switch bindings or replay dispatches; verify owner snapshots before activation.
 
+## Native toolchain cache during maintenance
+
+In v0.5.0, Workspace backup and relocation do **not** automatically exclude `STATE_ROOT/native-toolchain`. The pinned Python environment contains symbolic links, and a native executable can exceed the copier's 64 MiB file limit. A direct backup with this generated cache present can therefore fail with `MAINTENANCE_PERMISSIONS` or `MAINTENANCE_LIMIT`. Stopping the worker alone does not remove this limitation; do not weaken the copier or follow these links.
+
+A same-host operator can preserve the cache separately while backing up business data:
+
+1. Stop the independent worker and acquire the installed client's `withWorkspaceMaintenance` lease. It verifies and stops the shared connection. Keep that lease for the entire operation below.
+2. Verify the exact cache with the installed `inspectNativeToolchain`. Require its canonical path and a new, private sibling destination outside both Workspace roots. Retain a recovery note with those exact paths.
+3. Rename only the verified generated `native-toolchain` directory to that destination. Do not move owner databases, assets, receipts, project files, signing keys or maintenance journals.
+4. Run the installed `maintainWorkspace(..., 'backup', ...)` and `inspectWorkspaceBackup`. The verified manifest now covers project and business state without the reproducible tool cache. Retain all original-location backup anchors and keys.
+5. In a `finally` path, rename the preserved cache back to its exact original path and verify it again before releasing the lease or activating. If interrupted, retain the parked directory and recover those exact paths before retry; do not overwrite a newly occupied path.
+
+This is an explicit operator procedure, not an automatic Expert/MCP backup feature. A restore of that business backup needs toolchain preparation before native validation. Reuse only hash-verified download artifacts; a relocated Python environment must be rebuilt at the new path. Never copy a live database, erase an interrupted maintenance journal, delete an unknown cache or treat the cached executables as business acceptance evidence.
+
 ## Connection recovery
 
 If selecting a candidate plugin still returns another installation, keep the session inactive. Check the installed plugin cache's MCP configuration against the candidate configuration path. Corrected installations use distinct `evopilot_<path-hash>` server names; older releases used one shared name and can collide when registered together. Refresh the candidate registration using the supported Codex plugin commands and reconnect in the Host. Do not overwrite the old installation or edit an inventoried `.mcp.json` in place. Only the actual `inspect` receipt can establish that the new connection is in use.
