@@ -19,7 +19,7 @@ export function validateProductMetadata(pkg, owner, checkpoint = 'M2') {
   const cli = pkg.bin === undefined ? 'PENDING' : 'PRESENT';
     assert.deepEqual(pkg.bin, { ['evopilot-next-' + owner]: 'dist/cli.js' });
   assert.deepEqual(pkg.dependencies ?? {}, owner === 'runtime' ? {} : owner === 'harness' ? { yaml: '2.9.0' } : { ajv: '8.20.0', yaml: '2.9.0' });
-  assert.deepEqual(pkg.devDependencies, { typescript: '5.9.3', '@types/node': '24.19.2' });
+  assert.deepEqual(pkg.devDependencies, { typescript: '5.9.3', '@types/node': '24.19.2', ...(owner === 'harness' ? { ajv: '8.20.0' } : {}) });
   for (const field of ['peerDependencies', 'optionalDependencies']) assert.deepEqual(pkg[field] ?? {}, {});
   assert.deepEqual(pkg.scripts, { build: 'node scripts/build.mjs', check: owner === 'ontology' ? 'tsc --noEmit && node scripts/check.mjs' : 'node scripts/check.mjs', test: 'node --test tests/e2e/*.test.mjs' });
   assert.deepEqual([...pkg.files].sort(), ( owner === 'runtime' ? ['dist', 'src', 'vendor', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'docs', 'LICENSE', 'NOTICE', 'provenance']
@@ -44,7 +44,7 @@ export async function checkPackages() {
   assert.equal(pkg.license, 'Apache-2.0');
     assert.deepEqual(pkg.engines, { node: '>=24.14.0' });
     for (const field of ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies']) {
-      if (field === 'devDependencies') assert.deepEqual(pkg[field], { typescript: '5.9.3', '@types/node': '24.19.2' });
+      if (field === 'devDependencies') assert.deepEqual(pkg[field], { typescript: '5.9.3', '@types/node': '24.19.2', ...(index === 2 ? { ajv: '8.20.0' } : {}) });
       else if (index === 3 && field === "dependencies") assert.deepEqual(pkg.dependencies, { ajv: "8.20.0", yaml: "2.9.0" });
       else if (index === 2 && field === 'dependencies') assert.deepEqual(pkg.dependencies, { yaml: '2.9.0' });
       else assert.equal(Object.keys(pkg[field] ?? {}).length, 0, `${field} must be empty`);
