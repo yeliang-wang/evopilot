@@ -1,4 +1,5 @@
-import { nativeExact, nativeSha256, nativeStableSerialize, nativePackageDigest, referenceForPackage, validateNativeReference, NATIVE_CONTRACT_DIGEST } from './compatibility/v1/native.mjs';
+import type { FeedbackEnvelope, FeedbackEvent, FeedbackInbox, FeedbackOwner, FeedbackMaterial } from './compatibility/feedback/v1/feedback.mjs';
+import { nativeAssertJSON, nativeExact, nativeSha256, nativeStableSerialize, nativePackageDigest, referenceForPackage, validateNativeReference, NATIVE_CONTRACT_DIGEST } from './compatibility/v1/native.mjs';
 import type { NativePackage, NativeReference, NativeToolchain, NativeScope, StandardPins, NativeJSON } from './compatibility/v1/native.mjs';
 import type { NativeRuntimeProviders, NativeRunClaim, NativeRun, NativeMaterial, NativeOwnerReceipt, NativeProviderReceipt } from '@evopilot-next/runtime/service';
 import type { NativeOntologyValidation, NativeOntologyRecord } from '@evopilot-next/ontology';
@@ -113,13 +114,32 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
     if (signal.aborted) fail('ABORTED');
     return receipt(claim);
   }
+  async function feedbackAPI(owner:Owner,envelope:FeedbackEnvelope):Promise<unknown> {
+    const instance=service(owner);if(!instance.feedback)fail('FEEDBACK_API_UNAVAILABLE');return instance.feedback(envelope);
+  }
+  async function readFeedbackInbox({owner,scope,id}:{owner:FeedbackOwner;scope:NativeScope;id:string}):Promise<FeedbackInbox|null> {
+    try{return await feedbackAPI(owner,{operation:'feedback.read',scope,input:{id}}) as FeedbackInbox;}catch(e){if((e as {code?:string}).code==='NOT_FOUND')return null;throw e;}
+  }
+  async function deliverFeedback({owner,event}:{owner:FeedbackOwner;event:FeedbackEvent}):Promise<FeedbackInbox> {
+    const existing=await readFeedbackInbox({owner,scope:event.scope,id:event.id});if(existing)return existing;
+    const state=await feedbackAPI(owner,{operation:'feedback.inspect',scope:event.scope,input:{}}) as {revision:number};
+    await feedbackAPI(owner,{operation:'feedback.ingest',scope:event.scope,input:{id:event.id,digest:event.digest},requestId:'feedback-'+event.id.slice(7,55),expectedRevision:state.revision});
+    const result=await readFeedbackInbox({owner,scope:event.scope,id:event.id});if(!result)fail('FEEDBACK_RECEIPT_UNAVAILABLE');return result;
+  }
+  const ownerFeedbackProviders={
+    readFeedback:async({id,scope}:{id:string;scope:NativeScope})=>await feedbackAPI('runtime',{operation:'feedback.event',scope,input:{id}}) as FeedbackEvent,
+    resolveFeedbackMaterial:async({reference,scope}:{reference:NativeReference;scope:NativeScope}):Promise<FeedbackMaterial>=>{
+      const value=await published(reference,scope);return {...value,workspaceId:options.workspaceId,published:true};
+    },
+  };
   const runtimeProviders = (): NativeRuntimeProviders => ({
     ...(apis.ontology.inspectOntologyStandard && apis.harness.inspectHarnessStandard ? { nativeStandards: standards() } : {}),
     ...Object.fromEntries((['collect', 'inspectCollection', 'inspectSource', 'resolveRequirements', 'verifyProject'] as const).filter(k => configuration[k]).map(k => [k, configuration[k]])),
-    resolveNative, executeNative, readOwnerReceipt,
+    resolveNative, executeNative, readOwnerReceipt, deliverFeedback, readFeedbackInbox,
     inspectNative: async ({ claim, signal }) => { if (signal.aborted) fail('ABORTED'); return receipt(claim); },
   });
   const harnessProviders = {
+    ...ownerFeedbackProviders,
     ...(configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {}),
     resolveNativeDependency: async ({ reference, workspaceId, scope }: { reference: NativeReference; workspaceId: string; scope: NativeScope }) => {
       if (workspaceId !== options.workspaceId) fail('MATERIAL_SCOPE');
@@ -127,6 +147,10 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
       return { reference: record.reference, published: true, workspaceId, scope: record.scope };
     },
   };
-  return { runtimeProviders, harnessProviders, ontologyProviders: configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {},
-    native: async (owner: Owner, envelope: Envelope) => service(owner).native(envelope), standards };
+  return { runtimeProviders, harnessProviders, ontologyProviders: {...ownerFeedbackProviders,...(configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {})},
+    native: async (owner: Owner, envelope: Envelope) => {
+      if(!envelope.operation.startsWith('feedback.'))return service(owner).native(envelope);
+      nativeAssertJSON(envelope.input);if(!envelope.input||typeof envelope.input!=='object'||Array.isArray(envelope.input))fail('INVALID_INPUT');
+      return feedbackAPI(owner,{...envelope,input:Object.fromEntries(Object.entries(envelope.input))});
+    }, standards };
 }

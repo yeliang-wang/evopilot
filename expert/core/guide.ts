@@ -38,6 +38,24 @@ const guides: Record<string, GuideScenario> = {
     tools: ['evopilot_v01_native'],
     steps: ['Inspect the original retained receipt after UNKNOWN, timeout or disconnect. Reconcile only actual protected evidence; never redispatch, refresh CAS or invent a replacement request ID.', 'Retain partial raw output and actual error status. Source, package, configuration or toolchain drift invalidates the old approval and requires a new reviewed candidate.', 'Use supported stopped-state backup and recovery. Preserve new native state before rollback; an old reader must reject new state rather than silently misinterpret it.', 'Historical documents and deliveries remain readable with their original standards and do not establish current conformance. Deactivation affects this chat only.'],
   },
+  'runtime-feedback': {
+    questions: ['Which registered project candidate and source revision should receive feedback?'],
+    owners: ['runtime', 'harness', 'ontology'], operations: ['feedback.inspect', 'feedback.configure', 'feedback.list', 'feedback.read', 'feedback.deliver', 'feedback.refresh'],
+    tools: ['evopilot_v01_native'],
+    steps: ['Inspect the selected chat, Workspace and exact project candidate. Configure feedback explicitly through Runtime; ordinary or unregistered Host work is not captured.', 'Registered terminal Run receipts and pending delivery are committed together. Runtime attempts bounded delivery to both owners; use feedback.read to distinguish delivered, pending and reviewed.', 'If a response is lost, inspect the original Run and retained owner inbox before resuming feedback delivery. Delivery never redispatches the Run. A terminal pending delivery may use a new delivery request after diagnosis; it keeps the same event and candidate IDs.', 'The automatic steps capture evidence and reconcile receipts. They do not approve domain meaning, publish assets or release software.'],
+  },
+  'asset-feedback-review': {
+    questions: ['Does the concrete evidence require a new asset delivery or justify reuse?', 'Which source-linked semantic or regression changes need a human decision?'],
+    owners: ['ontology', 'harness', 'runtime'], operations: ['feedback.list', 'feedback.read', 'feedback.propose', 'feedback.decide', 'feedback.refresh', 'project.validate', 'project.complete'],
+    tools: ['evopilot_v01_native', 'evopilot_v01_native_project'],
+    steps: ['Locate the private owner inbox via feedback.list/read. Harness owns regression candidates; Ontology owns semantic-impact candidates. Read pinned source, observation, both owner results and cause ID.', 'REUSE requires the exact published reference and a rationale. DELIVER requires a new immutable native package that has passed its author/validate/review/decision/publish lifecycle, with source-linked changes. Record relation, cardinality and deprecation impacts explicitly. Only the current pinned Harness dependency is inspected, not a global dependency graph.', 'Present the exact proposal and review digest for the real human decision. Synthetic test decisions and blanket execution permission cannot approve project semantics.', 'Refresh both owner dispositions. Completion requires both approvals and a passing Run that evaluated those exact final asset references. If assets changed, prepare and review a new Run; preserve failed RC evidence.'],
+  },
+  'feedback-recovery': {
+    questions: ['Which event, request and owner receipt were retained?', 'Which verified backup and installation match the state being recovered?'],
+    owners: ['runtime', 'harness', 'ontology'], operations: ['feedback.inspect', 'feedback.list', 'feedback.read', 'feedback.deliver', 'feedback.refresh', 'run.inspect'],
+    tools: ['evopilot_v01_native', 'evopilot_v01_workspace_backup', 'evopilot_v01_workspace_restore'],
+    steps: ['Reopen the same Workspace and inspect retained event and owner receipts. No Codex-wide interception or always-on delivery worker exists in v0.4.', 'Do not change event identity or repeat Run execution to clear pending feedback. Diagnose timeout, source drift, wrong scope or stale review using the retained error code.', 'Stop older connections before upgrade. The first feedback write advances the database schema to 3. Older readers must reject it; rollback uses a matching pre-upgrade backup and installation.', 'Back up project files and all owner state consistently through supported maintenance. Asset Git history alone cannot recover Run claims or feedback receipts.'],
+  },
   'retained-ontology': {
     questions: ['Which historical source, asset, receipt or delivery must be read?'],
     owners: ['ontology'], operations: ['source.list', 'source.inspect', 'asset.inspect', 'receipt.inspect'],
@@ -46,6 +64,9 @@ const guides: Record<string, GuideScenario> = {
   },
 };
 const nativeScenarios: Record<string, { guide: keyof typeof guides; title: string; tests: string[] }> = {
+  'V04-U01': { guide: 'runtime-feedback', title: 'Registered Run feedback and retained delivery', tests: ['integration/e2e/feedback.test.mjs'] },
+  'V04-U02': { guide: 'asset-feedback-review', title: 'Reviewed regression and semantic-impact delivery', tests: ['integration/e2e/feedback.test.mjs'] },
+  'V04-U03': { guide: 'feedback-recovery', title: 'Feedback restart, history and backup recovery', tests: ['integration/e2e/feedback.test.mjs'] },
   'V03-U01': { guide: 'onboarding', title: 'Passive selection, Workspace and pinned toolchain', tests: ['integration/e2e/plugin.test.mjs', 'integration/e2e/native-toolchain.test.mjs', 'integration/e2e/native-connection.test.mjs'] },
   'V03-U02': { guide: 'ontology-forward', title: 'Forward requirements and native project contract', tests: ['integration/e2e/native-project.test.mjs'] },
   'V03-U03': { guide: 'ontology-reverse', title: 'Reverse extraction and all visibility/direction combinations', tests: ['integration/e2e/native-project.test.mjs'] },
@@ -54,7 +75,7 @@ const nativeScenarios: Record<string, { guide: keyof typeof guides; title: strin
   'V03-U06': { guide: 'recovery', title: 'Source changes, history, no redispatch and retained errors', tests: ['integration/e2e/native-collection.test.mjs', 'integration/e2e/native-project.test.mjs'] },
 };
 // Guides are pure; installed paths resolve against a verified installationRoot.
-export const sourceReferences = Object.freeze(['specifications/project/v1/README.md', 'docs/native-workflow.md', 'docs/native-decisions.md', 'docs/first-journey.md', 'docs/product-composition.md', 'projects/evopilot-ontology/docs/service.md', 'projects/evopilot-ontology/docs/classification-service.md', 'projects/evopilot-ontology/docs/legacy-api.md', 'projects/evopilot-ontology/docs/catalog-service.md', 'projects/evopilot-ontology/specifications/', 'projects/evopilot-ontology/schemas/', 'projects/evopilot-harness/specifications/', 'projects/evopilot-harness/docs/service.md', 'projects/evopilot-runtime/docs/service.md']);
+export const sourceReferences = Object.freeze(['docs/feedback.md', 'specifications/project/v1/README.md', 'docs/native-workflow.md', 'docs/native-decisions.md', 'docs/first-journey.md', 'docs/product-composition.md', 'projects/evopilot-ontology/docs/service.md', 'projects/evopilot-ontology/docs/classification-service.md', 'projects/evopilot-ontology/docs/legacy-api.md', 'projects/evopilot-ontology/docs/catalog-service.md', 'projects/evopilot-ontology/specifications/', 'projects/evopilot-ontology/schemas/', 'projects/evopilot-harness/specifications/', 'projects/evopilot-harness/docs/service.md', 'projects/evopilot-runtime/docs/service.md']);
 export const installedReference = (reference: string) => reference.replace(/^projects\/evopilot-(runtime|harness|ontology)\//, 'node_modules/@evopilot-next/$1/');
 export const scenarios = Object.freeze([...Object.keys(guides), ...Object.keys(nativeScenarios), ...scenarioIds]);
 export function getGuide(scenario: string) {

@@ -24,3 +24,7 @@ Historical asset deliveries, decisions and receipts keep their original bytes an
 Target/Loop progress remains private documentary governance linked to Runtime objects. Normal project onboarding does not change public product source or Roadmaps. Public visibility does not authorize uploading private data. No WorkBuddy implementation, production database operation, monitoring service, automatic synchronization or automatic release is included.
 
 The [Expert catalogue](expert-scenarios.md) separates current native journeys from retained historical scenarios. [Acceptance evidence](native-acceptance.md) explains why tests and complete-shaped reports alone cannot establish project or product acceptance.
+
+## v0.4 candidate feedback
+
+Registered Runtime Runs can opt into durable evidence delivery. Harness and Ontology receive private reviewable candidates through public APIs, with exact-version reuse or a native asset delivery and concrete human decision. Pending feedback blocks dependent completion. See [feedback](feedback.md). v0.4 does not add online SRE, arbitrary Host interception, automatic semantic approval or patch publication.

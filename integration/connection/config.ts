@@ -48,7 +48,7 @@ export function outsideGit(root: string) {
   }
 }
 export function installationIdentity(config: ConnectionConfig): ConnectionIdentity {
-  return Object.freeze({ product: 'evopilot-v01-preview', version: '0.3.0', protocol: 'evopilot-connection/v1', installationId: config.installationId,
+  return Object.freeze({ product: 'evopilot-v01-preview', version: '0.4.0', protocol: 'evopilot-connection/v1', installationId: config.installationId,
     installationRoot: config.installationRoot, installationDigest: digest(canonicalJSON(config.manifest)), components: config.components,
     workspaceRoot: config.workspaceRoot, workspaceId: config.workspaceId });
 }
@@ -85,7 +85,7 @@ export function loadInstallationConfiguration(filename: string, options: Configu
   if (filename.startsWith(codeRoot + path.sep)) fail('CONFIG_LOCATION');
   const c: unknown = JSON.parse(readRegular(filename).toString());
   fields(c, ['schema', 'version', 'protocol', 'installationId', 'installationRoot', 'workspaceRoot', 'workspaceId', 'components', 'manifest']);
-  if (c.schema !== 'evopilot-connection-config/v1' || c.version !== '0.3.0' || c.protocol !== 'evopilot-connection/v1') fail('CONFIG_VERSION');
+  if (c.schema !== 'evopilot-connection-config/v1' || c.version !== '0.4.0' || c.protocol !== 'evopilot-connection/v1') fail('CONFIG_VERSION');
   if (typeof c.installationId !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(c.installationId)) fail('CONFIG_ID');
   if ((c.workspaceRoot === null) !== (c.workspaceId === null)) fail('CONFIG_WORKSPACE');
   if (c.workspaceId !== null && (typeof c.workspaceId !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(c.workspaceId))) fail('CONFIG_ID');
@@ -93,7 +93,7 @@ export function loadInstallationConfiguration(filename: string, options: Configu
   if (c.installationRoot !== codeRoot) fail('INSTALLATION_ROOT');
   if (c.workspaceRoot !== null) validateStateRoot(c.workspaceRoot);
   fields(c.components, ['runtime', 'harness', 'ontology']);
-  if (Object.values(c.components).some(v => v !== '0.3.0')) fail('COMPONENT_VERSION');
+  if (Object.values(c.components).some(v => v !== '0.4.0')) fail('COMPONENT_VERSION');
   if (!Array.isArray(c.manifest) || !c.manifest.length || c.manifest.length > LIMITS.files) fail('MANIFEST');
   const listed = new Set();
   let total = 0;
@@ -121,7 +121,7 @@ export function loadInstallationConfiguration(filename: string, options: Configu
   walk('node_modules');
   if (required.some(p => !listed.has(p))) fail('MANIFEST_INCOMPLETE');
   const parent = JSON.parse(readRegular(path.join(codeRoot, 'package.json')).toString());
-  if (parent.name !== '@evopilot-next/stack' || parent.version !== '0.3.0') fail('COMPONENT_IDENTITY');
+  if (parent.name !== '@evopilot-next/stack' || parent.version !== '0.4.0') fail('COMPONENT_IDENTITY');
   for (const owner of Object.keys(c.components) as Owner[]) {
     const pkg = JSON.parse(readRegular(path.join(codeRoot, 'node_modules/@evopilot-next', owner, 'package.json')).toString());
     if (pkg.name !== '@evopilot-next/' + owner || pkg.version !== (c.components as Record<string, unknown>)[owner]) fail('COMPONENT_IDENTITY');

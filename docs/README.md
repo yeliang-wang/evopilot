@@ -22,3 +22,7 @@ Start with [installation](installation.md) and the [first journey](first-journey
 Architecture also covers [process topology](architecture/0002-local-process-topology.md) and [local authoring](architecture/0003-local-authoring.md). Product links use GitHub; within-parent links stay relative. Installed bundles map shipped child documentation to local paths for offline reading.
 
 The [frozen roadmap](roadmap/ROADMAP.md) preserves the v0.1.0 baseline and the [repair scope](../governance/delivery-repair-v011.json) preserves v0.1.1. The current [v0.2 target](../governance/workspace-v02.json) adds independent Workspace workflows. [v1.0 readiness criteria](../governance/readiness-v1.json) stay generic; real project progress and evidence remain private. These documents define scope, not acceptance results.
+
+## Registered execution feedback
+
+Start with [the v0.4 feedback guide](feedback.md) for exact operation inputs, owner review and recovery; [the Expert catalogue](expert-scenarios.md) lists V04-U01–U03. The [fixed Target](../governance/feedback-v04.json) separates implementation from acceptance.

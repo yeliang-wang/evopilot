@@ -14,7 +14,7 @@ const reference = product => ({ product, id: 'example', version: '0.1.0', specVe
 function validateProviderContract(providers) {
   const invalid = () => { throw Object.assign(new Error('Invalid provider contract'), { code: 'INVALID_REQUEST' }); };
   for (const [key, value] of Object.entries(providers)) {
-    if (!['resolveClassificationSource', 'classificationAdvisor', 'classificationModel', 'resolveLegacyHarness'].includes(key)) invalid();
+    if (!['resolveClassificationSource', 'classificationAdvisor', 'classificationModel', 'resolveLegacyHarness', 'readFeedback', 'resolveFeedbackMaterial'].includes(key)) invalid();
     if (key !== 'classificationModel') { if (typeof value !== 'function') invalid(); continue; }
     if (!value || Object.keys(value).sort().join() !== ['modelId', 'providerId', 'revision', 'timeoutMs'].sort().join()) invalid();
     for (const field of ['providerId', 'modelId', 'revision']) if (typeof value[field] !== 'string' || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(value[field])) invalid();
@@ -39,7 +39,7 @@ function fixture() {
     const ref = owner === 'runtime' ? null : reference(owner);
     if (ref) records[owner] = { model: { id: ref.id, version: ref.version, specVersion: 'v1' }, scope: owner === 'ontology' ? shared : scope, delivery: { digest: ref.digest }, ...(owner === 'harness' ? { resolution: { dependencies: [reference('ontology')] } } : {}) };
     return [owner, {
-      PRODUCT: owner, VERSION: '0.3.0', verifyDelivery: delivery => ({ valid: delivery.digest === ref.digest }),
+      PRODUCT: owner, VERSION: '0.4.0', verifyDelivery: delivery => ({ valid: delivery.digest === ref.digest }),
       validateInstances: () => ({ valid: true, status: 'PASS' }),
       ['create' + owner[0].toUpperCase() + owner.slice(1) + 'Service']: (received, supplied) => {
         if (owner === 'ontology') validateProviderContract(supplied);
@@ -123,7 +123,9 @@ test('interface only: trusted providers are copied and classification forwards e
   supplied.resolveClassificationSource = () => 'changed';
   try {
     const capabilities = c.capabilities();
-    assert.deepEqual(f.providers.ontology, { resolveClassificationSource, classificationModel, classificationAdvisor, resolveLegacyHarness });
+    const {readFeedback,resolveFeedbackMaterial,...classificationProviders}=f.providers.ontology;
+    assert.equal(typeof readFeedback,'function');assert.equal(typeof resolveFeedbackMaterial,'function');
+    assert.deepEqual(classificationProviders, { resolveClassificationSource, classificationModel, classificationAdvisor, resolveLegacyHarness });
     assert.notEqual(f.providers.ontology, supplied);
     assert(Object.isFrozen(f.providers.ontology));
     assert.deepEqual(capabilities.ontologyProviders, Object.fromEntries(Object.keys(supplied).map(k => [k, 'CONFIGURED'])));
@@ -151,7 +153,8 @@ test('interface only: unconfigured classification preserves owner failure withou
   const unavailable = Object.assign(new Error('Owner provider unavailable'), { code: 'PROVIDER_UNAVAILABLE' });
   let count = 0;
   f.apis.ontology.createOntologyService = (options, providers) => {
-    assert.deepEqual(providers, {});
+    assert.deepEqual(Object.keys(providers).sort(), ['readFeedback','resolveFeedbackMaterial']);
+    assert(Object.values(providers).every(value=>typeof value==='function'));
     return { ...factory(options, providers), async classify() { count++; throw unavailable; } };
   };
   const c = createComposition(options, f.apis);
@@ -304,7 +307,7 @@ test('interface only: cancellation during revision query prevents Harness dispat
 const metadataFixtures = {
   "runtime": {
     "name": "@evopilot-next/runtime",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "private": true,
     "type": "module",
     "engines": {
@@ -349,7 +352,7 @@ const metadataFixtures = {
   },
   "harness": {
     "name": "@evopilot-next/harness",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "private": true,
     "bin": {
       "evopilot-next-harness": "dist/cli.js"
@@ -404,7 +407,7 @@ const metadataFixtures = {
   },
   "ontology": {
     "name": "@evopilot-next/ontology",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "private": true,
     "type": "module",
     "engines": {
