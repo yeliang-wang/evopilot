@@ -402,7 +402,8 @@ const metadataFixtures = {
     "license": "Apache-2.0",
     "devDependencies": {
       "typescript": "5.9.3",
-      "@types/node": "24.19.2"
+      "@types/node": "24.19.2",
+      "ajv": "8.20.0"
     }
   },
   "ontology": {
