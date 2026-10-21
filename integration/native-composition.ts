@@ -6,10 +6,13 @@ import type { NativeRuntimeProviders, NativeRunClaim, NativeRun, NativeMaterial,
 import type { NativeOntologyValidation, NativeOntologyRecord } from '@evopilot-next/ontology';
 import type { NativeHarnessReport, HarnessObservation } from '@evopilot-next/harness/native';
 import type { Options, ProductService, Owner, Envelope } from './types.js';
+import type { ResponseEnvelope, ResponseRuntimeProviders, ResponseEvidenceRef, ResponseEvidence, ResponseRecovery, ResponseProblem, RunbookPin, ResolvedResponseRunbook, ResponseExecutionVerification } from './compatibility/response/v1/response.mjs';
+import { readRuntimeResponseEvidence, requestResponseCollectionCancellation } from './response/evidence.js';
 
 export interface NativeIntegrationConfiguration extends Pick<NativeRuntimeProviders, 'collect' | 'inspectCollection' | 'inspectSource' | 'resolveRequirements' | 'verifyProject'> {
   toolchain?: NativeToolchain;
   online?:Pick<OnlineHarnessProviders,'collectOnline'|'inspectOnlineAlert'>;
+  readResponseWorkspaceEvidence?: (input: { scope: NativeScope; reference: ResponseEvidenceRef }) => Promise<ResponseEvidence> | ResponseEvidence;
 }
 export interface NativeIntegrationAPIs {
   ontology: { inspectOntologyStandard?: () => StandardPins & { contractDigest: string } };
@@ -122,6 +125,26 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
   async function onlineAPI(owner:Owner,envelope:OnlineEnvelope):Promise<unknown>{
     const instance=service(owner);if(!instance.online)fail('ONLINE_API_UNAVAILABLE');return instance.online(envelope);
   }
+  async function responseAPI(owner:Owner,envelope:ResponseEnvelope):Promise<unknown>{
+    const instance=service(owner);if(!instance.response)fail('RESPONSE_API_UNAVAILABLE');return instance.response(envelope);
+  }
+  const readResponseEvidence=async({scope,reference}:{scope:NativeScope;reference:ResponseEvidenceRef}):Promise<ResponseEvidence>=>{
+    if(reference.owner==='runtime')return readRuntimeResponseEvidence(options,r=>service('runtime').native(r),scope,reference);
+    if(reference.owner==='harness')return await responseAPI('harness',{operation:'response.evidence.inspect',scope,input:{reference}}) as ResponseEvidence;
+    if(reference.owner==='workspace'&&configuration.readResponseWorkspaceEvidence)return configuration.readResponseWorkspaceEvidence({scope,reference});
+    fail('RESPONSE_EVIDENCE_UNSUPPORTED');
+  };
+  const readResponseRecovery=async({scope,reference}:{scope:NativeScope;reference:ResponseEvidenceRef}):Promise<ResponseRecovery>=>{
+    if(reference.owner!=='harness')fail('RESPONSE_EVIDENCE_OWNER');
+    const result=await responseAPI('harness',{operation:'response.recovery.inspect',scope,input:{id:reference.id}}) as ResponseRecovery;
+    if(!same(result.reference,reference))fail('RESPONSE_EVIDENCE_DRIFT');return result;
+  };
+  const responseRuntimeProviders:ResponseRuntimeProviders={
+    resolveResponseRunbook:async({scope,pin}:{scope:NativeScope;pin:RunbookPin})=>await responseAPI('harness',{operation:'response.runbook.inspect',scope,input:{pin}}) as ResolvedResponseRunbook,
+    readResponseProblem:async({scope,id}:{scope:NativeScope;id:string})=>await responseAPI('harness',{operation:'response.problem.inspect',scope,input:{id}}) as ResponseProblem,
+    readResponseEvidence,readResponseRecovery,
+    cancelResponseCollection:({scope,collectionId,claimId})=>requestResponseCollectionCancellation(options,r=>service('runtime').native(r),scope,collectionId,claimId),
+  };
   const readOnlineFinding=async({scope,id}:{scope:NativeScope;id:string})=>await onlineAPI('harness',{operation:'online.finding.inspect',scope,input:{id}}) as OnlineFinding;
   const readOnlineRepair=async({scope,id}:{scope:NativeScope;id:string})=>await onlineAPI('runtime',{operation:'online.repair.inspect',scope,input:{id}}) as OnlineRepairCandidate|null;
   async function deliverOnlineFinding(finding:OnlineFinding):Promise<{id:string;digest:string}>{
@@ -144,14 +167,21 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
       const value=await published(reference,scope);return {...value,workspaceId:options.workspaceId,published:true};
     },
   };
-  const runtimeProviders = (): NativeRuntimeProviders & OnlineRuntimeProviders => ({
+  const runtimeProviders = (): NativeRuntimeProviders & OnlineRuntimeProviders & ResponseRuntimeProviders => ({
     ...(apis.ontology.inspectOntologyStandard && apis.harness.inspectHarnessStandard ? { nativeStandards: standards() } : {}),
     ...Object.fromEntries((['collect', 'inspectCollection', 'inspectSource', 'resolveRequirements', 'verifyProject'] as const).filter(k => configuration[k]).map(k => [k, configuration[k]])),
     resolveNative, executeNative, readOwnerReceipt, deliverFeedback, readFeedbackInbox, readOnlineFinding,
+    ...responseRuntimeProviders,
     inspectNative: async ({ claim, signal }) => { if (signal.aborted) fail('ABORTED'); return receipt(claim); },
   });
   const harnessProviders = {
     ...ownerFeedbackProviders,
+    readResponseEvidence,readResponseRecovery,
+    readResponseExecution:async({scope,reference}:{scope:NativeScope;reference:ResponseEvidenceRef})=>{
+      if(reference.owner!=='runtime'||!reference.id.startsWith('response:'))fail('RESPONSE_EXECUTION_REFERENCE');
+      const result=await responseAPI('runtime',{operation:'response.execution.inspect',scope,input:{id:reference.id.slice(9)}}) as ResponseExecutionVerification;
+      if(!same(result.reference,reference))fail('RESPONSE_EXECUTION_REFERENCE');return result;
+    },
     ...configuration.online,deliverOnlineFinding,readOnlineRepair,
     ...(configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {}),
     resolveNativeDependency: async ({ reference, workspaceId, scope }: { reference: NativeReference; workspaceId: string; scope: NativeScope }) => {
@@ -162,6 +192,7 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
   };
   return { runtimeProviders, harnessProviders, ontologyProviders: {...ownerFeedbackProviders,...(configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {})},
     native: async (owner: Owner, envelope: Envelope) => {
+      if(envelope.operation.startsWith('response.')){nativeAssertJSON(envelope.input);if(!envelope.input||typeof envelope.input!=='object'||Array.isArray(envelope.input))fail('INVALID_INPUT');return responseAPI(owner,{...envelope,input:Object.fromEntries(Object.entries(envelope.input))});}
       if(envelope.operation.startsWith('online.')){nativeAssertJSON(envelope.input);if(!envelope.input||typeof envelope.input!=='object'||Array.isArray(envelope.input))fail('INVALID_INPUT');return onlineAPI(owner,{...envelope,input:Object.fromEntries(Object.entries(envelope.input))});}
       if(!envelope.operation.startsWith('feedback.'))return service(owner).native(envelope);
       nativeAssertJSON(envelope.input);if(!envelope.input||typeof envelope.input!=='object'||Array.isArray(envelope.input))fail('INVALID_INPUT');

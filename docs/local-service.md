@@ -1,18 +1,18 @@
-# Local connection foundation (M3)
+# Local connection — v0.6.0 Preview candidate
 
-This is connection orchestration for EvoPilot v0.2 Preview, version `0.1.0`,
-protocol `evopilot-connection/v1`. It is not Host acceptance, release authority,
-or a completed stdio adapter/installer. Runtime, Harness and Ontology retain
+This describes connection orchestration for version `0.6.0`, using the retained
+protocol `evopilot-connection/v1`. The installer and Codex stdio adapter use this
+connection; their presence is not Host acceptance or release authority. Runtime, Harness and Ontology retain
 their own state and receipts. There is no parent business database.
 
 ## Public entry points
 
-Import `integration/connection/config.mjs` for `loadConfiguration(configPath)`,
+Import the installed `dist/integration/connection/config.js` for `loadConfiguration(configPath)`,
 `installationIdentity(config)`, `canonicalJSON(value)`, `digest(bytes)`, and
 `LIMITS`. Loading validates installed content and paths without writing files.
 There is no environment-based configuration or credential loading.
 
-Import `integration/connection/client.mjs` for:
+Import the installed `dist/integration/connection/client.js` for:
 
 - `inspectConnection(configPath)`: passive discovery; returns inactive when no
   record exists, or verifies an existing ready process over authenticated HTTP.
@@ -21,10 +21,13 @@ Import `integration/connection/client.mjs` for:
   installation/workspace identity. Successful activation initializes Runtime.
 - `callConnection(configPath, action, payload)`: forward once to an already
   active process. Actions are `request {owner,envelope}`, `dispatch {args}`,
-  `reconcile {args}`, `capabilities {}`, and `inspect {owner,scope}`.
+  `reconcile {args}`, `capabilities {}`, `inspect {owner,scope}`,
+  `native {owner,envelope}`, and `native_project {operation,input}`.
   Owners are exactly `runtime`, `harness`, and `ontology`. Envelopes and args
   reach the existing composition APIs unchanged; owning products validate
   their business schemas. Harness/Ontology initialize on explicit operations.
+  New native, feedback, online and response owner envelopes use `native`;
+  historical `request` APIs do not reactivate retired JSON mutations.
 - `stopConnection(configPath)`: authenticate the exact instance and close it.
   Returns `{stopped:false}` when absent; refuses `BUSY` while an operation is
   in flight. It closes composition before removing its own control record.
@@ -32,8 +35,12 @@ Import `integration/connection/client.mjs` for:
   exact valid record only when `kill(pid, 0)` proves `ESRCH`. This never sends a
   kill signal, touches business data, or redispatches a request.
 
-Capabilities retain the composition's honest unavailable-provider list:
-classification, legacy Catalog, and arbitrary legacy resolvers remain unwired.
+Capabilities return actual owner operation lists and the configured/unconfigured
+status of historical Ontology SDK providers. The daemon supplies deterministic
+native resolution and validation, the prepared local collector, and explicitly
+configured online adapters. It does not supply a classification model, advisor,
+legacy Catalog resolver or arbitrary executor. Provider registration does not
+make retired writes available or establish acceptance.
 Inspect/capabilities on an inactive connection do not implicitly activate it.
 The lower-level `transport`, `validateAction`, and control-module exports are
 implementation helpers, not a separate product execution interface.
@@ -47,27 +54,40 @@ provider, executable override, port, or arbitrary control-directory setting):
 ```json
 {
   "schema": "evopilot-connection-config/v1",
-  "version": "0.1.0",
+  "version": "0.6.0",
   "protocol": "evopilot-connection/v1",
   "installationId": "preview-install",
   "installationRoot": "/canonical/installed-preview",
   "workspaceRoot": "/canonical/private-parent/workspace",
   "workspaceId": "preview-workspace",
-  "components": {"runtime":"0.1.0","harness":"0.1.0","ontology":"0.1.0"},
+  "components": {"runtime":"0.6.0","harness":"0.6.0","ontology":"0.6.0"},
   "manifest": [{"path":"package.json","sha256":"64-lowercase-hex-digits"}]
 }
 ```
 
+An unbound installation has both `workspaceRoot` and `workspaceId` set to
+`null`. `loadInstallationConfiguration` permits that passive state;
+`loadConfiguration` requires a Workspace. Explicit initialization/attachment
+retains a separately validated private binding beside the managed root. The
+editable project root is distinct from protected owner state and may have its
+own private Git repository; state/configuration must stay outside Git.
+
 The example manifest is illustrative, not complete. The installer must enumerate
 and hash the **raw file bytes**, using SHA-256 without a `sha256:` prefix, of:
 
-1. `package.json` (`@evopilot-next/stack`, version `0.1.0`).
-2. All four `integration/connection/*.mjs` files.
-3. `integration/composition.mjs`.
-4. `integration/compatibility/v1/reference.mjs` and `manifest.json`.
+1. `package.json` (`@evopilot-next/stack`, version `0.6.0`).
+2. All four compiled `dist/integration/connection/*.js` files.
+3. `dist/integration/composition.js` and `dist/integration/types.js`.
+4. `dist/integration/compatibility/v1/reference.mjs` and `manifest.json`.
 5. Every regular file recursively under installed `node_modules`, including
    all three public packages, transitive dependencies, package export maps,
    native binaries, and any executable dependency assets.
+
+These are the connection loader's required minimum entries. The supported
+installer inventories the complete shipped program, including the compiled
+native/feedback/online/response routes, shared contracts, Expert, plugin,
+Workspace templates and installed documentation; do not construct a partial
+manifest from this list.
 
 Use a reproducible path sort for manifest entries. The installation digest is
 SHA-256 of the canonical JSON manifest (object keys sorted, array order retained).
@@ -111,16 +131,28 @@ identity includes workspace root/id, installation root/id, installation digest,
 component versions, product, version and protocol. No configurable remote address
 or non-loopback fallback exists.
 
-Bounds: config/request 1 MiB; response 8 MiB; manifest 10,000 entries and at most
+Bounds: config and ordinary requests 1 MiB; ordinary responses 8 MiB. Only
+Harness/Ontology `native.package.put` and project `materialize` accept requests
+up to 8 MiB. Those routes and owner package inspect/readback/publish/receipt
+readback accept responses up to 16 MiB; their MCP output limit is 32 MiB.
+Other routes retain the ordinary limits. See [package transport](native-workflow.md#native-package-transport-bounds)
+for pre-dispatch rejection and uncertain post-dispatch outcomes.
+
+The manifest has at most 10,000 entries and
 10,000 dependency-tree nodes; each installed file 16 MiB, total hashed content
 256 MiB; HTTP headers 8 KiB; request-body/header time 5 seconds; 64 connections;
-client call deadline 35 seconds; health 1.5 seconds; startup polling 10 seconds.
+ordinary client call deadline 35 seconds; `native` calls 625 seconds; health
+1.5 seconds; startup polling 10 seconds. Individual native operations retain
+their own validator/provider/collection deadlines; the transport allowance is
+not execution permission or a successful receipt.
 Oversized responses or lost connections yield `UNKNOWN`. Startup timeout leaves
 metadata intact and never kills an unknown process. Failed startup retains a
 sanitized diagnostic; initialization failures do not authorize replay.
 
-Product errors retain their code and exact requestId/scope/expectedRevision
-correlation. Provider messages and stacks are not serialized. Lost/malformed
+Product errors retain their code and available requestId/scope/expectedRevision,
+operation and ID correlation; native owner calls also retain the valid owner.
+Project materialization retains its scope, operation and candidate ID. Package
+contents are not copied into errors. Provider messages and stacks are not serialized. Lost/malformed
 responses, including loss after mutation, produce `UNKNOWN`: inspect the owning
 receipt with the original requestId/scope, or use the owning reconciliation API.
 There is no retry, revision refresh, inferred decision, or automatic CAS repair.

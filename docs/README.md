@@ -1,6 +1,6 @@
 # Documentation
 
-Current v0.5.0 Preview: [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics.
+These docs describe the v0.6.0 Preview candidate; v0.5.0 is the previous published release. Start with [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics. Candidate documentation does not establish publication or acceptance.
 
 Start with [installation](installation.md) and the [first journey](first-journey.md). The portable bundle is the user path; source builds are for contributors.
 
@@ -30,3 +30,7 @@ Start with [the v0.4 feedback guide](feedback.md) for exact operation inputs, ow
 ## Online Harness
 
 Use [online setup, inspection and recovery](online-harness.md), the [worker design](architecture/0005-online-harness.md), and the fixed [v0.5 Target](../governance/online-harness-v05.json). Expert journeys V05-U01–U05 have linked executable tests. Actual Host and controlled telemetry acceptance remain separate evidence.
+
+## v0.6 candidate response linkage
+
+Start with [response workflow and boundaries](response.md), [V06 Expert journeys](expert-scenarios.md#v06-response-journeys) and [implementation languages](language-policy.md). The [fixed v0.6 Target](../governance/response-v06.json) requires cross-owner evidence, recovery and installed Host acceptance; source availability is not completion.

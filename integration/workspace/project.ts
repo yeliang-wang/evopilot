@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { createHash, randomBytes } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { validateCampaignInput } from './campaign.js';
 import { withProjectLock } from './project-lock.js';
 import { canonicalPath, readRegular, canonicalJSON, fail } from '../connection/config.js';
 
@@ -164,30 +165,15 @@ function projectOperationUnlocked(context: ProjectContext, operation: 'bind' | '
   if (operation !== 'campaign.write') fail('PROJECT_OPERATION');
   exact(input, ['projectId','id','goal','sourceDigest','criteria','loops','status']);
   const projectId=slug(input.projectId), id=slug(input.id), record=readProject(context,projectId);
-  if (input.sourceDigest !== record.baseline.digest || typeof input.goal !== 'string' || !input.goal.trim() || input.goal.length>8192 || !Array.isArray(input.criteria) || !input.criteria.length || input.criteria.length>100 || !Array.isArray(input.loops) || input.loops.length>200 || !['IN_PROGRESS','COMPLETE'].includes(String(input.status))) fail('CAMPAIGN_SCHEMA');
-  const ids = new Set<string>();
-  const loopIds = new Set<string>();
-  for (const loop of input.loops) {
-    exact(loop,['id','observation','action','result']);
-    const id = slug(loop.id);
-    if (loopIds.has(id) || ['observation','action','result'].some(key=>typeof loop[key] !== 'string' || !(loop[key] as string).trim() || (loop[key] as string).length > 8192)) fail('CAMPAIGN_LOOP');
-    loopIds.add(id);
-  }
+  validateCampaignInput(input);
+  if (input.sourceDigest !== record.baseline.digest) fail('CAMPAIGN_SCHEMA');
   for (const item of input.criteria) {
-    exact(item,['id','status','evidence']); const cid=slug(item.id);
-    if (ids.has(cid) || !['PASS','FAIL','PENDING','UNKNOWN'].includes(String(item.status)) || !Array.isArray(item.evidence) || item.evidence.length>100) fail('CAMPAIGN_CRITERION'); ids.add(cid);
-    if (item.status === 'PASS' && !item.evidence.length) fail('CAMPAIGN_EVIDENCE_REQUIRED');
     for (const evidence of item.evidence) {
-      exact(evidence,['root','path','sha256']);
-      if (!['project','state'].includes(String(evidence.root)) || !/^[a-f0-9]{64}$/.test(String(evidence.sha256))) fail('CAMPAIGN_EVIDENCE');
-      const relativePath=relative(evidence.path);
-      if (!relativePath.startsWith('public/') && !relativePath.startsWith('private/projects/' + projectId + '/')) fail('CAMPAIGN_EVIDENCE_SCOPE');
-      if (relativePath.split('/').some(part => part.startsWith('.') || /\.db(?:-(?:wal|shm|journal))?$/.test(part))) fail('CAMPAIGN_EVIDENCE_SCOPE');
+      const relativePath = evidence.path;
       const filename=path.join(evidence.root==='project'?context.projectRoot:context.stateRoot,relativePath);
       if (hash(readRegular(filename,16*1048576,true)) !== evidence.sha256) fail('CAMPAIGN_EVIDENCE_CHANGED');
     }
   }
-  if (input.status === 'COMPLETE' && input.criteria.some(c => c.status !== 'PASS')) fail('CAMPAIGN_INCOMPLETE');
   if (input.status === 'COMPLETE' && source(record.baseline.root, record.baseline.files.map(f=>f.path)).digest !== record.baseline.digest) fail('PROJECT_SOURCE_CHANGED');
   const campaign: Campaign = {schema:'evopilot-private-campaign/v1',...(input as unknown as Omit<Campaign,'schema'|'authority'>),authority:false};
   if (Buffer.byteLength(canonicalJSON(campaign))>1048576) fail('CAMPAIGN_LIMIT');

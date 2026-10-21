@@ -1,6 +1,6 @@
-# First use — v0.2.0 Preview
+# First use — v0.6.0 Preview candidate
 
-> Historical v0.2 workflow. Its JSON mutation commands are retired in the v0.3 candidate. Use the [native workflow](native-workflow.md) for new assets and execution; historical records remain readable with their original meaning.
+Use the [native workflow](native-workflow.md) for exact current envelopes and expected files. Historical JSON authoring commands remain retired; old records retain their original meaning.
 
 [Install EvoPilot](installation.md), select the EvoPilot plugin in Codex and say:
 
@@ -30,7 +30,7 @@ The Host reads only authorized sources; the Expert records real locator, revisio
 
 > Evaluate this Harness against the supplied reports. Show missing evidence. Prepare a Runtime goal using the exact delivered Ontology and Harness versions.
 
-Missing evidence remains INDETERMINATE with Warning. Evaluation does not automatically change versions or launch an action. A prepared Runtime Run pins six exact reference fields (`product`, `id`, `version`, `specVersion`, `digest`, `visibility`) and immutable inputs. After your actual decision, authorized dispatch validates supplied instances and quality evidence. Runtime completion, quality and business validity remain distinct. Runtime does not arbitrarily edit code or deploy software.
+Missing evidence remains incomplete and blocks dependent completion. Evaluation does not automatically change versions or launch an action. A prepared native Run pins the exact source, immutable asset references, standard/lock digests, requirements and real collection evidence. After your actual decision, authorized dispatch validates instances and quality evidence. Runtime execution, quality and business validity remain distinct. Runtime does not arbitrarily edit code or deploy software.
 
 ## Continue in another chat
 
@@ -42,6 +42,8 @@ For a lost response, retain the original requestId and say “Inspect this recei
 
 ## More workflows and capabilities
 
-The [complete Expert catalogue](expert-scenarios.md) lists all 27 scenarios and their acceptance requirements. Advanced classification requires explicit trusted SDK providers; the default daemon does not inherit the Host model or credentials. Foreign Catalog Harness material also needs a resolver. A provider-prerequisite diagnostic is not a completed classification. See [capabilities](capabilities.md), [Codex integration](codex.md) and [composition](product-composition.md).
+The [complete Expert catalogue](expert-scenarios.md) distinguishes current native, feedback, online and response journeys from retained historical scenarios. The default daemon does not inherit the Host model or credentials. A provider-prerequisite diagnostic is not a successful execution. See [capabilities](capabilities.md), [Codex integration](codex.md) and [composition](product-composition.md).
+
+For a service already connected to online Harness, ask: “Inspect the retained finding, explain applicable published guidance, and prepare the bounded response for review.” The Expert must show the exact project, deployment, source, prerequisites and proposed action. An alert does not approve it. After execution, request independent recovery evidence and both owners' asset feedback. See [response linkage](response.md); installing the candidate does not itself connect a production service or enable its worker.
 
 Guides return `installedReferences` relative to verified `installationRoot` (already `managedRoot/app`). Child references resolve under `node_modules/@evopilot-next/{runtime,harness,ontology}/`; do not append another `app`. Read owner schemas for exact payloads. Public visibility does not authorize upload; model output never grants approval or release authority.

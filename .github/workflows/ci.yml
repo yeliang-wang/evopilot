@@ -49,7 +49,7 @@ jobs:
           set -euo pipefail
           distribution="$RUNNER_TEMP/evopilot-distribution"
           mkdir "$distribution"
-          tar -czf "$distribution/evopilot-0.5.0-preview.tar.gz" -C "$RUNNER_TEMP/evopilot-bundle" .
+          tar -czf "$distribution/evopilot-0.6.0-preview.tar.gz" -C "$RUNNER_TEMP/evopilot-bundle" .
           for owner in runtime harness ontology; do
             mkdir "$distribution/$owner"
             tarballs=("$RUNNER_TEMP/evopilot-artifacts/$owner/"*.tgz)
@@ -65,11 +65,11 @@ jobs:
             git submodule status
           } > "$distribution/source-revision.txt"
           cd "$distribution"
-          sha256sum evopilot-0.5.0-preview.tar.gz */*.tgz */dependency-lock.json source-revision.txt > SHA256SUMS
+          sha256sum evopilot-0.6.0-preview.tar.gz */*.tgz */dependency-lock.json source-revision.txt > SHA256SUMS
       - name: Upload candidate distribution (not an official Release)
         uses: actions/upload-artifact@v4
         with:
-          name: evopilot-0.5.0-preview-${{ github.sha }}
+          name: evopilot-0.6.0-preview-${{ github.sha }}
           path: ${{ runner.temp }}/evopilot-distribution/
           retention-days: 14
           if-no-files-found: error

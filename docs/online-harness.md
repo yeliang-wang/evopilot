@@ -1,6 +1,6 @@
 # Configure and operate online Harness
 
-This guide is for v0.5 Preview users with a private Workspace, the pinned native toolchain, and a read-only Prometheus endpoint. The managed independent worker is supported on macOS arm64 through the current user's launchd GUI domain. It uses existing telemetry services; EvoPilot does not install a monitoring platform or change a production deployment.
+This guide describes online Harness introduced in v0.5 and retained in the v0.6 candidate. It requires a private Workspace, the pinned native toolchain, and a read-only Prometheus endpoint. The managed independent worker is supported on macOS arm64 through the current user's launchd GUI domain. It uses existing telemetry services; EvoPilot does not install a monitoring platform or change a production deployment.
 
 ## First setup through Expert
 

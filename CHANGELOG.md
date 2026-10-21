@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 Preview — candidate, not published
+
+- Add optional operations ontology profile, published Harness runbooks and reviewed problem dispositions.
+- Link Runtime responses to actual isolated collection, independent verification and reviewed asset feedback.
+- Preserve uncertainty and history; response writes advance Runtime/Harness state to marker 5.
+- Bound large native transport and retain request correlation after disconnect.
+- Enforce strict TypeScript core, explicit generated/vendor provenance and narrow native Python adaptation.
+
+
 ## 0.5.0 Preview
 
 - Add bounded OpenSLO/Prometheus/Alertmanager integration, immutable native online evaluation and retained incidents.

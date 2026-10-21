@@ -4,6 +4,7 @@ import { createLocalCollector } from '../collection/local.js';
 import fs from 'node:fs';
 import { nativeExact, nativeBytesDigest, nativeSha256 } from '../compatibility/v1/native.mjs';
 import type { NativeIntegrationConfiguration } from '../native-composition.js';
+import { readWorkspaceResponseEvidence } from '../response/evidence.js';
 
 /** Fixed method allowlist. Requests cannot register providers or change toolchain bindings. */
 export function createNativeProjectRouter(context: NativeProjectContext, trusted: Pick<NativeProjectTrusted, 'readCompletedProject'> = {}) {
@@ -11,6 +12,7 @@ export function createNativeProjectRouter(context: NativeProjectContext, trusted
   const toolFiles = [{ path: executable, sha256: nativeBytesDigest(fs.readFileSync(executable)).slice(7) }];
   const project = createNativeProjectService(context, { ...trusted, toolchains: { node: { toolchainLockDigest: nativeSha256(toolFiles), toolFiles, readRoots: [] } } });
   const providers: NativeIntegrationConfiguration = {
+    readResponseWorkspaceEvidence: ({scope,reference}) => readWorkspaceResponseEvidence(context,scope,reference),
     inspectSource: project.inspectSource,
     resolveRequirements: project.resolveRequirements,
     verifyProject: project.verifyProject,

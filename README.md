@@ -1,10 +1,10 @@
-# EvoPilot 0.5.0 Preview
+# EvoPilot 0.6.0 Preview — candidate source
 
 Build domain models, assess quality, and prepare controlled execution through one Expert in Codex. Runtime owns execution and state, Harness owns QA and delivery standards, and Ontology owns domain modeling.
 
 [Quickstart](docs/installation.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/yeliang-wang/evopilot/releases) · [Contribute](CONTRIBUTING.md)
 
-This checkout implements v0.5.0 online Harness and retains v0.4 registered execution feedback. Use the Releases page for published versioned artifacts; source availability is not evidence of acceptance or publication. Native domain models use RDF/Turtle and SHACL; quality assets use Rego, OPA and Conftest. Project completion requires fixed requirements, actual collection receipts, both owner reports and the actual domain decision. Preview is not GA or blanket production acceptance.
+This checkout is implementing [v0.6.0 response linkage](docs/response.md), extending online Harness and registered execution feedback. v0.6.0 is a candidate until its fixed acceptance and installation checks complete; the latest previously published release is v0.5.0. Use the Releases page for published versioned artifacts; source availability is not evidence of acceptance or publication. Native domain models use RDF/Turtle and SHACL; quality assets use Rego, OPA and Conftest. Project completion requires fixed requirements, actual collection receipts, both owner reports and the actual domain decision. Preview is not GA or blanket production acceptance.
 
 ## What can I do?
 
@@ -67,3 +67,5 @@ For the current release, use the [native workflow](docs/native-workflow.md) and 
 For help, use [support](SUPPORT.md); for sensitive reports, read [security](SECURITY.md). Licensed under [Apache-2.0](LICENSE); attribution is in [NOTICE](NOTICE).
 
 Native approvals bind readable, digest-pinned evidence to the exact review, Workspace and operation. See [decision evidence](docs/native-decisions.md) for the format, historical readback and trusted-operator boundary.
+
+Implementation language responsibilities and source checks: [language policy](docs/language-policy.md).

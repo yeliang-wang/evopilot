@@ -76,7 +76,7 @@ export function validateEntries(entries, expected, owner) {
   assert.equal(manifest.legacySha256, LEGACY_PIN); assert.equal(hash(entries.get('vendor/compatibility/v1/reference.mjs')), LEGACY_PIN);
   const index = entries.get('src/index.ts').toString();
   assert(index.includes("export const PRODUCT = '" + owner + "';"));
-  assert(index.includes("export const VERSION = '0.5.0';"));
+  assert(index.includes("export const VERSION = '0.6.0';"));
   const exports = typeof pkg.exports === 'string' ? { '.': pkg.exports } : pkg.exports;
   for (const entry of Object.values(exports)) {
     assert.deepEqual(Object.keys(entry), ['types', 'import'], 'Invalid export conditions');
@@ -215,7 +215,7 @@ function smoke(owner, pkg) {
 async function smokePackage(owner, name) {
   const { default: assert } = await import('node:assert/strict');
   const api = await import(name);
-  assert.equal(api.PRODUCT, owner); assert.equal(api.VERSION, '0.5.0');
+  assert.equal(api.PRODUCT, owner); assert.equal(api.VERSION, '0.6.0');
   const serviceAPI = await import(name + '/service');
   const factory = serviceAPI['create' + owner[0].toUpperCase() + owner.slice(1) + 'Service'];
   const service = factory({ workspaceRoot: '/uninitialized-artifact-workspace', workspaceId: 'artifact-discovery' });
@@ -230,7 +230,10 @@ async function smokePackage(owner, name) {
   for (const operation of owner === 'runtime' ? ['run.prepare', 'run.decide'] : ['asset.put', 'asset.publish']) assert(!serviceCapabilities.operations.includes(operation), 'Retired writer advertised: ' + operation);
   assert(Array.isArray(serviceCapabilities.nativeOperations));
   for (const operation of owner === 'runtime' ? ['collection.prepare', 'collection.execute', 'run.dispatch', 'project.complete'] : ['standard.inspect', 'native.package.put', 'native.package.validate', 'native.package.publish']) assert(serviceCapabilities.nativeOperations.includes(operation), 'Missing native operation: ' + operation);
-  if (owner === 'runtime') assert.deepEqual(serviceCapabilities.asyncOperations, ['reconcile', 'native']);
+  assert.equal(typeof service.response, 'function');
+  assert(Array.isArray(serviceCapabilities.responseOperations));
+  for (const operation of owner === 'runtime' ? ['response.prepare', 'response.execute', 'response.cancel.review', 'response.verify'] : owner === 'harness' ? ['response.runbook.inspect', 'response.problem.context', 'response.problem.prepare', 'response.problem.status', 'response.recovery.link', 'response.recovery.inspect'] : ['response.profile.inspect', 'response.profile.instantiate']) assert(serviceCapabilities.responseOperations.includes(operation), 'Missing response operation: ' + operation);
+  if (owner === 'runtime') assert.deepEqual(serviceCapabilities.asyncOperations, ['reconcile', 'native', 'response']);
   else {
     const standard = await service.native({operation:'standard.inspect', scope:{visibility:'public',projectId:'artifact-discovery'}, input:{}});
     assert.equal(standard.owner, owner); assert.match(standard.standardDigest, /^sha256:[a-f0-9]{64}$/);
@@ -240,7 +243,7 @@ async function smokePackage(owner, name) {
   service.close();
   assert.equal(publicCapabilities.authority, false);
   assert.equal(publicCapabilities.product, owner);
-  assert.equal(publicCapabilities.version, '0.5.0');
+  assert.equal(publicCapabilities.version, '0.6.0');
   assert.equal(publicCapabilities.implementationStage, 'NATIVE_STANDARDS');
   assert.equal(typeof publicCapabilities.businessOperationsReady, 'boolean');
   const ref = product => ({ product, id: 'artifact', version: '0.1.0', specVersion: 'v1', digest: 'sha256:' + 'a'.repeat(64), visibility: 'private' });

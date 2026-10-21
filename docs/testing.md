@@ -1,4 +1,21 @@
-# Testing and evidence — v0.2.0 Preview
+# Testing and evidence
+
+## Current v0.6.0 response acceptance
+
+The [response Target](../governance/response-v06.json) fixes **36 variants**. Evidence must bind the actual source, package, bundle and installed identity. Preserve results privately; no passing acceptance report is bundled.
+
+| Layer | Current executable evidence | Limit |
+| --- | --- | --- |
+| Owned behavior | Runtime/Harness `tests/e2e/response.test.mjs`; Ontology `tests/e2e/operations-profile.test.mjs` | Explicitly synthetic domain material and decisions; no customer approval |
+| Real isolated process/owners | `integration/e2e/response.test.mjs` | Actual HTTP telemetry, collection, native validation, feedback and restore; not production |
+| Historical executable upgrade | `integration/e2e/response-upgrade.test.mjs` with `EVOPILOT_V05_APP` and `EVOPILOT_TEST_NATIVE_TOOLCHAIN` | Requires an actual preserved v0.5 installation; a skipped fixture is not upgrade evidence |
+| Transport and installed artifacts | `integration/e2e/native-transport-limits.test.mjs` | Required acceptance also supplies `EVOPILOT_NATIVE_TRANSPORT_BUNDLE` and private `EVOPILOT_NATIVE_TRANSPORT_PACKAGES`; package contents never enter public output |
+| Languages and contracts | Owning builds, `npm run check`, language-policy and artifact checks | Strict TypeScript, reproducible generated modules and pinned exceptions; not behavioral acceptance |
+| Codex Host | Actual passive first use, explicit scoped journey and reconnect receipts | Must use the exact candidate connection; a spawned MCP test is not a Desktop observation |
+
+Run the complete suite and focused supplied-fixture cases. The aggregate runner bounds file concurrency to four because native validators and process fixtures spawn additional workers. Missing, cancelled, skipped, unknown or stale required evidence is not PASS. Synthetic projects do not satisfy the separate two-real-project v1.0 target.
+
+## Historical v0.2 scenario contract
 
 The v0.2.0 candidate must cover every case in the [Expert catalogue](expert-scenarios.md), including all existing retained workflows and new Workspace initialization/maintenance. `expert/core/scenarios.ts` is the canonical metadata; `getGuide("V02-A02")` returns a concrete use case with prerequisites, required branches, expected outputs, preserved state, test files and real Desktop observations. The seven earlier guide groups remain compatible.
 

@@ -275,6 +275,11 @@ test('pure guide maps every source reference to the installed package layout', (
   // No installed child repositories or filesystem fixtures are needed.
   const installationRoot = '/managed/evopilot/app';
   const expectedPaths = [
+    '/managed/evopilot/app/docs/response.md',
+    '/managed/evopilot/app/docs/language-policy.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/ontology/docs/operations-profile.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/harness/docs/response.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/runtime/docs/response.md',
     '/managed/evopilot/app/docs/online-harness.md',
     '/managed/evopilot/app/docs/feedback.md',
     '/managed/evopilot/app/specifications/project/v1/README.md',
