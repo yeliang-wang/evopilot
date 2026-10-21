@@ -5,7 +5,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { withWorkspaceLease } from '../workspace/lock.js';
 import { spawn } from 'node:child_process';
-import { loadConfiguration, loadInstallationConfiguration, LIMITS, fail, fields } from './config.js';
+import { loadConfiguration, loadInstallationConfiguration, LIMITS, connectionBodyLimit, connectionResponseLimit, connectionCorrelation, fail, fields } from './config.js';
 import { readRecord, same, recoverRecord } from './control.js';
 
 const pause = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -21,16 +21,15 @@ export function validateAction(action: string, payload: ActionPayload) {
 export function transport(c: Configuration, record: ControlRecord, action: string, payload: ActionPayload = {}, timeout: number = LIMITS.request) {
   validateAction(action, payload);
   const body = JSON.stringify({ protocol: c.protocol, identity: c.identity, nonce: record.nonce, action, payload });
-  if (Buffer.byteLength(body) > LIMITS.body) fail('LIMIT');
+  if (Buffer.byteLength(body) > connectionBodyLimit(action, payload)) fail('LIMIT');
   return new Promise((resolve, reject) => {
     let timer: ReturnType<typeof setTimeout>;
-    const source = payload.envelope ?? payload.args;
-    const correlation = source ? Object.fromEntries(['requestId', 'scope', 'expectedRevision'].filter(k => Object.hasOwn(source, k)).map(k => [k, (source as unknown as Record<string, unknown>)[k]])) : null;
+    const correlation = connectionCorrelation(action, payload);
     const unknown = () => Object.assign(new Error('Connection outcome unknown; inspect the owning receipt before any new action'), { code: 'UNKNOWN', correlation });
     const req = http.request({ hostname: '127.0.0.1', port: record.port, path: '/', method: 'POST', agent: false,
       headers: { authorization: 'Bearer ' + record.token, host: '127.0.0.1:' + record.port, 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) } }, res => {
       let size = 0; const chunks: Buffer[] = [];
-      res.on('data', chunk => { size += chunk.length; if (size > LIMITS.response) res.destroy(); else chunks.push(chunk); });
+      res.on('data', chunk => { size += chunk.length; if (size > connectionResponseLimit(action, payload)) res.destroy(); else chunks.push(chunk); });
       res.on('error', () => { clearTimeout(timer); reject(unknown()); });
       res.on('end', () => {
         clearTimeout(timer);

@@ -1,0 +1,338 @@
+{
+  "schema": "evopilot-response-target/v1",
+  "id": "evopilot-response-v06",
+  "version": "0.6.0",
+  "stage": "PREVIEW",
+  "status": "IMPLEMENTED",
+  "scopeAuthority": "Explicit user request to implement Roadmap and install in current Codex; supplemental strict TypeScript core requirement.",
+  "roadmapIds": [
+    "EVO-F04",
+    "RUN-F04",
+    "HAR-F04",
+    "ONT-F05"
+  ],
+  "languagePolicy": "language-policy.json",
+  "implementation": [
+    "Optional namespace-instantiated operations ontology profile atop unchanged native specifications/v1",
+    "Published Harness guidance and reviewed problem disposition",
+    "Runtime response linkage around existing isolated local collection and native validation Runs",
+    "Existing reviewed feedback reuse/delivery and exact evidence resolution",
+    "Large native transport fix",
+    "Codex Expert guidance, packages, backup/recovery and daily installation"
+  ],
+  "executionBoundary": {
+    "provider": "Existing pinned Node collection worker",
+    "writes": "Only explicitly reviewed isolated copied execution directory; original project and production remain protected",
+    "network": "Existing explicitly declared loopback subset only",
+    "validation": "Native Run independently verifies model and rules; it is not the repair action",
+    "rollback": "No implicit rollback; a separate approved response/collection if required"
+  },
+  "acceptance": [
+    {
+      "id": "EVO-F04-E01",
+      "variants": [
+        {
+          "id": "EVO-F04-E01.01",
+          "expected": "Actual scoped finding resolves to published guidance, reviewed project/Goal/Target/Loop and plan.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E01.02",
+          "expected": "Reviewed bounded local collection performs a real isolated action with retained process receipt.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E01.03",
+          "expected": "Independent recovery collection and native validation Run pass exact source/asset requirements.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-F04-E02",
+      "variants": [
+        {
+          "id": "EVO-F04-E02.01",
+          "expected": "Resolved alert alone leaves problem and response review required.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E02.02",
+          "expected": "Suspected cause never becomes confirmed without reviewed evidence.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E02.03",
+          "expected": "Successful process exit cannot certify quality or select a software release.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-F04-E03",
+      "variants": [
+        {
+          "id": "EVO-F04-E03.01",
+          "expected": "Wrong service/environment/deployment/source/guidance/parameters are rejected.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E03.02",
+          "expected": "Missing or stale prerequisites and withdrawn guidance reject dispatch.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E03.03",
+          "expected": "Changed plan invalidates old decision; independent collection decision remains required.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-F04-E04",
+      "variants": [
+        {
+          "id": "EVO-F04-E04.01",
+          "expected": "Duplicate execution and lost response reconcile original claim without repeated action.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E04.02",
+          "expected": "Timeout, partial output, interruption and restart preserve actual uncertainty.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E04.03",
+          "expected": "Cancellation is an actual receipt or pending request; rollback requires a separately approved action.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-F04-E05",
+      "variants": [
+        {
+          "id": "EVO-F04-E05.01",
+          "expected": "Registered verification Run creates exact feedback for both asset owners.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E05.02",
+          "expected": "Reviewed REUSE or new immutable DELIVER is required; changed pins are re-evaluated.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E05.03",
+          "expected": "Problem assessment preserves contributing causes, preventive followups and earlier records.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-F04-E06",
+      "variants": [
+        {
+          "id": "EVO-F04-E06.01",
+          "expected": "Two distinct isolated project examples instantiate the same versioned profile.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E06.02",
+          "expected": "Cross-project/workspace/public-private pins and credentials never mix.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E06.03",
+          "expected": "Native specification bytes stay identical; examples do not count as real-project v1.0 readiness.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-F04-E07",
+      "variants": [
+        {
+          "id": "EVO-F04-E07.01",
+          "expected": "Deferral/risk acceptance retains declared actor, pinned decision, rationale, scope and expiry.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E07.02",
+          "expected": "Expiry is visible without overwriting the historical quality result.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E07.03",
+          "expected": "Duplicate and late observations preserve ordering and cannot manufacture recovery.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-F04-E08",
+      "variants": [
+        {
+          "id": "EVO-F04-E08.01",
+          "expected": "Forged/missing/changed owner references reject or remain incomplete.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E08.02",
+          "expected": "Stale source/observation/collection and unsupported execution provider reject.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E08.03",
+          "expected": "Annotation strings and graph edges confer no authority or causal confirmation.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-F04-E09",
+      "variants": [
+        {
+          "id": "EVO-F04-E09.01",
+          "expected": "Installed Codex starts inactive and exposes exact v0.6 identity and guides.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E09.02",
+          "expected": "Explicit activation supports actual scoped response readback and reviewed isolated journey.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E09.03",
+          "expected": "Reconnect retains claims and records; no production or WorkBuddy acceptance implied.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-F04-E10",
+      "variants": [
+        {
+          "id": "EVO-F04-E10.01",
+          "expected": "Isolated upgrade from v0.5 preserves source-linked assets, decisions and history.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E10.02",
+          "expected": "Supported backup/restore includes new response records and intact cross-owner references.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-F04-E10.03",
+          "expected": "Old readers reject schema5; failed cutover remains recoverable before daily installation.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-V06-T01",
+      "variants": [
+        {
+          "id": "EVO-V06-T01.01",
+          "expected": "Ordinary requests retain 1 MiB cap; only native package routes expand within fixed limits.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-V06-T01.02",
+          "expected": "Large native package and two-package materialization survive daemon/MCP/installed readback.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-V06-T01.03",
+          "expected": "Disconnect or oversized post-write output returns UNKNOWN with exact reconciliation correlation.",
+          "status": "PENDING"
+        }
+      ]
+    },
+    {
+      "id": "EVO-V06-L01",
+      "variants": [
+        {
+          "id": "EVO-V06-L01.01",
+          "expected": "Core implementation and new shared contracts use strict TypeScript with no unchecked escape.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-V06-L01.02",
+          "expected": "Compiled JS/declarations are reproducible and legacy/Python exceptions are explicit and pinned.",
+          "status": "PENDING"
+        },
+        {
+          "id": "EVO-V06-L01.03",
+          "expected": "Language boundary is checked automatically; README/docs accurately describe source and generated files.",
+          "status": "PENDING"
+        }
+      ]
+    }
+  ],
+  "completionRule": "All 36 fixed variants require exact-candidate evidence. Synthetic service tests, real process execution, real Codex Host and private-data preservation are separate evidence classes; no missing/skipped/UNKNOWN required result constitutes acceptance.",
+  "fileBindings": {
+    "parent": [
+      "AGENTS.md",
+      "README.md",
+      "CHANGELOG.md",
+      "docs/**",
+      "governance/response-v06.json",
+      "integration/compatibility/response/v1/**",
+      "integration/response/**",
+      "integration/native-composition.ts",
+      "integration/types.ts",
+      "integration/connection/**",
+      "integration/host.ts",
+      "integration/composition.ts",
+      "integration/e2e/**",
+      "plugins/codex/**",
+      "expert/**",
+      "scripts/**",
+      "package.json",
+      "package-lock.json",
+      "tsconfig.json",
+      "projects/evopilot-runtime",
+      "projects/evopilot-harness",
+      "projects/evopilot-ontology",
+      "governance/language-policy.json",
+      ".gitattributes",
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml",
+      "integration/workspace/campaign.ts",
+      "integration/workspace/project.ts",
+      "integration/workspace/native-router.ts",
+      "integration/compatibility/feedback/v1/**"
+    ],
+    "children": [
+      "AGENTS.md",
+      "README.md",
+      "CHANGELOG.md",
+      "docs/**",
+      "src/**",
+      "tests/e2e/**",
+      "examples/**",
+      "assets/**",
+      "vendor/compatibility/response/**",
+      "scripts/**",
+      "package.json",
+      "package-lock.json",
+      ".gitattributes",
+      ".github/workflows/release.yml",
+      "vendor/compatibility/feedback/v1/**"
+    ]
+  },
+  "preserve": [
+    "Frozen v0.1 governance and native specifications/v1",
+    "Immutable original DataRig sources, current accepted private assets and original decisions",
+    "Existing v1.0 readiness criteria"
+  ],
+  "exclusions": [
+    "Java/Maven/remote executor adapters",
+    "Production remediation or deployment",
+    "Second real project onboarding",
+    "WorkBuddy",
+    "v1.0 release",
+    "Unrestricted coding-agent or ontology-reasoner platform"
+  ],
+  "publication": "This Target binds implementation and local installation; it is not a GitHub publication receipt or new release authorization."
+}

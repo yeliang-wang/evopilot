@@ -6,7 +6,7 @@ import path from 'node:path';
 import { withWorkspaceLease } from '../workspace/lock.js';
 import { randomBytes, timingSafeEqual, randomUUID } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { loadConfiguration, LIMITS, fields, fail } from './config.js';
+import { loadConfiguration, LIMITS, connectionBodyLimit, connectionResponseLimit, connectionCorrelation, fields, fail } from './config.js';
 import { checkDirectory, writeRecord, removeRecord, readRecord, same } from './control.js';
 import { validateAction } from './client.js';
 import { createComposition, loadInstalledProducts } from '../composition.js';
@@ -37,9 +37,10 @@ export async function runDaemon(configPath: string) {
     composition = createComposition({ workspaceRoot: c.workspaceRoot, workspaceId: c.workspaceId }, await loadInstalledProducts(), {}, { ...project?.providers, ...(toolchain ? { toolchain } : {}),...(online?{online:{collectOnline:online.collectOnline}}:{}) });
     composition.inspect('runtime', { visibility: 'public', projectId: 'shared' });
     server = http.createServer({ maxHeaderSize: 8192, requestTimeout: 5000, headersTimeout: 5000, keepAliveTimeout: 1000 }, async (req, res) => {
+      let responseLimit: number = LIMITS.response;
       const send = (status: number, value: Record<string, unknown>) => {
         const body = JSON.stringify(publicReply(value));
-        if (Buffer.byteLength(body) > LIMITS.response) { res.destroy(); return; }
+        if (Buffer.byteLength(body) > responseLimit) { res.destroy(); return; }
         res.writeHead(status, { 'content-type': 'application/json', 'cache-control': 'no-store', connection: 'close' }); res.end(body);
       };
       const expected = Buffer.from('Bearer ' + record.token), actual = Buffer.from(req.headers.authorization ?? '');
@@ -50,12 +51,16 @@ export async function runDaemon(configPath: string) {
       const timer = setTimeout(() => req.destroy(), 5000);
       try {
         let size = 0; const chunks = [];
-        for await (const chunk of req) { size += chunk.length; if (size > LIMITS.body) fail('LIMIT'); chunks.push(chunk); }
+        // Before parsing, admit at most the largest fixed route budget. The
+        // exact route budget is enforced below before any owner or project call.
+        for await (const chunk of req) { size += chunk.length; if (size > LIMITS.nativeBody) fail('LIMIT'); chunks.push(chunk); }
         clearTimeout(timer);
         request = JSON.parse(Buffer.concat(chunks).toString());
         fields(request, ['protocol', 'identity', 'nonce', 'action', 'payload']);
         if (request!.protocol !== c.protocol || !same(request!.identity, c.identity) || request!.nonce !== record.nonce) fail('IDENTITY_CONFLICT');
         validateAction(request!.action, request!.payload);
+        if (size > connectionBodyLimit(request!.action, request!.payload)) fail('LIMIT');
+        responseLimit = connectionResponseLimit(request!.action, request!.payload);
         if (closing) fail('CLOSING');
         const { action, payload } = request!;
         if (action === 'health') { send(200, { result: { identity: c.identity } }); return; }
@@ -83,8 +88,7 @@ export async function runDaemon(configPath: string) {
         send(200, { result });
       } catch (error) {
         // Never serialize provider messages/stacks or authentication material.
-        const source = request?.payload?.envelope ?? request?.payload?.args;
-        const correlation = source ? Object.fromEntries(['requestId', 'scope', 'expectedRevision'].filter(k => Object.hasOwn(source, k)).map(k => [k, (source as unknown as Record<string, unknown>)[k]])) : null;
+        const correlation = connectionCorrelation(request?.action, request?.payload);
         send(400, { error: { code: typeof errorCode(error) === 'string' && /^[A-Z_0-9]{1,80}$/.test(errorCode(error)!) ? errorCode(error) : entered ? 'UNKNOWN' : 'SCHEMA', correlation } });
       } finally { clearTimeout(timer); if (entered) active--; }
     });

@@ -1,0 +1,85 @@
+{
+  "schema": "evopilot-language-policy/v1",
+  "coreRoots": [
+    "integration",
+    "expert",
+    "plugins/codex",
+    "projects/evopilot-runtime/src",
+    "projects/evopilot-harness/src",
+    "projects/evopilot-ontology/src"
+  ],
+  "excludeSubtrees": [
+    "integration/e2e"
+  ],
+  "primaryExtensions": [
+    ".ts",
+    ".mts",
+    ".tsx"
+  ],
+  "generatedJavaScript": "Only same-directory .mts -> .mjs or .ts/.tsx -> .js with owner generator byte validation; dist excluded from Git.",
+  "frozenJavaScript": {
+    "integration/compatibility/v1/reference.mjs": "df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a",
+    "projects/evopilot-ontology/src/compat/index.mjs": "fe3d34575059c6d9eac1b4c3ec64cd0e7a508479e48059219ba41b14310ddf70",
+    "projects/evopilot-ontology/src/compat/v4/constants.mjs": "dd8279a68fd76be835ffc98c40e1573d258d248850e97fb7a9334207be21498a",
+    "projects/evopilot-ontology/src/compat/v4/classification/classifier.mjs": "09f5bb2afa47f73007746946781d24ca9daab59b3b04cd621e405c77fc410eb7",
+    "projects/evopilot-ontology/src/compat/v4/classification/source-concept.mjs": "d4388a349be8c25e7f1009e913d104f693a6f05d80e3abb18f967b24077a164b",
+    "projects/evopilot-ontology/src/compat/v4/classification/engine.mjs": "f2bdc99011be625a7d41b4f463f32e0902775811f1d2cecc9fa94e505494e55a",
+    "projects/evopilot-ontology/src/compat/v4/classification/taxonomy.mjs": "e821207f6a8c3877f8941a2196c30d8c9c020aa6ed5e1b8b967606faab13a9e4",
+    "projects/evopilot-ontology/src/compat/v4/classification/evaluation.mjs": "35cecf02b9c2447ba8728066f80597e4d32fd18272343e49bbc578bb98787e73",
+    "projects/evopilot-ontology/src/compat/v4/classification/source-descriptor.mjs": "3f0e57558b80833c2b676bc39ec9ecd1a8dbc4da7b4fe0c3376a12c7cb3cc8ff",
+    "projects/evopilot-ontology/src/compat/v4/classification/advisor.mjs": "47ad5ca764f981158a7204b23d235e9b61786bdeb04f7c3634727ad3effa6746",
+    "projects/evopilot-ontology/src/compat/v4/security/sensitive.mjs": "af4f69ea44a025c614b3ff9feb55942495895e517dc5fa4c511242eb541a4917",
+    "projects/evopilot-ontology/src/compat/v4/source/static-text.mjs": "b16ae63cdf4eee971353f8176d787ca767a3b5faf55070089dff6bef0570c18b",
+    "projects/evopilot-ontology/src/compat/v4/source/path-policy.mjs": "c569f04e9d6214b6bb8584b5e2da8229f1943d8b99fbb32d2a183606f9bfbc9e",
+    "projects/evopilot-ontology/src/compat/v4/semantics/catalog-budget.mjs": "c32e3bb66012470faede9f1c1aea9c6c37e7bc671e5d682124bd8bffd8012aaa",
+    "projects/evopilot-ontology/src/compat/v4/semantics/catalog-supply.mjs": "52ef7f8109fb20b854ad697080b9f79b80966a5febbefd53b216b73c80f06f42",
+    "projects/evopilot-ontology/src/compat/v4/semantics/professional-packs.mjs": "cf4b1672ed1d3bb7e3c5171e68490bc04f414811ec6a7075d7de3506be9b08b4",
+    "projects/evopilot-ontology/src/compat/v4/semantics/catalog-materials.mjs": "48c48dabb7365ea1e9930d78f00f4b3cf5c82d51be31d4d94346a75b6483003b",
+    "projects/evopilot-ontology/src/compat/v4/semantics/catalog-generation.mjs": "4f8a396006218cd0676091291494f9658435e80b7b6522a1ef584b047c9f5349",
+    "projects/evopilot-ontology/src/compat/v4/semantics/catalog-contract.mjs": "1da5044af4a906f44ce929b816568bf3f5645f708f9fd576259d727f514a0c4f",
+    "projects/evopilot-ontology/src/compat/v4/semantics/semantic-interoperability.mjs": "c725501e9c8b6ec218e400efc7c7799b7f08010b37e0d72c1122cde505e4bdc8",
+    "projects/evopilot-ontology/src/compat/v4/semantics/catalog-store.mjs": "234b3ee93c20245c9acb12cb0517d93b54c7233032697d9c7103a448343a6f56",
+    "projects/evopilot-ontology/src/compat/v4/semantics/ontology-grounding.mjs": "5350cfd6400125e4d7ddf64108e13c7b7c72e2dccebafb1ffc2765d9c28b344b",
+    "projects/evopilot-ontology/src/compat/v4/semantics/project-ontology.mjs": "e477fe5878e6d2fc4fba11df9cac4d889c455901096066f12985b4ed5e6bc0ba",
+    "projects/evopilot-ontology/src/compat/v3/constants.mjs": "e2d7fa38ca9c76a052b49a28775e75e95ef30876ff21bf55882d7c3cbe58b304",
+    "projects/evopilot-ontology/src/compat/v3/schema.mjs": "619fd179366fc4681538444286052301c6b1a7c33adb0854a61ef864266b523d",
+    "projects/evopilot-ontology/src/compat/v3/utils.mjs": "dde43cdb2bfba484c6d22f0a05a85791f4bc7249b509736afec413b8aef87838"
+  },
+  "nativePython": {
+    "projects/evopilot-ontology/src/native/validator.py": {
+      "purpose": "Pinned RDFLib/pySHACL native validation adapter; no orchestration/authority logic",
+      "sha256": "b73319057a002dd557d1a82a6d3548e5b838c2c1240d64567d2d1f86f8bf2a49"
+    }
+  },
+  "newJavaScriptAllowed": [
+    "scripts/** for build/bootstrap/packaging/checks",
+    "tests/** and integration/e2e/** for test drivers and fixtures"
+  ],
+  "generatedOrVendorNotLanguageTargets": true,
+  "generatedModules": {
+    "integration/compatibility/v1/native.mjs": {
+      "source": "integration/compatibility/v1/native.mts",
+      "generator": "scripts/sync-contract.mjs"
+    },
+    "integration/compatibility/v1/decision-evidence.mjs": {
+      "source": "integration/compatibility/v1/decision-evidence.mts",
+      "generator": "scripts/sync-contract.mjs"
+    },
+    "integration/compatibility/feedback/v1/feedback.mjs": {
+      "source": "integration/compatibility/feedback/v1/feedback.mts",
+      "generator": "scripts/sync-feedback.mjs"
+    },
+    "integration/compatibility/feedback/v1/owner.mjs": {
+      "source": "integration/compatibility/feedback/v1/owner.mts",
+      "generator": "scripts/sync-feedback.mjs"
+    },
+    "integration/compatibility/online/v1/online.mjs": {
+      "source": "integration/compatibility/online/v1/online.mts",
+      "generator": "scripts/sync-online.mjs"
+    },
+    "integration/compatibility/response/v1/response.mjs": {
+      "source": "integration/compatibility/response/v1/response.mts",
+      "generator": "scripts/sync-response.mjs"
+    }
+  }
+}

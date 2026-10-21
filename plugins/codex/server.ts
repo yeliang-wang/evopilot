@@ -4,7 +4,7 @@ import type { Schema, MCPMessage, ActionPayload } from '../../integration/types.
 import path from 'node:path';
 import { randomUUID, createHash } from 'node:crypto';
 import { inspectConnection, activateConnection, callConnection, withWorkspaceMaintenance } from '../../integration/connection/client.js';
-import { loadConfiguration } from '../../integration/connection/config.js';
+import { loadConfiguration, LIMITS, connectionBodyLimit, mcpOutputLimit, connectionCorrelation } from '../../integration/connection/config.js';
 import { withWorkspaceLease } from '../../integration/workspace/lock.js';
 import { inspectWorkspace, setupWorkspace } from '../../integration/workspace/bootstrap.js';
 import { projectOperation } from '../../integration/workspace/project.js';
@@ -17,7 +17,7 @@ import { inspectToolchainPreparation, startToolchainPreparation } from '../../in
 import {configureOnline,readOnlineConfiguration} from '../../integration/online/config.js';
 import {inspectOnlineWorker,startOnlineWorker,stopOnlineWorker} from '../../integration/online/lifecycle.js';
 
-const INPUT = 1048576, OUTPUT = 8388608;
+const INPUT = LIMITS.nativeBody, OUTPUT = LIMITS.response;
 const prefix = 'evopilot_v01_';
 const object = (properties: Record<string, Schema> = {}, required = Object.keys(properties)): Schema => ({ type: 'object', properties, required, additionalProperties: false });
 const slug = { type: 'string', pattern: '^[a-z0-9][a-z0-9-]{0,63}$' };
@@ -87,11 +87,13 @@ async function serve(configPath: string) {
     return { content: [{ type: 'text', text: JSON.stringify(data) }], structuredContent: data, ...(error ? { isError: true } : {}) };
   };
   const rpcError = (id: unknown, code: number, message: string) => ({ jsonrpc: '2.0', id, error: { code, message } });
-  async function write(value: { jsonrpc: string; id?: unknown; result?: unknown; error?: unknown }) {
+  async function write(value: { jsonrpc: string; id?: unknown; result?: unknown; error?: unknown }, outputLimit: number = OUTPUT) {
     let bytes;
     try { bytes = JSON.stringify(value); } catch { bytes = ''; }
-    if (!bytes || Buffer.byteLength(bytes) > OUTPUT) {
-      const data = receipt(undefined, { code: 'LIMIT', correlation: (value.result as ReturnType<typeof receipt> | undefined)?.structuredContent?.correlation ?? null });
+    if (!bytes || Buffer.byteLength(bytes) > outputLimit) {
+      // Native package responses can follow a durable write. An output failure
+      // cannot certify that nothing happened; retain the reconciliation identity.
+      const data = receipt(undefined, { code: outputLimit === OUTPUT ? 'LIMIT' : 'UNKNOWN', correlation: (value.result as ReturnType<typeof receipt> | undefined)?.structuredContent?.correlation ?? null });
       bytes = JSON.stringify({ jsonrpc: '2.0', id: value.id ?? null, result: data });
     }
     await new Promise<void>((resolve, reject) => process.stdout.write(bytes + '\n', error => error ? reject(error) : resolve()));
@@ -99,7 +101,9 @@ async function serve(configPath: string) {
   async function handle(line: Uint8Array) {
     let r: MCPMessage;
     try { r = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(line)); }
-    catch { await write(rpcError(null, -32700, 'Parse error')); return; }
+    catch { await write(rpcError(null, line.length > LIMITS.body ? -32600 : -32700, line.length > LIMITS.body ? 'Input limit exceeded' : 'Parse error')); return; }
+    const route = r?.method === 'tools/call' && typeof r.params?.name === 'string' && r.params.name.startsWith(prefix) ? r.params.name.slice(prefix.length) : null;
+    if (line.length > connectionBodyLimit(route, r?.params?.arguments)) { await write(rpcError(null, -32600, 'Input limit exceeded')); return; }
     const validId = (id: unknown) => typeof id === 'string' || (typeof id === 'number' && Number.isFinite(id));
     const hasId = r && Object.hasOwn(r, 'id');
     const notification = r && !Array.isArray(r) && r.jsonrpc === '2.0' && typeof r.method === 'string' && !hasId;
@@ -127,7 +131,7 @@ async function serve(configPath: string) {
       const p = r.params;
       if (initialized || !p || Object.keys(p).some(k => !['protocolVersion', 'capabilities', 'clientInfo', '_meta'].includes(k)) || typeof p.protocolVersion !== 'string' || !p.capabilities || typeof p.capabilities !== 'object' || Array.isArray(p.capabilities) || !p.clientInfo || typeof (p.clientInfo as Record<string, unknown>).name !== 'string' || typeof (p.clientInfo as Record<string, unknown>).version !== 'string') { await error(-32602, 'Invalid params'); return; }
       initialized = true;
-      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.5.0' } };
+      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.6.0' } };
     } else if (r.method === 'ping' || r.method === 'tools/list') {
       if (params && (Object.keys(params).some(k => !['_meta', ...(r.method === 'tools/list' ? ['cursor'] : [])].includes(k)) || (Object.hasOwn(params, 'cursor') && (typeof params.cursor !== 'string' || params.cursor !== '')))) { await error(-32602, 'Invalid params'); return; }
       result = r.method === 'ping' ? {} : { tools };
@@ -139,8 +143,7 @@ async function serve(configPath: string) {
       // The tool-specific schema above checks each forwarded field before use.
       const input = rawInput as ActionPayload & WorkspaceSetupInput & { scenario: string; operation: Parameters<typeof projectOperation>[1] | 'template.upgrade'; input: Record<string,unknown>; destinationRoot: string; backupRoot: string; destinationProjectRoot: string; destinationStateRoot: string };
       const action = (p.name as string).slice(prefix.length);
-      const source = input.envelope ?? input.args ?? (input.requestId ? {requestId:input.requestId,operation:input.operation??action} : null);
-      const correlation = source ? Object.fromEntries(['requestId', 'scope', 'expectedRevision', 'operation', 'id'].filter(k => Object.hasOwn(source, k)).map(k => [k, (source as unknown as Record<string, unknown>)[k]])) : null;
+      const correlation = connectionCorrelation(action, input);
       try {
         let value;
         if (action === 'guide') value = getGuide(input.scenario);
@@ -229,7 +232,7 @@ async function serve(configPath: string) {
         result = receipt(undefined, { code: safeCodes.has(code) || /^(?:PROJECT|DOMAIN|STANDARD|CONTRACT|NATIVE|COLLECTION|TOOLCHAIN|CAMPAIGN|MAINTENANCE|BACKUP|RESTORE|MIGRATION|RELOCATION|TEMPLATE|UPGRADE|WORKSPACE_LEASE)_[A-Z0-9_]+$/.test(code) ? code : 'CONNECTION_ERROR', correlation });
       }
     } else { await error(-32601, 'Method not found'); return; }
-    await write({ jsonrpc: '2.0', id: r.id, result });
+    await write({ jsonrpc: '2.0', id: r.id, result }, mcpOutputLimit(route, r.params?.arguments));
   }
   // One in-flight request, no application queue. Backpressure bounds both streams.
   let parts: Buffer[] = [], size = 0, dropping = false;

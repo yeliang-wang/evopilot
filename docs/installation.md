@@ -1,15 +1,21 @@
-# Install EvoPilot 0.5.0 Preview
+# Install EvoPilot Preview
 
-These instructions describe the v0.5.0 Preview distribution. Use an exact published release or a verified local candidate during acceptance. Publication, installed Host acceptance and daily cutover are separate. Preserve your previous installation and a verified pre-upgrade Workspace backup; online state uses owner database marker 4 and cannot be reopened by v0.4. Stop the independent online worker before backup, restore, relocation, toolchain maintenance or uninstall. Review [online Harness lifecycle and limits](online-harness.md).
+## Version 0.6.0 Preview
 
-Use **Node 24.14.0**. Download `evopilot-0.5.0-preview.tar.gz` and `SHA256SUMS` from the exact [v0.5.0 Preview release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.5.0). Use immutable versioned Preview downloads, not a latest-stable selector. The bundle contains compiled JavaScript and needs no npm install or source build. Native validation additionally requires the explicitly prepared pinned toolchain; inspection never downloads it. It includes no Node executable, credentials, live configuration, business data or configured providers. Source builds belong to the [developer path](development.md).
+Use **Node 24.14.0**. Download `evopilot-0.6.0-preview.tar.gz` and `SHA256SUMS` from the exact [v0.6.0 Preview release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0). A release candidate may use a verified local bundle through the same commands; source version alone is not proof of a published download. Use an immutable versioned release, not a latest-stable selector.
+
+The bundle contains compiled JavaScript and needs no npm install or source build. Core source is strict TypeScript; see [language policy](language-policy.md). The native validator platform is **macOS arm64**, with an explicit pinned-toolchain preparation step; inspection never downloads dependencies. The bundle includes no Node executable, credentials, live configuration, business data or configured providers. Source builds belong to the [developer path](development.md).
+
+Response writes advance Runtime/Harness database markers to **5**. Follow the [v0.5 to v0.6 migration](migration.md#upgrade-from-v05-to-v060) before binding existing data. Preserve the old installation and a verified backup; older readers cannot reopen the new response state. Stop the independent online worker before backup, restore, relocation, toolchain maintenance or uninstall. See [online lifecycle](online-harness.md) and [recovery](recovery.md).
+
+The plugin display name is **EvoPilot v0.6 Preview**. Inspect its actual version, installation ID, root and digest before activation. Publication, local installation and current Host activation are separate. After updating a local plugin, restart the desktop app and verify it in a fresh connection as described by the [official plugin guide](https://developers.openai.com/plugins/build/plugins).
 
 ## Verify and extract
 
 In the directory containing both downloads, select exactly the bundle entry. This fails if the entry is missing or duplicated:
 
 ```sh
-preview_checksum="$(awk '$2 == "evopilot-0.5.0-preview.tar.gz" && length($1) == 64 && $1 !~ /[^0-9a-fA-F]/ { line=$0; count++ } END { if (count != 1) exit 1; print line }' SHA256SUMS)" &&
+preview_checksum="$(awk '$2 == "evopilot-0.6.0-preview.tar.gz" && length($1) == 64 && $1 !~ /[^0-9a-fA-F]/ { line=$0; count++ } END { if (count != 1) exit 1; print line }' SHA256SUMS)" &&
   printf '%s\n' "$preview_checksum" | shasum -a 256 -c -
 ```
 
@@ -20,7 +26,7 @@ Choose a new extraction directory with an existing parent:
 ```sh
 preview_bundle="/absolute/path/to/new-extracted-bundle"
 mkdir "$preview_bundle" &&
-  tar -xzf evopilot-0.5.0-preview.tar.gz -C "$preview_bundle"
+  tar -xzf evopilot-0.6.0-preview.tar.gz -C "$preview_bundle"
 ```
 
 ## Install and register
@@ -41,7 +47,7 @@ The installer verifies the inventory, renders Codex configuration with the curre
 
 Each installation receives a distinct MCP server name derived from its canonical configuration path. This keeps a candidate connection separate from a retained installation when both are registered. The plugin's display name alone does not prove which program is connected: before activation, inspect and compare its version, installation ID, root and digest. See [connection recovery](recovery.md#connection-recovery) if the Host still exposes an older connection.
 
-Select **EvoPilot v0.5 Preview** and request: “Inspect the installation, initialize my own Workspace, then activate and show the examples.” You may provide explicit project/state paths or use the defaults described in [Workspace](../workspace/README.md). Initialization is idempotent and does not overwrite an occupied directory or user edits. The Expert separately activates the current chat after successful setup. Existing users can request attachment of a validated, stopped Workspace; an already bound installation cannot silently switch to another Workspace.
+Select **EvoPilot v0.6 Preview** and verify it matches the installed bundle. Request: “Inspect the installation, initialize my own Workspace, then activate and show the examples.” Compare its returned installation identity before proceeding. You may provide explicit project/state paths or use the defaults described in [Workspace](../workspace/README.md). Initialization is idempotent and does not overwrite an occupied directory or user edits. The Expert separately activates the current chat after successful setup. Existing users can request attachment of a validated, stopped Workspace; an already bound installation cannot silently switch to another Workspace.
 
 Inspect and guide requests remain passive. Ordinary work then happens through the Expert without routine CLI operations. See [first journeys](first-journey.md), [Codex](codex.md), [migration](migration.md) and [provider limits](capabilities.md).
 

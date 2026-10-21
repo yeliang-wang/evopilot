@@ -1,0 +1,11 @@
+dist/** linguist-generated=true
+integration/compatibility/v1/native.mjs linguist-generated=true
+integration/compatibility/v1/native.d.mts linguist-generated=true
+integration/compatibility/v1/decision-evidence.mjs linguist-generated=true
+integration/compatibility/v1/decision-evidence.d.mts linguist-generated=true
+integration/compatibility/feedback/**/*.mjs linguist-generated=true
+integration/compatibility/feedback/**/*.d.mts linguist-generated=true
+integration/compatibility/online/**/*.mjs linguist-generated=true
+integration/compatibility/online/**/*.d.mts linguist-generated=true
+integration/compatibility/response/**/*.mjs linguist-generated=true
+integration/compatibility/response/**/*.d.mts linguist-generated=true

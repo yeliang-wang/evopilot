@@ -1,8 +1,8 @@
-# EvoPilot 0.2.0 Preview in Codex
+# EvoPilot 0.6.0 Preview in Codex
 
-The composed Preview exposes one unified Expert and the `evopilot_v01_preview` MCP namespace. Tool names start with `evopilot_v01_`. Runtime owns the Codex integration; it is not a fourth product.
+The composed Preview exposes one unified Expert. Each installation uses an MCP server namespace derived from its configuration path (`evopilot_<path-hash>`); stable tool names start with `evopilot_v01_`. Those names do not identify the product version. Runtime owns the Codex integration; it is not a fourth product.
 
-After [installation and registration](installation.md), select **EvoPilot v0.2 Preview**. On first use the Expert inspects and guides explicit Workspace initialization or attachment before activation. A configured Workspace can be activated for the current chat without a second enable question. Activation checks the shared daemon and starts it if absent. Normal work uses the Expert rather than CLI commands.
+After [installation and registration](installation.md), select **EvoPilot v0.6 Preview** and inspect the exact installed identity. On first use the Expert inspects and guides explicit Workspace initialization or attachment before activation. A configured Workspace can be activated for the current chat without a second enable question. Activation checks the shared daemon and starts it if absent. Normal work uses the Expert rather than CLI commands.
 
 Inspect the returned session identity, activation state and verified running connection identity, including installation, component versions and workspace. Each chat has its own adapter and activation flag; another chat's daemon does not activate this chat. This native per-chat binding is integration behavior, not tamperproof Host enforcement. Ordinary chats leave the Expert off (`allow_implicit_invocation: false`).
 
@@ -10,7 +10,7 @@ Inspect the returned session identity, activation state and verified running con
 
 Inspect may perform passive authenticated health inspection. JSON-RPC initialize, ping, tools/list, guide and workspace_inspect create no Workspace or control state. The explicitly requested workspace_initialize tool creates project/state data and a binding but leaves the session inactive. Product requests, capabilities, dispatch, reconcile and project operations require current-session activation. Deactivation clears only this chat's flag; closing the chat or EOF does not stop the shared daemon.
 
-The Expert first reads capabilities and scoped owner state, then selects forward modeling, reverse modeling, Harness quality or Runtime handoff. See [first journeys](first-journey.md). Native asset work needs no LLM callback. The parent executes deterministic Ontology validation and supplied-evidence Harness evaluation; it does not execute arbitrary coding or deployment. Advanced classification, external legacy Catalog resolution and standalone Runtime execution require trusted SDK providers; see [capabilities](capabilities.md).
+The Expert first reads capabilities and scoped owner state, then selects forward/reverse modeling, Harness quality, execution feedback, online observation or reviewed response. See [first journeys](first-journey.md). Native validation needs no LLM callback. The parent composes deterministic native validators and the bounded installed collector; it does not execute arbitrary coding or deployment. Legacy JSON authoring/classification mutations are retired. See [capabilities](capabilities.md) for current providers and limits.
 
 ## Adapter and recovery
 

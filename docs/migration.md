@@ -1,5 +1,18 @@
 # Workspace migration and source boundaries
 
+## Upgrade from v0.5 to v0.6.0
+
+Version 0.6.0 Preview adds response linkage and preserves the native v1 specifications. Use the exact [v0.6.0 bundle](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) and preserve the earlier installation for rollback. New Runtime/Harness response writes use database marker **5**; the Ontology native schema is unchanged. An old reader must reject new state rather than silently ignore response records.
+
+1. Inspect the old installation and latest accepted project assets. Reconcile original pending requests without resubmission. Stop its connection and independent online worker, then create a supported consistent backup of editable files and owner state. Preserve current receipts, relocation keys and the old installation; do not substitute an older acceptance fixture.
+2. Prove upgrade and restore on an isolated copy, using the actual 0.5 program to establish historical state. Compare published packages, decisions, execution receipts and source bindings after opening with 0.6. Preserve original records; response state is additive. Test that old Runtime/Harness readers reject marker 5 and that supported backup/restore retains new cross-owner references.
+3. Install the exact verified 0.6 bundle in a new program directory and complete real Codex acceptance against isolated data. Keep candidate and daily MCP server identities separate. A connection's version and installation digest, rather than its display label, identify what was tested.
+4. After preservation and recovery checks pass, stop all processes using the original Workspace, take a current backup and attach the final 0.6 installation to that stopped Workspace. Compare historical records again, then switch the local plugin registration. Verify the fresh connection's component versions, Workspace identity, passive initial state and explicit activation before resuming project work.
+
+Rollback preserves newly created state separately and restores the matching verified pre-upgrade backup to its original missing or empty roots with the old installation. Never point 0.5 at marker 5 or overwrite current data with a historical test snapshot. The [cache maintenance requirements](recovery.md#native-toolchain-cache-during-maintenance) still apply.
+
+This upgrade does not re-extract project assets, approve domain changes, execute remediation or enable monitoring. The new response executor remains the pinned isolated Node collector with explicit loopback scope. Java/Maven and remote providers require separate Roadmap work; installing 0.6 alone does not complete those project acceptance gates.
+
 ## Upgrade from v0.2–v0.4 to v0.5.0
 
 This is a same-machine, same-OS-user upgrade of an existing Workspace. It does not require moving the editable project or protected service state. Use the exact [v0.5.0 Preview bundle](https://github.com/yeliang-wang/evopilot/releases/tag/v0.5.0) and a new versioned program directory; preserve the previous installation. Publication does not switch a user's daily plugin.

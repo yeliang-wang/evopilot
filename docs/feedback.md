@@ -1,6 +1,6 @@
 # Registered execution feedback
 
-v0.4 adds an explicitly configured flow from Runtime Runs to private Harness and Ontology inboxes. Use Expert scenarios `V04-U01` (capture and delivery), `V04-U02` (asset review) and `V04-U03` (recovery). Selection and guides remain passive; activate the current chat before mutations.
+Introduced in v0.4 and retained in v0.6, this explicitly configured flow sends Runtime Run evidence to private Harness and Ontology inboxes. Use Expert scenarios `V04-U01` (capture and delivery), `V04-U02` (asset review) and `V04-U03` (recovery). Selection and guides remain passive; activate the current chat before mutations.
 
 ## First use
 
@@ -35,11 +35,11 @@ Provider calls have a five-second response deadline. A timeout does not prove th
 
 `FEEDBACK_PENDING` means delivery or review is incomplete. `FEEDBACK_TIMEOUT` retains an uncertain response. `EVENT_CONFLICT`, `SCOPE_MISMATCH`, `STALE_SOURCE`, `STALE_REVIEW` and `FEEDBACK_NEW_RUN_REQUIRED` require correcting the identified binding. Source drift must be resolved against an immutable source candidate. Never fabricate evidence, suppress a warning, or choose a newer asset implicitly.
 
-There is no always-on delivery worker or arbitrary Codex activity interceptor in v0.4. Reconnect and inspect pending state to resume. Online monitoring is the separate v0.5 target. Findings do not automatically bump or publish software versions.
+There is no always-on execution-feedback delivery worker or arbitrary Codex activity interceptor. Reconnect and inspect pending state to resume. The separate [online worker](online-harness.md), introduced in v0.5, collects configured measurements and findings; [v0.6 response linkage](response.md) uses those reviewed findings. Neither automatically bumps or publishes software versions.
 
 ## Upgrade and rollback
 
-Close old connections, then make a verified backup of the editable project and all owner state before upgrade. The first feedback write advances that owner's SQLite schema marker to 3; old readers must reject it. Existing native records keep their original v0.3 contract/producer identity, standard digests and bytes. The v0.4 software identity is distinct from those historical native contract identifiers.
+Close old connections, then make a verified backup of the editable project and all owner state before upgrade. Feedback requires an owner SQLite schema marker of at least 3; an existing higher marker is never downgraded. Online records require marker 4 and Runtime/Harness response records require marker 5. Readers that do not support the actual marker must reject it. Existing native records keep their original v0.3 contract/producer identity, standard digests and bytes; current software versions are distinct from those historical identifiers.
 
 Use supported stopped-state maintenance for backup and restore. Preserve the newer state before rollback and restore the matching pre-upgrade backup with its matching installation; do not point v0.3 at feedback state or rewrite its schema marker. Git history of assets alone is not a complete backup.
 

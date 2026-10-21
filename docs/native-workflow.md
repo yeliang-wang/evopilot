@@ -1,7 +1,8 @@
 # Corrected-v1 native workflow
 
-This documents the v0.3 implementation candidate. It is not a release, installed
-Host acceptance or project completion certificate. The two owners define their
+This documents the corrected-v1 native workflow used by v0.6.0 Preview.
+The standards introduced in v0.3 remain unchanged. This guide is not a release,
+installed Host acceptance or project completion certificate. The two owners define their
 native standards; the parent defines the [project contract](../specifications/project/v1/README.md).
 
 1. Inspect/initialize your Workspace, inspect the locked toolchain, explicitly
@@ -79,6 +80,36 @@ project operations use immutable candidate IDs and content-bound records; no
 request can register an executor or replace trusted providers. Public visibility
 does not authorize upload. Required native package manifest files are sorted by
 path (`localeCompare` with `en`), with no duplicate or case-colliding path.
+
+## Native package transport bounds
+
+Transport budgets include UTF-8 JSON framing. Ordinary MCP requests and
+authenticated connection requests remain limited to 1 MiB. Only
+`native_project.materialize` and the Ontology/Harness `native.package.put`
+routes accept up to 8 MiB, including both packages in materialization. The MCP
+adapter, connection client and authenticated daemon enforce the same route
+allowlist before calling an owner or writing project state. Larger frames are
+rejected; splitting or shrinking a frozen source scope is not a workaround.
+Owner schema, source coverage, revision and approval checks still apply.
+
+Those routes and Ontology/Harness `native.package.inspect/readback/publish`
+and `native.receipt.inspect` have a
+16 MiB connection-response budget and a 32 MiB MCP-output budget, accommodating
+the full package in both text and structured content. Other responses retain
+their 8 MiB limit. Readback requests retain the ordinary 1 MiB input limit.
+If a native response still exceeds its bounded output budget after dispatch,
+the adapter returns `UNKNOWN` with the operation's reconciliation identity;
+inspect the retained candidate or owner receipt before considering another call.
+Materialization failures retain the exact operation, project scope and candidate
+ID in both direct connection and MCP errors; reconcile that candidate before
+another materialization request. Transport errors never establish that a write
+did not occur.
+These are finite transport budgets, not changes to the owners' package limits
+or evidence requirements. Installed support requires a verified candidate
+installation; a source checkout or a passing synthetic test does not upgrade
+an existing installation.
+
+## Native recovery and compatibility
 
 After timeout or disconnect, inspect the exact retained collection/Run/owner
 receipt and reconcile. Do not redispatch or choose another request ID to conceal

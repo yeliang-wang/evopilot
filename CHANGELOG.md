@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.0 Preview
+
+- Add optional operations ontology profile, published Harness runbooks and reviewed problem dispositions.
+- Link Runtime responses to actual isolated collection, independent verification and reviewed asset feedback.
+- Preserve uncertainty and history; response writes advance Runtime/Harness state to marker 5.
+- Bound large native transport and retain request correlation after disconnect.
+- Enforce strict TypeScript core, explicit generated/vendor provenance and narrow native Python adaptation.
+
+
 ## 0.5.0 Preview
 
 - Add bounded OpenSLO/Prometheus/Alertmanager integration, immutable native online evaluation and retained incidents.
@@ -17,7 +26,7 @@
 - Preserve native v0.3 contracts and historical records; add feedback-state backup/restore and old-reader rejection.
 - Preview publication remains conditional on the fixed v0.4 acceptance, actual Codex journeys and exact source CI.
 
-## 0.3.0 Preview — unreleased candidate
+## 0.3.0 Preview
 
 Correct current v1 native contracts and bind standard content digests. New work uses native RDF/Turtle and SHACL or Rego/OPA/Conftest, protected collection/run receipts, and fixed project completion requirements. Historical JSON records retain their original identity; retired mutation paths cannot create new work. This v0.x correction is incompatible with historical writers. Keep a consistent pre-upgrade snapshot; do not point v0.2 at state written by this candidate. Implementation and tests do not establish acceptance or release.
 
@@ -29,9 +38,9 @@ Correct current v1 native contracts and bind standard content digests. New work 
 - Historical specifications/v1 and earlier acceptance records remain unchanged.
 - Full 27-scenario catalogue with evidence requirements; acceptance remains bound to the exact candidate and real Host receipts.
 
-## 0.1.1 Preview — planned repair
+## 0.1.1 Preview — delivery repair
 
-Five approved repair areas; this is scope, not an acceptance or publication report:
+Five delivery repair areas; exact releases are recorded on GitHub:
 
 1. OSS entry and documentation navigation with owning-repository GitHub links.
 2. Portable download, checksum, installation and four unified Expert journeys.

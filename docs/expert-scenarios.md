@@ -1,8 +1,13 @@
-# Expert scenarios — native assets and execution feedback
+# Expert scenarios — v0.6.0 Preview
 
 Current native journeys are returned by `evopilot_v01_guide`. Their actual
 operation sequence is in [Native workflow](native-workflow.md). Guidance and
 catalogue metadata do not certify installed Desktop behavior.
+
+The current guide has 19 native journeys: six V03, three V04, five V05 and
+five V06. The 27 retained V02 scenarios below are historical context, not the
+current acceptance denominator. See [online journeys](#v05-online-journeys) and
+[response journeys](#v06-response-journeys) for the later additions.
 
 | ID | User journey | Automated evidence locations |
 | --- | --- | --- |
@@ -63,7 +68,11 @@ Forward and reverse routes use the same owner `specifications/v1/`, with owner-s
 
 ## Retained Ontology workflows
 
-These are capabilities in the current Ontology product, not activation of retired software. Consult active owner capabilities for exact argument schemas. Named producers require a prepared, currently decided plan; calculation output grants no approval.
+These rows describe historical Ontology workflows. Current capabilities expose
+their supported read operations; retired JSON, producer, classification and
+Catalog mutations fail with `HISTORICAL_READ_ONLY`, even when trusted SDK
+providers are configured. Use native packages for new work. The table preserves
+the original use cases and must not be interpreted as current write instructions.
 
 | ID | Ask the Expert | Required result and boundary |
 | --- | --- | --- |
@@ -76,7 +85,12 @@ These are capabilities in the current Ontology product, not activation of retire
 | V02-C07 | Classify, reanalyze, inspect or resume | Use explicitly configured trusted providers. Retain original admission receipt; timeout/restart stays UNKNOWN until resolved and does not trigger retry. |
 | V02-C08 | Record my classification handoff to Harness | Bind the human decision token to exact source/results. The handoff record neither creates a native Harness asset nor starts a Run. |
 
-Advanced classification requires trusted SDK `resolveClassificationSource`, `classificationAdvisor` and `classificationModel`; the model binding is `{providerId, modelId, revision, timeoutMs}`. Foreign Catalog Harness material needs `resolveLegacyHarness`. The default daemon does not supply these callbacks or inherit Codex credentials/model identity. An accurate missing-provider diagnostic is the default Desktop branch; it is not a successful classification/publication. Configured success and recovery branches run against actual product services with explicitly synthetic test providers in automated E2E.
+The historical SDK contracts name `resolveClassificationSource`,
+`classificationAdvisor`, `classificationModel` and `resolveLegacyHarness`;
+the model binding is `{providerId, modelId, revision, timeoutMs}`. The default
+daemon does not supply them or inherit Codex credentials/model identity.
+Retained contract tests and synthetic providers do not reopen those write
+flows or certify current Desktop classification/publication.
 
 Read the owning [retained API](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/legacy-api.md), [classification](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/classification-service.md) and [Catalog](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/catalog-service.md) contracts before constructing requests.
 
@@ -109,3 +123,17 @@ A valid candidate report is stored privately; documentation and catalogue carry 
 | V05-U05 | Continue after client exit; restart with watermarks; block live maintenance; stop owned worker | `integration/e2e/online-worker.test.mjs` |
 
 Harness test paths are under `projects/evopilot-harness/tests/e2e`; integration test paths are under `integration/e2e`. These named tests exercise actual product APIs; telemetry fixtures are labeled synthetic. Controlled real Prometheus/Alertmanager plus the isolated project and actual installed Codex journeys remain fixed P11/P12 acceptance, never inferred from this table. See [the user guide](online-harness.md).
+
+## v0.6 response journeys
+
+Read [response linkage](response.md) and the exact installed owner guides. These are fixed journeys to test; their catalogue entries do not certify completion.
+
+| ID | User journey | Automated evidence |
+| --- | --- | --- |
+| V06-U01 | Instantiate the optional operations profile for forward/reverse assets, preserving project scope and provenance | Ontology `operations-profile.test.mjs` |
+| V06-U02 | Inspect a real finding, review the problem, resolve applicable published guidance and prepare a response | Harness and Runtime `response.test.mjs` |
+| V06-U03 | Execute the reviewed isolated action once; reconcile uncertainty and confirm actual cancellation | Runtime and parent `response.test.mjs` |
+| V06-U04 | Independently validate and compare actual same-binding recovery before reviewing disposition | Harness and parent `response.test.mjs` |
+| V06-U05 | Review owner reuse/new delivery, preserve history and recover schema-5 state | Parent `response.test.mjs` |
+
+Actual installed Codex default-off, explicit activation, guide readback, owner routing and reconnect remain separate required acceptance evidence. The two synthetic sample domains do not satisfy the second real-project v1.0 criterion.
