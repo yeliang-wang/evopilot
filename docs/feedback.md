@@ -1,6 +1,6 @@
 # Registered execution feedback
 
-Introduced in v0.4 and retained in the v0.6 candidate, this explicitly configured flow sends Runtime Run evidence to private Harness and Ontology inboxes. Use Expert scenarios `V04-U01` (capture and delivery), `V04-U02` (asset review) and `V04-U03` (recovery). Selection and guides remain passive; activate the current chat before mutations.
+Introduced in v0.4 and retained in v0.6, this explicitly configured flow sends Runtime Run evidence to private Harness and Ontology inboxes. Use Expert scenarios `V04-U01` (capture and delivery), `V04-U02` (asset review) and `V04-U03` (recovery). Selection and guides remain passive; activate the current chat before mutations.
 
 ## First use
 

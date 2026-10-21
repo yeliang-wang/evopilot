@@ -1,4 +1,4 @@
-# First use — v0.6.0 Preview candidate
+# First use — v0.6.0 Preview
 
 Use the [native workflow](native-workflow.md) for exact current envelopes and expected files. Historical JSON authoring commands remain retired; old records retain their original meaning.
 
@@ -44,6 +44,6 @@ For a lost response, retain the original requestId and say “Inspect this recei
 
 The [complete Expert catalogue](expert-scenarios.md) distinguishes current native, feedback, online and response journeys from retained historical scenarios. The default daemon does not inherit the Host model or credentials. A provider-prerequisite diagnostic is not a successful execution. See [capabilities](capabilities.md), [Codex integration](codex.md) and [composition](product-composition.md).
 
-For a service already connected to online Harness, ask: “Inspect the retained finding, explain applicable published guidance, and prepare the bounded response for review.” The Expert must show the exact project, deployment, source, prerequisites and proposed action. An alert does not approve it. After execution, request independent recovery evidence and both owners' asset feedback. See [response linkage](response.md); installing the candidate does not itself connect a production service or enable its worker.
+For a service already connected to online Harness, ask: “Inspect the retained finding, explain applicable published guidance, and prepare the bounded response for review.” The Expert must show the exact project, deployment, source, prerequisites and proposed action. An alert does not approve it. After execution, request independent recovery evidence and both owners' asset feedback. See [response linkage](response.md); installing the plugin does not itself connect a production service or enable its worker.
 
 Guides return `installedReferences` relative to verified `installationRoot` (already `managedRoot/app`). Child references resolve under `node_modules/@evopilot-next/{runtime,harness,ontology}/`; do not append another `app`. Read owner schemas for exact payloads. Public visibility does not authorize upload; model output never grants approval or release authority.

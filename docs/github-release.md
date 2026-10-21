@@ -1,6 +1,6 @@
-# GitHub delivery — v0.6.0 Preview candidate
+# GitHub delivery — v0.6.0 Preview
 
-The active v0.6 Target authorizes implementation and local installation. It does **not** record a new GitHub publication decision. The workflow below prepares the process for a separately authorized exact candidate; source version changes and prior v0.5 release authority do not authorize publishing v0.6.
+The [v0.6 Target](../governance/response-v06.json) defines implementation and local acceptance. Publication additionally requires the actual user release decision, bound privately to the exact source commits, CI runs and artifacts. The workflow below enforces those technical bindings; a source version or public scope document does not supply that decision.
 
 The release repositories are [EvoPilot](https://github.com/yeliang-wang/evopilot), [Runtime](https://github.com/yeliang-wang/evopilot-runtime), [Harness](https://github.com/yeliang-wang/evopilot-harness) and [Ontology](https://github.com/yeliang-wang/evopilot-ontology). Each child owns its release. Parent gitlinks bind exact child commits. The existing v0.1.0 tags, artifacts and evidence remain immutable history.
 

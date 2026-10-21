@@ -54,26 +54,26 @@ Project choices, per-project completion states, human decisions and evidence bel
 
 Goal and Run are Runtime objects. Target and Loop are governance contracts and private ledgers. Each loop records its goal, baseline, actions, actual results, evidence, unresolved items and next step. Private evidence binds source revisions, exact asset versions, installed component identity and evaluation receipts. Source drift requires impact review; background synchronization is not implied. Repeating a test or changing a version label is not a substantive second round.
 
-## Deferred product directions
+## Product evolution directions
 
 These entries record product direction, not implementation or release authorization. `CANDIDATE` means a follow-up worth reviewing after the approved correction; `CONDITIONAL_RESEARCH` means first establish a concrete user need and feasibility. Neither assigns a software version or deadline. An accepted Target must fix scope, owner, compatibility, evidence and release conditions before work starts. These capability candidates add no new v1.0 release prerequisites: the existing readiness contract remains authoritative. Fixes discovered during real-project use can lead to separately scoped v0.x deliveries.
 
-| ID / state | Trigger and intended outcome | Required future acceptance | Boundary |
+| ID / state | Trigger and intended outcome | Acceptance requirements | Boundary |
 |---|---|---|---|
 | EVO-F01 / CANDIDATE | After the correction, validate first-use and repeated evolution with a second genuinely different project and new-user feedback. Coordinate the existing T2/T3 readiness work. | Two real projects and substantive rounds; forward/reverse and source/asset consistency; recovery and exact-candidate proof under the existing readiness contract. Record usability failures and their disposition. | No synthetic project or rerun substitutes for real-project evidence; private project status stays private; readiness still needs its final user release decision. |
 | EVO-F02 / CONDITIONAL_RESEARCH | Add a requested Host adapter, including WorkBuddy, when its supported plugin/MCP surface and user need are established. | Actual Host first use, default inactive behavior, explicit activation, scope isolation, tool/receipt identity, reconnect, installed documentation and failure handling. | No WorkBuddy implementation or E2E in the approved correction; no arbitrary-Agent compatibility claim or host-wide non-bypass promise. |
 | EVO-F03 / CONDITIONAL_RESEARCH | Introduce a later specification revision only when several projects demonstrate a limitation that cannot be handled safely by the current standard or a project extension. | Versioned change rationale, stable identity rules, explicit compatibility/loss reports, owner round-trip checks, historical readback and migration/recovery evidence. | This correction stays in `specifications/v1`; no new v2/v3 directory now, no silent semantic change to an already published standard, no automatic reinterpretation of old approvals. |
-| EVO-F04 / IMPLEMENTING v0.6.0 | Connect observed faults, business impact, reviewed response, actual execution and asset learning. | See the [cross-product scenarios](#required-future-e2e-evidence) and owner candidates; registration is not completed acceptance. | Approved v0.6.0 response Target; no automatic repair/release or new v1.0 gate. |
+| EVO-F04 / IMPLEMENTED v0.6.0 | Connect observed faults, business impact, reviewed response, actual execution and asset learning. | See the [cross-product scenarios](#required-v06-e2e-evidence) and owner candidates; registration is not completed acceptance. | Approved v0.6.0 response Target; no automatic repair/release or new v1.0 gate. |
 
 ### Product-owned follow-ups
 
 The owning repository keeps the detailed trigger, scope and acceptance; this table is navigation, not a duplicate definition.
 
-| Owner | Deferred target IDs and direction | Roadmap |
+| Owner | Target IDs and direction | Roadmap |
 |---|---|---|
-| Ontology | ONT-F01 semantic evolution and stable identity; ONT-F02 bounded interchange/generation; ONT-F03 pinned external vocabulary/import closure; ONT-F04 optional reasoning profiles; ONT-F05 optional operations/fault domain profile. | [Ontology roadmap](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/roadmap.md) |
-| Harness | HAR-F01 richer rule diagnostics, coverage and scale; HAR-F02 optional upstream policy sharing; HAR-F03 consuming online SRE evidence; HAR-F04 response guidance and verified disposition. | [Harness roadmap](https://github.com/yeliang-wang/evopilot-harness/blob/main/docs/roadmap.md) |
-| Runtime | RUN-F01 external executor adapters; RUN-F02 sustained reliability/resource benchmarks; RUN-F03 explicitly opted-in source-drift checks; RUN-F04 reviewed repair/runbook linkage. | [Runtime roadmap](https://github.com/yeliang-wang/evopilot-runtime/blob/main/docs/roadmap.md) |
+| Ontology | ONT-F01 semantic evolution and stable identity; ONT-F02 bounded interchange/generation; ONT-F03 pinned external vocabulary/import closure; ONT-F04 optional reasoning profiles; ONT-F05 operations/fault domain profile (implemented in v0.6). | [Ontology roadmap](https://github.com/yeliang-wang/evopilot-ontology/blob/main/docs/roadmap.md) |
+| Harness | HAR-F01 richer rule diagnostics, coverage and scale; HAR-F02 optional upstream policy sharing; HAR-F03 online SRE evidence (implemented in v0.5); HAR-F04 response guidance and verified disposition (implemented in v0.6). | [Harness roadmap](https://github.com/yeliang-wang/evopilot-harness/blob/main/docs/roadmap.md) |
+| Runtime | RUN-F01 external executor adapters; RUN-F02 sustained reliability/resource benchmarks; RUN-F03 explicitly opted-in source-drift checks; RUN-F04 reviewed repair/runbook linkage (implemented in v0.6). | [Runtime roadmap](https://github.com/yeliang-wang/evopilot-runtime/blob/main/docs/roadmap.md) |
 
 ### Product non-goals
 
@@ -95,14 +95,13 @@ The delivered scope is a bounded OpenSLO v1 RatioTimeslices profile and macOS ar
 |---|---|---|
 | Online retention and scale | Real projects reach bounded history/backlog limits | Reviewed retention/export semantics, immutable historical evidence, restart/load tests and explicit no-loss acceptance; no silent pruning |
 | Additional supervisors/providers | A concrete project requires another platform or telemetry source | Pinned supported subset, real provider/Host E2E, credentials/network isolation and owned stop/recovery; no blanket compatibility claim |
-| [Reviewed repair execution linkage — EVO-F04](#evo-f04--incident-response-and-asset-learning) | Real users need repair candidates connected to a concrete approved Target | See the shared EVO-F04 scenarios and owner candidates; exact authority, actual execution, recovery and reviewed asset learning remain required |
 | Additional SLO semantics | Several projects need calendar/composite/other budgeting methods | Versioned profile compatibility, upstream field/calculation comparisons, negative cases and preserved earlier approvals |
 
-These candidates are not uncompleted v0.5 criteria and have no assigned release date. They require their own reviewed Target. Existing v1.0 readiness conditions remain unchanged.
+These candidates are not uncompleted v0.5 criteria and have no assigned release date. They require their own reviewed Target. Response linkage has advanced to the implemented v0.6 scope below. Existing v1.0 readiness conditions remain unchanged.
 
 ## EVO-F04 — Incident response and asset learning
 
-**Status:** `IMPLEMENTING` in **v0.6.0 Preview** under the user-approved [response Target](../governance/response-v06.json). Its 36 fixed variants cover this direction, the native transport repair and strict TypeScript language boundaries. Implementation status is not acceptance or publication; existing v1.0 readiness requirements are unchanged.
+**Status:** `IMPLEMENTED` for **v0.6.0 Preview** under the user-approved [response Target](../governance/response-v06.json). Its 36 fixed variants cover this direction, the native transport repair and strict TypeScript language boundaries. The [versioned release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) records public delivery; fixed acceptance evidence remains private and existing v1.0 readiness requirements are unchanged.
 
 **Trigger:** an onboarded project needs to connect an observed fault to its business impact, applicable response guidance, an authorized repair and evidence of recovery. This expands the existing **Reviewed repair execution linkage** candidate; it is not a second repair platform or a new product.
 
@@ -131,9 +130,9 @@ Use [W3C PROV-O](https://www.w3.org/TR/prov-o/) as a reference for provenance, w
 
 Public material contains generic templates and synthetic examples. Real observations, business mappings, SOPs, decisions and campaign progress remain in private Workspace/owner state. Project extensions do not modify the shared standard. If current support cannot express a required mapping, review an explicit compatibility change through EVO-F03; never silently change published v1 bytes or reinterpret earlier decisions. This candidate does not create a new specification directory.
 
-### Required future E2E evidence
+### Required v0.6 E2E evidence
 
-The following IDs are expanded into fixed variants in the v0.6 Target, not completed tests. The supported execution profile is existing pinned Node collection in an isolated copied directory, independent native Run verification and same-binding online recovery. Java/Maven/remote adapters remain RUN-F01. Implement cases in the parent's existing `integration/e2e` and the owners' existing `tests/e2e`, with real installed Codex journeys. Missing, skipped, stale, synthetic-only or caller-asserted evidence cannot substitute for a required real journey.
+The following IDs are expanded into fixed variants in the v0.6 Target and covered by the owning and composed test suites. This table defines requirements; actual outcomes remain in exact-candidate private evidence. The supported execution profile is existing pinned Node collection in an isolated copied directory, independent native Run verification and same-binding online recovery. Java/Maven/remote adapters remain RUN-F01. Implement cases in the parent's existing `integration/e2e` and the owners' existing `tests/e2e`, with real installed Codex journeys. Missing, skipped, stale, synthetic-only or caller-asserted evidence cannot substitute for a required real journey.
 
 | ID | Scenario | Required observable result |
 |---|---|---|
@@ -148,4 +147,4 @@ The following IDs are expanded into fixed variants in the v0.6 Target, not compl
 | EVO-F04-E09 | First-use Codex Expert journey | With the plugin explicitly selected, a new user can inspect impact, identify applicable guidance, review the proposed action, inspect failure/recovery and complete the appropriate asset review. Answers cite actual owner records; inactive chats do not start a repair or monitoring selection. WorkBuddy is excluded. |
 | EVO-F04-E10 | Upgrade, recovery and retained history | Exact plan, guidance, asset and observation references survive supported backup/restore and restart. Old records are not rewritten into new approvals; migration failures preserve recoverable state and report incompatibility. |
 
-**Priority:** first validate the minimal profile and repair linkage against a concrete project need; then improve reusable postmortem learning and queries. This candidate does not delay the existing second-project onboarding or add a v1.0 release gate. ONT-F01, HAR-F01 and RUN-F01 remain separate, demand-driven follow-ups; do not silently pull full semantic reasoning, policy calibration or a new executor platform into this scope.
+**Follow-up:** extend reusable postmortem learning and queries when real project needs justify another reviewed Target. The v0.6 implementation does not delay the existing second-project onboarding or add a v1.0 release gate. ONT-F01, HAR-F01 and RUN-F01 remain separate, demand-driven follow-ups; do not silently pull full semantic reasoning, policy calibration or a new executor platform into this scope.

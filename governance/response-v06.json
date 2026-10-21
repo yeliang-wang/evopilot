@@ -3,7 +3,7 @@
   "id": "evopilot-response-v06",
   "version": "0.6.0",
   "stage": "PREVIEW",
-  "status": "IMPLEMENTING",
+  "status": "IMPLEMENTED",
   "scopeAuthority": "Explicit user request to implement Roadmap and install in current Codex; supplemental strict TypeScript core requirement.",
   "roadmapIds": [
     "EVO-F04",

@@ -1,10 +1,10 @@
-# EvoPilot 0.6.0 Preview — candidate source
+# EvoPilot 0.6.0 Preview
 
 Build domain models, assess quality, and prepare controlled execution through one Expert in Codex. Runtime owns execution and state, Harness owns QA and delivery standards, and Ontology owns domain modeling.
 
 [Quickstart](docs/installation.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/yeliang-wang/evopilot/releases) · [Contribute](CONTRIBUTING.md)
 
-This checkout is implementing [v0.6.0 response linkage](docs/response.md), extending online Harness and registered execution feedback. v0.6.0 is a candidate until its fixed acceptance and installation checks complete; the latest previously published release is v0.5.0. Use the Releases page for published versioned artifacts; source availability is not evidence of acceptance or publication. Native domain models use RDF/Turtle and SHACL; quality assets use Rego, OPA and Conftest. Project completion requires fixed requirements, actual collection receipts, both owner reports and the actual domain decision. Preview is not GA or blanket production acceptance.
+Version 0.6.0 implements [reviewed response linkage](docs/response.md), extending online Harness and registered execution feedback. It connects findings, published runbooks, reviewed isolated actions, independent verification and asset-owner feedback. Use the [versioned release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) for published artifacts; source availability alone is not a publication receipt. Native domain models use RDF/Turtle and SHACL; quality assets use Rego, OPA and Conftest. Project completion requires fixed requirements, actual collection receipts, both owner reports and the actual domain decision. Preview is not GA or blanket production acceptance.
 
 ## What can I do?
 
@@ -16,6 +16,7 @@ This checkout is implementing [v0.6.0 response linkage](docs/response.md), exten
 | Assess quality | Harness quality assessment | Rules, evidence, missing reports and quality results |
 | Evolve reviewed assets | [Registered execution feedback](docs/feedback.md) | Durable Run evidence, owner impact proposals, exact-version reuse or native delivery |
 | Monitor a selected service | [Online Harness](docs/online-harness.md) | Measured SLO windows, native policy results, incidents and reviewable Runtime repair candidates |
+| Respond to a retained fault | [Reviewed response](docs/response.md) | Pinned runbook and action, independent recovery evidence, reviewed asset reuse or delivery |
 | Plan and execute a goal | Runtime plan/execute | Immutable inputs, decisions, receipts and reconciliation |
 
 Missing, unknown, skipped or stale required evidence blocks completion. Warnings do not authorize an automatic version bump. The current native workflow separates execution status from semantic and quality results; standalone Runtime needs trusted providers. Arbitrary coding and deployment are unsupported. Start with the [native workflow](docs/native-workflow.md), [project standard](specifications/project/v1/README.md) and [locked toolchain](docs/native-toolchain.md).
@@ -45,7 +46,7 @@ The daemon loads all three services; it does not start one process per product. 
 
 ## Install a published bundle
 
-Use **Node 24.14.0**. Get `evopilot-0.5.0-preview.tar.gz` and `SHA256SUMS` from the exact [versioned release](https://github.com/yeliang-wang/evopilot/releases). Follow [checksum verification and extraction](docs/installation.md), then set canonical absolute paths to your extracted bundle and new isolated locations outside Git; their parent directories must exist. Public and private product data belong to the workspace, separate from installed program files:
+Use **Node 24.14.0**. Get `evopilot-0.6.0-preview.tar.gz` and `SHA256SUMS` from the exact [v0.6.0 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0). Follow [checksum verification and extraction](docs/installation.md), then set canonical absolute paths to your extracted bundle and new isolated locations outside Git; their parent directories must exist. Public and private product data belong to the workspace, separate from installed program files:
 
 ```sh
 preview_bundle="/absolute/path/to/extracted-bundle"
@@ -56,9 +57,9 @@ codex plugin marketplace add "$preview_root" --json
 codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json
 ```
 
-Existing users should follow the [v0.2–v0.4 upgrade procedure](docs/migration.md#upgrade-from-v02v04-to-v050) before switching their daily plugin. Preserve the existing Workspace and verify rollback on an isolated copy.
+Existing users should follow the [v0.5 to v0.6 upgrade procedure](docs/migration.md#upgrade-from-v05-to-v060) before switching their daily plugin. Preserve the existing Workspace and verify rollback on an isolated copy.
 
-Select **EvoPilot v0.5 Preview**, then say: “Initialize my private Workspace, explain its directories, and guide me through the forward example.” The Expert inspects first, creates the Workspace only after your setup request, then explicitly activates the current chat. You can choose your own directories; no private GitHub repository is required. Initialization alone does not activate the chat. Inspect and guide requests stay passive; ordinary chats do not require EvoPilot.
+Select **EvoPilot v0.6 Preview**, then say: “Initialize my private Workspace, explain its directories, and guide me through the forward example.” The Expert inspects first, creates the Workspace only after your setup request, then explicitly activates the current chat. You can choose your own directories; no private GitHub repository is required. Initialization alone does not activate the chat. Inspect and guide requests stay passive; ordinary chats do not require EvoPilot.
 
 Your editable project defaults to `~/evopilot-workspace`; protected service state defaults to `~/.local/share/evopilot/workspaces/<id>`. The project may have its own private Git history. Service databases, control records, signing keys and private evidence stay outside EvoPilot source and distribution. See [Workspace](workspace/README.md) and the [current and historical Expert scenarios](docs/expert-scenarios.md).
 

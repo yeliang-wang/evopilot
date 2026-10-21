@@ -2,7 +2,7 @@
 
 ## Upgrade from v0.5 to v0.6.0
 
-The 0.6.0 source is a local Preview candidate until its exact publication is recorded. It adds response linkage and preserves the native v1 specifications. New Runtime/Harness response writes use database marker **5**; the Ontology native schema is unchanged. An old reader must reject new state rather than silently ignore response records.
+Version 0.6.0 Preview adds response linkage and preserves the native v1 specifications. Use the exact [v0.6.0 bundle](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) and preserve the earlier installation for rollback. New Runtime/Harness response writes use database marker **5**; the Ontology native schema is unchanged. An old reader must reject new state rather than silently ignore response records.
 
 1. Inspect the old installation and latest accepted project assets. Reconcile original pending requests without resubmission. Stop its connection and independent online worker, then create a supported consistent backup of editable files and owner state. Preserve current receipts, relocation keys and the old installation; do not substitute an older acceptance fixture.
 2. Prove upgrade and restore on an isolated copy, using the actual 0.5 program to establish historical state. Compare published packages, decisions, execution receipts and source bindings after opening with 0.6. Preserve original records; response state is additive. Test that old Runtime/Harness readers reject marker 5 and that supported backup/restore retains new cross-owner references.

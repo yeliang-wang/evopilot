@@ -1,4 +1,4 @@
-# Local connection — v0.6.0 Preview candidate
+# Local connection — v0.6.0 Preview
 
 This describes connection orchestration for version `0.6.0`, using the retained
 protocol `evopilot-connection/v1`. The installer and Codex stdio adapter use this

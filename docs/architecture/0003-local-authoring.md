@@ -1,6 +1,6 @@
 # Native local authoring and assembly
 
-The v0.6.0 Preview candidate parent owns canonical compatibility bytes, strict TypeScript composition, connection, Expert and plugin code, integration tests, documentation and assembly tooling. Child Runtime, Harness and Ontology repositories own independent source, checks, declarations and exact dependency locks. See the [language policy](../language-policy.md) for generated and test-driver exceptions.
+The v0.6.0 Preview parent owns canonical compatibility bytes, strict TypeScript composition, connection, Expert and plugin code, integration tests, documentation and assembly tooling. Child Runtime, Harness and Ontology repositories own independent source, checks, declarations and exact dependency locks. See the [language policy](../language-policy.md) for generated and test-driver exceptions.
 
 Qualify the explicit project and files before a Runtime-owned edit request. A parent scope does not authorize child edits. An isolated editor may have unpopulated gitlinks; missing children must be reported, never silently restored or treated as passing checks. Keep current daily state, credentials, pending requests and retained receipts in place.
 

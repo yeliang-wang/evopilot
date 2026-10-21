@@ -1,6 +1,6 @@
 # Corrected-v1 native workflow
 
-This documents the corrected-v1 native workflow used by the v0.6.0 candidate.
+This documents the corrected-v1 native workflow used by v0.6.0 Preview.
 The standards introduced in v0.3 remain unchanged. This guide is not a release,
 installed Host acceptance or project completion certificate. The two owners define their
 native standards; the parent defines the [project contract](../specifications/project/v1/README.md).

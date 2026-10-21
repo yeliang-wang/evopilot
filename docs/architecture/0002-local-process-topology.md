@@ -1,6 +1,6 @@
 # Local process topology
 
-The v0.6.0 candidate retains the bounded local connection foundation around the public Runtime, Harness and Ontology composition. This source implementation does not establish Host acceptance or release authority. Current acceptance follows the [v0.6 Target](../../governance/response-v06.json); historical M3 and E01–E19 results do not certify a new installation.
+The v0.6.0 Preview retains the bounded local connection foundation around the public Runtime, Harness and Ontology composition. This source implementation does not establish Host acceptance or release authority. Current acceptance follows the [v0.6 Target](../../governance/response-v06.json); historical M3 and E01–E19 results do not certify a new installation.
 
 Codex starts a separate stdio adapter for each conversation. Its activation explicitly starts or reuses a shared detached loopback process for the canonical workspace. The current installer and adapter use the exported connection API. The daemon loads the three public installed packages through `loadInstalledProducts`, initializes Runtime on activation, and initializes Harness/Ontology only on explicit owning operations. Each product protects its own transactions and locks. The parent distributes compatibility material and has no business state. Imports, configuration loading and passive connection inspection perform no initialization or writes.
 

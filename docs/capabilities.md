@@ -1,4 +1,4 @@
-# Capabilities in the v0.6.0 implementation candidate
+# Capabilities in v0.6.0 Preview
 
 This is source capability documentation, not a release or production certificate. The [native workflow](native-workflow.md) is the current path. Historical v0.2 JSON mutation examples cannot create corrected-v1 work.
 
@@ -33,4 +33,4 @@ Registered Runtime Runs can opt into durable evidence delivery. Harness and Onto
 
 The [online service](online-harness.md) uses explicitly selected immutable service bindings, the bounded OpenSLO profile, actual Prometheus/Alertmanager inputs and an independently enabled local worker. It retains findings and repair candidates; it does not start automatic production repair.
 
-The [0.6 response candidate](response.md) connects optional operations ontology material, published Harness guidance, a reviewed Runtime response, an actual isolated collection action, independent native verification and both owners' feedback decisions. It preserves cause hypotheses, preventive followups and risk dispositions. The supplied executor remains pinned Node with explicitly declared loopback access. Java/Maven and remote adapters remain separate Roadmap work.
+The [0.6 response workflow](response.md) connects optional operations ontology material, published Harness guidance, a reviewed Runtime response, an actual isolated collection action, independent native verification and both owners' feedback decisions. It preserves cause hypotheses, preventive followups and risk dispositions. The supplied executor remains pinned Node with explicitly declared loopback access. Java/Maven and remote adapters remain separate Roadmap work.
