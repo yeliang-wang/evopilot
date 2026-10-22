@@ -1,4 +1,4 @@
-# Expert scenarios — v0.7.0 candidate
+# Expert scenarios — v0.7.0 Preview
 
 Current native journeys are returned by `evopilot_v01_guide`. Their actual
 operation sequence is in [Native workflow](native-workflow.md). Guidance and

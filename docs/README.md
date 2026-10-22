@@ -37,3 +37,5 @@ Use [online setup, inspection and recovery](online-harness.md), the [worker desi
 ## v0.6 response linkage
 
 Start with [response workflow and boundaries](response.md), [V06 Expert journeys](expert-scenarios.md#v06-response-journeys) and [implementation languages](language-policy.md). The [fixed v0.6 Target](../governance/response-v06.json) requires cross-owner evidence, recovery and installed Host acceptance; source availability is not completion.
+
+For documentation amendments after release, see the [correction policy](github-release.md#documentation-corrections-after-publication). Current source documentation can advance without replacing the original v0.7.0 archives.

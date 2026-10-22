@@ -1,3 +1,4 @@
+import { checkDocumentation } from './check-documentation.mjs';
 import {syncReadability} from './sync-readability.mjs';
 import { syncResponse } from './sync-response.mjs';
 import { checkLanguages } from './check-languages.mjs';
@@ -102,7 +103,7 @@ export async function checkStrictConsumers() {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const failures = [];
   if (process.argv.length !== 2) failures.push('Unknown check arguments');
-  for (const check of [checkLanguages, checkPackages, checkRoadmap, () => syncContract({ check: true }), () => syncFeedback({ check: true }), () => syncOnline({ check: true }), () => syncResponse({ check: true }), () => syncReadability({ check: true }),
+  for (const check of [checkDocumentation, checkLanguages, checkPackages, checkRoadmap, () => syncContract({ check: true }), () => syncFeedback({ check: true }), () => syncOnline({ check: true }), () => syncResponse({ check: true }), () => syncReadability({ check: true }),
     ...CHILDREN.map(child => async () => (await import(pathToFileURL(resolve(ROOT, child, 'scripts/check.mjs')).href)).checkSource())]) {
     try { await check(); } catch (error) { failures.push(error.message); }
   }

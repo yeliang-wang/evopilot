@@ -1,4 +1,4 @@
-# EvoPilot 0.7.0 Preview candidate
+# EvoPilot · v0.7.0 Preview
 
 Build domain models, assess quality, and prepare controlled execution through one Expert in Codex. Runtime owns execution and state, Harness owns QA and delivery standards, and Ontology owns domain modeling.
 
@@ -6,7 +6,7 @@ Build domain models, assess quality, and prepare controlled execution through on
 
 This edition is **0.7.0 Preview**: [conversation-driven planning](docs/planning.md), [table-first native asset and gate reports](docs/readable-assets.md), and [preflight, diagnostics and bounded maintenance](docs/preflight-maintenance.md). Exact source, downloads and publication status are recorded by the versioned Release; local installation is a separate operation.
 
-Earlier v0.6.0 introduced [reviewed response linkage](docs/response.md), extending online Harness and registered execution feedback. It connects findings, published runbooks, reviewed isolated actions, independent verification and asset-owner feedback. Use the [versioned release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) for published artifacts; source availability alone is not a publication receipt. Native domain models use RDF/Turtle and SHACL; quality assets use Rego, OPA and Conftest. Project completion requires fixed requirements, actual collection receipts, both owner reports and the actual domain decision. Preview is not GA or blanket production acceptance.
+Earlier v0.6.0 introduced [reviewed response linkage](docs/response.md), extending online Harness and registered execution feedback. It connects findings, published runbooks, reviewed isolated actions, independent verification and asset-owner feedback. The [historical v0.6.0 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) retains that edition; source availability alone is not a publication receipt. Native domain models use RDF/Turtle and SHACL; quality assets use Rego, OPA and Conftest. Project completion requires fixed requirements, actual collection receipts, both owner reports and the actual domain decision. Preview is not GA or blanket production acceptance.
 
 ## What can I do?
 

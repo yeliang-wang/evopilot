@@ -43,3 +43,9 @@ The [feedback Target](../governance/feedback-v04.json) fixes 12 criteria and 36 
 ## v0.5 online Harness acceptance
 
 The [online Harness Target](../governance/online-harness-v05.json) fixes P01–P12 and all 36 variants. Retain real provider, native evaluation, durable scheduler, supervised lifecycle, fault/recovery, repair feedback, stopped-state upgrade/restore and installed Codex evidence for the exact candidate. Earlier feedback results do not substitute for these checks. Only conditional publication followed by actual public download and installed readback closes P12.03. The supported profile, supervisor and provider boundaries are specified in the [online guide](online-harness.md); private service evidence and credentials never enter release artifacts.
+
+## Documentation corrections after publication
+
+The four v0.7.0 Preview releases are published. The default branches include subsequent corrections to README installation examples, release-status wording and documentation navigation. Read the current [documentation index](README.md) for those corrections. The original tag, Release archives and installed offline documentation retain the published bytes; source-only documentation commits do not silently update installations or change software versions.
+
+Do not rebuild or replace v0.7.0 assets to apply these corrections. A future corrected binary/offline bundle requires a new version and its own release verification. `npm run check` runs the owning documentation consistency gate before packaging: current entry pages must match `package.json`, default download/clone commands must use that version, and current release sections must not retain obsolete candidate/unreleased status. Historical changelog sections, frozen specifications and preserved fixtures keep their original version references. These checks validate documentation consistency; they do not infer acceptance or authorize publication.

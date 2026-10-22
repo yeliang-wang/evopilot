@@ -1,4 +1,4 @@
-# First use — v0.7.0 candidate
+# First use — v0.7.0 Preview
 
 Use the [native workflow](native-workflow.md) for exact current envelopes and expected files. Historical JSON authoring commands remain retired; old records retain their original meaning.
 
@@ -10,7 +10,7 @@ No GitHub login or separate Workspace repository is required. The Expert checks 
 
 The project contains README, documentation, synthetic examples, public reusable assets and private project materials. `public` means reusable scope, not permission to upload. Keep databases, raw runtime evidence, control state and credentials out of Git; use a complete Workspace backup for restoration. The installation binds one Workspace; use the explicit attach/migration workflow for existing data rather than editing identity files or moving live databases.
 
-For a v0.7 planning discussion, ask “Discuss the next version, preserve assumptions and open questions, and show the review table before execution.” The [planning guide](planning.md) explains forward ideation, reverse onboarding, revisions, cross-chat resumption and execution handoff. [Readable reports](readable-assets.md) show native definitions and validation evidence without changing standards. This candidate remains separate from the currently published v0.6 installation.
+For a v0.7 planning discussion, ask “Discuss the next version, preserve assumptions and open questions, and show the review table before execution.” The [planning guide](planning.md) explains forward ideation, reverse onboarding, revisions, cross-chat resumption and execution handoff. [Readable reports](readable-assets.md) show native definitions and validation evidence without changing standards. The published v0.7.0 Preview is available through the [installation guide](installation.md). Existing users follow the [v0.6-to-v0.7 migration procedure](migration.md#upgrade-from-v06-to-v070); selecting a new source checkout does not update a running installation.
 
 ## Try a synthetic example
 

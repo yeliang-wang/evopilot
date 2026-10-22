@@ -9,3 +9,7 @@ The v0.7.0 core uses strict TypeScript with real `dist` compilation and declarat
 Do not commit `dist`, `node_modules`, credentials, private workspaces or audit reports. Use your real authorized Git identity or your own GitHub-provided noreply address. Do not invent contributors, fabricate commits or rewrite published history.
 
 Describe the problem, resulting behavior and exact validation. Report missing dependencies, skipped checks and failures honestly. Synthetic fixtures do not establish production acceptance, Host verification or release authority. See [testing](docs/testing.md), [security](SECURITY.md) and [release procedure](docs/github-release.md).
+
+## Documentation consistency
+
+`npm run check` includes `scripts/check-documentation.mjs`. Keep the README, documentation index, current changelog section and default installation examples aligned with `package.json`; retain explicitly historical version records. Run `node --test integration/e2e/documentation.test.mjs` for the gate regression cases. Source documentation updates do not replace existing tags or release archives.
