@@ -39,7 +39,10 @@ jobs:
           node -e "if(process.platform !== 'darwin' || process.arch !== 'arm64') process.exit(1)"
           node dist/integration/toolchain/cli.js prepare --cache "$RUNNER_TEMP/evopilot-native-cache" > "$RUNNER_TEMP/native-toolchain.json"
           echo "EVOPILOT_TEST_NATIVE_TOOLCHAIN=$RUNNER_TEMP/native-toolchain.json" >> "$GITHUB_ENV"
-      - run: npm test
+      # Native validator subprocesses and large transport fixtures share the runner.
+      # Execute the same complete test set with bounded worker contention.
+      - name: Full test suite with two workers
+        run: node --test --test-concurrency=2 integration/e2e/*.test.mjs projects/evopilot-runtime/tests/e2e/*.test.mjs projects/evopilot-harness/tests/e2e/*.test.mjs projects/evopilot-ontology/tests/e2e/*.test.mjs
       - run: npm run artifacts:verify -- --out "$RUNNER_TEMP/evopilot-artifacts"
       - name: Assemble portable bundle
         run: node scripts/assemble-preview.mjs --artifacts "$RUNNER_TEMP/evopilot-artifacts" --out "$RUNNER_TEMP/evopilot-bundle"

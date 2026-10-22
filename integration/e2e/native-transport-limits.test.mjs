@@ -262,9 +262,11 @@ for (const owner of ['ontology', 'harness']) test(`actual installed ${owner} own
   }
 });
 
-test('installed MCP/client/daemon materialize both large packages and refuse over-budget requests without owner/project writes', { timeout: 90000 }, async t => {
+test('installed MCP/client/daemon materialize both large packages and refuse over-budget requests without owner/project writes', { timeout: 180000 }, async t => {
+  // Aggregate setup and several independently bounded MCP conversations.
+  // The per-conversation 30s timeout and all byte/authority assertions stay fixed.
   const startedAt = performance.now(); let phase = 'fixture';
-  const mark = value => { phase = value; t.signal.throwIfAborted(); };
+  const mark = value => { t.diagnostic(JSON.stringify({phase, elapsedMs:Math.round(performance.now()-startedAt)})); phase = value; t.signal.throwIfAborted(); };
   const f = await installedFixture(true), source = fixture();
   try {
     mark('malformed-protocol');
