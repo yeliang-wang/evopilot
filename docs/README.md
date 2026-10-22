@@ -1,11 +1,14 @@
 # Documentation
 
-These docs describe v0.6.0 Preview. Use its [versioned release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) for distribution artifacts. Start with [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics. Documentation describes behavior; actual publication and project acceptance require their own records.
+This checkout documents v0.7.0 Preview. Use its [versioned release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.7.0) for distribution artifacts. Start with [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics. Documentation describes behavior; actual publication and project acceptance require their own records.
 
 Start with [installation](installation.md) and the [first journey](first-journey.md). The portable bundle is the user path; source builds are for contributors.
 
 | Need | Guide or reference |
 | --- | --- |
+| Discuss, review and resume a project plan | [Planning](planning.md), [architecture](adr-planning.md) |
+| Read native models, rules, changes and results in Codex | [Readable assets](readable-assets.md) |
+| Preflight drafts or inspect maintenance capacity | [Preflight and maintenance](preflight-maintenance.md) |
 | Install, verify checksums, register or remove | [Installation](installation.md) |
 | Forward design, reverse modeling, quality, execution | [First journey](first-journey.md) |
 | Initialize or maintain your private Workspace | [Workspace](../workspace/README.md), [migration](migration.md), [recovery](recovery.md) |

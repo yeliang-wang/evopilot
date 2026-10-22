@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { safeDiagnostic } from './diagnostics.js';
+import type { SafeDiagnostic } from './diagnostics.js';
 import { errorCode } from '../../integration/types.js';
 import type { Schema, MCPMessage, ActionPayload } from '../../integration/types.js';
 import path from 'node:path';
@@ -31,6 +33,7 @@ const attach = object({ requestId: slug, projectRoot: absolutePath, stateRoot: a
 const definitions: Record<string, [string, Schema]> = {
   online_configure:['Configure private read-only Prometheus and authenticated Alertmanager connections using credential file references. Requires this active session and a stopped worker; stops the shared connection and deactivates this session. Does not select monitoring.',object({settings:{type:'object'},expectedDigest:{},requestId:slug})],
   online_worker:['Inspect the independent online worker passively, or explicitly start/stop/uninstall its verified launchd job in this active session. Monitoring bindings must be reviewed and selected separately. Evidence is preserved.',object({operation:{enum:['inspect','start','stop','uninstall']},requestId:slug})],
+  workspace_capacity:['Read bounded Workspace file counts, byte totals and digest. A live scan is not a consistent backup and does not stop services.',object()],
   workspace_inspect: ['Inspect installation and Workspace binding without starting services or creating files.', object()],
   workspace_initialize: ['Explicitly initialize your private editable project and separate protected service state; does not activate the session.', setup],
   workspace_attach: ['Explicitly attach an existing validated and stopped Workspace, creating its editable project if absent. Cannot switch an already bound installation.', attach],
@@ -45,7 +48,7 @@ const definitions: Record<string, [string, Schema]> = {
   guide: ['Read a scenario guide without activating or accessing product state.', object({ scenario: { enum: scenarios } })],
   request: ['Forward one exact owning product envelope; await classification start/reanalyze.', object({ owner: { enum: ['runtime', 'harness', 'ontology'] }, envelope })],
   native: ['Call a corrected-v1 owning product operation. Real collection, owner receipts and exact project completion gates remain mandatory.', object({ owner: { enum: ['runtime', 'harness', 'ontology'] }, envelope })],
-  native_project: ['Prepare and inspect a corrected-v1 project candidate, freeze an actually reviewed scope, materialize native assets or record an exact domain review. Candidate files do not replace current deliveries. prepare-execution currently supports the installed Node toolchain only.', object({ operation: { enum: ['prepare', 'freeze', 'materialize', 'review-domain', 'inspect', 'check-layout', 'candidate-location', 'prepare-execution', 'promote'] }, input: { type: 'object' } })],
+  native_project: ['Prepare and inspect a corrected-v1 project candidate, freeze an actually reviewed scope, materialize native assets or record an exact domain review. Candidate files do not replace current deliveries. prepare-execution currently supports the installed Node toolchain only.', object({ operation: { enum: ['preflight', 'prepare', 'freeze', 'materialize', 'review-domain', 'inspect', 'check-layout', 'candidate-location', 'prepare-execution', 'promote'] }, input: { type: 'object' } })],
   toolchain_inspect: ['Verify the bundled native toolchain lock and local installed bytes without downloading or activating.', object()],
   toolchain_prepare: ['Start bounded preparation of bundled pinned dependencies and return a retained status. Inspect progress; never repeat a pending request. Deactivates this session; activate only after toolchain_inspect reports ready.', object({ requestId: slug })],
   dispatch: ['Dispatch one explicitly approved Runtime run without retry.', object({ args })],
@@ -70,7 +73,7 @@ function finiteJSON(value: unknown, depth = 0) {
   if (depth > 64 || (typeof value === 'number' && !Number.isFinite(value))) throw Error('SCHEMA');
   if (value && typeof value === 'object') for (const v of Object.values(value)) finiteJSON(v, depth + 1);
 }
-const safeCodes = new Set(['HISTORICAL_READ_ONLY', 'WORKSPACE_UNCONFIGURED', 'WORKSPACE_ALREADY_BOUND', 'WORKSPACE_OCCUPIED', 'PROJECT_OCCUPIED', 'UNSAFE_PROJECT', 'PROJECT_IDENTITY', 'BINDING_IDENTITY', 'SETUP_BUSY', 'SETUP_CONFLICT', 'SETUP_LOCK_INVALID', 'CONNECTION_MUST_STOP', 'WORKSPACE_LOCATION', 'WORKSPACE_IN_GIT', 'CONFIG_WORKSPACE', 'UNSAFE_DIRECTORY', 'UNSAFE_WORKSPACE', 'IDENTITY_CONFLICT', 'CONFIG_ID', 'SCHEMA', 'UNKNOWN', 'INACTIVE', 'SESSION_INACTIVE', 'NOT_READY', 'STARTUP_TIMEOUT', 'STARTUP_FAILED', 'SPAWN_FAILED', 'CONTROL_INVALID', 'IDENTITY_MISMATCH', 'INSTALLATION_DIGEST', 'CONFIG_VERSION', 'PATH', 'SYMLINK', 'UNSAFE_FILE', 'INVALID_REQUEST', 'LIMIT', 'NOT_FOUND', 'REVISION_CONFLICT', 'REQUEST_CONFLICT', 'APPROVAL_REQUIRED', 'REVIEW_REQUIRED', 'REVIEW_MISMATCH', 'PENDING_MODEL', 'SOURCE_QUARANTINED', 'PACK_NAMESPACE_COLLISION', 'PACK_OVERRIDE_INCOMPATIBLE', 'INVALID_MODEL', 'SCOPE_MISMATCH', 'IMMUTABLE_VERSION', 'UNSUPPORTED_DEPENDENCY', 'CLASSIFICATION_PROVIDER_UNAVAILABLE', 'CLASSIFICATION_SOURCE_UNAVAILABLE', 'CLASSIFICATION_UNRESOLVED', 'PROVIDER_UNAVAILABLE', 'PROVIDER_REQUIRED', 'PROVIDER_FAILED', 'PROVIDER_MISMATCH','MISSING_RELOCATION_KEY','INVALID_LINEAGE','SNAPSHOT_DRIFT','CORRUPT_BLOB','CORRUPT_STATE','WORKSPACE_BUSY','UNSAFE_COORDINATION']);
+
 const argv = process.argv.slice(2);
 if (argv.length !== 2 || argv[0] !== '--config' || !path.isAbsolute(argv[1]) || path.normalize(argv[1]) !== argv[1] || !argv[1].endsWith('.json')) {
   process.stderr.write('Invalid adapter configuration argument\n'); process.exitCode = 2;
@@ -82,8 +85,8 @@ async function serve(configPath: string) {
   const namespace = 'evopilot_' + createHash('sha256').update(configPath).digest('hex').slice(0, 16);
   let initialized = false, sessionActive = false, connection: Awaited<ReturnType<typeof inspectConnection>> | null = null;
   const identity = () => ({ namespace, sessionId, pid: process.pid, sessionActive, connection, authority: false });
-  const receipt = (result: unknown, error?: { code: string; correlation: unknown }) => {
-    const data: ReturnType<typeof identity> & { result?: unknown; error?: { code: string; correlation: unknown }; correlation?: unknown } = { ...identity(), ...(error ? { error } : { result }) };
+  const receipt = (result: unknown, error?: { code: string; correlation: unknown; diagnostic?: SafeDiagnostic }) => {
+    const data: ReturnType<typeof identity> & { result?: unknown; error?: { code: string; correlation: unknown; diagnostic?: SafeDiagnostic }; correlation?: unknown } = { ...identity(), ...(error ? { error } : { result }) };
     return { content: [{ type: 'text', text: JSON.stringify(data) }], structuredContent: data, ...(error ? { isError: true } : {}) };
   };
   const rpcError = (id: unknown, code: number, message: string) => ({ jsonrpc: '2.0', id, error: { code, message } });
@@ -131,7 +134,7 @@ async function serve(configPath: string) {
       const p = r.params;
       if (initialized || !p || Object.keys(p).some(k => !['protocolVersion', 'capabilities', 'clientInfo', '_meta'].includes(k)) || typeof p.protocolVersion !== 'string' || !p.capabilities || typeof p.capabilities !== 'object' || Array.isArray(p.capabilities) || !p.clientInfo || typeof (p.clientInfo as Record<string, unknown>).name !== 'string' || typeof (p.clientInfo as Record<string, unknown>).version !== 'string') { await error(-32602, 'Invalid params'); return; }
       initialized = true;
-      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.6.0' } };
+      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.7.0' } };
     } else if (r.method === 'ping' || r.method === 'tools/list') {
       if (params && (Object.keys(params).some(k => !['_meta', ...(r.method === 'tools/list' ? ['cursor'] : [])].includes(k)) || (Object.hasOwn(params, 'cursor') && (typeof params.cursor !== 'string' || params.cursor !== '')))) { await error(-32602, 'Invalid params'); return; }
       result = r.method === 'ping' ? {} : { tools };
@@ -172,6 +175,7 @@ async function serve(configPath: string) {
             value = await startToolchainPreparation(configPath, input.requestId);
           } finally { sessionActive = false; connection = await inspectConnection(configPath); }
         }
+        else if(action==='workspace_capacity'){const c=loadConfiguration(configPath);if(!c.projectRoot)throw Object.assign(Error(),{code:'WORKSPACE_UNCONFIGURED'});const {inspectWorkspaceCapacity}=await import('../../integration/workspace/maintenance.js');value=inspectWorkspaceCapacity({projectRoot:c.projectRoot,stateRoot:c.workspaceRoot,workspaceId:c.workspaceId,installationRoot:c.installationRoot});}
         else if (action === 'workspace_inspect') value = inspectWorkspace(configPath);
         else if (action === 'workspace_initialize' || action === 'workspace_attach') {
           value = await setupWorkspace(configPath, input, action === 'workspace_attach' ? 'attach' : 'initialize');
@@ -229,7 +233,7 @@ async function serve(configPath: string) {
         result.content[0].text = JSON.stringify(result.structuredContent);
       } catch (e) {
         const code = errorCode(e) ?? '';
-        result = receipt(undefined, { code: safeCodes.has(code) || /^(?:PROJECT|DOMAIN|STANDARD|CONTRACT|NATIVE|COLLECTION|TOOLCHAIN|CAMPAIGN|MAINTENANCE|BACKUP|RESTORE|MIGRATION|RELOCATION|TEMPLATE|UPGRADE|WORKSPACE_LEASE)_[A-Z0-9_]+$/.test(code) ? code : 'CONNECTION_ERROR', correlation });
+        result = receipt(undefined, { ...safeDiagnostic(code), correlation });
       }
     } else { await error(-32601, 'Method not found'); return; }
     await write({ jsonrpc: '2.0', id: r.id, result }, mcpOutputLimit(route, r.params?.arguments));

@@ -1,3 +1,4 @@
+import {connectionRequestTimeout} from './config.js';
 import { errorCode } from '../types.js';
 import type { Configuration, ControlRecord, ActionPayload } from '../types.js';
 import http from 'node:http';
@@ -95,7 +96,7 @@ export async function callConnection(configPath: string, action: string, payload
   if (['stop', 'health'].includes(action)) fail('ACTION');
   const c = loadConfiguration(configPath), r = readRecord(c);
   if (!r || r.state !== 'ready') fail('INACTIVE');
-  return transport(c, r, action, payload, action === 'native' ? 625_000 : LIMITS.request);
+  return transport(c, r, action, payload, connectionRequestTimeout(action,payload));
 }
 export async function stopConnection(configPath: string) {
   if (loadInstallationConfiguration(configPath).workspaceRoot === null) return { stopped: false };

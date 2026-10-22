@@ -10,7 +10,7 @@ export const PARENT_FILES = ['package.json', 'README.md', 'LICENSE', 'NOTICE', '
   'dist', 'integration/composition.ts', 'integration/native-composition.ts', 'integration/types.ts', 'integration/compatibility', 'integration/connection', 'integration/workspace', 'integration/collection', 'integration/toolchain', 'integration/online', 'integration/response', 'specifications/project/v1', 'plugins/codex', 'expert',
   'docs', 'workspace/README.md', 'workspace/templates',
   'governance/roadmap.json', 'governance/implementation-lock.json', 'governance/decisions/local-implementation.json',
-  'governance/acceptance.json', 'governance/m0.json', 'governance/delivery-repair-v011.json', 'governance/workspace-v02.json', 'governance/standards-v03.json', 'governance/feedback-v04.json', 'governance/online-harness-v05.json', 'governance/response-v06.json', 'governance/language-policy.json', 'governance/readiness-v1.json',
+  'governance/acceptance.json', 'governance/m0.json', 'governance/delivery-repair-v011.json', 'governance/workspace-v02.json', 'governance/standards-v03.json', 'governance/feedback-v04.json', 'governance/online-harness-v05.json', 'governance/response-v06.json', 'governance/readability-v07.json', 'governance/readability-v07-execution.json', 'governance/planning-v07.json', 'governance/language-policy.json', 'governance/readiness-v1.json',
   'scripts/manage-preview.mjs', 'scripts/verify-native-acceptance.mjs', 'scripts/verify-workspace-acceptance.mjs', 'scripts/verify-local-acceptance.mjs', 'scripts/roadmap.mjs'];
 export function collect(root, names) {
   const files = new Map();

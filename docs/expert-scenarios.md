@@ -1,4 +1,4 @@
-# Expert scenarios — v0.6.0 Preview
+# Expert scenarios — v0.7.0 candidate
 
 Current native journeys are returned by `evopilot_v01_guide`. Their actual
 operation sequence is in [Native workflow](native-workflow.md). Guidance and
@@ -137,3 +137,18 @@ Read [response linkage](response.md) and the exact installed owner guides. These
 | V06-U05 | Review owner reuse/new delivery, preserve history and recover schema-5 state | Parent `response.test.mjs` |
 
 Actual installed Codex default-off, explicit activation, guide readback, owner routing and reconnect remain separate required acceptance evidence. The two synthetic sample domains do not satisfy the second real-project v1.0 criterion.
+
+## v0.7 planning and readability
+
+| Journey | Expert entry | Deterministic E2E evidence |
+| --- | --- | --- |
+| V07-U01 | planning-explore: forward ideation | Runtime planning and parent planning integration tests |
+| V07-U02 | planning-explore: reverse onboarding | Scoped source/summary/reference distinctions; no source mutation |
+| V07-U03 | planning-review | Exact human decision, digest-bound table export and tamper detection |
+| V07-U04 | planning-resume | Retained revisions across sessions, concurrent-edit rejection |
+| V07-U05 | planning-handoff | Exact Goal, source, assets and fixed acceptance binding |
+| V07-U06 | planning-resume | Stale admission blocks; original receipts remain reconcilable |
+| Read models and gates | readable-assets | Native positive/negative validation, typed tables, complete pagination, exports and comparisons |
+| Prepare complete drafts | draft-preflight | Owner validation before immutable freeze/materialization |
+
+Source test files: `integration/e2e/planning.test.mjs`, `integration/e2e/readability.test.mjs`, `integration/e2e/readable-presentation.test.mjs`, `integration/e2e/native-project.test.mjs`, and `projects/evopilot-runtime/tests/e2e/planning.test.mjs`. Actual installed Codex first-use, reconnect and human presentation readback require separate exact-candidate Host evidence. None of these tests is a human domain decision.

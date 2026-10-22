@@ -6,13 +6,15 @@ Ask the Expert to back up the configured project and state to a new separate pri
 
 Backups include editable project files and owner databases, assets, receipts and audit. Live PID/socket/token files and coordination sidecars are not restored into state. Original control/audit and maintenance journals remain beside the original state. Treat backups as private; do not include them in product releases.
 
-The checked copier accepts at most 20,000 entries, 64 MiB per file and 512 MiB of file content per inventoried root. Links, foreign ownership and writable-by-others files are rejected. An optional private Git directory is part of the project backup; review its contents before sharing any backup.
+The v0.7 checked copier accepts at most 128,000 entries and 8 GiB per inventoried root, with a 2 GiB per-file limit and 4 MiB transfer chunks. Internal relative links are retained without traversal; unsafe links, hardlinks, foreign ownership and writable-by-others files are rejected. See [bounded maintenance](preflight-maintenance.md). An optional private Git directory is part of the project backup; review its contents before sharing any backup.
 
 Restore requires the exact backup manifest pinned by the retained maintenance journal. Foreign or self-rehashed backups are insufficient. It supports only the same host/uid and original canonical roots, both missing or empty. Retain backup anchors and requests under `STATE_ROOT.evopilot-maintenance/{known-backups,requests}` and relocation keys under `~/.local/share/evopilot/relocation-keys`. Copying project/state directories alone is not cross-machine disaster recovery.
 
 After interruption, preserve request ID, journal and partial destination. Resume only the exact operation when its phase permits it. Never delete a journal to force retry. Restore and migration do not grant decisions, switch bindings or replay dispatches; verify owner snapshots before activation.
 
 ## Native toolchain cache during maintenance
+
+v0.7 includes cache bytes and supported internal relative links in its verified backup. Absolute or external cache links remain unsupported; a verified generated cache containing them still requires the explicit preservation procedure below. Never silently omit files. The older v0.5/v0.6 copier also has the size and link limitations described below.
 
 In v0.5.0, Workspace backup and relocation do **not** automatically exclude `STATE_ROOT/native-toolchain`. The pinned Python environment contains symbolic links, and a native executable can exceed the copier's 64 MiB file limit. A direct backup with this generated cache present can therefore fail with `MAINTENANCE_PERMISSIONS` or `MAINTENANCE_LIMIT`. Stopping the worker alone does not remove this limitation; do not weaken the copier or follow these links.
 

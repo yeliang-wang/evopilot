@@ -124,7 +124,7 @@ test('MCP package publication/receipt responses retain large payloads and oversi
   assert.deepEqual(replies[6].result, {});
 });
 
-async function installedFixture() {
+async function installedFixture(withToolchain=false) {
   const f = await assembly(true);
   for (const relative of ['dist/integration/workspace', 'dist/plugins', 'dist/expert', 'workspace/templates']) fs.cpSync(path.join(root, relative), path.join(f.install, relative), { recursive: true });
   const manifest = [];
@@ -142,6 +142,11 @@ async function installedFixture() {
   const bootstrap = await import(pathToFileURL(path.join(f.install, 'dist/integration/workspace/bootstrap.js')));
   const input = { requestId: 'synthetic-transport-setup', projectRoot: path.join(f.base, 'project'), stateRoot: f.config.workspaceRoot, workspaceId: f.config.workspaceId };
   await bootstrap.setupWorkspace(configPath, input);
+  if(withToolchain){
+    const tools=JSON.parse(fs.readFileSync(process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN,'utf8'));
+    const locked=await import(pathToFileURL(path.join(f.install,'dist/integration/toolchain/locked.js')));
+    await locked.prepareNativeToolchain({cacheRoot:path.join(input.stateRoot,'native-toolchain'),downloadCache:path.join(path.dirname(path.dirname(tools.environmentRoot)),'downloads'),offline:true});
+  }
   return { ...f, configPath, input, async cleanup() {
     await f.api.stopConnection(configPath);
     const c = f.configuration.loadConfiguration(configPath), record = f.control.readRecord(c);
@@ -162,7 +167,7 @@ for (const owner of ['ontology', 'harness']) test(`actual installed ${owner} own
   const startedAt = performance.now();
   let phase = 'fixture', faultMode = null;
   const mark = value => { phase = value; t.signal.throwIfAborted(); };
-  const f = await installedFixture(), source = fixture();
+  const f = await installedFixture(true), source = fixture();
   let proxy, original, configuration, intercepted = 0, committedReply;
   const proxyErrors = [], upstreamRequests = new Set();
   // node:test cancellation does not cancel arbitrary promises. Close only this
@@ -260,7 +265,7 @@ for (const owner of ['ontology', 'harness']) test(`actual installed ${owner} own
 test('installed MCP/client/daemon materialize both large packages and refuse over-budget requests without owner/project writes', { timeout: 90000 }, async t => {
   const startedAt = performance.now(); let phase = 'fixture';
   const mark = value => { phase = value; t.signal.throwIfAborted(); };
-  const f = await installedFixture(), source = fixture();
+  const f = await installedFixture(true), source = fixture();
   try {
     mark('malformed-protocol');
     const malformed = conversation(f, [
@@ -284,7 +289,7 @@ test('installed MCP/client/daemon materialize both large packages and refuse ove
     assert.deepEqual(rejectedMaterializeError.correlation, { scope: source.scope, operation: 'materialize', id: 'missing-candidate' });
     mark('prepare-and-freeze');
     const prepared = await f.api.callConnection(f.configPath, 'native_project', { operation: 'prepare', input: source.input });
-    await f.api.callConnection(f.configPath, 'native_project', { operation: 'freeze', input: { scope: source.scope, id: source.input.id, reviewDigest: prepared.reviewDigest, humanEvidenceRef: syntheticDecisionEvidence(f.base, { owner: 'project', operation: 'freeze', workspaceId: f.input.workspaceId, scope: source.scope, reviewDigest: prepared.reviewDigest, decision: 'ACCEPT' }) } });
+    await f.api.callConnection(f.configPath, 'native_project', { operation: 'freeze', input: { scope: source.scope, id: source.input.id, packages: source.packages, reviewDigest: prepared.reviewDigest, humanEvidenceRef: syntheticDecisionEvidence(f.base, { owner: 'project', operation: 'freeze', workspaceId: f.input.workspaceId, scope: source.scope, reviewDigest: prepared.reviewDigest, decision: 'ACCEPT' }) } });
     const materialize = { operation: 'materialize', input: { scope: source.scope, id: source.input.id, packages: source.packages } };
     const inputBytes = Buffer.byteLength(JSON.stringify(call(3, 'native_project', materialize)));
     assert(inputBytes > MiB && inputBytes < LIMITS.nativeBody);
@@ -322,7 +327,7 @@ test('installed MCP/client/daemon materialize both large packages and refuse ove
     mark('near-limit-materialize');
     const nearInput = { ...source.input, id: 'near-native-limit' };
     const nearPrepared = await f.api.callConnection(f.configPath, 'native_project', { operation: 'prepare', input: nearInput });
-    await f.api.callConnection(f.configPath, 'native_project', { operation: 'freeze', input: { scope: source.scope, id: nearInput.id, reviewDigest: nearPrepared.reviewDigest, humanEvidenceRef: syntheticDecisionEvidence(f.base, { owner: 'project', operation: 'freeze', workspaceId: f.input.workspaceId, scope: source.scope, reviewDigest: nearPrepared.reviewDigest, decision: 'ACCEPT' }) } });
+    await f.api.callConnection(f.configPath, 'native_project', { operation: 'freeze', input: { scope: source.scope, id: nearInput.id, packages: source.packages, reviewDigest: nearPrepared.reviewDigest, humanEvidenceRef: syntheticDecisionEvidence(f.base, { owner: 'project', operation: 'freeze', workspaceId: f.input.workspaceId, scope: source.scope, reviewDigest: nearPrepared.reviewDigest, decision: 'ACCEPT' }) } });
     const near = { operation: 'materialize', input: { scope: source.scope, id: nearInput.id, packages: structuredClone(source.packages) } };
     for (const pkg of Object.values(near.input.packages)) { pkg.files['sources/transport-size.txt'] = '"\\'.repeat(900000); rehash(pkg); }
     const nearLimit = LIMITS.nativeBody - 16384;

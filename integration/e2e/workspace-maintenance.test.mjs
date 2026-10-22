@@ -200,7 +200,7 @@ test('SIGKILL during partial copied payload resumes only journal-bound expected 
   maintainWorkspace(context, 'backup', { destinationRoot: backupRoot }, 'backup');
   fs.rmSync(context.projectRoot, { recursive: true }); fs.rmSync(context.stateRoot, { recursive: true });
   const script = `import fs from 'node:fs';import {maintainWorkspace} from ${JSON.stringify(new URL('../../dist/integration/workspace/maintenance.js', import.meta.url).href)};
-    const write=fs.writeFileSync;fs.writeFileSync=function(fd,bytes,...args){if(typeof fd==='number' && Buffer.isBuffer(bytes) && bytes.toString().includes('evopilot-workspace-project/v1')){write.call(this,fd,bytes.subarray(0,7));fs.fsyncSync(fd);process.kill(process.pid,'SIGKILL');}return write.call(this,fd,bytes,...args);};
+    const write=fs.writeSync;fs.writeSync=function(fd,bytes,offset,length,position){if(Buffer.isBuffer(bytes) && bytes.subarray(offset,offset+length).toString().includes('evopilot-workspace-project/v1')){write.call(this,fd,bytes,offset,7,position);fs.fsyncSync(fd);process.kill(process.pid,'SIGKILL');}return write.call(this,fd,bytes,offset,length,position);};
     maintainWorkspace(${JSON.stringify(context)},'restore',${JSON.stringify({backupRoot})},'partial-restore');`;
   const child = spawn(process.execPath, ['--input-type=module','-e',script], {stdio:['ignore','pipe','pipe']});
   t.after(() => { if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL'); });
@@ -218,4 +218,11 @@ test('SIGKILL during partial copied payload resumes only journal-bound expected 
   fs.writeFileSync(stagedPath,partial);
   assert.equal(maintainWorkspace(context,'restore',{backupRoot},'partial-restore').status,'VERIFIED');
   assert.equal(fs.existsSync(stage),false);assertReadback(context,fixture);
+});
+
+test('V07-E07 streaming manifest bytes preserve canonical historical digests without a whole-tree clone',async()=>{
+ const {maintenanceJSONChunks,maintenanceJSONDigest}=await import('../../dist/integration/workspace/maintenance-stream.js');
+ const {canonicalJSON,digest}=await import('../../dist/integration/connection/config.js');
+ const values=[null,[],{z:'多行\n文本',a:[1,true,null,{"10":'ten',"2":'two',"01":'one',"4294967295":'outside index',b:'\\"'}]},Object.fromEntries(Array.from({length:1000},(_,i)=>['key-'+i,{size:i,mode:384,sha256:'f'.repeat(64)}]))];
+ for(const value of values){const original=canonicalJSON(value);assert.equal([...maintenanceJSONChunks(value)].join(''),original);assert.equal(maintenanceJSONDigest(value),digest(original));}
 });

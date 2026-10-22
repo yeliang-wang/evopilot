@@ -60,7 +60,7 @@ test('V02-A01/A02: real installed services bootstrap in inactive MCP session, th
     assert.equal(data(out[1]).sessionActive, false);
     assert.equal(data(out[2]).error.code, 'SESSION_INACTIVE');
     assert.equal(data(out[3]).sessionActive, true);
-    assert.equal(data(out[4]).result.version, '0.6.0');
+    assert.equal(data(out[4]).result.version, '0.7.0');
     assert.deepEqual(fs.readFileSync(f.configPath), configBytes, 'Setup preserves immutable installed configuration');
     const marker = JSON.parse(fs.readFileSync(path.join(f.input.stateRoot, 'workspace.json')));
     assert.equal(marker.id, f.input.workspaceId); assert.equal(marker.canonicalRoot, f.input.stateRoot);
@@ -111,7 +111,8 @@ test('V02-C01/C03/D05: actual owners preserve quarantine and Pack conflict diagn
       assert.equal(value.error.code, code); assert.equal(value.sessionActive, true); assert.equal(value.connection.active, true);
       assert.deepEqual(value.error.correlation.scope, selected);
       assert.equal(value.error.correlation.operation, id === 3 ? 'legacy.derive' : 'pack.resolve.inspect');
-      assert.deepEqual(Object.keys(value.error).sort(), ['code', 'correlation']);
+      assert.deepEqual(Object.keys(value.error).sort(), ['code', 'correlation', 'diagnostic']);
+      assert.equal(value.error.diagnostic.retrySafe,false);
     }
     assert.equal(result(checks, 3).error.correlation.requestId, 'diagnostic-derive');
     assert.equal(result(checks, 3).error.correlation.expectedRevision, before.revision);
@@ -312,13 +313,13 @@ test('V02-D02: only matching protected restore journal admits interrupted first-
     assert.equal(backup.status, 'VERIFIED');
     const marker = fs.readFileSync(path.join(f.input.projectRoot, 'workspace-project.json'));
     fs.rmSync(f.input.projectRoot, { recursive: true }); fs.rmSync(f.input.stateRoot, { recursive: true });
-    const write = fs.writeFileSync;
-    writer = t.mock.method(fs, 'writeFileSync', (filename, bytes, ...args) => {
-      if (typeof filename === 'number' && Buffer.isBuffer(bytes) && bytes.equals(marker)) {
-        write(filename, bytes.subarray(0, Math.floor(bytes.length / 2)), ...args);
+    const write = fs.writeSync;
+    writer = t.mock.method(fs, 'writeSync', (fd, bytes, offset, length, position) => {
+      if (typeof fd === 'number' && Buffer.isBuffer(bytes) && bytes.subarray(offset,offset+length).equals(marker)) {
+        write(fd, bytes, offset, Math.floor(length/2), position);
         throw Object.assign(Error('Synthetic interruption before atomic marker publication'), { code: 'TEST_COPY_INTERRUPTED' });
       }
-      return write(filename, bytes, ...args);
+      return write(fd, bytes, offset, length, position);
     });
     await assert.rejects(f.api.withWorkspaceMaintenance(f.configPath, requestId, () => maintainWorkspace(context, 'restore', { backupRoot }, requestId), { restoring: true }), { code: 'TEST_COPY_INTERRUPTED' });
     writer.mock.restore();

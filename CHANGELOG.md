@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.7.0 Preview candidate — unreleased
+
+- Add owner-verified, table-first reports with exact references and explicit unknown, missing, not-executed and tool-error states. Expected rejection remains distinct from business success.
+- Preserve corrected native v1 standards, immutable history and independent decision/release authority. No Dashboard is included.
+- Integrate scoped planning and readable Expert journeys, draft preflight, finite diagnostics and bounded/resumable Workspace maintenance.
+- Candidate verification is in progress; shared maintenance and daily installation cutover remain deferred. This entry is not a release or acceptance receipt.
+
+
 ## 0.6.0 Preview
 
 - Add optional operations ontology profile, published Harness runbooks and reviewed problem dispositions.

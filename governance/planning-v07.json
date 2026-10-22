@@ -1,0 +1,23 @@
+{
+  "schema": "evopilot-planning-scope/v1",
+  "version": "0.7.0",
+  "target": "V07-T0",
+  "owners": {
+    "runtime": "Immutable planning revisions, decisions, Roadmap baseline and execution binding",
+    "ontology": "Business semantics and independently reviewed native asset candidates",
+    "harness": "Quality and acceptance rules and independently reviewed native candidates",
+    "expert": "Project-scoped dialogue, source capture and guidance; no independent authority"
+  },
+  "sourcePolicy": "Capture only scoped available excerpts, summaries or references. Preserve their distinct evidence categories and do not assert unavailable original conversations. No automatic global chat access.",
+  "storage": "Private project planning data and Runtime protected records in user Workspace; product source contains only generic contracts/templates/examples. Repository Roadmap can be an explicitly exported, digest-bound view.",
+  "statePolicy": "New revisions are DRAFT. Exact human evidence confirms APPROVED/REJECTED. New drafts and approvals preserve all prior revisions. Binding and actual execution approval are separate.",
+  "compatibility": "Add Runtime planning API and schema 6 read protection; retain historical records and native specifications/v1 byte-for-byte. Existing projects without planning bindings stay readable/executable under their existing reviewed contracts. Expert guides new planning work through the standard entry.",
+  "exclusions": [
+    "global chat interception",
+    "automatic ontology acceptance",
+    "automatic coding scheduler",
+    "all Dashboard implementation",
+    "live DataRig migration",
+    "daily installation switch"
+  ]
+}

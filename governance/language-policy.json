@@ -49,6 +49,10 @@
     "projects/evopilot-ontology/src/native/validator.py": {
       "purpose": "Pinned RDFLib/pySHACL native validation adapter; no orchestration/authority logic",
       "sha256": "b73319057a002dd557d1a82a6d3548e5b838c2c1240d64567d2d1f86f8bf2a49"
+    },
+    "projects/evopilot-ontology/src/native/readmodel.py": {
+      "sha256": "84ed870e99fd0fa5ccf717dcf0d477e9cad330c7e8419ecc2b9d8f985fbc4052",
+      "purpose": "Bounded upstream RDFLib canonical graph projection; no orchestration or approval"
     }
   },
   "newJavaScriptAllowed": [
@@ -80,6 +84,14 @@
     "integration/compatibility/response/v1/response.mjs": {
       "source": "integration/compatibility/response/v1/response.mts",
       "generator": "scripts/sync-response.mjs"
+    },
+    "integration/compatibility/readability/v1/readability.mjs": {
+      "source": "integration/compatibility/readability/v1/readability.mts",
+      "generator": "scripts/sync-readability.mjs"
+    },
+    "integration/compatibility/readability/v1/presentation.mjs": {
+      "source": "integration/compatibility/readability/v1/presentation.mts",
+      "generator": "scripts/sync-readability.mjs"
     }
   }
 }

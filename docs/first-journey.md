@@ -1,4 +1,4 @@
-# First use — v0.6.0 Preview
+# First use — v0.7.0 candidate
 
 Use the [native workflow](native-workflow.md) for exact current envelopes and expected files. Historical JSON authoring commands remain retired; old records retain their original meaning.
 
@@ -9,6 +9,8 @@ Use the [native workflow](native-workflow.md) for exact current envelopes and ex
 No GitHub login or separate Workspace repository is required. The Expert checks for a binding. If none exists, it explains the default user project location (`~/evopilot-workspace`) and separate protected service state (`~/.local/share/evopilot/workspaces/<workspace-id>`), initializes them, then activates this chat. You can specify your own locations. Existing occupied directories are not overwritten. Merely asking what EvoPilot does stays passive.
 
 The project contains README, documentation, synthetic examples, public reusable assets and private project materials. `public` means reusable scope, not permission to upload. Keep databases, raw runtime evidence, control state and credentials out of Git; use a complete Workspace backup for restoration. The installation binds one Workspace; use the explicit attach/migration workflow for existing data rather than editing identity files or moving live databases.
+
+For a v0.7 planning discussion, ask “Discuss the next version, preserve assumptions and open questions, and show the review table before execution.” The [planning guide](planning.md) explains forward ideation, reverse onboarding, revisions, cross-chat resumption and execution handoff. [Readable reports](readable-assets.md) show native definitions and validation evidence without changing standards. This candidate remains separate from the currently published v0.6 installation.
 
 ## Try a synthetic example
 

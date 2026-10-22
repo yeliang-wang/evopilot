@@ -80,7 +80,7 @@ test('candidate preparation and a second version preserve all current and histor
     write(path.join(f.source, 'new-requirement.txt'), 'Substantive source change retained in the complete inventory.');
     const secondPackages = structuredClone(f.packages);
     for (const pkg of Object.values(secondPackages)) { pkg.manifest.version = '1.1.0'; const b = JSON.parse(pkg.files[pkg.manifest.sourceBindingRef]); for (const s of b.sources) s.revision = second.revision; for (const m of b.mappings) m.revision = second.revision; pkg.files[pkg.manifest.sourceBindingRef] = JSON.stringify(b); rehash(pkg); }
-    await freeze(f, second); await f.service.materialize({ scope: f.scope, id: second.id, packages: secondPackages });
+    await freeze(f, second, secondPackages); await f.service.materialize({ scope: f.scope, id: second.id, packages: secondPackages });
     for (const [name, bytes] of Object.entries(originals)) assert.deepEqual(fs.readFileSync(path.join(current, name)), bytes);
     assert.deepEqual(fs.readFileSync(path.join(firstRoot, 'project-manifest.json')), firstManifest);
     assert.equal(f.service.checkLayout({ scope: f.scope, id: second.id }).conforms, true);
@@ -165,17 +165,37 @@ for (const owner of ['ontology', 'harness']) test(`source closure: ${owner} must
     // A second independent input is required even though existing cases and mappings still pass.
     write(path.join(f.source, filename), pkg.files[original.contentPath]);
     requirement.sourceIds.push(filename);
-    await freeze(f);
-    await assert.rejects(f.service.materialize({ scope: f.scope, id: f.input.id, packages: f.packages }), { code: 'PROJECT_SOURCE_COVERAGE' });
+    await assert.rejects(freeze(f), { code: 'PROJECT_SOURCE_COVERAGE' });
+    assert.equal(fs.existsSync(path.join(f.projectRoot,'private/projects',f.scope.projectId,'campaigns')),false);
     // Merely copying the input into sources also cannot substitute for a requirement mapping.
     bindings.sources.push({ ...original, id: 'additional', locator: filename, contentPath });
     pkg.files[contentPath] = pkg.files[original.contentPath];
     pkg.files[key] = JSON.stringify(bindings); rehash(pkg);
-    await assert.rejects(f.service.materialize({ scope: f.scope, id: f.input.id, packages: f.packages }), { code: 'PROJECT_SOURCE_COVERAGE' });
+    await assert.rejects(freeze(f), { code: 'PROJECT_SOURCE_COVERAGE' });
     const target = bindings.mappings.find(m => m.requirementId === requirement.criterionId);
     bindings.mappings.push({ ...target, sourceId: 'additional', rationale: 'Synthetic duplicate source reinforces this exact requirement; domain acceptance remains separate.' });
     pkg.files[key] = JSON.stringify(bindings); rehash(pkg);
+    await freeze(f);
     await f.service.materialize({ scope: f.scope, id: f.input.id, packages: f.packages });
     assert.equal(f.service.checkLayout({ scope: f.scope, id: f.input.id }).conforms, true);
   } finally { f.cleanup(); }
+});
+
+test('V07-E02 pure native preflight preserves fixed denominator and rejects metadata or coverage before freezing', async()=>{
+ const f=fixture();try{
+  const before=[fs.readdirSync(f.projectRoot),fs.readdirSync(f.stateRoot)];
+  const report=await f.service.preflight({project:f.input,packages:f.packages});
+  assert.equal(report.requiredVariants,25);assert.equal(report.authority,false);
+  assert.deepEqual([fs.readdirSync(f.projectRoot),fs.readdirSync(f.stateRoot)],before);
+  const missing=structuredClone(f.packages);missing.ontology.files['model.ttl']=missing.ontology.files['model.ttl'].replace(/rdfs:label[^;]*;/g,'');rehash(missing.ontology);
+  await assert.rejects(f.service.preflight({project:f.input,packages:missing}),{code:'PROJECT_ONTOLOGY_PREFLIGHT'});
+  const reduced=structuredClone(f.input);reduced.requirements.ownerRequirements[1].variantIds=reduced.requirements.ownerRequirements[1].variantIds.filter(x=>x!=='actual-observation');
+  await assert.rejects(f.service.preflight({project:reduced,packages:f.packages}),{code:'PROJECT_COVERAGE'});
+  assert.deepEqual([fs.readdirSync(f.projectRoot),fs.readdirSync(f.stateRoot)],before);
+  await freeze(f);const root=f.service.candidateLocation({scope:f.scope,id:f.input.id});
+  const prior=fs.readdirSync(path.join(root,'ontology'));
+  await assert.rejects(f.service.materialize({scope:f.scope,id:f.input.id,packages:missing}),{code:'PROJECT_ONTOLOGY_PREFLIGHT'});
+  assert.deepEqual(fs.readdirSync(path.join(root,'ontology')),prior);
+  await f.service.materialize({scope:f.scope,id:f.input.id,packages:f.packages});assert.equal(f.service.checkLayout({scope:f.scope,id:f.input.id}).conforms,true);
+ }finally{f.cleanup();}
 });

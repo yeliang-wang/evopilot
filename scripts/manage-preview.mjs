@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { NATIVE_CONTRACT_DIGEST } from '../integration/compatibility/v1/native.mjs';
 
-export const VERSION = '0.6.0';
+export const VERSION = '0.7.0';
 export const PIN = NATIVE_CONTRACT_DIGEST.slice(7);
 export const LEGACY_PIN = 'df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a';
 export const OWNERS = ['runtime', 'harness', 'ontology'];
@@ -144,12 +144,13 @@ export function readBundle(bundle) {
   assert.equal(contract.sha256, PIN); assert.equal(contract.module, 'native.mjs'); assert.equal(contract.contractRevision, '1.1.0'); assert.equal(contract.legacySha256, LEGACY_PIN);
   return { manifest: m, bytes, app };
 }
-export async function installPreview({ bundle, root, workspaceRoot = null, workspaceId = null, installationId }) {
+export async function installPreview({ bundle, root, workspaceRoot = null, workspaceId = null, installationId, marketplaceName = 'evopilot-v01-preview-local' }) {
   assert.equal(process.versions.node, '24.14.0', 'Requires Node 24.14.0');
   canonical(bundle); newRoot(root); outsideGit(root);
   assert.equal(workspaceRoot === null, workspaceId === null, 'Workspace root and id must be supplied together');
   if (workspaceRoot !== null) { canonical(workspaceRoot, true); outsideGit(workspaceRoot); }
   for (const id of [installationId, ...(workspaceId === null ? [] : [workspaceId])]) assert(typeof id === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(id), 'Invalid identity');
+  assert(typeof marketplaceName === 'string' && /^[a-z0-9][a-z0-9-]{0,63}$/.test(marketplaceName), 'Invalid marketplace name');
   if (workspaceRoot !== null && fs.existsSync(workspaceRoot)) assert(fs.statSync(workspaceRoot).isDirectory(), 'Workspace must be a directory');
   const control = workspaceRoot === null ? null : workspaceRoot + '.evopilot-control';
   if (control !== null) canonical(control, true);
@@ -169,7 +170,7 @@ export async function installPreview({ bundle, root, workspaceRoot = null, works
   fs.mkdirSync(root, { mode: 0o700 });
   for (const [name, content] of app) put(root, 'app/' + name, content);
   put(root, 'bundle-manifest.json', bytes);
-  put(root, '.agents/plugins/marketplace.json', json({ name: 'evopilot-v01-preview-local', plugins: [{ name: 'evopilot-v01-preview', source: { source: 'local', path: './app/plugins/codex' }, policy: { installation: 'AVAILABLE', authentication: 'ON_INSTALL' } }] }));
+  put(root, '.agents/plugins/marketplace.json', json({ name: marketplaceName, plugins: [{ name: 'evopilot-v01-preview', source: { source: 'local', path: './app/plugins/codex' }, policy: { installation: 'AVAILABLE', authentication: 'ON_INSTALL' } }] }));
   put(root, 'config.json', json(config), 0o600);
   const snapshot = tree(root);
   const descriptor = { schema: 'evopilot-preview-install/v1', version: VERSION, root, installationId, workspaceRoot, workspaceId, bundleManifestSHA256: sha(bytes), files: inventory(snapshot.files), directories: snapshot.directories };
@@ -240,7 +241,7 @@ export function argumentsFor(args, names) {
   return values;
 }
 const help = `Requires Node 24.14.0. No network, activation or Codex registration.
-install --bundle DIR --root NEW_ROOT --installation-id ID [--workspace ROOT --workspace-id ID]
+install --bundle DIR --root NEW_ROOT --installation-id ID [--workspace ROOT --workspace-id ID] [--marketplace-name NAME]
 workspace-init --root ROOT --project-root DIR --state-root DIR --workspace-id ID --request-id ID
 workspace-attach --root ROOT --project-root DIR --state-root DIR --workspace-id ID --request-id ID
 workspace-inspect --root ROOT
@@ -250,7 +251,10 @@ codex plugin remove evopilot-v01-preview@evopilot-v01-preview-local --json
 codex plugin marketplace remove evopilot-v01-preview-local --json
 Register explicitly after install:
 codex plugin marketplace add ROOT --json
-codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json`;
+codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json
+For an isolated candidate use --marketplace-name with a unique NAME, then replace
+evopilot-v01-preview-local with that NAME in the registration/removal commands.
+Installation itself never registers or replaces a Codex plugin.`;
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
   try {
     const args = process.argv.slice(2);
@@ -259,9 +263,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.ar
       assert.equal(process.versions.node, '24.14.0', 'Requires Node 24.14.0');
       const command = args.shift(); let result;
       if (command === 'install') {
-        const names = ['--bundle', '--root', '--installation-id', ...(args.includes('--workspace') || args.includes('--workspace-id') ? ['--workspace', '--workspace-id'] : [])];
+        const names = ['--bundle', '--root', '--installation-id', ...(args.includes('--workspace') || args.includes('--workspace-id') ? ['--workspace', '--workspace-id'] : []), ...(args.includes('--marketplace-name') ? ['--marketplace-name'] : [])];
         const a = argumentsFor(args, names);
-        result = await installPreview({ bundle: a['--bundle'], root: a['--root'], workspaceRoot: a['--workspace'] ?? null, workspaceId: a['--workspace-id'] ?? null, installationId: a['--installation-id'] });
+        result = await installPreview({ bundle: a['--bundle'], root: a['--root'], workspaceRoot: a['--workspace'] ?? null, workspaceId: a['--workspace-id'] ?? null, installationId: a['--installation-id'], marketplaceName: a['--marketplace-name'] });
       } else if (['workspace-init', 'workspace-attach', 'workspace-inspect'].includes(command)) {
         const names = command === 'workspace-inspect' ? ['--root'] : ['--root', '--project-root', '--state-root', '--workspace-id', '--request-id'];
         const a = argumentsFor(args, names), { c } = await installed(a['--root']);

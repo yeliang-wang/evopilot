@@ -1,5 +1,17 @@
 # Workspace migration and source boundaries
 
+## Upgrade from v0.6 to v0.7.0
+
+Version 0.7.0 adds scoped discussion/planning revisions, table-first asset and gate reports, bounded version comparisons, draft preflight and streaming Workspace maintenance. Native `specifications/v1` remain unchanged. Runtime planning writes advance its database marker to **6**; Harness remains at **5** and the Ontology native schema is unchanged. Older Runtime readers must not open new planning state.
+
+1. Pause project work at a retained checkpoint and reconcile original unresolved requests. Inspect the old installation and owner state. Stop the connection and any explicitly enabled online worker before maintenance; do not replay a business operation as part of upgrade.
+2. Use supported maintenance under its exclusive lease to create and verify a fresh backup of editable project files and protected owner state. Preserve the old installation, binding, relocation keys and raw receipts. v0.7 streams 4 MiB chunks and retains internal relative links and tool cache bytes within its documented limits; see [maintenance](preflight-maintenance.md).
+3. Prove upgrade and rollback on an isolated owner-validated copy. Compare original owner records and asset digests after opening with the actual new installation. Preserve history and verify the old executable can read its matching restored backup. A synthetic/empty test alone does not establish compatibility with a user's existing Workspace.
+4. Install the exact [v0.7.0 bundle](https://github.com/yeliang-wang/evopilot/releases/tag/v0.7.0) in a new program directory. Attach the stopped original Workspace only after backup and isolated recovery pass. Verify records, pins, toolchain, project/state paths and component versions before replacing the daily plugin registration.
+5. In a fresh Codex connection select **EvoPilot v0.7 Preview**, inspect the exact installation identity, activate, read existing assets/project status and verify per-chat deactivation. Existing chats may retain old tools and require reselection/reconnection before they resume.
+
+Rollback stops all users of the new state, preserves any new state separately, restores the verified pre-upgrade backup into its original missing or empty roots, then restores the matching old installation. Never point v0.6 at marker 6, overwrite a live Workspace, or replace user assets with acceptance fixtures. Upgrade does not accept a new business model, execute a project, publish assets or enable online monitoring.
+
 ## Upgrade from v0.5 to v0.6.0
 
 Version 0.6.0 Preview adds response linkage and preserves the native v1 specifications. Use the exact [v0.6.0 bundle](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) and preserve the earlier installation for rollback. New Runtime/Harness response writes use database marker **5**; the Ontology native schema is unchanged. An old reader must reject new state rather than silently ignore response records.

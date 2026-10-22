@@ -192,6 +192,8 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
   };
   return { runtimeProviders, harnessProviders, ontologyProviders: {...ownerFeedbackProviders,...(configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {})},
     native: async (owner: Owner, envelope: Envelope) => {
+      if(envelope.operation.startsWith('readable.')){const api=service(owner).readable;if(!api)fail('READABLE_API_UNAVAILABLE');return api(envelope);}
+      if(envelope.operation.startsWith('planning.')){if(owner!=='runtime')fail('PLANNING_OWNER');const api=service(owner).planning;if(!api)fail('PLANNING_API_UNAVAILABLE');return api(envelope);}
       if(envelope.operation.startsWith('response.')){nativeAssertJSON(envelope.input);if(!envelope.input||typeof envelope.input!=='object'||Array.isArray(envelope.input))fail('INVALID_INPUT');return responseAPI(owner,{...envelope,input:Object.fromEntries(Object.entries(envelope.input))});}
       if(envelope.operation.startsWith('online.')){nativeAssertJSON(envelope.input);if(!envelope.input||typeof envelope.input!=='object'||Array.isArray(envelope.input))fail('INVALID_INPUT');return onlineAPI(owner,{...envelope,input:Object.fromEntries(Object.entries(envelope.input))});}
       if(!envelope.operation.startsWith('feedback.'))return service(owner).native(envelope);

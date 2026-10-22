@@ -1,0 +1,437 @@
+{
+  "schema": "evopilot-readability-target/v1",
+  "id": "evopilot-readable-assets-v07-execution",
+  "version": "0.7.0",
+  "stage": "PREVIEW",
+  "scopeAuthority": "Explicit user start instruction; shared maintenance and daily cutover are deferred until the independent ongoing project completes. Actual instruction and progress retained privately. Supplemental explicit approval adds conversation-driven planning and asset derivation for all projects. User correction excludes all Dashboard implementation and browser acceptance; focuses Codex business-readable reports.",
+  "roadmapIds": [
+    "EVO-F05",
+    "RUN-F05",
+    "HAR-F05",
+    "ONT-F06"
+  ],
+  "roadmapDigest": "sha256:36747ae4b90e83767b573462a475aed6c8e532558ee5fa2c792d89cd3587c530",
+  "baseRevisions": {
+    "parent": "063c4dcba16299ccba19d652c0cdf5f70b5ce87d",
+    "runtime": "a882392a7c888a88f105ac7c20b36919f2e3977c",
+    "harness": "c2e9e42e64df16ede2d08f940aeac6571d0888ba",
+    "ontology": "b1aa6ffb02b74c97a12887698c7253562642ba71"
+  },
+  "targets": [
+    {
+      "id": "V07-T0",
+      "scope": [
+        "versioned project planning",
+        "conversation provenance",
+        "review and execution binding",
+        "Expert planning journeys"
+      ],
+      "acceptanceIds": [
+        "V07-E09",
+        "V07-E10",
+        "V07-E11"
+      ]
+    },
+    {
+      "id": "V07-T1",
+      "scope": [
+        "diagnostics",
+        "draft preflight",
+        "bounded maintenance"
+      ],
+      "acceptanceIds": [
+        "V07-E01",
+        "V07-E02",
+        "V07-E07"
+      ]
+    },
+    {
+      "id": "V07-T2",
+      "dependsOn": [
+        "V07-T1"
+      ],
+      "scope": [
+        "owner projections",
+        "readable reports",
+        "bounded comparisons"
+      ],
+      "acceptanceIds": [
+        "V07-E03",
+        "V07-E04",
+        "V07-E05",
+        "V07-E06"
+      ]
+    },
+    {
+      "id": "V07-T3",
+      "dependsOn": [
+        "V07-T2"
+      ],
+      "scope": [
+        "Codex business-readable planning, asset and gate journeys",
+        "documentation and Expert"
+      ],
+      "acceptanceIds": [
+        "V07-E06",
+        "V07-E08",
+        "V07-E12"
+      ]
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "V07-E01",
+      "variants": [
+        {
+          "id": "V07-E01.01",
+          "expected": "Pending owner feedback retains its specific code and safe action with receipt identity"
+        },
+        {
+          "id": "V07-E01.02",
+          "expected": "Transport failure and post-dispatch uncertainty remain distinct and never redispatch"
+        },
+        {
+          "id": "V07-E01.03",
+          "expected": "Unknown messages and secret-shaped error fields are suppressed with safe correlation"
+        },
+        {
+          "id": "V07-E01.04",
+          "expected": "Actual MCP roundtrip reproduces and fixes known diagnostic mapping"
+        }
+      ]
+    },
+    {
+      "id": "V07-E02",
+      "variants": [
+        {
+          "id": "V07-E02.01",
+          "expected": "Valid complete drafts preflight without candidate or delivery writes"
+        },
+        {
+          "id": "V07-E02.02",
+          "expected": "Missing required metadata, observation cases or layout reject before freeze"
+        },
+        {
+          "id": "V07-E02.03",
+          "expected": "Invalid materialization writes no files and keeps existing immutable candidates unchanged"
+        },
+        {
+          "id": "V07-E02.04",
+          "expected": "Corrected draft uses identical owner validators and original fixed denominator"
+        }
+      ]
+    },
+    {
+      "id": "V07-E03",
+      "variants": [
+        {
+          "id": "V07-E03.01",
+          "expected": "Positive case exposes expected/actual/verdict and exact evidence origin"
+        },
+        {
+          "id": "V07-E03.02",
+          "expected": "Expected rejection remains case PASS while input constraint violation remains visible"
+        },
+        {
+          "id": "V07-E03.03",
+          "expected": "Missing input or unsupported detail is incomplete, never inferred"
+        },
+        {
+          "id": "V07-E03.04",
+          "expected": "Rule/shape/source/input/parameter and native output evidence remain pinned"
+        }
+      ]
+    },
+    {
+      "id": "V07-E04",
+      "variants": [
+        {
+          "id": "V07-E04.01",
+          "expected": "Asset conformance and actual execution are separate stages"
+        },
+        {
+          "id": "V07-E04.02",
+          "expected": "Unexecuted business/Host/scale obligations remain missing with original denominator"
+        },
+        {
+          "id": "V07-E04.03",
+          "expected": "Pending/expired decisions and next eligible actions are explicit"
+        },
+        {
+          "id": "V07-E04.04",
+          "expected": "All checks passing cannot grant release authority or make a decision"
+        }
+      ]
+    },
+    {
+      "id": "V07-E05",
+      "variants": [
+        {
+          "id": "V07-E05.01",
+          "expected": "Serialization/order-only change is distinguished within declared comparison profile"
+        },
+        {
+          "id": "V07-E05.02",
+          "expected": "Label, stable identity, relationship, constraint and parameter changes are visible"
+        },
+        {
+          "id": "V07-E05.03",
+          "expected": "Exact two versions and source/asset digests are pinned; unknown impact explicit"
+        },
+        {
+          "id": "V07-E05.04",
+          "expected": "Unsupported constructs or missing version evidence cannot claim semantic equivalence"
+        }
+      ]
+    },
+    {
+      "id": "V07-E06",
+      "variants": [
+        {
+          "id": "V07-E06.01",
+          "expected": "JSON/Markdown/HTML/Codex share the same verified snapshot counts, states, versions and pins"
+        },
+        {
+          "id": "V07-E06.02",
+          "expected": "Filtering and complete pagination neither omit/duplicate nor shrink denominator"
+        },
+        {
+          "id": "V07-E06.03",
+          "expected": "Cross-owner drift, stale snapshots and unavailable owners are explicit"
+        },
+        {
+          "id": "V07-E06.04",
+          "expected": "Two project scopes cannot read each other or arbitrary filesystem paths"
+        }
+      ]
+    },
+    {
+      "id": "V07-E07",
+      "variants": [
+        {
+          "id": "V07-E07.01",
+          "expected": "Fixed representative corpus exceeds trigger workload and stays within resource budget"
+        },
+        {
+          "id": "V07-E07.02",
+          "expected": "Interrupted bounded-chunk transfer resumes exact request with verified prefix"
+        },
+        {
+          "id": "V07-E07.03",
+          "expected": "Corrupted backup, external links, changed source and overlapping destinations reject"
+        },
+        {
+          "id": "V07-E07.04",
+          "expected": "Isolated restore/upgrade preserve owner history, receipts, evidence and relative links"
+        }
+      ]
+    },
+    {
+      "id": "V07-E08",
+      "variants": [
+        {
+          "id": "V07-E08.01",
+          "expected": "Actual isolated installed Codex first-use and reconnect retain inactive/read boundaries"
+        },
+        {
+          "id": "V07-E08.02",
+          "expected": "Actual isolated installed Codex explains planning, native asset definitions, version changes and gate results with exact evidence links"
+        },
+        {
+          "id": "V07-E08.03",
+          "expected": "Adversarial asset text remains literal data; read operations cannot approve, execute or mutate"
+        },
+        {
+          "id": "V07-E08.04",
+          "expected": "Readable localized labels, explicit empty/error states and packaged README/Expert match behavior"
+        }
+      ]
+    },
+    {
+      "id": "V07-E09",
+      "variants": [
+        {
+          "id": "V07-E09.01",
+          "expected": "Multiple discussion revisions preserve rejected ideas, original sources and immutable history"
+        },
+        {
+          "id": "V07-E09.02",
+          "expected": "Resume the same plan in a second session; stale concurrent edits fail without data loss"
+        },
+        {
+          "id": "V07-E09.03",
+          "expected": "Proposals, assumptions and source summaries never assert accepted current business facts"
+        },
+        {
+          "id": "V07-E09.04",
+          "expected": "Cross-project access, reference-only evidence and secret-bearing material have explicit bounds"
+        }
+      ]
+    },
+    {
+      "id": "V07-E10",
+      "variants": [
+        {
+          "id": "V07-E10.01",
+          "expected": "Only exact human-confirmed planning revision becomes the authoritative baseline"
+        },
+        {
+          "id": "V07-E10.02",
+          "expected": "Target binding resolves actual Goal, project source, fixed requirements and published assets"
+        },
+        {
+          "id": "V07-E10.03",
+          "expected": "A changed accepted plan rejects stale execution admission while retaining prior receipts"
+        },
+        {
+          "id": "V07-E10.04",
+          "expected": "Planning approval and readable exports never dispatch code, approve asset publication or release"
+        }
+      ]
+    },
+    {
+      "id": "V07-E11",
+      "variants": [
+        {
+          "id": "V07-E11.01",
+          "expected": "Roadmap Markdown/JSON export binds exact baseline digest; edited export is detected"
+        },
+        {
+          "id": "V07-E11.02",
+          "expected": "Expert covers forward ideation, reverse onboarding, revision, resume, handoff and change review"
+        },
+        {
+          "id": "V07-E11.03",
+          "expected": "Planning references connect to native Ontology/Harness candidates without bypassing owner review"
+        },
+        {
+          "id": "V07-E11.04",
+          "expected": "Codex readback shows planning revision, source, asset and execution linkage within the selected project"
+        }
+      ]
+    },
+    {
+      "id": "V07-E12",
+      "variants": [
+        {
+          "id": "V07-E12.01",
+          "expected": "Plan review identifies facts, assumptions, proposals, open questions, rationale and mapped acceptance without inventing current capabilities"
+        },
+        {
+          "id": "V07-E12.02",
+          "expected": "Ontology renders names, definitions, properties, relationships, constraints and instances with native identifiers and available provenance"
+        },
+        {
+          "id": "V07-E12.03",
+          "expected": "Harness renders rule purpose, input, parameters, severity, actual result and completion policy separately"
+        },
+        {
+          "id": "V07-E12.04",
+          "expected": "Missing evidence, unexecuted checks, tool faults and validation failures have distinct labels and actionable next steps"
+        },
+        {
+          "id": "V07-E12.05",
+          "expected": "Version comparison shows exact before/after changes and references; semantic and impact limits remain explicit"
+        },
+        {
+          "id": "V07-E12.06",
+          "expected": "Codex report and native evidence agree field by field; missing labels and unsupported details remain explicit; no Dashboard tooling is exposed"
+        }
+      ]
+    }
+  ],
+  "maintenanceBudget": {
+    "perRootEntries": 128000,
+    "perRootBytes": 8589934592,
+    "singleFileBytes": 2147483648,
+    "chunkBytes": 4194304,
+    "representativeCorpus": {
+      "minimumEntries": 100000,
+      "minimumBytes": 4294967296,
+      "largeFileBytes": 268435456,
+      "relativeInternalSymlinks": 20,
+      "cachePolicy": "Retain every cache file and exact link; no silent exclusions"
+    },
+    "maxElapsedSeconds": 900,
+    "maxPeakRssBytes": 536870912,
+    "concurrency": 1,
+    "linkPolicy": "Only relative links resolving within the same root; preserve link text, never traverse. Reject external, dangling, cyclic or directory-alias traversal. Hardlinked regular files reject."
+  },
+  "viewBudget": {
+    "maxPageSize": 200,
+    "defaultPageSize": 50,
+    "maxSnapshotBytes": 33554432,
+    "maxComparisonItems": 20000,
+    "authority": false
+  },
+  "fileBindings": {
+    "parent": [
+      "AGENTS.md",
+      "governance/readability-v07*.json",
+      "docs/**",
+      "README.md",
+      "CHANGELOG.md",
+      "package*.json",
+      "tsconfig*.json",
+      "scripts/**",
+      "integration/**",
+      "plugins/codex/**",
+      "expert/**",
+      "contracts/readability*",
+      "governance/components.lock.json",
+      "governance/planning-v07.json",
+      "governance/language-policy.json",
+      ".github/workflows/*.yml"
+    ],
+    "children": [
+      "AGENTS.md",
+      "src/**/*.ts",
+      "src/native/*.py",
+      "tests/e2e/**",
+      "docs/**",
+      "README.md",
+      "CHANGELOG.md",
+      "package*.json",
+      "scripts/**",
+      "vendor/readability*",
+      ".github/workflows/*.yml"
+    ]
+  },
+  "preserve": [
+    "original checkouts and planning edits",
+    "v0.6 daily installation/configuration/sidecar and running daemon",
+    "DataRig source and all live private Workspace/state",
+    "frozen contracts, native specifications/v1, historical receipts/decisions",
+    "GitHub and releases until applicable release scope and gates"
+  ],
+  "deferred": [
+    "shared environment maintenance",
+    "daily installation/plugin/configuration cutover",
+    "Java/Maven/external CI adapters",
+    "automatic agent scheduler",
+    "editing Dashboard or automatic review/release",
+    "WorkBuddy",
+    "second real project and v1.0 release"
+  ],
+  "evidencePolicy": "All 50 fixed variants require exact candidate evidence. Source, package and actual Codex Host checks remain distinct. Missing or deferred items are not PASS. Private audit retains decisions and status; this document confers no release authority.",
+  "planningBudget": {
+    "maxRevisionsPerPlan": 100,
+    "maxItems": 200,
+    "maxSources": 200,
+    "maxSourceExcerptChars": 16384,
+    "maxRequestBytes": 1048576,
+    "maxMilestones": 50,
+    "maxBindingsPerPlan": 200,
+    "authorityOwner": "runtime",
+    "sourceCapture": "Explicit current-scope excerpts or references only; no global conversation capture",
+    "nativeSpecificationChange": false
+  },
+  "revision": 2,
+  "exclusions": [],
+  "requiredPresentationReview": {
+    "id": "V07-G0-HUMAN-PRESENTATION",
+    "requirement": "Human confirms a source-bound real-project E2E presentation sample and its generic readable-report criteria before further implementation or acceptance progression",
+    "decisionRecord": "Private audit only; real-project sources never enter public governance",
+    "technicalEvidenceCannotApprove": true
+  }
+}

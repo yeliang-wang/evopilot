@@ -1,6 +1,10 @@
 # Testing and evidence
 
-## Current v0.6.0 response acceptance
+## Current v0.7 edition acceptance
+
+The [v0.7 execution Target](../governance/readability-v07-execution.json) fixes 50 variants across diagnostics, preflight, native read projections, comparisons, maintenance, conversation-driven planning and actual Codex journeys. Native v1 normative bytes remain unchanged. Source/package tests, resource measurements and actual Host receipts are distinct evidence. Missing or deferred checks are not PASS; the daily v0.6 environment stays unchanged during isolated validation. [Readable reports](readable-assets.md), [planning](planning.md), [maintenance](preflight-maintenance.md) and [Expert scenarios](expert-scenarios.md) describe the current behavior.
+
+## Retained v0.6.0 response acceptance
 
 The [response Target](../governance/response-v06.json) fixes **36 variants**. Evidence must bind the actual source, package, bundle and installed identity. Preserve results privately; no passing acceptance report is bundled.
 

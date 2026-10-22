@@ -51,7 +51,7 @@ function preserved(before, after) {
   }
 }
 
-test('actual installed v0.5 -> v0.6 preserves native assets/decisions/history, rejects old readers and restores schema5', { timeout: 150_000, skip: !oldApp && 'Set EVOPILOT_V05_APP to a real immutable v0.5 installation; historical acceptance is not inferred' }, async t => {
+test('actual installed v0.5 -> current candidate preserves native assets/decisions/history, rejects old readers and restores schema5', { timeout: 150_000, skip: !oldApp && 'Set EVOPILOT_V05_APP to a real immutable v0.5 installation; historical acceptance is not inferred' }, async t => {
   assert.ok(process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN, 'Actual pinned native toolchain required');
   const installation = fs.realpathSync(oldApp), installationBefore = files(installation);
   const oldImport = relative => import(pathToFileURL(path.join(installation, relative)).href);
@@ -133,7 +133,7 @@ test('actual installed v0.5 -> v0.6 preserves native assets/decisions/history, r
   const before = Object.fromEntries(owners.map(owner => [owner, database(f.stateRoot, owner)]));
   assert.equal(before.runtime.version, 4); assert.equal(before.harness.version, 4);
   const projectFiles = files(f.projectRoot), sourceFiles = files(f.source);
-  const apis = await loadInstalledProducts(); for (const owner of owners) assert.equal(apis[owner].VERSION, '0.6.0');
+  const apis = await loadInstalledProducts(); for (const owner of owners) assert.equal(apis[owner].VERSION, '0.7.0');
   const currentTrusted = { ...trusted, readResponseWorkspaceEvidence: ({ scope, reference }) => readWorkspaceResponseEvidence({ projectRoot: f.projectRoot, workspaceId: options.workspaceId }, scope, reference) };
   c = createComposition(options, apis, {}, currentTrusted);
   const assertRetained = async () => {
@@ -179,5 +179,5 @@ test('actual installed v0.5 -> v0.6 preserves native assets/decisions/history, r
   assert.equal((await read('harness', 'response.runbook.inspect', { pin })).withdrawn, false);
   assert.equal((await read('harness', 'response.evidence.inspect', { reference: faultRef })).status, 'FAIL');
   assert.deepEqual(files(f.projectRoot), projectFiles); assert.deepEqual(files(f.source), sourceFiles); assert.equal(f.git('status', '--porcelain'), '');
-  t.diagnostic(JSON.stringify({ historicalVersion: '0.5.0', candidateVersion: '0.6.0', schema: { runtime: after.runtime.version, harness: after.harness.version }, evidence: 'Actual installed old APIs, HTTP collection, native validation and maintenance; synthetic domain and operator decisions' }));
+  t.diagnostic(JSON.stringify({ historicalVersion: '0.5.0', candidateVersion: '0.7.0', schema: { runtime: after.runtime.version, harness: after.harness.version }, evidence: 'Actual installed old APIs, HTTP collection, native validation and maintenance; synthetic domain and operator decisions' }));
 });

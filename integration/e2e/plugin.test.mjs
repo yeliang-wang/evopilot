@@ -13,7 +13,7 @@ const env = { ...process.env, OPENSSL_CONF: '/dev/null' };
 const config = root + 'nonexistent-protocol-config.json';
 const init = { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'protocol-fixture', version: '1' } } };
 const call = (id, action, args = {}) => ({ jsonrpc: '2.0', id, method: 'tools/call', params: { name: 'evopilot_v01_' + action, arguments: args } });
-const expectedToolIds = ['inspect','activate','deactivate','guide','request','native','native_project','online_configure','online_worker','toolchain_inspect','toolchain_prepare','dispatch','reconcile','capabilities','workspace_inspect','workspace_initialize','workspace_attach','workspace_project','workspace_backup','workspace_backup_inspect','workspace_restore','workspace_migrate'].map(name => 'evopilot_v01_' + name).sort();
+const expectedToolIds = ['workspace_capacity','inspect','activate','deactivate','guide','request','native','native_project','online_configure','online_worker','toolchain_inspect','toolchain_prepare','dispatch','reconcile','capabilities','workspace_inspect','workspace_initialize','workspace_attach','workspace_project','workspace_backup','workspace_backup_inspect','workspace_restore','workspace_migrate'].map(name => 'evopilot_v01_' + name).sort();
 const scope = { visibility: 'private', projectId: 'example' };
 const request = (operation, input = {}) => ({ owner: 'ontology', envelope: { operation, scope, input, requestId: 'retained-request', expectedRevision: 1 } });
 const lines = values => values.map(v => typeof v === 'string' ? v : JSON.stringify(v)).join('\n') + '\n';
@@ -140,7 +140,7 @@ test('protocol fixture: finite public source/Pack diagnostics preserve correlati
     assert.equal(reply.result.isError, true);
     assert.equal(value.error.code, known.includes(code) ? code : 'CONNECTION_ERROR');
     assert.deepEqual(value.error.correlation, { requestId: 'retained-request', scope, expectedRevision: 1, operation: 'diagnostic' });
-    assert.deepEqual(Object.keys(value.error).sort(), ['code', 'correlation']);
+    assert.deepEqual(Object.keys(value.error).sort(), ['code', 'correlation', 'diagnostic']);
   }
   assert.doesNotMatch(JSON.stringify(out), /SECRET_PROVIDER|\"message\"|\"stack\"|\"detail\"/);
 });
@@ -275,6 +275,10 @@ test('pure guide maps every source reference to the installed package layout', (
   // No installed child repositories or filesystem fixtures are needed.
   const installationRoot = '/managed/evopilot/app';
   const expectedPaths = [
+    '/managed/evopilot/app/docs/readable-assets.md',
+    '/managed/evopilot/app/docs/preflight-maintenance.md',
+    '/managed/evopilot/app/docs/planning.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/runtime/docs/planning-api.md',
     '/managed/evopilot/app/docs/response.md',
     '/managed/evopilot/app/docs/language-policy.md',
     '/managed/evopilot/app/node_modules/@evopilot-next/ontology/docs/operations-profile.md',
@@ -309,4 +313,18 @@ test('pure guide maps every source reference to the installed package layout', (
   assert(reverse.operations.includes('native.package.put'));
   assert(!reverse.operations.includes('asset.put'));
   assert.match(reverse.steps.join(' '),/independently of existing assets/);
+});
+
+// V07-E01: real MCP protocol fixture; one failure never triggers a second dispatch.
+test('V07-E01 pending owner disposition survives MCP separately from connection uncertainty', () => {
+ const codes=['FEEDBACK_PENDING','FEEDBACK_NEW_RUN_REQUIRED','RESPONSE_FEEDBACK_REQUIRED','UNKNOWN','NOT_READY','FEEDBACK_SECRET_PROVIDER_CODE'];
+ const out=run([init,call(2,'activate'),...codes.map((code,i)=>call(i+3,'request',request('diagnostic',{code}))),call(10,'capabilities')],true);
+ for(let i=0;i<codes.length;i++){
+  const e=data(out[i+2]).error;
+  assert.equal(e.code,i===5?'CONNECTION_ERROR':codes[i]);
+  assert.equal(e.diagnostic.category,i<3?'PREREQUISITE':i===3?'UNCERTAIN':i===4?'TRANSPORT':'UNCLASSIFIED');
+  assert.equal(e.diagnostic.retrySafe,false);
+  assert.equal(e.correlation.requestId,'retained-request');
+ }
+ assert.doesNotMatch(JSON.stringify(out),/SECRET_PROVIDER|secret-provider|password/);
 });

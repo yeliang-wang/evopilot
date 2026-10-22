@@ -1,0 +1,135 @@
+{
+  "schema": "evopilot-roadmap-planning/v1",
+  "id": "evopilot-readable-assets-v07",
+  "roadmapId": "EVO-F05",
+  "kind": "planning-only",
+  "targetVersion": "0.7.0",
+  "releaseChannel": "Preview",
+  "status": "IMPLEMENTATION_STARTED_ISOLATED",
+  "planningStatus": "ACCEPTED",
+  "implementationStatus": "IN_PROGRESS",
+  "acceptanceStatus": "NOT_EVALUATED",
+  "authority": false,
+  "implementationAuthorized": true,
+  "installationAuthorized": false,
+  "releaseAuthorized": false,
+  "requiresExplicitStart": true,
+  "automaticResume": false,
+  "objective": "Business-readable planning, native assets and explainable gates during Codex project evolution, with safe diagnostics and recoverable Workspace maintenance",
+  "roadmap": "docs/roadmap.md#v070-preview-readable-assets-and-explainable-gates",
+  "targets": [
+    {
+      "id": "V07-T1",
+      "name": "Diagnostics and maintenance",
+      "dependsOn": [],
+      "acceptanceIds": [
+        "V07-E01",
+        "V07-E02",
+        "V07-E07"
+      ]
+    },
+    {
+      "id": "V07-T2",
+      "name": "Readable reports and queries",
+      "dependsOn": [
+        "V07-T1"
+      ],
+      "acceptanceIds": [
+        "V07-E03",
+        "V07-E04",
+        "V07-E05",
+        "V07-E06"
+      ]
+    },
+    {
+      "id": "V07-T3",
+      "name": "Codex-readable project evolution",
+      "dependsOn": [
+        "V07-T2"
+      ],
+      "acceptanceIds": [
+        "V07-E06",
+        "V07-E08",
+        "V07-E12"
+      ]
+    }
+  ],
+  "owners": {
+    "parent": "EVO-F05",
+    "runtime": "RUN-F05",
+    "harness": "HAR-F05",
+    "ontology": "ONT-F06"
+  },
+  "acceptance": [
+    {
+      "id": "V07-E01",
+      "requirement": "Typed errors, prerequisites and uncertain outcomes remain distinct",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V07-E02",
+      "requirement": "Complete metadata, required observation/case set and layout preflight before freeze/materialization",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V07-E03",
+      "requirement": "Expected outcome, actual result, test verdict and evidence origin remain distinct",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V07-E04",
+      "requirement": "Stage conformance, product acceptance, actionable work and release authority are separate",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V07-E05",
+      "requirement": "Bounded pinned-version comparisons preserve semantic limits and historical decisions",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V07-E06",
+      "requirement": "Scoped queries and all presentation formats agree with exact fresh evidence",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V07-E07",
+      "requirement": "Representative-volume consistent backup, interruption and isolated recovery preserve history",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V07-E08",
+      "requirement": "Actual isolated installed Codex journeys, private project scope and packaged documentation agree",
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V07-E12",
+      "requirement": "Business-readable plans, native definitions, rules, differences and gate evidence agree with original records",
+      "status": "NOT_EVALUATED"
+    }
+  ],
+  "beforeImplementation": [
+    "Receive a subsequent explicit user start instruction; ongoing project completion does not authorize automatic resumption",
+    "Reconcile private ongoing-project findings and review any proposed scope changes",
+    "Bind exact repository revisions, authorized source paths and compatibility impact",
+    "Fix positive, negative, missing/stale and recovery variants with evidence locations",
+    "Fix maintenance volume, file/byte/link/cache semantics and performance/resource budgets",
+    "Record the execution Target separately; this planning projection is not an executable authorization"
+  ],
+  "preserve": [
+    "Published specifications/v1 normative bytes and immutable contracts/assets/decisions/receipts",
+    "Owner package boundaries and private project/evidence isolation",
+    "Current v0.6 installations and independently progressing project work",
+    "Existing governance/readiness-v1.json criteria and final user release decision"
+  ],
+  "deferred": [
+    "Java/Maven and external CI adapters under RUN-F01",
+    "Autonomous Target selection and coding/test/repair scheduling",
+    "All Dashboard implementation and approval-policy changes",
+    "Broader HAR-F01 calibration/mutation scale and ONT-F01 semantic migration",
+    "General ontology editors/reasoners, hosted graph platforms, WorkBuddy and production automation"
+  ],
+  "progressPolicy": "Keep actual project findings, decisions, status and evidence private; this record contains generic product planning only. No watcher, automatic resumption or product acceptance is implied.",
+  "executionTarget": "governance/readability-v07-execution.json",
+  "dailyCutover": "DEFERRED_UNTIL_ONGOING_PROJECT_COMPLETES",
+  "revision": 2
+}

@@ -16,7 +16,7 @@ test('V02 catalogue metadata: exact approved IDs, bidirectional guide coverage, 
   const target = JSON.parse(readFileSync(new URL('../../governance/workspace-v02.json', import.meta.url)));
   assert.deepEqual(scenarioIds, target.scenarioIds);
   assert.equal(new Set(scenarioIds).size, 27);
-  assert.deepEqual(new Set(scenarios), new Set([...guideNames, 'operations-profile', 'response-assess', 'response-execute', 'response-recovery', 'response-learning', 'runtime-feedback', 'asset-feedback-review', 'feedback-recovery', 'online-setup', 'online-observe', 'online-repair', 'online-regression', 'online-recovery', ...nativeIds, ...scenarioIds]));
+  assert.deepEqual(new Set(scenarios), new Set([...guideNames, 'operations-profile', 'response-assess', 'response-execute', 'response-recovery', 'response-learning', 'runtime-feedback', 'asset-feedback-review', 'feedback-recovery', 'online-setup', 'online-observe', 'online-repair', 'online-regression', 'online-recovery', 'readable-assets', 'draft-preflight', 'planning-explore', 'planning-review', 'planning-resume', 'planning-handoff', ...Array.from({length:6},(_,i)=>'V07-U0'+(i+1)), ...nativeIds, ...scenarioIds]));
   const documented = readFileSync(new URL('../../docs/expert-scenarios.md', import.meta.url), 'utf8');
   for (const entry of scenarioCatalogue) {
     assert(guideNames.includes(entry.guide));

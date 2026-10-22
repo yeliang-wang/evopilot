@@ -1,3 +1,4 @@
+import {syncReadability} from './sync-readability.mjs';
 import {syncResponse} from './sync-response.mjs';
 import { rm, mkdir, copyFile, cp } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
@@ -8,6 +9,7 @@ import {syncFeedback} from './sync-feedback.mjs';
 import {syncOnline} from './sync-online.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 await readCanonical();
+await syncReadability({check:true});
 await syncContract({ check: true });
 await syncToolchain({ check: true });
 await syncFeedback({check:true});
@@ -33,3 +35,5 @@ await cp(new URL('../integration/compatibility/feedback/', import.meta.url),new 
 await cp(new URL('../integration/compatibility/online/', import.meta.url),new URL('../dist/integration/compatibility/online/', import.meta.url),{recursive:true});
 
 await cp(new URL('../integration/compatibility/response/', import.meta.url),new URL('../dist/integration/compatibility/response/', import.meta.url),{recursive:true});
+
+await cp(new URL('../integration/compatibility/readability/', import.meta.url),new URL('../dist/integration/compatibility/readability/', import.meta.url),{recursive:true});

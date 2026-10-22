@@ -1,4 +1,4 @@
-# Capabilities in v0.6.0 Preview
+# Capabilities in v0.7.0 Preview
 
 This is source capability documentation, not a release or production certificate. The [native workflow](native-workflow.md) is the current path. Historical v0.2 JSON mutation examples cannot create corrected-v1 work.
 
@@ -8,6 +8,10 @@ This is source capability documentation, not a release or production certificate
 | Harness | Rego v1 policies, OPA tests, Conftest evaluation, explicit missing-input cases, source mappings and immutable package lifecycle | Owns quality criteria and validation. A Warning or failed required rule blocks quality completion; it does not authorize repair or release. |
 | Ontology | RDF/Turtle domain models and instances, bounded SHACL, source mappings, declared coverage, positive/negative cases and immutable package lifecycle | Native validation checks stated constraints. It cannot determine whether an inferred business meaning is correct without domain review. |
 | Parent / Codex integration | Private Workspace bootstrap, complete source inventory, independent scope freeze, staged editable assets, native owner composition and controlled current-delivery promotion | Explicit per-chat activation; one bound Workspace per installation. It cannot force all unrelated Codex activity through EvoPilot. |
+
+## v0.7 additions
+
+Runtime stores scoped planning revisions, exact decisions and execution bindings. The three owners expose structured snapshots and table-based reports with fixed denominators, expected/actual results and evidence origins. Asset comparisons preserve both pinned versions and explicit semantic limits. Draft preflight and bounded maintenance improve preparation and recovery. See [planning](planning.md), [readable reports](readable-assets.md) and [preflight/maintenance](preflight-maintenance.md). No Dashboard or automatic business approval is included.
 
 ## Standards and execution
 

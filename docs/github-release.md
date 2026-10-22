@@ -1,12 +1,12 @@
-# GitHub delivery — v0.6.0 Preview
+# GitHub delivery — v0.7.0 Preview
 
-The [v0.6 Target](../governance/response-v06.json) defines implementation and local acceptance. Publication additionally requires the actual user release decision, bound privately to the exact source commits, CI runs and artifacts. The workflow below enforces those technical bindings; a source version or public scope document does not supply that decision.
+The [v0.7 Target](../governance/readability-v07-execution.json) defines implementation and local acceptance. Publication additionally requires the actual user release decision, bound privately to the exact source commits, CI runs and artifacts. The workflow below enforces those technical bindings; a source version or public scope document does not supply that decision.
 
 The release repositories are [EvoPilot](https://github.com/yeliang-wang/evopilot), [Runtime](https://github.com/yeliang-wang/evopilot-runtime), [Harness](https://github.com/yeliang-wang/evopilot-harness) and [Ontology](https://github.com/yeliang-wang/evopilot-ontology). Each child owns its release. Parent gitlinks bind exact child commits. The existing v0.1.0 tags, artifacts and evidence remain immutable history.
 
 Source CI recursively checks out pinned children, installs parent development tools from the complete lock, binds child public packages using npm --no-save --package-lock=false, then runs npm ci from each child lock and builds each child before building, checking and testing the parent. Binding must precede the final child npm ci so child transitive dependencies retain their locked versions. Offline artifact verification precedes portable assembly. See [development](development.md) for the commands.
 
-The parent candidate has exactly eight distribution assets: evopilot-0.6.0-preview.tar.gz; one tgz in each runtime, harness and ontology directory; harness/dependency-lock.json; ontology/dependency-lock.json; source-revision.txt; and SHA256SUMS. Runtime has no production dependency lock. Release notes form the Release body and are not a ninth asset.
+The parent candidate has exactly eight distribution assets: evopilot-0.7.0-preview.tar.gz; one tgz in each runtime, harness and ontology directory; harness/dependency-lock.json; ontology/dependency-lock.json; source-revision.txt; and SHA256SUMS. Runtime has no production dependency lock. Release notes form the Release body and are not a ninth asset.
 
 Delivery follows this sequence:
 
