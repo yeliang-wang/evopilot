@@ -9,13 +9,17 @@ import {rehash} from '../../projects/evopilot-ontology/tests/fixtures/native/pac
 import {nativeSha256} from '../../dist/integration/compatibility/v1/native.mjs';
 import {renderReadSnapshot,readSnapshot,readStable,queryReadSnapshot,compareReadSnapshots} from '../../dist/integration/compatibility/readability/v1/readability.mjs';
 
-test('V07-E03/E05/E06 actual owner validation remains distinguishable from expected rejection across every projection', {timeout:90000},async t=>{
+test('V07-E03/E05/E06 actual owner validation remains distinguishable from expected rejection across every projection', {timeout:300000},async t=>{
  const f=fixture(),root=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'evopilot-readable-'));
  const toolchain=JSON.parse(fs.readFileSync(process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN,'utf8'));
  const stack=createComposition({workspaceRoot:path.join(root,'state'),workspaceId:'readable-test'},await loadInstalledProducts(),{},{toolchain});
  t.after(()=>{stack.close();f.cleanup();fs.rmSync(root,{recursive:true,force:true});});
  let serial=0;const q=(owner,operation,input={},scope=f.scope)=>stack.native(owner,{operation,scope,input});
  const write=(owner,operation,input)=>stack.native(owner,{operation,scope:f.scope,input,requestId:'readable-'+(++serial),expectedRevision:stack.inspect(owner,f.scope).revision});
+ // This scenario walks every owner/page and multiple version pairs. Its suite
+ // deadline includes all native subprocess starts; owner request limits stay unchanged.
+ const started=performance.now();let phaseStarted=started;
+ const phase=name=>{const now=performance.now();t.diagnostic(JSON.stringify({phase:name,elapsedMs:Math.round(now-phaseStarted),totalMs:Math.round(now-started)}));phaseStarted=now;};
  const snapshots={};
  for(const owner of ['ontology','harness']){
   const pkg=f.packages[owner],identity={id:pkg.manifest.id,version:pkg.manifest.version};
@@ -55,6 +59,7 @@ test('V07-E03/E05/E06 actual owner validation remains distinguishable from expec
   for(const format of ['json','markdown','html']){const exp=await q(owner,'readable.export',{...identity,format,expectedDigest:snapshot.digest});assert.equal(exp.snapshotDigest,snapshot.digest);assert.equal(exp.content,renderReadSnapshot(snapshot,format));}
   await assert.rejects(q(owner,'readable.snapshot',identity,{...f.scope,projectId:'foreign'}));
   await assert.rejects(q(owner,'readable.export',{...identity,format:'json',expectedDigest:before.digest}),{code:'READABLE_SNAPSHOT_DRIFT'});
+  phase(owner+' validation, pagination and exports');
  }
  assert.throws(()=>compareReadSnapshots(snapshots.ontology,snapshots.harness),{code:'READABLE_COMPARISON_SCOPE'});
  const pkg=structuredClone(f.packages.ontology);pkg.manifest.version='1.0.1';pkg.files['model.ttl']='\n# Serialization-only change\n'+pkg.files['model.ttl'];rehash(pkg);
@@ -111,6 +116,7 @@ test('V07-E03/E05/E06 actual owner validation remains distinguishable from expec
  const policyChange=await allComparisonPages('harness',parameterChange.manifest.id,'1.0.0','1.0.1');
  assert(policyChange.table.rows.some(r=>r[2]==='parameters'&&r[3]==='maxWarnings = 0'&&r[4]==='maxWarnings = 2'));
  await assert.rejects(q('ontology','readable.compare',{id:pkg.manifest.id,beforeVersion:'missing',afterVersion:'1.0.3'}));
+ phase('exact version comparisons and complete difference pagination');
 });
 
 test('V07-E06 unavailable native reader returns an explicit error instead of empty or passing evidence',async t=>{
