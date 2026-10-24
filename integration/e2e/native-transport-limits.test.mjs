@@ -227,11 +227,12 @@ test('installed owner HTTP/MCP rejects unbound and relabelled assets and admits 
   }finally{source.cleanup();await f.cleanup();}
 });
 
-// Each owner keeps its own 60s test budget. Running six durable write/readback
-// journeys in one deadline couples unrelated owners under full-suite I/O load.
-for (const owner of ['ontology', 'harness']) test(`actual installed ${owner} owner commit survives lost, malformed and over-budget HTTP replies without redispatch`, { timeout: 60000 }, async t => {
+// Each owner/fault journey gets an independent fixture and the same 60s limit.
+// Aggregating three durable journeys under one timer cancels valid later cases
+// on slower CI disks; individual transport deadlines and assertions stay fixed.
+for (const owner of ['ontology', 'harness']) for (const faultMode of ['disconnect', 'malformed', 'oversized']) test(`actual installed ${owner} owner commit survives ${faultMode} HTTP reply without redispatch`, { timeout: 60000 }, async t => {
   const startedAt = performance.now();
-  let phase = 'fixture', faultMode = null;
+  let phase = 'fixture';
   const mark = value => { phase = value; t.signal.throwIfAborted(); };
   const f = await installedFixture(true), source = fixture();
   let proxy, original, configuration, intercepted = 0, committedReply;
@@ -282,7 +283,7 @@ for (const owner of ['ontology', 'harness']) test(`actual installed ${owner} own
       } catch (error) { proxyErrors.push(error); res.destroy(); }
     });
     await new Promise(resolve => proxy.listen(0, '127.0.0.1', resolve));
-    for (faultMode of ['disconnect', 'malformed', 'oversized']) {
+    {
       const caseStartedAt = performance.now();
       mark('inspect-before');
       const before = await f.api.callConnection(f.configPath, 'inspect', { owner, scope: source.scope });
