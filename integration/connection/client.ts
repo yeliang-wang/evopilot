@@ -25,15 +25,31 @@ export function transport(c: Configuration, record: ControlRecord, action: strin
   if (Buffer.byteLength(body) > connectionBodyLimit(action, payload)) fail('LIMIT');
   return new Promise((resolve, reject) => {
     let timer: ReturnType<typeof setTimeout>;
+    let settled = false;
     const correlation = connectionCorrelation(action, payload);
     const unknown = () => Object.assign(new Error('Connection outcome unknown; inspect the owning receipt before any new action'), { code: 'UNKNOWN', correlation });
+    const finish = (error?: unknown, result?: unknown) => {
+      if (settled) return;
+      settled = true; clearTimeout(timer);
+      if (error) reject(error); else resolve(result);
+    };
+    const uncertain = () => finish(unknown());
     const req = http.request({ hostname: '127.0.0.1', port: record.port, path: '/', method: 'POST', agent: false,
       headers: { authorization: 'Bearer ' + record.token, host: '127.0.0.1:' + record.port, 'content-type': 'application/json', 'content-length': Buffer.byteLength(body) } }, res => {
       let size = 0; const chunks: Buffer[] = [];
-      res.on('data', chunk => { size += chunk.length; if (size > connectionResponseLimit(action, payload)) res.destroy(); else chunks.push(chunk); });
-      res.on('error', () => { clearTimeout(timer); reject(unknown()); });
+      res.on('data', chunk => {
+        if (settled) return;
+        size += chunk.length;
+        // destroy() may emit only close when the final HTTP bytes were already
+        // received. Settle explicitly; never depend on a later error event.
+        if (size > connectionResponseLimit(action, payload)) { uncertain(); res.destroy(); }
+        else chunks.push(chunk);
+      });
+      res.on('error', uncertain);
+      res.on('aborted', uncertain);
+      res.on('close', uncertain);
       res.on('end', () => {
-        clearTimeout(timer);
+        if (settled) return;
         try {
           const value: unknown = JSON.parse(Buffer.concat(chunks).toString());
           if (!value || typeof value !== 'object') throw Error();
@@ -41,15 +57,15 @@ export function transport(c: Configuration, record: ControlRecord, action: strin
           if (!same(reply.identity, c.identity) || reply.nonce !== record.nonce || reply.pid !== record.pid) throw Error();
           if (reply.error) {
             const error = reply.error as { code?: string };
-            reject(Object.assign(new Error(error.code), error));
+            finish(Object.assign(new Error(error.code), error));
           }
-          else if (res.statusCode !== 200) reject(unknown());
-          else resolve(reply.result);
-        } catch { reject(unknown()); }
+          else if (res.statusCode !== 200) uncertain();
+          else finish(undefined, reply.result);
+        } catch { uncertain(); }
       });
     });
-    timer = setTimeout(() => req.destroy(), timeout);
-    req.on('error', () => { clearTimeout(timer); reject(unknown()); });
+    timer = setTimeout(() => { uncertain(); req.destroy(); }, timeout);
+    req.on('error', uncertain);
     req.end(body);
   });
 }
