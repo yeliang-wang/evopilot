@@ -41,6 +41,21 @@ jobs:
           echo "EVOPILOT_TEST_NATIVE_TOOLCHAIN=$RUNNER_TEMP/native-toolchain.json" >> "$GITHUB_ENV"
       # Native validator subprocesses and large transport fixtures share the runner.
       # Execute the same complete test set with bounded worker contention.
+      - name: Prepare credential-free synthetic Codex protocol configuration
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import os from 'node:os';
+          import path from 'node:path';
+          // Protocol fixtures use a synthetic executable; no model or login is used.
+          // Preserve the adapter's real configuration-path/digest admission checks.
+          const directory = path.join(os.homedir(), '.codex');
+          fs.mkdirSync(directory, { recursive: true, mode: 0o700 });
+          fs.writeFileSync(path.join(directory, 'config.toml'),
+            '# Synthetic CI protocol fixture only; contains no credentials.\n',
+            { flag: 'wx', mode: 0o600 });
+          JS
       - name: Full test suite with two workers
         run: node --test --test-concurrency=2 integration/e2e/*.test.mjs projects/evopilot-runtime/tests/e2e/*.test.mjs projects/evopilot-harness/tests/e2e/*.test.mjs projects/evopilot-ontology/tests/e2e/*.test.mjs
       - run: npm run artifacts:verify -- --out "$RUNNER_TEMP/evopilot-artifacts"
