@@ -215,6 +215,16 @@ export async function prepareNativeToolchain(options: ToolchainOptions): Promise
     const base = path.join(environmentRoot, platform.pythonBase);
     const result = spawnSync(base, ['-I', '-B', '-m', 'venv', '--without-pip', path.join(environmentRoot, 'venv')], { env: cleanEnvironment(environmentRoot), cwd: environmentRoot, timeout: 60_000, maxBuffer: 1024 * 1024 });
     if (result.error || result.status !== 0) fail('TOOLCHAIN_PREPARE', 'Isolated Python environment creation failed');
+    // venv can create an absolute interpreter link even inside this owned root.
+    // Fresh environments use equivalent relative links so safe backups remain portable.
+    // Never rewrite an existing cache or allow a link outside the pinned environment.
+    const bin=path.join(environmentRoot,'venv','bin');
+    for(const name of fs.readdirSync(bin)){
+      const filename=path.join(bin,name);if(!fs.lstatSync(filename).isSymbolicLink())continue;
+      const target=fs.readlinkSync(filename);if(!path.isAbsolute(target))continue;
+      const resolved=fs.realpathSync(filename);if(!resolved.startsWith(environmentRoot+path.sep))fail('TOOLCHAIN_INTEGRITY','Venv link escapes the owned environment');
+      fs.unlinkSync(filename);fs.symlinkSync(path.relative(bin,resolved),filename);
+    }
     for (const file of files.filter(f => f.path.startsWith(platform.pythonSite + '/'))) {
       const filename = path.join(environmentRoot, file.path); fs.mkdirSync(path.dirname(filename), { recursive: true, mode: 0o700 });
       fs.writeFileSync(filename, file.bytes, { flag: 'wx', mode: 0o600 });

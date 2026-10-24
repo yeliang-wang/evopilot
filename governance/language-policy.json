@@ -92,6 +92,22 @@
     "integration/compatibility/readability/v1/presentation.mjs": {
       "source": "integration/compatibility/readability/v1/presentation.mts",
       "generator": "scripts/sync-readability.mjs"
+    },
+    "integration/compatibility/usability/v1/contract.mjs": {
+      "source": "integration/compatibility/usability/v1/contract.mts",
+      "generator": "scripts/sync-usability.mjs"
+    },
+    "integration/compatibility/usability/v1/authoring.mjs": {
+      "source": "integration/compatibility/usability/v1/authoring.mts",
+      "generator": "scripts/sync-usability.mjs"
+    },
+    "integration/compatibility/usability/v1/assessment.mjs": {
+      "source": "integration/compatibility/usability/v1/assessment.mts",
+      "generator": "scripts/sync-usability.mjs"
+    },
+    "integration/compatibility/usability/v1/oracle.mjs": {
+      "source": "integration/compatibility/usability/v1/oracle.mts",
+      "generator": "scripts/sync-usability.mjs"
     }
   }
 }

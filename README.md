@@ -1,10 +1,10 @@
-# EvoPilot · v0.7.0 Preview
+# EvoPilot · v0.8.0 Preview
 
 Build domain models, assess quality, and prepare controlled execution through one Expert in Codex. Runtime owns execution and state, Harness owns QA and delivery standards, and Ontology owns domain modeling.
 
 [Quickstart](docs/installation.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/yeliang-wang/evopilot/releases) · [Contribute](CONTRIBUTING.md)
 
-This edition is **0.7.0 Preview**: [conversation-driven planning](docs/planning.md), [table-first native asset and gate reports](docs/readable-assets.md), and [preflight, diagnostics and bounded maintenance](docs/preflight-maintenance.md). Exact source, downloads and publication status are recorded by the versioned Release; local installation is a separate operation.
+This edition is **0.8.0 Preview**. v0.8 adds independent asset consumption, explicit L1/L2/L3 usability assessment, mandatory purpose/scope/level admission before reverse modeling, and controlled reconstruction with an independent fixed oracle. Verified L3 is limited to the reviewed functional slice and requires two clean complete reconstructions; it does not mean byte-identical source, whole-project coverage, production readiness or automatic release. Start with [asset usability](docs/asset-usability-v08.md), [asset service](docs/asset-service.md) and [the Expert workflow](docs/asset-usability-v08-workflow.md). Exact publication status and downloads belong to the versioned Release; local installation is separate.
 
 Earlier v0.6.0 introduced [reviewed response linkage](docs/response.md), extending online Harness and registered execution feedback. It connects findings, published runbooks, reviewed isolated actions, independent verification and asset-owner feedback. The [historical v0.6.0 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) retains that edition; source availability alone is not a publication receipt. Native domain models use RDF/Turtle and SHACL; quality assets use Rego, OPA and Conftest. Project completion requires fixed requirements, actual collection receipts, both owner reports and the actual domain decision. Preview is not GA or blanket production acceptance.
 
@@ -50,7 +50,7 @@ The daemon loads all three services; it does not start one process per product. 
 
 ## Install a published bundle
 
-Use **Node 24.14.0**. Get `evopilot-0.7.0-preview.tar.gz` and `SHA256SUMS` from the exact [v0.7.0 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.7.0). Follow [checksum verification and extraction](docs/installation.md), then set canonical absolute paths to your extracted bundle and new isolated locations outside Git; their parent directories must exist. Public and private product data belong to the workspace, separate from installed program files:
+Use **Node 24.14.0**. Get `evopilot-0.8.0-preview.tar.gz` and `SHA256SUMS` from the exact [v0.8.0 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.0). Follow [checksum verification and extraction](docs/installation.md), then set canonical absolute paths to your extracted bundle and new isolated locations outside Git; their parent directories must exist. Public and private product data belong to the workspace, separate from installed program files:
 
 ```sh
 preview_bundle="/absolute/path/to/extracted-bundle"
@@ -63,7 +63,7 @@ codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json
 
 Existing users should follow the [v0.6 to v0.7 upgrade procedure](docs/migration.md#upgrade-from-v06-to-v070) before switching their daily plugin. Preserve the existing Workspace and verify rollback on an isolated copy.
 
-Select **EvoPilot v0.7 Preview**, then say: “Initialize my private Workspace, explain its directories, and guide me through the forward example.” The Expert inspects first, creates the Workspace only after your setup request, then explicitly activates the current chat. You can choose your own directories; no private GitHub repository is required. Initialization alone does not activate the chat. Inspect and guide requests stay passive; ordinary chats do not require EvoPilot.
+Select **EvoPilot v0.8 Preview**, then say: “Initialize my private Workspace, explain its directories, and guide me through the forward example.” The Expert inspects first, creates the Workspace only after your setup request, then explicitly activates the current chat. You can choose your own directories; no private GitHub repository is required. Initialization alone does not activate the chat. Inspect and guide requests stay passive; ordinary chats do not require EvoPilot.
 
 Your editable project defaults to `~/evopilot-workspace`; protected service state defaults to `~/.local/share/evopilot/workspaces/<id>`. The project may have its own private Git history. Service databases, control records, signing keys and private evidence stay outside EvoPilot source and distribution. See [Workspace](workspace/README.md) and the [current and historical Expert scenarios](docs/expert-scenarios.md).
 

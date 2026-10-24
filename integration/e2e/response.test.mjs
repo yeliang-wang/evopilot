@@ -1,3 +1,4 @@
+import {syntheticAuthoring} from './fixtures/authoring.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -13,7 +14,7 @@ import { createPrometheusCollector, createAlertmanagerReceiver } from '@evopilot
 import { inspectWorkspaceSnapshot } from '@evopilot-next/runtime/workspace-migration';
 import { syntheticHarnessPackage, replaceNativeFile } from '../../projects/evopilot-harness/examples/native/package.mjs';
 import { syntheticOnlinePackage } from '../../projects/evopilot-harness/examples/native/online-package.mjs';
-import { fixture, freeze } from './fixtures/native-project.mjs';
+import { fixture, freeze, syntheticModelingIntent } from './fixtures/native-project.mjs';
 import { syntheticDecisionEvidence } from './fixtures/decision-evidence.mjs';
 
 // Synthetic service histories and test operator attestations are never business
@@ -29,6 +30,7 @@ for (const scenario of [
   scope.projectId = scenario.id; f.input.requirements.projectId = scenario.id;
   for (const row of f.input.requirements.ownerRequirements) if (row.criterionId.startsWith('harness:')) row.origin = 'execution-result';
   f.packages.harness.manifest.dependencies = [referenceForPackage(f.packages.ontology)];
+  f.input.modelingIntent = syntheticModelingIntent(f);
   const frozen = await freeze(f);
   await f.service.materialize({ scope, id: f.input.id, packages: f.packages });
   const binding = await f.service.prepareExecution({ scope, id: f.input.id, executionId: 'response-execution', toolchainId: 'node' });
@@ -60,7 +62,11 @@ for (const scenario of [
   });
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   const apis = await loadInstalledProducts(), options = { workspaceRoot: f.stateRoot, workspaceId: 'synthetic' };
-  const trusted = { toolchain, ...createLocalCollector({ resolveExecution: f.service.resolveExecution }), inspectSource: f.service.inspectSource, resolveRequirements: f.service.resolveRequirements, verifyProject: f.service.verifyProject,
+  // The separate synthetic monitoring policy uses an explicit test host admission;
+  // project completion assets still resolve against their actual frozen candidate.
+  const onlinePackage=syntheticOnlinePackage({id:scenario.id+'-online'}),syntheticPolicyDigests=new Set([nativePackageDigest(onlinePackage)]);
+  const resolveNativeAuthoring=request=>request.owner==='harness'&&syntheticPolicyDigests.has(request.packageDigest)?syntheticAuthoring(request):f.service.resolveNativeAuthoring(request);
+  const trusted = { toolchain, ...createLocalCollector({ resolveExecution: f.service.resolveExecution }), resolveNativeAuthoring,inspectSource: f.service.inspectSource, resolveRequirements: f.service.resolveRequirements, verifyProject: f.service.verifyProject,
     readResponseWorkspaceEvidence: ({ scope, reference }) => readWorkspaceResponseEvidence({ projectRoot: f.projectRoot, workspaceId: 'synthetic' }, scope, reference),
     online: { collectOnline: createPrometheusCollector([{ id: 'metrics', origin: `http://127.0.0.1:${server.address().port}`, bearerTokenFile: null, freshnessSeconds: 30 }]), inspectOnlineAlert: alertReceiver.inspect } };
   let c = createComposition(options, apis, {}, trusted), sequence = 0;
@@ -103,7 +109,7 @@ for (const scenario of [
   await prepareCollection('preflight', output);
   const preflight = (await write('runtime', 'collection.execute', { id: 'preflight' })).result.receipt;
   const prerequisite = { owner: 'runtime', id: 'collection:preflight', digest: preflight.digest };
-  const onlinePin = await publish('harness', syntheticOnlinePackage({ id: scenario.id + '-online' }));
+  const onlinePin = await publish('harness', onlinePackage);
   const slo = JSON.parse(fs.readFileSync(new URL('../../projects/evopilot-harness/specifications/online/v1/example.json', import.meta.url)));
   slo.spec.service = scenario.service; slo.spec.timeWindow[0].duration = '2s';
   const spec = { id: 'monitor', serviceId: scenario.service, environment: 'test', deploymentRevision: sourceScope.revision, providerId: 'metrics', alertSourceId: 'alerts', policy: onlinePin, slo, intervalSeconds: 1 };
@@ -124,6 +130,7 @@ for (const scenario of [
   const problem = (await write('harness', 'response.problem.put', { assessment, reviewDigest: problemReview.reviewDigest, humanEvidenceRef: 'synthetic' })).result;
   const runbook = { schema: 'evopilot-response-runbook/v1', id: scenario.operation, version: '1.0.0', serviceId: scenario.service, environment: 'test', sourceRevision: sourceScope.revision, parameters: { operation: scenario.operation }, prerequisites: [prerequisite], steps: [{ id: 'recover-probe', description: 'Restore this isolated synthetic probe; no original source or production mutation', operation: 'isolated-collection' }], stopConditions: ['SOURCE_DRIFT', 'PREREQUISITE_FAILED', 'GUIDANCE_WITHDRAWN', 'EXPIRED', 'TIMEOUT', 'UNKNOWN'], effectScope: 'isolated-local', maxEvidenceAgeSeconds: 300, expiresAt: Math.floor(Date.now() / 1000) + 600 };
   const guidance = syntheticHarnessPackage({ id: scenario.id + '-guidance' }); replaceNativeFile(guidance, 'runbooks/recover.json', runbook);
+  syntheticPolicyDigests.add(nativePackageDigest(guidance));
   const runbookPin = { reference: await publish('harness', guidance), path: 'runbooks/recover.json', digest: nativeSha256(runbook) };
   await write('harness', 'response.runbook.admit', { pin: runbookPin });
   const campaign = { schema: 'evopilot-private-campaign/v1', projectId: scope.projectId, id: 'recover-target', goal: 'Synthetic isolated response', sourceDigest: sourceScope.treeDigest.slice(7), criteria: ['independent-native-run', 'reviewed-owner-feedback', 'retained-fault'].map(id => ({ id, status: 'PENDING', evidence: [] })), loops: [{ id: 'recover-loop', observation: 'Owned failure ' + faultRef.id + ' at ' + faultRef.digest, action: scenario.operation, result: 'pending' }], status: 'IN_PROGRESS', authority: false };
@@ -230,6 +237,8 @@ for (const scenario of [
     sourceBindings.mappings.find(row => row.targetId === 'H003').rationale = 'Synthetic recovery learning: a successful health probe does not waive the source requirement for a present zero warning count; preserve independent post-action verification.';
     replaceNativeFile(changed, changed.manifest.sourceBindingRef, sourceBindings);
     replaceNativeFile(changed, 'docs/recovery-learning.json', { synthetic: true, ruleId: 'H003', sourcePath: 'sources/requirements.txt', sourceDigest: nativeBytesDigest(changed.files['sources/requirements.txt']), explanation: 'Keep the warning rule unchanged after probe recovery. Process success, alert resolution and independent delivery quality are separate results.' });
+    const correctionInput={...f.input,id:'round-two'},correctionPackages={ontology:f.packages.ontology,harness:changed};
+    await freeze(f,correctionInput,correctionPackages);await f.service.materialize({scope,id:correctionInput.id,packages:correctionPackages});
     delivered = { packages: { ontology: f.packages.ontology, harness: changed }, pins: { ontology: pins.ontology, harness: await publish('harness', changed) } };
   }
   for (const owner of ['ontology', 'harness']) {

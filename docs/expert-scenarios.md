@@ -152,3 +152,16 @@ Actual installed Codex default-off, explicit activation, guide readback, owner r
 | Prepare complete drafts | draft-preflight | Owner validation before immutable freeze/materialization |
 
 Source test files: `integration/e2e/planning.test.mjs`, `integration/e2e/readability.test.mjs`, `integration/e2e/readable-presentation.test.mjs`, `integration/e2e/native-project.test.mjs`, and `projects/evopilot-runtime/tests/e2e/planning.test.mjs`. Actual installed Codex first-use, reconnect and human presentation readback require separate exact-candidate Host evidence. None of these tests is a human domain decision.
+
+## v0.8 asset usability journeys
+
+See [the v0.8 workflow](asset-usability-v08-workflow.md). These routes bind the accepted v0.8 obligations; source guide tests do not establish actual installed Host acceptance.
+
+| Scenario | Guide | Purpose |
+| --- | --- | --- |
+| V08-U01 | `asset-consumption` | Independent asset consumption and scoped domain answers |
+| V08-U02 | `ontology-reverse` | Purpose and level admission before reverse modeling |
+| V08-U03 | `usability-assessment` | Exact semantic evidence and independent level assessment |
+| V08-U04 | `controlled-reconstruction` | Protected actual reconstruction and fixed independent oracle |
+| V08-U05 | `reconstruction-recovery` | Original receipt reconciliation and bounded recovery |
+| V08-U06 | `asset-feedback-review` | Substantive asset evolution and retained compatibility |

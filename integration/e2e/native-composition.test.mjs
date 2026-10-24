@@ -11,7 +11,7 @@ import { nativeSha256, nativeBytesDigest, nativePackageDigest, NATIVE_CONTRACT_D
 import { nativePackage, rehash } from '../../projects/evopilot-ontology/tests/fixtures/native/package.mjs';
 import { syntheticHarnessPackage, replaceNativeFile } from '../../projects/evopilot-harness/examples/native/package.mjs';
 
-import {fixture,freeze} from './fixtures/native-project.mjs';
+import {fixture,freeze,syntheticModelingIntent} from './fixtures/native-project.mjs';
 
 for (const direction of ['forward', 'reverse']) for (const visibility of ['public', 'private'])
 test(`U03: ${direction} ${visibility} journey publishes native packages, consumes collection bytes and verifies both owner receipts`, { timeout: 120_000 }, async () => {
@@ -19,6 +19,7 @@ test(`U03: ${direction} ${visibility} journey publishes native packages, consume
   const toolchain = JSON.parse(fs.readFileSync(process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN, 'utf8'));
   const f = fixture(direction, visibility), scope = f.scope;
   for (const r of f.input.requirements.ownerRequirements) if (r.criterionId.startsWith('harness:')) r.origin = 'execution-result';
+  if(direction==='reverse')f.input.modelingIntent=syntheticModelingIntent(f);
   const frozen = await freeze(f), samples = f.packages;
   await f.service.materialize({scope,id:f.input.id,packages:samples});
   const requirements = frozen.candidate.nativeRequirements, sourceScope = frozen.candidate.sourceScope;
@@ -26,7 +27,7 @@ test(`U03: ${direction} ${visibility} journey publishes native packages, consume
   const binding = await f.service.prepareExecution({scope,id:f.input.id,executionId:'collection-one',toolchainId:'node'});
   const executable = binding.toolFiles[0].path, tool = binding.toolFiles[0];
   const collector = createLocalCollector({resolveExecution:f.service.resolveExecution});
-  const trusted = {toolchain,...collector,inspectSource:f.service.inspectSource,resolveRequirements:f.service.resolveRequirements,verifyProject:f.service.verifyProject};
+  const trusted = {toolchain,...collector,resolveNativeAuthoring:f.service.resolveNativeAuthoring,inspectSource:f.service.inspectSource,resolveRequirements:f.service.resolveRequirements,verifyProject:f.service.verifyProject};
   let composition = createComposition(options, apis, {}, trusted), sequence = 0;
   const mutate = async (owner, operation, input) => {
     if(input.humanEvidenceRef?.startsWith('synthetic'))input={...input,humanEvidenceRef:syntheticDecisionEvidence(f.root,{owner,operation,workspaceId:options.workspaceId,scope,reviewDigest:input.reviewDigest,decision:input.decision??'APPROVE'})};

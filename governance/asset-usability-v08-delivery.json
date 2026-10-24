@@ -1,0 +1,707 @@
+{
+  "schema": "evopilot-asset-usability-delivery/v1",
+  "id": "evopilot-v080-release",
+  "targetVersion": "0.8.0",
+  "planningDigest": "sha256:2f1a54cf7c58cd98833c589c50dc8c50010450d2325a08cf1d0b21310cd0fa1a",
+  "specificationDigest": "sha256:be9061a207850ccc1ebe562f174bc5aa7ab061b70be51373fd757b6e7378a91e",
+  "roadmapDigest": "sha256:11044ba50b44402263c43721dd2c58397b7209999d91e552f8ec6d22d3524d8d",
+  "prerequisite": {
+    "version": "0.7.0",
+    "repositories": {
+      "parent": "c1cfeaaa582e59277861cefa919dc6204c2f5dd8",
+      "runtime": "869299897e84e5598464b282548fa1e8e60e8dfa",
+      "harness": "e71d7811efa1ce6acb116349da2d83801acce918",
+      "ontology": "756ec177782d3326796285d23d5f8b33f21f2fbe"
+    },
+    "nativeContractUnchanged": true
+  },
+  "requirements": [
+    "V08-R01",
+    "V08-R02",
+    "V08-R03",
+    "V08-R04",
+    "V08-R05",
+    "V08-R06",
+    "V08-R07",
+    "V08-R08",
+    "V08-R09",
+    "V08-R10",
+    "V08-R11",
+    "V08-R12",
+    "V08-R13",
+    "V08-R14",
+    "V08-R15",
+    "V08-R16",
+    "V08-R17",
+    "V08-R18"
+  ],
+  "acceptance": [
+    "V08-E01",
+    "V08-E02",
+    "V08-E03",
+    "V08-E04",
+    "V08-E05",
+    "V08-E06",
+    "V08-E07",
+    "V08-E08",
+    "V08-E09",
+    "V08-E10",
+    "V08-E11",
+    "V08-E12",
+    "V08-E13",
+    "V08-E14",
+    "V08-E15",
+    "V08-E16",
+    "V08-E17",
+    "V08-E18",
+    "V08-E19",
+    "V08-E20"
+  ],
+  "variants": [
+    {
+      "id": "V08-E01.D01",
+      "acceptanceId": "V08-E01",
+      "name": "independent-http-consumer",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E01.D02",
+      "acceptanceId": "V08-E01",
+      "name": "offline-consumer",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E01.D03",
+      "acceptanceId": "V08-E01",
+      "name": "no-runtime-goal-or-session",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E01.D04",
+      "acceptanceId": "V08-E01",
+      "name": "read-has-no-business-write",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E02.D01",
+      "acceptanceId": "V08-E02",
+      "name": "two-scopes-and-revocation",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E02.D02",
+      "acceptanceId": "V08-E02",
+      "name": "configured-tls-nonloopback",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E02.D03",
+      "acceptanceId": "V08-E02",
+      "name": "bounded-rate-and-output",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E02.D04",
+      "acceptanceId": "V08-E02",
+      "name": "path-link-text-and-secret-isolation",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E03.D01",
+      "acceptanceId": "V08-E03",
+      "name": "exact-dependency-closure",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E03.D02",
+      "acceptanceId": "V08-E03",
+      "name": "snapshot-pagination",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E03.D03",
+      "acceptanceId": "V08-E03",
+      "name": "tamper-missing-and-partial-rejected",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E03.D04",
+      "acceptanceId": "V08-E03",
+      "name": "explicit-projection-loss",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E04.D01",
+      "acceptanceId": "V08-E04",
+      "name": "cumulative-versioned-levels",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E04.D02",
+      "acceptanceId": "V08-E04",
+      "name": "installed-definition-parity",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E04.D03",
+      "acceptanceId": "V08-E04",
+      "name": "technical-pass-does-not-grade",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E04.D04",
+      "acceptanceId": "V08-E04",
+      "name": "scenarios-and-industry-limits",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E05.D01",
+      "acceptanceId": "V08-E05",
+      "name": "target-and-verified-separated",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E05.D02",
+      "acceptanceId": "V08-E05",
+      "name": "all-assessment-states",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E05.D03",
+      "acceptanceId": "V08-E05",
+      "name": "scope-expansion-stale",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E05.D04",
+      "acceptanceId": "V08-E05",
+      "name": "mixed-slices-and-fixed-denominator",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E06.D01",
+      "acceptanceId": "V08-E06",
+      "name": "independent-frozen-questions",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E06.D02",
+      "acceptanceId": "V08-E06",
+      "name": "source-grounded-answers",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E06.D03",
+      "acceptanceId": "V08-E06",
+      "name": "missing-ambiguous-conflicting",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E06.D04",
+      "acceptanceId": "V08-E06",
+      "name": "draft-is-not-published",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E07.D01",
+      "acceptanceId": "V08-E07",
+      "name": "all-normative-behavior-facets",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E07.D02",
+      "acceptanceId": "V08-E07",
+      "name": "independent-reviewed-inventory",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E07.D03",
+      "acceptanceId": "V08-E07",
+      "name": "reference-and-conversion-loss",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E07.D04",
+      "acceptanceId": "V08-E07",
+      "name": "applicability-and-integration-obligations",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E08.D01",
+      "acceptanceId": "V08-E08",
+      "name": "specification-only-closure",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E08.D02",
+      "acceptanceId": "V08-E08",
+      "name": "deny-original-source-and-binaries",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E08.D03",
+      "acceptanceId": "V08-E08",
+      "name": "deny-caches-network-and-delegation",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E08.D04",
+      "acceptanceId": "V08-E08",
+      "name": "source-assisted-never-l3",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E09.D01",
+      "acceptanceId": "V08-E09",
+      "name": "actual-installed-adapter",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E09.D02",
+      "acceptanceId": "V08-E09",
+      "name": "real-generation-build-run",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E09.D03",
+      "acceptanceId": "V08-E09",
+      "name": "identities-usage-and-interventions",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E09.D04",
+      "acceptanceId": "V08-E09",
+      "name": "unsupported-and-budget-fail-closed",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E10.D01",
+      "acceptanceId": "V08-E10",
+      "name": "duplicate-and-lost-response",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E10.D02",
+      "acceptanceId": "V08-E10",
+      "name": "timeout-and-cancellation",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E10.D03",
+      "acceptanceId": "V08-E10",
+      "name": "restart-and-interrupted-persistence",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E10.D04",
+      "acceptanceId": "V08-E10",
+      "name": "reconcile-without-redispatch",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E11.D01",
+      "acceptanceId": "V08-E11",
+      "name": "outputs-states-errors-effects",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E11.D02",
+      "acceptanceId": "V08-E11",
+      "name": "boundary-concurrency-recovery",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E11.D03",
+      "acceptanceId": "V08-E11",
+      "name": "faulty-implementations-rejected",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E11.D04",
+      "acceptanceId": "V08-E11",
+      "name": "withheld-oracle-independence",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E12.D01",
+      "acceptanceId": "V08-E12",
+      "name": "first-clean-attempt",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E12.D02",
+      "acceptanceId": "V08-E12",
+      "name": "second-clean-attempt",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E12.D03",
+      "acceptanceId": "V08-E12",
+      "name": "no-solution-sharing",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E12.D04",
+      "acceptanceId": "V08-E12",
+      "name": "all-attempts-and-fixed-pins",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E13.D01",
+      "acceptanceId": "V08-E13",
+      "name": "nonpass-blocks-l3",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E13.D02",
+      "acceptanceId": "V08-E13",
+      "name": "missing-and-synthetic-block",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E13.D03",
+      "acceptanceId": "V08-E13",
+      "name": "gap-categories-and-scope",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E13.D04",
+      "acceptanceId": "V08-E13",
+      "name": "negative-rejection-is-not-pilot",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E14.D01",
+      "acceptanceId": "V08-E14",
+      "name": "substantive-new-specification",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E14.D02",
+      "acceptanceId": "V08-E14",
+      "name": "new-reconstruction-and-compatibility",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E14.D03",
+      "acceptanceId": "V08-E14",
+      "name": "changed-pins-stale",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E14.D04",
+      "acceptanceId": "V08-E14",
+      "name": "history-preserved",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E15.D01",
+      "acceptanceId": "V08-E15",
+      "name": "http-sdk-report-parity",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E15.D02",
+      "acceptanceId": "V08-E15",
+      "name": "actual-installed-expert",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E15.D04",
+      "acceptanceId": "V08-E15",
+      "name": "exact-receipt-navigation-no-write",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E16.D01",
+      "acceptanceId": "V08-E16",
+      "name": "real-initial-slice",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E16.D02",
+      "acceptanceId": "V08-E16",
+      "name": "real-evolved-slice",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E16.D03",
+      "acceptanceId": "V08-E16",
+      "name": "exact-private-evidence",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E16.D04",
+      "acceptanceId": "V08-E16",
+      "name": "no-synthetic-or-source-assisted-substitute",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E17.D01",
+      "acceptanceId": "V08-E17",
+      "name": "generic-public-examples",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E17.D02",
+      "acceptanceId": "V08-E17",
+      "name": "two-isolated-namespaces",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E17.D03",
+      "acceptanceId": "V08-E17",
+      "name": "all-level-scenarios",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E17.D04",
+      "acceptanceId": "V08-E17",
+      "name": "private-leak-check",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E18.D01",
+      "acceptanceId": "V08-E18",
+      "name": "actual-upgrade",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E18.D02",
+      "acceptanceId": "V08-E18",
+      "name": "stopped-backup-restore",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E18.D03",
+      "acceptanceId": "V08-E18",
+      "name": "old-readers-and-pending-claims",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E18.D04",
+      "acceptanceId": "V08-E18",
+      "name": "unknown-historical-levels",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E19.D01",
+      "acceptanceId": "V08-E19",
+      "name": "accepted-v07-contracts",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E19.D02",
+      "acceptanceId": "V08-E19",
+      "name": "exact-four-repository-candidate",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E19.D03",
+      "acceptanceId": "V08-E19",
+      "name": "build-types-packaged-installed",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E19.D04",
+      "acceptanceId": "V08-E19",
+      "name": "actual-consumer-host-and-docs",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E20.D01",
+      "acceptanceId": "V08-E20",
+      "name": "complete-r-e-variant-traceability",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E20.D02",
+      "acceptanceId": "V08-E20",
+      "name": "all-prerelease-gates",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E20.D03",
+      "acceptanceId": "V08-E20",
+      "name": "conditional-user-release-authority",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E20.D04",
+      "acceptanceId": "V08-E20",
+      "name": "download-readback-postrelease-closure",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    }
+  ],
+  "resourceBounds": {
+    "assessmentInputBytes": 1048576,
+    "assessmentTotalEvidenceBytes": 4194304,
+    "assessmentReadTimeoutMs": 2000,
+    "assessmentTotalTimeoutMs": 10000,
+    "externalResponseBytes": 8388608,
+    "reconstructionAttemptsMinimum": 2,
+    "reconstructionWallMs": 3600000,
+    "reconstructionMaxAttemptsPerPlan": 4,
+    "reconstructionMaxOutputBytes": 8388608,
+    "maxConcurrentBuilders": 1
+  },
+  "currentSourceStage": "T1-T3 retained assessment and independent oracle; T2 standalone consumption; T4 controlled Runtime execution and bounded offline adapter, actual project reconstruction pending",
+  "allowedFiles": [
+    "governance/asset-usability-v08-delivery.json",
+    "scripts/verify-usability-delivery.mjs",
+    "docs/architecture/0008-usability-assessment.md",
+    "docs/asset-usability-v08-delivery.md",
+    "integration/compatibility/usability/v1/*",
+    "projects/*/vendor/usability/v1/*",
+    "projects/*/scripts/check.mjs",
+    "governance/language-policy.json",
+    "integration/e2e/usability*.test.mjs",
+    "integration/e2e/package-isolation.test.mjs",
+    "integration/native-composition.ts",
+    "integration/types.ts",
+    "projects/evopilot-harness/src/usability-assessment.ts",
+    "projects/evopilot-harness/src/usability-evaluation.ts",
+    "projects/evopilot-harness/src/service.ts",
+    "projects/evopilot-harness/src/types.ts",
+    "projects/evopilot-harness/src/resolution.ts",
+    "projects/evopilot-harness/src/state.ts",
+    "projects/evopilot-harness/src/location-lineage.ts",
+    "projects/evopilot-harness/src/index.ts",
+    "projects/evopilot-harness/tests/e2e/usability-assessment.test.mjs",
+    "projects/evopilot-harness/tests/fixtures/usability-assessment.mjs",
+    "projects/evopilot-harness/tests/types/contracts.ts",
+    "projects/evopilot-harness/docs/usability.md",
+    "integration/usability/*.ts",
+    "integration/consumption/*.ts",
+    "tsconfig.json",
+    "scripts/asset-service.mjs",
+    "docs/asset-service.md",
+    "integration/e2e/fixtures/usability-consumption.mjs",
+    "scripts/assemble-preview.mjs",
+    "integration/compatibility/usability/v1/oracle.mts",
+    "projects/evopilot-harness/src/usability-oracle.ts",
+    "projects/evopilot-harness/tests/e2e/usability-oracle.test.mjs",
+    "integration/e2e/usability-assessment-integration.test.mjs",
+    "docs/architecture/0009-behavior-oracle.md",
+    "projects/evopilot-runtime/src/reconstruction.ts",
+    "projects/evopilot-runtime/src/service.ts",
+    "projects/evopilot-runtime/src/types.ts",
+    "projects/evopilot-runtime/src/state.ts",
+    "projects/evopilot-runtime/src/location-lineage.ts",
+    "projects/evopilot-runtime/tests/e2e/reconstruction.test.mjs",
+    "projects/evopilot-runtime/tests/fixtures/reconstruction.mjs",
+    "projects/evopilot-runtime/tests/types/contracts.ts",
+    "projects/evopilot-runtime/docs/reconstruction.md",
+    "integration/e2e/usability-reconstruction*.test.mjs",
+    "integration/e2e/fixtures/reconstruction*.mjs",
+    "docs/architecture/0010-controlled-reconstruction.md",
+    "projects/evopilot-runtime/src/planning.ts",
+    "expert/core/guide.ts",
+    "expert/adapters/codex/SKILL.md",
+    "plugins/codex/skills/evopilot-v01-expert/SKILL.md",
+    "integration/e2e/expert-catalogue.test.mjs",
+    "docs/asset-usability-v08-workflow.md",
+    "docs/expert-scenarios.md"
+  ],
+  "releasePolicy": "Explicit current user instruction authorizes release after all mandatory pre-release evidence passes; actual private decision binding and exact candidate remain mandatory. No stage-by-stage reapproval.",
+  "releaseReady": false,
+  "authority": false,
+  "priorFixedVariants": {
+    "target": "governance/asset-usability-v08-execution.json",
+    "preserveStageVariants": 27,
+    "preserveAdmissionVariants": 18,
+    "preserveOwnerAdmissionVariants": 19,
+    "policy": "Delivery variants supplement all prior fixed source variants; none is removed, renamed, or reinterpreted."
+  },
+  "scopeAmendment": {
+    "policy": "governance/release-scope.json",
+    "withdrawnVariants": [
+      {
+        "id": "V08-E15.D03",
+        "status": "OUT_OF_SCOPE",
+        "countsAsPassed": false,
+        "reason": "User excludes graphical frontend and browser acceptance until after v1.0 Release"
+      }
+    ],
+    "preserveOtherVariants": true
+  }
+}

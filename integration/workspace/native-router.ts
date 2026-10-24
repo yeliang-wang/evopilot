@@ -14,6 +14,7 @@ export function createNativeProjectRouter(context: NativeProjectContext, trusted
   const toolFiles = [{ path: executable, sha256: nativeBytesDigest(fs.readFileSync(executable)).slice(7) }];
   const project = createNativeProjectService(context, { ...trusted, nativeToolchain:()=>inspectNativeToolchain({cacheRoot:path.join(context.stateRoot,'native-toolchain')}), toolchains: { node: { toolchainLockDigest: nativeSha256(toolFiles), toolFiles, readRoots: [] } } });
   const providers: NativeIntegrationConfiguration = {
+    resolveNativeAuthoring: project.resolveNativeAuthoring,
     readResponseWorkspaceEvidence: ({scope,reference}) => readWorkspaceResponseEvidence(context,scope,reference),
     inspectSource: project.inspectSource,
     resolveRequirements: project.resolveRequirements,

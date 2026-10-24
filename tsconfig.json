@@ -28,6 +28,8 @@
     "expert/core/acceptance.ts",
     "expert/core/native-acceptance.ts",
     "integration/online/**/*.ts",
-    "integration/response/**/*.ts"
+    "integration/response/**/*.ts",
+    "integration/consumption/**/*.ts",
+    "integration/usability/**/*.ts"
   ]
 }

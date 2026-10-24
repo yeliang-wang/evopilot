@@ -1,10 +1,10 @@
 {
   "name": "evopilot-v01-preview",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "skills": "./skills/",
   "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "EvoPilot v0.7 Preview",
+    "displayName": "EvoPilot v0.8 Preview",
     "shortDescription": "Private Workspace, Ontology, Harness and Runtime guidance"
   }
 }

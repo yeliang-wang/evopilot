@@ -10,7 +10,7 @@ import { maintainWorkspace } from '../../dist/integration/workspace/maintenance.
 import { nativeSha256, nativePackageDigest, referenceForPackage, NATIVE_CONTRACT_DIGEST } from '../../dist/integration/compatibility/v1/native.mjs';
 import { rehash } from '../../projects/evopilot-ontology/tests/fixtures/native/package.mjs';
 import { createFeedbackStore, inspectFeedbackSnapshot } from '../../dist/integration/compatibility/feedback/v1/feedback.mjs';
-import { fixture, freeze } from './fixtures/native-project.mjs';
+import { fixture, freeze, syntheticModelingIntent } from './fixtures/native-project.mjs';
 import { syntheticDecisionEvidence } from './fixtures/decision-evidence.mjs';
 
 test('feedback provider timeout preserves uncertainty without a second invocation',async()=>{let calls=0;await assert.rejects(feedbackBounded(()=>{calls++;return new Promise(()=>{});},15),{code:'FEEDBACK_TIMEOUT'});assert.equal(calls,1);});
@@ -43,9 +43,10 @@ test('v0.4: registered RC failure and correction retain owner feedback, require 
  apis.harness={...apis.harness,createHarnessService(...args){const service=realFactory(args[0],{...args[1],nativeToolchain:faultToolchain});return {...service,async feedback(request){const result=await service.feedback(request);if(request.operation==='feedback.ingest'){ingestCalls++;if(loseResponse){loseResponse=false;throw Object.assign(Error('Synthetic transport loses response after actual owner commit'),{code:'SIMULATED_RESPONSE_LOSS'});}}return result;}};}};
  for(const r of f.input.requirements.ownerRequirements)if(r.criterionId.startsWith('harness:'))r.origin='execution-result';
  f.packages.harness.manifest.dependencies=[referenceForPackage(f.packages.ontology)];
+ f.input.modelingIntent=syntheticModelingIntent(f);
  const frozen=await freeze(f);await f.service.materialize({scope,id:f.input.id,packages:f.packages});
  const binding=await f.service.prepareExecution({scope,id:f.input.id,executionId:'feedback-execution',toolchainId:'node'});
- const trusted={toolchain,...createLocalCollector({resolveExecution:f.service.resolveExecution}),inspectSource:f.service.inspectSource,resolveRequirements:f.service.resolveRequirements,verifyProject:f.service.verifyProject};
+ const trusted={toolchain,...createLocalCollector({resolveExecution:f.service.resolveExecution}),resolveNativeAuthoring:f.service.resolveNativeAuthoring,inspectSource:f.service.inspectSource,resolveRequirements:f.service.resolveRequirements,verifyProject:f.service.verifyProject};
  let c=createComposition(options,apis,{},trusted),seq=0;
  const query=(owner,operation,input={},queryScope=scope)=>c.native(owner,{operation,scope:queryScope,input});
  async function mutate(owner,operation,input){
@@ -110,7 +111,13 @@ test('v0.4: registered RC failure and correction retain owner feedback, require 
     const coverage=JSON.parse(changed.files['coverage.json']);coverage.requiredTestIds.push('test_H003_type');coverage.requiredCaseIds.push('invalid-warning-type');coverage.requirements.find(r=>r.ruleIds.includes('H003')).caseIds.push('invalid-warning-type');coverage.cases.push({id:'invalid-warning-type',input:'tests/fixtures/invalid-warning-type.json',expected:'WARN',expectedRuleIds:['H003']});changed.files['coverage.json']=JSON.stringify(coverage);
     const observation=JSON.parse(changed.files['observations/current.json']);observation.values.warnings='unknown';changed.files['tests/fixtures/invalid-warning-type.json']=JSON.stringify(observation);
    }
-   rehash(changed);const identity={id:changed.manifest.id,version:changed.manifest.version};await mutate(owner,'native.package.put',{package:changed});
+   rehash(changed);
+   const correctedInput={...f.input,id:'correction-'+owner,requirements:structuredClone(f.input.requirements)},correctedPackages={...f.packages,[owner]:changed};
+   // New behavior is added to the independently fixed test inventory before candidate review.
+   correctedInput.requirements.ownerRequirements.find(r=>r.criterionId===(owner==='ontology'?'ontology:scope':'harness:requirement-H003')).variantIds.push(owner==='ontology'?'over-limit':'invalid-warning-type');
+   correctedInput.modelingIntent=syntheticModelingIntent({...f,input:correctedInput});
+   await freeze(f,correctedInput,correctedPackages);await f.service.materialize({scope,id:correctedInput.id,packages:correctedPackages});
+   const identity={id:changed.manifest.id,version:changed.manifest.version};await mutate(owner,'native.package.put',{package:changed});
    const validation=(await mutate(owner,'native.package.validate',identity)).result;assert.equal(owner==='ontology'?validation.status:validation.qualityStatus,owner==='ontology'?'CONFORMS':'PASS',JSON.stringify({diagnostics:validation.diagnostics,issues:validation.issues}));
    const assetReview=(await mutate(owner,'native.package.review',identity)).result;await mutate(owner,'native.package.decide',{...identity,reviewDigest:assetReview.reviewDigest,decision:'APPROVE',humanEvidenceRef:'synthetic'});const reference=(await mutate(owner,'native.package.publish',identity)).result.reference;
    const proposal={mode:'DELIVER',reference,rationale:'Synthetic bounded interpretation strengthens the unchanged source requirement; actual native cases passed.',changes:[{kind:owner==='ontology'?'cardinality':'rule',identifiers:[owner==='ontology'?'https://example.invalid/r1/LimitShape':'H003'],sourcePaths:[owner==='ontology'?'sources/source.txt':'sources/requirements.txt'],explanation:'Add a missing upper-bound/type regression; old published assets remain intact.'}]};

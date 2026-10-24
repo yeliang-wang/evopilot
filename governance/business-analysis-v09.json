@@ -1,0 +1,92 @@
+{
+  "schema": "evopilot-roadmap-planning/v1",
+  "id": "evopilot-business-analysis-v09",
+  "roadmapId": "EVO-F07",
+  "kind": "candidate-planning",
+  "targetVersion": "0.9.0",
+  "versionCommitment": "PROPOSED_DESTINATION_ONLY",
+  "status": "CANDIDATE",
+  "planningStatus": "DIRECTION_AND_VERSION_ALLOCATION_ACCEPTED",
+  "executionPlanStatus": "NOT_FROZEN",
+  "implementationStatus": "NOT_STARTED",
+  "acceptanceStatus": "NOT_EVALUATED",
+  "authority": false,
+  "implementationAuthorized": false,
+  "installationAuthorized": false,
+  "releaseAuthorized": false,
+  "requiresExplicitStart": true,
+  "automaticResume": false,
+  "objective": "Bounded project business metric queries, deterministic computation and evidence-driven analysis using reviewed semantic definitions and real observations",
+  "roadmap": "docs/roadmap.md#v09-candidate-project-business-metrics-and-evidence-driven-analysis",
+  "specification": "docs/business-analysis-v09.md",
+  "owners": {
+    "parent": "EVO-F07",
+    "ontology": "ONT-F08",
+    "harness": "HAR-F07",
+    "runtime": "RUN-F07"
+  },
+  "v08Relationship": {
+    "planningRecord": "governance/asset-usability-v08.json",
+    "entryAndDomainQA": "Delivered within existing V08-R01/R03/R06/R14 and V08-E01/E03/E06/E15 scope; actual values and analytical computations are separate.",
+    "dependentImplementation": "Requires actual accepted consumption, authorization, snapshot and version contracts; no date or automatic start.",
+    "reconstructionBoundary": "L1/L2/L3 claims do not establish production-data availability or metric correctness.",
+    "addsCompletionGate": false
+  },
+  "initialScope": [
+    "One privately authorized real business domain",
+    "Finite reviewed indicator set and independent expected answers",
+    "Limited named sources and read-only analysis",
+    "Fixed metric definitions, explicit time ranges and bounded grouping/baseline comparisons"
+  ],
+  "metricContract": [
+    "Business object and grain",
+    "Numerator/denominator or formula",
+    "Units, dimensions, filters and exclusions",
+    "Time basis/window/timezone",
+    "Semantic data mappings and reviewed source/version provenance",
+    "Missing/stale/partial input and zero-denominator behavior",
+    "Numerical tolerance and comparison compatibility"
+  ],
+  "ownership": {
+    "ontology": "Metric meanings and semantic mappings/version compatibility; not live metric storage or collection execution.",
+    "harness": "Completeness/quality/threshold evaluation and independent correctness checks; retains existing online observation ownership.",
+    "runtime": "New authorized collection/query execution, identities, budgets, receipts, cancellation and uncertain-outcome recovery; retained reads need no new Run by default.",
+    "parent": "Question routing/clarification, public-owner API composition and consistent evidence-linked presentation.",
+    "adaptersAndCalculation": "Assign explicit owner/result retention and authority in the future execution design; no duplicate owner database."
+  },
+  "acceptanceMatrixStatus": "THEMES_ONLY_REQUIRES_FIXED_VARIANTS",
+  "acceptanceThemes": [
+    "Real bounded journey, independent numeric oracle and reproducible pinned calculation",
+    "Ambiguous/conflicting definitions, missing/stale/partial inputs, zero denominators and incompatible units/time ranges",
+    "Both comparison definitions/snapshots pinned; drift and incompatible grain/filter/source semantics visible",
+    "Scoped access, revoked credentials, malicious text/query injection and time/cost/row/byte limits",
+    "Cancellation, duplicate/lost responses, restart and exact uncertain-outcome reconciliation",
+    "Every number and claim resolves to evidence; model cannot invent values or causal conclusions",
+    "Actual installed consumers and Expert agree with owner results, completeness and limitations"
+  ],
+  "beforeImplementation": [
+    "Select real pilot privately and freeze independent requirements/answers",
+    "Bind exact repositories/files and accepted dependency contracts",
+    "Freeze positive/negative/missing/stale/recovery variants and resource budgets",
+    "Resolve adapter/calculation/result ownership and authority through necessary ADRs",
+    "Record explicit execution Target; boundary/trust changes require formal Roadmap/ADR/migration/guard review"
+  ],
+  "excluded": [
+    "General BI platform",
+    "Arbitrary SQL or Agent execution",
+    "All-database connector catalogue or unbounded cross-source federation",
+    "New hosted graph or metrics platform",
+    "Automatic causal determination",
+    "Production mutation/remediation",
+    "Automatic asset approval or release"
+  ],
+  "preserve": [
+    "Native RDF/SHACL and Rego contracts",
+    "Immutable assets, decisions and receipts",
+    "Existing owner boundaries and Harness online observations",
+    "All v0.8 reconstruction and pilot requirements",
+    "Existing v1.0 readiness criteria"
+  ],
+  "privacyPolicy": "Real project selection, data, credentials and evidence stay private; public examples are synthetic.",
+  "progressPolicy": "Candidate registration records direction only; no passing acceptance, installed capability, date or release commitment is claimed."
+}

@@ -1,4 +1,5 @@
 import { syntheticDecisionEvidence } from './decision-evidence.mjs';
+import {USABILITY_STANDARD_DIGEST} from '../../../dist/integration/compatibility/usability/v1/contract.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -48,6 +49,13 @@ export function fixture(direction = 'forward', visibility = 'private') {
   const rawService = createNativeProjectService({ projectRoot, stateRoot, workspaceId }, { nativeToolchain:()=>{if(!process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN)throw Error('Prepare the isolated pinned native toolchain');return JSON.parse(fs.readFileSync(process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN,'utf8'));}, toolchains: { node: {toolchainLockDigest:nativeSha256(toolFiles),toolFiles,readRoots:[]} }, readCompletedProject: async () => completedProject ?? { complete: null } });
   const service = {...rawService,reviewDomain(input){if(input.humanEvidenceRef?.startsWith('synthetic')){const frozen=rawService.inspect(input);const subject={candidateDigest:frozen.candidate.reviewDigest,runtimeCandidateDigest:input.runtimeCandidateDigest,assetDigests:input.assetDigests,bindingsDigest:input.bindingsDigest,inferredMappings:input.inferredMappings};input={...input,humanEvidenceRef:syntheticDecisionEvidence(root,{owner:'project',operation:'reviewDomain',workspaceId,scope:input.scope,reviewDigest:nativeSha256(subject),decision:input.decision})};}return rawService.reviewDomain(input);}};
   const input = { id: 'round-one', scope, sourceRoot: source, direction, revision, requirements, standardPins: Object.fromEntries(Object.entries(packages).map(([k, v]) => [k, v.manifest.standardPins])) };
+  if(direction==='reverse')input.modelingIntent=syntheticModelingIntent({root,workspaceId,scope,input});
   return { root, source, projectRoot, stateRoot, scope, service, input, packages, git, setCompletion: value => { completedProject = value; }, cleanup: () => fs.rmSync(root, { recursive: true, force: true }) };
 }
 export async function freeze(f, input = f.input, packages = f.packages) { const candidate = await f.service.prepare(input); return f.service.freeze({ scope: f.scope, id: input.id, packages, reviewDigest: candidate.reviewDigest, humanEvidenceRef: syntheticDecisionEvidence(f.root,{owner:'project',operation:'freeze',workspaceId:'synthetic',scope:f.scope,reviewDigest:candidate.reviewDigest,decision:'ACCEPT'}) }); }
+
+// Synthetic test operator evidence only; never reuse for a real project decision.
+export function syntheticModelingIntent({root,workspaceId='synthetic',scope,input}, changes={}) {
+ const definition={schema:'evopilot-modeling-intent/v1',workspaceId,scope,source:{root:input.sourceRoot,direction:'reverse',revision:input.revision},purpose:'Understand the synthetic domain',useCase:'understand',functionalScope:'The complete independently fixed synthetic module',exclusions:[],targetLevel:'L1',standardDigest:USABILITY_STANDARD_DIGEST,requirementsDigest:nativeSha256(input.requirements),acceptance:input.requirements.ownerRequirements.map(r=>({criterionId:r.criterionId,variantIds:r.variantIds,expected:r.description})),questions:['What does this synthetic module define?'],behaviors:[],unresolvedQuestions:[],reconstruction:null,userIntentOrigin:'explicit-request',...changes};
+ return{definition,humanEvidenceRef:syntheticDecisionEvidence(root,{owner:'project',operation:'modeling.intent',workspaceId,scope,reviewDigest:nativeSha256(definition),decision:'ACCEPT'})};
+}

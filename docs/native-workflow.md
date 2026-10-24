@@ -137,6 +137,32 @@ no current candidate exists.
 
 Before a new decision, retain the actual authorization source and bind it using the [decision evidence format](native-decisions.md). Opaque approval labels no longer authorize new native work; historical receipts remain unchanged.
 
+## v0.8 implementation: reverse modeling purpose
+
+The v0.8 implementation adds a mandatory `modelingIntent` to new reverse project
+preparation; this does not change an existing v0.7 installation. Before step 2's
+formal `prepare`, resolve purpose, scope and exclusions, target L1/L2/L3, fixed
+requirements and acceptance, and an exact actual user-intent reference. Read-only
+source discovery may precede this decision. Reuse clear prior context and ask only
+for missing or ambiguous answers. The project SDK, HTTP and MCP routes enforce
+the same admission check; direct calls cannot skip it.
+
+L1 supports domain understanding, L2 adds implementable behavior, and L3 adds the
+independent reconstruction obligations. These profiles are cumulative. Selecting
+a target or filling a template never establishes the verified level. An intent
+change needs a new binding and, for a retained candidate, a new candidate ID.
+Historical readback remains available; new freeze/materialization of an unbound
+reverse candidate is blocked. See the [modeling intent decision](architecture/0007-modeling-intent-gate.md)
+for the precise source-stage boundary and remaining actual Host verification.
+
+Both independent owner services also require trusted project/source admission for
+new asset writes. The parent HTTP/MCP host resolves it from the exact frozen and
+materialized project. Bare owner CLI authoring without that context is blocked;
+SDK hosts must provide `resolveNativeAuthoring`. Published reads, published
+validation and exact old receipt replay remain available. A legacy unfinished
+draft needs a new bound put before continuation. The first admitted write changes
+the owner state marker; retain a stopped complete backup for any downgrade.
+
 ## Registered evolution feedback (v0.4)
 
 When the user requests asset feedback for version evolution, configure the exact Runtime candidate before dispatch using `feedback.configure`. Inspect owner inboxes, propose a source-bound native delivery or justified exact-version reuse, record the concrete human decision, then refresh dispositions. Pending feedback blocks dependent completion; final Runs must evaluate the exact approved assets. See [the feedback guide](feedback.md) for API inputs, timeout recovery and the V04 Expert scenarios. Existing native standards and receipt producer identifiers remain unchanged from v0.3.

@@ -1,3 +1,4 @@
+import {syntheticAuthoring} from './fixtures/authoring.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -12,7 +13,7 @@ import {renderReadSnapshot,readSnapshot,readStable,queryReadSnapshot,compareRead
 test('V07-E03/E05/E06 actual owner validation remains distinguishable from expected rejection across every projection', {timeout:300000},async t=>{
  const f=fixture(),root=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'evopilot-readable-'));
  const toolchain=JSON.parse(fs.readFileSync(process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN,'utf8'));
- const stack=createComposition({workspaceRoot:path.join(root,'state'),workspaceId:'readable-test'},await loadInstalledProducts(),{},{toolchain});
+ const stack=createComposition({workspaceRoot:path.join(root,'state'),workspaceId:'readable-test'},await loadInstalledProducts(),{},{toolchain,resolveNativeAuthoring:syntheticAuthoring});
  t.after(()=>{stack.close();f.cleanup();fs.rmSync(root,{recursive:true,force:true});});
  let serial=0;const q=(owner,operation,input={},scope=f.scope)=>stack.native(owner,{operation,scope,input});
  const write=(owner,operation,input)=>stack.native(owner,{operation,scope:f.scope,input,requestId:'readable-'+(++serial),expectedRevision:stack.inspect(owner,f.scope).revision});
@@ -121,7 +122,7 @@ test('V07-E03/E05/E06 actual owner validation remains distinguishable from expec
 
 test('V07-E06 unavailable native reader returns an explicit error instead of empty or passing evidence',async t=>{
  const f=fixture(),root=fs.mkdtempSync(path.join(fs.realpathSync(os.tmpdir()),'evopilot-reader-unavailable-'));
- const stack=createComposition({workspaceRoot:path.join(root,'state'),workspaceId:'unavailable-reader'},await loadInstalledProducts());
+ const stack=createComposition({workspaceRoot:path.join(root,'state'),workspaceId:'unavailable-reader'},await loadInstalledProducts(),{},{resolveNativeAuthoring:syntheticAuthoring});
  t.after(()=>{stack.close();f.cleanup();fs.rmSync(root,{recursive:true,force:true});});
  const pkg=f.packages.ontology,scope=f.scope,identity={id:pkg.manifest.id,version:pkg.manifest.version};
  await stack.native('ontology',{operation:'native.package.put',scope,input:{package:pkg},requestId:'unavailable-put',expectedRevision:stack.inspect('ontology',scope).revision});

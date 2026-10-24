@@ -1,0 +1,715 @@
+{
+  "schema": "evopilot-roadmap-planning/v1",
+  "id": "evopilot-asset-usability-v08",
+  "roadmapId": "EVO-F06",
+  "kind": "planning-only",
+  "targetVersion": "0.8.0",
+  "releaseChannel": "Preview",
+  "status": "PLANNED_IMPLEMENTATION_DEFERRED",
+  "planningStatus": "ACCEPTED",
+  "implementationStatus": "NOT_STARTED",
+  "acceptanceStatus": "NOT_EVALUATED",
+  "authority": false,
+  "implementationAuthorized": false,
+  "installationAuthorized": false,
+  "releaseAuthorized": false,
+  "requiresExplicitStart": true,
+  "automaticResume": false,
+  "objective": "Independently consumable Ontology assets, scoped L1/L2/L3 usability and controlled specification-only reconstruction verified on a real functional slice and its substantive evolution",
+  "roadmap": "docs/roadmap.md#v080-preview-asset-usability-and-controlled-reconstruction",
+  "specification": "docs/asset-usability-v08.md",
+  "owners": {
+    "parent": "EVO-F06",
+    "ontology": "ONT-F07",
+    "harness": "HAR-F06",
+    "runtime": "RUN-F06"
+  },
+  "levels": [
+    {
+      "id": "L1",
+      "name": "Understanding",
+      "scenarios": [
+        "Discovery",
+        "Onboarding",
+        "Domain Q&A",
+        "Handover",
+        "Prototyping"
+      ],
+      "minimumEvidenceIds": [
+        "V08-E06"
+      ]
+    },
+    {
+      "id": "L2",
+      "name": "Implementation specification",
+      "includes": "L1",
+      "scenarios": [
+        "Module implementation",
+        "Scoped rewrite",
+        "Adapters",
+        "Version evolution"
+      ],
+      "minimumEvidenceIds": [
+        "V08-E07"
+      ]
+    },
+    {
+      "id": "L3",
+      "name": "Reconstruction verified",
+      "includes": "L2",
+      "scenarios": [
+        "Verified module replacement",
+        "Bounded legacy reconstruction",
+        "Platform migration",
+        "Supplier substitution"
+      ],
+      "minimumEvidenceIds": [
+        "V08-E08",
+        "V08-E09",
+        "V08-E10",
+        "V08-E11",
+        "V08-E12",
+        "V08-E13"
+      ]
+    }
+  ],
+  "levelPolicy": "EvoPilot conventions, not industry certification. Level-specific evidence is necessary but does not waive common scope, identity, freshness, access, compatibility or acceptance requirements. Claims apply only to exact reviewed scope and conditions; no graph-size score, averaging or automatic whole-project promotion.",
+  "assessmentStates": [
+    "NOT_EVALUATED",
+    "IN_PROGRESS",
+    "VERIFIED",
+    "FAILED",
+    "INCOMPLETE",
+    "STALE",
+    "UNSUPPORTED"
+  ],
+  "inputModes": {
+    "SPECIFICATION_ONLY": "Reviewed specification projection and pinned allowed dependencies; required for L3",
+    "SOURCE_ASSISTED": "Explicitly labeled; cannot substitute for L3 reconstruction evidence"
+  },
+  "targets": [
+    {
+      "id": "V08-T1",
+      "name": "Usability contract",
+      "dependsOn": [],
+      "prerequisite": "Bind accepted v0.7 query/presentation semantics for dependent implementation",
+      "acceptanceIds": [
+        "V08-E04",
+        "V08-E05",
+        "V08-E06",
+        "V08-E07"
+      ]
+    },
+    {
+      "id": "V08-T2",
+      "name": "External consumption",
+      "dependsOn": [
+        "V08-T1"
+      ],
+      "acceptanceIds": [
+        "V08-E01",
+        "V08-E02",
+        "V08-E03",
+        "V08-E08"
+      ]
+    },
+    {
+      "id": "V08-T3",
+      "name": "Independent assessment",
+      "dependsOn": [
+        "V08-T1"
+      ],
+      "acceptanceIds": [
+        "V08-E11",
+        "V08-E13"
+      ]
+    },
+    {
+      "id": "V08-T4",
+      "name": "Controlled reconstruction",
+      "dependsOn": [
+        "V08-T2",
+        "V08-T3"
+      ],
+      "prerequisite": "Prove actual selected Agent/build adapter, including bounded RUN-F01 prerequisites if needed",
+      "acceptanceIds": [
+        "V08-E09",
+        "V08-E10",
+        "V08-E12"
+      ]
+    },
+    {
+      "id": "V08-T5",
+      "name": "Pilot, evolution and delivery",
+      "dependsOn": [
+        "V08-T4"
+      ],
+      "acceptanceIds": [
+        "V08-E14",
+        "V08-E15",
+        "V08-E16",
+        "V08-E17",
+        "V08-E18",
+        "V08-E19",
+        "V08-E20"
+      ]
+    }
+  ],
+  "requirements": [
+    {
+      "id": "V08-R01",
+      "requirement": "Standalone online asset consumption, without Runtime business execution or Codex activation prerequisites",
+      "owners": [
+        "ontology",
+        "parent"
+      ],
+      "acceptanceIds": [
+        "V08-E01"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R02",
+      "requirement": "Authenticated scoped access, privacy, bounded transport and read/mutation separation",
+      "owners": [
+        "ontology",
+        "parent"
+      ],
+      "acceptanceIds": [
+        "V08-E02"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R03",
+      "requirement": "Exact-version discover/query/export, portable closure, integrity and explicit losses",
+      "owners": [
+        "ontology",
+        "parent"
+      ],
+      "acceptanceIds": [
+        "V08-E03"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R04",
+      "requirement": "Public L1/L2/L3 meanings, scenarios and explicit industry-standard limits",
+      "owners": [
+        "ontology",
+        "harness",
+        "parent"
+      ],
+      "acceptanceIds": [
+        "V08-E04"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R05",
+      "requirement": "Target/verified level, assessment state, exact scope identity and no aggregate shortcuts",
+      "owners": [
+        "harness",
+        "runtime",
+        "parent"
+      ],
+      "acceptanceIds": [
+        "V08-E05"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R06",
+      "requirement": "L1 domain-question coverage, provenance and visible gaps",
+      "owners": [
+        "ontology",
+        "harness"
+      ],
+      "acceptanceIds": [
+        "V08-E06"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R07",
+      "requirement": "L2 behavior/interface completeness, authoritative linked specifications and independent denominator",
+      "owners": [
+        "ontology",
+        "harness"
+      ],
+      "acceptanceIds": [
+        "V08-E07"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R08",
+      "requirement": "Specification-only consumer inputs separated from source-assisted/audit material",
+      "owners": [
+        "ontology",
+        "runtime",
+        "parent"
+      ],
+      "acceptanceIds": [
+        "V08-E08"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R09",
+      "requirement": "Real bounded external execution, exact receipts, human interventions and uncertainty recovery",
+      "owners": [
+        "runtime",
+        "parent"
+      ],
+      "acceptanceIds": [
+        "V08-E09",
+        "V08-E10"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R10",
+      "requirement": "Independent scoped behavioral-equivalence oracle and effective negative checks",
+      "owners": [
+        "harness",
+        "runtime"
+      ],
+      "acceptanceIds": [
+        "V08-E11"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R11",
+      "requirement": "Two independent clean reconstructions; wider claims require a wider evidence matrix",
+      "owners": [
+        "runtime",
+        "harness"
+      ],
+      "acceptanceIds": [
+        "V08-E12"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R12",
+      "requirement": "Failed/incomplete/gap outcomes cannot become completion or verified L3",
+      "owners": [
+        "harness",
+        "runtime",
+        "parent"
+      ],
+      "acceptanceIds": [
+        "V08-E13"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R13",
+      "requirement": "Substantive asset evolution, compatibility assessment and evidence invalidation",
+      "owners": [
+        "ontology",
+        "harness",
+        "runtime"
+      ],
+      "acceptanceIds": [
+        "V08-E14"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R14",
+      "requirement": "Consistent API/Expert/report level, scope, evidence and gap presentation",
+      "owners": [
+        "parent",
+        "ontology",
+        "harness",
+        "runtime"
+      ],
+      "acceptanceIds": [
+        "V08-E15"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R15",
+      "requirement": "Successful real-project slice pilot with original and evolved behavior; private evidence",
+      "owners": [
+        "ontology",
+        "harness",
+        "runtime",
+        "parent"
+      ],
+      "acceptanceIds": [
+        "V08-E16"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R16",
+      "requirement": "Generic public examples and isolated multiple-scope checks without private project leakage",
+      "owners": [
+        "parent",
+        "ontology",
+        "harness"
+      ],
+      "acceptanceIds": [
+        "V08-E17"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R17",
+      "requirement": "Additive compatibility, protected history and actual upgrade/backup/recovery",
+      "owners": [
+        "parent",
+        "ontology",
+        "harness",
+        "runtime"
+      ],
+      "acceptanceIds": [
+        "V08-E18"
+      ],
+      "required": true
+    },
+    {
+      "id": "V08-R18",
+      "requirement": "v0.7 handoff, exact-candidate source/package/installed acceptance, complete traceability and separate release authority",
+      "owners": [
+        "parent",
+        "ontology",
+        "harness",
+        "runtime"
+      ],
+      "acceptanceIds": [
+        "V08-E19",
+        "V08-E20"
+      ],
+      "required": true
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "V08-E01",
+      "requirement": "A real independent HTTP consumer discovers, queries and reads an exact published asset without a Runtime Goal/Run or Codex activation; offline export also works. Show that reading changes no business decision, execution or publication state.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "journeyRefinements": [
+        "Show authorized project/scope, pinned assets, business capabilities and question/navigation entry points without a new business Run or authoring workflow."
+      ]
+    },
+    {
+      "id": "V08-E02",
+      "requirement": "Two isolated scopes reject unauthorized cross-scope/private reads and mutations; revoked credentials fail. Exercise configured TLS/non-loopback transport in an isolated environment, bounded queries/rate/output, link/path traversal and malicious asset text. No credentials leak through assets, logs or errors.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E03",
+      "requirement": "Exact asset/dependency/projection digests survive download and offline readback. Pagination uses an explicit snapshot. Tampering, missing dependency, unsupported format, stale cursor, partial export or silent latest-version substitution fails; consumers see any transformation loss.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "journeyRefinements": [
+        "Navigate explicit object, relation, constraint and source references with immutable pins and complete snapshot pagination; disclose ambiguous version selection."
+      ]
+    },
+    {
+      "id": "V08-E04",
+      "requirement": "Versioned level definitions and use-case examples agree across owning rules, public docs and installed consumers. Graph size, triple count, model fixture count, technical PASS or adopting RDF/OWL alone cannot assign a level. Industry references are described as related frameworks, not equivalent certifications.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    {
+      "id": "V08-E05",
+      "requirement": "Requested L3 with only L1 evidence reports target L3 and the exact verified level/gaps. Exercise all assessment states, scope expansion, mixed-level slices, missing integration obligations and filtered views; neither averaging nor denominator reduction upgrades a claim.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    {
+      "id": "V08-E06",
+      "requirement": "An independent reader answers the frozen domain questions from allowed assets with source mappings; missing definitions, conflicting sources and uncovered mandatory questions are reported and cannot verify L1.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "journeyRefinements": [
+        "Freeze representative domain questions independently of available coverage.",
+        "Exercise known and ambiguous terms, missing/conflicting definitions and draft-versus-published meanings; trace answers to exact sources.",
+        "Read existing reviewed metric definitions; new pilot content uses ordinary reviewed immutable asset versions. Do not infer actual metric values from declarations, fixtures or L3 results."
+      ]
+    },
+    {
+      "id": "V08-E07",
+      "requirement": "A reviewed behavior slice has complete normative inputs/outputs, interfaces, transitions, failure/side-effect and applicable concurrency/recovery/environment contracts mapped to independently frozen requirements. Missing mandatory semantics, unreachable references or unexplained conversion loss prevents verified L2.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    {
+      "id": "V08-E08",
+      "requirement": "A builder receives only the approved specification projection and pinned allowed dependencies. Attempts to read original source/binaries, prior generated output, hidden oracle data or a delegating reference service fail through files, caches and network. Audit sources remain privately available to reviewers. Source-assisted runs are explicitly labeled and cannot qualify for L3.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E09",
+      "requirement": "The selected installed Agent/build adapter performs real generation, compilation and execution in the allowed environment with identities, inputs, outputs, cost/usage availability and interventions recorded. Unsupported language/tool/provider or missing prerequisites fails before claiming a run; bound budgets terminate without fabricated results.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E10",
+      "requirement": "Duplicate submission, lost response, timeout, cancellation, partial output, process restart and interrupted persistence preserve exact claim/receipt identity. Reconciliation inspects the original attempt without blindly repeating external work; recovery cannot imply success or overwrite failure.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E11",
+      "requirement": "Independent oracle checks outputs, states, errors and side effects against the frozen contract/reference, using agreed tolerances and applicable boundary/concurrency/recovery cases. Deliberately wrong implementations fail, including duplicate effects and premature success. Withheld acceptance remains independent of generator-authored tests.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E12",
+      "requirement": "Two clean independent reconstruction attempts use the same exact specification input and pass every mandatory case, without sharing generated solutions or original implementation context. Preserve all attempts and interventions. Additional Agent/platform compatibility claims require separate actual evidence.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E13",
+      "requirement": "Failed, skipped, missing, unknown, stale, unsupported and synthetic-only required results block verified L3 and dependent completion. Failure reports identify scope, unmet requirement and actionable gap category; correct rejection does not satisfy a positive reconstruction requirement.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E14",
+      "requirement": "A real substantive specification change yields a new asset and reconstruction; new requirements and retained compatibility/migration checks pass. Changed asset/oracle/environment/dependency pins produce a stale/review-required disposition instead of inheriting prior verification. Historical claims remain readable.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E15",
+      "requirement": "HTTP/SDK, Expert and reports agree on target/verified level, scope, exclusions, input mode, evidence and freshness. Actual installed consumer/Host journeys navigate to exact receipts. Rendering and reading cannot dispatch, approve, publish or invent missing explanations.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "journeyRefinements": [
+        "Installed Expert and owner-rendered reports agree with HTTP/SDK on overview, versions, definitions, gaps and evidence.",
+        "Natural-language presentation preserves exact bounds and cannot fabricate meaning, mutate owner state or dispatch work."
+      ],
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    {
+      "id": "V08-E16",
+      "requirement": "One privately selected real functional slice achieves the initial L3 checks and the substantive evolution check under exact input/environment pins. Project assets are supplemented through normal reviewed versions as needed. A synthetic substitute, source-assisted reconstruction or only a gap report leaves this criterion incomplete.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E17",
+      "requirement": "Public fixtures are explicitly synthetic and exercise at least two isolated namespaces. Public docs demonstrate all levels without private names, source bytes, credentials or actual approval/evidence. Generic criteria apply without project-specific hardcoding.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E18",
+      "requirement": "Upgrade and isolated backup/restore preserve prior native assets, versions, standards, decisions and receipts byte-for-byte. Additive assessments/projections retain original references, unknown historical levels and pending claims. Old readers fail safely where necessary; maintenance never replays work or silently grades old assets.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    {
+      "id": "V08-E19",
+      "requirement": "Verify the accepted v0.7 dependency contracts and exact four-repository candidate. Owning builds/types/relevant tests, parent integration, packaged/installed entry points and actual external-consumer/Host journeys agree. Documentation, standards limits and failure/recovery guidance match delivered behavior.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    {
+      "id": "V08-E20",
+      "requirement": "Every R-ID maps to owned E-IDs and every mandatory fixed variant has current exact-candidate evidence. All applicable pre-release requirements, including the successful real pilot, pass before a separately authorized release. After authorized publication, downloaded-package/readback checks and closure are required; pre-publication status must not claim those post-release checks have passed.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    }
+  ],
+  "completionPolicy": {
+    "allRequirementsRequired": true,
+    "allFixedMandatoryVariantsRequired": true,
+    "minimumIndependentCleanReconstructions": 2,
+    "realFunctionalSliceRequired": true,
+    "substantiveEvolutionSuccessRequired": true,
+    "independentOracleAndHeldOutAcceptanceRequired": true,
+    "gapReportAloneCompletesPlan": false,
+    "sourceAssistedRunQualifiesForL3": false,
+    "syntheticPilotSubstitutesForRealPilot": false,
+    "blockingMandatoryEvidence": [
+      "FAILED",
+      "SKIPPED",
+      "MISSING",
+      "UNKNOWN",
+      "STALE",
+      "UNSUPPORTED",
+      "SYNTHETIC_ONLY"
+    ],
+    "scopeChangesRequireReview": true,
+    "futureImplementationSuccessGuaranteed": false,
+    "releaseOrder": [
+      "Complete all applicable pre-release requirements on exact candidate",
+      "Obtain separate explicit release authorization",
+      "Publish only within authorized scope",
+      "Complete downloaded-package/readback checks and final closure"
+    ]
+  },
+  "beforeImplementation": [
+    "Receive explicit execution authorization; this planning record neither starts nor resumes product work",
+    "Bind current roadmap/planning digests, exact four-repository revisions, authorized source files, compatibility impact and private evidence locations",
+    "Bind accepted v0.7 dependencies, selected consumer/Agent/build adapters and supported standard subsets",
+    "Freeze scope, independently reviewed mandatory requirement inventory, oracle, held-out variants, equivalence tolerances, environment and budgets",
+    "Reconcile architecture decisions for external read authority, assessment ownership, input isolation and adapters",
+    "For a boundary/trust/compatibility change, obtain explicit replacement ADR, migration analysis, formal Roadmap revision, executable guards and user approval",
+    "Record a separate execution Target; the frozen v0.1 checker and this descriptive JSON do not enforce or approve v0.8"
+  ],
+  "preserve": [
+    "Current v0.7 scope, status and independently progressing projects",
+    "Frozen specifications/v1, historical vendor bytes, immutable native assets, decisions, claims and receipts",
+    "Public owner API boundaries and parent-generated additive shared contracts",
+    "Original real-project source, private assets/evidence/credentials and current installations",
+    "Existing v1.0 readiness criteria and separate release authority"
+  ],
+  "excluded": [
+    "Universal full-software reconstruction, identical source/binaries or unspecified UI/performance guarantees",
+    "Mandatory ontology-core rewrite, full OWL reasoner, general editor or hosted graph registry",
+    "Broad code-generation platform, arbitrary-Agent compatibility, general CI engine or unlimited autonomous repair",
+    "Production operations, default internet deployment, automatic release or grading historical assets without evidence"
+  ],
+  "privacyPolicy": "Public requirements and synthetic fixtures are generic. Actual real-project identity, scope, source/asset pins, human decisions and acceptance evidence remain private. Do not mutate private assets while recording this plan.",
+  "progressPolicy": "Planning is accepted; implementation and all acceptance remain unevaluated. No watcher, automatic resumption, installed capability or completed reconstruction is implied.",
+  "versionAllocation": {
+    "status": "ACCEPTED",
+    "v08": {
+      "scope": [
+        "Project semantic overview and business-object navigation",
+        "Source-grounded domain and existing reviewed metric-definition questions",
+        "Exact-version independent asset consumption and consistent read-only presentation"
+      ],
+      "requirementIds": [
+        "V08-R01",
+        "V08-R03",
+        "V08-R06",
+        "V08-R14"
+      ],
+      "acceptanceIds": [
+        "V08-E01",
+        "V08-E03",
+        "V08-E06",
+        "V08-E15"
+      ],
+      "specification": "docs/asset-usability-v08.md#project-entry-and-domain-questions"
+    },
+    "v09": {
+      "status": "CANDIDATE",
+      "record": "governance/business-analysis-v09.json",
+      "scope": [
+        "Actual business metric query and deterministic computation",
+        "Compatible baseline/group/trend comparisons",
+        "Evidence-linked business analysis with explicit uncertainty"
+      ]
+    },
+    "boundary": "Metric-definition Q&A does not compute a live value. No v0.9 analysis completion gate is added to v0.8 or existing v1.0 readiness."
+  },
+  "executionHandoff": {
+    "specification": "docs/asset-usability-v08.md#execution-handoff",
+    "dependencyBaseline": "Bind actual published v0.7.0 component/query contracts and applicable acceptance evidence; older local planning projections do not establish current release or installation status.",
+    "requirementCount": 18,
+    "acceptanceCount": 20,
+    "preservedObligations": [
+      "Two independent clean successful reconstructions",
+      "Successful real functional slice and substantive evolution",
+      "Exact execution Target, compatibility/resource bounds and fixed variants",
+      "Separate installation and release authority"
+    ],
+    "v09ImplementationAuthorized": false
+  },
+  "modelingIntentGate": {
+    "status": "REQUIRED_BEFORE_FORMAL_REVERSE_MODELING",
+    "purpose": "Select target level from intended use and scope before authoring; actual level requires evidence.",
+    "requiredBindings": [
+      "workspace/project/source",
+      "purpose",
+      "functionalScope",
+      "exclusions",
+      "targetLevel",
+      "independentMandatoryRequirementsAndAcceptance",
+      "actualUserIntentReference"
+    ],
+    "reuseClearContext": true,
+    "repeatQuestionRequired": false,
+    "readOnlyDiscoveryAndConsumptionExempt": true,
+    "templateGrantsLevel": false,
+    "reverseExtractionAloneVerifiesL3": false,
+    "enforcement": [
+      "owning service",
+      "SDK",
+      "MCP",
+      "HTTP",
+      "Expert"
+    ],
+    "changedBindingRequiresReview": true,
+    "historicalRecordsPreserved": true,
+    "requirementIds": [
+      "V08-R04",
+      "V08-R05",
+      "V08-R07",
+      "V08-R14"
+    ],
+    "acceptanceIds": [
+      "V08-E04",
+      "V08-E05",
+      "V08-E07",
+      "V08-E15",
+      "V08-E18",
+      "V08-E20"
+    ],
+    "mandatoryVariants": [
+      "missing-purpose",
+      "missing-scope",
+      "missing-exclusions",
+      "missing-target",
+      "missing-requirements",
+      "missing-acceptance",
+      "missing-user-intent",
+      "ambiguous-intent",
+      "reuse-explicit-context",
+      "l1-template-no-grading",
+      "l2-inherits-l1",
+      "l3-requires-reconstruction",
+      "changed-binding",
+      "direct-sdk-bypass",
+      "transport-bypass",
+      "historical-readback",
+      "read-only-consumption",
+      "target-verified-separated"
+    ],
+    "acceptanceStatus": "NOT_EVALUATED"
+  },
+  "preV1ReleaseScope": {
+    "graphicalFrontend": "EXCLUDED",
+    "browserAcceptance": "EXCLUDED",
+    "reconsiderAfter": "v1.0 Release published",
+    "automaticStart": false,
+    "serviceAPIsRemainInScope": true,
+    "policy": "governance/release-scope.json"
+  }
+}

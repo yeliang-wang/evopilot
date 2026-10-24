@@ -1,6 +1,6 @@
-# Local connection — v0.7.0 Preview
+# Local connection — v0.8.0 Preview
 
-This describes connection orchestration for candidate version `0.7.0`, using the retained
+This describes connection orchestration for candidate version `0.8.0`, using the retained
 protocol `evopilot-connection/v1`. The installer and Codex stdio adapter use this
 connection; their presence is not Host acceptance or release authority. Runtime, Harness and Ontology retain
 their own state and receipts. There is no parent business database.

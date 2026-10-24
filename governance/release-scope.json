@@ -1,0 +1,22 @@
+{
+  "schema": "evopilot-release-scope/v1",
+  "phase": "PRE_V1_0_RELEASE",
+  "excludedCapabilities": [
+    "dashboard",
+    "graphical-frontend",
+    "browser-acceptance"
+  ],
+  "appliesTo": "All EvoPilot versions and current execution plans before v1.0 Release is published",
+  "permittedInterfaces": [
+    "authenticated-asset-json-api",
+    "owning-sdk",
+    "codex-reports"
+  ],
+  "postReleaseRequiresNewAcceptedPlan": true,
+  "historicalProposalsHaveExecutionAuthority": false,
+  "withdrawnDeliveryVariants": [
+    "V08-E15.D03"
+  ],
+  "withdrawnIsPassed": false,
+  "authority": false
+}

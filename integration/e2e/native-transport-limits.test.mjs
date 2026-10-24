@@ -11,8 +11,9 @@ import { LIMITS, connectionBodyLimit, connectionResponseLimit, connectionCorrela
 import { transport } from '../../dist/integration/connection/client.js';
 import { nativeSha256 } from '../../dist/integration/compatibility/v1/native.mjs';
 import { assembly, rawRequest } from './connection.test.mjs';
-import { fixture } from './fixtures/native-project.mjs';
+import { fixture, syntheticModelingIntent } from './fixtures/native-project.mjs';
 import { syntheticDecisionEvidence } from './fixtures/decision-evidence.mjs';
+import { syntheticAuthoring } from './fixtures/authoring.mjs';
 import { rehash } from '../../projects/evopilot-ontology/tests/fixtures/native/package.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url)), MiB = 1048576;
@@ -161,6 +162,71 @@ function conversation(f, messages) {
   return { messages: out.stdout.trim().split('\n').map(line => JSON.parse(line)), outputBytes: Buffer.byteLength(out.stdout) };
 }
 
+test('reverse modeling intent is enforced by isolated installed HTTP and MCP entry points', { timeout: 30000 }, async () => {
+  const f = await installedFixture(), source = fixture('reverse');
+  try {
+    await f.api.activateConnection(f.configPath);
+    const input = { ...source.input };
+    delete input.modelingIntent;
+    const candidatePath = path.join(f.input.stateRoot, 'state/project-standards', source.scope.visibility, source.scope.projectId, 'candidates', input.id + '.json');
+    await assert.rejects(f.api.callConnection(f.configPath, 'native_project', { operation: 'prepare', input }), { code: 'MODELING_INTENT_REQUIRED' });
+    assert.equal(fs.existsSync(candidatePath), false);
+    const blocked = conversation(f, [call(2, 'activate'), call(3, 'native_project', { operation: 'prepare', input }), call(4, 'native_project', { operation: 'prepare', input: { ...input, skipGate: true } })]);
+    assert.equal(data(blocked.messages[2]).error.code, 'MODELING_INTENT_REQUIRED');
+    assert.equal(blocked.messages[3].result.isError, true);
+    // Existing transport semantics preserve an unclassified service-side schema
+    // error as UNKNOWN. Inspect the exact candidate to reconcile the no-write result.
+    assert.equal(data(blocked.messages[3]).error.code, 'UNKNOWN');
+    assert.deepEqual(data(blocked.messages[3]).error.correlation, { scope: input.scope, operation: 'prepare', id: input.id });
+    assert.equal(fs.existsSync(candidatePath), false);
+
+    input.modelingIntent = syntheticModelingIntent({ ...source, input, workspaceId: f.input.workspaceId });
+    const missingPurpose = structuredClone(input);
+    delete missingPurpose.modelingIntent.definition.purpose;
+    const invalid = conversation(f, [call(2, 'activate'), call(3, 'native_project', { operation: 'prepare', input: missingPurpose })]);
+    assert.equal(data(invalid.messages[2]).error.code, 'MODELING_INTENT_INVALID');
+    assert.equal(fs.existsSync(candidatePath), false);
+    const candidate = await f.api.callConnection(f.configPath, 'native_project', { operation: 'prepare', input });
+    assert.equal(candidate.modelingIntent.definition.targetLevel, 'L1');
+    assert.equal(candidate.authority, false);
+    assert.equal(candidate.verifiedLevel, undefined);
+    const repeated = conversation(f, [call(2, 'activate'), call(3, 'native_project', { operation: 'prepare', input })]);
+    assert.deepEqual(data(repeated.messages[2]).result, candidate);
+    assert.equal(JSON.parse(fs.readFileSync(candidatePath, 'utf8')).reviewDigest, candidate.reviewDigest);
+  } finally { source.cleanup(); await f.cleanup(); }
+});
+
+test('installed owner HTTP/MCP rejects unbound and relabelled assets and admits exact reverse project material', {timeout:60000},async()=>{
+  const f=await installedFixture(true),source=fixture('reverse');
+  try{
+    await f.api.activateConnection(f.configPath);
+    for(const owner of ['ontology','harness']){
+      const before=await f.api.callConnection(f.configPath,'inspect',{owner,scope:source.scope});
+      const payload=ownerPayload(owner,'native.package.put',{package:source.packages[owner]});
+      Object.assign(payload.envelope,{requestId:'missing-'+owner,expectedRevision:before.revision});
+      await assert.rejects(f.api.callConnection(f.configPath,'native',payload),{code:'AUTHORING_CONTEXT_REQUIRED'});
+      const denied=conversation(f,[call(2,'activate'),call(3,'native',payload),call(4,'native',{...payload,envelope:{...payload.envelope,input:{...payload.envelope.input,skipGate:true}}})]);
+      assert.equal(data(denied.messages[2]).error.code,'AUTHORING_CONTEXT_REQUIRED');assert.equal(denied.messages[3].result.isError,true);
+      assert.deepEqual(await f.api.callConnection(f.configPath,'inspect',{owner,scope:source.scope}),before);
+    }
+    const input={...source.input,modelingIntent:syntheticModelingIntent({...source,workspaceId:f.input.workspaceId})};
+    const candidate=await f.api.callConnection(f.configPath,'native_project',{operation:'prepare',input});
+    await f.api.callConnection(f.configPath,'native_project',{operation:'freeze',input:{scope:source.scope,id:input.id,packages:source.packages,reviewDigest:candidate.reviewDigest,humanEvidenceRef:syntheticDecisionEvidence(f.base,{owner:'project',operation:'freeze',workspaceId:f.input.workspaceId,scope:source.scope,reviewDigest:candidate.reviewDigest,decision:'ACCEPT'})}});
+    await f.api.callConnection(f.configPath,'native_project',{operation:'materialize',input:{scope:source.scope,id:input.id,packages:source.packages}});
+    for(const owner of ['ontology','harness']){
+      const before=await f.api.callConnection(f.configPath,'inspect',{owner,scope:source.scope}),pkg=source.packages[owner];
+      const payload=ownerPayload(owner,'native.package.put',{package:pkg});Object.assign(payload.envelope,{requestId:'admit-'+owner,expectedRevision:before.revision});
+      const admitted=conversation(f,[call(2,'activate'),call(3,'native',payload)]);assert.equal(admitted.messages[2].result.isError,undefined,JSON.stringify(data(admitted.messages[2]).error));
+      const record=await f.api.callConnection(f.configPath,'native',ownerPayload(owner,'native.package.inspect',{id:pkg.manifest.id,version:pkg.manifest.version}));
+      assert.equal(record.authoring.candidateDigest,candidate.reviewDigest);assert.equal(record.authoring.targetLevel,'L1');assert.equal(record.verifiedLevel,undefined);
+      const relabelled=structuredClone(pkg),bindingPath=pkg.manifest.sourceBindingRef,bindings=JSON.parse(pkg.files[bindingPath]);bindings.direction='forward';relabelled.files[bindingPath]=JSON.stringify(bindings);rehash(relabelled);
+      const after=await f.api.callConnection(f.configPath,'inspect',{owner,scope:source.scope});
+      await assert.rejects(f.api.callConnection(f.configPath,'native',{owner,envelope:{operation:'native.package.put',scope:source.scope,input:{package:relabelled},requestId:'relabel-'+owner,expectedRevision:after.revision}}),{code:'AUTHORING_CONTEXT_REQUIRED'});
+      assert.deepEqual(await f.api.callConnection(f.configPath,'inspect',{owner,scope:source.scope}),after);
+    }
+  }finally{source.cleanup();await f.cleanup();}
+});
+
 // Each owner keeps its own 60s test budget. Running six durable write/readback
 // journeys in one deadline couples unrelated owners under full-suite I/O load.
 for (const owner of ['ontology', 'harness']) test(`actual installed ${owner} owner commit survives lost, malformed and over-budget HTTP replies without redispatch`, { timeout: 60000 }, async t => {
@@ -221,6 +287,10 @@ for (const owner of ['ontology', 'harness']) test(`actual installed ${owner} own
       mark('inspect-before');
       const before = await f.api.callConnection(f.configPath, 'inspect', { owner, scope: source.scope });
       const pkg = structuredClone(source.packages[owner]); pkg.manifest.id = `post-write-${owner}-${faultMode}`; rehash(pkg);
+      const projectInput={...source.input,id:`admission-${owner}-${faultMode}`},packages={...source.packages,[owner]:pkg};
+      const candidate=await f.api.callConnection(f.configPath,'native_project',{operation:'prepare',input:projectInput});
+      await f.api.callConnection(f.configPath,'native_project',{operation:'freeze',input:{scope:source.scope,id:projectInput.id,packages,reviewDigest:candidate.reviewDigest,humanEvidenceRef:syntheticDecisionEvidence(f.base,{owner:'project',operation:'freeze',workspaceId:f.input.workspaceId,scope:source.scope,reviewDigest:candidate.reviewDigest,decision:'ACCEPT'})}});
+      await f.api.callConnection(f.configPath,'native_project',{operation:'materialize',input:{scope:source.scope,id:projectInput.id,packages}});
       const payload = ownerPayload(owner, 'native.package.put', { package: pkg });
       payload.envelope.requestId = `post-write-${owner}-${faultMode}`; payload.envelope.expectedRevision = before.revision;
       const attempts = intercepted; committedReply = undefined;
@@ -346,6 +416,10 @@ test('installed MCP/client/daemon materialize both large packages and refuse ove
     mark('large-package-readback');
     const large = structuredClone(source.packages.ontology);
     large.manifest.id = 'synthetic-large-readback'; large.files['sources/transport-size.txt'] = '"\\数据库\n'.repeat(350000); rehash(large);
+    const largeInput={...source.input,id:'large-readback-candidate'},largePackages={...source.packages,ontology:large};
+    const largePrepared=await f.api.callConnection(f.configPath,'native_project',{operation:'prepare',input:largeInput});
+    await f.api.callConnection(f.configPath,'native_project',{operation:'freeze',input:{scope:source.scope,id:largeInput.id,packages:largePackages,reviewDigest:largePrepared.reviewDigest,humanEvidenceRef:syntheticDecisionEvidence(f.base,{owner:'project',operation:'freeze',workspaceId:f.input.workspaceId,scope:source.scope,reviewDigest:largePrepared.reviewDigest,decision:'ACCEPT'})}});
+    await f.api.callConnection(f.configPath,'native_project',{operation:'materialize',input:{scope:source.scope,id:largeInput.id,packages:largePackages}});
     const put = ownerPayload('ontology', 'native.package.put', { package: large });
     put.envelope.requestId = 'large-readback-put'; put.envelope.expectedRevision = before.revision;
     const putBytes = Buffer.byteLength(JSON.stringify(call(3, 'native', put)));
@@ -372,17 +446,25 @@ test('optional private package inputs fit fixed transport budgets without retain
   assert.deepEqual(Object.keys(packages).sort(), ['harness', 'ontology']);
   const f = await installedFixture();
   try {
+    // Seed readback through the public owner API in disposable state. This synthetic
+    // admission is transport setup only, never a real-project freeze or publication.
+    for(const owner of ['ontology','harness']){
+      const api=await import(pathToFileURL(path.join(f.install,'node_modules/@evopilot-next',owner,'dist/service.js')));
+      const service=api[owner==='ontology'?'createOntologyService':'createHarnessService']({workspaceRoot:f.input.stateRoot,workspaceId:f.input.workspaceId},{resolveNativeAuthoring:syntheticAuthoring});service.initialize();
+      try{await service.native({operation:'native.package.put',scope:ownerPayload(owner).envelope.scope,input:{package:packages[owner]},requestId:'seed-readback-'+owner,expectedRevision:0});}finally{service.close();}
+    }
     const messages = [call(2, 'activate')]; let id = 3;
     for (const owner of ['ontology', 'harness']) {
-      // Owner put is confined to a disposable test Workspace; no decisions or publication.
+      // The real Host still rejects an unbound write, even for retained draft bytes.
       const put = ownerPayload(owner, 'native.package.put', { package: packages[owner] });
-      put.envelope.requestId = 'private-input-' + owner; put.envelope.expectedRevision = 0;
+      put.envelope.requestId = 'private-input-' + owner; put.envelope.expectedRevision = 1;
       const bytes = Buffer.byteLength(JSON.stringify(call(id, 'native', put)));
       assert(bytes < LIMITS.nativeBody); t.diagnostic(JSON.stringify({ owner, inputBytes: bytes, packageDigest: nativeSha256(packages[owner]) }));
       messages.push(call(id++, 'native', put));
       messages.push(call(id++, 'native', ownerPayload(owner, 'native.package.inspect', { id: packages[owner].manifest.id, version: packages[owner].manifest.version })));
     }
     const out = conversation(f, messages);
+    for(const index of [2,4])assert.equal(data(out.messages[index]).error.code,'AUTHORING_CONTEXT_REQUIRED');
     for (const [index, owner] of [[3, 'ontology'], [5, 'harness']]) assert.equal(nativeSha256(data(out.messages[index]).result?.package ?? null), nativeSha256(packages[owner]), JSON.stringify(data(out.messages[index]).error));
     const materializeBytes = Buffer.byteLength(JSON.stringify(call(10, 'native_project', { operation: 'materialize', input: { scope: ownerPayload('ontology').envelope.scope, id: 'private-transport-measurement', packages } })));
     assert(materializeBytes > MiB && materializeBytes < LIMITS.nativeBody);
@@ -404,10 +486,16 @@ test('optional actual candidate bundle installs, backs up and restores isolated 
     const bootstrap = await installed('workspace/bootstrap.js'), maintenance = await installed('workspace/maintenance.js');
     const roots = { projectRoot: path.join(base, 'project'), stateRoot: path.join(base, 'state'), workspaceId: 'synthetic-native-recovery' };
     await bootstrap.setupWorkspace(configPath, { ...roots, requestId: 'candidate-recovery-setup' });
+    const tools=JSON.parse(fs.readFileSync(process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN,'utf8')),locked=await installed('toolchain/locked.js');
+    await locked.prepareNativeToolchain({cacheRoot:path.join(roots.stateRoot,'native-toolchain'),downloadCache:path.join(path.dirname(path.dirname(tools.environmentRoot)),'downloads'),offline:true});
     const active = await api.activateConnection(configPath);
     const expected = {};
+    for(const owner of ['ontology','harness']){const pkg=source.packages[owner];pkg.files['sources/transport-size.txt']='x'.repeat(700000);rehash(pkg);}
+    const candidate=await api.callConnection(configPath,'native_project',{operation:'prepare',input:source.input});
+    await api.callConnection(configPath,'native_project',{operation:'freeze',input:{scope:source.scope,id:source.input.id,packages:source.packages,reviewDigest:candidate.reviewDigest,humanEvidenceRef:syntheticDecisionEvidence(base,{owner:'project',operation:'freeze',workspaceId:roots.workspaceId,scope:source.scope,reviewDigest:candidate.reviewDigest,decision:'ACCEPT'})}});
+    await api.callConnection(configPath,'native_project',{operation:'materialize',input:{scope:source.scope,id:source.input.id,packages:source.packages}});
     for (const owner of ['ontology', 'harness']) {
-      const pkg = source.packages[owner]; pkg.files['sources/transport-size.txt'] = 'x'.repeat(700000); rehash(pkg);
+      const pkg = source.packages[owner];
       const put = ownerPayload(owner, 'native.package.put', { package: pkg }); put.envelope.requestId = 'recovery-put-' + owner; put.envelope.expectedRevision = 0;
       await api.callConnection(configPath, 'native', put);
       expected[owner] = await api.callConnection(configPath, 'native', ownerPayload(owner, 'native.package.inspect', { id: pkg.manifest.id, version: pkg.manifest.version }));

@@ -7,6 +7,7 @@ import { gzipSync } from 'node:zlib';
 import { spawnSync } from 'node:child_process';
 import { archivePath, readTarGz, readWheel } from '../../dist/integration/toolchain/archive.js';
 import { inspectNativeToolchain, prepareNativeToolchain, inspectBundledToolchainLock } from '../../dist/integration/toolchain/locked.js';
+import {inspectMaintenanceTree} from '../../dist/integration/workspace/maintenance-stream.js';
 
 test('native distribution paths and corrupt containers fail closed', () => {
   for (const value of ['../x', '/x', 'a/../../x', 'a\\b', 'a//b', 'C:x', 'a\0b']) assert.throws(() => archivePath(value));
@@ -80,6 +81,9 @@ test('pinned distribution reconstructs offline and detects executable, dependenc
     assert.equal(actual.lockDigest, configured.lockDigest);
     assert.ok(actual.dependencyFiles.length > 2000);
     assert.deepEqual(inspectNativeToolchain({ cacheRoot: root }), actual);
+    const links=inspectMaintenanceTree(root).filter(entry=>entry.kind==='symlink');
+    assert(links.some(entry=>entry.path.includes('/venv/bin/')));
+    assert(links.every(entry=>!path.isAbsolute(entry.target)));
     const output = spawnSync(actual.tools.python.executable, ['-I', '-B', '-c', 'import pyshacl,rdflib;print(pyshacl.__version__,rdflib.__version__)'], { encoding: 'utf8', timeout: 10_000 });
     assert.equal(output.status, 0, output.stderr);
     assert.equal(output.stdout.trim(), '0.40.1 7.6.0');

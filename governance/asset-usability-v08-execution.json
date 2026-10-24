@@ -1,0 +1,380 @@
+{
+  "schema": "evopilot-asset-usability-execution/v1",
+  "id": "evopilot-v080-t1",
+  "targetVersion": "0.8.0",
+  "stage": "V08-T1",
+  "status": "IMPLEMENTING",
+  "planningDigest": "sha256:2f1a54cf7c58cd98833c589c50dc8c50010450d2325a08cf1d0b21310cd0fa1a",
+  "specificationDigest": "sha256:be9061a207850ccc1ebe562f174bc5aa7ab061b70be51373fd757b6e7378a91e",
+  "prerequisite": {
+    "version": "0.7.0",
+    "repositories": {
+      "parent": "c1cfeaaa582e59277861cefa919dc6204c2f5dd8",
+      "runtime": "869299897e84e5598464b282548fa1e8e60e8dfa",
+      "harness": "e71d7811efa1ce6acb116349da2d83801acce918",
+      "ontology": "756ec177782d3326796285d23d5f8b33f21f2fbe"
+    },
+    "nativeContractUnchanged": true
+  },
+  "scope": "Additive usability inventory/specification contract and fail-closed read-only Harness preflight; consume real private assets to expose gaps. Preflight does not award a verified level. User-confirmed refinement: implement cumulative modeling profiles and mandatory purpose/scope/target/acceptance/user-intent admission for new reverse candidate preparation, freeze and materialization; preserve history and read-only access. Next user-confirmed stage: enforce trusted owner-level admission on new native draft writes, recheck before later authoring writes, retain historical read/replay and published validation; direct SDK and HTTP/MCP cannot bypass. Bare CLI authoring without a trusted resolver must fail closed; expose compatibility impact. Actual daily Host and release remain subsequent gates.",
+  "allowedFiles": [
+    "governance/asset-usability-v08*.json",
+    "docs/asset-usability-v08*.md",
+    "docs/architecture/0006-usability-contract.md",
+    "integration/compatibility/usability/v1/*",
+    "integration/e2e/usability*.test.mjs",
+    "scripts/sync-usability.mjs",
+    "scripts/verify-usability-target.mjs",
+    "governance/language-policy.json",
+    "projects/evopilot-harness/src/usability.ts",
+    "projects/evopilot-harness/tests/e2e/usability.test.mjs",
+    "projects/evopilot-harness/tests/types/contracts.ts",
+    "projects/evopilot-harness/package.json",
+    "projects/evopilot-harness/docs/usability.md",
+    "projects/*/vendor/usability/v1/*",
+    "projects/evopilot-harness/src/index.ts",
+    "scripts/build.mjs",
+    "scripts/check.mjs",
+    "projects/evopilot-harness/docs/README.md",
+    "projects/*/scripts/check.mjs",
+    "integration/e2e/package-isolation.test.mjs",
+    "projects/evopilot-harness/tests/e2e/reference.test.mjs",
+    "docs/roadmap.md",
+    "docs/architecture/0007-modeling-intent-gate.md",
+    "integration/workspace/modeling-intent.ts",
+    "integration/workspace/native-project.ts",
+    "integration/e2e/usability-modeling*.test.mjs",
+    "integration/e2e/native-project.test.mjs",
+    "integration/e2e/native-transport-limits.test.mjs",
+    "integration/e2e/fixtures/native-project.mjs",
+    "expert/core/guide.ts",
+    "docs/native-workflow.md",
+    "integration/e2e/connection.test.mjs",
+    "plugins/codex/diagnostics.ts",
+    "governance/asset-usability-v08-execution.json",
+    "integration/workspace/native-router.ts",
+    "integration/native-composition.ts",
+    "docs/asset-usability-v08-t1.md",
+    "projects/evopilot-ontology/src/types.ts",
+    "projects/evopilot-ontology/src/native/types.ts",
+    "projects/evopilot-ontology/src/native/service.ts",
+    "projects/evopilot-ontology/src/service.ts",
+    "projects/evopilot-ontology/docs/native.md",
+    "projects/evopilot-harness/src/native-types.ts",
+    "projects/evopilot-harness/src/native-service.ts",
+    "projects/evopilot-harness/src/state.ts",
+    "projects/evopilot-harness/docs/native.md",
+    "integration/e2e/usability-owner-admission.test.mjs",
+    "integration/e2e/fixtures/*authoring*.mjs",
+    "projects/evopilot-ontology/tests/fixtures/native/*authoring*.mjs",
+    "projects/evopilot-harness/tests/fixtures/native/*authoring*.mjs",
+    "projects/evopilot-ontology/tests/e2e/native-*.test.mjs",
+    "projects/evopilot-harness/tests/e2e/native-*.test.mjs",
+    "projects/evopilot-harness/tests/e2e/online-owner.test.mjs",
+    "integration/e2e/native-composition.test.mjs",
+    "integration/e2e/feedback.test.mjs",
+    "integration/e2e/online-feedback.test.mjs",
+    "integration/e2e/online-worker.test.mjs",
+    "integration/e2e/response.test.mjs",
+    "integration/e2e/response-upgrade.test.mjs",
+    "integration/e2e/planning-upgrade.test.mjs",
+    "integration/e2e/readability.test.mjs",
+    "integration/e2e/usability-distribution.test.mjs",
+    "projects/evopilot-ontology/tests/types/contracts.ts",
+    "projects/evopilot-ontology/src/classification-runner.ts",
+    "projects/evopilot-harness/src/resolution.ts",
+    "projects/evopilot-ontology/src/state.ts",
+    "projects/evopilot-ontology/src/cli.ts",
+    "projects/evopilot-harness/src/cli.ts",
+    "projects/evopilot-ontology/src/location-lineage.ts",
+    "projects/evopilot-harness/src/location-lineage.ts",
+    "projects/evopilot-harness/tests/fixtures/native-worker.mjs",
+    "projects/evopilot-ontology/docs/native-service.md",
+    "projects/evopilot-harness/docs/native-harness.md",
+    "projects/evopilot-harness/examples/native/tutorial.mjs",
+    "projects/evopilot-harness/examples/native/authoring.mjs"
+  ],
+  "requirements": [
+    "V08-R01",
+    "V08-R02",
+    "V08-R03",
+    "V08-R04",
+    "V08-R05",
+    "V08-R06",
+    "V08-R07",
+    "V08-R08",
+    "V08-R09",
+    "V08-R10",
+    "V08-R11",
+    "V08-R12",
+    "V08-R13",
+    "V08-R14",
+    "V08-R15",
+    "V08-R16",
+    "V08-R17",
+    "V08-R18"
+  ],
+  "acceptance": [
+    "V08-E01",
+    "V08-E02",
+    "V08-E03",
+    "V08-E04",
+    "V08-E05",
+    "V08-E06",
+    "V08-E07",
+    "V08-E08",
+    "V08-E09",
+    "V08-E10",
+    "V08-E11",
+    "V08-E12",
+    "V08-E13",
+    "V08-E14",
+    "V08-E15",
+    "V08-E16",
+    "V08-E17",
+    "V08-E18",
+    "V08-E19",
+    "V08-E20"
+  ],
+  "stageVariants": [
+    {
+      "id": "V08-E04.01",
+      "acceptanceId": "V08-E04",
+      "name": "level-definitions",
+      "required": true
+    },
+    {
+      "id": "V08-E04.02",
+      "acceptanceId": "V08-E04",
+      "name": "higher-level-includes-lower",
+      "required": true
+    },
+    {
+      "id": "V08-E04.03",
+      "acceptanceId": "V08-E04",
+      "name": "scope-not-certification",
+      "required": true
+    },
+    {
+      "id": "V08-E05.01",
+      "acceptanceId": "V08-E05",
+      "name": "exact-inventory-pin",
+      "required": true
+    },
+    {
+      "id": "V08-E05.02",
+      "acceptanceId": "V08-E05",
+      "name": "workspace-scope-bound",
+      "required": true
+    },
+    {
+      "id": "V08-E05.03",
+      "acceptanceId": "V08-E05",
+      "name": "target-not-verified",
+      "required": true
+    },
+    {
+      "id": "V08-E05.04",
+      "acceptanceId": "V08-E05",
+      "name": "all-pin-drift-stale",
+      "required": true
+    },
+    {
+      "id": "V08-E05.05",
+      "acceptanceId": "V08-E05",
+      "name": "history-not-mutated",
+      "required": true
+    },
+    {
+      "id": "V08-E05.06",
+      "acceptanceId": "V08-E05",
+      "name": "no-aggregate-shortcut",
+      "required": true
+    },
+    {
+      "id": "V08-E06.01",
+      "acceptanceId": "V08-E06",
+      "name": "known-domain-question",
+      "required": true
+    },
+    {
+      "id": "V08-E06.02",
+      "acceptanceId": "V08-E06",
+      "name": "ambiguous-term",
+      "required": true
+    },
+    {
+      "id": "V08-E06.03",
+      "acceptanceId": "V08-E06",
+      "name": "missing-definition",
+      "required": true
+    },
+    {
+      "id": "V08-E06.04",
+      "acceptanceId": "V08-E06",
+      "name": "conflicting-sources",
+      "required": true
+    },
+    {
+      "id": "V08-E06.05",
+      "acceptanceId": "V08-E06",
+      "name": "draft-only",
+      "required": true
+    },
+    {
+      "id": "V08-E06.06",
+      "acceptanceId": "V08-E06",
+      "name": "exact-source-citation",
+      "required": true
+    },
+    {
+      "id": "V08-E06.07",
+      "acceptanceId": "V08-E06",
+      "name": "independent-question-denominator",
+      "required": true
+    },
+    {
+      "id": "V08-E06.08",
+      "acceptanceId": "V08-E06",
+      "name": "cross-scope-denied",
+      "required": true
+    },
+    {
+      "id": "V08-E07.01",
+      "acceptanceId": "V08-E07",
+      "name": "normative-behavior-facets",
+      "required": true
+    },
+    {
+      "id": "V08-E07.02",
+      "acceptanceId": "V08-E07",
+      "name": "missing-mandatory-facet",
+      "required": true
+    },
+    {
+      "id": "V08-E07.03",
+      "acceptanceId": "V08-E07",
+      "name": "reviewed-non-applicability",
+      "required": true
+    },
+    {
+      "id": "V08-E07.04",
+      "acceptanceId": "V08-E07",
+      "name": "unreviewed-denominator-change",
+      "required": true
+    },
+    {
+      "id": "V08-E07.05",
+      "acceptanceId": "V08-E07",
+      "name": "inaccessible-dependency",
+      "required": true
+    },
+    {
+      "id": "V08-E07.06",
+      "acceptanceId": "V08-E07",
+      "name": "tampered-content",
+      "required": true
+    },
+    {
+      "id": "V08-E07.07",
+      "acceptanceId": "V08-E07",
+      "name": "timeout-without-retry",
+      "required": true
+    },
+    {
+      "id": "V08-E07.08",
+      "acceptanceId": "V08-E07",
+      "name": "bounded-requests",
+      "required": true
+    },
+    {
+      "id": "V08-E07.09",
+      "acceptanceId": "V08-E07",
+      "name": "l3-not-awarded",
+      "required": true
+    },
+    {
+      "id": "V08-E07.10",
+      "acceptanceId": "V08-E07",
+      "name": "real-private-asset-gap-experiment",
+      "required": true
+    }
+  ],
+  "futureStages": [
+    "V08-T2",
+    "V08-T3",
+    "V08-T4",
+    "V08-T5"
+  ],
+  "budgets": {
+    "maxInventoryQuestions": 128,
+    "maxInventoryBehaviors": 64,
+    "maxCitations": 128,
+    "maxInputBytes": 1048576,
+    "maxEvidenceBytes": 1048576,
+    "evidenceTimeoutMs": 2000,
+    "totalTimeoutMs": 10000
+  },
+  "ownership": {
+    "ontology": "immutable semantic and specification material",
+    "harness": "readiness gaps; future independent assessment owns grading",
+    "runtime": "future reconstruction claims/receipts; unchanged in T1",
+    "parent": "canonical additive contract/generator, no new business store"
+  },
+  "compatibility": {
+    "nativeV1": "unchanged",
+    "storeMigration": "none in T1",
+    "dailyInstallation": "unchanged",
+    "legacyChecker": "unchanged",
+    "modelingAdmission": "Additive candidate metadata and typed rejection of new reverse modeling without explicit intent; historical reads remain supported. No native-v1 bytes or daily store migration."
+  },
+  "implementationAuthorized": true,
+  "installationAuthorized": false,
+  "releaseAuthorized": false,
+  "authority": false,
+  "acceptanceStatus": "NOT_EVALUATED",
+  "verificationBoundary": "Stage tests establish contract/preflight behavior only. Full E-ID acceptance, semantic assessment, real reconstruction and version delivery remain separate.",
+  "roadmapDigest": "sha256:11044ba50b44402263c43721dd2c58397b7209999d91e552f8ec6d22d3524d8d",
+  "roadmapBinding": "Exact accepted parent roadmap supplied to verifier; isolated product baseline remains v0.7.",
+  "admissionVariants": [
+    "missing-purpose",
+    "missing-scope",
+    "missing-exclusions",
+    "missing-target",
+    "missing-requirements",
+    "missing-acceptance",
+    "missing-user-intent",
+    "ambiguous-intent",
+    "reuse-explicit-context",
+    "l1-template-no-grading",
+    "l2-inherits-l1",
+    "l3-requires-reconstruction",
+    "changed-binding",
+    "direct-sdk-bypass",
+    "transport-bypass",
+    "historical-readback",
+    "read-only-consumption",
+    "target-verified-separated"
+  ],
+  "ownerAdmissionVariants": [
+    "missing-resolver-no-write",
+    "untrusted-envelope-no-bypass",
+    "wrong-workspace",
+    "wrong-scope",
+    "wrong-owner",
+    "wrong-package",
+    "missing-reverse-intent",
+    "forward-trusted-exemption",
+    "async-resolver-rejected",
+    "stale-admission",
+    "legacy-unfinished-blocked",
+    "historical-published-read",
+    "published-validation-preserved",
+    "exact-receipt-replay",
+    "http-mcp-bypass",
+    "standalone-package-boundary",
+    "cli-unbound-blocked",
+    "changed-during-validation",
+    "old-writer-rejected-after-first-admission"
+  ]
+}

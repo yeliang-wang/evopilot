@@ -1,3 +1,4 @@
+import {syntheticAuthoring} from './fixtures/authoring.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import path from 'node:path';import http from 'node:http';import {spawn} from 'node:child_process';import {pathToFileURL} from 'node:url';
 import {assembly} from './connection.test.mjs';
 import {prepareNativeToolchain} from '../../dist/integration/toolchain/locked.js';
@@ -19,7 +20,7 @@ test('installed supervised worker survives client exit, restores selected schedu
  const tokenFile=path.join(f.base,'alert-token');fs.writeFileSync(tokenFile,'synthetic-worker-alert-secret',{mode:0o600});const scope={visibility:'private',projectId:'fictional'};
  const settings={scopes:[scope],prometheus:[{id:'metrics',origin:'http://127.0.0.1:'+server.address().port,bearerTokenFile:null,freshnessSeconds:3}],alertmanager:[{id:'alerts',bearerTokenFile:tokenFile}],receiverPort:port,tickSeconds:1};
  const configured=await f.api.withWorkspaceMaintenance(f.configPath,'configure',cfg=>configuration.configureOnline(cfg,{settings,expectedDigest:null,requestId:'configure'}));assert.equal(configured.workerStarted,false);
- const apis=await import(pathToFileURL(path.join(f.install,'dist/integration/composition.js')));composition=apis.createComposition({workspaceRoot:c.workspaceRoot,workspaceId:c.workspaceId},await apis.loadInstalledProducts(),{},{toolchain:tools});
+ const apis=await import(pathToFileURL(path.join(f.install,'dist/integration/composition.js')));composition=apis.createComposition({workspaceRoot:c.workspaceRoot,workspaceId:c.workspaceId},await apis.loadInstalledProducts(),{},{resolveNativeAuthoring:syntheticAuthoring,toolchain:tools});
  let serial=0;const read=(owner,operation,input={})=>composition.native(owner,{operation,scope,input});const write=async(operation,input)=>{
   if(input.humanEvidenceRef==='synthetic')input={...input,humanEvidenceRef:syntheticDecisionEvidence(f.base,{owner:'harness',operation,workspaceId:c.workspaceId,scope,reviewDigest:input.reviewDigest,decision:input.decision})};
   return composition.native('harness',{operation,scope,input,requestId:'prepare-'+(++serial),expectedRevision:operation.startsWith('online.')?(await read('harness','online.inspect')).revision:composition.inspect('harness',scope).revision});

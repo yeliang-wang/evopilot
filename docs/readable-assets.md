@@ -37,7 +37,7 @@ Ontology uses the locked RDFLib canonical graph projection, separately for each 
 
 ## Codex delivery boundary
 
-v0.7 presents business-readable plans, Ontology assets, Harness rules, version differences and gate results directly in Codex. Human summaries and JSON/Markdown/HTML exports derive from the same verified owner snapshot. Always retain the original requirement denominator, exact versions and evidence links. No Dashboard pages, web server or browser acceptance are included. A future separately reviewed Dashboard may reuse these public read APIs.
+v0.7 presents business-readable plans, Ontology assets, Harness rules, version differences and gate results directly in Codex. Human summaries and JSON/Markdown/HTML exports derive from the same verified owner snapshot. Always retain the original requirement denominator, exact versions and evidence links. No Dashboard pages, web server or browser acceptance are included. These public read APIs support service clients. The pre-v1.0 release scope excludes graphical frontend work.
 
 ## Table-first human reports
 

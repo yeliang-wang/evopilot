@@ -1,6 +1,6 @@
 interface:
-  display_name: "EvoPilot v0.7 Preview"
+  display_name: "EvoPilot v0.8 Preview"
   short_description: "Explicit Ontology, Harness and Runtime guidance"
-  default_prompt: "Use $evopilot-v01-expert to guide my explicitly selected EvoPilot v0.7 Preview workflow."
+  default_prompt: "Use $evopilot-v01-expert to guide my explicitly selected EvoPilot v0.8 Preview workflow."
 policy:
   allow_implicit_invocation: false

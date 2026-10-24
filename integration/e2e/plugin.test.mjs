@@ -275,6 +275,11 @@ test('pure guide maps every source reference to the installed package layout', (
   // No installed child repositories or filesystem fixtures are needed.
   const installationRoot = '/managed/evopilot/app';
   const expectedPaths = [
+    '/managed/evopilot/app/docs/asset-usability-v08-workflow.md',
+    '/managed/evopilot/app/docs/asset-service.md',
+    '/managed/evopilot/app/docs/architecture/0010-controlled-reconstruction.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/harness/docs/usability.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/runtime/docs/reconstruction.md',
     '/managed/evopilot/app/docs/readable-assets.md',
     '/managed/evopilot/app/docs/preflight-maintenance.md',
     '/managed/evopilot/app/docs/planning.md',

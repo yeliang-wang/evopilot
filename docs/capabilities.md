@@ -1,4 +1,4 @@
-# Capabilities in v0.7.0 Preview
+# Capabilities in v0.8.0 Preview
 
 This is source capability documentation, not a release or production certificate. The [native workflow](native-workflow.md) is the current path. Historical v0.2 JSON mutation examples cannot create corrected-v1 work.
 
@@ -38,3 +38,8 @@ Registered Runtime Runs can opt into durable evidence delivery. Harness and Onto
 The [online service](online-harness.md) uses explicitly selected immutable service bindings, the bounded OpenSLO profile, actual Prometheus/Alertmanager inputs and an independently enabled local worker. It retains findings and repair candidates; it does not start automatic production repair.
 
 The [0.6 response workflow](response.md) connects optional operations ontology material, published Harness guidance, a reviewed Runtime response, an actual isolated collection action, independent native verification and both owners' feedback decisions. It preserves cause hypotheses, preventive followups and risk dispositions. The supplied executor remains pinned Node with explicitly declared loopback access. Java/Maven and remote adapters remain separate Roadmap work.
+
+
+## v0.8 asset usability and controlled reconstruction
+
+v0.8 adds independent asset consumption, explicit L1/L2/L3 usability assessment, mandatory purpose/scope/level admission before reverse modeling, and controlled reconstruction with an independent fixed oracle. Verified L3 is limited to the reviewed functional slice and requires two clean complete reconstructions; it does not mean byte-identical source, whole-project coverage, production readiness or automatic release. The standalone [asset service](asset-service.md) needs no Runtime Goal or Codex session. Reconstruction uses explicitly configured trusted executor bindings; missing or unsupported providers fail closed. Read [the workflow](asset-usability-v08-workflow.md) for independent scope, evidence, budget and recovery boundaries.

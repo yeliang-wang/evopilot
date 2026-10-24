@@ -1,5 +1,15 @@
 # Workspace migration and source boundaries
 
+## Upgrade from v0.7 to v0.8.0
+
+v0.8 adds independent asset consumption, explicit L1/L2/L3 usability assessment, mandatory purpose/scope/level admission before reverse modeling, and controlled reconstruction with an independent fixed oracle. Verified L3 is limited to the reviewed functional slice and requires two clean complete reconstructions; it does not mean byte-identical source, whole-project coverage, production readiness or automatic release. Native `specifications/v1` and original producer identities remain fixed. Runtime reconstruction and Harness usability writes use state marker **7**; read-only discovery does not silently grade historical assets.
+
+1. Reconcile the original pending requests without redispatch. Stop the verified connection and independent online worker before maintenance.
+2. Create and verify a complete stopped backup of editable project files, owner state, original receipts and relocation keys. Preserve the previous installation. Unsupported paths or links must be handled through an explicitly bounded preservation procedure; do not discard files or call a partial copy a full backup.
+3. Prove actual new-version reads and isolated recovery before any daily cutover. Compare retained package, decision and receipt identities. Preserve pending claims and unknown historical levels. Old writers must fail safely on unsupported markers.
+4. Install the exact verified 0.8.0 bundle in a new program root, inspect its identity in the actual Host, then attach only the intended stopped Workspace. An installed package or source test alone does not prove Host acceptance.
+5. For rollback, stop all users of the new state, preserve it separately, restore the matching verified pre-upgrade backup into its original missing or empty roots, and use its original installation. Do not replay work, overwrite a live Workspace or infer L3 from migration.
+
 ## Upgrade from v0.6 to v0.7.0
 
 Version 0.7.0 adds scoped discussion/planning revisions, table-first asset and gate reports, bounded version comparisons, draft preflight and streaming Workspace maintenance. Native `specifications/v1` remain unchanged. Runtime planning writes advance its database marker to **6**; Harness remains at **5** and the Ontology native schema is unchanged. Older Runtime readers must not open new planning state.
