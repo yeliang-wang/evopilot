@@ -178,3 +178,11 @@ Exclude universal/full-software reconstruction, mandatory full OWL reasoning, a 
 - [ISO/IEC 25010:2023](https://www.iso.org/standard/78176.html) informs explicit software quality/acceptance profiles; no ISO certification is claimed.
 - [Semantic-artefact catalogue maturity research](https://arxiv.org/abs/2305.06746) informs service governance and availability, not behavioral equivalence.
 - [SHACL](https://www.w3.org/TR/shacl/) establishes graph constraint semantics, not software behavior. [LinkML generators](https://linkml.io/linkml/generators/index.html) and [OBA](https://github.com/KnowledgeCaptureAndDiscovery/OBA) are possible bounded-generation references, not mandatory dependencies or proof that the adopted RDF subset maps losslessly.
+
+## Versioned composed execution authority
+
+[ADR 0011](architecture/0011-controlled-process-authority.md) governs the accepted bounded correction for composed projects. V2 profiles explicitly distinguish denied external networking from permitted communication within the owned isolated process tree. Exact normative dependencies must be separately declared; they are never hidden original implementation inside specification export. V1 offline evidence remains unchanged. Current execution, full mandatory oracle coverage, real decisions and two clean passing reconstructions remain necessary.
+
+## Separately bounded evaluation
+
+[ADR 0012](architecture/0012-bounded-evaluation-environments.md) adds evaluation-only plans and receipts after a completed generation/build receipt. An owned supervisor must preserve the candidate sandbox; a database gateway must enforce exact driver/route/namespace, statement and typed parameter allowlists, exclusively owned objects, bounded usage and cleanup. Credentials stay in the broker. Reference and candidate use the same qualified transport; synthetic transports cannot replace actual integration acceptance. Record actual external effects, preserve UNKNOWN outcomes without replay, and refuse partial cleanup or stale evidence. Marker 9 records require isolated migration/recovery and old-writer refusal. The [28 required guards](../governance/controlled-evaluation-v08.json) are additional obligations, with no reduction of the original scope or automatic L3/release.

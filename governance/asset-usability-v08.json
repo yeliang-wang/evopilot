@@ -711,5 +711,21 @@
     "automaticStart": false,
     "serviceAPIsRemainInScope": true,
     "policy": "governance/release-scope.json"
+  },
+  "controlledExecutionCorrection": {
+    "status": "ACCEPTED_SCOPE_NOT_ACCEPTANCE",
+    "target": "governance/controlled-execution-v08.json",
+    "adr": "docs/architecture/0011-controlled-process-authority.md",
+    "existingAcceptanceUnchanged": true,
+    "noReleaseAuthority": true
+  },
+  "controlledEvaluationCorrection": {
+    "status": "ACCEPTED_SCOPE_NOT_ACCEPTANCE",
+    "target": "governance/controlled-evaluation-v08.json",
+    "adr": "docs/architecture/0012-bounded-evaluation-environments.md",
+    "existingAcceptanceUnchanged": true,
+    "generationBuildUnchanged": true,
+    "defaultEnabled": false,
+    "noReleaseAuthority": true
   }
 }

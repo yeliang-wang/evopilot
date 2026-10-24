@@ -2,9 +2,9 @@
   "schema": "evopilot-asset-usability-delivery/v1",
   "id": "evopilot-v080-release",
   "targetVersion": "0.8.0",
-  "planningDigest": "sha256:2f1a54cf7c58cd98833c589c50dc8c50010450d2325a08cf1d0b21310cd0fa1a",
-  "specificationDigest": "sha256:be9061a207850ccc1ebe562f174bc5aa7ab061b70be51373fd757b6e7378a91e",
-  "roadmapDigest": "sha256:11044ba50b44402263c43721dd2c58397b7209999d91e552f8ec6d22d3524d8d",
+  "planningDigest": "sha256:7ab29e2e64c45b978edd55301a0953611afc7ed12e21fd8777d33bb4c0b34ab4",
+  "specificationDigest": "sha256:b666b96c09682fcc9b9ff80a0e119c5c5ccd6b5f4b32340054f2397be69f8324",
+  "roadmapDigest": "sha256:c3f7aa806f3fbd301ea47c032e9933f75ad70b422d4d6e1ddb53c64457306796",
   "prerequisite": {
     "version": "0.7.0",
     "repositories": {
@@ -703,5 +703,32 @@
       }
     ],
     "preserveOtherVariants": true
+  },
+  "bindingRevision": {
+    "schema": "evopilot-target-binding-revision/v1",
+    "predecessorTargetDigest": "sha256:4db00361605da1c7548210fbfed5d9f2652956c482b010de775822fe7e4e6bde",
+    "predecessorPlanningDigest": "sha256:2f1a54cf7c58cd98833c589c50dc8c50010450d2325a08cf1d0b21310cd0fa1a",
+    "predecessorSpecificationDigest": "sha256:be9061a207850ccc1ebe562f174bc5aa7ab061b70be51373fd757b6e7378a91e",
+    "predecessorRoadmapDigest": "sha256:11044ba50b44402263c43721dd2c58397b7209999d91e552f8ec6d22d3524d8d",
+    "correctionTarget": "governance/controlled-execution-v08.json",
+    "correctionTargetDigest": "sha256:3d42e519b18ed35c4792b92e39947c5d0b657e962a53edf60cf128c3f40083da",
+    "correctionAdrDigest": "sha256:f4e3b9c17db9adeb6f9fd774cbaa089fa1f3d80dd19157e486aafa28860bf16c",
+    "requirementsUnchanged": true,
+    "acceptanceUnchanged": true,
+    "authority": false
+  },
+  "evaluationBindingRevision": {
+    "schema": "evopilot-evaluation-target-binding/v1",
+    "predecessorTargetDigest": "sha256:5b86f465a1ec11a031e9ae30003b7efb256c65d514e1eacdb76195e67940f520",
+    "predecessorPlanningDigest": "sha256:44c223212eca5361e39a39299d10577a7bf940fb415027218d661399d4a2d7a9",
+    "predecessorSpecificationDigest": "sha256:6cdf525ab3c91c19413109d22f7f672017d64bd920dc8ddca9e64425b729c8ae",
+    "predecessorRoadmapDigest": "sha256:7b78443f9fe9bdba790f00b46aa1373deab6a7e6d4dd9b89615f66a27bd3bb94",
+    "predecessorBindingDigest": "sha256:e7f3c0b85bf5c2c6046fb02fe4495876d235c56baa89587d3c31d747ff79a561",
+    "correctionTarget": "governance/controlled-evaluation-v08.json",
+    "correctionTargetDigest": "sha256:af107fa7422c6d33c218c33b351d0fd3724f04bc05926b90490727892aa3ad33",
+    "correctionAdrDigest": "sha256:bb5d9a3be61806958ab65a7a5c6a43eefab1e34adaf0f7d99a2eab9edcd132c2",
+    "requirementsUnchanged": true,
+    "acceptanceUnchanged": true,
+    "authority": false
   }
 }

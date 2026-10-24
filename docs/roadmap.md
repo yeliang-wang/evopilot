@@ -249,3 +249,11 @@ The following IDs are expanded into fixed variants in the v0.6 Target and covere
 | EVO-F04-E10 | Upgrade, recovery and retained history | Exact plan, guidance, asset and observation references survive supported backup/restore and restart. Old records are not rewritten into new approvals; migration failures preserve recoverable state and report incompatibility. |
 
 **Follow-up:** extend reusable postmortem learning and queries when real project needs justify another reviewed Target. The v0.6 implementation does not delay the existing second-project onboarding or add a v1.0 release gate. ONT-F01, HAR-F01 and RUN-F01 remain separate, demand-driven follow-ups; do not silently pull full semantic reasoning, policy calibration or a new executor platform into this scope.
+
+## v0.8 controlled execution correction
+
+The accepted [bounded correction](../governance/controlled-execution-v08.json) and [ADR 0011](architecture/0011-controlled-process-authority.md) add explicit v2 authority for owned isolated process communication and separately pinned normative dependencies. Existing offline v1 semantics and native standard bytes remain unchanged. This supplies no whole-project grade, execution budget, daily cutover or release authorization. All existing acceptance and the new boundary checks remain required.
+
+## Bounded evaluation correction on the v0.8 line
+
+The accepted [evaluation Target](../governance/controlled-evaluation-v08.json) and [ADR 0012](architecture/0012-bounded-evaluation-environments.md) separately bind an owned sandboxed supervisor and a restricted statement/object database gateway for evaluation only. Generation/build remain offline. Both modes are disabled until the exact installed adapter, environment, output, oracle, authority and finite budgets are verified. Preserve all 18 requirements, 20 acceptance IDs, 79 delivery variants and 64 source variants; the 28 additional guards cannot replace full coverage or the two independent complete reconstructions per whole project. Actual database operations, semantic asset publication and a repaired release retain their distinct gates. This correction records accepted scope, not acceptance results.

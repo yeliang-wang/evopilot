@@ -1,6 +1,6 @@
 # v0.8 Expert workflow
 
-This guide routes the implemented candidate interfaces. It does not declare release acceptance or award a project level. Resolve these references against the verified installation root.
+This guide routes the v0.8 interfaces. It does not declare user-journey acceptance or award a project level. Resolve these references against the verified installation root.
 
 | Scenario | Entry | Expected evidence |
 | --- | --- | --- |
@@ -12,6 +12,8 @@ This guide routes the implemented candidate interfaces. It does not declare rele
 | V08-U06 | `guide(asset-feedback-review)` | Substantive asset evolution and retained compatibility |
 
 Reuse explicit project intent before asking questions. Read-only consumption does not create a modeling candidate. Formal reverse modeling requires the durable purpose/scope/exclusions/target/independent-inventory binding described in [the modeling gate](architecture/0007-modeling-intent-gate.md); owner APIs reject missing or stale bindings.
+
+For actual Host acceptance, execute the journey represented by each guide. A domain answer must cite exact owner evidence and distinguish missing facts. A modeling journey must resolve the intended use, functional scope, exclusions and target before preparation, then retain the resulting admission or its precise blocker. Guide reads, negative gate checks and prior reconstruction receipts are useful evidence but do not individually establish a complete positive modeling journey. Reusing a previous level is valid only for its explicit reviewed scope; a pilot grade cannot select the level for a whole-project upgrade.
 
 L1 means domain understanding, L2 means a reviewed implementation specification, and L3 means that the exact assets supported independent reconstruction passing the declared equivalence profile. These cumulative EvoPilot levels apply to a named slice. Templates, schema conformance and software publication do not establish a verified level. Report target, current verified level or null, status, pins, gaps and limitations separately.
 

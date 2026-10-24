@@ -1,3 +1,7 @@
+import {validateEvaluationEvidence} from './evaluation.mjs';
+import type {EvaluationEvidence} from './evaluation.mjs';
+import {validateExecutionEvidence,executionIsolated} from './execution.mjs';
+import type {ExecutionEvidence} from './execution.mjs';
 import {BEHAVIOR_FACETS,usabilityStable,usabilityDigest,usabilityFail as fail,validateUsabilityScope,validateUsabilityDigest} from './contract.mjs';
 import type {BehaviorFacet,UsabilityScope} from './contract.mjs';
 
@@ -10,8 +14,8 @@ export interface BehaviorOracle {
   cases:{id:string;behaviorId:string;facets:BehaviorFacet[];purpose:string;input:OracleJSON;expected:BehaviorObservation;tolerances:OracleTolerance[]}[];
   negativeControls:{id:string;caseId:string;purpose:string;actual:BehaviorObservation}[];
 }
-export interface ReconstructionObservation {
-  schema:'evopilot-reconstruction-observation/v1';workspaceId:string;scope:UsabilityScope;attemptId:string;
+interface ReconstructionObservationFields {
+  workspaceId:string;scope:UsabilityScope;attemptId:string;
   inventoryDigest:string;specificationDigest:string;oracleDigest:string;inputManifestDigest:string;
   environmentDigest:string;dependenciesDigest:string;outputDigest:string;executorDigest:string;
   origin:'ACTUAL'|'SYNTHETIC';inputMode:'ASSETS_ONLY'|'SOURCE_ASSISTED';independent:boolean;isolated:boolean;
@@ -20,6 +24,7 @@ export interface ReconstructionObservation {
   cases:{caseId:string;inputDigest:string;status:'COMPLETE'|'FAILED'|'SKIPPED'|'UNKNOWN';actual:BehaviorObservation|null}[];
   digest:string;
 }
+export type ReconstructionObservation=ReconstructionObservationFields&({schema:'evopilot-reconstruction-observation/v1'}|{schema:'evopilot-reconstruction-observation/v2';authority:ExecutionEvidence}|{schema:'evopilot-reconstruction-observation/v3';authority:ExecutionEvidence;evaluation:EvaluationEvidence});
 export interface BehaviorOracleResult {
   schema:'evopilot-behavior-oracle-result/v1';workspaceId:string;scope:UsabilityScope;bindingDigest:string;attemptId:string;
   oracleDigest:string;observationDigest:string|null;outputDigest:string|null;
@@ -67,10 +72,12 @@ export function validateBehaviorOracle(raw:unknown):BehaviorOracle{
 }
 export const behaviorOracleDigest=(oracle:BehaviorOracle):string=>usabilityDigest(validateBehaviorOracle(oracle));
 export function validateReconstructionObservation(raw:unknown):ReconstructionObservation{
-  usabilityStable(raw);const r=exact(raw,['schema','workspaceId','scope','attemptId','inventoryDigest','specificationDigest','oracleDigest','inputManifestDigest','environmentDigest','dependenciesDigest','outputDigest','executorDigest','origin','inputMode','independent','isolated','status','cases','digest'],['execution']);
-  if(r.schema!=='evopilot-reconstruction-observation/v1')fail('ORACLE_SCHEMA');id(r.workspaceId);id(r.attemptId);validateUsabilityScope(r.scope);
+  usabilityStable(raw);const v3=!!raw&&typeof raw==='object'&&'schema'in raw&&raw.schema==='evopilot-reconstruction-observation/v3';const v2=v3||!!raw&&typeof raw==='object'&&'schema'in raw&&raw.schema==='evopilot-reconstruction-observation/v2';const r=exact(raw,['schema','workspaceId','scope','attemptId','inventoryDigest','specificationDigest','oracleDigest','inputManifestDigest','environmentDigest','dependenciesDigest','outputDigest','executorDigest','origin','inputMode','independent','isolated','status','cases','digest',...(v2?['authority']:[]),...(v3?['evaluation']:[])],['execution']);
+  if(!['evopilot-reconstruction-observation/v1','evopilot-reconstruction-observation/v2','evopilot-reconstruction-observation/v3'].includes(String(r.schema)))fail('ORACLE_SCHEMA');id(r.workspaceId);id(r.attemptId);validateUsabilityScope(r.scope);
   for(const k of ['inventoryDigest','specificationDigest','oracleDigest','inputManifestDigest','environmentDigest','dependenciesDigest','outputDigest','executorDigest','digest'])validateUsabilityDigest(r[k]);
   if(!['ACTUAL','SYNTHETIC'].includes(String(r.origin))||!['ASSETS_ONLY','SOURCE_ASSISTED'].includes(String(r.inputMode))||typeof r.independent!=='boolean'||typeof r.isolated!=='boolean'||!['SUCCEEDED','FAILED','INCOMPLETE','UNKNOWN'].includes(String(r.status)))fail('ORACLE_SCHEMA');
+  if(v2){const authority=validateExecutionEvidence(r.authority);if(r.isolated!==executionIsolated(authority))fail('ORACLE_AUTHORITY_BINDING');}
+  if(v3){const e=validateEvaluationEvidence(r.evaluation),p=e.plan;if(p.workspaceId!==r.workspaceId||usabilityStable(p.scope)!==usabilityStable(r.scope)||p.reconstruction.attemptId!==r.attemptId||p.reconstruction.outputDigest!==r.outputDigest||p.origin!==r.origin||['oracleDigest','environmentDigest','dependenciesDigest'].some(k=>p[k as keyof typeof p]!==r[k])||e.receipt.status!=='SUCCEEDED')fail('ORACLE_EVALUATION_BINDING');if(!r.execution)fail('ORACLE_EVALUATION_BINDING');const x=r.execution as Record<string,unknown>;if(x.planDigest!==p.reconstruction.planDigest||x.claimId!==p.reconstruction.claimId||x.receiptDigest!==p.reconstruction.receiptDigest)fail('ORACLE_EVALUATION_BINDING');}
   if(r.execution!==undefined){const execution=exact(r.execution,['planDigest','claimId','cleanWorkspaceId','receiptDigest']);for(const k of ['planDigest','claimId','receiptDigest'])validateUsabilityDigest(execution[k]);text(execution.cleanWorkspaceId,256);}
   const cases=array(r.cases,ORACLE_LIMITS.cases);for(const value of cases){const c=exact(value,['caseId','inputDigest','status','actual']);id(c.caseId);validateUsabilityDigest(c.inputDigest);if(!['COMPLETE','FAILED','SKIPPED','UNKNOWN'].includes(String(c.status)))fail('ORACLE_SCHEMA');if(c.actual!==null)observation(c.actual);if(c.status==='COMPLETE'&&c.actual===null)fail('ORACLE_SCHEMA');}unique(cases,x=>(x as {caseId:string}).caseId);
   const {digest,...body}=r;if(digest!==usabilityDigest(body))fail('ORACLE_RECEIPT_DIGEST');return JSON.parse(usabilityStable(raw)) as ReconstructionObservation;

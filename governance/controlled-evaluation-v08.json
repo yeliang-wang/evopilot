@@ -1,0 +1,212 @@
+{
+  "schema": "evopilot-controlled-evaluation-correction/v1",
+  "status": "ACCEPTED_SCOPE_NOT_ACCEPTANCE",
+  "releaseLine": "v0.8",
+  "adr": "docs/architecture/0012-bounded-evaluation-environments.md",
+  "scope": [
+    "Owned sandboxed supervisor evaluation",
+    "Bound statement/object database evaluation"
+  ],
+  "defaultEnabled": false,
+  "generationBuildUnchanged": true,
+  "legacySchemasPreserved": true,
+  "nativeV1BytesUnchanged": true,
+  "newOwnerStateMarker": 9,
+  "requirementIds": [
+    "V08-R08",
+    "V08-R09",
+    "V08-R10",
+    "V08-R11",
+    "V08-R14",
+    "V08-R15",
+    "V08-R17"
+  ],
+  "unchanged": {
+    "requirements": 18,
+    "acceptanceIds": 20,
+    "deliveryVariants": 79,
+    "sourceVariants": 64,
+    "evopilotOperations": 235,
+    "evopilotSdkPaths": 162,
+    "evopilotIntegrationObligations": 20,
+    "datarigV2MandatoryRows": 270,
+    "datarigV2IntegrationObligations": 17,
+    "cleanReconstructionsPerWholeProject": 2
+  },
+  "requiredGuards": [
+    {
+      "id": "EVAL-01",
+      "obligation": "default-evaluation-disabled",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-02",
+      "obligation": "v1-v2-envelopes-and-standards-preserved",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-03",
+      "obligation": "generation-build-offline-unchanged",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-04",
+      "obligation": "exact-output-oracle-environment-binding",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-05",
+      "obligation": "no-caller-provider-authority",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-06",
+      "obligation": "supervisor-exact-owned-label-plist-executable",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-07",
+      "obligation": "supervisor-foreign-job-rejected",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-08",
+      "obligation": "supervisor-no-arbitrary-command-or-signal",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-09",
+      "obligation": "supervisor-child-sandbox-preserved",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-10",
+      "obligation": "supervisor-transport-loss-no-duplicate-job",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-11",
+      "obligation": "database-exact-driver-route-namespace",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-12",
+      "obligation": "database-secret-remains-broker-only",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-13",
+      "obligation": "database-no-direct-network-bypass",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-14",
+      "obligation": "database-statement-and-parameter-allowlist",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-15",
+      "obligation": "database-quoting-comments-multistatement-escape-rejected",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-16",
+      "obligation": "database-object-collision-no-adoption",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-17",
+      "obligation": "database-no-schema-user-privilege-mutation",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-18",
+      "obligation": "database-finite-connections-rows-time-output",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-19",
+      "obligation": "database-unknown-write-no-replay",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-20",
+      "obligation": "exact-owned-cleanup-and-reconciliation",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-21",
+      "obligation": "actual-external-effects-retained",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-22",
+      "obligation": "tampered-stale-partial-evidence-no-grade",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-23",
+      "obligation": "marker9-old-writer-refusal",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-24",
+      "obligation": "marker9-backup-relocation-restore",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-25",
+      "obligation": "original-and-candidate-transport-conformance",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-26",
+      "obligation": "wrong-implementation-and-side-effects-rejected",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-27",
+      "obligation": "all-original-mandatory-coverage-preserved",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    },
+    {
+      "id": "EVAL-28",
+      "obligation": "two-independent-full-reconstructions-per-project",
+      "required": true,
+      "result": "NOT_EVALUATED"
+    }
+  ],
+  "acceptanceStatus": "NOT_EVALUATED",
+  "authority": false,
+  "releaseAuthorized": false,
+  "assetApproval": false,
+  "newExecutionBudget": false,
+  "databaseExecutionAuthorized": false
+}

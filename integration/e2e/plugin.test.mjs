@@ -52,6 +52,33 @@ function run(values, fixture = false) {
 }
 const data = r => r.result.structuredContent;
 
+test('protocol fixture: explicit toolchain summary stays bounded while full/default and verification failures are preserved', () => {
+  const configURL = new URL('../../dist/integration/connection/config.js', import.meta.url).href;
+  const lockedURL = new URL('../../dist/integration/toolchain/locked.js', import.meta.url).href;
+  const preparationURL = new URL('../../dist/integration/toolchain/preparation.js', import.meta.url).href;
+  const dependencyFiles = Array.from({length:4000}, (_, i) => ({path:'/synthetic/dependency/'+i,sha256:'a'.repeat(64)}));
+  const complete = {schema:'synthetic-toolchain',lockDigest:'sha256:'+'b'.repeat(64),dependencyLockDigest:'sha256:'+'c'.repeat(64),tools:{synthetic:{version:'1',sha256:'d'.repeat(64)}},dependencyFiles};
+  const sources = {
+    [clientURL]: fixtureCode,
+    [configURL]: `export * from ${JSON.stringify(configURL+'?actual')}; export const loadConfiguration=()=>({workspaceRoot:'/synthetic'});`,
+    [lockedURL]: `export * from ${JSON.stringify(lockedURL+'?actual')}; let count=0; export const inspectBundledToolchainLock=()=>({lockDigest:'sha256:'+'b'.repeat(64)}); export const inspectNativeToolchain=()=>{if(++count===4)throw Object.assign(Error(),{code:'TOOLCHAIN_INTEGRITY'});return ${JSON.stringify(complete)};};`,
+    [preparationURL]: `export const inspectToolchainPreparation=()=>null; export const startToolchainPreparation=()=>{throw Error('No preparation allowed');};`,
+  };
+  const mapping = Object.fromEntries(Object.entries(sources).map(([key, value]) => [key, dataURL(value)]));
+  const loader = dataURL(`import {registerHooks} from 'node:module'; const mapping=${JSON.stringify(mapping)}; registerHooks({resolve(s,c,next){if(s.startsWith('.')||s.startsWith('/')||s.startsWith('file:')){const url=new URL(s,c.parentURL).href;if(mapping[url])return{url:mapping[url],shortCircuit:true};}return next(s,c);}});`);
+  const output = spawnSync(process.execPath, ['--import',loader,server,'--config',config], {env,input:lines([init,call(2,'toolchain_inspect',{view:'summary'}),call(3,'toolchain_inspect'),call(4,'toolchain_inspect',{view:'full'}),call(5,'toolchain_inspect',{view:'summary'}),call(6,'toolchain_inspect',{view:'wrong'})]),encoding:'utf8',timeout:10000,maxBuffer:8*1048576});
+  assert.ifError(output.error);assert.equal(output.status,0,output.stderr);
+  const replies=output.stdout.trim().split('\n').map(JSON.parse),summary=data(replies[1]).result;
+  assert.equal(summary.ready,true);assert.equal(summary.authority,false);
+  assert.equal(summary.toolchain.dependencyFilesOmitted,true);assert.equal(summary.toolchain.dependencyFileCount,4000);
+  const {dependencyFiles:omitted,...metadata}=complete;
+  assert.deepEqual(summary.toolchain,{...metadata,dependencyFileCount:omitted.length,dependencyFilesOmitted:true});
+  assert(Buffer.byteLength(JSON.stringify(replies[1]))<4096,'Host summary must not expand dependency file rows');
+  assert.deepEqual(data(replies[2]).result.toolchain,complete);assert.deepEqual(data(replies[3]).result.toolchain,complete);
+  assert.equal(replies[4].result.isError,true);assert.equal(data(replies[4]).error.code,'TOOLCHAIN_INTEGRITY');
+  assert.equal(replies[5].error.code,-32602);
+});
+
 test('native protocol routes require this session activation and forward exact owner/project inputs once', () => {
   const envelope = request('workspace.inspect');
   const candidate = { operation: 'inspect', input: { scope, id: 'round-one' } };

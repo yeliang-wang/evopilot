@@ -9,6 +9,10 @@ native standards; the parent defines the [project contract](../specifications/pr
    prepare missing dependencies, then activate this chat. Toolchain preparation
    stops the shared Workspace connection; reactivate afterward. Inspection never
    downloads. The verified native platform is currently macOS arm64 only.
+   For a Host readiness report, call `evopilot_v01_toolchain_inspect` with
+   `{"view":"summary"}`. It verifies the same complete toolchain and returns
+   readiness, exact pins and the dependency-file count without the expanded
+   file list. The default and `{"view":"full"}` preserve the complete result.
    Download failures report `TOOLCHAIN_DOWNLOAD_TIMEOUT`,
    `TOOLCHAIN_DOWNLOAD_NETWORK`, or `TOOLCHAIN_DOWNLOAD` for an HTTP/bounds
    failure. Each artifact download has a bounded fifteen-minute total deadline,
