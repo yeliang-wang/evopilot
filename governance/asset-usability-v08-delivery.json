@@ -2,9 +2,9 @@
   "schema": "evopilot-asset-usability-delivery/v1",
   "id": "evopilot-v080-release",
   "targetVersion": "0.8.0",
-  "planningDigest": "sha256:2f1a54cf7c58cd98833c589c50dc8c50010450d2325a08cf1d0b21310cd0fa1a",
-  "specificationDigest": "sha256:be9061a207850ccc1ebe562f174bc5aa7ab061b70be51373fd757b6e7378a91e",
-  "roadmapDigest": "sha256:11044ba50b44402263c43721dd2c58397b7209999d91e552f8ec6d22d3524d8d",
+  "planningDigest": "sha256:44c223212eca5361e39a39299d10577a7bf940fb415027218d661399d4a2d7a9",
+  "specificationDigest": "sha256:6cdf525ab3c91c19413109d22f7f672017d64bd920dc8ddca9e64425b729c8ae",
+  "roadmapDigest": "sha256:7b78443f9fe9bdba790f00b46aa1373deab6a7e6d4dd9b89615f66a27bd3bb94",
   "prerequisite": {
     "version": "0.7.0",
     "repositories": {
@@ -703,5 +703,18 @@
       }
     ],
     "preserveOtherVariants": true
+  },
+  "bindingRevision": {
+    "schema": "evopilot-target-binding-revision/v1",
+    "predecessorTargetDigest": "sha256:4db00361605da1c7548210fbfed5d9f2652956c482b010de775822fe7e4e6bde",
+    "predecessorPlanningDigest": "sha256:2f1a54cf7c58cd98833c589c50dc8c50010450d2325a08cf1d0b21310cd0fa1a",
+    "predecessorSpecificationDigest": "sha256:be9061a207850ccc1ebe562f174bc5aa7ab061b70be51373fd757b6e7378a91e",
+    "predecessorRoadmapDigest": "sha256:11044ba50b44402263c43721dd2c58397b7209999d91e552f8ec6d22d3524d8d",
+    "correctionTarget": "governance/controlled-execution-v08.json",
+    "correctionTargetDigest": "sha256:3d42e519b18ed35c4792b92e39947c5d0b657e962a53edf60cf128c3f40083da",
+    "correctionAdrDigest": "sha256:f4e3b9c17db9adeb6f9fd774cbaa089fa1f3d80dd19157e486aafa28860bf16c",
+    "requirementsUnchanged": true,
+    "acceptanceUnchanged": true,
+    "authority": false
   }
 }

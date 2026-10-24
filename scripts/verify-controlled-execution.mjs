@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+const root=new URL('../',import.meta.url),read=p=>fs.readFileSync(new URL(p,root)),hash=b=>'sha256:'+createHash('sha256').update(b).digest('hex');
+const raw=read('governance/controlled-execution-v08.json'),target=JSON.parse(raw),roadmap=JSON.parse(read('governance/asset-usability-v08.json'));
+assert.equal(target.schema,'evopilot-controlled-execution-correction/v1');assert.equal(target.status,'ACCEPTED_SCOPE_NOT_ACCEPTANCE');assert.equal(target.releaseLine,'v0.8');assert.equal(target.releaseAuthorized,false);
+assert.deepEqual(target.scope,['Versioned owned-process communication authority','Explicit pinned normative dependency reuse']);assert(target.legacySchemasPreserved&&target.nativeV1BytesUnchanged);assert.equal(target.newOwnerStateMarker,8);assert.equal(target.requiredGuards.length,24);assert.equal(new Set(target.requiredGuards).size,24);
+assert.equal(roadmap.controlledExecutionCorrection.target,'governance/controlled-execution-v08.json');assert.equal(roadmap.controlledExecutionCorrection.adr,target.adr);assert.equal(roadmap.controlledExecutionCorrection.existingAcceptanceUnchanged,true);
+assert(read(target.adr).toString().includes('Status: accepted boundary correction'));assert(read('docs/roadmap.md').toString().includes('controlled-execution-v08.json'));
+const contract=JSON.parse(read('integration/compatibility/v1/manifest.json'));assert.equal(hash(read('integration/compatibility/v1/native.mjs')),'sha256:'+contract.sha256);assert.equal(hash(read('integration/compatibility/v1/native.mjs')),'sha256:c613b972cee9aa5638797880fab6a48839e74ee79545fdfb74ebe9b2b23c9a11');assert.equal(hash(read('integration/compatibility/v1/reference.mjs')),'sha256:df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a');
+console.log(JSON.stringify({status:'ALIGNED',scope:target.scope,targetDigest:hash(raw),roadmapDigest:hash(read('governance/asset-usability-v08.json')),adrDigest:hash(read(target.adr)),acceptance:'NOT_EVALUATED',authority:'TECHNICAL_SCOPE_BINDING_ONLY',releaseAuthorized:false}));

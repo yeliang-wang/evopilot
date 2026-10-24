@@ -178,3 +178,7 @@ Exclude universal/full-software reconstruction, mandatory full OWL reasoning, a 
 - [ISO/IEC 25010:2023](https://www.iso.org/standard/78176.html) informs explicit software quality/acceptance profiles; no ISO certification is claimed.
 - [Semantic-artefact catalogue maturity research](https://arxiv.org/abs/2305.06746) informs service governance and availability, not behavioral equivalence.
 - [SHACL](https://www.w3.org/TR/shacl/) establishes graph constraint semantics, not software behavior. [LinkML generators](https://linkml.io/linkml/generators/index.html) and [OBA](https://github.com/KnowledgeCaptureAndDiscovery/OBA) are possible bounded-generation references, not mandatory dependencies or proof that the adopted RDF subset maps losslessly.
+
+## Versioned composed execution authority
+
+[ADR 0011](architecture/0011-controlled-process-authority.md) governs the accepted bounded correction for composed projects. V2 profiles explicitly distinguish denied external networking from permitted communication within the owned isolated process tree. Exact normative dependencies must be separately declared; they are never hidden original implementation inside specification export. V1 offline evidence remains unchanged. Current execution, full mandatory oracle coverage, real decisions and two clean passing reconstructions remain necessary.

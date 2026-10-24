@@ -1,0 +1,16 @@
+{
+  "schema": "evopilot-controlled-execution-correction/v1",
+  "status": "ACCEPTED_SCOPE_NOT_ACCEPTANCE",
+  "releaseLine": "v0.8",
+  "releaseVersion": null,
+  "releaseAuthorized": false,
+  "scope": ["Versioned owned-process communication authority", "Explicit pinned normative dependency reuse"],
+  "requirementIds": ["V08-R08", "V08-R09", "V08-R10", "V08-R11"],
+  "adr": "docs/architecture/0011-controlled-process-authority.md",
+  "legacySchemasPreserved": true,
+  "nativeV1BytesUnchanged": true,
+  "newOwnerStateMarker": 8,
+  "requiredGuards": ["v1-offline-unchanged", "v1-reject-v2-authority", "v2-policy-exact", "no-external-network", "no-unrelated-local-peers", "owned-listener-and-peer-binding", "no-direct-guest-fork", "narrowed-collection-authority", "all-descendants-closed", "source-oracle-credential-exclusion", "exact-normative-dependency-manifest", "no-business-code-dependency", "exact-output-currentness", "unknown-no-redispatch", "preserve-unknown-usage", "marker8-old-reader-refusal", "marker8-backup-relocation", "v2-runtime-harness-evidence-binding", "wrong-implementation-rejected", "two-real-clean-whole-rebuilds", "full-required-behavior-coverage", "actual-installed-host-journeys", "existing-pilot-regression", "no-inferred-grade-or-release"],
+  "acceptanceStatus": "NOT_EVALUATED",
+  "exclusions": ["Unrestricted networking", "Original business implementation reuse", "Standard-byte migration", "Whole-project grading without full acceptance", "Daily cutover", "Production writes", "v0.9 capabilities", "Graphical frontend", "Automatic release"]
+}

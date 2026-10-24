@@ -61,3 +61,7 @@ This maintenance path writes a separate `recovery/evidence.json` and failed-only
 ## Remaining release evidence
 
 Synthetic specifications and actual sandbox processes demonstrate mechanics only. The v0.8 release still requires the actual supported reconstruction route, independently reviewed real project specifications and oracle, two independent real reconstructions, version evolution, actual Host journeys and the remaining fixed acceptance variants. Missing evidence remains missing. No graphical frontend work is included before v1.0 release.
+
+## Accepted composed-profile correction
+
+[ADR 0011](0011-controlled-process-authority.md) supersedes the blanket offline/process restriction only for explicitly reviewed v2 profiles. It preserves this document’s v1 adapter semantics and historical evidence. An enabled owned-process loopback profile reports network denial accurately through its versioned policy and enforcement receipt; it cannot be presented as an offline v1 run.
