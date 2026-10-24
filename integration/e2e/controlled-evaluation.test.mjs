@@ -1,0 +1,40 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {validateEvaluationPolicy,validateEvaluationPlan,validateEvaluationReceipt,validateDatabaseCall,validateSupervisorCall,supervisorLabel} from '../compatibility/usability/v1/evaluation.mjs';
+import {validateExecutionPolicy} from '../compatibility/usability/v1/execution.mjs';
+import {usabilityDigest as hash} from '../compatibility/usability/v1/contract.mjs';
+const nonce='a'.repeat(32);
+const supervisor=()=>({id:'worker',kind:'OWNED_SUPERVISOR',ownerUid:501,domain:'gui/501',label:supervisorLabel('test',nonce),nonce,root:'/private/tmp/example',executableDigest:hash('node'),workerDigest:hash('worker'),plistDigest:hash('plist'),sandboxDigest:hash('sandbox'),qualificationDigest:hash('qualified'),operations:['INSPECT','BOOTSTRAP','BOOTOUT','RECONCILE']});
+const database=()=>({id:'database',kind:'BOUND_DATABASE',driverDigest:hash('driver'),endpointDigest:hash('endpoint'),route:'tp',namespace:'test',credentialRef:'credential-ref:synthetic',transportDigest:hash('transport'),qualificationDigest:hash('qualified'),objects:[{id:'table',name:'ep_eval_'+nonce+'_rows',ownershipNonce:nonce}],statements:[{id:'insert-row',operation:'INSERT',objectIds:['table'],templateDigest:hash('prepared-insert'),parameters:[{kind:'INTEGER',minimum:0,maximum:5},{kind:'TEXT',maxBytes:8},{kind:'ENUM',values:['a','b']}]}]});
+const policy=()=>({schema:'evopilot-evaluation-policy/v1',phase:'EVALUATION',brokerDigest:hash('broker'),directNetwork:'DENY',originalSource:'DENY',hiddenOracle:'DENY',priorOutputs:'DENY',hostCredentials:'DENY',dependencies:[supervisor(),database()]});
+const plan=()=>({schema:'evopilot-evaluation-plan/v1',workspaceId:'test',scope:{visibility:'private',projectId:'example'},reconstruction:{attemptId:'first',planDigest:hash('generation'),claimId:hash('claim'),receiptDigest:hash('receipt'),outputDigest:hash('output')},oracleDigest:hash('oracle'),environmentDigest:hash('environment'),dependenciesDigest:hash('dependencies'),provider:{id:'synthetic',version:'1',executableDigest:hash('binary'),configurationDigest:hash('config')},origin:'SYNTHETIC',policy:policy(),budget:{wallMs:1000,maxSessions:2,maxConnections:2,maxRows:10,maxOutputBytes:1000,maxOperations:10}});
+const claim=p=>{const body={workspaceId:p.workspaceId,scope:p.scope,sessionId:'first-eval',planDigest:hash(p),plan:p,ordinal:1,admittedAt:new Date().toISOString(),remaining:Object.fromEntries(Object.entries(p.budget).filter(([k])=>k!=='maxSessions'))};return {...body,claimId:hash(body)};};
+const seal=body=>({...body,digest:hash(body)});
+function receipt(c){const p=c.plan;return seal({schema:'evopilot-evaluation-receipt/v1',claimId:c.claimId,planDigest:c.planDigest,sessionId:c.sessionId,origin:p.origin,outputDigest:p.reconstruction.outputDigest,oracleDigest:p.oracleDigest,environmentDigest:p.environmentDigest,dependenciesDigest:p.dependenciesDigest,policyDigest:hash(p.policy),providerDigest:hash(p.provider),status:'SUCCEEDED',usage:{wallMs:10,connections:1,rows:1,outputBytes:10,operations:2},violations:{directConnections:0,unrelatedPeers:0,sourceReads:0,oracleReads:0,credentialReads:0,foreignEffects:0},effects:[{id:'write-1',dependencyId:'database',targetId:'table',operation:'insert-row',outcome:'CONFIRMED',traceDigest:hash('write')}],cleanup:p.policy.dependencies.map(d=>({dependencyId:d.id,ownedTargets:d.kind==='OWNED_SUPERVISOR'?[d.label]:d.objects.map(o=>o.id),confirmedAbsent:true,traceDigest:hash('cleanup-'+d.id)})),containment:[{dependencyId:'worker',sandboxDigest:supervisor().sandboxDigest,allProcessesClosed:true,traceDigest:hash('containment')}],enforcementDigest:hash('enforcement'),diagnostic:null});}
+function changed(value,fn){const x=structuredClone(value);fn(x);if('digest'in x){delete x.digest;return seal(x);}return x;}
+test('evaluation authority is exact, phase-specific and cannot enter generation v1',()=>{
+ assert.deepEqual(validateEvaluationPolicy(policy(),'test'),policy());assert.throws(()=>validateExecutionPolicy(policy()));
+ for(const change of [p=>p.phase='BUILD',p=>p.directNetwork='ALLOW',p=>p.hostCredentials='ALLOW',p=>p.originalSource='ALLOW',p=>p.dependencies=[],p=>p.approved=true,p=>p.dependencies.push(p.dependencies[0]),p=>p.dependencies[0].kind='ARBITRARY_PROCESS'])assert.throws(()=>validateEvaluationPolicy(changed(policy(),change),'test'));
+});
+test('owned supervisor rejects foreign labels, executable fields and arbitrary commands',()=>{
+ const d=supervisor();for(const operation of d.operations)assert.equal(validateSupervisorCall(d,{operation,label:d.label}).operation,operation);
+ for(const value of [{operation:'KILL',label:d.label},{operation:'BOOTOUT',label:'foreign'},{operation:'BOOTSTRAP',label:d.label,argv:['sh']},{operation:'BOOTSTRAP',label:d.label,plist:'/foreign'}])assert.throws(()=>validateSupervisorCall(d,value));
+ for(const change of [p=>p.dependencies[0].domain='gui/0',p=>p.dependencies[0].label='existing.worker',p=>p.dependencies[0].root='/tmp/../foreign',p=>p.dependencies[0].nonce='arbitrary',p=>p.dependencies[0].operations.push('KILL')])assert.throws(()=>validateEvaluationPolicy(changed(policy(),change),'test'));
+});
+test('database binds only owned object names and opaque credential references',()=>{
+ for(const change of [p=>p.dependencies[1].credentialRef='password=secret',p=>p.dependencies[1].objects[0].name='existing_business',p=>p.dependencies[1].objects.push(p.dependencies[1].objects[0]),p=>p.dependencies[1].statements[0].objectIds=['foreign'],p=>p.dependencies[1].statements[0].operation='DROP_DATABASE',p=>p.dependencies[1].statements[0].operation='GRANT',p=>p.dependencies[1].route='tp;drop',p=>p.dependencies[1].statements[0].sql='select * from foreign'])assert.throws(()=>validateEvaluationPolicy(changed(policy(),change),'test'));
+});
+test('statement calls reject SQL/comment/identifier escapes and bound typed values',()=>{
+ const d=database(),good={statementId:'insert-row',parameters:[3,'hello','a']};assert.deepEqual(validateDatabaseCall(d,good),good);
+ for(const v of [{...good,sql:'DROP DATABASE test'}, {...good,statementId:'insert-row; --'}, {...good,statementId:'/*insert-row*/'}, {...good,route:'ap'}, {...good,parameters:[6,'hello','a']},{...good,parameters:[3,'longer-than-eight','a']},{...good,parameters:[3,'x','a;drop']},{...good,parameters:['3','hello','a']},{...good,parameters:[3,'\0','a']}])assert.throws(()=>validateDatabaseCall(d,v));
+ // Prepared TEXT values are data, including quotes. The gateway may never interpolate them into SQL.
+ assert.deepEqual(validateDatabaseCall(d,{...good,parameters:[3,"'; --",'b']}).parameters,[3,"'; --",'b']);
+});
+test('exact output/oracle/plan bindings, finite usage and actual external effects are retained',()=>{
+ const p=validateEvaluationPlan(plan()),c=claim(p),r=receipt(c);assert.deepEqual(validateEvaluationReceipt(r,c),r);assert.equal(r.usage.connections,1);
+ for(const change of [r=>r.outputDigest=hash('other'),r=>r.policyDigest=hash('other'),r=>r.usage.rows=11,r=>r.usage.connections=3,r=>r.usage.wallMs=null,r=>r.usage.operations=0,r=>r.violations.directConnections=1,r=>r.effects[0].outcome='UNKNOWN',r=>r.cleanup[0].confirmedAbsent=false,r=>r.cleanup[1].ownedTargets=['foreign'],r=>r.containment[0].allProcessesClosed=false,r=>r.effects[0].operation='GRANT',r=>r.cleanup=[],r=>r.containment=[]])assert.throws(()=>validateEvaluationReceipt(changed(r,change),c));
+ for(const change of [p=>p.budget.maxSessions=0,p=>p.budget.wallMs=Infinity,p=>p.reconstruction.receiptDigest='latest',p=>p.provider.approved=true])assert.throws(()=>validateEvaluationPlan(changed(p,change)));
+});
+test('failed unknown accounting is retained rather than converted to zero',()=>{
+ const c=claim(plan()),r=changed(receipt(c),r=>{r.status='FAILED';r.usage.connections=null;r.effects[0].outcome='UNKNOWN';r.cleanup[1].confirmedAbsent=false;});assert.equal(validateEvaluationReceipt(r,c).usage.connections,null);
+ assert.throws(()=>validateEvaluationReceipt({...r,digest:hash('tampered')},c));
+});

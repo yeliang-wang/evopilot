@@ -1,3 +1,4 @@
+import {checkControlledEvaluation} from './verify-controlled-evaluation.mjs';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -14,6 +15,7 @@ assert.equal(t.schema,'evopilot-asset-usability-execution/v1');
 assert.equal(t.stage,'V08-T1');assert.equal(t.targetVersion,'0.8.0');
 assert.equal(t.planningDigest,digest('governance/asset-usability-v08.json'));
 assert.equal(t.specificationDigest,digest('docs/asset-usability-v08.md'));
+checkControlledEvaluation(t);
 const binding=t.bindingRevision, correction=read('governance/controlled-execution-v08.json');
 assert.equal(binding.schema,'evopilot-target-binding-revision/v1');
 for(const field of ['predecessorTargetDigest','predecessorPlanningDigest','predecessorSpecificationDigest','predecessorRoadmapDigest'])assert.match(binding[field],/^sha256:[a-f0-9]{64}$/);

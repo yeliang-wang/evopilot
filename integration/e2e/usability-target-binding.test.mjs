@@ -8,6 +8,7 @@ import {spawnSync} from 'node:child_process';
 
 const root=fileURLToPath(new URL('../../',import.meta.url));
 const files=[
+  'scripts/verify-controlled-evaluation.mjs','governance/controlled-evaluation-v08.json','docs/architecture/0012-bounded-evaluation-environments.md',
   'scripts/verify-usability-target.mjs','scripts/verify-usability-delivery.mjs','scripts/verify-release-scope.mjs',
   'governance/asset-usability-v08.json','governance/asset-usability-v08-execution.json',
   'governance/asset-usability-v08-delivery.json','governance/controlled-execution-v08.json',
@@ -34,7 +35,7 @@ for(const kind of Object.keys(targets)){
     const result=run(fixture(t),kind);assert.equal(result.status,0,result.stderr);
     const report=JSON.parse(result.stdout);assert.equal(report.status,'ALIGNED');assert.equal(report.authority,false);assert.equal(report.acceptance,'NOT_INFERRED');
   });
-  for(const file of ['docs/roadmap.md','governance/asset-usability-v08.json','docs/asset-usability-v08.md','governance/controlled-execution-v08.json','docs/architecture/0011-controlled-process-authority.md']){
+  for(const file of ['governance/controlled-evaluation-v08.json','docs/architecture/0012-bounded-evaluation-environments.md','docs/roadmap.md','governance/asset-usability-v08.json','docs/asset-usability-v08.md','governance/controlled-execution-v08.json','docs/architecture/0011-controlled-process-authority.md']){
     test('target binding '+kind+' rejects changed '+file,t=>{
       const directory=fixture(t),path=join(directory,file);writeFileSync(path,readFileSync(path,'utf8')+'\n');
       const result=run(directory,kind);assert.notEqual(result.status,0);assert.match(result.stderr,/AssertionError/);

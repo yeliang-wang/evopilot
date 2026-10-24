@@ -112,6 +112,10 @@
     "integration/compatibility/usability/v1/execution.mjs": {
       "source": "integration/compatibility/usability/v1/execution.mts",
       "generator": "scripts/sync-usability.mjs"
+    },
+    "integration/compatibility/usability/v1/evaluation.mjs": {
+      "source": "integration/compatibility/usability/v1/evaluation.mts",
+      "generator": "scripts/sync-usability.mjs"
     }
   }
 }
