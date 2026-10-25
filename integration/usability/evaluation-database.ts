@@ -36,13 +36,23 @@ interface Journal {
 const same=(a:unknown,b:unknown)=>usabilityStable(a)===usabilityStable(b);
 function privateFile(file:string){const s=fs.lstatSync(file);if(!s.isFile()||s.isSymbolicLink()||s.nlink!==1||s.uid!==process.getuid?.()||(s.mode&0o777)!==0o600)fail('EVALUATION_GATEWAY_PATH');}
 function regularRoot(root:string){if(!path.isAbsolute(root)||fs.realpathSync(root)!==root)fail('EVALUATION_GATEWAY_PATH');for(let p=root;;p=path.dirname(p)){const s=fs.lstatSync(p);if(s.isSymbolicLink()||!s.isDirectory())fail('EVALUATION_GATEWAY_PATH');if(path.dirname(p)===p)break;}const s=fs.lstatSync(root);if(s.uid!==process.getuid?.()||(s.mode&0o777)!==0o700)fail('EVALUATION_GATEWAY_PATH');}
-/** Exact reviewed SQL only. Tokens cannot contain comments, batches, quotes, unscoped objects or privilege statements. */
+/** Recognize only the bounded HTAP table shape; property literals never become executable SQL tokens. */
+function htapTableBase(sql:string):string|null {
+  const m=/^CREATE TABLE ([a-z][a-z0-9_]*)\.([a-z][a-z0-9_]*) \((.+)\) CLUSTERED BY \(([a-z][a-z0-9_]*)\) INTO ([1-9][0-9]{0,3}) BUCKETS STORED AS HOLODESK WITH HTAP TBLPROPERTIES \('holodesk\.rowkey'='([a-z][a-z0-9_]*)'\)$/.exec(sql);
+  if(!m)return null;
+  const columns=m[3]!.split(', '),names:string[]=[];let requiredKey=false;
+  for(const column of columns){const c=/^([a-z][a-z0-9_]*) (INT|INTEGER|BIGINT|SMALLINT)( NOT NULL)?$/.exec(column);if(!c)return null;names.push(c[1]!);if(c[1]===m[4]&&c[3])requiredKey=true;}
+  if(!columns.length||columns.length>64||new Set(names).size!==names.length||!requiredKey||m[4]!==m[6]||Number(m[5])>1024)return null;
+  return 'CREATE TABLE '+m[1]+'.'+m[2]+' ('+m[3]+')';
+}
+/** Exact reviewed SQL only. Reject comments, batches, unscoped objects and privilege statements. */
 export function validatePreparedStatements(dependency:DatabaseDependency,templates:PreparedStatement[]):ReadonlyMap<string,string>{
   if(templates.length!==dependency.statements.length||new Set(templates.map(t=>t.id)).size!==templates.length)fail('EVALUATION_TEMPLATE');const result=new Map<string,string>();
-  for(const t of templates){if(!t||Object.keys(t).sort().join(',')!=='id,sql'||typeof t.sql!=='string'||!t.sql.length||t.sql.length>32768||/[;"'`\x00-\x1f\x7f]/.test(t.sql)||/--|\/\*|\*\/|\\/.test(t.sql))fail('EVALUATION_TEMPLATE');const s=dependency.statements.find(s=>s.id===t.id);if(!s||usabilityDigest(t.sql)!==s.templateDigest)fail('EVALUATION_TEMPLATE');
+  for(const t of templates){if(!t||Object.keys(t).sort().join(',')!=='id,sql'||typeof t.sql!=='string'||!t.sql.length||t.sql.length>32768||/[;"`\x00-\x1f\x7f]/.test(t.sql)||/--|\/\*|\*\/|\\/.test(t.sql))fail('EVALUATION_TEMPLATE');const s=dependency.statements.find(s=>s.id===t.id);if(!s||usabilityDigest(t.sql)!==s.templateDigest)fail('EVALUATION_TEMPLATE');
     if(['BEGIN','COMMIT','ROLLBACK'].includes(s.operation)){if(t.sql!==s.operation||s.parameters.length)fail('EVALUATION_TEMPLATE');result.set(t.id,t.sql);continue;}
     if(s.objectIds.length!==1)fail('EVALUATION_TEMPLATE');
-    const tokens=t.sql.match(/[a-zA-Z_][a-zA-Z0-9_]*|[0-9]+|\?|[().,*=<>+\/-]/g);if(!tokens||tokens.join('')!==t.sql.replaceAll(' ',''))fail('EVALUATION_TEMPLATE');const upper=tokens.map(v=>v.toUpperCase());
+    const normalized=s.operation==='CREATE_TABLE'?htapTableBase(t.sql)??t.sql:t.sql;if(normalized.includes("'"))fail('EVALUATION_TEMPLATE');
+    const tokens=normalized.match(/[a-zA-Z_][a-zA-Z0-9_]*|[0-9]+|\?|[().,*=<>+\/-]/g);if(!tokens||tokens.join('')!==normalized.replaceAll(' ',''))fail('EVALUATION_TEMPLATE');const upper=tokens.map(v=>v.toUpperCase());
     const verb=upper[0],expected={READ:'SELECT',INSERT:'INSERT',UPDATE:'UPDATE',DELETE:'DELETE',CREATE_TABLE:'CREATE',DROP_TABLE:'DROP',BEGIN:'BEGIN',COMMIT:'COMMIT',ROLLBACK:'ROLLBACK'}[s.operation];if(verb!==expected||['ALTER','GRANT','REVOKE','DATABASE','SCHEMA','USER','ROLE','ATTACH','DETACH','CALL','EXEC','EXECUTE','UNION','WITH','LOAD','COPY','INFILE','OUTFILE','FUNCTION','PROCEDURE'].some(word=>upper.includes(word)))fail('EVALUATION_TEMPLATE');
     if(['CREATE','DROP'].includes(verb!)&&upper[1]!=='TABLE')fail('EVALUATION_TEMPLATE');
     const referenced:string[]=[];for(let i=0;i<tokens.length;i++){if(['FROM','JOIN','INTO','TABLE','UPDATE'].includes(upper[i]!)){const target=tokens.slice(i+1,i+4);if(target.length!==3||target[0]!==dependency.namespace||target[1]!=='.'||!dependency.objects.some(o=>o.name===target[2]&&s.objectIds.includes(o.id)))fail('EVALUATION_TEMPLATE_OBJECT');referenced.push(target[2]!);}}
