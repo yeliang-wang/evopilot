@@ -3,8 +3,8 @@
   "id": "evopilot-v080-release",
   "targetVersion": "0.8.0",
   "planningDigest": "sha256:7ab29e2e64c45b978edd55301a0953611afc7ed12e21fd8777d33bb4c0b34ab4",
-  "specificationDigest": "sha256:b666b96c09682fcc9b9ff80a0e119c5c5ccd6b5f4b32340054f2397be69f8324",
-  "roadmapDigest": "sha256:c3f7aa806f3fbd301ea47c032e9933f75ad70b422d4d6e1ddb53c64457306796",
+  "specificationDigest": "sha256:1990ec5d5dafe2f7cd2d973218a61ac40588059ad31acb80451b4de13685421a",
+  "roadmapDigest": "sha256:078940dace28870836b299edffa84d3071de6eec86159264be8ea90b0c366dbd",
   "prerequisite": {
     "version": "0.7.0",
     "repositories": {
@@ -624,7 +624,7 @@
     "reconstructionMaxOutputBytes": 8388608,
     "maxConcurrentBuilders": 1
   },
-  "currentSourceStage": "T1-T3 retained assessment and independent oracle; T2 standalone consumption; T4 controlled Runtime execution and bounded offline adapter, actual project reconstruction pending",
+  "currentSourceStage": "Published v0.8.0 implements T1-T5 mechanisms. This correction retains its own pending exact-candidate acceptance; actual reconstruction, Host, release and project-level results are determined from separately retained evidence, not this source projection.",
   "allowedFiles": [
     "governance/asset-usability-v08-delivery.json",
     "scripts/verify-usability-delivery.mjs",
@@ -729,6 +729,17 @@
     "correctionAdrDigest": "sha256:bb5d9a3be61806958ab65a7a5c6a43eefab1e34adaf0f7d99a2eab9edcd132c2",
     "requirementsUnchanged": true,
     "acceptanceUnchanged": true,
+    "authority": false
+  },
+  "documentationBindingRevision": {
+    "schema": "evopilot-documentation-binding/v1",
+    "change": "CURRENT_RELEASE_STATUS_AND_HISTORICAL_PLANNING_DISAMBIGUATION",
+    "predecessorTargetDigest": "sha256:de644cf20a780097d5cd6577f8ba3d73de6d2a57520fcfdb03a626ea8c88aac6",
+    "predecessorSpecificationDigest": "sha256:b666b96c09682fcc9b9ff80a0e119c5c5ccd6b5f4b32340054f2397be69f8324",
+    "predecessorRoadmapDigest": "sha256:c3f7aa806f3fbd301ea47c032e9933f75ad70b422d4d6e1ddb53c64457306796",
+    "requirementsUnchanged": true,
+    "acceptanceUnchanged": true,
+    "executionAuthorityUnchanged": true,
     "authority": false
   }
 }

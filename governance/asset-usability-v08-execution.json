@@ -5,7 +5,7 @@
   "stage": "V08-T1",
   "status": "IMPLEMENTING",
   "planningDigest": "sha256:7ab29e2e64c45b978edd55301a0953611afc7ed12e21fd8777d33bb4c0b34ab4",
-  "specificationDigest": "sha256:b666b96c09682fcc9b9ff80a0e119c5c5ccd6b5f4b32340054f2397be69f8324",
+  "specificationDigest": "sha256:1990ec5d5dafe2f7cd2d973218a61ac40588059ad31acb80451b4de13685421a",
   "prerequisite": {
     "version": "0.7.0",
     "repositories": {
@@ -334,7 +334,7 @@
   "authority": false,
   "acceptanceStatus": "NOT_EVALUATED",
   "verificationBoundary": "Stage tests establish contract/preflight behavior only. Full E-ID acceptance, semantic assessment, real reconstruction and version delivery remain separate.",
-  "roadmapDigest": "sha256:c3f7aa806f3fbd301ea47c032e9933f75ad70b422d4d6e1ddb53c64457306796",
+  "roadmapDigest": "sha256:078940dace28870836b299edffa84d3071de6eec86159264be8ea90b0c366dbd",
   "roadmapBinding": "Exact accepted parent roadmap supplied to verifier; isolated product baseline remains v0.7.",
   "admissionVariants": [
     "missing-purpose",
@@ -402,6 +402,17 @@
     "correctionAdrDigest": "sha256:bb5d9a3be61806958ab65a7a5c6a43eefab1e34adaf0f7d99a2eab9edcd132c2",
     "requirementsUnchanged": true,
     "acceptanceUnchanged": true,
+    "authority": false
+  },
+  "documentationBindingRevision": {
+    "schema": "evopilot-documentation-binding/v1",
+    "change": "CURRENT_RELEASE_STATUS_AND_HISTORICAL_PLANNING_DISAMBIGUATION",
+    "predecessorTargetDigest": "sha256:566eaed95d486730188f51d1077df795a7e93610791b8aa9058357de6b52154d",
+    "predecessorSpecificationDigest": "sha256:b666b96c09682fcc9b9ff80a0e119c5c5ccd6b5f4b32340054f2397be69f8324",
+    "predecessorRoadmapDigest": "sha256:c3f7aa806f3fbd301ea47c032e9933f75ad70b422d4d6e1ddb53c64457306796",
+    "requirementsUnchanged": true,
+    "acceptanceUnchanged": true,
+    "executionAuthorityUnchanged": true,
     "authority": false
   }
 }
