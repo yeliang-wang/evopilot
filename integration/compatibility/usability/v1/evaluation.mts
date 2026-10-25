@@ -10,7 +10,7 @@ export type ParameterRule={kind:'INTEGER';minimum:number;maximum:number}|{kind:'
 export interface DatabaseDependency {
   id:string;kind:'BOUND_DATABASE';driverDigest:string;endpointDigest:string;route:string;namespace:string;
   credentialRef:string;transportDigest:string;qualificationDigest:string;objects:{id:string;name:string;ownershipNonce:string}[];
-  statements:{id:string;operation:'READ'|'INSERT'|'UPDATE'|'DELETE'|'CREATE_TABLE'|'DROP_TABLE';objectIds:string[];templateDigest:string;parameters:ParameterRule[]}[];
+  statements:{id:string;operation:'READ'|'INSERT'|'UPDATE'|'DELETE'|'CREATE_TABLE'|'DROP_TABLE'|'BEGIN'|'COMMIT'|'ROLLBACK';objectIds:string[];templateDigest:string;parameters:ParameterRule[]}[];
 }
 export interface EvaluationPolicy {
   schema:'evopilot-evaluation-policy/v1';phase:'EVALUATION';brokerDigest:string;
@@ -63,7 +63,8 @@ export function validateEvaluationPolicy(raw:unknown,workspaceId:string):Evaluat
       digestFields(d,['driverDigest','endpointDigest','transportDigest','qualificationDigest']);const objects=array(d.objects,256,1);const objectIds:string[]=[];const names:string[]=[];
       for(const rawObject of objects){const o=exact(rawObject,['id','name','ownershipNonce']);id(o.id);text(o.name,128);text(o.ownershipNonce,32);if(!/^[a-f0-9]{32}$/.test(o.ownershipNonce)||!new RegExp('^ep_eval_'+o.ownershipNonce+'_[a-z0-9_]+$').test(o.name))fail('EVALUATION_OWNERSHIP');objectIds.push(o.id);names.push(o.name);}unique(objectIds);unique(names);
       const statements=array(d.statements,512,1);const statementIds:string[]=[];
-      for(const rawStatement of statements){const s=exact(rawStatement,['id','operation','objectIds','templateDigest','parameters']);id(s.id);statementIds.push(s.id);if(!['READ','INSERT','UPDATE','DELETE','CREATE_TABLE','DROP_TABLE'].includes(String(s.operation)))fail('EVALUATION_STATEMENT');validateUsabilityDigest(s.templateDigest);const targets=array(s.objectIds,16,1);unique(targets);if(targets.some(k=>!objectIds.includes(String(k))))fail('EVALUATION_OWNERSHIP');
+      for(const rawStatement of statements){const s=exact(rawStatement,['id','operation','objectIds','templateDigest','parameters']);id(s.id);statementIds.push(s.id);if(!['READ','INSERT','UPDATE','DELETE','CREATE_TABLE','DROP_TABLE','BEGIN','COMMIT','ROLLBACK'].includes(String(s.operation)))fail('EVALUATION_STATEMENT');validateUsabilityDigest(s.templateDigest);const targets=array(s.objectIds,16,1);unique(targets);if(targets.some(k=>!objectIds.includes(String(k))))fail('EVALUATION_OWNERSHIP');
+        if(['BEGIN','COMMIT','ROLLBACK'].includes(String(s.operation))&&array(s.parameters,256).length!==0)fail('EVALUATION_PARAMETER');
         for(const param of array(s.parameters,256)){
           if(!param||typeof param!=='object'||!('kind'in param))fail('EVALUATION_PARAMETER');
           if(param.kind==='INTEGER'){const r=exact(param,['kind','minimum','maximum']);if(!Number.isSafeInteger(r.minimum)||!Number.isSafeInteger(r.maximum)||(r.minimum as number)>(r.maximum as number))fail('EVALUATION_PARAMETER');}
