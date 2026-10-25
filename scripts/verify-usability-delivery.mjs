@@ -1,3 +1,4 @@
+import {checkControlledEvaluation} from './verify-controlled-evaluation.mjs';
 import fs from 'node:fs';
 import {checkReleaseScope} from './verify-release-scope.mjs';
 import assert from 'node:assert/strict';
@@ -13,8 +14,22 @@ assert.equal(d.schema,'evopilot-asset-usability-delivery/v1');assert.equal(d.tar
 assert.equal(d.roadmapDigest,digest(args[1]),'Roadmap drift requires review');
 assert.equal(d.planningDigest,digest(root+'governance/asset-usability-v08.json'));
 assert.equal(d.specificationDigest,digest(root+'docs/asset-usability-v08.md'));
+checkControlledEvaluation(d);
+const binding=d.bindingRevision, correction=read('governance/controlled-execution-v08.json');
+assert.equal(binding.schema,'evopilot-target-binding-revision/v1');
+for(const field of ['predecessorTargetDigest','predecessorPlanningDigest','predecessorSpecificationDigest','predecessorRoadmapDigest'])assert.match(binding[field],/^sha256:[a-f0-9]{64}$/);
+assert.equal(binding.correctionTarget,'governance/controlled-execution-v08.json');
+assert.equal(binding.correctionTargetDigest,digest(root+binding.correctionTarget),'Controlled execution target drift requires review');
+assert.equal(binding.correctionAdrDigest,digest(root+correction.adr),'Controlled execution ADR drift requires review');
+assert.equal(p.controlledExecutionCorrection.target,binding.correctionTarget);
+assert.equal(p.controlledExecutionCorrection.adr,correction.adr);
+assert.equal(binding.requirementsUnchanged,true);assert.equal(binding.acceptanceUnchanged,true);assert.equal(binding.authority,false);
+for(const field of ['planningDigest','specificationDigest','roadmapDigest'])assert.equal(prior[field],d[field],'Execution and delivery input bindings must agree');
+assert.deepEqual({...prior.bindingRevision,predecessorTargetDigest:null},{...binding,predecessorTargetDigest:null},'Execution and delivery correction lineage must agree');
 assert.deepEqual(d.requirements,p.requirements.map(x=>x.id));assert.equal(d.requirements.length,18);
 assert.deepEqual(d.acceptance,p.acceptance.map(x=>x.id));assert.equal(d.acceptance.length,20);
+checkControlledEvaluation(prior);
+assert.deepEqual({...prior.evaluationBindingRevision,predecessorTargetDigest:null,predecessorBindingDigest:null},{...d.evaluationBindingRevision,predecessorTargetDigest:null,predecessorBindingDigest:null},'Evaluation correction lineage must agree');
 checkReleaseScope();
 assert.deepEqual(d.variants.map(x=>x.id),d.acceptance.flatMap(id=>[1,2,3,4].map(i=>id+'.D0'+i)).filter(id=>id!=='V08-E15.D03'));
 assert(d.variants.every(v=>v.required===true&&v.status==='NOT_EVALUATED'&&v.id.startsWith(v.acceptanceId+'.D')));

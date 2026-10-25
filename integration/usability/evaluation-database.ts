@@ -1,0 +1,134 @@
+import {DatabaseSync} from 'node:sqlite';
+import fs from 'node:fs';import path from 'node:path';import {randomBytes} from 'node:crypto';
+import {validateDatabaseCall,validateEvaluationClaim} from '../compatibility/usability/v1/evaluation.mjs';
+import type {DatabaseDependency,EvaluationClaim} from '../compatibility/usability/v1/evaluation.mjs';
+import {usabilityStable,usabilityDigest,usabilityFail as fail} from '../compatibility/usability/v1/contract.mjs';
+export interface PreparedStatement {id:string;sql:string}
+export interface DatabaseResult {rows:(string|number|boolean|null)[][];affectedRows:number}
+/** A trusted driver may report a definitive server rejection, never a lost connection as a known failure. */
+export class DatabaseExecutionRejected extends Error {
+  readonly code='EVALUATION_EXECUTION_REJECTED';
+  constructor(readonly operationId:string,readonly sqlState:string,readonly evidenceDigest:string){
+    super('EVALUATION_EXECUTION_REJECTED');
+    if(!operationId||!/^[0-9A-Z]{5}$/.test(sqlState)||sqlState.startsWith('08')||!/^sha256:[a-f0-9]{64}$/.test(evidenceDigest))fail('EVALUATION_DRIVER_RESULT');
+  }
+}
+export interface DatabaseDriver {
+  driverDigest:string;endpointDigest:string;transportDigest:string;qualificationDigest:string;route:string;namespace:string;
+  /** Implementations own the credential lookup and connection. Generated software receives only call(). */
+  open:(credentialRef:string,signal:AbortSignal)=>Promise<void>;
+  inspectObject:(name:string,signal:AbortSignal)=>Promise<{exists:boolean;ownershipNonce:string|null}>;
+  execute:(request:{operationId:string;operation:DatabaseDependency['statements'][number]['operation'];transactionId:string|null;targets:{name:string;ownershipNonce:string}[];sql:string;parameters:(string|number)[];ownershipNonce:string;limits:{rows:number;outputBytes:number;deadline:number}},signal:AbortSignal)=>Promise<DatabaseResult>;
+  /** A restarted driver must return UNKNOWN when it cannot bind the same live transaction. */
+  inspectTransaction?:(transactionId:string,signal:AbortSignal)=>Promise<'ACTIVE'|'FAILED'|'UNKNOWN'>;
+  /** Inspect an original operation only. Never re-execute uncertain SQL. */
+  reconcile:(operationId:string,signal:AbortSignal)=>Promise<DatabaseResult|null>;
+  close:(signal:AbortSignal)=>Promise<void>;
+}
+interface Entry {id:string;digest:string;statementId:string;targets:string[];status:'RESERVED'|'UNKNOWN'|'COMPLETE'|'FAILED';result:DatabaseResult|null;diagnostic:string|null;transactionId?:string;rejection?:{sqlState:string;evidenceDigest:string}}
+interface Transaction {beginId:string;targets:string[];state:'ACTIVE'|'FAILED'|'UNKNOWN'}
+interface Journal {
+  schema:'evopilot-database-gateway-journal/v1'|'evopilot-database-gateway-journal/v2';claimId:string;dependencyId:string;opened:'NO'|'RESERVED'|'YES'|'UNKNOWN'|'CLOSED';
+  objects:Record<string,'UNCHECKED'|'ABSENT'|'OWNED'|'UNKNOWN'|'COLLISION'>;
+  transaction?:Transaction|null;transactions?:{beginId:string;endId:string;outcome:'COMMIT'|'ROLLBACK'}[];
+  entries:Entry[];operations:number;connections:number;rows:number;outputBytes:number;startedAt:number;finishedAt:number|null;cleanup:boolean;violated:boolean;
+}
+const same=(a:unknown,b:unknown)=>usabilityStable(a)===usabilityStable(b);
+function privateFile(file:string){const s=fs.lstatSync(file);if(!s.isFile()||s.isSymbolicLink()||s.nlink!==1||s.uid!==process.getuid?.()||(s.mode&0o777)!==0o600)fail('EVALUATION_GATEWAY_PATH');}
+function regularRoot(root:string){if(!path.isAbsolute(root)||fs.realpathSync(root)!==root)fail('EVALUATION_GATEWAY_PATH');for(let p=root;;p=path.dirname(p)){const s=fs.lstatSync(p);if(s.isSymbolicLink()||!s.isDirectory())fail('EVALUATION_GATEWAY_PATH');if(path.dirname(p)===p)break;}const s=fs.lstatSync(root);if(s.uid!==process.getuid?.()||(s.mode&0o777)!==0o700)fail('EVALUATION_GATEWAY_PATH');}
+/** Recognize only the bounded HTAP table shape; property literals never become executable SQL tokens. */
+function htapTableBase(sql:string):string|null {
+  const m=/^CREATE TABLE ([a-z][a-z0-9_]*)\.([a-z][a-z0-9_]*) \((.+)\) CLUSTERED BY \(([a-z][a-z0-9_]*)\) INTO ([1-9][0-9]{0,3}) BUCKETS STORED AS HOLODESK WITH HTAP TBLPROPERTIES \('holodesk\.rowkey'='([a-z][a-z0-9_]*)'\)$/.exec(sql);
+  if(!m)return null;
+  const columns=m[3]!.split(', '),names:string[]=[];let requiredKey=false;
+  for(const column of columns){const c=/^([a-z][a-z0-9_]*) (INT|INTEGER|BIGINT|SMALLINT)( NOT NULL)?$/.exec(column);if(!c)return null;names.push(c[1]!);if(c[1]===m[4]&&c[3])requiredKey=true;}
+  if(!columns.length||columns.length>64||new Set(names).size!==names.length||!requiredKey||m[4]!==m[6]||Number(m[5])>1024)return null;
+  return 'CREATE TABLE '+m[1]+'.'+m[2]+' ('+m[3]+')';
+}
+/** Exact reviewed SQL only. Reject comments, batches, unscoped objects and privilege statements. */
+export function validatePreparedStatements(dependency:DatabaseDependency,templates:PreparedStatement[]):ReadonlyMap<string,string>{
+  if(templates.length!==dependency.statements.length||new Set(templates.map(t=>t.id)).size!==templates.length)fail('EVALUATION_TEMPLATE');const result=new Map<string,string>();
+  for(const t of templates){if(!t||Object.keys(t).sort().join(',')!=='id,sql'||typeof t.sql!=='string'||!t.sql.length||t.sql.length>32768||/[;"`\x00-\x1f\x7f]/.test(t.sql)||/--|\/\*|\*\/|\\/.test(t.sql))fail('EVALUATION_TEMPLATE');const s=dependency.statements.find(s=>s.id===t.id);if(!s||usabilityDigest(t.sql)!==s.templateDigest)fail('EVALUATION_TEMPLATE');
+    if(['BEGIN','COMMIT','ROLLBACK'].includes(s.operation)){if(t.sql!==s.operation||s.parameters.length)fail('EVALUATION_TEMPLATE');result.set(t.id,t.sql);continue;}
+    if(s.objectIds.length!==1)fail('EVALUATION_TEMPLATE');
+    const normalized=s.operation==='CREATE_TABLE'?htapTableBase(t.sql)??t.sql:t.sql;if(normalized.includes("'"))fail('EVALUATION_TEMPLATE');
+    const tokens=normalized.match(/[a-zA-Z_][a-zA-Z0-9_]*|[0-9]+|\?|[().,*=<>+\/-]/g);if(!tokens||tokens.join('')!==normalized.replaceAll(' ',''))fail('EVALUATION_TEMPLATE');const upper=tokens.map(v=>v.toUpperCase());
+    const verb=upper[0],expected={READ:'SELECT',INSERT:'INSERT',UPDATE:'UPDATE',DELETE:'DELETE',CREATE_TABLE:'CREATE',DROP_TABLE:'DROP',BEGIN:'BEGIN',COMMIT:'COMMIT',ROLLBACK:'ROLLBACK'}[s.operation];if(verb!==expected||['ALTER','GRANT','REVOKE','DATABASE','SCHEMA','USER','ROLE','ATTACH','DETACH','CALL','EXEC','EXECUTE','UNION','WITH','LOAD','COPY','INFILE','OUTFILE','FUNCTION','PROCEDURE'].some(word=>upper.includes(word)))fail('EVALUATION_TEMPLATE');
+    if(['CREATE','DROP'].includes(verb!)&&upper[1]!=='TABLE')fail('EVALUATION_TEMPLATE');
+    const referenced:string[]=[];for(let i=0;i<tokens.length;i++){if(['FROM','JOIN','INTO','TABLE','UPDATE'].includes(upper[i]!)){const target=tokens.slice(i+1,i+4);if(target.length!==3||target[0]!==dependency.namespace||target[1]!=='.'||!dependency.objects.some(o=>o.name===target[2]&&s.objectIds.includes(o.id)))fail('EVALUATION_TEMPLATE_OBJECT');referenced.push(target[2]!);}}
+    if(!referenced.length||s.objectIds.some(id=>!referenced.includes(dependency.objects.find(o=>o.id===id)!.name)))fail('EVALUATION_TEMPLATE_OBJECT');
+    if(tokens.filter(t=>t==='?').length!==s.parameters.length)fail('EVALUATION_PARAMETER');result.set(t.id,t.sql);
+  }return result;
+}
+export function createDatabaseEvaluationGateway(options:{root:string;claim:EvaluationClaim;dependencyId:string;templates:PreparedStatement[];driver:DatabaseDriver}){
+  const claim=validateEvaluationClaim(options.claim),selected=claim.plan.policy.dependencies.find(d=>d.id===options.dependencyId);if(!selected||selected.kind!=='BOUND_DATABASE'||claim.plan.policy.dependencies.length!==1)fail('EVALUATION_DATABASE_POLICY');const dependency:DatabaseDependency=selected;
+  const templates=validatePreparedStatements(dependency,options.templates),driver=options.driver;for(const k of ['driverDigest','endpointDigest','transportDigest','qualificationDigest','route','namespace'] as const)if(driver[k]!==dependency[k])fail('EVALUATION_DRIVER_BINDING');
+  const hasTransactions=dependency.statements.some(s=>['BEGIN','COMMIT','ROLLBACK'].includes(s.operation));
+  if(hasTransactions&&typeof driver.inspectTransaction!=='function')fail('EVALUATION_TRANSACTIONS_UNQUALIFIED');
+  const journalSchema=hasTransactions?'evopilot-database-gateway-journal/v2':'evopilot-database-gateway-journal/v1';
+  regularRoot(options.root);const file=path.join(options.root,'gateway.json');let journal:Journal;
+  function save(){const temporary=file+'.'+randomBytes(12).toString('hex')+'.pending';const fd=fs.openSync(temporary,fs.constants.O_WRONLY|fs.constants.O_CREAT|fs.constants.O_EXCL|fs.constants.O_NOFOLLOW,0o600);try{fs.writeFileSync(fd,usabilityStable(journal));fs.fsyncSync(fd);}finally{fs.closeSync(fd);}fs.renameSync(temporary,file);const directory=fs.openSync(options.root,'r');try{fs.fsyncSync(directory)}finally{fs.closeSync(directory)}}
+  function load(){privateFile(file);if(fs.statSync(file).size>67108864)fail('EVALUATION_GATEWAY_LIMIT');journal=JSON.parse(fs.readFileSync(file,'utf8')) as Journal;if(journal.schema!==journalSchema||journal.claimId!==claim.claimId||journal.dependencyId!==dependency.id||!same(Object.keys(journal.objects).sort(),dependency.objects.map(o=>o.id).sort()))fail('EVALUATION_GATEWAY_BINDING');}
+  function lease(){regularRoot(options.root);const lock=path.join(options.root,'lease.db');try{fs.closeSync(fs.openSync(lock,fs.constants.O_WRONLY|fs.constants.O_CREAT|fs.constants.O_EXCL|fs.constants.O_NOFOLLOW,0o600));}catch(e){if((e as NodeJS.ErrnoException).code!=='EEXIST')throw e;}privateFile(lock);const db=new DatabaseSync(lock,{timeout:0,allowExtension:false});db.enableDefensive(true);try{db.exec('BEGIN IMMEDIATE');return ()=>{db.exec('ROLLBACK');db.close();};}catch(e){db.close();if(e&&typeof e==='object'&&'errcode'in e&&[5,6].includes(Number(e.errcode)))fail('EVALUATION_GATEWAY_BUSY');throw e;}}
+  const release=lease();try{if(fs.existsSync(file))load();else{journal={schema:journalSchema,...(hasTransactions?{transaction:null,transactions:[]}:{}),claimId:claim.claimId,dependencyId:dependency.id,opened:'NO',objects:Object.fromEntries(dependency.objects.map(o=>[o.id,'UNCHECKED'])),entries:[],operations:0,connections:0,rows:0,outputBytes:0,startedAt:Date.now(),finishedAt:null,cleanup:false,violated:false};save();}}finally{release();}
+  let active=false;let pendingExecution:{id:string;controller:AbortController;cancelRequested:boolean}|null=null;const deadline=Date.parse(claim.admittedAt)+claim.remaining.wallMs;
+  async function bound<T>(fn:(signal:AbortSignal)=>Promise<T>,operationId?:string):Promise<T>{const ms=deadline-Date.now();if(ms<=0)fail('EVALUATION_GATEWAY_TIMEOUT');const controller=new AbortController();if(operationId)pendingExecution={id:operationId,controller,cancelRequested:false};let timer:ReturnType<typeof setTimeout>|undefined;try{return await Promise.race([fn(controller.signal),new Promise<never>((_,reject)=>{timer=setTimeout(()=>{controller.abort();reject(Object.assign(new Error('EVALUATION_GATEWAY_TIMEOUT'),{code:'EVALUATION_GATEWAY_TIMEOUT'}));},ms);})]);}finally{clearTimeout(timer);if(operationId&&pendingExecution?.id===operationId)pendingExecution=null;}}
+  async function exclusive<T>(fn:()=>Promise<T>):Promise<T>{if(active)fail('EVALUATION_GATEWAY_BUSY');active=true;let release:(()=>void)|undefined;try{release=lease();load();return await fn()}catch(e){const code=e&&typeof e==='object'&&'code'in e?String(e.code):'';return fail(/^EVALUATION_[A-Z_]{1,64}$/.test(code)?code:'EVALUATION_DRIVER_ERROR')}finally{release?.();active=false}}
+  function charge(count=1){if(journal.operations+count>claim.remaining.maxOperations)fail('EVALUATION_GATEWAY_BUDGET');journal.operations+=count;save();}
+  async function metadata(name:string){charge();const value=await bound(signal=>driver.inspectObject(name,signal));if(!value||Object.keys(value).sort().join(',')!=='exists,ownershipNonce'||typeof value.exists!=='boolean'||value.ownershipNonce!==null&&typeof value.ownershipNonce!=='string')fail('EVALUATION_DRIVER_RESULT');return value;}
+  async function connect(){if(journal.opened==='YES')return;if(journal.opened!=='NO')fail('EVALUATION_CONNECTION_UNKNOWN');if(journal.connections>=claim.remaining.maxConnections)fail('EVALUATION_GATEWAY_BUDGET');journal.opened='RESERVED';journal.connections++;save();try{await bound(signal=>driver.open(dependency.credentialRef,signal));journal.opened='YES';save()}catch(e){journal.opened='UNKNOWN';save();throw e}}
+  async function inspectOwned(id:string,creating=false){const o=dependency.objects.find(o=>o.id===id)!;const found=await metadata(o.name);if(found.exists&&(creating||found.ownershipNonce!==o.ownershipNonce||journal.objects[id]!=='OWNED')){journal.objects[id]='COLLISION';journal.violated=true;save();fail('EVALUATION_OBJECT_COLLISION');}if(!found.exists){journal.objects[id]='ABSENT';save();if(!creating)fail('EVALUATION_OBJECT_ABSENT');}}
+  function retain(entry:Entry,result:DatabaseResult){usabilityStable(result);if(!result||Object.keys(result).sort().join(',')!=='affectedRows,rows'||!Array.isArray(result.rows)||!Number.isSafeInteger(result.affectedRows)||result.affectedRows<0||result.rows.some(row=>!Array.isArray(row)||row.some(v=>v!==null&&!['string','number','boolean'].includes(typeof v))))fail('EVALUATION_DRIVER_RESULT');
+    const statement=dependency.statements.find(s=>s.id===entry.statementId)!;if(['BEGIN','COMMIT','ROLLBACK'].includes(statement.operation)&&(result.rows.length!==0||result.affectedRows!==0))fail('EVALUATION_DRIVER_RESULT');
+    const rows=result.rows.length+result.affectedRows,bytes=Buffer.byteLength(usabilityStable(result));journal.rows+=rows;journal.outputBytes+=bytes;
+    if(statement.operation==='BEGIN')journal.transaction={beginId:entry.id,targets:[...statement.objectIds],state:'ACTIVE'};
+    if(statement.operation==='COMMIT'||statement.operation==='ROLLBACK'){if(!journal.transaction)fail('EVALUATION_TRANSACTION_STATE');journal.transactions!.push({beginId:journal.transaction.beginId,endId:entry.id,outcome:statement.operation});journal.transaction=null;}
+    if(statement.operation==='CREATE_TABLE')for(const id of statement.objectIds)journal.objects[id]='OWNED';if(statement.operation==='DROP_TABLE')for(const id of statement.objectIds)journal.objects[id]='ABSENT';
+    if(journal.rows>claim.remaining.maxRows||journal.outputBytes>claim.remaining.maxOutputBytes){entry.status='FAILED';entry.diagnostic='EVALUATION_GATEWAY_BUDGET';journal.violated=true;save();fail('EVALUATION_GATEWAY_BUDGET');}
+    entry.status='COMPLETE';entry.result=JSON.parse(usabilityStable(result)) as DatabaseResult;const s=dependency.statements.find(s=>s.id===entry.statementId)!;if(s.operation==='CREATE_TABLE')for(const id of s.objectIds)journal.objects[id]='OWNED';if(s.operation==='DROP_TABLE')for(const id of s.objectIds)journal.objects[id]='ABSENT';save();return entry.result;
+  }
+  async function call(operationId:string,raw:unknown){return exclusive(async()=>{
+    if(!/^[a-z0-9][a-z0-9._-]{0,127}$/.test(operationId))fail('EVALUATION_OPERATION_ID');const request=validateDatabaseCall(dependency,raw),requestDigest=usabilityDigest(request),old=journal.entries.find(e=>e.id===operationId);
+    if(old){if(old.digest!==requestDigest)fail('EVALUATION_REQUEST_CONFLICT');if(old.status==='COMPLETE')return old.result;if(old.status==='FAILED')fail(old.diagnostic??'EVALUATION_FAILED');fail('EVALUATION_WRITE_UNKNOWN');}
+    const selected=dependency.statements.find(s=>s.id===request.statementId)!;
+    if(journal.cleanup||(journal.violated&&!['DROP_TABLE','ROLLBACK'].includes(selected.operation))||journal.entries.some(e=>['RESERVED','UNKNOWN'].includes(e.status)))fail('EVALUATION_WRITE_UNKNOWN');if(journal.operations>=claim.remaining.maxOperations)fail('EVALUATION_GATEWAY_BUDGET');
+    const s=dependency.statements.find(s=>s.id===request.statementId)!;
+    const control=['BEGIN','COMMIT','ROLLBACK'].includes(s.operation),tx=journal.transaction;
+    if(tx){
+      if(tx.state==='UNKNOWN')fail('EVALUATION_TRANSACTION_UNKNOWN');
+      charge();const observed=await bound(signal=>driver.inspectTransaction!(claim.claimId+':'+tx.beginId,signal));
+      if(observed!==tx.state){tx.state='UNKNOWN';save();fail('EVALUATION_TRANSACTION_UNKNOWN');}
+      if(s.operation==='BEGIN'||['CREATE_TABLE','DROP_TABLE'].includes(s.operation)||s.objectIds.some(id=>!tx.targets.includes(id))||tx.state==='FAILED'&&s.operation!=='ROLLBACK')fail('EVALUATION_TRANSACTION_STATE');
+      if(control&&!same([...s.objectIds].sort(),[...tx.targets].sort()))fail('EVALUATION_TRANSACTION_SCOPE');
+    }else if(['COMMIT','ROLLBACK'].includes(s.operation))fail('EVALUATION_TRANSACTION_STATE');
+    await connect();if(!['COMMIT','ROLLBACK'].includes(s.operation))for(const id of s.objectIds)await inspectOwned(id,s.operation==='CREATE_TABLE');
+    const entry:Entry={id:operationId,digest:requestDigest,statementId:s.id,targets:s.objectIds,...(tx?{transactionId:tx.beginId}:{}),status:'RESERVED',result:null,diagnostic:null};journal.entries.push(entry);charge(control?s.objectIds.length:1);
+    try{return retain(entry,await bound(signal=>driver.execute({operationId:claim.claimId+':'+operationId,operation:s.operation,transactionId:s.operation==='BEGIN'?claim.claimId+':'+operationId:tx?claim.claimId+':'+tx.beginId:null,targets:s.objectIds.map(id=>{const o=dependency.objects.find(o=>o.id===id)!;return{name:o.name,ownershipNonce:o.ownershipNonce}}),sql:templates.get(s.id)!,parameters:request.parameters,ownershipNonce:dependency.objects.find(o=>o.id===s.objectIds[0])!.ownershipNonce,limits:{rows:Math.max(0,claim.remaining.maxRows-journal.rows),outputBytes:Math.max(0,claim.remaining.maxOutputBytes-journal.outputBytes),deadline}},signal),operationId));}
+    catch(e){if(entry.status==='RESERVED'){
+      if(e instanceof DatabaseExecutionRejected&&e.operationId===claim.claimId+':'+operationId){entry.status='FAILED';entry.diagnostic=e.code;entry.rejection={sqlState:e.sqlState,evidenceDigest:e.evidenceDigest};if(journal.transaction)journal.transaction.state='FAILED';save();throw e;}
+      entry.status='UNKNOWN';if(journal.transaction)journal.transaction.state='UNKNOWN';entry.diagnostic=e&&typeof e==='object'&&'code'in e?String(e.code):'EVALUATION_DRIVER_ERROR';for(const id of s.objectIds)if(['CREATE_TABLE','DROP_TABLE'].includes(s.operation))journal.objects[id]='UNKNOWN';save();}if(e instanceof DatabaseExecutionRejected)fail('EVALUATION_DRIVER_ERROR');throw e;}
+  });}
+  async function refreshKnownTransaction(){
+    if(journal.transaction?.state!=='UNKNOWN'||journal.entries.some(e=>['RESERVED','UNKNOWN'].includes(e.status)))return;
+    charge();const observed=await bound(signal=>driver.inspectTransaction!(claim.claimId+':'+journal.transaction!.beginId,signal));
+    if(observed==='ACTIVE'||observed==='FAILED'){journal.transaction.state=observed;save();}
+  }
+  async function reconcile(operationId:string){return exclusive(async()=>{const entry=journal.entries.find(e=>e.id===operationId);if(!entry)fail('EVALUATION_OPERATION_UNKNOWN');if(entry.status==='COMPLETE'){await refreshKnownTransaction();return entry.result;}if(entry.status==='FAILED')fail(entry.diagnostic??'EVALUATION_FAILED');const result=await bound(signal=>driver.reconcile(claim.claimId+':'+operationId,signal));if(result===null)return null;const retained=retain(entry,result);await refreshKnownTransaction();return retained;});}
+  async function cleanup(){return exclusive(async()=>{
+    if(journal.transaction)fail('EVALUATION_TRANSACTION_OPEN');
+    if(journal.entries.some(e=>['RESERVED','UNKNOWN'].includes(e.status))||['RESERVED','UNKNOWN'].includes(journal.opened))fail('EVALUATION_WRITE_UNKNOWN');
+    // DROP is an explicit reviewed statement, never an automatic wildcard cleanup.
+    for(const object of dependency.objects){if(journal.opened==='NO')continue;const found=await metadata(object.name);if(found.exists)fail('EVALUATION_CLEANUP_REQUIRED');journal.objects[object.id]='ABSENT';}
+    if(journal.opened==='YES'){await bound(signal=>driver.close(signal));journal.opened='CLOSED';}journal.cleanup=true;journal.finishedAt=Date.now();save();return true;
+  });}
+  function receipt(){
+    if(active)fail('EVALUATION_GATEWAY_BUSY');const release=lease();try{load();const p=claim.plan,body={schema:'evopilot-database-gateway-evidence/v1' as const,scope:'DATABASE_GATEWAY_ONLY' as const,candidateIsolation:'NOT_OBSERVED' as const,authority:false as const,verifiedLevel:null,claimId:claim.claimId,planDigest:claim.planDigest,sessionId:claim.sessionId,origin:p.origin,outputDigest:p.reconstruction.outputDigest,oracleDigest:p.oracleDigest,environmentDigest:p.environmentDigest,dependenciesDigest:p.dependenciesDigest,policyDigest:usabilityDigest(p.policy),providerDigest:usabilityDigest(p.provider),status:journal.cleanup&&!journal.violated?'SUCCEEDED' as const:'FAILED' as const,usage:{wallMs:Math.max(0,(journal.finishedAt??Date.now())-Date.parse(claim.admittedAt)),connections:journal.opened==='UNKNOWN'?null:journal.connections,rows:journal.entries.some(e=>e.status==='UNKNOWN'||e.status==='RESERVED')?null:journal.rows,outputBytes:journal.outputBytes,operations:journal.operations},violations:{directConnections:0,unrelatedPeers:0,sourceReads:0,oracleReads:0,credentialReads:0,foreignEffects:0},effects:journal.entries.flatMap(e=>e.targets.map(id=>({id:e.id+'-'+id,dependencyId:dependency.id,targetId:id,operation:e.statementId,outcome:e.status==='COMPLETE'||e.status==='FAILED'&&(e.diagnostic==='EVALUATION_GATEWAY_BUDGET'||e.rejection!==undefined)?'CONFIRMED' as const:'UNKNOWN' as const,traceDigest:usabilityDigest(e)}))),cleanup:[{dependencyId:dependency.id,ownedTargets:dependency.objects.map(o=>o.id),confirmedAbsent:journal.cleanup,traceDigest:usabilityDigest(journal.objects)}],containment:[],enforcementDigest:usabilityDigest(journal),diagnostic:journal.cleanup&&!journal.violated?null:'EVALUATION_INCOMPLETE'};
+    return {...body,digest:usabilityDigest(body)};}finally{release();}
+  }
+  function cancelActive(operationId:string){
+    if(!pendingExecution||pendingExecution.id!==operationId)fail('EVALUATION_OPERATION_NOT_ACTIVE');
+    if(!pendingExecution.cancelRequested){charge();pendingExecution.cancelRequested=true;pendingExecution.controller.abort();}
+    return {operationId,cancelRequested:true};
+  }
+  return {call,reconcile,cleanup,receipt,cancelActive,inspect:()=>{const release=lease();try{load();return JSON.parse(usabilityStable(journal)) as Readonly<Journal>}finally{release();}}};
+}

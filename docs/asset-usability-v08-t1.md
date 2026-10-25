@@ -37,6 +37,8 @@ Set `EVOPILOT_TEST_NATIVE_TOOLCHAIN` to a verified pinned toolchain. Set `EVOPIL
 
 The explicit Roadmap file must match the execution Target's digest. The isolated source baseline can precede uncommitted accepted planning; neither the checker nor this document silently replaces those original inputs. Missing or changed inputs must fail alignment. The historical `roadmap:check` still validates only its frozen baseline.
 
+The current source Target rebinds the planning inputs to the accepted [controlled execution correction](architecture/0011-controlled-process-authority.md). Its `bindingRevision` retains the predecessor Target and input digests and pins the correction Target and ADR. All 27 foundation, 18 project-admission and 19 owner-admission variants remain unchanged. This source binding does not change the published v0.8.0 tag, historical receipts or acceptance decisions, and does not authorize a new asset, execution budget or release. Run both the execution and delivery checkers against the same accepted Roadmap; correction or input drift requires a new reviewed binding.
+
 The public fixtures are synthetic. The private real-asset experiment freezes a consumer inventory before reading the current published owner record, cites exact normative file bytes, preserves all gaps and compares owner revisions before/after. A successful *gap experiment* does not mean the asset passed a usability level. Source copies retained for auditing are not approved builder inputs.
 
 ## Remaining delivery order

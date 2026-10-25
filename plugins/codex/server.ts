@@ -49,7 +49,7 @@ const definitions: Record<string, [string, Schema]> = {
   request: ['Forward one exact owning product envelope; await classification start/reanalyze.', object({ owner: { enum: ['runtime', 'harness', 'ontology'] }, envelope })],
   native: ['Call a corrected-v1 owning product operation. Real collection, owner receipts and exact project completion gates remain mandatory.', object({ owner: { enum: ['runtime', 'harness', 'ontology'] }, envelope })],
   native_project: ['Prepare and inspect a corrected-v1 project candidate, freeze an actually reviewed scope, materialize native assets or record an exact domain review. Candidate files do not replace current deliveries. prepare-execution currently supports the installed Node toolchain only.', object({ operation: { enum: ['preflight', 'prepare', 'freeze', 'materialize', 'review-domain', 'inspect', 'check-layout', 'candidate-location', 'prepare-execution', 'promote'] }, input: { type: 'object' } })],
-  toolchain_inspect: ['Verify the bundled native toolchain lock and local installed bytes without downloading or activating.', object()],
+  toolchain_inspect: ['Verify all bundled toolchain bytes without downloading or activating. Use view=summary for Host readiness reports; omitted view or view=full retains the complete dependency-file inventory.', object({view:{enum:['summary','full']}}, [])],
   toolchain_prepare: ['Start bounded preparation of bundled pinned dependencies and return a retained status. Inspect progress; never repeat a pending request. Deactivates this session; activate only after toolchain_inspect reports ready.', object({ requestId: slug })],
   dispatch: ['Dispatch one explicitly approved Runtime run without retry.', object({ args })],
   reconcile: ['Read retained provider evidence through Runtime reconciliation, without redispatch.', object({ args })],
@@ -144,7 +144,7 @@ async function serve(configPath: string) {
       const rawInput = p.arguments ?? {};
       try { validate(rawInput, def.inputSchema); } catch { await error(-32602, 'Invalid params'); return; }
       // The tool-specific schema above checks each forwarded field before use.
-      const input = rawInput as ActionPayload & WorkspaceSetupInput & { scenario: string; operation: Parameters<typeof projectOperation>[1] | 'template.upgrade'; input: Record<string,unknown>; destinationRoot: string; backupRoot: string; destinationProjectRoot: string; destinationStateRoot: string };
+      const input = rawInput as ActionPayload & WorkspaceSetupInput & { view?: 'summary' | 'full'; scenario: string; operation: Parameters<typeof projectOperation>[1] | 'template.upgrade'; input: Record<string,unknown>; destinationRoot: string; backupRoot: string; destinationProjectRoot: string; destinationStateRoot: string };
       const action = (p.name as string).slice(prefix.length);
       const correlation = connectionCorrelation(action, input);
       try {
@@ -164,7 +164,10 @@ async function serve(configPath: string) {
           const lock = inspectBundledToolchainLock(), c = loadConfiguration(configPath), preparation = inspectToolchainPreparation(configPath);
           try {
             const toolchain = inspectNativeToolchain({ cacheRoot: path.join(c.workspaceRoot, 'native-toolchain') });
-            value = { ready: true, lock, toolchain, preparation, authority: false };
+            const {dependencyFiles, ...metadata} = toolchain;
+            value = { ready: true, lock, toolchain: input.view === 'summary'
+              ? {...metadata, dependencyFileCount: dependencyFiles?.length ?? null, dependencyFilesOmitted: true}
+              : toolchain, preparation, authority: false };
           } catch (error) {
             const code = errorCode(error);
             if (code !== 'ENOENT' && code !== 'TOOLCHAIN_NOT_READY') throw error;

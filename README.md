@@ -61,7 +61,7 @@ codex plugin marketplace add "$preview_root" --json
 codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json
 ```
 
-Existing users should follow the [v0.6 to v0.7 upgrade procedure](docs/migration.md#upgrade-from-v06-to-v070) before switching their daily plugin. Preserve the existing Workspace and verify rollback on an isolated copy.
+Existing users should follow the [v0.7 to v0.8 upgrade procedure](docs/migration.md#upgrade-from-v07-to-v080) before switching their daily plugin. Preserve the existing Workspace and verify rollback on an isolated copy. Installing v0.8 preserves existing asset versions; it does not select an L1/L2/L3 target or award a verified level to either a pilot or a whole project.
 
 Select **EvoPilot v0.8 Preview**, then say: “Initialize my private Workspace, explain its directories, and guide me through the forward example.” The Expert inspects first, creates the Workspace only after your setup request, then explicitly activates the current chat. You can choose your own directories; no private GitHub repository is required. Initialization alone does not activate the chat. Inspect and guide requests stay passive; ordinary chats do not require EvoPilot.
 

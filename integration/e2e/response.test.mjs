@@ -191,9 +191,16 @@ for (const scenario of [
   assert.equal(fs.readFileSync(attemptFile, 'utf8'), 'action\n', 'Restart/replay must not repeat the actual repair process');
   assert.equal((await read('runtime', 'response.execution.inspect', { id: prepared.plan.id })).status, 'UNVERIFIED');
   const healthySince = JSON.parse(fs.readFileSync(healthFile, 'utf8')).healthySince;
-  const wait = Math.max(0, (healthySince + 1) * 1000 - Date.now()); if (wait) await new Promise(resolve => setTimeout(resolve, wait));
-  const recovery = (await write('harness', 'online.evaluate', { id: spec.id, windowEnd: Math.floor(Date.now() / 1000) })).observation;
-  assert.equal(recovery.outcome, 'PASS'); assert.equal(queries, 8);
+  // A timer wakeup alone does not prove the clock crossed the sample boundary.
+  // Both samples in the actual two-second window must follow the repair.
+  const earliestRecoveryEnd = healthySince + 1;
+  while (Math.floor(Date.now() / 1000) < earliestRecoveryEnd) {
+    await new Promise(resolve => setTimeout(resolve, Math.max(1, earliestRecoveryEnd * 1000 - Date.now())));
+  }
+  const recoveryWindowEnd = Math.floor(Date.now() / 1000);
+  assert.ok(recoveryWindowEnd - 1 >= healthySince, 'The entire recovery window must contain post-repair samples');
+  const recovery = (await write('harness', 'online.evaluate', { id: spec.id, windowEnd: recoveryWindowEnd })).observation;
+  assert.equal(recovery.outcome, 'PASS', JSON.stringify(recovery)); assert.equal(queries, 8);
   const regression = (await write('harness', 'online.regression.verify', { faultId: fault.id, recoveryId: recovery.id })).result;
   let recoveryRef = { owner: 'harness', id: regression.digest, digest: regression.digest };
   if (scenario.id === 'checkout') {
