@@ -1,3 +1,4 @@
+import {syncReadiness} from './sync-readiness.mjs';
 import {syncUsability} from './sync-usability.mjs';
 import {syncReadability} from './sync-readability.mjs';
 import {syncResponse} from './sync-response.mjs';
@@ -10,6 +11,7 @@ import {syncFeedback} from './sync-feedback.mjs';
 import {syncOnline} from './sync-online.mjs';
 const root = fileURLToPath(new URL('../', import.meta.url));
 await readCanonical();
+await syncReadiness({check:true});
 await syncUsability({check:true});
 await syncReadability({check:true});
 await syncContract({ check: true });

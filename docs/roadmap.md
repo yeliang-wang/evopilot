@@ -249,3 +249,8 @@ The following IDs are expanded into fixed variants in the v0.6 Target and covere
 | EVO-F04-E10 | Upgrade, recovery and retained history | Exact plan, guidance, asset and observation references survive supported backup/restore and restart. Old records are not rewritten into new approvals; migration failures preserve recoverable state and report incompatibility. |
 
 **Follow-up:** extend reusable postmortem learning and queries when real project needs justify another reviewed Target. The v0.6 implementation does not delay the existing second-project onboarding or add a v1.0 release gate. ONT-F01, HAR-F01 and RUN-F01 remain separate, demand-driven follow-ups; do not silently pull full semantic reasoning, policy calibration or a new executor platform into this scope.
+
+
+## v0.8.1 Preview — accepted asset readiness correction
+
+[The accepted plan](asset-readiness-v081.md) and [machine Target](../governance/asset-readiness-v081.json) add explicit usability v2 while preserving v1. L1/L2/L3 describe asset content; reconstruction verification remains independent. Scope includes three modeling modes, full existing project asset upgrades, exact four-product release and current Codex deployment. All 63 pre-release and 9 post-release variants are mandatory. The prior v0.8 baseline remains published history. No v0.9 capability or Dashboard enters this version. User-environment Prometheus acceptance remains deferred.

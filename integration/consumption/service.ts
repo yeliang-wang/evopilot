@@ -33,6 +33,7 @@ export async function startAssetService(configPath:string){
     if(found.length!==1)consumptionFail(found.length?'CONSUMPTION_AMBIGUOUS':'CONSUMPTION_UNAVAILABLE');return found[0];
   }
   const api=createAssetConsumption({workspaceId:config.workspaceId,readPackage,
+    readiness:(owner,request)=>composition.native(owner,request),
     readSnapshot:async context=>{const material=await readPackage(context);return await composition.native(context.reference.product,{operation:'readable.snapshot',scope:material.scope,input:{id:context.reference.id,version:context.reference.version}}) as ReadSnapshot;},
     usability:async<K extends UsabilityOperation>(request:UsabilityRequest<K>)=>await composition.native('harness',request) as UsabilityResponse<K>,
   });

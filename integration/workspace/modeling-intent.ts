@@ -1,3 +1,4 @@
+import {validateReadinessIntent, type ReadinessIntent} from '../compatibility/usability/v2/contract.mjs';
 import {nativeAssertJSON, nativeExact, nativeSha256, nativeText, nativeFrozenClone} from '../compatibility/v1/native.mjs';
 import {verifyDecisionEvidence} from '../compatibility/v1/decision-evidence.mjs';
 import {USABILITY_STANDARD_DIGEST, BEHAVIOR_FACETS, type UsabilityLevel} from '../compatibility/usability/v1/contract.mjs';
@@ -18,9 +19,12 @@ export interface ModelingIntentDefinition {
   reconstruction: {inputMode: 'SPECIFICATION_ONLY'; independentAttempts: 2; oraclePlan: string; environment: string}|null;
   userIntentOrigin: 'explicit-request'|'retained-context';
 }
-export interface ModelingIntent {definition: ModelingIntentDefinition; humanEvidenceRef: string}
+export interface ModelingIntentV1 {definition: ModelingIntentDefinition; humanEvidenceRef: string}
+export interface ModelingIntentV2 {definition: ReadinessIntent; humanEvidenceRef:string}
+export type ModelingIntent=ModelingIntentV1|ModelingIntentV2;
 export interface ModelingIntentContext {
   workspaceId: string; scope: NativeScope; sourceRoot: string; revision: string;
+  direction?:'forward'|'reverse';sourceDigest?:string;
   requirements: {ownerRequirements: {criterionId: string; variantIds: string[]}[]};
 }
 function fail(code: string, message: string): never {throw Object.assign(new Error(message),{code});}
@@ -32,7 +36,10 @@ function strings(value: unknown, nonempty=false): asserts value is string[] {
 }
 /** Admission checks evidence binding and completeness, never semantic truth or a verified level. */
 export function assertModelingIntent(value: unknown, context: ModelingIntentContext): ModelingIntent {
-  try { return validateModelingIntent(value,context); }
+  try {
+    if(value&&typeof value==='object'&&'definition' in value&&(value.definition as {schema?:string})?.schema==='evopilot-modeling-intent/v2')return validateModelingIntentV2(value,context);
+    return validateModelingIntent(value,context);
+  }
   catch(error) {
     if(error instanceof TypeError)fail('MODELING_INTENT_INVALID','Complete the required modeling intent profile and evidence binding');
     throw error;
@@ -66,4 +73,13 @@ function validateModelingIntent(value: unknown, context: ModelingIntentContext):
   nativeText(value.humanEvidenceRef);
   verifyDecisionEvidence(value.humanEvidenceRef,{owner:'project',operation:'modeling.intent',workspaceId:context.workspaceId,scope:context.scope,reviewDigest:nativeSha256(d),decision:'ACCEPT'});
   return nativeFrozenClone(value) as unknown as ModelingIntent;
+}
+
+function validateModelingIntentV2(value:unknown,context:ModelingIntentContext):ModelingIntentV2 {
+  nativeExact(value,['definition','humanEvidenceRef']);const d=validateReadinessIntent(value.definition);
+  if(d.workspaceId!==context.workspaceId||!same(d.scope,context.scope)||!d.sources.some(s=>s.reference===context.sourceRoot&&s.revision===context.revision&&(!context.sourceDigest||s.digest===context.sourceDigest)))fail('MODELING_INTENT_STALE','The fixed source and scope must match the v2 intent');
+  if((context.direction??'reverse')==='reverse'?d.mode!=='SOURCE_REVERSE':d.mode==='SOURCE_REVERSE')fail('MODELING_INTENT_INVALID','The modeling mode must match the source direction');
+  if(context.requirements.ownerRequirements.some(r=>!d.requirements.some(q=>q.id===r.criterionId&&same([...(q.acceptanceVariants??[])].sort(),[...r.variantIds].sort()))))fail('MODELING_INTENT_ACCEPTANCE','Every fixed native requirement and variant must remain in the v2 inventory');
+  nativeText(value.humanEvidenceRef);verifyDecisionEvidence(value.humanEvidenceRef,{owner:'runtime',operation:'readiness.intent.record',workspaceId:context.workspaceId,scope:context.scope,reviewDigest:nativeSha256(d),decision:'ACCEPT'});
+  return nativeFrozenClone({definition:d,humanEvidenceRef:value.humanEvidenceRef});
 }

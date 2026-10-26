@@ -35,9 +35,10 @@ export async function startConsumptionHTTP(options:ConsumptionHTTPOptions){
     return matched?{id:matched.id,grants:matched.grants}:null;
   }
   const handler=async(req:http.IncomingMessage,res:http.ServerResponse)=>{
+    const v2Route=req.url==='/v2/assets';
     const projectsRoute=req.url==='/v1/projects'&&req.method==='GET';
     // Service clients only: no browser Origin, CORS, URL tokens, forms, or redirects.
-    if((!projectsRoute&&(req.url!=='/v1/assets'||req.method!=='POST'))||req.headers.origin){send(res,404,{error:'CONSUMPTION_ROUTE'});req.resume();return;}
+    if((!projectsRoute&&((req.url!=='/v1/assets'&&!v2Route)||req.method!=='POST'))||req.headers.origin){send(res,404,{error:'CONSUMPTION_ROUTE'});req.resume();return;}
     let principal:ConsumptionPrincipal|null;
     try{principal=authenticate(req);}catch{send(res,503,{error:'CONSUMPTION_AUTH_UNAVAILABLE'});req.resume();return;}
     if(!principal){send(res,401,{error:'CONSUMPTION_UNAUTHORIZED'});req.resume();return;}
@@ -52,6 +53,8 @@ export async function startConsumptionHTTP(options:ConsumptionHTTPOptions){
       const chunks:Buffer[]=[];let bytes=0;
       for await(const chunk of req){const b=Buffer.from(chunk);bytes+=b.length;if(bytes>CONSUMPTION_LIMITS.requestBytes)consumptionFail('CONSUMPTION_LIMIT');chunks.push(b);}
       let request:ConsumptionRequest;try{request=JSON.parse(Buffer.concat(chunks).toString('utf8'));}catch{consumptionFail('CONSUMPTION_REQUEST');}
+      const v2Operation=['assets.readiness','assets.specification.v2'].includes(request.operation);
+      if(v2Route!==v2Operation)consumptionFail('CONSUMPTION_OPERATION');
       const result=await options.consume(principal,request);const body=JSON.stringify(result);if(Buffer.byteLength(body)>CONSUMPTION_LIMITS.responseBytes)consumptionFail('CONSUMPTION_LIMIT');
       // Revocation while a provider was running also prevents delivery.
       const current=authenticate(req);if(!current||nativeStableSerialize(current)!==nativeStableSerialize(principal))consumptionFail('CONSUMPTION_REVOKED');send(res,200,result);

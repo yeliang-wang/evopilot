@@ -1,0 +1,666 @@
+{
+  "schema": "evopilot-v081-review-acceptance-draft/v1",
+  "status": "ACCEPTED_PLAN_NOT_ACCEPTANCE",
+  "versionProposal": "0.8.1 Preview",
+  "standardProposal": "evopilot-usability-standard/v2",
+  "approvalRecorded": false,
+  "executionAuthorized": false,
+  "releaseAuthorized": false,
+  "counts": {
+    "criteria": 24,
+    "mandatoryVariants": 72,
+    "preReleaseVariants": 63,
+    "postReleaseVariants": 9
+  },
+  "countMeaning": "72 fixed acceptance variants across contract, integration, real Host, project asset, migration and delivery checks; not 72 independent user E2E journeys.",
+  "criteria": [
+    {
+      "id": "V081-E01",
+      "title": "标准身份与等级定义",
+      "evidenceType": "共享契约",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E01.01",
+          "expected": "新标准准确显示 L1 理解、L2 实现规格、L3 重建规格完备，且不声称已重建",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E01.02",
+          "expected": "新标准请求缺少或使用未知标准版本时拒绝，不按裸 L3 推断",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E01.03",
+          "expected": "旧标准和摘要保持原值，旧 L3 仍显示重建验证语义",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E02",
+      "title": "建模意图门禁",
+      "evidenceType": "服务集成",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E02.01",
+          "expected": "三种建模模式均绑定用途、范围、排除项、来源、目标等级及标准",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E02.02",
+          "expected": "复用明确的已确认上下文，不重复询问；不将选择模板当作授级",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E02.03",
+          "expected": "范围、来源语义或标准变化时要求有效新绑定，缺失/陈旧绑定不能写入",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E03",
+      "title": "L1 领域内容评定",
+      "evidenceType": "服务集成",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E03.01",
+          "expected": "约定领域问题全部有准确且可追溯的答案时通过",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E03.02",
+          "expected": "缺失定义、无法定位来源的必需答案阻止通过",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E03.03",
+          "expected": "冲突、歧义和仅有未确认推断不能冒充确认事实",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E04",
+      "title": "L2 行为规格评定",
+      "evidenceType": "服务集成",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E04.01",
+          "expected": "所选功能的全部适用 13 个行为维度及验收映射完整时通过",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E04.02",
+          "expected": "缺少错误、副作用、恢复等任一必需语义时不通过",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E04.03",
+          "expected": "不适用项有理由和审阅引用，不能以空模板或统一 N/A 绕过",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E05",
+      "title": "L3 重建输入闭合",
+      "evidenceType": "服务集成",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E05.01",
+          "expected": "完整规格、模块组合、固定依赖、配置/环境要求、初始化/迁移和验收规则形成可独立消费的包",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E05.02",
+          "expected": "缺失/不可访问/篡改的必需规格依赖，或隐藏的源码/部署依赖阻止通过",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E05.03",
+          "expected": "单模块已完整但组合义务缺失时不能授予整体 L3",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E06",
+      "title": "来源与设计真实性",
+      "evidenceType": "服务集成",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E06.01",
+          "expected": "源码事实、文档声明、推断、用户设计决定分别标注，并定位到提交/文件/页码/资产摘要",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E06.02",
+          "expected": "正向设计可作为待实现的规范被确认，不要求存在软件，也不宣称已运行",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E06.03",
+          "expected": "来源冲突及未决核心业务语义阻止相应等级；修正须保留前版与决定来源",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E07",
+      "title": "环境无关与零业务执行",
+      "evidenceType": "集成守卫",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E07.01",
+          "expected": "未配置 SSH、数据库、Prometheus、构建 Agent 或模型执行凭据时仍能完成符合要求的 v2 L3 资产评定",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E07.02",
+          "expected": "关闭原项目服务不使内容完整、依赖规格仍可读的资产等级失效",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E07.03",
+          "expected": "建模/评定期间业务重建调度、SSH 和数据库调用均为零，凭据不被索取或读取",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E08",
+      "title": "资产等级与重建验证分离",
+      "evidenceType": "服务集成",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E08.01",
+          "expected": "v2 L3 与 reconstructionVerification=NOT_REQUESTED 可合法共存",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E08.02",
+          "expected": "可选重建失败、取消或缺少环境单独保留，不能直接将资产等级或旧结果重写",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E08.03",
+          "expected": "若独立证据确认资产确有规格遗漏/冲突，记录缺口并重新评定，不能借分离隐藏已知缺陷",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E09",
+      "title": "版本与时效独立判定",
+      "evidenceType": "服务集成",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E09.01",
+          "expected": "资产/需求/标准变更使适用的新资产评定进入待评或过期，不自动继承等级",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E09.02",
+          "expected": "仅执行机或数据库可达性变化影响相应重建验证的适用性，不等同于资产内容变化",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E09.03",
+          "expected": "历史评定及历史执行结果按原摘要可读，新旧结论并列且适用范围明确",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E10",
+      "title": "源码反向的真实 Host 流程",
+      "evidenceType": "安装后真实 Codex E2E",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E10.01",
+          "expected": "从固定 DataRig 源码范围进入意图确认、提取、补缺、审阅、评定、导出，无原数据库/SSH 环境",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E10.02",
+          "expected": "从固定 EvoPilot 源码范围完成同一流程，正确处理跨组件来源与标准版本",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E10.03",
+          "expected": "带缺失必需语义的源码范围输出准确缺口，不能凭测试目录存在获得 L3；独立记录实际 MCP 调用",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E11",
+      "title": "PDF 与设计文档的真实 Host 流程",
+      "evidenceType": "安装后真实 Codex E2E",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E11.01",
+          "expected": "仅提供有文本层的真实 PDF/设计文档，完成来源定位、设计确认和 v2 等级评定，不绑定原软件",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E11.02",
+          "expected": "尚无软件的正向设计可形成合格 L3 规格包，输出明确为待实现设计",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E11.03",
+          "expected": "扫描/不可解析/缺页或含关键矛盾的资料明确阻塞或降为待补，不编造读取内容",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E12",
+      "title": "已有资产组合的真实 Host 流程",
+      "evidenceType": "安装后真实 Codex E2E",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E12.01",
+          "expected": "从 Workspace 中已授权资产的固定版本组合新规格，完整导出依赖闭包",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E12.02",
+          "expected": "版本冲突、缺失依赖与转换信息损失被定位并阻止不当授级",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E12.03",
+          "expected": "跨项目/租户未授权资产不可读，已有资产的等级不会被组合过程自动转移",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E13",
+      "title": "可选重建能力保留",
+      "evidenceType": "既有执行功能回归",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E13.01",
+          "expected": "真实历史重建结果按原标准只读可见，次数、失败、范围和证据不被改写",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E13.02",
+          "expected": "仅选择新 L3 或发布规格包不创建或启动重建 Run",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E13.03",
+          "expected": "用户主动请求重建时仍检查精确计划、权限、预算和环境；隔离技术样例验证原有恢复/拒绝行为，不执行真实项目全量重建",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E14",
+      "title": "HTTP SDK MCP 及导出一致性",
+      "evidenceType": "多入口集成",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E14.01",
+          "expected": "独立 HTTP 消费者在无 Runtime 业务 Run 条件下读到标准、资产等级与独立重建状态",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E14.02",
+          "expected": "SDK 与 MCP 返回相同的标准版本、固定范围、等级、缺口及两种证据状态",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E14.03",
+          "expected": "分页/导出/离线读回保留相同固定版本与摘要，旧消费者不把 v2 L3 当成 v1 L3",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E15",
+      "title": "隐私与输入权限",
+      "evidenceType": "安全集成",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E15.01",
+          "expected": "资产包和日志不包含数据库/SSH/API 密钥或未授权原项目数据",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E15.02",
+          "expected": "文档、PDF 和源码中的指令文本不能授权执行、修改范围或泄露数据",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E15.03",
+          "expected": "跨 scope、撤销访问、路径穿越和被篡改引用被拒绝，保留原有资产服务守卫",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E16",
+      "title": "中断恢复与幂等",
+      "evidenceType": "服务恢复集成",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E16.01",
+          "expected": "评定或导入响应丢失后读取原 request/receipt，不重复写入或执行",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E16.02",
+          "expected": "中断/重启保留当前真实状态、缺口与历史结果，不由半成品生成 PASS",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E16.03",
+          "expected": "并发修改与重复提交保留版本冲突/幂等语义，不自动刷新审批绑定",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E17",
+      "title": "新旧标准兼容迁移",
+      "evidenceType": "隔离迁移 E2E",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E17.01",
+          "expected": "克隆非空旧 Workspace 后升级，旧资产、审批、摘要和历史 L3 原样可读",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E17.02",
+          "expected": "原 v1 调用保留原语义与错误；未显式选择新标准的旧请求不默认为 v2",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E17.03",
+          "expected": "新增状态标记后旧写入器明确拒绝；通过停止服务的已验证备份恢复旧版本",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E18",
+      "title": "DataRig 整体资产内容升级",
+      "evidenceType": "真实项目资产验收",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E18.01",
+          "expected": "固定 v2.0 已发布基线，Engine/Query/Export/MCP/Usecase 全部必需功能及组合义务有内容覆盖",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E18.02",
+          "expected": "数据库行为、事务、路由、停止/恢复、导出等完整写入规格，但不执行原数据库和原版 E2E",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E18.03",
+          "expected": "完整新资产候选的预发布内容审阅满足选定整体 L3 要求；候选不冒充正式发布评定，遗漏必需模块不得用切片通过代替",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E19",
+      "title": "EvoPilot 整体资产内容升级",
+      "evidenceType": "真实项目资产验收",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E19.01",
+          "expected": "固定本次候选源码，Runtime/Harness/Ontology 及 Workspace/Expert/父项目组合全部必需功能有内容覆盖",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E19.02",
+          "expected": "新标准、旧标准兼容、可选重建和升级流程进入自描述资产，不把 v0.8.0 资产冒充新版本规格",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E19.03",
+          "expected": "完整新资产候选的预发布内容审阅满足整体 L3 要求；平台产品测试通过不能替代内容审阅，正式授级在新私有版本发布后完成",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E20",
+      "title": "历史验收映射与产品回归",
+      "evidenceType": "四仓库技术回归",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E20.01",
+          "expected": "原 v0.8 每项义务标明保留、仅历史、v2 替代或可选流程归属，不能删除失败记录",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E20.02",
+          "expected": "四仓库 build/typecheck/相关测试与父项目组合在精确候选上通过，v1 行为不被弱化",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E20.03",
+          "expected": "无 Dashboard、v0.9 指标计算、生产部署或未声明功能混入版本；Prometheus 用户环境延期保持可见",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E21",
+      "title": "候选包与安装文档",
+      "evidenceType": "发布前安装 E2E",
+      "stage": "PRE_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E21.01",
+          "expected": "四仓库版本/锁定提交/构建产物/共享契约摘要一致，完整可移植安装包可校验",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E21.02",
+          "expected": "在隔离安装与非空克隆 Workspace 上运行新流程，插件、六类相关指南与真实 API 含义一致",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E21.03",
+          "expected": "README/迁移指南/发布说明明确新旧 L3、独立重建状态及真实适用范围，无虚构完成结论",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E22",
+      "title": "GitHub 发布一致性",
+      "evidenceType": "发布后交付核验",
+      "stage": "POST_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E22.01",
+          "expected": "获得精确候选发布授权后，四个新版本 tag 指向验收提交，发布产物匹配批准摘要",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E22.02",
+          "expected": "所有旧 v0.8.0 tag/Release 产物保持不变，私有项目资产不进入公共发行包",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E22.03",
+          "expected": "发布部分成功或结果未知时逐仓库读回并协调，不覆写旧 tag、不盲目重发",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E23",
+      "title": "下载与当前 Codex 部署",
+      "evidenceType": "发布后实际安装 E2E",
+      "stage": "POST_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E23.01",
+          "expected": "从新 Release 重新下载并验校验和/包清单，不仅验证本地候选包",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E23.02",
+          "expected": "完成停服备份、部署新安装、绑定当前 Workspace、重连 Host，确认实际四组件和插件版本",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E23.03",
+          "expected": "在当前 Codex 读回新标准与两个状态；回滚演练证据有效，切换失败能恢复且不重放业务 Run",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "V081-E24",
+      "title": "两项目私有资产交付与关闭",
+      "evidenceType": "发布后项目交付 E2E",
+      "stage": "POST_RELEASE",
+      "status": "NOT_EVALUATED",
+      "variants": [
+        {
+          "id": "V081-E24.01",
+          "expected": "对精确审阅并获准的 DataRig 新资产私有发布，读回固定版本和 v2 整体 L3 评定",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E24.02",
+          "expected": "对精确审阅并获准的 EvoPilot 新资产私有发布，读回对应源码版本和 v2 整体 L3 评定",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        },
+        {
+          "id": "V081-E24.03",
+          "expected": "两项目保留旧资产、旧评定及真实重建历史；所有 72 个必需变体均有对应阶段的真实证据后关闭计划",
+          "status": "NOT_EVALUATED",
+          "evidence": []
+        }
+      ]
+    }
+  ]
+}

@@ -15,6 +15,7 @@ export function createNativeProjectRouter(context: NativeProjectContext, trusted
   const project = createNativeProjectService(context, { ...trusted, nativeToolchain:()=>inspectNativeToolchain({cacheRoot:path.join(context.stateRoot,'native-toolchain')}), toolchains: { node: { toolchainLockDigest: nativeSha256(toolFiles), toolFiles, readRoots: [] } } });
   const providers: NativeIntegrationConfiguration = {
     resolveNativeAuthoring: project.resolveNativeAuthoring,
+    resolveReadinessAuthoring: project.resolveReadinessAuthoring,
     readResponseWorkspaceEvidence: ({scope,reference}) => readWorkspaceResponseEvidence(context,scope,reference),
     inspectSource: project.inspectSource,
     resolveRequirements: project.resolveRequirements,

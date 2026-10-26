@@ -108,6 +108,14 @@
     "integration/compatibility/usability/v1/oracle.mjs": {
       "source": "integration/compatibility/usability/v1/oracle.mts",
       "generator": "scripts/sync-usability.mjs"
+    },
+    "integration/compatibility/usability/v2/contract.mjs": {
+      "source": "integration/compatibility/usability/v2/contract.mts",
+      "generator": "scripts/sync-readiness.mjs"
+    },
+    "integration/compatibility/usability/v2/authoring.mjs": {
+      "source": "integration/compatibility/usability/v2/authoring.mts",
+      "generator": "scripts/sync-readiness.mjs"
     }
   }
 }

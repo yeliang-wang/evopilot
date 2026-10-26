@@ -14,12 +14,13 @@ function nativePackageRoute(action: unknown, payload: unknown, read = false): bo
   const operation = (p.envelope as Record<string, unknown>).operation;
   return operation === 'native.package.put' || (read && typeof operation === 'string' && ['native.package.inspect', 'native.package.readback', 'native.package.publish', 'native.receipt.inspect'].includes(operation));
 }
+function readinessRoute(action:unknown,payload:unknown):boolean {if(action!=='native'||!payload||typeof payload!=='object')return false;const p=payload as {envelope?:{operation?:unknown}};return typeof p.envelope?.operation==='string'&&p.envelope.operation.startsWith('readiness.');}
 function readableRoute(action:unknown,payload:unknown):boolean {if(action!=='native'||!payload||typeof payload!=='object')return false;const p=payload as {envelope?:{operation?:unknown}};return typeof p.envelope?.operation==='string'&&p.envelope.operation.startsWith('readable.');}
 /** Only package-bearing routes receive the larger finite budget, never caller-selected limits. */
 export const connectionRequestTimeout = (action:unknown,payload:unknown):number => action==='native'||nativePackageRoute(action,payload) ? 625_000 : LIMITS.request;
-export const connectionBodyLimit = (action: unknown, payload: unknown): number => nativePackageRoute(action, payload) ? LIMITS.nativeBody : LIMITS.body;
-export const connectionResponseLimit = (action: unknown, payload: unknown): number => readableRoute(action,payload) ? 67108864 : nativePackageRoute(action, payload, true) ? LIMITS.nativeResponse : LIMITS.response;
-export const mcpOutputLimit = (action: unknown, payload: unknown): number => readableRoute(action,payload) ? 134217728 : nativePackageRoute(action, payload, true) ? LIMITS.nativeOutput : LIMITS.response;
+export const connectionBodyLimit = (action: unknown, payload: unknown): number => (nativePackageRoute(action, payload)||readinessRoute(action,payload)) ? LIMITS.nativeBody : LIMITS.body;
+export const connectionResponseLimit = (action: unknown, payload: unknown): number => readinessRoute(action,payload) ? 33554432 : readableRoute(action,payload) ? 67108864 : nativePackageRoute(action, payload, true) ? LIMITS.nativeResponse : LIMITS.response;
+export const mcpOutputLimit = (action: unknown, payload: unknown): number => readinessRoute(action,payload) ? 67108864 : readableRoute(action,payload) ? 134217728 : nativePackageRoute(action, payload, true) ? LIMITS.nativeOutput : LIMITS.response;
 /** Keep the candidate identity on uncertain outcomes without echoing package contents. */
 export function connectionCorrelation(action: unknown, payload: unknown): Record<string, unknown> | null {
   const record = (value: unknown): Record<string, unknown> | null => value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
@@ -78,7 +79,7 @@ export function outsideGit(root: string) {
   }
 }
 export function installationIdentity(config: ConnectionConfig): ConnectionIdentity {
-  return Object.freeze({ product: 'evopilot-v01-preview', version: '0.8.0', protocol: 'evopilot-connection/v1', installationId: config.installationId,
+  return Object.freeze({ product: 'evopilot-v01-preview', version: '0.8.1', protocol: 'evopilot-connection/v1', installationId: config.installationId,
     installationRoot: config.installationRoot, installationDigest: digest(canonicalJSON(config.manifest)), components: config.components,
     workspaceRoot: config.workspaceRoot, workspaceId: config.workspaceId });
 }
@@ -115,7 +116,7 @@ export function loadInstallationConfiguration(filename: string, options: Configu
   if (filename.startsWith(codeRoot + path.sep)) fail('CONFIG_LOCATION');
   const c: unknown = JSON.parse(readRegular(filename).toString());
   fields(c, ['schema', 'version', 'protocol', 'installationId', 'installationRoot', 'workspaceRoot', 'workspaceId', 'components', 'manifest']);
-  if (c.schema !== 'evopilot-connection-config/v1' || c.version !== '0.8.0' || c.protocol !== 'evopilot-connection/v1') fail('CONFIG_VERSION');
+  if (c.schema !== 'evopilot-connection-config/v1' || c.version !== '0.8.1' || c.protocol !== 'evopilot-connection/v1') fail('CONFIG_VERSION');
   if (typeof c.installationId !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(c.installationId)) fail('CONFIG_ID');
   if ((c.workspaceRoot === null) !== (c.workspaceId === null)) fail('CONFIG_WORKSPACE');
   if (c.workspaceId !== null && (typeof c.workspaceId !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9-]{0,63}$/.test(c.workspaceId))) fail('CONFIG_ID');
@@ -123,7 +124,7 @@ export function loadInstallationConfiguration(filename: string, options: Configu
   if (c.installationRoot !== codeRoot) fail('INSTALLATION_ROOT');
   if (c.workspaceRoot !== null) validateStateRoot(c.workspaceRoot);
   fields(c.components, ['runtime', 'harness', 'ontology']);
-  if (Object.values(c.components).some(v => v !== '0.8.0')) fail('COMPONENT_VERSION');
+  if (Object.values(c.components).some(v => v !== '0.8.1')) fail('COMPONENT_VERSION');
   if (!Array.isArray(c.manifest) || !c.manifest.length || c.manifest.length > LIMITS.files) fail('MANIFEST');
   const listed = new Set();
   let total = 0;
@@ -151,7 +152,7 @@ export function loadInstallationConfiguration(filename: string, options: Configu
   walk('node_modules');
   if (required.some(p => !listed.has(p))) fail('MANIFEST_INCOMPLETE');
   const parent = JSON.parse(readRegular(path.join(codeRoot, 'package.json')).toString());
-  if (parent.name !== '@evopilot-next/stack' || parent.version !== '0.8.0') fail('COMPONENT_IDENTITY');
+  if (parent.name !== '@evopilot-next/stack' || parent.version !== '0.8.1') fail('COMPONENT_IDENTITY');
   for (const owner of Object.keys(c.components) as Owner[]) {
     const pkg = JSON.parse(readRegular(path.join(codeRoot, 'node_modules/@evopilot-next', owner, 'package.json')).toString());
     if (pkg.name !== '@evopilot-next/' + owner || pkg.version !== (c.components as Record<string, unknown>)[owner]) fail('COMPONENT_IDENTITY');

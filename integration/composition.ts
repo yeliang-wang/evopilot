@@ -88,7 +88,7 @@ export function createComposition(options: Options, apis: ProductAPIs & Partial<
     fail('INVALID_INPUT', 'Expected trusted provider object');
   // These are trusted code-injected APIs, never request-supplied providers.
   for (const owner of owners) {
-    if (apis?.[owner]?.PRODUCT !== owner || apis[owner].VERSION !== '0.8.0') fail('PRODUCT_IDENTITY', 'Expected exact 0.8.0 product: ' + owner);
+    if (apis?.[owner]?.PRODUCT !== owner || apis[owner].VERSION !== '0.8.1') fail('PRODUCT_IDENTITY', 'Expected exact 0.8.1 product: ' + owner);
     if (typeof (apis[owner] as unknown as Record<string, unknown>)[factories[owner]] !== 'function') fail('PRODUCT_API', 'Missing public service factory: ' + owner);
   }
   for (const name of ['ontology', 'harness'] as const) if (typeof apis[name].verifyDelivery !== 'function') fail('PRODUCT_API', 'Missing delivery validator');
@@ -204,7 +204,7 @@ export function createComposition(options: Options, apis: ProductAPIs & Partial<
     return receipt(claim, materials, retained);
   }
   function capabilities() {
-    return frozenClone({ version: '0.8.0', authority: false,
+    return frozenClone({ version: '0.8.1', authority: false,
       products: Object.fromEntries(owners.map(owner => [owner, service(owner, false).capabilities()])),
       ontologyProviders: Object.fromEntries((['resolveClassificationSource', 'classificationModel', 'classificationAdvisor', 'resolveLegacyHarness'] as const).map(name =>
         [name, Object.hasOwn(ontologyProviders, name) && ontologyProviders[name] != null ? 'CONFIGURED' : 'UNCONFIGURED'])),

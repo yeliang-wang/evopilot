@@ -5,7 +5,7 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { NATIVE_CONTRACT_DIGEST } from '../integration/compatibility/v1/native.mjs';
 
-export const VERSION = '0.8.0';
+export const VERSION = '0.8.1';
 export const PIN = NATIVE_CONTRACT_DIGEST.slice(7);
 export const LEGACY_PIN = 'df4f7246ae35ef9114e2b93663d520e7ff4f44f14f886ac8ba43e9fc080ddc9a';
 export const OWNERS = ['runtime', 'harness', 'ontology'];

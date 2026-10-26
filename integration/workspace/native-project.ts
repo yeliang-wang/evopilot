@@ -1,3 +1,5 @@
+import type {ReadinessAuthoringRequest} from '../compatibility/usability/v2/authoring.mjs';
+import type {ReadinessIntentRecord} from '../compatibility/usability/v2/contract.mjs';
 import fs from 'node:fs';
 import {assertModelingIntent, type ModelingIntent} from './modeling-intent.js';
 import type {NativeAuthoringRequest, NativeAuthoringAdmission} from '../compatibility/usability/v1/authoring.mjs';
@@ -154,8 +156,8 @@ export function createNativeProjectService(context:NativeProjectContext,trusted:
     if(!same(json(path.join(project,'acceptance/current.ref.json')),{schema:'evopilot-acceptance-reference/v1',candidateId:f.candidate.id,requirementsDigest:f.candidate.sourceScope.requirementsDigest}))fail('PROJECT_MANIFEST');
     checkProjectNavigation(project);
   }
-  function buildCandidate(input:ProjectPrepareInput):PreparedProject{nativeAssertJSON(input);nativeExact(input,['id','scope','sourceRoot','direction','revision','requirements','standardPins'],['modelingIntent']);slug(input.id);scopeCheck(input.scope);safeContext(context);const modelingIntent=input.direction==='reverse'?assertModelingIntent(input.modelingIntent,{workspaceId:context.workspaceId,scope:input.scope,sourceRoot:input.sourceRoot,revision:input.revision,requirements:input.requirements}):undefined;if(input.direction!=='reverse'&&input.modelingIntent!==undefined)fail('MODELING_INTENT_INVALID','Reverse intent cannot be used for forward preparation');canonicalPath(input.sourceRoot);disjoint(input.sourceRoot,context.projectRoot);disjoint(input.sourceRoot,context.stateRoot);nativeExact(input.standardPins,['ontology','harness']);validateStandardPins(input.standardPins.ontology);validateStandardPins(input.standardPins.harness);const inventory=inspectSourceInventory(input.sourceRoot,input.direction,input.revision),nativeRequirements=requirements(input.requirements,input.scope,inventory);const subject={schema:'evopilot-project-candidate/v1' as const,id:input.id,scope:input.scope,inventory,requirements:input.requirements,...(modelingIntent?{modelingIntent}:{}),sourceScope:{direction:inventory.direction,locator:inventory.root,revision:inventory.revision,treeDigest:inventory.treeDigest,inventoryDigest:nativeSha256(inventory),requirementsDigest:nativeSha256(nativeRequirements)},nativeRequirements,standardPins:input.standardPins,projectStandardDigest:inspectProjectStandard().standardDigest,contractDigest:NATIVE_CONTRACT_DIGEST,authority:false as const};const candidate={...subject,reviewDigest:nativeSha256(subject)};return candidate;}
-  function requireModelingIntent(candidate:PreparedProject):void{if(candidate.inventory.direction==='reverse')assertModelingIntent(candidate.modelingIntent,{workspaceId:context.workspaceId,scope:candidate.scope,sourceRoot:candidate.inventory.root,revision:candidate.inventory.revision,requirements:candidate.requirements});}
+  function buildCandidate(input:ProjectPrepareInput):PreparedProject{nativeAssertJSON(input);nativeExact(input,['id','scope','sourceRoot','direction','revision','requirements','standardPins'],['modelingIntent']);slug(input.id);scopeCheck(input.scope);safeContext(context);const v2=input.modelingIntent?.definition.schema==='evopilot-modeling-intent/v2';const modelingIntent=input.direction==='reverse'||v2?assertModelingIntent(input.modelingIntent,{workspaceId:context.workspaceId,scope:input.scope,sourceRoot:input.sourceRoot,revision:input.revision,direction:input.direction,requirements:input.requirements}):undefined;if(input.direction!=='reverse'&&input.modelingIntent!==undefined&&!v2)fail('MODELING_INTENT_INVALID','Reverse v1 intent cannot be used for forward preparation');canonicalPath(input.sourceRoot);disjoint(input.sourceRoot,context.projectRoot);disjoint(input.sourceRoot,context.stateRoot);nativeExact(input.standardPins,['ontology','harness']);validateStandardPins(input.standardPins.ontology);validateStandardPins(input.standardPins.harness);const inventory=inspectSourceInventory(input.sourceRoot,input.direction,input.revision),nativeRequirements=requirements(input.requirements,input.scope,inventory);if(v2)assertModelingIntent(input.modelingIntent,{workspaceId:context.workspaceId,scope:input.scope,sourceRoot:input.sourceRoot,revision:input.revision,direction:input.direction,sourceDigest:inventory.treeDigest,requirements:input.requirements});const subject={schema:'evopilot-project-candidate/v1' as const,id:input.id,scope:input.scope,inventory,requirements:input.requirements,...(modelingIntent?{modelingIntent}:{}),sourceScope:{direction:inventory.direction,locator:inventory.root,revision:inventory.revision,treeDigest:inventory.treeDigest,inventoryDigest:nativeSha256(inventory),requirementsDigest:nativeSha256(nativeRequirements)},nativeRequirements,standardPins:input.standardPins,projectStandardDigest:inspectProjectStandard().standardDigest,contractDigest:NATIVE_CONTRACT_DIGEST,authority:false as const};const candidate={...subject,reviewDigest:nativeSha256(subject)};return candidate;}
+  function requireModelingIntent(candidate:PreparedProject):void{if(candidate.inventory.direction==='reverse'||candidate.modelingIntent?.definition.schema==='evopilot-modeling-intent/v2')assertModelingIntent(candidate.modelingIntent,{workspaceId:context.workspaceId,scope:candidate.scope,sourceRoot:candidate.inventory.root,revision:candidate.inventory.revision,direction:candidate.inventory.direction,requirements:candidate.requirements});}
   function resolveNativeAuthoring(request:Readonly<NativeAuthoringRequest>):NativeAuthoringAdmission {
     if(request.workspaceId!==context.workspaceId)fail('AUTHORING_CONTEXT_STALE');
     scopeCheck(request.scope);
@@ -176,11 +178,37 @@ export function createNativeProjectService(context:NativeProjectContext,trusted:
     requireModelingIntent(c);
     verifyDecisionEvidence(f.reviewEvidenceRef,{owner:'project',operation:'freeze',workspaceId:context.workspaceId,scope:request.scope,reviewDigest:c.reviewDigest,decision:'ACCEPT'});
     try{fresh(f);layout(f,m);coverage(f,m.packages);checkBindings(f,m.packages);}catch{fail('AUTHORING_CONTEXT_STALE');}
-    return nativeFrozenClone({...request,schema:'evopilot-native-authoring-admission/v1',candidateDigest:c.reviewDigest,sourceInventoryDigest:nativeSha256(c.inventory),requirementsDigest:nativeSha256(c.requirements),modelingIntentDigest:c.modelingIntent?nativeSha256(c.modelingIntent):null,targetLevel:c.modelingIntent?.definition.targetLevel??null,authority:false} as NativeAuthoringAdmission);
+    return nativeFrozenClone({...request,schema:'evopilot-native-authoring-admission/v1',candidateDigest:c.reviewDigest,sourceInventoryDigest:nativeSha256(c.inventory),requirementsDigest:nativeSha256(c.requirements),modelingIntentDigest:c.inventory.direction==='reverse'&&c.modelingIntent?nativeSha256(c.modelingIntent):null,targetLevel:c.inventory.direction==='reverse'?c.modelingIntent?.definition.targetLevel??null:null,authority:false} as NativeAuthoringAdmission);
+  }
+  function resolveReadinessAuthoring(request:Readonly<ReadinessAuthoringRequest>):ReadinessIntentRecord {
+    if(request.workspaceId!==context.workspaceId)fail('READINESS_SCOPE');scopeCheck(request.scope);
+    const directory=path.join(roots(request.scope).retained,'materials');if(!exists(directory))fail('READINESS_INTENT_REQUIRED');
+    const names=fs.readdirSync(directory).filter(n=>n.endsWith('.json'));if(names.length>1000)fail('READINESS_LIMIT');
+    const matches=names.map(n=>record(request.scope,n.slice(0,-5),false)).filter(f=>nativePackageDigest(loadMaterial(f).packages[request.owner])===request.packageDigest);
+    if(matches.length!==1)fail('READINESS_INTENT_REQUIRED');const f=matches[0],m=loadMaterial(f),c=f.candidate;
+    const b=packageBindings(m.packages[request.owner]);resolveNativeAuthoring({workspaceId:request.workspaceId,scope:request.scope,owner:request.owner,packageDigest:request.packageDigest,sourceBindingsDigest:nativeSha256(b),sourceDirection:c.inventory.direction});
+    if(c.modelingIntent?.definition.schema!=='evopilot-modeling-intent/v2')fail('READINESS_INTENT_REQUIRED');
+    const digest=nativeSha256(c.modelingIntent.definition);if(digest!==request.intentDigest)fail('READINESS_INTENT_STALE');
+    return {definition:c.modelingIntent.definition,humanEvidenceRef:c.modelingIntent.humanEvidenceRef,digest,authority:false};
   }
   async function prepare(input:ProjectPrepareInput):Promise<PreparedProject>{nativeAssertJSON(input);input=nativeFrozenClone(input);const candidate=buildCandidate(input);const {retained}=roots(input.scope,true);return withProjectLock(retained,context.workspaceId,input.scope.projectId,()=>{requireModelingIntent(candidate);mkdir(retained,'candidates');writeNew(path.join(retained,'candidates',input.id+'.json'),candidate);return candidate;});}
   async function validateDraft(candidate:PreparedProject,packages:Materialization['packages']) {
     nativeExact(packages,['ontology','harness']);
+    if(candidate.modelingIntent?.definition.schema==='evopilot-modeling-intent/v2'){
+      // Classify this known input rejection before the legacy validator throws
+      // an uncoded TypeError. Do not reinterpret legacy v1 or uncertain effects.
+      for(const owner of ['ontology','harness'] as const){
+        const dependencies=packages[owner]?.manifest?.dependencies;
+        if(!Array.isArray(dependencies))continue;
+        const identities=new Set<string>();
+        for(const dependency of dependencies){
+          if(!dependency||typeof dependency.product!=='string'||typeof dependency.id!=='string')continue;
+          const identity=dependency.product+':'+dependency.id;
+          if(identities.has(identity))fail('READINESS_DEPENDENCY','A v2 candidate cannot combine multiple versions of one native dependency identity');
+          identities.add(identity);
+        }
+      }
+    }
     const f:FrozenProject={candidate,reviewEvidenceRef:'preflight-only',frozenAt:'',digest:nativeSha256(candidate),authority:false};
     const checked=checkBindings(f,packages);coverage(f,packages);
     validateOntologyPackage(packages.ontology,candidate.scope);inspectHarnessPackage(packages.harness);
@@ -235,5 +263,5 @@ export function createNativeProjectService(context:NativeProjectContext,trusted:
       return finishPromotion(plan,retained);
     });
   }
-  return{resolveNativeAuthoring,prepare,preflight,freeze,materialize,reviewDomain,promote,candidateLocation:(input:{scope:NativeScope;id:string})=>{record(input.scope,input.id);return candidateRoot(input.scope,input.id);},prepareExecution,resolveExecution,verifyProject,inspect:(input:{scope:NativeScope;id:string})=>record(input.scope,input.id),inspectSource:({scope,sourceScope}:{scope:NativeScope;sourceScope:NativeSourceScope})=>{const f=find(scope,sourceScope);fresh(f);return f.candidate.sourceScope;},resolveRequirements:({scope,sourceScope}:{scope:NativeScope;sourceScope:NativeSourceScope})=>{const f=find(scope,sourceScope);return f.candidate.nativeRequirements;},checkLayout:(input:{scope:NativeScope;id:string})=>{const f=record(input.scope,input.id),m=loadMaterial(f);fresh(f);layout(f,m);coverage(f,m.packages);return{conforms:true,bindings:checkBindings(f,m.packages),authority:false};}};
+  return{resolveReadinessAuthoring,resolveNativeAuthoring,prepare,preflight,freeze,materialize,reviewDomain,promote,candidateLocation:(input:{scope:NativeScope;id:string})=>{record(input.scope,input.id);return candidateRoot(input.scope,input.id);},prepareExecution,resolveExecution,verifyProject,inspect:(input:{scope:NativeScope;id:string})=>record(input.scope,input.id),inspectSource:({scope,sourceScope}:{scope:NativeScope;sourceScope:NativeSourceScope})=>{const f=find(scope,sourceScope);fresh(f);return f.candidate.sourceScope;},resolveRequirements:({scope,sourceScope}:{scope:NativeScope;sourceScope:NativeSourceScope})=>{const f=find(scope,sourceScope);return f.candidate.nativeRequirements;},checkLayout:(input:{scope:NativeScope;id:string})=>{const f=record(input.scope,input.id),m=loadMaterial(f);fresh(f);layout(f,m);coverage(f,m.packages);return{conforms:true,bindings:checkBindings(f,m.packages),authority:false};}};
 }

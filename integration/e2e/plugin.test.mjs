@@ -132,7 +132,7 @@ test('protocol fixture: verified session activation, once-only forwarding, struc
 });
 
 test('protocol fixture: finite public source/Pack diagnostics preserve correlation while arbitrary codes and details remain redacted', () => {
-  const known = ['SOURCE_QUARANTINED', 'PACK_NAMESPACE_COLLISION', 'PACK_OVERRIDE_INCOMPATIBLE'];
+  const known = ['SOURCE_QUARANTINED', 'PACK_NAMESPACE_COLLISION', 'PACK_OVERRIDE_INCOMPATIBLE', 'READINESS_SCHEMA', 'READINESS_NOT_FOUND', 'READINESS_INTENT_STALE', 'READINESS_SCOPE'];
   const codes = [...known, 'PACK_SECRET_PROVIDER_CODE', 'SECRET_PROVIDER_CODE'];
   const out = run([init, call(2, 'activate'), ...codes.map((code, index) => call(index + 3, 'request', request('diagnostic', { code })))], true);
   for (const [index, code] of codes.entries()) {
@@ -275,6 +275,11 @@ test('pure guide maps every source reference to the installed package layout', (
   // No installed child repositories or filesystem fixtures are needed.
   const installationRoot = '/managed/evopilot/app';
   const expectedPaths = [
+    '/managed/evopilot/app/docs/asset-readiness-v081-workflow.md',
+    '/managed/evopilot/app/docs/migration-v080-v081.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/harness/docs/readiness-v2.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/ontology/docs/readiness-v2.md',
+    '/managed/evopilot/app/node_modules/@evopilot-next/runtime/docs/readiness-v2.md',
     '/managed/evopilot/app/docs/asset-usability-v08-workflow.md',
     '/managed/evopilot/app/docs/asset-service.md',
     '/managed/evopilot/app/docs/architecture/0010-controlled-reconstruction.md',

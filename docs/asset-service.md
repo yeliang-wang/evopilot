@@ -47,3 +47,9 @@ Specification export is deliberately a different object from a native package. I
 Limits are 16 KiB per request, 8 MiB per response, 64 assets per closure, 50 discovery entries per page, four active reads, 120 requests per credential per minute, five seconds per provider read and fifteen seconds per operation. Errors disclose finite codes, not provider exceptions or credential values. No mutation is performed to serve these reads.
 
 The standalone default host does not assert a current assessment when a trusted current-pin reader is absent. Historical results remain available, while current freshness is unknown and the displayed verified level is null. Supplying a caller flag cannot change this. Real pilot, actual installed Host and release acceptance remain outstanding. Graphical frontend implementation and browser acceptance are excluded before v1.0 release. See [delivery execution](asset-usability-v08-delivery.md).
+
+## Explicit v2 content consumption (0.8.1)
+
+Use `/v2/assets` for SDK-discriminated `assets.readiness` and `assets.specification.v2` requests. The former returns the standard, fixed scope, grade/gaps and separate reconstruction state. The latter exports the exact intent/specification and hash-bound normative file pages. Assemble pages only from one projection digest and use `readiness.package.verify` for offline readback. The existing scoped token, revocation, path and size guards apply. `/v1/assets` refuses v2 requests; old consumers keep the original semantics.
+
+Content L3 is not verified runtime equivalence. See [the v2 workflow](asset-readiness-v081-workflow.md).

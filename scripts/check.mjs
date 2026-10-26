@@ -1,3 +1,4 @@
+import {syncReadiness} from './sync-readiness.mjs';
 import { checkDocumentation } from './check-documentation.mjs';
 import {checkReleaseScope} from './verify-release-scope.mjs';
 import {syncUsability} from './sync-usability.mjs';
@@ -18,7 +19,7 @@ export function validateProductMetadata(pkg, owner, checkpoint = 'M2') {
   assert(['M2', 'M4'].includes(checkpoint), 'Unknown metadata checkpoint');
   assert(['runtime', 'harness', 'ontology'].includes(owner), 'Unknown product');
   assert.equal(pkg.name, '@evopilot-next/' + owner);
-  assert.equal(pkg.version, '0.8.0');
+  assert.equal(pkg.version, '0.8.1');
   assert.equal(pkg.private, true);
   assert.equal(pkg.type, 'module');
   assert.equal(pkg.license, 'Apache-2.0');
@@ -39,13 +40,13 @@ export function validateProductMetadata(pkg, owner, checkpoint = 'M2') {
 
 export async function checkPackages() {
   const plugin=JSON.parse(await readFile(resolve(ROOT,'plugins/codex/.codex-plugin/plugin.json'),'utf8'));
-  assert.equal(plugin.version,'0.8.0');assert.equal(plugin.interface.displayName,'EvoPilot v0.8 Preview');
+  assert.equal(plugin.version,'0.8.1');assert.equal(plugin.interface.displayName,'EvoPilot v0.8.1 Preview');
   for (const [index, directory] of ['.', ...CHILDREN].entries()) {
     const path = resolve(ROOT, directory, 'package.json');
     await assertNoSymlinks(path);
     const pkg = JSON.parse(await readFile(path, 'utf8'));
     assert.equal(pkg.name, `@evopilot-next/${['stack', 'runtime', 'harness', 'ontology'][index]}`);
-    assert.equal(pkg.version, '0.8.0');
+    assert.equal(pkg.version, '0.8.1');
     assert.equal(pkg.private, true);
     assert.equal(pkg.type, 'module');
   assert.equal(pkg.license, 'Apache-2.0');
@@ -74,7 +75,7 @@ export async function checkPackages() {
       const sourcePath = resolve(ROOT, directory, 'src/index.ts');
       await assertNoSymlinks(sourcePath);
       const source = await readFile(sourcePath, 'utf8');
-      assert(source.includes("export const VERSION = '0.8.0';"));
+      assert(source.includes("export const VERSION = '0.8.1';"));
       assert(source.includes(`export const PRODUCT = '${['runtime', 'harness', 'ontology'][index - 1]}';`));
     }
   }
@@ -105,7 +106,7 @@ export async function checkStrictConsumers() {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const failures = [];
   if (process.argv.length !== 2) failures.push('Unknown check arguments');
-  for (const check of [checkReleaseScope, checkDocumentation, checkLanguages, checkPackages, checkRoadmap, () => syncContract({ check: true }), () => syncFeedback({ check: true }), () => syncOnline({ check: true }), () => syncResponse({ check: true }), () => syncReadability({ check: true }), () => syncUsability({ check: true }),
+  for (const check of [() => syncReadiness({check:true}), checkReleaseScope, checkDocumentation, checkLanguages, checkPackages, checkRoadmap, () => syncContract({ check: true }), () => syncFeedback({ check: true }), () => syncOnline({ check: true }), () => syncResponse({ check: true }), () => syncReadability({ check: true }), () => syncUsability({ check: true }),
     ...CHILDREN.map(child => async () => (await import(pathToFileURL(resolve(ROOT, child, 'scripts/check.mjs')).href)).checkSource())]) {
     try { await check(); } catch (error) { failures.push(error.message); }
   }

@@ -1,0 +1,255 @@
+[
+  {
+    "id": "V08-E01",
+    "obligation": {
+      "id": "V08-E01",
+      "requirement": "A real independent HTTP consumer discovers, queries and reads an exact published asset without a Runtime Goal/Run or Codex activation; offline export also works. Show that reading changes no business decision, execution or publication state.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "journeyRefinements": [
+        "Show authorized project/scope, pinned assets, business capabilities and question/navigation entry points without a new business Run or authoring workflow."
+      ]
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E02",
+    "obligation": {
+      "id": "V08-E02",
+      "requirement": "Two isolated scopes reject unauthorized cross-scope/private reads and mutations; revoked credentials fail. Exercise configured TLS/non-loopback transport in an isolated environment, bounded queries/rate/output, link/path traversal and malicious asset text. No credentials leak through assets, logs or errors.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E03",
+    "obligation": {
+      "id": "V08-E03",
+      "requirement": "Exact asset/dependency/projection digests survive download and offline readback. Pagination uses an explicit snapshot. Tampering, missing dependency, unsupported format, stale cursor, partial export or silent latest-version substitution fails; consumers see any transformation loss.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "journeyRefinements": [
+        "Navigate explicit object, relation, constraint and source references with immutable pins and complete snapshot pagination; disclose ambiguous version selection."
+      ]
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E04",
+    "obligation": {
+      "id": "V08-E04",
+      "requirement": "Versioned level definitions and use-case examples agree across owning rules, public docs and installed consumers. Graph size, triple count, model fixture count, technical PASS or adopting RDF/OWL alone cannot assign a level. Industry references are described as related frameworks, not equivalent certifications.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E05",
+    "obligation": {
+      "id": "V08-E05",
+      "requirement": "Requested L3 with only L1 evidence reports target L3 and the exact verified level/gaps. Exercise all assessment states, scope expansion, mixed-level slices, missing integration obligations and filtered views; neither averaging nor denominator reduction upgrades a claim.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E06",
+    "obligation": {
+      "id": "V08-E06",
+      "requirement": "An independent reader answers the frozen domain questions from allowed assets with source mappings; missing definitions, conflicting sources and uncovered mandatory questions are reported and cannot verify L1.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "journeyRefinements": [
+        "Freeze representative domain questions independently of available coverage.",
+        "Exercise known and ambiguous terms, missing/conflicting definitions and draft-versus-published meanings; trace answers to exact sources.",
+        "Read existing reviewed metric definitions; new pilot content uses ordinary reviewed immutable asset versions. Do not infer actual metric values from declarations, fixtures or L3 results."
+      ]
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E07",
+    "obligation": {
+      "id": "V08-E07",
+      "requirement": "A reviewed behavior slice has complete normative inputs/outputs, interfaces, transitions, failure/side-effect and applicable concurrency/recovery/environment contracts mapped to independently frozen requirements. Missing mandatory semantics, unreachable references or unexplained conversion loss prevents verified L2.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E08",
+    "obligation": {
+      "id": "V08-E08",
+      "requirement": "A builder receives only the approved specification projection and pinned allowed dependencies. Attempts to read original source/binaries, prior generated output, hidden oracle data or a delegating reference service fail through files, caches and network. Audit sources remain privately available to reviewers. Source-assisted runs are explicitly labeled and cannot qualify for L3.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "OPTIONAL_V2_RECONSTRUCTION_AND_RETAINED_V1",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E09",
+    "obligation": {
+      "id": "V08-E09",
+      "requirement": "The selected installed Agent/build adapter performs real generation, compilation and execution in the allowed environment with identities, inputs, outputs, cost/usage availability and interventions recorded. Unsupported language/tool/provider or missing prerequisites fails before claiming a run; bound budgets terminate without fabricated results.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "OPTIONAL_V2_RECONSTRUCTION_AND_RETAINED_V1",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E10",
+    "obligation": {
+      "id": "V08-E10",
+      "requirement": "Duplicate submission, lost response, timeout, cancellation, partial output, process restart and interrupted persistence preserve exact claim/receipt identity. Reconciliation inspects the original attempt without blindly repeating external work; recovery cannot imply success or overwrite failure.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "OPTIONAL_V2_RECONSTRUCTION_AND_RETAINED_V1",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E11",
+    "obligation": {
+      "id": "V08-E11",
+      "requirement": "Independent oracle checks outputs, states, errors and side effects against the frozen contract/reference, using agreed tolerances and applicable boundary/concurrency/recovery cases. Deliberately wrong implementations fail, including duplicate effects and premature success. Withheld acceptance remains independent of generator-authored tests.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "OPTIONAL_V2_RECONSTRUCTION_AND_RETAINED_V1",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E12",
+    "obligation": {
+      "id": "V08-E12",
+      "requirement": "Two clean independent reconstruction attempts use the same exact specification input and pass every mandatory case, without sharing generated solutions or original implementation context. Preserve all attempts and interventions. Additional Agent/platform compatibility claims require separate actual evidence.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "OPTIONAL_V2_RECONSTRUCTION_AND_RETAINED_V1",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E13",
+    "obligation": {
+      "id": "V08-E13",
+      "requirement": "Failed, skipped, missing, unknown, stale, unsupported and synthetic-only required results block verified L3 and dependent completion. Failure reports identify scope, unmet requirement and actionable gap category; correct rejection does not satisfy a positive reconstruction requirement.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "OPTIONAL_V2_RECONSTRUCTION_AND_RETAINED_V1",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E14",
+    "obligation": {
+      "id": "V08-E14",
+      "requirement": "A real substantive specification change yields a new asset and reconstruction; new requirements and retained compatibility/migration checks pass. Changed asset/oracle/environment/dependency pins produce a stale/review-required disposition instead of inheriting prior verification. Historical claims remain readable.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E15",
+    "obligation": {
+      "id": "V08-E15",
+      "requirement": "HTTP/SDK, Expert and reports agree on target/verified level, scope, exclusions, input mode, evidence and freshness. Actual installed consumer/Host journeys navigate to exact receipts. Rendering and reading cannot dispatch, approve, publish or invent missing explanations.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "journeyRefinements": [
+        "Installed Expert and owner-rendered reports agree with HTTP/SDK on overview, versions, definitions, gaps and evidence.",
+        "Natural-language presentation preserves exact bounds and cannot fabricate meaning, mutate owner state or dispatch work."
+      ],
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E16",
+    "obligation": {
+      "id": "V08-E16",
+      "requirement": "One privately selected real functional slice achieves the initial L3 checks and the substantive evolution check under exact input/environment pins. Project assets are supplemented through normal reviewed versions as needed. A synthetic substitute, source-assisted reconstruction or only a gap report leaves this criterion incomplete.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E17",
+    "obligation": {
+      "id": "V08-E17",
+      "requirement": "Public fixtures are explicitly synthetic and exercise at least two isolated namespaces. Public docs demonstrate all levels without private names, source bytes, credentials or actual approval/evidence. Generic criteria apply without project-specific hardcoding.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E18",
+    "obligation": {
+      "id": "V08-E18",
+      "requirement": "Upgrade and isolated backup/restore preserve prior native assets, versions, standards, decisions and receipts byte-for-byte. Additive assessments/projections retain original references, unknown historical levels and pending claims. Old readers fail safely where necessary; maintenance never replays work or silently grades old assets.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E19",
+    "obligation": {
+      "id": "V08-E19",
+      "requirement": "Verify the accepted v0.7 dependency contracts and exact four-repository candidate. Owning builds/types/relevant tests, parent integration, packaged/installed entry points and actual external-consumer/Host journeys agree. Documentation, standards limits and failure/recovery guidance match delivered behavior.",
+      "required": true,
+      "status": "NOT_EVALUATED"
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  },
+  {
+    "id": "V08-E20",
+    "obligation": {
+      "id": "V08-E20",
+      "requirement": "Every R-ID maps to owned E-IDs and every mandatory fixed variant has current exact-candidate evidence. All applicable pre-release requirements, including the successful real pilot, pass before a separately authorized release. After authorized publication, downloaded-package/readback checks and closure are required; pre-publication status must not claim those post-release checks have passed.",
+      "required": true,
+      "status": "NOT_EVALUATED",
+      "modelingIntentRefinements": [
+        "Verify the applicable mandatory modeling-purpose admission, profile, compatibility and presentation requirements in modelingIntentGate; missing evidence blocks completion."
+      ]
+    },
+    "disposition": "RETAINED_AND_EXTENDED",
+    "history": "Unchanged; no conversion of failures, unknowns or deferrals to PASS"
+  }
+]

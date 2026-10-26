@@ -51,7 +51,7 @@ test('Current guides: real public owner capabilities contain every named operati
   const services = [apis.runtime.createRuntimeService, apis.harness.createHarnessService, apis.ontology.createOntologyService]
     .map(create => create({ workspaceRoot, workspaceId: 'catalogue-only' }));
   try {
-    const operations = new Set(services.flatMap(service => [...service.capabilities().operations, ...(service.capabilities().nativeOperations ?? []), ...(service.capabilities().feedbackOperations ?? []), ...(service.capabilities().onlineOperations ?? []), ...(service.capabilities().responseOperations ?? []), ...(service.capabilities().readableOperations ?? []), ...(service.capabilities().planningOperations ?? []), ...(service.capabilities().usabilityOperations ?? []), ...(service.capabilities().reconstructionOperations ?? [])]));
+    const operations = new Set(services.flatMap(service => [...service.capabilities().operations, ...(service.capabilities().nativeOperations ?? []), ...(service.capabilities().feedbackOperations ?? []), ...(service.capabilities().onlineOperations ?? []), ...(service.capabilities().responseOperations ?? []), ...(service.capabilities().readableOperations ?? []), ...(service.capabilities().planningOperations ?? []), ...(service.capabilities().usabilityOperations ?? []), ...(service.capabilities().reconstructionOperations ?? []), ...(service.capabilities().readinessOperations ?? [])]));
     for (const id of nativeIds) for (const operation of getGuide(id).operations) {
       if (operation.startsWith('evopilot_v01_')) continue;
       assert(operations.has(operation), `${id}: operation ${operation} is absent from all actual owner capabilities`);

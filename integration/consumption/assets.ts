@@ -1,3 +1,5 @@
+import {assertReadinessVersion,verifyReadinessProjection} from '../compatibility/usability/v2/contract.mjs';
+import type {ReadinessProjection,ReadinessResult} from '../compatibility/usability/v2/contract.mjs';
 import {createHash} from 'node:crypto';
 import {nativeExact,nativeStableSerialize,nativeFrozenClone,referenceForPackage,validateNativeReference} from '../compatibility/v1/native.mjs';
 import type {NativePackage,NativeReference,NativeScope} from '../compatibility/v1/native.mjs';
@@ -14,6 +16,7 @@ const same=(a:unknown,b:unknown)=>nativeStableSerialize(a)===nativeStableSeriali
 export interface ConsumptionGrant {scope:NativeScope;assets:NativeReference[];inventories:string[];assessments:string[]}
 export interface ConsumptionPrincipal {id:string;grants:ConsumptionGrant[]}
 export interface ConsumptionProviders {
+  readiness?:(owner: 'harness'|'ontology',request:{operation:string;scope:NativeScope;input:Record<string,unknown>})=>Promise<unknown>;
   workspaceId:string;
   readPackage(context:{scope:NativeScope;reference:NativeReference},signal:AbortSignal):Promise<{workspaceId:string;scope:NativeScope;package:NativePackage;published:boolean}>;
   readSnapshot(context:{scope:NativeScope;reference:NativeReference},signal:AbortSignal):Promise<ReadSnapshot>;
@@ -30,7 +33,9 @@ export type ConsumptionRequest=
  |{operation:'assets.compare';scope:NativeScope;input:{before:NativeReference;after:NativeReference;query:{limit:number;cursor:string|null}}}
  |{operation:'assets.query';scope:NativeScope;input:{reference:NativeReference;query:ReadQuery}}
  |{operation:'assets.specification';scope:NativeScope;input:{inventoryDigest:string;specificationDigest:string}}
- |{operation:'assets.assessment';scope:NativeScope;input:{id:string}};
+ |{operation:'assets.assessment';scope:NativeScope;input:{id:string}}
+ |{operation:'assets.readiness';scope:NativeScope;input:{standardVersion:'v2';id:string}}
+ |{operation:'assets.specification.v2';scope:NativeScope;input:{standardVersion:'v2';reference:NativeReference;limit:number;cursor:string|null}};
 
 function boundedBytes(value:unknown,max:number=CONSUMPTION_LIMITS.responseBytes):void{if(Buffer.byteLength(nativeStableSerialize(value))>max)consumptionFail('CONSUMPTION_LIMIT');}
 async function bounded<T>(work:(signal:AbortSignal)=>Promise<T>,deadline:number):Promise<T>{
@@ -92,6 +97,21 @@ export function createAssetConsumption(providers:ConsumptionProviders){
       const snapshots:ReadSnapshot[]=[];
       for(const reference of [before,after]){await closure(reference);const value=await bounded(signal=>providers.readSnapshot({scope:request.scope,reference},signal),deadline);verifyReadSnapshot(value);if(value.workspaceId!==providers.workspaceId||!permitted(value.scope,request.scope,reference)||value.pins.packageDigest!==reference.digest)consumptionFail('CONSUMPTION_DRIFT');snapshots.push(value);}
       result=compareReadSnapshots(snapshots[0],snapshots[1],{limit:query.limit,...(query.cursor===null?{}:{cursor:query.cursor})});
+    }else if(request.operation==='assets.readiness'){
+      nativeExact(request.input,['standardVersion','id']);assertReadinessVersion(request.input.standardVersion);
+      if(!grant.assessments.includes(request.input.id))consumptionFail('CONSUMPTION_FORBIDDEN');if(!providers.readiness)consumptionFail('CONSUMPTION_OPERATION');
+      const value=await bounded(()=>providers.readiness!('harness',{operation:'readiness.assessment.read',scope:request.scope,input:request.input}),deadline) as {result:ReadinessResult;recordedDigest:string;currentViewDigest:string};
+      if(value.result.standardVersion!=='v2'||value.result.workspaceId!==providers.workspaceId||!same(value.result.scope,request.scope))consumptionFail('CONSUMPTION_DRIFT');
+      rootAllowed(value.result.reference);result=value;
+    }else if(request.operation==='assets.specification.v2'){
+      nativeExact(request.input,['standardVersion','reference','limit','cursor']);assertReadinessVersion(request.input.standardVersion);const {reference,limit,cursor}=request.input;
+      rootAllowed(reference);await closure(reference);if(!providers.readiness)consumptionFail('CONSUMPTION_OPERATION');
+      const p=await bounded(()=>providers.readiness!('ontology',{operation:'readiness.package.export',scope:request.scope,input:{standardVersion:'v2',id:reference.id,version:reference.version}}),deadline) as ReadinessProjection;
+      verifyReadinessProjection(p);if(!p.published||p.workspaceId!==providers.workspaceId||!same(p.reference,reference)||!permitted(p.scope,request.scope,reference))consumptionFail('CONSUMPTION_DRIFT');
+      const entries=Object.entries(p.files).sort(([a],[b])=>a.localeCompare(b));if(!Number.isSafeInteger(limit)||limit<1||limit>50)consumptionFail('CONSUMPTION_LIMIT');
+      let offset=0;if(cursor!==null){let c:{digest:string;offset:number};try{if(typeof cursor!=='string'||cursor.length>1024)throw Error();c=JSON.parse(Buffer.from(cursor,'base64url').toString());nativeExact(c,['digest','offset']);}catch{consumptionFail('CONSUMPTION_CURSOR');}if(c.digest!==p.digest||!Number.isSafeInteger(c.offset)||c.offset<0||c.offset>entries.length)consumptionFail('CONSUMPTION_STALE_CURSOR');offset=c.offset;}
+      const page=entries.slice(offset,offset+limit),next=offset+page.length;const {files,...metadata}=p;
+      result={schema:'evopilot-readiness-export-page/v2',projection:metadata,files:Object.fromEntries(page),totalFiles:entries.length,nextCursor:next<entries.length?Buffer.from(JSON.stringify({digest:p.digest,offset:next})).toString('base64url'):null,authority:false};
     }else if(request.operation==='assets.assessment'){
       nativeExact(request.input,['id']);if(!grant.assessments.includes(request.input.id))consumptionFail('CONSUMPTION_FORBIDDEN');
       const value=await bounded(()=>providers.usability({operation:'usability.assessment.read',scope:request.scope,input:request.input}),deadline);

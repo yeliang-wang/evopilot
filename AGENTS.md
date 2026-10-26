@@ -74,3 +74,8 @@ The user corrected v0.7 scope: no Dashboard pages, web server or browser accepta
 ## Authorized v0.7 release and daily installation
 
 The subsequent explicit user instruction to publish v0.7 and install it for normal use in the current Codex permits the release and daily cutover after exact-candidate acceptance, verified backup and recovery checks. It supersedes the earlier shared-maintenance hold for this release. Keep the independent business project paused and its source unchanged; this authorization does not resume business execution. Retain the actual user decision and exact release/install bindings privately.
+
+
+## Approved v0.8.1 asset readiness correction
+
+The current explicit user instruction authorizes the accepted parent `governance/asset-readiness-v081.json` plan through both full private project asset upgrades, conditional release and current Codex deployment. Follow its precise file binding and fixed acceptance; do not repeat routine confirmations. New shared v2 contracts are generated only by the parent. Preserve v1 behavior, historical bytes, native standards and private evidence. Content grades do not dispatch reconstruction or require business databases/SSH. Full acceptance and exact candidate evidence remain mandatory; no fabricated semantic decisions or PASS.

@@ -1,3 +1,6 @@
+import type {ReadinessRuntimeProviders} from '@evopilot-next/runtime/service';
+import type {ReadinessAuthoringResolver} from './compatibility/usability/v2/authoring.mjs';
+import type {ReadinessIntentRecord,ReadinessProjection,ReadinessResult} from './compatibility/usability/v2/contract.mjs';
 import type {ReconstructionProviders} from '@evopilot-next/runtime/service';
 import {validateReconstructionObservation} from './compatibility/usability/v1/oracle.mjs';
 import type { FeedbackEnvelope, FeedbackEvent, FeedbackInbox, FeedbackOwner, FeedbackMaterial } from './compatibility/feedback/v1/feedback.mjs';
@@ -15,6 +18,7 @@ import type {NativeAuthoringResolver} from './compatibility/usability/v1/authori
 
 export interface NativeIntegrationConfiguration extends Pick<NativeRuntimeProviders, 'collect' | 'inspectCollection' | 'inspectSource' | 'resolveRequirements' | 'verifyProject'> {
   resolveNativeAuthoring?: NativeAuthoringResolver;
+  resolveReadinessAuthoring?:ReadinessAuthoringResolver;
   readUsabilityPins?: UsabilityAssessmentProviders['readUsabilityPins'];
   readReconstructionEvidence?: UsabilityAssessmentProviders['readReconstructionEvidence'];
   reconstruction?: ReconstructionProviders;
@@ -175,15 +179,19 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
       const value=await published(reference,scope);return {...value,workspaceId:options.workspaceId,published:true};
     },
   };
-  const runtimeProviders = (): NativeRuntimeProviders & OnlineRuntimeProviders & ResponseRuntimeProviders & ReconstructionProviders => ({
+  const runtimeProviders = (): NativeRuntimeProviders & OnlineRuntimeProviders & ResponseRuntimeProviders & ReconstructionProviders & ReadinessRuntimeProviders => ({
     ...configuration.reconstruction,
+    readReadinessAssessment:async(context:{workspaceId:string;scope:NativeScope;id:string})=>{if(context.workspaceId!==options.workspaceId)fail('READINESS_SCOPE');const r=await readinessAPI('harness',{operation:'readiness.assessment.read',scope:context.scope,input:{standardVersion:'v2',id:context.id}}) as {result:ReadinessResult};return r.result;},
     ...(apis.ontology.inspectOntologyStandard && apis.harness.inspectHarnessStandard ? { nativeStandards: standards() } : {}),
     ...Object.fromEntries((['collect', 'inspectCollection', 'inspectSource', 'resolveRequirements', 'verifyProject'] as const).filter(k => configuration[k]).map(k => [k, configuration[k]])),
     resolveNative, executeNative, readOwnerReceipt, deliverFeedback, readFeedbackInbox, readOnlineFinding,
     ...responseRuntimeProviders,
     inspectNative: async ({ claim, signal }) => { if (signal.aborted) fail('ABORTED'); return receipt(claim); },
   });
+  async function readinessAPI(owner:Owner,envelope:Envelope):Promise<unknown>{const api=service(owner).readiness;if(!api)fail('READINESS_API_UNAVAILABLE');return api(envelope);}
   const harnessProviders = {
+    readReadinessIntent:async(context:{workspaceId:string;scope:NativeScope;digest:string})=>{if(context.workspaceId!==options.workspaceId)fail('READINESS_SCOPE');return await readinessAPI('runtime',{operation:'readiness.intent.read',scope:context.scope,input:{standardVersion:'v2',digest:context.digest}}) as ReadinessIntentRecord&{current:boolean};},
+    readReadinessProjection:async(context:{workspaceId:string;scope:NativeScope;reference:NativeReference})=>{if(context.workspaceId!==options.workspaceId)fail('READINESS_SCOPE');return await readinessAPI('ontology',{operation:'readiness.package.inspect',scope:context.scope,input:{standardVersion:'v2',id:context.reference.id,version:context.reference.version}}) as ReadinessProjection;},
     ...(configuration.readUsabilityPins?{readUsabilityPins:configuration.readUsabilityPins}:{}),
     ...(configuration.reconstruction?{readReconstructionEvidence:async(context:{workspaceId:string;scope:NativeScope;attemptId:string},signal:AbortSignal)=>{if(signal.aborted||context.workspaceId!==options.workspaceId)fail('RECONSTRUCTION_SCOPE');const api=service('runtime').reconstruction;if(!api)fail('RECONSTRUCTION_API_UNAVAILABLE');return validateReconstructionObservation(await api({operation:'reconstruction.evidence',scope:context.scope,input:{id:context.attemptId}}));}}:configuration.readReconstructionEvidence?{readReconstructionEvidence:configuration.readReconstructionEvidence}:{}),
     ...ownerFeedbackProviders,
@@ -194,6 +202,7 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
       if(!same(result.reference,reference))fail('RESPONSE_EXECUTION_REFERENCE');return result;
     },
     ...configuration.online,deliverOnlineFinding,readOnlineRepair,
+    ...(configuration.resolveReadinessAuthoring?{resolveReadinessAuthoring:configuration.resolveReadinessAuthoring}:{}),
     ...(configuration.resolveNativeAuthoring ? {resolveNativeAuthoring:configuration.resolveNativeAuthoring}:{}),
     ...(configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {}),
     resolveNativeDependency: async ({ reference, workspaceId, scope }: { reference: NativeReference; workspaceId: string; scope: NativeScope }) => {
@@ -202,8 +211,10 @@ export function createNativeIntegration(options: Options, apis: NativeIntegratio
       return { reference: record.reference, published: true, workspaceId, scope: record.scope };
     },
   };
-  return { runtimeProviders, harnessProviders, ontologyProviders: {...ownerFeedbackProviders,...(configuration.resolveNativeAuthoring?{resolveNativeAuthoring:configuration.resolveNativeAuthoring}:{}),...(configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {})},
+  return { runtimeProviders, harnessProviders, ontologyProviders: {...ownerFeedbackProviders,...(configuration.resolveReadinessAuthoring?{resolveReadinessAuthoring:configuration.resolveReadinessAuthoring}:{}),
+    ...(configuration.resolveNativeAuthoring?{resolveNativeAuthoring:configuration.resolveNativeAuthoring}:{}),...(configuration.toolchain ? { nativeToolchain: configuration.toolchain } : {})},
     native: async (owner: Owner, envelope: Envelope) => {
+      if(envelope.operation.startsWith('readiness.'))return readinessAPI(owner,envelope);
       if(envelope.operation.startsWith('reconstruction.')){if(owner!=='runtime')fail('RECONSTRUCTION_OWNER');const api=service(owner).reconstruction;if(!api)fail('RECONSTRUCTION_API_UNAVAILABLE');return api(envelope);}
       if(envelope.operation.startsWith('usability.')){if(owner!=='harness')fail('USABILITY_OWNER');const api=service(owner).usability;if(!api)fail('USABILITY_API_UNAVAILABLE');return api(envelope);}
       if(envelope.operation.startsWith('readable.')){const api=service(owner).readable;if(!api)fail('READABLE_API_UNAVAILABLE');return api(envelope);}
