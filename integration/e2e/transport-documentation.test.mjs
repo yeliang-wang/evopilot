@@ -32,3 +32,8 @@ test('regression guard rejects incorrect ordinary and readiness input limits', (
   assert.throws(() => verify(guide.replace('| `native` with explicit `readiness.*` | 8 |', '| `native` with explicit `readiness.*` | 1 |')), /Missing or incorrect/);
   assert.throws(() => verify(guide.replace('`native_project.inspect` | 1 | 8 | 8 |', '`native_project.inspect` | 8 | 8 | 8 |')), /Missing or incorrect/);
 });
+
+test('local service guide includes all package-bearing routes and links the complete table', () => {
+  const local = fs.readFileSync(new URL('../../docs/local-service.md', import.meta.url), 'utf8');
+  for (const text of ['`preflight`', '`freeze`', '`materialize`', '8/32/64 MiB', '1/64/128 MiB', 'native-workflow.md#native-package-transport-bounds']) assert(local.includes(text), text);
+});

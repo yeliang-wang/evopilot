@@ -131,12 +131,15 @@ identity includes workspace root/id, installation root/id, installation digest,
 component versions, product, version and protocol. No configurable remote address
 or non-loopback fallback exists.
 
-Bounds: config and ordinary requests 1 MiB; ordinary responses 8 MiB. Only
-Harness/Ontology `native.package.put` and project `materialize` accept requests
-up to 8 MiB. Those routes and owner package inspect/readback/publish/receipt
-readback accept responses up to 16 MiB; their MCP output limit is 32 MiB.
-Other routes retain the ordinary limits. See [package transport](native-workflow.md#native-package-transport-bounds)
-for pre-dispatch rejection and uncertain post-dispatch outcomes.
+Bounds: config and ordinary requests 1 MiB; ordinary responses 8 MiB.
+Harness/Ontology `native.package.put` and project `preflight`, `freeze` and
+`materialize` accept requests up to 8 MiB. Those routes and owner package
+inspect/readback/publish/receipt readback accept responses up to 16 MiB;
+their MCP output limit is 32 MiB. The explicit `readiness.*` family has
+8/32/64 MiB request/response/MCP-output limits; `readable.*` has 1/64/128 MiB.
+The [complete transport table](native-workflow.md#native-package-transport-bounds)
+also specifies ordinary routes, framing, pre-dispatch rejection and uncertain
+post-dispatch outcomes. These allowances do not bypass operation schemas.
 
 The manifest has at most 10,000 entries and
 10,000 dependency-tree nodes; each installed file 16 MiB, total hashed content

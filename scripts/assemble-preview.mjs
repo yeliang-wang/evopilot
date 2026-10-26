@@ -12,7 +12,7 @@ export const PARENT_FILES = ['package.json', 'README.md', 'LICENSE', 'NOTICE', '
   'governance/business-analysis-v09.json', 'governance/asset-readiness-v081.json', 'governance/asset-readiness-v081-acceptance.json', 'governance/asset-readiness-v081-legacy-map.json', 'scripts/verify-readiness-target.mjs',
   'governance/roadmap.json', 'governance/implementation-lock.json', 'governance/decisions/local-implementation.json',
   'governance/acceptance.json', 'governance/m0.json', 'governance/delivery-repair-v011.json', 'governance/workspace-v02.json', 'governance/standards-v03.json', 'governance/feedback-v04.json', 'governance/online-harness-v05.json', 'governance/response-v06.json', 'governance/readability-v07.json', 'governance/readability-v07-execution.json', 'governance/planning-v07.json', 'governance/asset-usability-v08.json', 'governance/asset-usability-v08-execution.json', 'governance/asset-usability-v08-delivery.json', 'governance/language-policy.json', 'governance/readiness-v1.json',
-  'scripts/manage-preview.mjs', 'scripts/asset-service.mjs', 'scripts/verify-usability-target.mjs', 'scripts/verify-usability-delivery.mjs', 'scripts/verify-release-scope.mjs', 'governance/release-scope.json', 'scripts/verify-native-acceptance.mjs', 'scripts/verify-workspace-acceptance.mjs', 'scripts/verify-local-acceptance.mjs', 'scripts/roadmap.mjs'];
+  'scripts/manage-preview.mjs', 'scripts/asset-service.mjs', 'scripts/verify-usability-target.mjs', 'scripts/verify-usability-delivery.mjs', 'scripts/verify-release-scope.mjs', 'governance/release-scope.json', 'governance/transport-correction-v082.json', 'scripts/verify-native-acceptance.mjs', 'scripts/verify-workspace-acceptance.mjs', 'scripts/verify-local-acceptance.mjs', 'scripts/roadmap.mjs'];
 export function collect(root, names) {
   const files = new Map();
   const metadata = name => name.split('/').some(part => part === '.DS_Store' || part === '__MACOSX' || part.startsWith('._'));
@@ -29,7 +29,7 @@ export function collect(root, names) {
 // Source projects/evopilot-OWNER maps to the installed npm pack.
 export function installedMarkdown(markdown, filename, packagedFiles = new Map()) {
   const target = value => {
-    const owned = value.match(/^https:\/\/github\.com\/yeliang-wang\/(evopilot(?:-runtime|-harness|-ontology)?)\/blob\/(?:main|v0\.8\.1)\/([^?#]+)([?#].*)?$/);
+    const owned = value.match(/^https:\/\/github\.com\/yeliang-wang\/(evopilot(?:-runtime|-harness|-ontology)?)\/blob\/(?:main|v0\.8\.2)\/([^?#]+)([?#].*)?$/);
     if (owned) {
       let relative;
       try { relative = decodeURIComponent(owned[2]); } catch { return value; }
