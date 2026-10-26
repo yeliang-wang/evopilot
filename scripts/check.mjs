@@ -19,7 +19,7 @@ export function validateProductMetadata(pkg, owner, checkpoint = 'M2') {
   assert(['M2', 'M4'].includes(checkpoint), 'Unknown metadata checkpoint');
   assert(['runtime', 'harness', 'ontology'].includes(owner), 'Unknown product');
   assert.equal(pkg.name, '@evopilot-next/' + owner);
-  assert.equal(pkg.version, '0.8.1');
+  assert.equal(pkg.version, '0.8.2');
   assert.equal(pkg.private, true);
   assert.equal(pkg.type, 'module');
   assert.equal(pkg.license, 'Apache-2.0');
@@ -40,13 +40,13 @@ export function validateProductMetadata(pkg, owner, checkpoint = 'M2') {
 
 export async function checkPackages() {
   const plugin=JSON.parse(await readFile(resolve(ROOT,'plugins/codex/.codex-plugin/plugin.json'),'utf8'));
-  assert.equal(plugin.version,'0.8.1');assert.equal(plugin.interface.displayName,'EvoPilot v0.8.1 Preview');
+  assert.equal(plugin.version,'0.8.2');assert.equal(plugin.interface.displayName,'EvoPilot v0.8.2 Preview');
   for (const [index, directory] of ['.', ...CHILDREN].entries()) {
     const path = resolve(ROOT, directory, 'package.json');
     await assertNoSymlinks(path);
     const pkg = JSON.parse(await readFile(path, 'utf8'));
     assert.equal(pkg.name, `@evopilot-next/${['stack', 'runtime', 'harness', 'ontology'][index]}`);
-    assert.equal(pkg.version, '0.8.1');
+    assert.equal(pkg.version, '0.8.2');
     assert.equal(pkg.private, true);
     assert.equal(pkg.type, 'module');
   assert.equal(pkg.license, 'Apache-2.0');
@@ -75,7 +75,7 @@ export async function checkPackages() {
       const sourcePath = resolve(ROOT, directory, 'src/index.ts');
       await assertNoSymlinks(sourcePath);
       const source = await readFile(sourcePath, 'utf8');
-      assert(source.includes("export const VERSION = '0.8.1';"));
+      assert(source.includes("export const VERSION = '0.8.2';"));
       assert(source.includes(`export const PRODUCT = '${['runtime', 'harness', 'ontology'][index - 1]}';`));
     }
   }

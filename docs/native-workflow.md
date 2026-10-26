@@ -84,19 +84,35 @@ path (`localeCompare` with `en`), with no duplicate or case-colliding path.
 ## Native package transport bounds
 
 Transport budgets include UTF-8 JSON framing. Ordinary MCP requests and
-authenticated connection requests remain limited to 1 MiB. Only
-`native_project.materialize` and the Ontology/Harness `native.package.put`
-routes accept up to 8 MiB, including both packages in materialization. The MCP
+authenticated connection requests remain limited to 1 MiB. The following
+package-bearing routes accept up to 8 MiB: `native_project.preflight`,
+`native_project.freeze`, `native_project.materialize`, and the Ontology/Harness
+`native.package.put` routes. The complete envelope, including both packages for
+project preflight, freeze or materialization, must fit the bound. The MCP
 adapter, connection client and authenticated daemon enforce the same route
 allowlist before calling an owner or writing project state. Larger frames are
 rejected; splitting or shrinking a frozen source scope is not a workaround.
 Owner schema, source coverage, revision and approval checks still apply.
 
-Those routes and Ontology/Harness `native.package.inspect/readback/publish`
-and `native.receipt.inspect` have a
-16 MiB connection-response budget and a 32 MiB MCP-output budget, accommodating
-the full package in both text and structured content. Other responses retain
-their 8 MiB limit. Readback requests retain the ordinary 1 MiB input limit.
+The effective limits below are in MiB and include serialization overhead.
+The three package-bearing project operations are listed individually so that
+preflight and freeze are not mistaken for ordinary 1 MiB requests.
+
+| Route | Request | Connection response | MCP output |
+|---|---:|---:|---:|
+| `native_project.preflight` | 8 | 16 | 32 |
+| `native_project.freeze` | 8 | 16 | 32 |
+| `native_project.materialize` | 8 | 16 | 32 |
+| Ontology/Harness `native.package.put` | 8 | 16 | 32 |
+| Ontology/Harness `native.package.inspect`, `native.package.readback`, `native.package.publish`, `native.receipt.inspect` | 1 | 16 | 32 |
+| `native` with explicit `readiness.*` | 8 | 32 | 64 |
+| `native` with `readable.*` | 1 | 64 | 128 |
+| Other routes, including `native_project.prepare` and `native_project.inspect` | 1 | 8 | 8 |
+
+These transport allowances do not admit unsupported operations or bypass owner
+schemas. Readback requests retain the ordinary 1 MiB input limit except for the
+explicit readiness family. Larger output budgets accommodate full packages,
+paged reports and the MCP text/structured-content copies.
 If a native response still exceeds its bounded output budget after dispatch,
 the adapter returns `UNKNOWN` with the operation's reconciliation identity;
 inspect the retained candidate or owner receipt before considering another call.

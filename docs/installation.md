@@ -1,8 +1,8 @@
 # Install EvoPilot Preview
 
-## Version 0.8.1 Preview
+## Version 0.8.2 Preview
 
-Use **Node 24.14.0**. Download `evopilot-0.8.1-preview.tar.gz` and `SHA256SUMS` from the exact [v0.8.1 Preview release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.1). A release candidate may use a verified local bundle through the same commands; source version alone is not proof of a published download. Use an immutable versioned release, not a latest-stable selector.
+Use **Node 24.14.0**. Download `evopilot-0.8.2-preview.tar.gz` and `SHA256SUMS` from the exact [v0.8.2 Preview release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.2). A release candidate may use a verified local bundle through the same commands; source version alone is not proof of a published download. Use an immutable versioned release, not a latest-stable selector.
 
 The bundle contains compiled JavaScript and needs no npm install or source build. Core source is strict TypeScript; see [language policy](language-policy.md). The native validator platform is **macOS arm64**, with an explicit pinned-toolchain preparation step; inspection never downloads dependencies. The bundle includes no Node executable, credentials, live configuration, business data or configured providers. Source builds belong to the [developer path](development.md).
 
@@ -15,7 +15,7 @@ The plugin display name is **EvoPilot v0.8 Preview**. Inspect its actual version
 In the directory containing both downloads, select exactly the bundle entry. This fails if the entry is missing or duplicated:
 
 ```sh
-preview_checksum="$(awk '$2 == "evopilot-0.8.1-preview.tar.gz" && length($1) == 64 && $1 !~ /[^0-9a-fA-F]/ { line=$0; count++ } END { if (count != 1) exit 1; print line }' SHA256SUMS)" &&
+preview_checksum="$(awk '$2 == "evopilot-0.8.2-preview.tar.gz" && length($1) == 64 && $1 !~ /[^0-9a-fA-F]/ { line=$0; count++ } END { if (count != 1) exit 1; print line }' SHA256SUMS)" &&
   printf '%s\n' "$preview_checksum" | shasum -a 256 -c -
 ```
 
@@ -26,7 +26,7 @@ Choose a new extraction directory with an existing parent:
 ```sh
 preview_bundle="/absolute/path/to/new-extracted-bundle"
 mkdir "$preview_bundle" &&
-  tar -xzf evopilot-0.8.1-preview.tar.gz -C "$preview_bundle"
+  tar -xzf evopilot-0.8.2-preview.tar.gz -C "$preview_bundle"
 ```
 
 ## Install and register

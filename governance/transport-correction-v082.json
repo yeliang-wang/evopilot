@@ -1,0 +1,38 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "transport-correction-v082",
+  "targetVersion": "0.8.2",
+  "status": "ACCEPTED_SCOPE",
+  "baselineTarget": "governance/asset-readiness-v081.json",
+  "baselineTargetDigest": "sha256:b3afd3f255c1596caa98676c291adfc7756a11644135e3c57d731aec7dea041f",
+  "previousRoadmapDigest": "sha256:24e2c9e8fe994acc7373c4514bb81f9d14a3116c8beb3dcdea75d4373df20ed0",
+  "roadmapDigest": "sha256:114cfc88dd2a40a4e650a2c28a377e447fe389a7f0a518a4b5f43a179550c5db",
+  "plan": "docs/transport-correction-v082.md",
+  "planDigest": "sha256:9316e899b56fc0de7ee663ea2a074b205a2d44fa2395999b54396e018088e3f5",
+  "acceptance": "governance/asset-readiness-v081-acceptance.json",
+  "acceptanceDigest": "sha256:35481529a331e0dc26b21cbaa46234932c613120e0547b458eb7f491f20bfa0a",
+  "baselineCommits": {
+    "parent": "a7ee9367f80d236b5bffd56ce6094f46759a7b6b",
+    "runtime": "50262f2206e2fb1b0b2a5f64294e31079f9b67cc",
+    "harness": "c06498fc517d2ed8f5b34daab3149a2575adf4ff",
+    "ontology": "86144a01afa95e612d8405a6384b9ba3fb24a8d5"
+  },
+  "scope": [
+    "native transport documentation",
+    "EvoPilot immutable normative content correction",
+    "synchronized release identity",
+    "GitHub Preview release",
+    "current Codex install and acceptance"
+  ],
+  "exclusions": [
+    "runtime behavior changes",
+    "API/schema/state migration changes",
+    "database/SSH",
+    "software reconstruction",
+    "Dashboard",
+    "v0.9",
+    "production deployment"
+  ],
+  "authority": false,
+  "acceptanceInferred": false
+}

@@ -254,3 +254,7 @@ The following IDs are expanded into fixed variants in the v0.6 Target and covere
 ## v0.8.1 Preview — accepted asset readiness correction
 
 [The accepted plan](asset-readiness-v081.md) and [machine Target](../governance/asset-readiness-v081.json) add explicit usability v2 while preserving v1. L1/L2/L3 describe asset content; reconstruction verification remains independent. Scope includes three modeling modes, full existing project asset upgrades, exact four-product release and current Codex deployment. All 63 pre-release and 9 post-release variants are mandatory. The prior v0.8 baseline remains published history. No v0.9 capability or Dashboard enters this version. User-environment Prometheus acceptance remains deferred.
+
+## v0.8.2 Preview: transport documentation and specification correction
+
+The [correction plan](transport-correction-v082.md) and [maintenance Target](../governance/transport-correction-v082.json) address the confirmed v0.8.1 guide omission and corresponding private normative specification. Preserve the 72 v0.8.1 acceptance variants, all historical publications and private evidence. This patch changes documentation and synchronized release identity only; it adds no product behavior or execution authority. Exact verification, new immutable publication and current Codex installation evidence remain required.
