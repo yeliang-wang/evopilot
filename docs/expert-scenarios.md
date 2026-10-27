@@ -1,13 +1,10 @@
-# Expert scenarios — v0.7.0 Preview
+# Expert scenarios
 
 Current native journeys are returned by `evopilot_v01_guide`. Their actual
 operation sequence is in [Native workflow](native-workflow.md). Guidance and
 catalogue metadata do not certify installed Desktop behavior.
 
-The current guide has 19 native journeys: six V03, three V04, five V05 and
-five V06. The 27 retained V02 scenarios below are historical context, not the
-current acceptance denominator. See [online journeys](#v05-online-journeys) and
-[response journeys](#v06-response-journeys) for the later additions.
+The catalogue retains V03–V08 journeys and historical V02 context. For current content grading, the [v2 workflow](asset-readiness-v081-workflow.md) and its six relevant guide overrides define the applicable behavior; old scenario counts are not the current acceptance denominator. See [online journeys](#v05-online-journeys) and [response journeys](#v06-response-journeys) for those retained capabilities.
 
 | ID | User journey | Automated evidence locations |
 | --- | --- | --- |

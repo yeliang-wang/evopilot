@@ -1,8 +1,8 @@
-# EvoPilot 0.8.0 Preview in Codex
+# EvoPilot in Codex
 
 The composed Preview exposes one unified Expert. Each installation uses an MCP server namespace derived from its configuration path (`evopilot_<path-hash>`); stable tool names start with `evopilot_v01_`. Those names do not identify the product version. Runtime owns the Codex integration; it is not a fourth product.
 
-After [installation and registration](installation.md), select **EvoPilot v0.8 Preview** and inspect the exact installed identity. On first use the Expert inspects and guides explicit Workspace initialization or attachment before activation. A configured Workspace can be activated for the current chat without a second enable question. Activation checks the shared daemon and starts it if absent. Normal work uses the Expert rather than CLI commands.
+After [installation and registration](installation.md), select **EvoPilot v0.8.3 Preview** and inspect the exact installed identity. On first use the Expert inspects and guides explicit Workspace initialization or attachment before activation. A configured Workspace can be activated for the current chat without a second enable question. Activation checks the shared daemon and starts it if absent. Normal work uses the Expert rather than CLI commands.
 
 Inspect the returned session identity, activation state and verified running connection identity, including installation, component versions and workspace. Each chat has its own adapter and activation flag; another chat's daemon does not activate this chat. This native per-chat binding is integration behavior, not tamperproof Host enforcement. Ordinary chats leave the Expert off (`allow_implicit_invocation: false`).
 

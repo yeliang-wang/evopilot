@@ -1,6 +1,6 @@
 # Plan a project through EvoPilot
 
-This guide describes the isolated v0.7 edition. It does not claim daily installation or actual Codex acceptance is complete.
+This guide describes project planning introduced in v0.7 and retained by the current release. Planning decisions remain distinct from native asset decisions, execution authority and release acceptance.
 
 Select EvoPilot when starting a project discussion, including when you only have an idea. Ask: “Discuss this project's next version; plan first without modifying its source.” Expert binds your private Workspace and project, reads the current baseline and resumes an existing draft when appropriate. Ordinary chats remain unaffected.
 
@@ -32,7 +32,7 @@ Planning approval and binding do not dispatch work. Continue the existing collec
 
 `planning.export` returns a Markdown Roadmap and structured view pinned to the accepted revision, source and export digest. Save it to a source repository only when that write is authorized. `planning.export.verify` compares it to the owner record; editing the exported file cannot change the authoritative plan. There is no automatic GitHub publication or import of edited exports.
 
-Runtime uses schema marker 6 after the first planning write; older Runtime readers reject that state. Use supported isolated backup/recovery verification before upgrading daily data. See the [API reference](../projects/evopilot-runtime/docs/planning-api.md) and [architecture decision](adr-planning.md).
+Planning introduced Runtime schema marker 6; current v2 readiness writes can advance it to 8. A planning operation does not downgrade a newer marker. Older Runtime readers reject unsupported state. Use supported isolated backup/recovery verification before upgrading daily data. See the [API reference](../projects/evopilot-runtime/docs/planning-api.md) and [architecture decision](adr-planning.md).
 
 ## What the user sees
 

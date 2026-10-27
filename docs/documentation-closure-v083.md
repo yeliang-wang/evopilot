@@ -1,0 +1,13 @@
+# v0.8.3 Preview documentation closure
+
+This bounded maintenance correction implements the user's confirmation to finish the documented entry-guide omissions under the accepted v0.8.1 plan. Current explicit usability v2 grades asset content; its L3 does not require actual reconstruction. Preserve the original usability v1 requirements in clearly historical sections. Correct current migration routes, the existing Runtime/Harness marker 8 and Ontology marker 5, and the plugin name from the exact manifest. Review all current entry guides for the same mismatch, including offline references.
+
+The correction changes documentation, maintenance tests, source/asset provenance and synchronized release identity only. It does not change owner APIs, business implementation, schemas, native standards, permissions or release authority. No database/SSH, original project E2E, software reconstruction, Dashboard, v0.9 or production deployment is authorized. User Prometheus environment acceptance remains deferred.
+
+## Acceptance and delivery
+
+Retain every one of the 72 v0.8.1 fixed variants and their original required scope. Add executable checks that reject the actual old L3 paragraph, obsolete upgrade routes and plugin-name drift while permitting correctly labeled historical v1 guidance. Check current source, compiled packages and installed/offline documentation, including actual Codex Host reading the exact affected entry pages. Passing snapshots or regex alone do not prove content correctness.
+
+EvoPilot's affected normative documents require a new immutable private asset version, source comparison, native validation/publication and fresh v2 content assessment. Keep the same 565 content criteria and prior actual purpose/scope/L3 choice; reuse previous exact semantic decisions only for verified unchanged meanings. Bind the real current factual-correction instruction without claiming a separate human review of newly generated hashes. DataRig's exact 332-criterion assets remain unchanged and are re-read. Keep old gaps, failed/stale grades and previous publications.
+
+The existing explicit user instruction covers this concrete completion, GitHub publication and current Codex delivery after acceptance. Before release bind exact commits, CI results, artifact hashes, actual instruction and pre-release evidence privately. Publish a new version without replacing old releases. Download and verify public artifacts, take a verified stopped backup, install through supported APIs, check both current project grades and separate reconstruction states, preserve old owner records, and only then close all post-release evidence. Source or a public Target cannot fabricate approval or acceptance.

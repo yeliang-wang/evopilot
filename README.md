@@ -1,10 +1,10 @@
-# EvoPilot · v0.8.2 Preview
+# EvoPilot · v0.8.3 Preview
 
 Build domain models, assess quality, and prepare controlled execution through one Expert in Codex. Runtime owns execution and state, Harness owns QA and delivery standards, and Ontology owns domain modeling.
 
 [Quickstart](docs/installation.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/yeliang-wang/evopilot/releases) · [Contribute](CONTRIBUTING.md)
 
-v0.8.2 corrects the parent transport guide and refreshes the synchronized offline distribution. Runtime behavior is unchanged. v0.8.1 introduced explicit usability **v2** content grades: L1 domain understanding, L2 implementation specification and L3 reconstruction specification closure. L3 does not require running the original environment or reconstructing software. Content assessment and optional reconstruction verification are separate; `v2 / L3 / NOT_REQUESTED` is valid. It does not establish generated functional equivalence, byte-identical source, production readiness or release authority. Historical usability v1 APIs and records retain their original meaning. Read [the current workflow](docs/asset-readiness-v081-workflow.md) and [migration guide](docs/migration-v080-v081.md).
+v0.8.3 synchronizes current v2 content-grade guidance, installation and migration routes, plugin naming and offline documentation. Product behavior is unchanged. v0.8.1 introduced explicit usability **v2** content grades: L1 domain understanding, L2 implementation specification and L3 reconstruction specification closure. L3 does not require running the original environment or reconstructing software. Content assessment and optional reconstruction verification are separate; `v2 / L3 / NOT_REQUESTED` is valid. It does not establish generated functional equivalence, byte-identical source, production readiness or release authority. Historical usability v1 APIs and records retain their original meaning. Read [the current workflow](docs/asset-readiness-v081-workflow.md) and [migration guide](docs/migration-v080-v081.md).
 
 Earlier v0.6.0 introduced [reviewed response linkage](docs/response.md), extending online Harness and registered execution feedback. It connects findings, published runbooks, reviewed isolated actions, independent verification and asset-owner feedback. The [historical v0.6.0 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) retains that edition; source availability alone is not a publication receipt. Native domain models use RDF/Turtle and SHACL; quality assets use Rego, OPA and Conftest. Project completion requires fixed requirements, actual collection receipts, both owner reports and the actual domain decision. Preview is not GA or blanket production acceptance.
 
@@ -50,7 +50,7 @@ The daemon loads all three services; it does not start one process per product. 
 
 ## Install a published bundle
 
-Use **Node 24.14.0**. Get `evopilot-0.8.2-preview.tar.gz` and `SHA256SUMS` from the exact [v0.8.2 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.2). Follow [checksum verification and extraction](docs/installation.md), then set canonical absolute paths to your extracted bundle and new isolated locations outside Git; their parent directories must exist. Public and private product data belong to the workspace, separate from installed program files:
+Use **Node 24.14.0**. Get `evopilot-0.8.3-preview.tar.gz` and `SHA256SUMS` from the exact [v0.8.3 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.3). Follow [checksum verification and extraction](docs/installation.md), then set canonical absolute paths to your extracted bundle and new isolated locations outside Git; their parent directories must exist. Public and private product data belong to the workspace, separate from installed program files:
 
 ```sh
 preview_bundle="/absolute/path/to/extracted-bundle"
@@ -61,9 +61,9 @@ codex plugin marketplace add "$preview_root" --json
 codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json
 ```
 
-Existing users should follow the [v0.6 to v0.7 upgrade procedure](docs/migration.md#upgrade-from-v06-to-v070) before switching their daily plugin. Preserve the existing Workspace and verify rollback on an isolated copy.
+Existing users must select the route matching their installed version in the [current migration entry](docs/migration.md#current-upgrade-route). For v0.8.0 to v0.8.1 or later, follow the [v2 state migration](docs/migration-v080-v081.md). v0.8.1 and later maintenance releases preserve those state semantics; verify the exact new bundle, stopped backup, isolated recovery and current Host before switching the daily plugin.
 
-Select **EvoPilot v0.8 Preview**, then say: “Initialize my private Workspace, explain its directories, and guide me through the forward example.” The Expert inspects first, creates the Workspace only after your setup request, then explicitly activates the current chat. You can choose your own directories; no private GitHub repository is required. Initialization alone does not activate the chat. Inspect and guide requests stay passive; ordinary chats do not require EvoPilot.
+Select **EvoPilot v0.8.3 Preview**, then say: “Initialize my private Workspace, explain its directories, and guide me through the forward example.” The Expert inspects first, creates the Workspace only after your setup request, then explicitly activates the current chat. You can choose your own directories; no private GitHub repository is required. Initialization alone does not activate the chat. Inspect and guide requests stay passive; ordinary chats do not require EvoPilot.
 
 Your editable project defaults to `~/evopilot-workspace`; protected service state defaults to `~/.local/share/evopilot/workspaces/<id>`. The project may have its own private Git history. Service databases, control records, signing keys and private evidence stay outside EvoPilot source and distribution. See [Workspace](workspace/README.md) and the [current and historical Expert scenarios](docs/expert-scenarios.md).
 

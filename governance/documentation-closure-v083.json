@@ -1,0 +1,40 @@
+{
+  "schema": "evopilot-evolution-target/v1",
+  "id": "documentation-closure-v083",
+  "targetVersion": "0.8.3",
+  "status": "ACCEPTED_SCOPE",
+  "baselineTarget": "governance/asset-readiness-v081.json",
+  "baselineTargetDigest": "sha256:b3afd3f255c1596caa98676c291adfc7756a11644135e3c57d731aec7dea041f",
+  "previousRoadmapDigest": "sha256:114cfc88dd2a40a4e650a2c28a377e447fe389a7f0a518a4b5f43a179550c5db",
+  "roadmapDigest": "sha256:5ec7893638b5e13ec9f65c5e0c233666d09761aa14f3a743df94bce60d867570",
+  "plan": "docs/documentation-closure-v083.md",
+  "planDigest": "sha256:2959c78297271381b57d4982e41d1736aa2c7d081e2ac9c97b3f63121078292c",
+  "acceptance": "governance/asset-readiness-v081-acceptance.json",
+  "acceptanceDigest": "sha256:35481529a331e0dc26b21cbaa46234932c613120e0547b458eb7f491f20bfa0a",
+  "baselineCommits": {
+    "parent": "9948705b6d187897993359873406e5d66980950a",
+    "runtime": "2276d69a8469cd594eeba2a02d46c57b6d027bc5",
+    "harness": "8aa3698c5ca55c8e917a3b5f7b7d68bef47498b1",
+    "ontology": "b9401aa5ccea8f3c84311ddb3df5a7c87ae289cd"
+  },
+  "scope": [
+    "current/historical documentation consistency",
+    "EvoPilot immutable normative specification correction",
+    "synchronized release identity",
+    "GitHub Preview release",
+    "current Codex install and acceptance"
+  ],
+  "exclusions": [
+    "runtime behavior changes",
+    "API/schema/state migration changes",
+    "database/SSH",
+    "software reconstruction",
+    "Dashboard",
+    "v0.9",
+    "production deployment"
+  ],
+  "authority": false,
+  "acceptanceInferred": false,
+  "previousTarget": "governance/transport-correction-v082.json",
+  "previousTargetDigest": "sha256:27bb256f6c63eef07418961899fcda1c13ee6843e1899772354a1a97e2b8f75e"
+}

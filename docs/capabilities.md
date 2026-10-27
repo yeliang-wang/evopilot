@@ -1,4 +1,4 @@
-# Capabilities in v0.8.0 Preview
+# Current EvoPilot capabilities
 
 This is source capability documentation, not a release or production certificate. The [native workflow](native-workflow.md) is the current path. Historical v0.2 JSON mutation examples cannot create corrected-v1 work.
 
@@ -40,6 +40,10 @@ The [online service](online-harness.md) uses explicitly selected immutable servi
 The [0.6 response workflow](response.md) connects optional operations ontology material, published Harness guidance, a reviewed Runtime response, an actual isolated collection action, independent native verification and both owners' feedback decisions. It preserves cause hypotheses, preventive followups and risk dispositions. The supplied executor remains pinned Node with explicitly declared loopback access. Java/Maven and remote adapters remain separate Roadmap work.
 
 
-## v0.8 asset usability and controlled reconstruction
+## Current asset readiness (v2)
 
-v0.8 adds independent asset consumption, explicit L1/L2/L3 usability assessment, mandatory purpose/scope/level admission before reverse modeling, and controlled reconstruction with an independent fixed oracle. Verified L3 is limited to the reviewed functional slice and requires two clean complete reconstructions; it does not mean byte-identical source, whole-project coverage, production readiness or automatic release. The standalone [asset service](asset-service.md) needs no Runtime Goal or Codex session. Reconstruction uses explicitly configured trusted executor bindings; missing or unsupported providers fail closed. Read [the workflow](asset-usability-v08-workflow.md) for independent scope, evidence, budget and recovery boundaries.
+Current content grading explicitly selects `standardVersion: "v2"`: L1 covers domain understanding, L2 implementation specifications, and L3 reconstruction specification completeness. L3 does not require software reconstruction or access to the original runtime environment. `assetAssessment` and `reconstructionVerification` are independent; `L3 / NOT_REQUESTED` is valid and makes no generated-equivalence claim. Use the [current v2 workflow](asset-readiness-v081-workflow.md). Source reverse, document forward and asset composition all bind purpose, scope, sources, fixed requirements and the target level before formal modeling.
+
+## Historical usability v1 and optional reconstruction
+
+Historical v0.8.0 usability v1 added independent asset consumption, explicit L1/L2/L3 usability assessment, mandatory purpose/scope/level admission before reverse modeling, and controlled reconstruction with an independent fixed oracle. Verified L3 is limited to the reviewed functional slice and requires two clean complete reconstructions; it does not mean byte-identical source, whole-project coverage, production readiness or automatic release. The standalone [asset service](asset-service.md) needs no Runtime Goal or Codex session. Reconstruction uses explicitly configured trusted executor bindings; missing or unsupported providers fail closed. Read [the historical v1 workflow](asset-usability-v08-workflow.md) for independent scope, evidence, budget and recovery boundaries.

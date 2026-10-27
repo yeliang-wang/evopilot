@@ -1,6 +1,6 @@
-# First use — v0.8.0 Preview
+# First use
 
-Use the [native workflow](native-workflow.md) for exact current envelopes and expected files. Historical JSON authoring commands remain retired; old records retain their original meaning.
+Start with the [current v2 content workflow](asset-readiness-v081-workflow.md) for modeling purpose, scope, level and content grading. Use the [native package workflow](native-workflow.md) for exact native envelopes and expected files; content grading does not require a business Run or reconstruction. Historical JSON authoring commands remain retired; old records retain their original meaning.
 
 [Install EvoPilot](installation.md), select the EvoPilot plugin in Codex and say:
 
@@ -10,7 +10,7 @@ No GitHub login or separate Workspace repository is required. The Expert checks 
 
 The project contains README, documentation, synthetic examples, public reusable assets and private project materials. `public` means reusable scope, not permission to upload. Keep databases, raw runtime evidence, control state and credentials out of Git; use a complete Workspace backup for restoration. The installation binds one Workspace; use the explicit attach/migration workflow for existing data rather than editing identity files or moving live databases.
 
-For a planning discussion, ask “Discuss the next version, preserve assumptions and open questions, and show the review table before execution.” The [planning guide](planning.md) explains forward ideation, reverse onboarding, revisions, cross-chat resumption and execution handoff. [Readable reports](readable-assets.md) show native definitions and validation evidence without changing standards. Use the [installation guide](installation.md) for the exact verified v0.8.0 Preview release artifacts. Existing users follow the [v0.7-to-v0.8 migration procedure](migration.md#upgrade-from-v07-to-v080); selecting a new source checkout does not update a running installation.
+For a planning discussion, ask “Discuss the next version, preserve assumptions and open questions, and show the review table before execution.” The [planning guide](planning.md) explains forward ideation, reverse onboarding, revisions, cross-chat resumption and execution handoff. [Readable reports](readable-assets.md) show native definitions and validation evidence without changing standards. Use the [installation guide](installation.md) for the exact verified current Preview release artifacts. Existing users follow the [current migration route](migration.md#current-upgrade-route) and the [v2 state migration guide](migration-v080-v081.md); selecting a new source checkout does not update a running installation.
 
 ## Try a synthetic example
 

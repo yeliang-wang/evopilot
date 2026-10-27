@@ -10,7 +10,12 @@ export function checkReadinessTarget(){
   assert.equal(t.schema,'evopilot-evolution-target/v1');assert.equal(t.targetVersion,'0.8.1');
   const correction=read('governance/transport-correction-v082.json');
   assert.equal(correction.targetVersion,'0.8.2');assert.equal(correction.baselineTargetDigest,digest('governance/asset-readiness-v081.json'));
-  assert.equal(t.roadmapDigest,correction.previousRoadmapDigest);assert.equal(correction.roadmapDigest,digest('docs/roadmap.md'));
+  assert.equal(t.roadmapDigest,correction.previousRoadmapDigest);
+  const current=read('governance/documentation-closure-v083.json');
+  assert.equal(current.targetVersion,'0.8.3');assert.equal(current.previousTargetDigest,digest('governance/transport-correction-v082.json'));
+  assert.equal(current.previousRoadmapDigest,correction.roadmapDigest);assert.equal(current.roadmapDigest,digest('docs/roadmap.md'));
+  assert.equal(current.planDigest,digest(current.plan));assert.equal(current.acceptanceDigest,digest(t.acceptance));
+  assert.equal(current.authority,false);assert.equal(current.acceptanceInferred,false);
   assert.equal(correction.planDigest,digest(correction.plan));assert.equal(correction.acceptanceDigest,digest(t.acceptance));
   assert.equal(correction.authority,false);assert.equal(correction.acceptanceInferred,false);
   for(const k of ['plan','adr','acceptance'])assert.equal(t[k+'Digest'],digest(t[k]),k+' drift');
@@ -23,6 +28,6 @@ export function checkReadinessTarget(){
   assert.deepEqual(map.map(m=>m.obligation),old.acceptance);
   assert(t.exclusions.includes('business DB or SSH operations'));assert(t.exclusions.includes('Dashboard'));
   assert.equal(t.authority,false);assert.equal(t.acceptanceInferred,false);
-  return {status:'ALIGNED',target:correction.id,version:correction.targetVersion,variants:72,acceptance:'NOT_INFERRED',authority:false};
+  return {status:'ALIGNED',target:current.id,version:current.targetVersion,variants:72,acceptance:'NOT_INFERRED',authority:false};
 }
 if(process.argv[1]===fileURLToPath(import.meta.url))console.log(JSON.stringify(checkReadinessTarget()));

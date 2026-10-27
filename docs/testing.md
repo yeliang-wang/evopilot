@@ -1,6 +1,10 @@
 # Testing and evidence
 
-## Current v0.7 edition acceptance
+## Current v0.8.1 plan and maintenance acceptance
+
+The [v0.8.1 accepted inventory](../governance/asset-readiness-v081-acceptance.json) fixes 72 variants: 63 before release and nine after publication. Current maintenance Targets retain that denominator. Current v2 content L3 and optional reconstruction are assessed independently. Exact current source/CI/package, content review, release download, stopped backup, installation and actual Codex Host evidence remain required; retained unaffected evidence needs an explicit applicability comparison. Checks and document assertions cannot approve semantics or release.
+
+## Historical v0.7 edition acceptance
 
 The [v0.7 execution Target](../governance/readability-v07-execution.json) fixes 50 variants across diagnostics, preflight, native read projections, comparisons, maintenance, conversation-driven planning and actual Codex journeys. Native v1 normative bytes remain unchanged. Source/package tests, resource measurements and actual Host receipts are distinct evidence. Missing or deferred checks are not PASS. Candidate validation uses isolated state; a daily upgrade requires its own authorized backup, recovery and actual Host verification. [Readable reports](readable-assets.md), [planning](planning.md), [maintenance](preflight-maintenance.md) and [Expert scenarios](expert-scenarios.md) describe the current behavior.
 

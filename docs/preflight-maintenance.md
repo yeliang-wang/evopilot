@@ -1,6 +1,6 @@
 # Draft preflight and bounded maintenance
 
-These interfaces are part of v0.7. Pause active project work and follow the [upgrade procedure](migration.md#upgrade-from-v06-to-v070) before shared maintenance or daily installation changes.
+These interfaces were introduced in v0.7 and remain available. Pause active project work and follow the [current upgrade route](migration.md#current-upgrade-route) before shared maintenance or daily installation changes.
 
 ## Native project preflight
 

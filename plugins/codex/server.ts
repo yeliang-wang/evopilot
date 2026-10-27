@@ -134,7 +134,7 @@ async function serve(configPath: string) {
       const p = r.params;
       if (initialized || !p || Object.keys(p).some(k => !['protocolVersion', 'capabilities', 'clientInfo', '_meta'].includes(k)) || typeof p.protocolVersion !== 'string' || !p.capabilities || typeof p.capabilities !== 'object' || Array.isArray(p.capabilities) || !p.clientInfo || typeof (p.clientInfo as Record<string, unknown>).name !== 'string' || typeof (p.clientInfo as Record<string, unknown>).version !== 'string') { await error(-32602, 'Invalid params'); return; }
       initialized = true;
-      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.8.2' } };
+      result = { protocolVersion: '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'evopilot-v01-preview', version: '0.8.3' } };
     } else if (r.method === 'ping' || r.method === 'tools/list') {
       if (params && (Object.keys(params).some(k => !['_meta', ...(r.method === 'tools/list' ? ['cursor'] : [])].includes(k)) || (Object.hasOwn(params, 'cursor') && (typeof params.cursor !== 'string' || params.cursor !== '')))) { await error(-32602, 'Invalid params'); return; }
       result = r.method === 'ping' ? {} : { tools };

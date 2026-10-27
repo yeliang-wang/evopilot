@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { checkCurrentGuidance } from './check-current-guidance.mjs';
 
 const escape = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -63,7 +64,9 @@ export async function checkDocumentation(root = fileURLToPath(new URL('../', imp
   const names = ['README.md', 'CHANGELOG.md', ...(await readdir(resolve(root, 'docs')))
     .filter(name => name.endsWith('.md') && !name.startsWith('legacy-')).map(name => 'docs/' + name)];
   const documents = Object.fromEntries(await Promise.all(names.map(async name => [name, await readFile(resolve(root, name), 'utf8')])));
-  return validateDocumentation({ version: pkg.version, owner, documents });
+  const result = validateDocumentation({ version: pkg.version, owner, documents });
+  if (owner === 'stack') checkCurrentGuidance(root);
+  return result;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

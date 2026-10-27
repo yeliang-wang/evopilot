@@ -1,6 +1,6 @@
 # Documentation
 
-This checkout documents v0.8.2 Preview. Use its [versioned release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.2) for distribution artifacts. Start with [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics. Documentation describes behavior; actual publication and project acceptance require their own records.
+This checkout documents v0.8.3 Preview. Use its [versioned release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.3) for distribution artifacts. Start with [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics. Documentation describes behavior; actual publication and project acceptance require their own records.
 
 Start with [installation](installation.md) and the [first journey](first-journey.md). The portable bundle is the user path; source builds are for contributors.
 
@@ -41,10 +41,14 @@ Start with [response workflow and boundaries](response.md), [V06 Expert journeys
 For documentation amendments after release, see the [correction policy](github-release.md#documentation-corrections-after-publication). Current source documentation can advance without replacing the original v0.7.0 archives.
 
 
-## v0.8.2 Preview
+## v0.8.3 Preview
 
-v0.8 adds independent asset consumption, explicit L1/L2/L3 usability assessment, mandatory purpose/scope/level admission before reverse modeling, and controlled reconstruction with an independent fixed oracle. Verified L3 is limited to the reviewed functional slice and requires two clean complete reconstructions; it does not mean byte-identical source, whole-project coverage, production readiness or automatic release. Read [the current workflow/API](asset-usability-v08-workflow.md). Publication and project acceptance retain separate evidence.
+Current content grading explicitly selects `standardVersion: "v2"`: L1 covers domain understanding, L2 implementation specifications, and L3 reconstruction specification completeness. L3 does not require software reconstruction or access to the original runtime environment. `assetAssessment` and `reconstructionVerification` are independent; `L3 / NOT_REQUESTED` is valid and makes no generated-equivalence claim. Use the [current v2 workflow](asset-readiness-v081-workflow.md). Publication and project acceptance retain separate evidence.
+
+### Historical usability v1
+
+The retained v0.8.0 `usability.*` standard requires two clean passing reconstructions for its scope-bound v1 L3. Its [historical workflow](asset-usability-v08-workflow.md) remains available; it is not the v2 content-grading prerequisite.
 
 - [Asset readiness v2 workflow](asset-readiness-v081-workflow.md) · [0.8.0 to 0.8.1 migration](migration-v080-v081.md)
 
-- [v0.8.2 transport documentation correction](transport-correction-v082.md)
+- [v0.8.3 transport documentation correction](transport-correction-v082.md)

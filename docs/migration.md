@@ -1,5 +1,11 @@
 # Workspace migration and source boundaries
 
+## Current upgrade route
+
+Choose by the actual installed version and schema state, not by an old example. For v0.8.0 to v0.8.1 or later, use the [v2 migration guide](migration-v080-v081.md): current v2 writes use **Runtime 8 / Harness 8 / Ontology 5**. Historical usability v1 marker 7 is not the v2 target. v0.8.1 and later maintenance patches preserve these semantics, but still require a new verified installation, stopped current backup, isolated recovery verification and current Host readback. Earlier source versions must first use their applicable historical migration steps below; those steps alone do not establish v2 compatibility.
+
+The v2 standard separates asset content from optional execution: L3 content qualification may have reconstruction `NOT_REQUESTED`. Installing or upgrading the product does not assign a project level, approve new model meaning, enable monitoring or execute business work. Preserve original assets, decisions and receipts; never downgrade markers or replay uncertain work.
+
 ## Upgrade from v0.7 to v0.8.0
 
 v0.8 adds independent asset consumption, explicit L1/L2/L3 usability assessment, mandatory purpose/scope/level admission before reverse modeling, and controlled reconstruction with an independent fixed oracle. Verified L3 is limited to the reviewed functional slice and requires two clean complete reconstructions; it does not mean byte-identical source, whole-project coverage, production readiness or automatic release. Native `specifications/v1` and original producer identities remain fixed. Runtime reconstruction and Harness usability writes use state marker **7**; read-only discovery does not silently grade historical assets.

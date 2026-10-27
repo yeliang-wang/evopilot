@@ -1,6 +1,6 @@
 # Corrected-v1 native workflow
 
-This documents the corrected-v1 native workflow used by v0.7.0 Preview.
+This documents the corrected-v1 native package lifecycle retained by the current release. For current content grading, use the explicit [v2 workflow](asset-readiness-v081-workflow.md); native v1 package formats and usability v1 grading are different version axes.
 The standards introduced in v0.3 remain unchanged. This guide is not a release,
 installed Host acceptance or project completion certificate. The two owners define their
 native standards; the parent defines the [project contract](../specifications/project/v1/README.md).
@@ -153,9 +153,13 @@ no current candidate exists.
 
 Before a new decision, retain the actual authorization source and bind it using the [decision evidence format](native-decisions.md). Opaque approval labels no longer authorize new native work; historical receipts remain unchanged.
 
-## v0.8 implementation: reverse modeling purpose
+## Current modeling purpose (v2)
 
-The v0.8 implementation adds a mandatory `modelingIntent` to new reverse project
+Current content grading explicitly selects `standardVersion: "v2"`: L1 covers domain understanding, L2 implementation specifications, and L3 reconstruction specification completeness. L3 does not require software reconstruction or access to the original runtime environment. `assetAssessment` and `reconstructionVerification` are independent; `L3 / NOT_REQUESTED` is valid and makes no generated-equivalence claim. Use the [current v2 workflow](asset-readiness-v081-workflow.md). All three modeling modes—source reverse, document forward and asset composition—require explicit purpose, scope, fixed sources, independent requirements and target level before formal modeling. Read-only discovery may precede that decision. Reuse an existing clear user choice; changed intent or source requires a new binding.
+
+## Historical usability v1 reverse-modeling admission
+
+The historical v0.8.0 usability v1 implementation added a mandatory `modelingIntent` to new reverse project
 preparation; this does not change an existing v0.7 installation. Before step 2's
 formal `prepare`, resolve purpose, scope and exclusions, target L1/L2/L3, fixed
 requirements and acceptance, and an exact actual user-intent reference. Read-only
@@ -163,7 +167,7 @@ source discovery may precede this decision. Reuse clear prior context and ask on
 for missing or ambiguous answers. The project SDK, HTTP and MCP routes enforce
 the same admission check; direct calls cannot skip it.
 
-L1 supports domain understanding, L2 adds implementable behavior, and L3 adds the
+Under historical usability v1, L1 supports domain understanding, L2 adds implementable behavior, and L3 adds the
 independent reconstruction obligations. These profiles are cumulative. Selecting
 a target or filling a template never establishes the verified level. An intent
 change needs a new binding and, for a retained candidate, a new candidate ID.

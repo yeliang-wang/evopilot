@@ -30,8 +30,8 @@ export interface ProductAPIs {
   ontology: { PRODUCT: string; VERSION: string; createOntologyService(options: Options, providers: OntologyProviders): OntologyService; verifyDelivery(value: unknown): { valid: boolean }; validateInstances(model: unknown, instance: unknown): Evaluation };
 }
 export interface ManifestEntry { path: string; sha256: string }
-export interface ConnectionConfig extends Options { schema: 'evopilot-connection-config/v1'; version: '0.8.2'; protocol: 'evopilot-connection/v1'; installationId: string; installationRoot: string; components: Record<Owner, '0.8.2'>; manifest: ManifestEntry[] }
-export interface ConnectionIdentity extends Options { product: 'evopilot-v01-preview'; version: '0.8.2'; protocol: 'evopilot-connection/v1'; installationId: string; installationRoot: string; installationDigest: string; components: ConnectionConfig['components'] }
+export interface ConnectionConfig extends Options { schema: 'evopilot-connection-config/v1'; version: '0.8.3'; protocol: 'evopilot-connection/v1'; installationId: string; installationRoot: string; components: Record<Owner, '0.8.3'>; manifest: ManifestEntry[] }
+export interface ConnectionIdentity extends Options { product: 'evopilot-v01-preview'; version: '0.8.3'; protocol: 'evopilot-connection/v1'; installationId: string; installationRoot: string; installationDigest: string; components: ConnectionConfig['components'] }
 export interface Configuration extends ConnectionConfig { configPath: string; controlRoot: string; bindingPath: string; projectRoot: string | null; identity: ConnectionIdentity }
 export interface UnboundConnectionConfig extends Omit<ConnectionConfig, 'workspaceRoot' | 'workspaceId'> { workspaceRoot: null; workspaceId: null }
 export interface InstallationConfiguration extends Omit<ConnectionConfig, 'workspaceRoot' | 'workspaceId'> { workspaceRoot: string | null; workspaceId: string | null; configPath: string; bindingPath: string; projectRoot: string | null; identity: Omit<ConnectionIdentity, 'workspaceRoot' | 'workspaceId'> & { workspaceRoot: string | null; workspaceId: string | null } }

@@ -258,3 +258,7 @@ The following IDs are expanded into fixed variants in the v0.6 Target and covere
 ## v0.8.2 Preview: transport documentation and specification correction
 
 The [correction plan](transport-correction-v082.md) and [maintenance Target](../governance/transport-correction-v082.json) address the confirmed v0.8.1 guide omission and corresponding private normative specification. Preserve the 72 v0.8.1 acceptance variants, all historical publications and private evidence. This patch changes documentation and synchronized release identity only; it adds no product behavior or execution authority. Exact verification, new immutable publication and current Codex installation evidence remain required.
+
+## v0.8.3 Preview: current documentation closure
+
+The [documentation closure plan](documentation-closure-v083.md) and [maintenance Target](../governance/documentation-closure-v083.json) correct current-versus-historical L3 wording, migration routing, state markers and plugin labels across entry guides and the corresponding private normative assets. Keep all 72 v0.8.1 variants, fixed project scope, native standards, runtime behavior and prior release bytes. New consistency guards, exact source/CI/package validation, immutable releases and current Codex readback are required. No additional product capability or execution permission is introduced.
