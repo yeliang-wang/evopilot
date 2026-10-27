@@ -1,5 +1,7 @@
 # v0.8.1 asset readiness workflow
 
+English | [简体中文](zh-CN/asset-readiness.md)
+
 This workflow explicitly selects `standardVersion: "v2"`. Native RDF/SHACL and Rego standards remain v1. The historical usability v1 API and its reconstruction requirements are unchanged.
 
 | Grade | Reviewed content | Intended use |

@@ -2,6 +2,8 @@
 
 This checkout documents v0.8.3 Preview. Use its [versioned release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.3) for distribution artifacts. Start with [native workflow](native-workflow.md), [native toolchain](native-toolchain.md), [project standard](../specifications/project/v1/README.md), and [Expert scenarios](expert-scenarios.md). Historical v0.2 examples cannot create new work under corrected-v1 semantics. Documentation describes behavior; actual publication and project acceptance require their own records.
 
+English | [简体中文](zh-CN/README.md)
+
 Start with [installation](installation.md) and the [first journey](first-journey.md). The portable bundle is the user path; source builds are for contributors.
 
 | Need | Guide or reference |

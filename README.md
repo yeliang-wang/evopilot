@@ -1,56 +1,41 @@
 # EvoPilot · v0.8.3 Preview
 
-Build domain models, assess quality, and prepare controlled execution through one Expert in Codex. Runtime owns execution and state, Harness owns QA and delivery standards, and Ontology owns domain modeling.
+English | [简体中文](README_CN.md)
 
-[Quickstart](docs/installation.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/yeliang-wang/evopilot/releases) · [Contribute](CONTRIBUTING.md)
+Build domain models, assess their quality, and prepare controlled execution through one Expert in Codex. EvoPilot combines Ontology for semantic assets, Harness for quality and evidence, and Runtime for projects, execution and audit.
 
-v0.8.3 synchronizes current v2 content-grade guidance, installation and migration routes, plugin naming and offline documentation. Product behavior is unchanged. v0.8.1 introduced explicit usability **v2** content grades: L1 domain understanding, L2 implementation specification and L3 reconstruction specification closure. L3 does not require running the original environment or reconstructing software. Content assessment and optional reconstruction verification are separate; `v2 / L3 / NOT_REQUESTED` is valid. It does not establish generated functional equivalence, byte-identical source, production readiness or release authority. Historical usability v1 APIs and records retain their original meaning. Read [the current workflow](docs/asset-readiness-v081-workflow.md) and [migration guide](docs/migration-v080-v081.md).
-
-Earlier v0.6.0 introduced [reviewed response linkage](docs/response.md), extending online Harness and registered execution feedback. It connects findings, published runbooks, reviewed isolated actions, independent verification and asset-owner feedback. The [historical v0.6.0 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.6.0) retains that edition; source availability alone is not a publication receipt. Native domain models use RDF/Turtle and SHACL; quality assets use Rego, OPA and Conftest. Project completion requires fixed requirements, actual collection receipts, both owner reports and the actual domain decision. Preview is not GA or blanket production acceptance.
+[Install](docs/installation.md) · [First journey](docs/first-journey.md) · [Documentation](docs/README.md) · [Downloads](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.3) · [Contribute](CONTRIBUTING.md)
 
 ## What can I do?
 
-| Scenario | Unified Expert path | Result to review |
-| --- | --- | --- |
-| Discuss a future version | [Planning and review](docs/planning.md) | Versioned ideas, assumptions, questions, decisions and milestone bindings |
-| Read rules and gate results | [Readable assets](docs/readable-assets.md) | Typed tables, before/after values and exact evidence with unchanged native standards |
-| First use | Initialize your own Workspace | Editable project directory, separate protected service state, README and synthetic examples |
-| Design from requirements | Forward design | Concepts, relations, constraints and proposed mappings |
-| Understand an existing project | Reverse modeling of an authorized revision | Observed mappings, inferences and semantic gaps |
-| Assess quality | Harness quality assessment | Rules, evidence, missing reports and quality results |
-| Evolve reviewed assets | [Registered execution feedback](docs/feedback.md) | Durable Run evidence, owner impact proposals, exact-version reuse or native delivery |
-| Monitor a selected service | [Online Harness](docs/online-harness.md) | Measured SLO windows, native policy results, incidents and reviewable Runtime repair candidates |
-| Respond to a retained fault | [Reviewed response](docs/response.md) | Pinned runbook and action, independent recovery evidence, reviewed asset reuse or delivery |
-| Plan and execute a goal | Runtime plan/execute | Immutable inputs, decisions, receipts and reconciliation |
+| Need | Workflow | Result |
+|---|---|---|
+| Understand an existing project | Reverse modeling of authorized, fixed source | Concepts, behavior, provenance and unresolved questions |
+| Design from requirements or documents | Forward modeling | Reviewed domain definitions and implementation specifications |
+| Reuse existing assets | Composition of pinned asset versions | Explicit dependencies, resolved conflicts and combined behavior |
+| Assess asset completeness | [Content readiness v2](docs/asset-readiness-v081-workflow.md) | Target level, qualified level, gaps and freshness |
+| Discuss a version or inspect evidence | [Planning](docs/planning.md) and [readable reports](docs/readable-assets.md) | Reviewable decisions and evidence linked to exact versions |
+| Execute a reviewed goal | [Native workflow](docs/native-workflow.md) | Pinned inputs, actual receipts and recovery state |
+| Assess a selected service or respond to a finding | [Online Harness](docs/online-harness.md) and [response linkage](docs/response.md) | Measured windows, reviewed actions and independent recovery evidence |
 
-Missing, unknown, skipped or stale required evidence blocks completion. Warnings do not authorize an automatic version bump. The current native workflow separates execution status from semantic and quality results; standalone Runtime needs trusted providers. Arbitrary coding and deployment are unsupported. Start with the [native workflow](docs/native-workflow.md), [project standard](specifications/project/v1/README.md) and [locked toolchain](docs/native-toolchain.md).
+Modeling intent fixes purpose, scope, sources and target level before formal work. Source facts, design declarations, inference and user decisions remain distinct. Missing or stale required evidence blocks completion.
 
 ## Three products, one entry
 
-| Repository | Responsibility | Documentation | Releases |
-| --- | --- | --- | --- |
-| [EvoPilot parent](https://github.com/yeliang-wang/evopilot) | Composition, unified Expert and distribution; Codex plugin is Runtime integration, not a fourth product | [Guides](docs/README.md) | [Preview releases](https://github.com/yeliang-wang/evopilot/releases) |
-| [Runtime](https://github.com/yeliang-wang/evopilot-runtime) | Projects, goals, execution, state, decisions and audit | [API](https://github.com/yeliang-wang/evopilot-runtime/blob/main/docs/service.md) | [Preview releases](https://github.com/yeliang-wang/evopilot-runtime/releases) |
-| [Harness](https://github.com/yeliang-wang/evopilot-harness) | QA, evidence, evaluation and delivery standards | [Guide](https://github.com/yeliang-wang/evopilot-harness/blob/main/README.md) | [Preview releases](https://github.com/yeliang-wang/evopilot-harness/releases) |
-| [Ontology](https://github.com/yeliang-wang/evopilot-ontology) | Domain concepts, relations, modeling, builds and immutable deliveries | [Guide](https://github.com/yeliang-wang/evopilot-ontology/blob/main/README.md) | [Preview releases](https://github.com/yeliang-wang/evopilot-ontology/releases) |
+| Repository | Responsibility |
+|---|---|
+| [EvoPilot](https://github.com/yeliang-wang/evopilot/blob/main/README.md) | Public-package composition, unified Expert, Workspace and distribution |
+| [Runtime](https://github.com/yeliang-wang/evopilot-runtime/blob/main/README.md) | Projects, goals, execution claims, state, decisions, receipts and audit |
+| [Harness](https://github.com/yeliang-wang/evopilot-harness/blob/main/README.md) | Quality policies, evidence evaluation and immutable quality deliveries |
+| [Ontology](https://github.com/yeliang-wang/evopilot-ontology/blob/main/README.md) | Domain concepts, relationships, constraints and immutable semantic deliveries |
 
-```mermaid
-flowchart LR
-  C[Codex: unified Expert] --> A[Per-chat MCP adapter]
-  A --> D[Shared local parent daemon]
-  D --> R[Runtime service]
-  D --> H[Harness service]
-  D --> O[Ontology service]
-  R --> W[External scoped workspace]
-  H --> W
-  O --> W
-```
-
-The daemon loads all three services; it does not start one process per product. An explicitly enabled online worker runs independently under launchd and uses the same public owner APIs. It continues after Codex closes; [stop it before maintenance](docs/online-harness.md). See [process topology](docs/architecture/0002-local-process-topology.md).
+The Codex plugin connects to a shared local daemon containing all three services. It is not a fourth product. An explicitly enabled online worker runs independently under macOS launchd; stop it before maintenance. See [architecture](docs/architecture/0002-local-process-topology.md).
 
 ## Install a published bundle
 
-Use **Node 24.14.0**. Get `evopilot-0.8.3-preview.tar.gz` and `SHA256SUMS` from the exact [v0.8.3 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.3). Follow [checksum verification and extraction](docs/installation.md), then set canonical absolute paths to your extracted bundle and new isolated locations outside Git; their parent directories must exist. Public and private product data belong to the workspace, separate from installed program files:
+Use **Node 24.14.0**. Download `evopilot-0.8.3-preview.tar.gz` and `SHA256SUMS` from the [v0.8.3 release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.3). Complete [checksum verification and extraction](docs/installation.md) first. The compiled bundle needs no source build or npm install. Native validation currently supports **macOS arm64** and requires explicit preparation of the pinned toolchain.
+
+Choose new canonical absolute paths outside Git, with existing parent directories:
 
 ```sh
 preview_bundle="/absolute/path/to/extracted-bundle"
@@ -61,20 +46,31 @@ codex plugin marketplace add "$preview_root" --json
 codex plugin add evopilot-v01-preview@evopilot-v01-preview-local --json
 ```
 
-Existing users must select the route matching their installed version in the [current migration entry](docs/migration.md#current-upgrade-route). For v0.8.0 to v0.8.1 or later, follow the [v2 state migration](docs/migration-v080-v081.md). v0.8.1 and later maintenance releases preserve those state semantics; verify the exact new bundle, stopped backup, isolated recovery and current Host before switching the daily plugin.
+Restart the desktop app after updating the local plugin. Select **EvoPilot v0.8.3 Preview** and ask: “Inspect the installation, initialize my private Workspace, then activate this chat and show the examples.” Verify the actual version, installation root and digest. Installation, Workspace initialization and per-chat activation are separate steps.
 
-Select **EvoPilot v0.8.3 Preview**, then say: “Initialize my private Workspace, explain its directories, and guide me through the forward example.” The Expert inspects first, creates the Workspace only after your setup request, then explicitly activates the current chat. You can choose your own directories; no private GitHub repository is required. Initialization alone does not activate the chat. Inspect and guide requests stay passive; ordinary chats do not require EvoPilot.
+Editable projects default to `~/evopilot-workspace`; protected state defaults to `~/.local/share/evopilot/workspaces/<id>`. You can choose other locations. No private GitHub repository is required. Keep service databases, credentials and private evidence outside source and distribution. Inspection and guides stay passive; ordinary chats do not require EvoPilot.
 
-Your editable project defaults to `~/evopilot-workspace`; protected service state defaults to `~/.local/share/evopilot/workspaces/<id>`. The project may have its own private Git history. Service databases, control records, signing keys and private evidence stay outside EvoPilot source and distribution. See [Workspace](workspace/README.md) and the [current and historical Expert scenarios](docs/expert-scenarios.md).
+Existing users start at the [current upgrade route](docs/migration.md#current-upgrade-route), including [v2 migration](docs/migration-v080-v081.md). Preserve the previous installation and a verified stopped backup; validate isolated recovery before switching daily use.
 
-For the current release, use the [native workflow](docs/native-workflow.md) and [current Expert journeys](docs/expert-scenarios.md). Its native validator platform is macOS arm64 with an explicit locked-toolchain preparation step; inspection never downloads dependencies. The legacy JSON authoring, classification and Catalog mutation routes are read-only historical compatibility. They cannot certify the corrected v1. Use [source development](docs/development.md) for this checkout and [recovery](docs/recovery.md) before changing installations.
+## Content levels and boundaries
 
-For help, use [support](SUPPORT.md); for sensitive reports, read [security](SECURITY.md). Licensed under [Apache-2.0](LICENSE); attribution is in [NOTICE](NOTICE).
+Current grading explicitly uses `standardVersion: "v2"`:
 
-Native approvals bind readable, digest-pinned evidence to the exact review, Workspace and operation. See [decision evidence](docs/native-decisions.md) for the format, historical readback and trusted-operator boundary.
+| Level | Content claim |
+|---|---|
+| L1 | Domain understanding: concepts, relationships, rules and provenance |
+| L2 | L1 plus implementation behavior, interfaces, state, errors and dependencies |
+| L3 | L2 plus complete reconstruction specifications for the fixed scope |
 
-Implementation language responsibilities and source checks: [language policy](docs/language-policy.md).
+**L3 does not require software reconstruction or access to the original environment.** `assetAssessment` and `reconstructionVerification` are separate; `L3 / NOT_REQUESTED` is valid. A content grade does not establish generated functional equivalence, identical code, production readiness or release authority. Historical usability v1 records retain their original meaning.
 
-## Planning and readable evidence
+Native semantic assets use RDF/Turtle and SHACL; quality rules use Rego, OPA and Conftest. Successful validation alone does not approve domain meaning. Standalone Runtime supplies no execution providers; configured trusted adapters and reviewed inputs are required for execution. Arbitrary coding, deployment and autonomous release are not provided. Preview is not GA.
 
-v0.7 adds [conversation-driven planning](docs/planning.md), [business-readable plans, assets and gate evidence in Codex](docs/readable-assets.md), and [preflight/recovery improvements](docs/preflight-maintenance.md). Native v1 standards and immutable history remain unchanged. Read the migration guide before switching an existing Workspace; publication does not automatically update running chats.
+## Documentation and contribution
+
+- [Documentation index](docs/README.md), [capabilities](docs/capabilities.md), [native workflow](docs/native-workflow.md) and [decision evidence](docs/native-decisions.md).
+- [Source development](docs/development.md), [language policy](docs/language-policy.md), [contribution guide](CONTRIBUTING.md) and [bilingual maintenance](docs/documentation-languages.md).
+- [Changelog](CHANGELOG.md) and [Roadmap](docs/roadmap.md) for version history and planned work.
+- [Support](SUPPORT.md), [security](SECURITY.md), [Apache-2.0 license](LICENSE) and [attribution](NOTICE).
+
+These source pages include documentation improvements after v0.8.3. Existing tagged archives retain their original documentation; future releases package the updated pages.

@@ -6,7 +6,7 @@ import { archiveEntries, validateEntries, validateDependencyLock, verifyInstalle
 import { SOURCE, VERSION, PIN, OWNERS, sha, json, regular, tree, portable, inventory, put, canonical, newRoot, disjoint, safeRelative, exact, argumentsFor, readBundle } from './manage-preview.mjs';
 
 // Explicit parent whitelist. Assembly helpers and source children are not runtime dependencies.
-export const PARENT_FILES = ['package.json', 'README.md', 'LICENSE', 'NOTICE', 'CONTRIBUTING.md', 'SECURITY.md', 'SUPPORT.md', 'CHANGELOG.md',
+export const PARENT_FILES = ['package.json', 'README.md', 'README_CN.md', 'LICENSE', 'NOTICE', 'CONTRIBUTING.md', 'SECURITY.md', 'SUPPORT.md', 'CHANGELOG.md',
   'dist', 'integration/composition.ts', 'integration/native-composition.ts', 'integration/types.ts', 'integration/compatibility', 'integration/connection', 'integration/workspace', 'integration/collection', 'integration/toolchain', 'integration/online', 'integration/response', 'integration/consumption', 'integration/usability', 'specifications/project/v1', 'plugins/codex', 'expert',
   'docs', 'workspace/README.md', 'workspace/templates',
   'governance/business-analysis-v09.json', 'governance/asset-readiness-v081.json', 'governance/asset-readiness-v081-acceptance.json', 'governance/asset-readiness-v081-legacy-map.json', 'scripts/verify-readiness-target.mjs',

@@ -30,9 +30,9 @@ export function validateProductMetadata(pkg, owner, checkpoint = 'M2') {
   assert.deepEqual(pkg.devDependencies, { typescript: '5.9.3', '@types/node': '24.19.2', ...(owner === 'harness' ? { ajv: '8.20.0' } : {}) });
   for (const field of ['peerDependencies', 'optionalDependencies']) assert.deepEqual(pkg[field] ?? {}, {});
   assert.deepEqual(pkg.scripts, { build: 'node scripts/build.mjs', check: owner === 'ontology' ? 'tsc --noEmit && node scripts/check.mjs' : 'node scripts/check.mjs', test: 'node --test tests/e2e/*.test.mjs' });
-  assert.deepEqual([...pkg.files].sort(), ( owner === 'runtime' ? ['dist', 'src', 'vendor', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'docs', 'LICENSE', 'NOTICE', 'provenance']
-    : owner === 'harness' ? ['dist', 'src', 'vendor', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'specifications', 'examples', 'assets', 'docs', 'provenance', 'LICENSE', 'NOTICE']
-    : ['dist', 'src', 'vendor', 'README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'specifications', 'examples', 'schemas', 'docs', 'provenance', 'LICENSE', 'NOTICE', 'assets']).sort());
+  assert.deepEqual([...pkg.files].sort(), ( owner === 'runtime' ? ['dist', 'src', 'vendor', 'README.md', 'README_CN.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'docs', 'LICENSE', 'NOTICE', 'provenance']
+    : owner === 'harness' ? ['dist', 'src', 'vendor', 'README.md', 'README_CN.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'specifications', 'examples', 'assets', 'docs', 'provenance', 'LICENSE', 'NOTICE']
+    : ['dist', 'src', 'vendor', 'README.md', 'README_CN.md', 'CONTRIBUTING.md', 'SECURITY.md', 'CHANGELOG.md', 'specifications', 'examples', 'schemas', 'docs', 'provenance', 'LICENSE', 'NOTICE', 'assets']).sort());
   const names = { '.': 'index', ...(owner === 'ontology' ? { './compat': 'compat/index', './migration': 'migration' } : {}), ...(owner !== 'runtime' ? { './sources': 'asset-sources' } : {}), './service': 'service', './workspace-migration': 'workspace-migration', ...(owner === 'harness' ? { './native': 'native' } : {}), ...(owner !== 'ontology' ? { './online': 'online' } : {}) };
   assert.deepEqual(pkg.exports, Object.fromEntries(Object.entries(names).map(([key, name]) => [key, { types: './dist/' + name + (key === './compat' ? '.d.mts' : '.d.ts'), import: './dist/' + name + (key === './compat' ? '.mjs' : '.js') }])));
   return Object.freeze({ product: owner, checkpoint, cli, allBinsRequiredAt: 'M4' });

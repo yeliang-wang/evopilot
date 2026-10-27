@@ -1,5 +1,7 @@
 # First use
 
+English | [简体中文](zh-CN/first-journey.md)
+
 Start with the [current v2 content workflow](asset-readiness-v081-workflow.md) for modeling purpose, scope, level and content grading. Use the [native package workflow](native-workflow.md) for exact native envelopes and expected files; content grading does not require a business Run or reconstruction. Historical JSON authoring commands remain retired; old records retain their original meaning.
 
 [Install EvoPilot](installation.md), select the EvoPilot plugin in Codex and say:

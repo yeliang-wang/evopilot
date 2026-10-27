@@ -1,5 +1,7 @@
 # Migrate 0.8.0 to 0.8.1 Preview
 
+English | [简体中文](zh-CN/migration.md)
+
 The new content standard is additive and explicitly named v2. Native RDF/SHACL/Rego v1 standards, immutable asset versions, decision records, request receipts and historical usability v1 assessments retain their original bytes and meaning. There is no automatic asset upgrade or relabeling of old L3.
 
 ## Before cutover

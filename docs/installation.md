@@ -1,5 +1,7 @@
 # Install EvoPilot Preview
 
+English | [简体中文](zh-CN/installation.md)
+
 ## Version 0.8.3 Preview
 
 Use **Node 24.14.0**. Download `evopilot-0.8.3-preview.tar.gz` and `SHA256SUMS` from the exact [v0.8.3 Preview release](https://github.com/yeliang-wang/evopilot/releases/tag/v0.8.3). A release candidate may use a verified local bundle through the same commands; source version alone is not proof of a published download. Use an immutable versioned release, not a latest-stable selector.
