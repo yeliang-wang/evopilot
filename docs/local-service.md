@@ -54,13 +54,13 @@ provider, executable override, port, or arbitrary control-directory setting):
 ```json
 {
   "schema": "evopilot-connection-config/v1",
-  "version": "0.6.0",
+  "version": "0.8.3",
   "protocol": "evopilot-connection/v1",
   "installationId": "preview-install",
   "installationRoot": "/canonical/installed-preview",
   "workspaceRoot": "/canonical/private-parent/workspace",
   "workspaceId": "preview-workspace",
-  "components": {"runtime":"0.6.0","harness":"0.6.0","ontology":"0.6.0"},
+  "components": {"runtime":"0.8.3","harness":"0.8.3","ontology":"0.8.3"},
   "manifest": [{"path":"package.json","sha256":"64-lowercase-hex-digits"}]
 }
 ```
@@ -75,7 +75,7 @@ own private Git repository; state/configuration must stay outside Git.
 The example manifest is illustrative, not complete. The installer must enumerate
 and hash the **raw file bytes**, using SHA-256 without a `sha256:` prefix, of:
 
-1. `package.json` (`@evopilot-next/stack`, version `0.6.0`).
+1. `package.json` (`@evopilot-next/stack`, version `0.8.3`).
 2. All four compiled `dist/integration/connection/*.js` files.
 3. `dist/integration/composition.js` and `dist/integration/types.js`.
 4. `dist/integration/compatibility/v1/reference.mjs` and `manifest.json`.

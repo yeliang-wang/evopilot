@@ -13,6 +13,7 @@ import { nativeSha256 } from '../../dist/integration/compatibility/v1/native.mjs
 import { assembly, rawRequest } from './connection.test.mjs';
 import { fixture, syntheticModelingIntent } from './fixtures/native-project.mjs';
 import { syntheticDecisionEvidence } from './fixtures/decision-evidence.mjs';
+import { READINESS_SPEC_PATH, validateReadinessSpecification } from '../../dist/integration/compatibility/usability/v2/contract.mjs';
 import { syntheticAuthoring } from './fixtures/authoring.mjs';
 import { rehash } from '../../projects/evopilot-ontology/tests/fixtures/native/package.mjs';
 
@@ -125,7 +126,7 @@ test('MCP package publication/receipt responses retain large payloads and oversi
   assert.deepEqual(replies[6].result, {});
 });
 
-async function installedFixture(withToolchain=false) {
+async function installedFixture(withToolchain=false, options={}) {
   const f = await assembly(true);
   for (const relative of ['dist/integration/workspace', 'dist/plugins', 'dist/expert', 'workspace/templates']) fs.cpSync(path.join(root, relative), path.join(f.install, relative), { recursive: true });
   const manifest = [];
@@ -141,7 +142,7 @@ async function installedFixture(withToolchain=false) {
   const configPath = path.join(managed, 'config.json');
   fs.writeFileSync(configPath, JSON.stringify({ ...f.config, workspaceRoot: null, workspaceId: null, manifest }), { mode: 0o600 });
   const bootstrap = await import(pathToFileURL(path.join(f.install, 'dist/integration/workspace/bootstrap.js')));
-  const input = { requestId: 'synthetic-transport-setup', projectRoot: path.join(f.base, 'project'), stateRoot: f.config.workspaceRoot, workspaceId: f.config.workspaceId };
+  const input = { requestId: 'synthetic-transport-setup', projectRoot: path.join(f.base, 'project'), stateRoot: f.config.workspaceRoot, workspaceId: options.workspaceId ?? f.config.workspaceId };
   await bootstrap.setupWorkspace(configPath, input);
   if(withToolchain){
     const tools=JSON.parse(fs.readFileSync(process.env.EVOPILOT_TEST_NATIVE_TOOLCHAIN,'utf8'));
@@ -444,29 +445,36 @@ test('optional private package inputs fit fixed transport budgets without retain
   assert.equal(filenames.length, 2);
   const packages = Object.fromEntries(filenames.map(filename => { const pkg = JSON.parse(fs.readFileSync(filename, 'utf8')); return [pkg.manifest.owner, pkg]; }));
   assert.deepEqual(Object.keys(packages).sort(), ['harness', 'ontology']);
-  const f = await installedFixture();
+  const rawSpecification = packages.ontology.files[READINESS_SPEC_PATH];
+  const definition = rawSpecification ? validateReadinessSpecification(JSON.parse(rawSpecification)).intent : null;
+  const scope = definition?.scope ?? ownerPayload('ontology').envelope.scope;
+  const scopedPayload = (...args) => { const p = ownerPayload(...args); p.envelope.scope = scope; return p; };
+  const f = await installedFixture(false, {workspaceId: definition?.workspaceId});
+  // Synthetic fixture authority exists only inside these disposable roots. Private
+  // package bytes stay exact; this is transport evidence, never project approval.
+  const intent = definition ? {definition, digest:nativeSha256(definition), humanEvidenceRef:syntheticDecisionEvidence(f.base,{owner:'runtime',operation:'readiness.intent.record',workspaceId:definition.workspaceId,scope,reviewDigest:nativeSha256(definition),decision:'ACCEPT'})} : null;
   try {
     // Seed readback through the public owner API in disposable state. This synthetic
     // admission is transport setup only, never a real-project freeze or publication.
     for(const owner of ['ontology','harness']){
       const api=await import(pathToFileURL(path.join(f.install,'node_modules/@evopilot-next',owner,'dist/service.js')));
-      const service=api[owner==='ontology'?'createOntologyService':'createHarnessService']({workspaceRoot:f.input.stateRoot,workspaceId:f.input.workspaceId},{resolveNativeAuthoring:syntheticAuthoring});service.initialize();
-      try{await service.native({operation:'native.package.put',scope:ownerPayload(owner).envelope.scope,input:{package:packages[owner]},requestId:'seed-readback-'+owner,expectedRevision:0});}finally{service.close();}
+      const service=api[owner==='ontology'?'createOntologyService':'createHarnessService']({workspaceRoot:f.input.stateRoot,workspaceId:f.input.workspaceId},{resolveNativeAuthoring:syntheticAuthoring,...(intent?{resolveReadinessAuthoring:()=>intent}:{})});service.initialize();
+      try{await service.native({operation:'native.package.put',scope,input:{package:packages[owner]},requestId:'seed-readback-'+owner,expectedRevision:0});}finally{service.close();}
     }
     const messages = [call(2, 'activate')]; let id = 3;
     for (const owner of ['ontology', 'harness']) {
       // The real Host still rejects an unbound write, even for retained draft bytes.
-      const put = ownerPayload(owner, 'native.package.put', { package: packages[owner] });
+      const put = scopedPayload(owner, 'native.package.put', { package: packages[owner] });
       put.envelope.requestId = 'private-input-' + owner; put.envelope.expectedRevision = 1;
       const bytes = Buffer.byteLength(JSON.stringify(call(id, 'native', put)));
       assert(bytes < LIMITS.nativeBody); t.diagnostic(JSON.stringify({ owner, inputBytes: bytes, packageDigest: nativeSha256(packages[owner]) }));
       messages.push(call(id++, 'native', put));
-      messages.push(call(id++, 'native', ownerPayload(owner, 'native.package.inspect', { id: packages[owner].manifest.id, version: packages[owner].manifest.version })));
+      messages.push(call(id++, 'native', scopedPayload(owner, 'native.package.inspect', { id: packages[owner].manifest.id, version: packages[owner].manifest.version })));
     }
     const out = conversation(f, messages);
-    for(const index of [2,4])assert.equal(data(out.messages[index]).error.code,'AUTHORING_CONTEXT_REQUIRED');
+    for(const [index,owner] of [[2,'ontology'],[4,'harness']])assert.equal(data(out.messages[index]).error.code,packages[owner].files[READINESS_SPEC_PATH]?'READINESS_INTENT_REQUIRED':'AUTHORING_CONTEXT_REQUIRED');
     for (const [index, owner] of [[3, 'ontology'], [5, 'harness']]) assert.equal(nativeSha256(data(out.messages[index]).result?.package ?? null), nativeSha256(packages[owner]), JSON.stringify(data(out.messages[index]).error));
-    const materializeBytes = Buffer.byteLength(JSON.stringify(call(10, 'native_project', { operation: 'materialize', input: { scope: ownerPayload('ontology').envelope.scope, id: 'private-transport-measurement', packages } })));
+    const materializeBytes = Buffer.byteLength(JSON.stringify(call(10, 'native_project', { operation: 'materialize', input: { scope, id: 'private-transport-measurement', packages } })));
     assert(materializeBytes > MiB && materializeBytes < LIMITS.nativeBody);
     t.diagnostic(JSON.stringify({ actualPrivateInput: true, materializeInputBytes: materializeBytes, ownerRoundtripOutputBytes: out.outputBytes }));
   } finally { await f.cleanup(); }

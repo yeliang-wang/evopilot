@@ -40,3 +40,9 @@ test('first-journey routing cannot silently return users to the old migration pr
   const c = current(); c.documents['docs/first-journey.md'] = c.documents['docs/first-journey.md'].replace('migration.md#current-upgrade-route', 'migration.md#upgrade-from-v07-to-v080');
   assert.throws(() => validateCurrentGuidance(c), /migration routing/);
 });
+test('current configuration samples and owner installation labels cannot retain obsolete releases', () => {
+  const c = current(); c.documents['docs/local-service.md'] = c.documents['docs/local-service.md'].replaceAll(c.version, '0.6.0');
+  assert.throws(() => validateCurrentGuidance(c), /configuration example is stale/);
+  const d = current(); d.documents['projects/evopilot-ontology/docs/README.md'] = d.documents['projects/evopilot-ontology/docs/README.md'].replace('[current package installation]', '[v0.7.0 package installation]');
+  assert.throws(() => validateCurrentGuidance(d), /obsolete version label/);
+});

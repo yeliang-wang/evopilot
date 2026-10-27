@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { READINESS_STANDARD } from '../integration/compatibility/usability/v2/contract.mjs';
 
-export const guidanceFiles = ['README.md', 'docs/README.md', 'docs/installation.md', 'docs/capabilities.md', 'docs/codex.md', 'docs/native-workflow.md', 'docs/migration.md', 'docs/migration-v080-v081.md', 'docs/testing.md', 'docs/first-journey.md', ...['runtime', 'harness', 'ontology'].map(owner => 'projects/evopilot-' + owner + '/docs/README.md')];
+export const guidanceFiles = ['README.md', 'docs/README.md', 'docs/installation.md', 'docs/capabilities.md', 'docs/codex.md', 'docs/native-workflow.md', 'docs/migration.md', 'docs/migration-v080-v081.md', 'docs/testing.md', 'docs/first-journey.md', 'docs/local-service.md', ...['runtime', 'harness', 'ontology'].map(owner => 'projects/evopilot-' + owner + '/docs/README.md')];
 const section = (text, heading) => {
   const start = text.indexOf(heading + '\n');
   assert(start >= 0, 'Missing current guidance section: ' + heading);
@@ -44,6 +44,10 @@ export function validateCurrentGuidance({ version, plugin, documents, standard =
   }
   for (const file of ['docs/installation.md', 'docs/migration.md']) assert(documents[file].includes('Runtime 8 / Harness 8 / Ontology 5'), 'Current v2 state markers missing in ' + file);
   assert(documents['docs/migration-v080-v081.md'].includes('markers to 8') && documents['docs/migration-v080-v081.md'].includes('marker to 5'), 'Current migration contract differs from entry guidance');
+  const configExample = JSON.parse(documents['docs/local-service.md'].match(/```json\n([\s\S]*?)\n```/)[1]);
+  assert.equal(configExample.version, version, 'Current connection configuration example is stale');
+  for (const owner of ['runtime', 'harness', 'ontology']) assert.equal(configExample.components[owner], version, 'Current component configuration example is stale');
+  assert(!/\[v[\d.]+ package installation\]/.test(documents['projects/evopilot-ontology/docs/README.md']), 'Owner installation routing uses an obsolete version label');
   assert(documents['docs/testing.md'].includes('72 variants: 63 before release and nine after publication'), 'Current acceptance route is stale');
   return { status: 'PASS', version, checkedDocuments: guidanceFiles.length, standardVersion: 'v2', authority: false };
 }
