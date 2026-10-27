@@ -40,7 +40,8 @@ jobs:
           node dist/integration/toolchain/cli.js prepare --cache "$RUNNER_TEMP/evopilot-native-cache" > "$RUNNER_TEMP/native-toolchain.json"
           echo "EVOPILOT_TEST_NATIVE_TOOLCHAIN=$RUNNER_TEMP/native-toolchain.json" >> "$GITHUB_ENV"
       # Native validator subprocesses and large transport fixtures share the runner.
-      # Execute the same complete test set with bounded worker contention.
+      # Serialize test files to avoid host contention; each concurrency/fault fixture
+      # retains its original concurrent operations, deadlines and assertions.
       - name: Prepare credential-free synthetic Codex protocol configuration
         shell: bash
         run: |
@@ -56,8 +57,8 @@ jobs:
             '# Synthetic CI protocol fixture only; contains no credentials.\n',
             { flag: 'wx', mode: 0o600 });
           JS
-      - name: Full test suite with two workers
-        run: node --test --test-concurrency=2 integration/e2e/*.test.mjs projects/evopilot-runtime/tests/e2e/*.test.mjs projects/evopilot-harness/tests/e2e/*.test.mjs projects/evopilot-ontology/tests/e2e/*.test.mjs
+      - name: Full test suite with one worker
+        run: node --test --test-concurrency=1 integration/e2e/*.test.mjs projects/evopilot-runtime/tests/e2e/*.test.mjs projects/evopilot-harness/tests/e2e/*.test.mjs projects/evopilot-ontology/tests/e2e/*.test.mjs
       - run: npm run artifacts:verify -- --out "$RUNNER_TEMP/evopilot-artifacts"
       - name: Assemble portable bundle
         run: node scripts/assemble-preview.mjs --artifacts "$RUNNER_TEMP/evopilot-artifacts" --out "$RUNNER_TEMP/evopilot-bundle"
