@@ -79,3 +79,15 @@ The subsequent explicit user instruction to publish v0.7 and install it for norm
 ## Approved v0.8.1 asset readiness correction
 
 The current explicit user instruction authorizes the accepted parent `governance/asset-readiness-v081.json` plan through both full private project asset upgrades, conditional release and current Codex deployment. Follow its precise file binding and fixed acceptance; do not repeat routine confirmations. New shared v2 contracts are generated only by the parent. Preserve v1 behavior, historical bytes, native standards and private evidence. Content grades do not dispatch reconstruction or require business databases/SSH. Full acceptance and exact candidate evidence remain mandatory; no fabricated semantic decisions or PASS.
+
+## Approved Runtime v0.9 transition
+
+The explicit user-approved Runtime v0.9 plan supersedes the historical
+pre-v1.0 Dashboard exclusion only for Runtime's two-page lifecycle UI. Runtime
+now owns its independent service, Expert, HTTP MCP, CLI, plugin and release.
+The parent stops introducing product versions and provides navigation; preserve
+historical release/source records. Ontology/Harness next-version work is excluded.
+The independent Runtime repository owns the new Roadmap, Target and acceptance
+catalog. Historical local-v0.1 integrity gates remain historical; their UNKNOWN
+response to v0.9 is not an alignment or acceptance result. M0 formalization and
+exact scope/evidence gates precede product implementation and eventual release.

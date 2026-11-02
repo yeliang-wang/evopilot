@@ -262,3 +262,15 @@ The [correction plan](transport-correction-v082.md) and [maintenance Target](../
 ## v0.8.3 Preview: current documentation closure
 
 The [documentation closure plan](documentation-closure-v083.md) and [maintenance Target](../governance/documentation-closure-v083.json) correct current-versus-historical L3 wording, migration routing, state markers and plugin labels across entry guides and the corresponding private normative assets. Keep all 72 v0.8.1 variants, fixed project scope, native standards, runtime behavior and prior release bytes. New consistency guards, exact source/CI/package validation, immutable releases and current Codex readback are required. No additional product capability or execution permission is introduced.
+
+## Approved Runtime v0.9 transition
+
+The explicit user-approved Runtime v0.9 plan supersedes the historical
+pre-v1.0 Dashboard exclusion only for Runtime's two-page lifecycle UI. Runtime
+now owns its independent service, Expert, HTTP MCP, CLI, plugin and release.
+The parent stops introducing product versions and provides navigation; preserve
+historical release/source records. Ontology/Harness next-version work is excluded.
+The independent Runtime repository owns the new Roadmap, Target and acceptance
+catalog. Historical local-v0.1 integrity gates remain historical; their UNKNOWN
+response to v0.9 is not an alignment or acceptance result. M0 formalization and
+exact scope/evidence gates precede product implementation and eventual release.
